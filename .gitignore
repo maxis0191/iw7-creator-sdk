@@ -1,0 +1,7 @@
+/tools/
+/runtime/
+/backups/
+*.log
+*.cgsc
+*.gscbin
+.env*
