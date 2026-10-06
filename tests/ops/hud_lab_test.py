@@ -33,7 +33,12 @@ class HudLabTests(unittest.TestCase):
     def run_powershell_fixture(self, source):
         if not shutil.which('pwsh'):
             self.skipTest('PowerShell 7 required')
-        with tempfile.TemporaryDirectory() as folder:
+        # Runtime callers pass canonical installation paths. Hosted Windows TEMP
+        # may contain an 8.3 user alias; do not feed that unnormalised alias into
+        # fixtures that compare file identities and relative profile paths.
+        (ROOT / 'runtime').mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as temporary:
+            folder = str(Path(temporary).resolve())
             script = Path(folder) / 'fixture.ps1'
             script.write_text('param($Repo,$Fixture)\n$ErrorActionPreference="Stop"\n' + source, encoding='utf-8')
             result = subprocess.run(['pwsh', '-NoProfile', '-File', str(script), str(ROOT), folder],
@@ -348,7 +353,10 @@ if([IO.File]::ReadAllText($cache) -cne 'pre-existing owner cache'){throw 'Seed/u
         # Synthetic files test staging only: no executable is ever invoked.
         output = ROOT / 'runtime' / ('hud-test-' + uuid.uuid4().hex)
         try:
-            with tempfile.TemporaryDirectory() as folder:
+            # NTFS hardlinks require the same volume as the staged worktree.
+            # Hosted runners commonly place TEMP on C: and the checkout on D:.
+            (ROOT / 'runtime').mkdir(exist_ok=True)
+            with tempfile.TemporaryDirectory(dir=ROOT / 'runtime') as folder:
                 stock = Path(folder)
                 for name in ('main/code_pre_gfx.ff', 'main/cp_zmb.ff', 'main/fileSysCheck.cfg', 'zone/code_pre_gfx.ff',
                              'zone/custom_foreign.ff', 'zone/imagefile999.pak', 'zone/assetfile1.pak', 'zone/assetfile17.pak', 'zone/assetfile19.pak', 'zone/assetfile999.pak',
