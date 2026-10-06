@@ -1,0 +1,42 @@
+{
+  "schema": "iw7.hud-measurement/1",
+  "id": "paris_lab_hud",
+  "version": "0.1.1",
+  "measured_utc": "2026-10-06T23:25:53Z",
+  "evidence_run": "runtime/hud-011-bootstrap-20261007",
+  "verification_context": "Bootstrap",
+  "recipient_offline_linked": false,
+  "tool_source": "fab935826c898806855376662a8a03317b3ad8f1",
+  "tool_sha256": "A2CBA8B0C34493FCDDB5DC82E034E678C948F5C80D5B4454A93792E8E256B1D9",
+  "tool_accepted": false,
+  "required_native_source": "77e6d4d24e918ee363b3feee3735c3b889dff7d7",
+  "file": {
+    "source": "mod.ff",
+    "destination": "mods/paris_lab_hud/mod.ff",
+    "bytes": 1360,
+    "sha256": "C49AA9E380A83AEAC7DC0CFE58998733F0658881C20C959E7578A8582AD2528A",
+    "engine_crc32_le_hex": "58548DA4"
+  },
+  "inventory": [
+    "luafile,ui_scripts/paris_lab_hud/__init__.lua",
+    "rawfile,paris_lab_hud"
+  ],
+  "roundtrip": {
+    "bytes": 1575,
+    "sha256": "3834479321CD0F170A452F9877510D85759EAC5622B8CE126CA8D87E794F5992",
+    "identical_to_original": true
+  },
+  "restored": true,
+  "stock_preserved": true,
+  "owner_acceptance": "pending",
+  "ready": false,
+  "client_download": "pass-seeded-update-one-get-native-0C1AD36B",
+  "lua_evaluation": "pass-owned-client-load-and-attachment",
+  "retail_font": "pass-manual-frame-inspection",
+  "pixels": "pass-manual-frame-inspection",
+  "layout": "pass-no-stock-counter-overlap",
+  "failed_runtime_evidence_run": "runtime/agent-lab/20261006-232700-764-8ce9cd94",
+  "failed_runtime_recovered": true,
+  "runtime_evidence_run": "runtime/agent-lab/20261006-233949-682-6cc64cb6",
+  "runtime_frame_sha256": "818E96C35189330A9BE2195DDE07966D62EE358BF647A053CBD23E8980FA1F83"
+}
