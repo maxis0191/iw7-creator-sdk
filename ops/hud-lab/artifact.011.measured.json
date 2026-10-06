@@ -30,11 +30,13 @@
   "stock_preserved": true,
   "owner_acceptance": "pending",
   "ready": false,
-  "client_download": "fail-seeded-update-64-repeated-gets-on-native-70A0697D",
-  "lua_evaluation": "pending",
-  "retail_font": "pending",
-  "pixels": "pending",
-  "layout": "pending-new-client-frame",
+  "client_download": "pass-seeded-update-one-get-native-0C1AD36B",
+  "lua_evaluation": "pass-owned-client-load-and-attachment",
+  "retail_font": "pass-manual-frame-inspection",
+  "pixels": "pass-manual-frame-inspection",
+  "layout": "pass-no-stock-counter-overlap",
   "failed_runtime_evidence_run": "runtime/agent-lab/20261006-232700-764-8ce9cd94",
-  "failed_runtime_recovered": true
+  "failed_runtime_recovered": true,
+  "runtime_evidence_run": "runtime/agent-lab/20261006-233949-682-6cc64cb6",
+  "runtime_frame_sha256": "818E96C35189330A9BE2195DDE07966D62EE358BF647A053CBD23E8980FA1F83"
 }
