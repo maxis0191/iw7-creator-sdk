@@ -1,5 +1,5 @@
 # Optional module for Agent-Lab; no launch or reservation occurs on import.
-function Read-IW7HudBuild([string]$RunRoot) {
+function Read-IW7HudBuild([string]$RunRoot,[switch]$PreviousVersion) {
     $root=(Resolve-Path -LiteralPath $RunRoot).Path.TrimEnd('\','/')
     $statePath=Resolve-IW7BasePath $root 'state.local.json'
     if ((Get-Item -LiteralPath $statePath).Length -gt 1MB) { throw 'HUD build state exceeds bound.' }
@@ -36,11 +36,26 @@ function Read-IW7HudBuild([string]$RunRoot) {
     })
     if ($rows.Count -ne 2 -or @($rows | Sort-Object -Unique).Count -ne 2 -or
         'luafile,ui_scripts/paris_lab_hud/__init__.lua' -cnotin $rows -or 'rawfile,paris_lab_hud' -cnotin $rows) { throw 'Retained tool callback inventory differs from minimal HUD.' }
-    $luaHash='FFDBD352B4126A2EA8EE0FF484CD37AECB3AD8C9CFE80195B2B10505403169B5'
-    foreach ($lua in @((Resolve-IW7BasePath $root 'roundtrip.lua'),(Join-Path $PSScriptRoot 'ui_scripts/paris_lab_hud/__init__.lua'))) {
+    $luaHash=if ($PreviousVersion) { 'FFDBD352B4126A2EA8EE0FF484CD37AECB3AD8C9CFE80195B2B10505403169B5' } else { '3834479321CD0F170A452F9877510D85759EAC5622B8CE126CA8D87E794F5992' }
+    $luaFiles=@((Resolve-IW7BasePath $root 'roundtrip.lua'))
+    if (!$PreviousVersion) { $luaFiles+=Join-Path $PSScriptRoot 'ui_scripts/paris_lab_hud/__init__.lua' }
+    if ($PreviousVersion -and ($hash -cne 'C6290FDF225C6207B0E6B8BE598FC683603DDF2DA9A114020399224244B096AF' -or $bytes.Length -ne 1356)) { throw 'Cache seed must be the exact measured 0.1.0 FF.' }
+    foreach ($lua in $luaFiles) {
         if ((Get-Item -LiteralPath $lua).Length -ne 1575 -or (Get-FileHash -LiteralPath $lua).Hash -cne $luaHash) { throw 'HUD roundtrip/current original source mismatch.' }
     }
-    [pscustomobject]@{RunRoot=$root;Bytes=$bytes;SHA256=$hash;VerificationContext=$state.VerificationContext;RecipientOfflineLinked=[bool]$state.RecipientOfflineLinked;Ready=$false}
+    [pscustomobject]@{RunRoot=$root;Bytes=$bytes;SHA256=$hash;Version=$(if($PreviousVersion){'0.1.0'}else{'0.1.1'});VerificationContext=$state.VerificationContext;RecipientOfflineLinked=[bool]$state.RecipientOfflineLinked;Ready=$false}
+}
+
+function Assert-IW7HudSeed($Build,$Seed) {
+    if (!$Build -or !$Seed -or $Seed.Version -cne '0.1.0' -or $Seed.Bytes.Length -ne 1356 -or
+        $Seed.SHA256 -cne 'C6290FDF225C6207B0E6B8BE598FC683603DDF2DA9A114020399224244B096AF' -or
+        [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($Seed.Bytes)) -cne $Seed.SHA256 -or
+        $Build.SHA256 -eq $Seed.SHA256) { throw 'Exact prior HUD seed and a different new FF hash required.' }
+}
+
+function Assert-IW7HudSeedCache([string]$GameRoot,$Seed) {
+    $path=Resolve-IW7BasePath $GameRoot 'mods/paris_lab_hud/mod.ff'
+    if ((Get-Item -LiteralPath $path).Length -ne $Seed.Bytes.Length -or (Get-FileHash -LiteralPath $path).Hash -cne $Seed.SHA256) { throw 'Staged prior HUD cache changed before client launch.' }
 }
 
 function Assert-IW7HudNative($Manifest) {
@@ -91,10 +106,11 @@ function Start-IW7HudHttp($Build,[string]$OutputRoot) {
     [IW7HudHttp]::new($Build.Bytes,$Build.SHA256,(Join-Path $OutputRoot 'hud-http.jsonl'))
 }
 
-function Wait-IW7HudRuntimeEvidence($Session,$Build,$Http,[string]$OutputRoot) {
+function Wait-IW7HudRuntimeEvidence($Session,$Build,$Http,[string]$OutputRoot,$Seed=$null) {
+    if ($Seed) { Assert-IW7HudSeed $Build $Seed }
     $deadline=[datetime]::UtcNow.AddSeconds(15)
-    $loaded='[PARIS_HUD] loaded version=0.1.0; attach pending'
-    $attached='[PARIS_HUD] attached version=0.1.0; render witness pending'
+    $loaded='[PARIS_HUD] loaded version=0.1.1; attach pending'
+    $attached='[PARIS_HUD] attached version=0.1.1; render witness pending'
     do {
         $null=Update-IW7BaseClient $Session
         Assert-IW7BaseIdentity $Session.Identity
@@ -123,7 +139,9 @@ function Wait-IW7HudRuntimeEvidence($Session,$Build,$Http,[string]$OutputRoot) {
     })
     if (!$freshGets.Count) { throw 'HUD GET did not follow this owned client launch.' }
     [ordered]@{Schema='iw7.hud-runtime/1';PID=$Session.Identity.PID;CreatedUtc=$Session.Identity.CreatedUtc;NativeSHA256=$Session.Identity.SHA256;
-        Stdout=$logPath;BuildRun=$Build.RunRoot;FFSHA256=$Build.SHA256;FFBytes=$Build.Bytes.Length;FreshCacheVerified=$true;
+        Stdout=$logPath;BuildRun=$Build.RunRoot;FFSHA256=$Build.SHA256;FFBytes=$Build.Bytes.Length;
+        CacheMode=$(if($Seed){'seeded-hash-update'}else{'fresh-empty'});FreshCacheVerified=(!$Seed);UpdatedCacheVerified=[bool]$Seed;
+        SeedFFSHA256=$(if($Seed){$Seed.SHA256}else{$null});SeedBuildRun=$(if($Seed){$Seed.RunRoot}else{$null});
         CompletedHttpGets=$Http.CompletedGets;GetsAfterClientLaunch=$freshGets.Count;HttpRequesterPID='unmeasured';CacheModifiedUtc=$cacheInfo.LastWriteTimeUtc.ToString('o');
         LuaLoaded=$true;LuaAttached=$true;VerificationContext=$Build.VerificationContext;
         PixelsVerified=$false;GameplayVerified=$false;OwnerAcceptance=$false;Ready=$false} |

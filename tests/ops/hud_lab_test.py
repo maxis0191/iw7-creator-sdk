@@ -153,7 +153,7 @@ $bytes=[Text.Encoding]::ASCII.GetBytes('synthetic download; not a fastfile')
 $sha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes))
 $started=[datetime]::UtcNow.AddSeconds(-2)
 $stdout=Join-Path $out 'client.stdout.log'
-[IO.File]::WriteAllText($stdout,"[PARIS_HUD] loaded version=0.1.0; attach pending`n[PARIS_HUD] attached version=0.1.0; render witness pending`n")
+[IO.File]::WriteAllText($stdout,"[PARIS_HUD] loaded version=0.1.1; attach pending`n[PARIS_HUD] attached version=0.1.1; render witness pending`n")
 $cache=Join-Path $game 'mods/paris_lab_hud/mod.ff';[IO.File]::WriteAllBytes($cache,$bytes)
 $journal=Join-Path $out 'hud-http.jsonl'
 $row=@{utc=[datetime]::UtcNow.ToString('o');method='GET';path='/mods/paris_lab_hud/mod.ff';bytes=$bytes.Length;sha256=$sha}
@@ -165,6 +165,14 @@ $http=[pscustomobject]@{CompletedGets=1;Error=$null}
 Wait-IW7HudRuntimeEvidence $session $build $http $out
 $e=Get-Content (Join-Path $out 'hud-runtime.local.json') -Raw | ConvertFrom-Json
 if(!$e.FreshCacheVerified -or !$e.LuaAttached -or $e.PixelsVerified -or $e.GameplayVerified -or $e.Ready -or $identityChecks -lt 1){throw 'Evidence claims wrong gate/identity'}
+# Inject only the historical-pin gate to exercise seeded evidence attribution
+# without shipping the real generated FF in asset-free tests. Its rejection
+# policy is covered separately with the unmocked function.
+function Assert-IW7HudSeed($Build,$Seed){if($Seed.RunRoot -cne 'synthetic-prior-contract'){throw 'wrong injected seed'}}
+$seed=[pscustomobject]@{RunRoot='synthetic-prior-contract';SHA256=('C'*64)}
+Wait-IW7HudRuntimeEvidence $session $build $http $out $seed
+$e=Get-Content (Join-Path $out 'hud-runtime.local.json') -Raw | ConvertFrom-Json
+if($e.FreshCacheVerified -or !$e.UpdatedCacheVerified -or $e.CacheMode -cne 'seeded-hash-update' -or $e.SeedFFSHA256 -cne $seed.SHA256 -or $e.PixelsVerified -or $e.Ready){throw 'Seeded update falsely claimed fresh/pixels/ready'}
 function Refused{$failed=$false;try{Wait-IW7HudRuntimeEvidence $session $build $http $out}catch{$failed=$true};if(!$failed){throw 'Stale/foreign runtime evidence admitted'}}
 $row.utc=$started.AddSeconds(-1).ToString('o');WriteGet;Refused
 $row.utc=[datetime]::UtcNow.ToString('o');WriteGet
@@ -172,6 +180,37 @@ $row.utc=[datetime]::UtcNow.ToString('o');WriteGet
 [IO.File]::SetLastWriteTimeUtc($cache,[datetime]::UtcNow)
 $session.Identity.Stdout=Join-Path $Fixture 'foreign.log';Refused
 $session.Identity.Stdout=$stdout;$session.Identity.PID=456;Refused
+''')
+
+    def test_seed_pin_refusals_and_transactional_cache_guard(self):
+        self.run_powershell_fixture(r'''
+. (Join-Path $Repo 'ops/Base-Client.Core.ps1')
+. (Join-Path $Repo 'ops/hud-lab/Hud-Runtime.Core.ps1')
+$pin='C6290FDF225C6207B0E6B8BE598FC683603DDF2DA9A114020399224244B096AF'
+$build=[pscustomobject]@{SHA256=('B'*64)}
+$seed=[pscustomobject]@{Version='0.1.0';Bytes=[byte[]]::new(1356);SHA256=$pin}
+function Refused { $failed=$false;try{Assert-IW7HudSeed $build $seed}catch{$failed=$true};if(!$failed){throw 'Unproven prior seed admitted'} }
+Refused # exact declared pin with synthetic bytes must fail the recomputed hash
+$seed.Version='0.1.1';Refused;$seed.Version='0.1.0'
+$seed.Bytes=[byte[]]::new(1357);Refused;$seed.Bytes=[byte[]]::new(1356)
+$seed.SHA256=('A'*64);Refused;$seed.SHA256=$pin
+$build.SHA256=$pin;Refused;$build.SHA256=('B'*64)
+# Exercise the actual file guard and outer restoration using synthetic bytes.
+# This cache guard does not certify the historical seed; AssertSeed does that.
+$root=Join-Path $Fixture 'game';$cache=Join-Path $root 'mods/paris_lab_hud/mod.ff'
+[IO.Directory]::CreateDirectory((Split-Path $cache))|Out-Null
+[IO.File]::WriteAllText($cache,'pre-existing owner cache')
+$paths=@(Get-IW7HudProfilePaths $root)
+$txn=Save-IW7BaseTransaction ([pscustomobject]@{GameRoot=$root;MutableFiles=@();ProfileDirectory='unused';ProfileDirectories=$paths}) (Join-Path $Fixture 'backup')
+Clear-IW7HudProfiles $root $paths $txn
+$payload=[Text.Encoding]::ASCII.GetBytes('synthetic prior cache; not a fastfile')
+$fixtureSeed=[pscustomobject]@{Bytes=$payload;SHA256=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($payload))}
+[IO.File]::WriteAllBytes($cache,$payload);Assert-IW7HudSeedCache $root $fixtureSeed
+[IO.File]::WriteAllText($cache,'changed before launch')
+$failed=$false;try{Assert-IW7HudSeedCache $root $fixtureSeed}catch{$failed=$true};if(!$failed){throw 'Changed staged seed admitted'}
+[IO.File]::WriteAllText($cache,'synthetic new download')
+Restore-IW7BaseTransaction $txn
+if([IO.File]::ReadAllText($cache) -cne 'pre-existing owner cache'){throw 'Seed/update erased original cache'}
 ''')
 
     def test_http_snapshot_and_exact_endpoint_expose_only_pinned_bytes(self):

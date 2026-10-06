@@ -1,5 +1,5 @@
 -- Original diagnostic HUD. One LuaFile, no engine/global event overrides.
-local PANEL_ID = "ParisLabHud_010"
+local PANEL_ID = "ParisLabHud_011"
 local remaining = 480
 
 local function attach()
@@ -19,7 +19,7 @@ local function attach()
     local panel = LUI.UIElement.new({
         topAnchor = true, bottomAnchor = false,
         leftAnchor = true, rightAnchor = false,
-        top = 42, bottom = 114, left = 42, right = 382, alpha = 1
+        top = 96, bottom = 168, left = 42, right = 382, alpha = 1
     })
     panel.id = PANEL_ID
     local function line(id, text, top, color)
@@ -34,10 +34,10 @@ local function attach()
         panel:addElement(label)
     end
     line("ParisLabHud_Title", "PRIVATE TEST LAB", 0, {r = 0.35, g = 0.9, b = 0.85})
-    line("ParisLabHud_Version", "HUD MODULE / 0.1.0", font.Height + 4, {r = 1, g = 1, b = 1})
+    line("ParisLabHud_Version", "HUD MODULE / 0.1.1", font.Height + 4, {r = 1, g = 1, b = 1})
     root:addElement(panel)
-    print("[PARIS_HUD] attached version=0.1.0; render witness pending")
+    print("[PARIS_HUD] attached version=0.1.1; render witness pending")
 end
 
-print("[PARIS_HUD] loaded version=0.1.0; attach pending")
+print("[PARIS_HUD] loaded version=0.1.1; attach pending")
 scheduler.once(attach, 500)
