@@ -30,9 +30,11 @@
   "stock_preserved": true,
   "owner_acceptance": "pending",
   "ready": false,
-  "client_download": "pending-seeded-update",
+  "client_download": "fail-seeded-update-64-repeated-gets-on-native-70A0697D",
   "lua_evaluation": "pending",
   "retail_font": "pending",
   "pixels": "pending",
-  "layout": "pending-new-client-frame"
+  "layout": "pending-new-client-frame",
+  "failed_runtime_evidence_run": "runtime/agent-lab/20261006-232700-764-8ce9cd94",
+  "failed_runtime_recovered": true
 }
