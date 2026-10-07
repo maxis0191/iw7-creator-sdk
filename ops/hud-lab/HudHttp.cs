@@ -11,6 +11,8 @@ using System.Threading;
 public sealed class IW7HudHttp : IDisposable
 {
     public const string Route = "/mods/paris_lab_hud/mod.ff";
+    public const string ModelRoute = "/mods/paris_model_probe/mod.ff";
+    public string AssetRoute { get; private set; }
     private readonly byte[] payload;
     private readonly string journal;
     private readonly TcpListener listener;
@@ -26,7 +28,14 @@ public sealed class IW7HudHttp : IDisposable
     public int CompletedGets { get { return Volatile.Read(ref gets); } }
 
     public IW7HudHttp(byte[] bytes, string expectedHash, string logPath)
+        : this(bytes, expectedHash, logPath, Route) { }
+
+    public IW7HudHttp(byte[] bytes, string expectedHash, string logPath, string route)
     {
+        // Explicit experiment routes only; no arbitrary paths or directory serving.
+        if (route != Route && route != ModelRoute)
+            throw new ArgumentException("Unreviewed laboratory asset route.");
+        AssetRoute = route;
         if (bytes == null || bytes.Length == 0 || bytes.Length > 1600)
             throw new ArgumentException("HUD HTTP payload must be 1..1600 bytes.");
         payload = (byte[])bytes.Clone();
@@ -81,14 +90,14 @@ public sealed class IW7HudHttp : IDisposable
         if (length < 4 || header[length-4] != 13 || header[length-3] != 10 ||
             header[length-2] != 13 || header[length-1] != 10) return;
         string first = Encoding.ASCII.GetString(header, 0, length).Split(new[] {"\r\n"}, StringSplitOptions.None)[0];
-        bool allowed = first == "GET " + Route + " HTTP/1.1" || first == "GET " + Route + " HTTP/1.0";
+        bool allowed = first == "GET " + AssetRoute + " HTTP/1.1" || first == "GET " + AssetRoute + " HTTP/1.0";
         byte[] response = Encoding.ASCII.GetBytes(allowed ?
             "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: " + payload.Length + "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n" :
             "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
         stream.Write(response, 0, response.Length);
         if (!allowed) return;
         stream.Write(payload, 0, payload.Length); stream.Flush();
-        string row = "{\"utc\":\"" + DateTime.UtcNow.ToString("o") + "\",\"method\":\"GET\",\"path\":\"" + Route +
+        string row = "{\"utc\":\"" + DateTime.UtcNow.ToString("o") + "\",\"method\":\"GET\",\"path\":\"" + AssetRoute +
             "\",\"bytes\":" + payload.Length + ",\"sha256\":\"" + SHA256 + "\"}\n";
         try { File.AppendAllText(journal, row, new UTF8Encoding(false)); }
         catch (IOException e) { Error = "HTTP journal failed: " + e.Message; return; }
