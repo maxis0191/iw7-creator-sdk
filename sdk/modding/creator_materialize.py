@@ -9,9 +9,12 @@ def materialize(project, build_root, output_root, tools_root, *, client_source=N
     spec = importlib.util.spec_from_file_location("creator_local_finalizer", path)
     finalizer = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(finalizer)
+    originals = finalizer.Inputs()
     result = finalizer.finalize(project, build_root, output_root, client_source=client_source,
-        server_source=server_source, recipient_proof=recipient_proof, recipient_root=recipient_root)
-    return verify_candidate(finalizer, result, output_root, client_source=client_source, server_source=server_source)
+        server_source=server_source, recipient_proof=recipient_proof, recipient_root=recipient_root, _inputs=originals)
+    checked = verify_candidate(finalizer, result, output_root, client_source=client_source, server_source=server_source)
+    originals.recheck()
+    return checked
 
 
 def verify_candidate(finalizer, result, output_root, *, client_source=None, server_source=None,

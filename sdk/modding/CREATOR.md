@@ -468,6 +468,26 @@ after its hash check: unverified replacement Python is never executed. Historica
 audit files and all newly consumed reference inputs enter the final composition
 identity/hash recheck before writing.
 
+Post-review correction: the first composition implementation rechecked source
+inputs only before writing. A same-size change to the retained FF during the
+manifest write could therefore leave a stale source receipt beside an apparently
+verified candidate. The shared writer now rechecks original inputs again after
+all writes, outside its cleanup transaction, preserving a rejected candidate.
+Both Materialize routes retain that same input reader and recheck it after the
+final candidate readback, immediately before returning success. Composition's
+script/descriptor, original asset records and every attached GSC/reference source
+and recipient phase/CSV input are included. These are bounded repeated checks,
+not a claim of a filesystem-wide atomic snapshot or a hostile-writer lock.
+
+Synthetic regressions first reproduced the accepted stale-input result, then
+verified refusal for the FF during writing and for the FF, GSC, descriptor,
+recipient CSV, consumption witness and reference table after final readback.
+A real CLI fixture also checks original Beacon input drift after its finalizer
+returns. All rejected candidates remain available; no real asset was mutated.
+Corrective validation: 109 Creator/consumer tests pass (62 CLI methods, 47 pure
+tests); the finalizer passes 34 with the same one Windows symlink skip. The
+prepared real composition output remains absent and its original pins unchanged.
+
 ## Explicit Build orchestration
 
 `-Action Build` runs the real BeaconV1 chain after its complete plan passes.

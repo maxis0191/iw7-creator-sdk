@@ -164,20 +164,24 @@ class CompositionTests(unittest.TestCase):
         (fixture.work / "enemy-catalog/sdk_beacon_recipient_a.csv").write_bytes(b"changed")
         self.rejected("recipient evidence pin differs")
 
-    def test_historical_gsc_consumption_does_not_become_encoded_reference_qualification(self):
+    def attach_historical_audit(self):
         fixtures = module(SDK / "tests/test_creator_gsc_audit.py", "composition_audit_fixtures")
         audit = fixtures.AuditFixture(self.root / "audit")
         path = audit.base / "expectations.json"
         path.write_text(json.dumps(audit.evidence), encoding="utf-8")
         self.descriptor["evidence"]["gsc"] = {"path": str(path), "sha256": self.hash(path)}
         self.save()
+        return audit
+
+    def test_historical_gsc_consumption_does_not_become_encoded_reference_qualification(self):
+        self.attach_historical_audit()
         self.materialize()
         receipt = json.loads((self.asset.output / "finalization.json").read_bytes())
         self.assertTrue(receipt["gsc_observation"]["global_completion_record_linked"])
         self.assertFalse(receipt["encoded_external_script_reference_absence"])
         self.assertTrue(receipt["unresolved_qualifications"])
 
-    def reference_composition(self, failed=False):
+    def reference_composition(self, failed=False, after_verify=None):
         fixtures = module(SDK / "tests/test_creator_gsc_references.py", "composition_reference_fixtures")
         audit = fixtures.ReferenceFixture(self.root / "reference-audit")
         if failed:
@@ -190,7 +194,15 @@ class CompositionTests(unittest.TestCase):
         finalizer = c._finalizer(REPO)
         original_module = finalizer.module
         def select_module(path, name):
-            return fixtures.a if Path(path).name == "creator_gsc_audit.py" else original_module(path, name)
+            loaded = fixtures.a if Path(path).name == "creator_gsc_audit.py" else original_module(path, name)
+            if Path(path).name == "creator_materialize.py" and after_verify is not None:
+                verify = loaded.verify_candidate
+                def mutate_after_readback(*args, **kwargs):
+                    result = verify(*args, **kwargs)
+                    after_verify(audit)
+                    return result
+                loaded.verify_candidate = mutate_after_readback
+            return loaded
         with mock.patch.object(c, "_finalizer", return_value=finalizer), mock.patch.object(finalizer, "module", side_effect=select_module), \
              mock.patch.object(fixtures.a, "REFERENCE_SOURCES", audit.source_pins), \
              mock.patch.object(fixtures.a, "REFERENCE_INPUTS", {role: fixtures.a.sha(audit.raw["input"]) for role in ("variant", "original")}):
@@ -226,6 +238,59 @@ class CompositionTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, "differs"):
                         self.materialize()
                 self.assertTrue(self.asset.output.exists())
+
+    def flip_byte(self, path):
+        raw = path.read_bytes()
+        path.write_bytes(raw[:-1] + bytes([raw[-1] ^ 1]))
+        self.assertEqual(path.stat().st_size, len(raw))
+
+    def test_original_inputs_are_rechecked_after_candidate_write(self):
+        finalizer = c._finalizer(REPO)
+        write = finalizer.OutputFiles.write
+        def change_original(writer, name, raw):
+            write(writer, name, raw)
+            if name == "manifest.json":
+                self.flip_byte(self.asset.build / "mod.ff")
+        with mock.patch.object(c, "_finalizer", return_value=finalizer), \
+             mock.patch.object(finalizer.OutputFiles, "write", change_original):
+            with self.assertRaisesRegex(ValueError, "Input changed|Input bytes changed"):
+                self.materialize()
+        self.assertTrue((self.asset.output / "finalization.json").exists(), "Keep output after source drift")
+
+    def test_sources_and_evidence_are_rechecked_after_final_candidate_readback(self):
+        recipient = self.attach_recipient()
+        audit = self.attach_historical_audit()
+        targets = [self.asset.build / "mod.ff", self.project / "sdk_beacon_self_contained.gsc", self.project / "composition.json",
+                   recipient.work / "enemy-catalog/sdk_beacon_recipient_a.csv", audit.paths["consumption"]]
+        for index, target in enumerate(targets):
+            with self.subTest(target=target):
+                original_bytes = target.read_bytes()
+                self.asset.output = self.root / ("readback-drift-" + str(index))
+                finalizer = c._finalizer(REPO)
+                original_module = finalizer.module
+                def intercept(path, name):
+                    loaded = original_module(path, name)
+                    if Path(path).name == "creator_materialize.py":
+                        verify = loaded.verify_candidate
+                        def mutate(*args, **kwargs):
+                            result = verify(*args, **kwargs)
+                            self.flip_byte(target)
+                            return result
+                        loaded.verify_candidate = mutate
+                    return loaded
+                try:
+                    with mock.patch.object(c, "_finalizer", return_value=finalizer), \
+                         mock.patch.object(finalizer, "module", side_effect=intercept):
+                        with self.assertRaisesRegex(ValueError, "Input changed|Input bytes changed"):
+                            self.materialize()
+                    self.assertTrue((self.asset.output / "finalization.json").exists())
+                finally:
+                    target.write_bytes(original_bytes)
+
+    def test_reference_sources_are_rechecked_after_final_candidate_readback(self):
+        with self.assertRaisesRegex(ValueError, "Input changed|Input bytes changed"):
+            self.reference_composition(after_verify=lambda audit: self.flip_byte(audit.source_root / "table-0"))
+        self.assertTrue((self.asset.output / "finalization.json").exists())
 
     @unittest.skipUnless(cli.PWSH, "PowerShell 7 required")
     def test_real_cli_materializes_composition_with_explicit_pending_and_no_builder(self):

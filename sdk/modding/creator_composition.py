@@ -47,9 +47,9 @@ def recipient_observation(f, inputs, spec, output):
     return {**report, "run_bound": False, "stock_identity_verified": False}
 
 
-def finalize(project, build_root, output_root, tools_root, *, client_source=None, server_source=None):
+def finalize(project, build_root, output_root, tools_root, *, client_source=None, server_source=None, _inputs=None):
     f = _finalizer(tools_root)
-    require, inputs = f.require, f.Inputs()
+    require, inputs = f.require, f.Inputs() if _inputs is None else _inputs
     project, build = f.safe_existing(project), f.safe_existing(build_root)
     output = Path(os.path.abspath(output_root))
     f.safe_existing(output.parent)
@@ -171,7 +171,10 @@ def _finalizer(tools_root):
 
 def materialize(project, build_root, output_root, tools_root, *, client_source=None, server_source=None):
     f = _finalizer(tools_root)
-    result = finalize(project, build_root, output_root, tools_root, client_source=client_source, server_source=server_source)
+    originals = f.Inputs()
+    result = finalize(project, build_root, output_root, tools_root, client_source=client_source, server_source=server_source, _inputs=originals)
     verifier = f.module(f.HERE / "creator_materialize.py", "composition_verifier")
-    return verifier.verify_candidate(f, result, output_root, api=API, gsc_name="sdk_beacon_self_contained.gsc",
+    checked = verifier.verify_candidate(f, result, output_root, api=API, gsc_name="sdk_beacon_self_contained.gsc",
                                     verify_evidence_hash=True, client_source=client_source, server_source=server_source)
+    originals.recheck()
+    return checked

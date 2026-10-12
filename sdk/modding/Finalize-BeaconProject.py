@@ -315,11 +315,14 @@ def write_candidate(output, inputs, manifest, evidence, outputs, *, client_sourc
     except Exception:
         writer.cleanup()
         raise
+    # A source drift discovered after writing must retain the candidate as
+    # evidence. Keep this outside the write-failure cleanup transaction.
+    inputs.recheck()
     return writer.bytes
 
 
 def finalize(project, build_root, output_root, *, client_source=None, server_source=None,
-             recipient_proof=None, recipient_root=None):
+             recipient_proof=None, recipient_root=None, _inputs=None):
     project, build = safe_existing(project), safe_existing(build_root)
     output = Path(os.path.abspath(output_root))
     safe_existing(output.parent)
@@ -328,7 +331,7 @@ def finalize(project, build_root, output_root, *, client_source=None, server_sou
             "Output overlaps input roots")
     for value in (client_source, server_source):
         require(value is None or isinstance(value, str) and re.fullmatch(r"[a-f0-9]{40}", value), "Source identity must be an exact lowercase commit")
-    inputs = Inputs()
+    inputs = Inputs() if _inputs is None else _inputs
     manifest, gsc, state, ff, nodes, source_bound = retained_beacon(inputs, project, build)
     material_sha = recipient_snapshot(inputs, recipient_proof, recipient_root)
     closure = manifest["package"]["closure"]
