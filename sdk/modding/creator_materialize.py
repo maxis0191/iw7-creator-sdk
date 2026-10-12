@@ -11,8 +11,14 @@ def materialize(project, build_root, output_root, tools_root, *, client_source=N
     spec.loader.exec_module(finalizer)
     result = finalizer.finalize(project, build_root, output_root, client_source=client_source,
         server_source=server_source, recipient_proof=recipient_proof, recipient_root=recipient_root)
+    return verify_candidate(finalizer, result, output_root, client_source=client_source, server_source=server_source)
+
+
+def verify_candidate(finalizer, result, output_root, *, client_source=None, server_source=None,
+                     api="beacon-finalize/1", gsc_name="sdk_beacon.gsc", verify_evidence_hash=False):
+    """Policy arguments come from reviewed callers, never from candidate receipts."""
     require = finalizer.require
-    require(result["api"] == "beacon-finalize/1" and result["materialized"] is True and
+    require(result["api"] == api and result["materialized"] is True and
             all(result[key] is False for key in ("closure_complete", "package_ready", "runtime_ready")),
             "Materialize finalizer returned an unexpected candidate contract")
     output = finalizer.safe_existing(output_root)
@@ -22,7 +28,7 @@ def materialize(project, build_root, output_root, tools_root, *, client_source=N
             all(isinstance(item, str) and item for item in result["blockers"]), "Materialize requires explicit remaining blockers")
     # Success needs actual bounded files, not just a positive finalizer boolean.
     # This does not repeat native work or invoke the package writer.
-    names = {"mod.ff", "sdk_beacon.gsc", "manifest.json", "finalization.json", "validation-plan.json", "validation-package.json"}
+    names = {"mod.ff", gsc_name, "manifest.json", "finalization.json", "validation-plan.json", "validation-package.json"}
     names.update("evidence/serialized-nodes/" + name for name in finalizer.NODE_FILES.values())
     inputs, files, measured = finalizer.Inputs(), {}, 0
     for name in sorted(names):
@@ -31,10 +37,13 @@ def materialize(project, build_root, output_root, tools_root, *, client_source=N
         require(measured <= finalizer.LIMIT, "Materialized candidate exceeds the byte budget")
     require(type(result["bytes_written"]) is int and 0 < measured == result["bytes_written"] <= finalizer.LIMIT,
             "Materialized candidate byte count differs")
-    for role, name in (("ff", "mod.ff"), ("gsc", "sdk_beacon.gsc"), ("manifest", "manifest.json")):
+    for role, name in (("ff", "mod.ff"), ("gsc", gsc_name), ("manifest", "manifest.json")):
         require(finalizer.sha(files[name]) == result["exact_hashes"][role], "Materialized candidate hash differs: " + role)
+    if verify_evidence_hash:
+        require(finalizer.sha(files["finalization.json"]) == result["exact_hashes"]["finalization"],
+                "Materialized candidate hash differs: finalization")
     evidence = finalizer.decoded(files["finalization.json"])
-    require(evidence["api"] == "beacon-finalize/1" and evidence["blockers"] == result["blockers"] and
+    require(evidence["api"] == api and evidence["blockers"] == result["blockers"] and
             all(evidence[key] is False for key in ("closure_complete", "package_ready", "runtime_ready", "owner_accepted")),
             "Materialized candidate evidence differs")
     manifest = finalizer.decoded(files["manifest.json"])

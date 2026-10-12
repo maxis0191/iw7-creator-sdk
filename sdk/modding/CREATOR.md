@@ -49,7 +49,8 @@ The original Beacon remains blocked for concrete, separate reasons:
    audit bound to the same source/compiler/container and opcode tables before
    dependency absence can be accepted. Structure alone does not prove absence.
 
-The existing variant can now be selected explicitly for **Plan only**:
+The existing variant can be selected explicitly for a source-only **Plan**.
+Its separate local composition route is documented below under Materialize:
 
 ```powershell
 ./sdk/modding/Creator.ps1 -Project ./sdk/modding/examples/beacon-self-contained `
@@ -107,12 +108,11 @@ and `Output` in Plan, so it cannot accidentally route through `BeaconV1` or trea
 historical proof as variant qualification. A valid Plan exits zero with pending
 steps; it is neither a build permission nor a distributable package.
 
-The next integration needs separately reviewed preparation/zone/source receipts,
-FF and rawfile identities, a variant-specific native builder/finalizer path,
-source-bound compiled consumption plus import analysis, and independent recipient
-content closure. Native execution and distributable ZIP creation require a
-distinct coordinator GO. This tranche implements the selectable input and its
-contract; it intentionally supplies no native execution path.
+Local composition now has its own receipt and finalization policy. It reuses the
+original FF without relabeling its build/source history or rawfile. Source-bound
+compiled reference qualification and independent recipient content closure remain
+separate. Native execution and distributable ZIP creation require a distinct
+coordinator GO; this adapter supplies no native execution path.
 
 The source-selection tests include 12 cases for this selector. They exercise the
 real CLI and SDK/Distribution validators: exact source/contract selection,
@@ -215,6 +215,55 @@ observed Far/Pointer opcodes, and `/2` completion linkage true. No compiler,
 executable rehash, stock read, lease, native run or package was performed by this
 validation. V4/v5 retain their historical global failures.
 
+### Encoded references from the reviewed Run /3
+
+`iw7.creator-gsc-audit-input/2` is a distinct optional input, not a reinterpretation
+of `/1`. It requires Plan `iw7.gsc-audit-build-plan/2`, build receipt
+`iw7.gsc-audit-build-run/3` and the unchanged supervision `/1`, whose completion
+record must also set `ReferenceContractVerified=true`. Only producer
+`42e6c403a789b38ede39fd58ff0cb5f77da7d002` with tool source digest
+`68ba75b9ee7a6b3cb6e5812c55581291ed8344dd37ee90ba6a56d0dbd58eede6` is accepted.
+
+The top-level fields remain `schema`, `run_root`, `source_sha256`, `pins`, `files`,
+with one additional `references` object: `{source_root, pins}`. The latter pins
+contain `decoder` (equal to the top-level pins), `profile_sha256`,
+`reference_validator_sha256` and `consumption_validator_sha256`, matching the
+reviewed SDK contract. `source_root` is the retained reviewed GSC tool source,
+not an executable path or a project-supplied command.
+
+In addition to the seven `/1` file roles, `files` must contain exactly:
+
+| Role | Required location |
+| --- | --- |
+| `original_input` | Exact original-control input path in Plan |
+| `original_consumption` | Run `witness-original/consumption.json` |
+| `reference_pins` | Run `reference-pins.json` |
+| `reference_controls` | Run `references/controls.json` |
+| `variant_native`, `variant_bound` | Run `references/variant-native.json`, `variant-bound.json` |
+| `original_native`, `original_bound` | Run `references/original-native.json`, `original-bound.json` |
+
+Each retains the existing `{path, sha256}` independent-pin shape. Creator links
+all eight ordered phases and 27 artifact roles (29 with the separately supported
+zlib preparation). The controls require 153 opcode cases, two unsupported-size
+refusals, four unresolved controls, 159 invocations and zero failures/errors/skips.
+It rechecks the pinned reader/profile/harness and eight source tables, executes
+only the hash-verified Python reader snapshot, and calls `references.validate`
+on both exact retained input containers and their new native witnesses. Each
+embedded consumption must equal its companion from this same Run; recomputed
+bound reports must exactly match the retained reports. The original control must
+still expose `flag_exist` at 212/318 and `flag` at 226/345.
+
+Only `encoded_external_script_reference_absence` may become true. The broader
+`external_gsc_dependency_absence_verified`, native/builtin/loader semantics,
+recipient closure, package/runtime and owner gates remain unqualified. Local
+completion linkage is not authentication of past execution or guard lifetime.
+The historical v6 witnesses cannot be converted to this protocol. No accepted
+global `/3` Run was used to validate this source-only tranche. Successful reference
+witnesses from a globally failed Run remain refused, including a collector failure
+after all reference controls passed; they cannot override supervision failure.
+The new binding tests use an explicitly synthetic decoder double; they establish
+consumer enforcement, not a native qualification or a second operand-decoder test.
+
 For an already prepared original-beacon project, optional `-BuildParameters`
 accepts the existing local `Build-BeaconFF.ps1` argument object. Creator rejects
 unknown fields (including `Run`), binds `SourceRoot` to the project and `OpsRoot`
@@ -248,11 +297,11 @@ parent, separate from the source project, every active project and the build.
 An existing destination is refused and preserved. `BuildRoot` belongs only to
 this action; it does not change the behavior of `Plan` or `Build`.
 
-Materialize accepts only the exact original `BeaconV1` source/preparation and
+This original-build Materialize route accepts only exact `BeaconV1` source/preparation and
 keeps the usual source/protocol assertions and active-project compatibility
 checks. It refuses `BuildParameters`, `Output` and `GscAuditEvidence`; it cannot
-select a native build or ZIP destination. The self-contained source variant is
-not accepted by this finalizer. Optional `RecipientProof` and `RecipientRoot`
+select a native build or ZIP destination. The self-contained source variant
+uses the separate composition policy below. Optional `RecipientProof` and `RecipientRoot`
 must be supplied together and retain their existing snapshot-only semantics.
 
 Creator calls `Finalize-BeaconProject.py::finalize()` directly through
@@ -322,6 +371,102 @@ not change. `source_receipt_bound` and `creator_output_verified` were true;
 The two remaining blockers were recipient material/transitive image/technique
 resolution and the compiled utility script/imports. No compiler, extractor,
 retail read, lease, new native execution, ZIP or deployment was involved.
+
+### Compose a reviewed script with retained assets
+
+`BeaconSelfContainedV1 -Action Materialize` accepts a separate project folder
+containing the exact reviewed variant source and an explicit `composition.json`:
+
+```json
+{
+  "schema": "iw7.creator-composition/1",
+  "script": {
+    "policy": "beacon-self-contained-source/1",
+    "path": "sdk_beacon_self_contained.gsc",
+    "bytes": 5535,
+    "sha256": "9de9b76dc25293146999c71653bd407d8cb639e107293f6de87084fed90eee1c"
+  },
+  "assets": {
+    "policy": "beacon-retained-build/1",
+    "project": "C:/author/original-beacon-source",
+    "build_root": "C:/author/completed-beacon-build",
+    "source_receipt_sha256": "independently reviewed original source-receipt.local.json digest",
+    "build_receipt_sha256": "independently reviewed original state.local.json digest",
+    "ff_sha256": "independently reviewed retained mod.ff digest"
+  },
+  "evidence": {"gsc": null, "recipient": null}
+}
+```
+
+The three digest descriptions above must be replaced by actual lowercase SHA256
+pins. Roots must be absolute, unredirected paths. `assets.build_root` must equal
+the explicit CLI `-BuildRoot`. The source project must be separate from the
+retained asset source/build, and output must be fresh and nonoverlapping.
+
+```powershell
+./sdk/modding/Creator.ps1 -Project C:/author/variant-project `
+  -Adapter BeaconSelfContainedV1 -Action Materialize `
+  -BuildRoot C:/author/completed-beacon-build -FinalizeRoot C:/author/fresh-composition `
+  -ClientSource 77e6d4d24e918ee363b3feee3735c3b889dff7d7 `
+  -ServerSource 77e6d4d24e918ee363b3feee3735c3b889dff7d7 -Protocol 2 -Json
+```
+
+`creator_composition.py` dispatches only the two registered policies above.
+Unknown policies, extra fields, commands, edited scripts (even repinned) and
+arbitrary assets are rejected. The contract separates script authorship policy,
+asset provenance and evidence, so later reviewed policies can extend it without
+changing those roles or accepting executable commands from JSON. This first
+policy deliberately does not qualify arbitrary user scripts.
+
+The shared `retained_beacon` checks the original exact project, inventories,
+FF/dumps, geometry/readback and four closed/restored phases. A matching original
+`Plan.SourceReceiptSHA256` is mandatory for composition. The FF and all four dump
+representations are copied byte-for-byte. The actual `rawfile:sdk_beacon` stays
+in the new manifest; its 28-byte marker is `Compiled using x64 ZoneTool.`. The
+prospective `rawfile:sdk_beacon_self_contained` is not invented. The standalone
+variant GSC, its namespace/fs_game, fresh manifest and `finalization.json`
+composition receipt are distinct from original source/build records. No original
+GSC payload or utility edge is added. Existing model/NCS conflicts remain active.
+
+`evidence.gsc`, when supplied, is `{path, sha256}` for a bounded independently
+pinned Creator audit expectation file, using `/1` or `/2` above. Historical
+consumption evidence retains the encoded-reference question. A verified `/2`
+input clears only that exact compiled-input question; it does not qualify native
+builtin semantics, a script loader or the entire FF. Missing evidence is explicit
+`unresolvedQualification` without an asserted utility dependency.
+
+`evidence.recipient`, when supplied, is `{run_root, phase_sha256, csv_sha256}`.
+Creator reads only fixed `references/phase.json` and
+`work/enemy-catalog/sdk_beacon_recipient_a.csv`, verifies independent pins and
+invokes the existing pure `verify_phase`. H can supply these four non-default
+reference observations; this route does not invoke the fuller binder, rehash an
+EXE/stock, attest the outer Run or infer content hashes from a CSV. Material hash,
+techset/images and transitive unresolved nodes stay unchanged. An inconsistent
+supplied proof fails rather than silently becoming pending.
+
+Ten files are written through the shared exclusive writer and SDK validators.
+The shared P2 verifier checks payload/node/manifest hashes, exact node mappings,
+recomputed reports and final identities. Composition additionally pins its whole
+finalization receipt. Failed post-write verification retains the candidate for
+inspection. Exit 0 means this checked local composition exists; `asset_build_reused`
+and `asset_source_receipt_bound` are true, `variant_ff_built` is false. Package,
+closure, runtime and owner readiness remain false even with GSC and H evidence.
+No source/build history is relabeled, and no builder or ZIP writer is called.
+
+This tranche uses synthetic source/build/recipient fixtures and real Creator CLI
+tests only. No real composition, native execution, lease, stock read, distributable ZIP or
+deployment was performed. The previously corrected real Beacon candidate remains
+separate evidence for the original Materialize route.
+
+Validation: 105 Creator/consumer tests pass (61 CLI methods, 44 pure tests),
+including 16 composition tests and 11 new reference-linkage tests. The shared
+finalizer still passes 34 tests; one symlink-creation case is skipped because
+Windows permission is unavailable. Existing Build-flow tests use only tiny
+synthetic ZIP fixtures; no distributable archive was produced. Regressions cover
+global collector failure despite successful witnesses and replacing a reader path
+after its hash check: unverified replacement Python is never executed. Historical
+audit files and all newly consumed reference inputs enter the final composition
+identity/hash recheck before writing.
 
 ## Explicit Build orchestration
 

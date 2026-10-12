@@ -97,8 +97,8 @@ try:
     if args["build_root"] and args["action"] != "Materialize":
         raise ValueError("BuildRoot is reserved for explicit Materialize; Plan and Build are unchanged")
     if args["action"] == "Materialize":
-        if args["adapter"] != "BeaconV1" or not args["build_root"] or not args["finalize_root"]:
-            raise ValueError("Materialize requires BeaconV1, an existing BuildRoot and a fresh FinalizeRoot")
+        if args["adapter"] not in ("BeaconV1", "BeaconSelfContainedV1") or not args["build_root"] or not args["finalize_root"]:
+            raise ValueError("Materialize requires BeaconV1 or BeaconSelfContainedV1, an existing BuildRoot and a fresh FinalizeRoot")
         if args["build_parameters"] or args["output"]:
             raise ValueError("Materialize does not accept BuildParameters or Output; it creates a local candidate only")
     if args["gsc_audit_evidence"] and (args["adapter"] != "BeaconSelfContainedV1" or args["action"] != "Plan"):
@@ -118,6 +118,9 @@ try:
         if index == 0 and args["adapter"] == "BeaconSelfContainedV1":
             selector = module(root / "sdk/modding/creator_self_contained.py", "creator_self_contained")
             data, selection = selector.select(directory, root, packager)
+            if args["action"] == "Materialize":
+                composition = module(root / "sdk/modding/creator_composition.py", "creator_composition")
+                data = composition.plan_contract(data)
             report["source_selection"] = selection
             report["pending"].extend(selection["pending"])
             step("source-selection", "passed", ["Exact separate source selected; proposed contract remains unbuilt and incomplete"])
@@ -186,9 +189,11 @@ try:
         else:
             step("adapter-plan", "pending", ["BuildParameters is required for stock/tool/receipt checks; no native build was run"])
     elif args["adapter"] == "BeaconSelfContainedV1":
-        if args["build_parameters"] or args["recipient_proof"] or args["recipient_root"] or args["finalize_root"] or args["output"]:
+        if args["build_parameters"] or args["recipient_proof"] or args["recipient_root"] or args["output"] or (args["finalize_root"] and args["action"] == "Plan"):
+            if args["action"] == "Materialize":
+                raise ValueError("Composition refuses BuildParameters, Output and legacy RecipientProof/Root; evidence belongs in composition.json")
             raise ValueError("BeaconSelfContainedV1 accepts source-only Plan selection; build/output/recipient inputs cannot qualify this adapter")
-        if args["action"] != "Plan":
+        if args["action"] == "Build":
             raise ValueError("BeaconSelfContainedV1 Build is not connected or qualified; no builder, compiler, finalizer or package writer was invoked")
         if args["gsc_audit_evidence"]:
             evidence_path = packager.no_redirects(args["gsc_audit_evidence"])
@@ -201,7 +206,10 @@ try:
             report["pending"].extend(report["gsc_audit"]["unresolved_qualifications"])
             step("gsc-audit-records", "passed", ["Pinned source/container/witness bytes linked; historical completion status reported separately",
                  "Import absence, variant finalization and recipient closure remain unqualified"])
-        step("adapter-plan", "pending", ["Source-only planning contract selected; native adapter and complete evidence remain required"])
+        if args["action"] == "Materialize":
+            step("adapter-plan", "not-run", ["Explicit composition.json joins reviewed source to retained assets; no builder invoked"])
+        else:
+            step("adapter-plan", "pending", ["Source-only planning contract selected; native adapter and complete evidence remain required"])
     elif args["adapter"] != "None":
         message = args["adapter"] + " adapter is named but not connected or qualified in Creator"
         step("adapter-plan", "blocked", [message])
@@ -255,14 +263,19 @@ try:
                 raise ValueError("Recipient proof file and root must exist without redirects")
         report.update(build_root=str(build_root), finalize_root=str(destination))
         if not report["errors"]:
-            local = module(root / "sdk/modding/creator_materialize.py", "creator_materialize")
-            final = local.materialize(project, build_root, destination, root, client_source=args["client_source"],
-                server_source=args["server_source"], recipient_proof=Path(args["recipient_proof"]) if args["recipient_proof"] else None,
-                recipient_root=Path(args["recipient_root"]) if args["recipient_root"] else None)
+            if args["adapter"] == "BeaconSelfContainedV1":
+                final = composition.materialize(project, build_root, destination, root,
+                    client_source=args["client_source"], server_source=args["server_source"])
+            else:
+                local = module(root / "sdk/modding/creator_materialize.py", "creator_materialize")
+                final = local.materialize(project, build_root, destination, root, client_source=args["client_source"],
+                    server_source=args["server_source"], recipient_proof=Path(args["recipient_proof"]) if args["recipient_proof"] else None,
+                    recipient_root=Path(args["recipient_root"]) if args["recipient_root"] else None)
             report["finalization"] = final
             report.update(build_verified=True, materialized=True)
-            report["source_project_pending"] = [item for item in report["pending"] if item.startswith("project-contract:")]
-            report["pending"] = [item for item in report["pending"] if not item.startswith("project-contract:")] + final["blockers"]
+            source_pending = selection["pending"] if args["adapter"] == "BeaconSelfContainedV1" else []
+            report["source_project_pending"] = [item for item in report["pending"] if item.startswith("project-contract:") or item in source_pending]
+            report["pending"] = [item for item in report["pending"] if item not in report["source_project_pending"]] + final["blockers"]
             step("materialize", "passed", ["Local candidate created: " + final["candidate_root"], *final["blockers"]])
     step("payload-and-closure", "pending" if report["pending"] else "not-run",
          report["pending"] or ["Package file hashes and closure will be checked by the finalizer and package gate"])
