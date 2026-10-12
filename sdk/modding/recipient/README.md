@@ -185,7 +185,7 @@ BeaconV1, its live session, current template and hashes are unchanged by this wo
 
 ## Verification performed on 2026-10-12
 
-Twenty-three asset-free tests cover the CLI's lack of writes, the agreed phase fields,
+Twenty-six asset-free tests cover the CLI's lack of writes, the agreed phase fields,
 real byte hashes, malformed/truncated/oversize script envelopes, bounded zlib
 expansion, false readiness claims, omitted/tampered image components, material
 references, graph cycles/missing nodes/unknown edges, and path/reparse guards.
@@ -196,3 +196,10 @@ No retained retail export, new native execution, stock load, lease or network
 operation was used to establish these results. The additional capture/locator
 tests verify metadata compatibility without converting diagnostic declarations
 into process identity or tree-closure proof.
+
+Three additional integration cases feed a structurally closed graph, an intact
+compiled container, and a verified phase-byte report into the actual finalizer's
+recipient-proof gate. Each unbound analysis is refused, no output is created, and
+the synthetic source/build trees remain byte-identical. These checks protect the
+future adapter boundary; they do not implement or test a disassembler that does
+not yet exist in this consumer.

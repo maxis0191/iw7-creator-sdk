@@ -295,6 +295,44 @@ class EvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             v.audit_graph(["image:a", "image:a"], {"image:a": []})
 
+    def assert_analysis_cannot_unlock_finalization(self, analysis):
+        # Reuse asset-free build fixtures but invoke the real finalizer gate.
+        # A future adapter must not accept these unbound analysis reports alone.
+        spec = importlib.util.spec_from_file_location("recipient_finalize_fixture", Path(__file__).with_name("test_beacon_finalize.py"))
+        fixtures = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(fixtures)
+        fixture = fixtures.FinalizeTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        def snapshot():
+            return {p.relative_to(fixture.root).as_posix(): p.read_bytes() if p.is_file() else None
+                    for p in fixture.root.rglob("*")}
+        before = snapshot()
+        proof = self.root / "unqualified-analysis.json"
+        proof.write_text(json.dumps(analysis), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "snapshot-only"):
+            fixture.run_finalize(recipient_proof=proof, recipient_root=self.root)
+        self.assertFalse(fixture.output.exists())
+        self.assertEqual(snapshot(), before, "Refused analysis altered source/build evidence")
+
+    def test_closed_graph_cannot_substitute_for_recipient_proof(self):
+        report = v.audit_graph(["scriptfile:scripts/engine/utility.gsc"],
+                              {"scriptfile:scripts/engine/utility.gsc": []})
+        self.assertTrue(report["structural_graph_closed"])
+        self.assert_analysis_cannot_unlock_finalization(report)
+
+    def test_intact_compiled_container_cannot_substitute_for_import_proof(self):
+        report = v.gscbin(self.script)
+        self.assertTrue(report["stack_integrity_verified"])
+        self.assertFalse(report["imports_analyzed"])
+        self.assert_analysis_cannot_unlock_finalization(report)
+
+    def test_verified_phase_bytes_cannot_substitute_for_outer_run_proof(self):
+        self.phase("script")
+        report = v.verify_phase(self.work, self.receipt_path)
+        self.assertTrue(report["phase_bytes_verified"])
+        self.assert_analysis_cannot_unlock_finalization(report)
+
     def test_files_reject_escape_aliases_and_reparse_attributes(self):
         self.write("input.bin", b"payload")
         for path in ("../input.bin", "/input.bin", "C:/input.bin", "input.bin:stream", "a//b", "a/./b", "nul.txt", "a./b", "a\\b", "*.bin"):
