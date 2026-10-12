@@ -90,8 +90,9 @@ The current beacon finalizer intentionally keeps recipient material/transitive
 dependencies and compiled utility/import evidence blocked. The historical first
 build also lacks Plan.SourceReceiptSHA256; new builds preserve that measured
 binding. No old receipt is edited, and this orchestration does not close these
-evidence gaps itself. The new native chain remains pending a coordinator-approved
-run; source tests and the read-only stock plan are not native build acceptance.
+evidence gaps itself. The authorized execution below verifies the native chain
+through materialization; source tests and the read-only stock plan remain
+separate evidence.
 
 This tranche does not change public schemas, common helpers, native tools,
 recipient proof semantics or existing completed runs. CLI tests invoke the real
@@ -111,3 +112,37 @@ after adapter planning. Both old read/hash races reproduced an unintended Run
 in the synthetic builder under Action Plan; the corrected snapshot logic permits
 no such transition. These tests use small fixture files and a synthetic builder,
 not native execution or stock.
+
+## Actual Creator execution, 2026-10-12
+
+One coordinator-authorized `Creator -Action Build -Adapter BeaconV1` execution
+completed the real build, verify, dump and independent reader phases, each with
+exit 0 and zero job members at closure. The real finalizer then materialized a
+23,036-byte candidate and verified `Plan.SourceReceiptSHA256` against the project
+receipt. `build_verified`, `materialized` and `source_receipt_bound` are true.
+The [sanitized validation record](creator-validation-2026-10-12.json) binds the
+measured artifacts and source hashes without local paths or reservation tokens.
+
+The new `mod.ff` is 1,048 bytes, SHA256
+`3fa49bcdfd08857bb37c198af7a49af78675b940b022e160343552d3f8b71da8`.
+It is a distinct artifact from the first native beacon build, whose same-size FF
+hash is `76ed0701dc1480c501604db04999f300394c65877aa24a70dfe7afc2cd662d4a`.
+The historical artifact/receipt were preserved. No byte-determinism claim or
+explanation for the hash difference is established by this run.
+
+Creator returned **exit 1 only at the package gate**. Two blockers remained:
+recipient material resolution with transitive image/technique dependencies, and
+the current compiled `scripts/engine/utility` plus its imports. No recipient proof
+was fabricated; the ZIP writer was not called and no ZIP was created. The target
+client/server pins `77e6d4d24e918ee363b3feee3735c3b889dff7d7` were contract
+assertions, not measurements of installed binary provenance. `closure_complete`,
+`package_ready`, `runtime_ready` and `owner_accepted` remain false.
+
+Effective admission was 8 GiB physical/11 GiB commit, confirmed from the retained
+registry predecessor. All 78 staged inputs were removed, restoration and source
+preservation were confirmed, no owned process remained and the reservation was
+released. At the final observation the registry was empty and Main's process
+identity and UDP 27016 owner were unchanged. Maximum observed build output was
+1,220,100 bytes, below the unchanged 64 MiB threshold; every stderr was empty.
+The nine reviewed source files retained their before/after hashes. No client or
+test dedicated was launched, no Main deployment occurred, and there was no retry.
