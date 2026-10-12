@@ -6,7 +6,7 @@
   "contract_revision": "bfa2d4af5e9687bcf30b6a45ad04db403f63538a",
   "correction_revision": "805f07676bb1bdad9effee5d907a5fe9f4bcfa01",
   "contract_and_correction_review": "favorable",
-  "recipe_review": "pending",
+  "recipe_review": "favorable-independent-source-review",
   "tool_source_sha256": "68ba75b9ee7a6b3cb6e5812c55581291ed8344dd37ee90ba6a56d0dbd58eede6",
   "source_sha256": "60467f82912762a76f95a541169b60995e6973989975050a8c6914aef66327c3",
   "tables_sha256": "6e3ed82737908b5c7be76290a178a66b5c63456a12097e964139154f4b46de4b",

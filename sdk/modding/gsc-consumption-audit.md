@@ -145,8 +145,9 @@ auditor build result does not itself promote any consumer package or runtime gat
 
 The archived source chain now includes `bfa2d4af` (reference contract), `805f076`
 (reviewed literal-offset correction), and `42e6c403` (supervised reference recipe).
-The original and corrected contracts were reviewed without an outstanding finding;
-the new recipe/Plan still need review and explicit GO before any native execution.
+The original and corrected contracts and the `42e6c403` recipe received favorable
+independent source review. The exact Plan and explicit GO remain required before
+any native execution.
 The existing v6 receipts and historical failed-run evidence are unchanged.
 
 The independent reader visits all encoded instructions and operands under the

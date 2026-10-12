@@ -137,7 +137,8 @@ independent byte reader and separate native mode;
 independent review; `42e6c403a789b38ede39fd58ff0cb5f77da7d002` adds the actual
 native reference phase to the supervised recipe. The first twelve patches and
 license files remain byte-for-byte unchanged. Contract/correction review was
-favorable; the recipe and next exact Plan still require separate review and GO.
+favorable. The recipe subsequently received a favorable independent source review;
+the next exact Plan and execution still require review and GO.
 
 The existing retained reconstruction was extended in place to tree
 `92a8a96529f8ee5acaa72363c261b97a56b9ebfb`; all 35 changed blobs match. Its checkout
