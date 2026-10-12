@@ -173,3 +173,37 @@ build, Run, lease or Creator change has occurred. The archive reuses the retaine
 reconstruction and preserves the first twelve patches. The
 [source checkpoint](gsc-reference-source-20261012.json) records the relevant hashes
 without including binaries, machine paths or a fabricated native reference proof.
+
+## V7: native references passed, global supervision failed
+
+The single authorized `v7-final` execution used source `42e6c403` and SDK `7008cce6`
+on 2026-10-12. All eight phases exited zero: CMake version/configuration/build,
+CTest (1/1), the 13 existing native test methods, both consumption witnesses, and
+the new reference phase (159 native invocations, all three methods passed without
+failure or skip). The variant's native stream and independent reader agree on
+570 instructions, complete 1480/1808 bytecode/stack consumption and encoded
+external-reference absence. The original agrees on 560 instructions, 1455/1394
+consumption and the two utility blockers. The linked consumption/ASM bytes and
+all 27 recorded artifacts were rechecked unchanged without rerunning native code.
+
+**V7 remains a global failure.** The closure collector rejected `Complete
+lowercase SHA256 required` before granting completion/closure qualification.
+The actual Plan is a `PSCustomObject`; the new dictionary-style Plan indexer
+returned null, while the dynamic property returned the correct digest. The
+existing mocks used an ordered hashtable and missed that type difference.
+No fix had been applied at this failure checkpoint.
+
+The owned failure cleanup stopped the original job, confirmed root exit zero and
+Active=0, and released its lease. Fresh observation at 08:59:31 UTC found no lease,
+builder or former run processes, with Main unchanged. The first member capture
+showed one original-job `vctip.exe`; no second qualification capture or guarded
+image identity was reached. This cleanup is not a successful qualified closure.
+The 2-second drain, resource budgets and all unrelated readiness gates stayed
+unchanged. No retry or game staging occurred. V4/V5 remain failures and V6 remains
+its separately proven success.
+
+See [the immutable V7 failure checkpoint](gsc-reference-v7-failure-20261012.json)
+for separate phase results, witness hashes, flags and cleanup evidence. The next
+step is a separate source correction with the real JSON-loaded Plan type and a
+read-only collector diagnostic on retained artifacts, followed by a new reviewed
+Plan. None of those steps can retroactively promote this failed Run.

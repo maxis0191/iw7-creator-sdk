@@ -169,3 +169,13 @@ Source/mock validation passed 367 PowerShell checks and 28 Python tests, includi
 read-only decoding of the retained Beacon bytes. This does not supply the new
 native reference stream. See [the sanitized source checkpoint](../../sdk/modding/gsc-reference-source-20261012.json)
 and reconstructed `audit/reference-contract.md` for exact scope and remaining gates.
+
+The subsequently authorized V7 run did produce the new reference witnesses and
+passed all eight phases, including 159 reference invocations. Its global
+supervision nevertheless failed because the new Plan field indexer received a
+`PSCustomObject` instead of the hashtable used by mocks. Owned failure cleanup
+closed the original job and released the lease; this does not qualify the failed
+Run. The archived source remains `42e6c403` at this checkpoint. See the
+[V7 failure record](../../sdk/modding/gsc-reference-v7-failure-20261012.json).
+An eventual source correction must be appended separately and cannot rewrite
+V7's supervision, previous patch bytes or older native evidence.
