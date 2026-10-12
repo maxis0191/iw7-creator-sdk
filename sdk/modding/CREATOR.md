@@ -509,6 +509,15 @@ script and new composition receipt remain separate. Four qualification questions
 stay pending, and no builder, lease, stock, ZIP writer or game was invoked.
 [Sanitized real composition result](creator-composition-validation-20261012.json).
 
+A second real composition binds the accepted V8 native audit through the explicit
+`/2` input. It produces ten files / 66,860 bytes, exit 0, with independent readback
+of every file and its final receipt. The encoded-external-GSC question is cleared;
+the other three questions remain. FF, four dumps, source GSC and manifest match
+the pending composition exactly. This action still ships the 5,535-byte source
+`.gsc`, not V8's compiled `.gscbin`: the latter is an offline audit witness linked
+to that source. Runtime compilation must be observed separately and no identical
+runtime bytecode is asserted. [V8-bound result](creator-composition-v8-validation-20261012.json).
+
 ## Explicit Build orchestration
 
 `-Action Build` runs the real BeaconV1 chain after its complete plan passes.
