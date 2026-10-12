@@ -896,6 +896,20 @@ class CreatorTests(unittest.TestCase):
                 self.assertIn("node representation differs", " ".join(report["errors"]))
                 self.assertTrue(fixture.output.exists())
 
+    def test_materialize_rechecks_original_inputs_after_finalizer_returns(self):
+        fixture = self.materialize_fixture()
+        tools = self.materialize_post_write_tools('''\
+            # The writer's final check has already completed here.
+            source = Path(args[1]) / 'mod.ff'
+            raw = source.read_bytes()
+            source.write_bytes(raw[:-1] + bytes([raw[-1] ^ 1]))
+            ''')
+        code, report = self.invoke_materialize(fixture, tools=tools, mutates=True)
+        self.assertEqual(code, 1, report)
+        self.assertFalse(report["materialized"])
+        self.assertIn("Input changed", " ".join(report["errors"]))
+        self.assertTrue((fixture.output / "finalization.json").exists())
+
     def test_materialize_rejects_changed_node_mapping_and_metadata(self):
         for field, mutation, message in (
                 ("id", "nodes[0]['id'] = nodes[1]['id']", "node representation identities differ"),

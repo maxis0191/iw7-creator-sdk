@@ -1,0 +1,83 @@
+{
+  "schema": "iw7.creator-composition-validation/1",
+  "observed_utc": "2026-10-12T09:23:35.7145118Z",
+  "source_revision": "4c873767f4128d48912dbf6d3c71b9ac4a3fa08b",
+  "source_revision_short": "4c87376",
+  "action": "Materialize",
+  "adapter": "BeaconSelfContainedV1",
+  "exit_code": 0,
+  "report_sha256": "fcd2bd672827627f7bf762aff62497a0cccd3132b9f2e6f1213d4ccd6677d85a",
+  "file_count": 10,
+  "total_bytes": 27816,
+  "independent_readback_verified": true,
+  "materialized": true,
+  "build_verified": true,
+  "asset_build_reused": true,
+  "variant_ff_built": false,
+  "build_executed": false,
+  "gsc_reference_audit_bound": false,
+  "recipient_phase_csv_verified": true,
+  "recipient_outer_run_revalidated": false,
+  "closure_complete": false,
+  "package_ready": false,
+  "packaged": false,
+  "runtime_ready": false,
+  "owner_accepted": false,
+  "blockers": [
+    "Complete source-bound encoded GSC reference qualification remains pending; no utility dependency is asserted.",
+    "Recipient serialized material, technique-set, image contents and transitive dependencies remain unqualified.",
+    "Native builtin/loader semantics and runtime behavior of this composition remain unqualified.",
+    "Recipient phase bytes agree, but the outer Run and stock identity are not revalidated by this composition."
+  ],
+  "exact_hashes": {
+    "ff": "3fa49bcdfd08857bb37c198af7a49af78675b940b022e160343552d3f8b71da8",
+    "gsc": "9de9b76dc25293146999c71653bd407d8cb639e107293f6de87084fed90eee1c",
+    "manifest": "2c0f49da7e7bd6989a80dd77b03cb8241d50811497702602ca35c88cc3a03136",
+    "finalization": "869e6b22fcbcc83de737ba77edf4944e1d0805df0cbfef48d1dbed09d98ba962",
+    "composition": "f26a9db0d26b1815f309593e08fdff032272dce3e852ce845fb0dbcf6b16efe8",
+    "source_receipt": "b8229d50751fa990a925b4cb3c3e2c8110a373d645764d0580959d55d78277aa",
+    "build_receipt": "b0b5f007a45c5605b64c33d5dae6ff5a49dd75edb736ba7c6679cf8649f5c5be"
+  },
+  "files": {
+    "evidence/serialized-nodes/netconststrings/ncs_mdl_paris_model_probe.json": {
+      "bytes": 99,
+      "sha256": "27487218f55deeec517407acbbb78fe4fe74ad6b8cdb50e773b4573945d9e1a4"
+    },
+    "evidence/serialized-nodes/sdk_beacon": {
+      "bytes": 28,
+      "sha256": "5134b43e15050642b55c451012b42b1d9821364f92a55e7dab679e5edb9b8e8c"
+    },
+    "evidence/serialized-nodes/xmodel/paris_model_probe.xmb": {
+      "bytes": 978,
+      "sha256": "cb7e4824cebcc201e97925c4d603e1b5645c8f6efa012aa5bfe30d85ccf1bf13"
+    },
+    "evidence/serialized-nodes/xsurface/paris_model_probe_lod0.xsb": {
+      "bytes": 1231,
+      "sha256": "d1bcc267099b758506c965add1564fdaecc8814b2a60954c95e79500f9d57b83"
+    },
+    "finalization.json": {
+      "bytes": 10485,
+      "sha256": "869e6b22fcbcc83de737ba77edf4944e1d0805df0cbfef48d1dbed09d98ba962"
+    },
+    "manifest.json": {
+      "bytes": 5553,
+      "sha256": "2c0f49da7e7bd6989a80dd77b03cb8241d50811497702602ca35c88cc3a03136"
+    },
+    "mod.ff": {
+      "bytes": 1048,
+      "sha256": "3fa49bcdfd08857bb37c198af7a49af78675b940b022e160343552d3f8b71da8"
+    },
+    "sdk_beacon_self_contained.gsc": {
+      "bytes": 5535,
+      "sha256": "9de9b76dc25293146999c71653bd407d8cb639e107293f6de87084fed90eee1c"
+    },
+    "validation-package.json": {
+      "bytes": 1299,
+      "sha256": "1b12c8db3fc48ff627569fcd2cad1d72741455c5d9fa8cc51c3e145a261dc0d4"
+    },
+    "validation-plan.json": {
+      "bytes": 1560,
+      "sha256": "790953889edbb8da038eea62d6bd465633974387c51ca8480bf52bcb36d67385"
+    }
+  }
+}

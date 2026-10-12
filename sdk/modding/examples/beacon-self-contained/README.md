@@ -14,6 +14,13 @@ material, technique-set and image dependencies. This variant and the original
 must not be loaded together: their asset names still collide even though their
 script state is distinct.
 
+Current Creator integration: source selection remains available for Plan, and
+the separate [local composition route](../../CREATOR.md) can pair this exact GSC
+with retained Beacon assets without relabeling their build. It keeps the original
+FF rawfile identity, emits a fresh composition receipt and retains all missing
+GSC/recipient qualification explicitly. The historical observations and future
+native/runtime acceptance boundaries below remain distinct from that local copy.
+
 ## Inspected reference and undefined semantics
 
 The local historical reference is `mjkzy/iw7-gsc-dump`, commit

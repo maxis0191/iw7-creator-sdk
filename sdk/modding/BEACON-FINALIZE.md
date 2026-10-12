@@ -7,6 +7,12 @@ It does not compile, extract, start a game, acquire a lease, access stock, make
 network calls, deploy or write a ZIP. `ops/modding/Package-CommunityMod.py` remains
 the only community ZIP writer.
 
+The read-only `retained_beacon` helper and exclusive `write_candidate` helper are
+also reused by Creator's separate [script composition policy](CREATOR.md).
+BeaconV1's exact-template checks, rawfile identity, utility edge, public result
+and package blockers remain unchanged. Reusing its asset bytes does not rename
+its historical source/build receipt or assert a new native build.
+
 ## Interface
 
 Use Python 3.10 or newer, with the standard library only:

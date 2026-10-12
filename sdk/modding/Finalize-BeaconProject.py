@@ -283,17 +283,8 @@ class OutputFiles:
                 pass
 
 
-def finalize(project, build_root, output_root, *, client_source=None, server_source=None,
-             recipient_proof=None, recipient_root=None):
-    project, build = safe_existing(project), safe_existing(build_root)
-    output = Path(os.path.abspath(output_root))
-    safe_existing(output.parent)
-    require(not output.exists() and not output.is_symlink(), "Fresh output root required")
-    require(all(not root.is_relative_to(output) and not output.is_relative_to(root) for root in (project, build)),
-            "Output overlaps input roots")
-    for value in (client_source, server_source):
-        require(value is None or isinstance(value, str) and re.fullmatch(r"[a-f0-9]{40}", value), "Source identity must be an exact lowercase commit")
-    inputs = Inputs()
+def retained_beacon(inputs, project, build):
+    """Validate the original asset build without rewriting it or creating output."""
     manifest, gsc, ncs = check_project(inputs, project)
     state, ff, nodes = check_build(inputs, project, build)
     source_bound = "SourceReceiptSHA256" in state["Plan"]
@@ -302,6 +293,46 @@ def finalize(project, build_root, output_root, *, client_source=None, server_sou
         require(pin(digest) and digest.lower() == inputs.records["project/source-receipt.local.json"]["sha256"],
                 "Build SourceReceiptSHA256 differs from the current source receipt")
     require(encoded(decoded(nodes["netconststrings:ncs_mdl_paris_model_probe"])) == encoded(ncs), "Dumped NCS differs from original source")
+    return manifest, gsc, state, ff, nodes, source_bound
+
+
+def write_candidate(output, inputs, manifest, evidence, outputs, *, client_source=None, server_source=None):
+    """Shared exclusive writer and pure SDK gates for incomplete local candidates."""
+    validation = sdk.validate(manifest, stage="plan", client_source=client_source, server_source=server_source)
+    require(validation["valid"], "Generated SDK plan invalid: " + "; ".join(validation["errors"]))
+    outputs.update({"manifest.json": encoded(manifest), "finalization.json": encoded(evidence), "validation-plan.json": encoded(validation)})
+    require(sum(map(len, outputs.values())) <= LIMIT, "Materialization exceeds 2 MiB byte budget")
+    inputs.recheck()
+    writer = OutputFiles(output)
+    writer.mkdir(output)
+    try:
+        for name, raw in sorted(outputs.items(), key=lambda item: (item[0] == "manifest.json", item[0])):
+            writer.write(name, raw)
+        package = sdk.validate(manifest, root=output, stage="package", client_source=client_source, server_source=server_source)
+        require(package["checked"] == ["client_fastfile", "server_gameplay"], "Materialized payload verification failed")
+        require(not package["ready"] and any("closure incomplete" in error for error in package["errors"]), "Incomplete recipient gate unexpectedly changed")
+        writer.write("validation-package.json", encoded(package))
+    except Exception:
+        writer.cleanup()
+        raise
+    # A source drift discovered after writing must retain the candidate as
+    # evidence. Keep this outside the write-failure cleanup transaction.
+    inputs.recheck()
+    return writer.bytes
+
+
+def finalize(project, build_root, output_root, *, client_source=None, server_source=None,
+             recipient_proof=None, recipient_root=None, _inputs=None):
+    project, build = safe_existing(project), safe_existing(build_root)
+    output = Path(os.path.abspath(output_root))
+    safe_existing(output.parent)
+    require(not output.exists() and not output.is_symlink(), "Fresh output root required")
+    require(all(not root.is_relative_to(output) and not output.is_relative_to(root) for root in (project, build)),
+            "Output overlaps input roots")
+    for value in (client_source, server_source):
+        require(value is None or isinstance(value, str) and re.fullmatch(r"[a-f0-9]{40}", value), "Source identity must be an exact lowercase commit")
+    inputs = Inputs() if _inputs is None else _inputs
+    manifest, gsc, state, ff, nodes, source_bound = retained_beacon(inputs, project, build)
     material_sha = recipient_snapshot(inputs, recipient_proof, recipient_root)
     closure = manifest["package"]["closure"]
     representations = []
@@ -324,8 +355,6 @@ def finalize(project, build_root, output_root, *, client_source=None, server_sou
     for entry in manifest["package"]["files"]:
         path = "mod.ff" if entry["role"] == "client" else "sdk_beacon.gsc"
         entry.update(source=path, bytes=len(outputs[path]), sha256=sha(outputs[path]))
-    validation = sdk.validate(manifest, stage="plan", client_source=client_source, server_source=server_source)
-    require(validation["valid"], "Generated SDK plan invalid: " + "; ".join(validation["errors"]))
     compatibility = compat.check_environment([manifest], client_source=client_source, server_source=server_source, protocol=2, mode="cp")
     blockers = ["Recipient material resolution and transitive image/technique closure remain unqualified.",
                 "Current compiled scripts/engine/utility (native lookup without .gsc) and its imports remain unqualified."] + compatibility
@@ -342,29 +371,14 @@ def finalize(project, build_root, output_root, *, client_source=None, server_sou
                     if source_bound else "Historical final state lacks Plan.SourceReceiptSHA256; source root/GSC/template are checked but historical receipt binding is unverified.")
                     + " Receipt statements and source pins are not publisher authentication or runtime proof.",
                 "validation_limit": "Rechecks existing source/build records and retained bytes. Does not parse arbitrary FF assets, execute a reader, prove a retail recipient or promote runtime evidence."}
-    outputs.update({"manifest.json": encoded(manifest), "finalization.json": encoded(evidence), "validation-plan.json": encoded(validation)})
-    require(sum(map(len, outputs.values())) <= LIMIT, "Materialization exceeds 2 MiB byte budget")
-    inputs.recheck()
-    # Exclusive root and fixed output allowlist; invalid inputs never create it.
-    writer = OutputFiles(output)
-    writer.mkdir(output)
-    try:
-        for name, raw in sorted(outputs.items(), key=lambda item: (item[0] == "manifest.json", item[0])):
-            writer.write(name, raw)
-        package = sdk.validate(manifest, root=output, stage="package", client_source=client_source, server_source=server_source)
-        require(package["checked"] == ["client_fastfile", "server_gameplay"], "Materialized payload verification failed")
-        require(not package["ready"] and any("closure incomplete" in error for error in package["errors"]), "Incomplete recipient gate unexpectedly changed")
-        writer.write("validation-package.json", encoded(package))
-    except Exception:
-        writer.cleanup()
-        raise
+    written = write_candidate(output, inputs, manifest, evidence, outputs, client_source=client_source, server_source=server_source)
     return {"api": API, "materialized": True, "candidate_root": str(output), "manifest_path": str(output / "manifest.json"),
             "closure_complete": False, "package_ready": False, "runtime_ready": False, "source_receipt_bound": source_bound,
             "blockers": blockers,
             "exact_hashes": {"ff": sha(ff), "gsc": sha(gsc), "manifest": sha(outputs["manifest.json"]),
                              "source_receipt": inputs.records["project/source-receipt.local.json"]["sha256"],
                              "build_receipt": inputs.records["build/state.local.json"]["sha256"]},
-            "bytes_written": writer.bytes}
+            "bytes_written": written}
 
 
 def main():

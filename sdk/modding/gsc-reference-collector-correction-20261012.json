@@ -1,0 +1,88 @@
+{
+  "schema": "iw7.gsc-reference-collector-correction/1",
+  "date": "2026-10-12",
+  "prior_failure_archive_commit": "aedd53528ff624bbc2fd4ad41002d5de684441ee",
+  "prior_failure_checkpoint_sha256": "725d697d754243dc32c5af9c2bf39d49f0836a74f1d8327a3a84471730dbcaf5",
+  "source": {
+    "source_revision": "03d3956d648b7aa4637fe1007f9d69ea463631e9",
+    "tool_source_sha256": "23b4de72afa23b1cefc6b03172a18ac945b60e0ab530ea4c40e0493ea34ae350",
+    "source_sha256": "bd53e01813dd80d44c871108fa1a3730db1b03e89b084e818098f49f12352d51",
+    "tables_sha256": "6e3ed82737908b5c7be76290a178a66b5c63456a12097e964139154f4b46de4b",
+    "zlib_commit": "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf",
+    "zlib_source_sha256": "433c0c259b60f1fa5eab7406d491fffb32c8d29ff42d210ee031c662300b7b77"
+  },
+  "source_tree_oid": "b1a980682dc057376e327d57416cf2bc0de01f13",
+  "changed_production_accesses": 3,
+  "correction": "Use dynamic Plan property access for real JSON-loaded PSCustomObject and dictionary fixtures",
+  "regression": {
+    "actual_plan_type": "System.Management.Automation.PSCustomObject",
+    "serialized_then_convertfromjson": true,
+    "reproduced_before_fix": true,
+    "complete_receipt_artifacts": 27,
+    "passes_after_fix": true,
+    "test_file_sha256": "7d22d5e48fe6960469ac13ee1bde61d6dfafa0c9145f7cb1c8d7cf443fa79c26"
+  },
+  "validation": {
+    "powershell_checks": {
+      "supervision": 37,
+      "registration_quarantine": 38,
+      "diagnostics": 25,
+      "residual_identity": 96,
+      "receipt": 88,
+      "owned_closure": 69,
+      "file_guards": 16
+    },
+    "powershell_total": 369,
+    "receipt_import_counted_once": true,
+    "powershell_asts": 13,
+    "diff_check_passed": true,
+    "native_executed": false
+  },
+  "retained_diagnostic": {
+    "schema": "iw7.gsc-retained-collector-diagnostic/1",
+    "UTC": "2026-10-12T09:08:06.3215579Z",
+    "OriginalRunGlobalSuccess": false,
+    "OriginalReceiptSHA256": "6cfd9fafca83ec21a170b3498475f74edb8866a7f7b6d15dad1ef5e946abde2b",
+    "OriginalSupervisionSHA256": "2087d1859983ec28858986f466f9d9dea9bb67e96fa4ec593e811d0beeccb002",
+    "PlanType": "System.Management.Automation.PSCustomObject",
+    "CollectorSourceSHA256": "212fe9cf360d78a030baa60baaa6aeda56dc351c39a29f0e108d78bca86a69e5",
+    "ReceiptContentVerified": true,
+    "ReferenceContractContentVerified": true,
+    "GuardedFiles": 28,
+    "GuardedBytes": 1900800,
+    "DiagnosticReadElapsedMs": 509,
+    "NativeExecuted": false,
+    "OriginalJobReobserved": false,
+    "ClosureRequalified": false,
+    "GlobalQualificationGranted": false,
+    "LeaseAcquired": false,
+    "DeadlineQualificationAttempted": false,
+    "GuardsReleased": true,
+    "RetainedEvidenceUnchanged": true
+  },
+  "retained_diagnostic_file_sha256": "fa4f3ef3f2f1e6cb7f28e98a50d1038503d72249a06d0a321a0bbf54a6307842",
+  "archive": {
+    "manifest_sha256": "dea1cd23bf2ded47fb1ff71bf2577336b1868aa064d2d8dc96b6296fba719c4d",
+    "patch16_sha256": "6c90b5dacf3bae36f0fabb2569f41583e274d8ff8f530d0b5a24c19e44dd187b",
+    "reconstruction_record_sha256": "109cb92ac4f6b7d862ac924daf114713dc6b1e27b2b5153585cd0728a640cd56",
+    "patches": 16,
+    "changed_blobs": 35,
+    "first_fifteen_patches_unchanged": true,
+    "licenses_unchanged": true,
+    "existing_reconstruction_reused": true,
+    "physical_table_pins_verified": true
+  },
+  "scope": {
+    "v7_global_success": false,
+    "v7_requalified": false,
+    "new_native_run": false,
+    "new_lease": false,
+    "deadline_qualification_attempted": false,
+    "closure_requalified": false,
+    "creator_changed": false,
+    "runtime_validation_passed": false,
+    "owner_acceptance": false,
+    "package_ready": false,
+    "requires_new_exact_reviewed_plan_and_go": true
+  }
+}

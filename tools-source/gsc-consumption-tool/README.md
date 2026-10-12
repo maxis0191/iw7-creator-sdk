@@ -127,3 +127,86 @@ the different `git am` reconstructed revision, and no package/runtime gate is pr
 `reconstruction-validation.json` records only the local source reconstruction
 check. Passing it does not establish executable correctness, complete GSC import
 analysis, asset closure, runtime readiness or owner gameplay acceptance.
+
+## Encoded-reference source tranche
+
+Patches thirteen through fifteen preserve the complete source chain:
+`bfa2d4af5e9687bcf30b6a45ad04db403f63538a` adds the exhaustive reference profile,
+independent byte reader and separate native mode;
+`805f07676bb1bdad9effee5d907a5fe9f4bcfa01` fixes literal diagnostic offsets after
+independent review; `42e6c403a789b38ede39fd58ff0cb5f77da7d002` adds the actual
+native reference phase to the supervised recipe. The first twelve patches and
+license files remain byte-for-byte unchanged. Contract/correction review was
+favorable. The recipe subsequently received a favorable independent source review;
+the next exact Plan and execution still require review and GO.
+
+The existing retained reconstruction was extended in place to tree
+`92a8a96529f8ee5acaa72363c261b97a56b9ebfb`; all 35 changed blobs match. Its checkout
+is 30,588,390 bytes under the existing 64 MiB source-only allowance. No new clone,
+dependency initialization, native execution or deletion occurred. Git `am` creates
+a different commit identity; this is source-tree reconstruction, not executable
+reproducibility.
+
+The reference profile also pins actual source-table bytes. The retained baseline
+had LF table files whereas the reviewed Windows source has CRLF. Seven existing
+table files were materialized as CRLF only after that exact candidate encoding
+matched each pinned SHA256; their normalized Git blobs and tree remained unchanged.
+The index was refreshed with those identical blobs. No Git configuration changed.
+The reconstructed profile now verifies all eight physical source files as well as
+the tree. Future reconstructions must check these physical pins too; a matching
+Git tree alone does not promise a matching source digest or table byte encoding.
+
+The recipe uses Plan `/2` and receipt `/3`, preserving consumption `/1` and all
+earlier native tests. Its eighth phase plans 159 native invocations: 153 opcode
+controls (two expected refusals), four unresolved/dynamic cases and two exact
+Beacon binaries. It retains four native/bound reference JSONs, the controls
+summary, written runtime pins and the pinned reader/profile/harness. Twenty-seven
+completion artifacts and thirty residual-closure guards fit the unchanged
+32-file/128-MiB/two-second limits with the existing zlib dependency. No new Run or
+lease is authorized by this archive.
+
+Source/mock validation passed 367 PowerShell checks and 28 Python tests, including
+read-only decoding of the retained Beacon bytes. This does not supply the new
+native reference stream. See [the sanitized source checkpoint](../../sdk/modding/gsc-reference-source-20261012.json)
+and reconstructed `audit/reference-contract.md` for exact scope and remaining gates.
+
+The subsequently authorized V7 run did produce the new reference witnesses and
+passed all eight phases, including 159 reference invocations. Its global
+supervision nevertheless failed because the new Plan field indexer received a
+`PSCustomObject` instead of the hashtable used by mocks. Owned failure cleanup
+closed the original job and released the lease; this does not qualify the failed
+Run. The archived source remains `42e6c403` at this checkpoint. See the
+[V7 failure record](../../sdk/modding/gsc-reference-v7-failure-20261012.json).
+An eventual source correction must be appended separately and cannot rewrite
+V7's supervision, previous patch bytes or older native evidence.
+
+## V7 collector correction, source only
+
+Patch sixteen preserves `03d3956d648b7aa4637fe1007f9d69ea463631e9` separately from
+the archived V7 failure. Three reference Plan accesses now use dynamic properties;
+the regression serializes and reloads the Plan as the launcher's `PSCustomObject`
+before exercising the entire receipt collector. All 369 PowerShell checks and
+13 PowerShell AST checks pass. The retained reconstruction was extended in place;
+its tree `b1a980682dc057376e327d57416cf2bc0de01f13`, all 35 changed blobs and eight
+physical table pins match. It uses 30,591,774 bytes under the existing 64 MiB bound.
+The first fifteen patches and licenses are unchanged. No clone or cleanup occurred.
+
+Read-only replay against retained V7 evidence passed receipt and reference content
+validation under 28 real file guards totaling 1,900,800 bytes. Guards were released
+and evidence stayed unchanged. This diagnostic did not observe the original job,
+qualify a deadline or closure, obtain a lease, or execute native code. **V7 remains
+globally failed.** See the [correction checkpoint](../../sdk/modding/gsc-reference-collector-correction-20261012.json).
+A fresh reviewed Plan and explicit GO remain required for native qualification;
+the archive itself does not authorize another Run.
+
+The separately reviewed and authorized V8 attempt subsequently passed all eight
+native phases and global supervision using original source `03d3956d` and SDK
+`a901c2c7`. The reference collector qualified its 27 artifacts; original-job
+residual closure completed within 422 ms of the 2,000 ms drain, and the lease was
+released. Fresh inventory confirmed no builders and Main unchanged. The source
+archive, reconstruction, all sixteen patches and historical V7 evidence remain
+unchanged. This validates that original-source executable, not binary
+reproducibility from the reconstructed commit. See the
+[V8 qualification checkpoint](../../sdk/modding/gsc-reference-qualified-v8-20261012.json).
+The variant's encoded-reference result is positive; the original's two utility
+references remain blockers. No asset/runtime/package/owner gate is promoted.

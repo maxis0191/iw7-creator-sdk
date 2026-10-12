@@ -140,3 +140,131 @@ review the exact tool source/head, complete the coordinator's private build and
 publication workflow, and pin the resulting executable. Distinguish the specific
 qualified v6 run above from historical failed runs and source/mock tests; this
 auditor build result does not itself promote any consumer package or runtime gate.
+
+## Encoded-reference source candidate, 2026-10-12
+
+The archived source chain now includes `bfa2d4af` (reference contract), `805f076`
+(reviewed literal-offset correction), and `42e6c403` (supervised reference recipe).
+The original and corrected contracts and the `42e6c403` recipe received favorable
+independent source review. The exact Plan and explicit GO remain required before
+any native execution.
+The existing v6 receipts and historical failed-run evidence are unchanged.
+
+The independent reader visits all encoded instructions and operands under the
+pinned IW7 profile, resolves local targets and numeric namespace/function IDs,
+separates native builtins/assets, and blocks unknown or pointer targets with exact
+positions. Source-only reads of the retained variant cover 570 instructions with
+zero blockers; the original covers 560 and exposes utility `flag_exist` at
+bytecode 212 / stack 318 and `flag` at 226 / 345. The checked absence is scoped to
+encoded GSC references, not all engine/builtin/asset dependencies.
+
+The separate native mode must still generate real reference witnesses. Plan `/2`
+and receipt `/3` add an eighth required phase with all 153 opcode specimens,
+four unresolved/dynamic controls and both Beacon inputs (159 planned invocations).
+Consumption `/1`, CTest and the 13 existing native methods remain mandatory.
+Closure requires the native/bound pairs, written pins/control summary and matching
+old consumption evidence under the unchanged guard/deadline limits. The reader can
+return `encoded_external_script_reference_absence=true` after exact native-to-byte
+agreement; this result alone cannot promote native semantics, asset closure,
+package readiness, runtime or owner acceptance.
+
+The source tranche passed 367 PowerShell checks and 28 Python tests. No new native
+build, Run, lease or Creator change has occurred. The archive reuses the retained
+reconstruction and preserves the first twelve patches. The
+[source checkpoint](gsc-reference-source-20261012.json) records the relevant hashes
+without including binaries, machine paths or a fabricated native reference proof.
+
+## V7: native references passed, global supervision failed
+
+The single authorized `v7-final` execution used source `42e6c403` and SDK `7008cce6`
+on 2026-10-12. All eight phases exited zero: CMake version/configuration/build,
+CTest (1/1), the 13 existing native test methods, both consumption witnesses, and
+the new reference phase (159 native invocations, all three methods passed without
+failure or skip). The variant's native stream and independent reader agree on
+570 instructions, complete 1480/1808 bytecode/stack consumption and encoded
+external-reference absence. The original agrees on 560 instructions, 1455/1394
+consumption and the two utility blockers. The linked consumption/ASM bytes and
+all 27 recorded artifacts were rechecked unchanged without rerunning native code.
+
+**V7 remains a global failure.** The closure collector rejected `Complete
+lowercase SHA256 required` before granting completion/closure qualification.
+The actual Plan is a `PSCustomObject`; the new dictionary-style Plan indexer
+returned null, while the dynamic property returned the correct digest. The
+existing mocks used an ordered hashtable and missed that type difference.
+No fix had been applied at this failure checkpoint.
+
+The owned failure cleanup stopped the original job, confirmed root exit zero and
+Active=0, and released its lease. Fresh observation at 08:59:31 UTC found no lease,
+builder or former run processes, with Main unchanged. The first member capture
+showed one original-job `vctip.exe`; no second qualification capture or guarded
+image identity was reached. This cleanup is not a successful qualified closure.
+The 2-second drain, resource budgets and all unrelated readiness gates stayed
+unchanged. No retry or game staging occurred. V4/V5 remain failures and V6 remains
+its separately proven success.
+
+See [the immutable V7 failure checkpoint](gsc-reference-v7-failure-20261012.json)
+for separate phase results, witness hashes, flags and cleanup evidence. The next
+step is a separate source correction with the real JSON-loaded Plan type and a
+read-only collector diagnostic on retained artifacts, followed by a new reviewed
+Plan. None of those steps can retroactively promote this failed Run.
+
+## V7 collector correction and retained-content diagnostic
+
+The failure checkpoint was committed first as `aedd53528ff624bbc2fd4ad41002d5de684441ee`.
+The separate source correction is `03d3956d648b7aa4637fe1007f9d69ea463631e9`,
+archived as patch sixteen. It replaces the three invalid dictionary-style Plan
+accesses with dynamic properties. A regression round-trips the Plan through JSON,
+asserts the actual `PSCustomObject` type and validates all 27 receipt artifacts.
+The new regression failed before the fix; all 369 PowerShell checks pass afterward.
+
+The corrected collector also passed a read-only content diagnostic using the
+actual retained V7 Plan, receipt and artifacts: 28 guarded files including the
+receipt, 1,900,800 bytes, all guards released and original evidence unchanged.
+The 509 ms diagnostic duration is not a qualified drain measurement. It performed
+no job observation, closure/deadline qualification, native execution or resource
+lease acquisition. **V7's global failure remains authoritative.** Neither Creator
+nor a consumer may promote these results without a successful new supervised Run.
+
+The [correction checkpoint](gsc-reference-collector-correction-20261012.json)
+records source, archive and diagnostic pins. The existing source reconstruction
+matches all 35 changed blobs, the exact tree and physical table pins; prior patches
+and native evidence remain unchanged. The next step is review of a fresh Plan
+pinned to this correction and the completed SDK archive, followed only by an
+explicit execution GO.
+
+## V8: qualified native encoded-reference proof
+
+After favorable independent source and exact-Plan review, one explicit GO ran
+source `03d3956d` with SDK `a901c2c7` on 2026-10-12. All eight phases passed:
+CTest 1/1, thirteen existing native methods, both consumption binders and all
+159 reference invocations (153 opcode cases, four unresolved controls, two Beacon
+inputs). The two unsupported opcode specimens were refused as required.
+
+**V8 global supervision passed.** The corrected collector verified the complete
+receipt and reference contract. Thirty guards held 2,913,874 bytes through two
+fresh original-job residual captures, identity qualification, the owned Stop and
+zero-member confirmation. The final observation/budget check was 422 ms after
+root exit observation, within the unchanged 2,000 ms drain. The lease was released.
+Fresh inventory at 09:29:41 UTC found no lease, builder or former run process;
+Main's identity was unchanged. This is the exact pinned original-job/image-file
+contract, not compiler ancestry or loaded-memory attestation.
+
+The executable SHA256 is
+`fbaeff90961d1c5c3aec5f293c6dcb7b9dd92ab049e6aebe3ea399b47a007211`.
+The variant has 570 instructions, complete 1480/1480 bytecode and 1808/1808 stack
+consumption, and no encoded external-script blocker under the pinned profile.
+The original has 560 instructions, 1455/1455 and 1394/1394 consumption, and retains
+the utility `flag_exist` (212/318) and `flag` (226/345) blockers. Consumption and
+reference evidence are distinct, with the nested reference consumption equal to
+the separate same-run witness. Pure rereading reproduced both bound reports and
+all 27 artifact hashes after the run; it did not execute the auditor again.
+
+See [the V8 qualification checkpoint](gsc-reference-qualified-v8-20261012.json)
+for all artifact, Plan, source, compiler, historical compilation and supervision
+pins. The historical Beacon compilation record remains schema `/2` and was not
+copied or rerun; V8 read its retained exact binaries. The new proof qualifies only
+the variant's encoded-reference gate. Builtin semantics, complete asset closure,
+retail/runtime compatibility, package readiness and owner acceptance remain false.
+V4/V5/V7 remain failures; V6 remains its distinct consumption/closure success.
+No Creator source, tool source, game, stock or previous evidence was changed.
+The coordinator owns consumer integration and the private PR/CI/merge workflow.

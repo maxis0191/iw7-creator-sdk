@@ -1,0 +1,624 @@
+From 42e6c403a789b38ede39fd58ff0cb5f77da7d002 Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 10:37:56 +0200
+Subject: [PATCH] Require native reference controls in the supervised build
+ recipe
+
+
+diff --git a/audit/README.md b/audit/README.md
+index 49ed9f9b25d15bdebb034ad50e1fe135ea09b223..34b544a631a242ec9a6cca1c96ed93cb795929e4 100644
+--- a/audit/README.md
++++ b/audit/README.md
+@@ -15,6 +15,12 @@ can qualify absence of encoded external GSC references, with unknown or dynamic
+ references blocking explicitly. It keeps native semantics, assets, runtime and
+ package readiness as separate gates. A new Plan/review/GO is required to build
+ and execute this mode; the v6 witnesses cannot stand in for its new evidence.
++The current source recipe uses Plan `/2` and run receipt `/3`. Its eighth phase
++executes the new native mode, all 153 opcode controls and both Beacon inputs,
++while preserving the seven old phases and consumption `/1`. The supervisor now
++requires 27 completion artifacts including the reference pairs/control summary;
++the unchanged guard and drain limits still apply. This recipe is source-only
++until a new exact Plan is reviewed and receives GO.
+ 
+ The source baseline is xensik/gsc-tool
+ `3300e430d1efef00e54c66a8bd416e18a2a9882a`. This checkout was cloned from the
+diff --git a/audit/build.ps1 b/audit/build.ps1
+index 87f53027f4e7a48a7d5ba891fd126dc4070db13d..fe37f9e46e55d5a74688888e44c53011eed8ed73 100644
+--- a/audit/build.ps1
++++ b/audit/build.ps1
+@@ -15,7 +15,8 @@ if ($actualHash -ne $PlanSha256.ToLowerInvariant()) {
+ }
+ $planData = [Text.Encoding]::UTF8.GetString($planBytes) | ConvertFrom-Json
+ $repo = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+-if ($planData.tool_root -ne $repo -or $planData.physical_bytes -ne 4GB -or $planData.commit_bytes -ne 6GB -or
++if ($planData.schema -cne 'iw7.gsc-audit-build-plan/2' -or $planData.reference_contract -cne 'iw7.gsc-reference-native/1' -or
++    $planData.tool_root -ne $repo -or $planData.physical_bytes -ne 4GB -or $planData.commit_bytes -ne 6GB -or
+     $planData.output_limit_bytes -ne 2GB) { throw 'Build plan scope or budget mismatch' }
+ if (-not $Execute) {
+     $planData | ConvertTo-Json -Depth 12
+diff --git a/audit/build.py b/audit/build.py
+index be482cb61562f17a109f9d40560ac529c9634d0d..d4e654500dcc119eb1cb384214a82ce4cdf43880 100644
+--- a/audit/build.py
++++ b/audit/build.py
+@@ -14,6 +14,24 @@ import prepare
+ 
+ ROOT = prepare.ROOT
+ GIB = 1024 ** 3
++REFERENCE_FILES = {'reference_reader': 'audit/references.py', 'reference_profile': 'audit/reference-profile.json',
++                   'reference_tests': 'audit/test_reference_native.py'}
++
++
++def reference_pins(plan, source, tool_hash):
++    return {'decoder': {'tool_sha256': tool_hash, 'source_revision': source['source_revision'],
++                        'source_sha256': source['source_sha256'], 'tables_sha256': source['tables_sha256']},
++            'profile_sha256': plan['reference_profile_sha256'],
++            'reference_validator_sha256': plan['reference_reader_sha256'],
++            'consumption_validator_sha256': plan['wrapper_sha256']}
++
++
++def reference_command(plan, tool):
++    output = Path(plan['output'])
++    return [plan['python'], '-B', plan['reference_tests'], '--tool', str(tool),
++            '--pins', str(output / 'reference-pins.json'), '--source-root', plan['tool_root'],
++            '--consumption-validator', plan['wrapper'], '--variant', plan['inputs'][0]['path'],
++            '--original', plan['inputs'][1]['path'], '--output', str(output / 'references')]
+ 
+ 
+ def sha_file(path):
+@@ -50,7 +68,9 @@ def plan(args):
+     cmake = args.cmake.resolve(strict=True)
+     ctest = cmake.with_name('ctest.exe')
+     pwsh = Path(shutil.which('pwsh')).resolve(strict=True)
+-    return {'schema': 'iw7.gsc-audit-build-plan/1', 'tool_root': str(ROOT),
++    references = {key: str(ROOT / path) for key, path in REFERENCE_FILES.items()}
++    references.update({key + '_sha256': sha_file(ROOT / path) for key, path in REFERENCE_FILES.items()})
++    return {'schema': 'iw7.gsc-audit-build-plan/2', 'tool_root': str(ROOT), **references,
+             'source_revision': source['source_revision'], 'tool_source_sha256': source['tool_source_sha256'],
+             'tables_sha256': source['tables_sha256'], 'zlib_commit': source['zlib_commit'],
+             'zlib_local': str(zlib), 'sdk_root': str(sdk), 'sdk_revision': prepare.git('rev-parse', 'HEAD', root=sdk),
+@@ -65,10 +85,13 @@ def plan(args):
+             'output_limit_bytes': 2 * GIB, 'output_stop_threshold_bytes': 1800 * 1024 ** 2,
+             'storage_poll_seconds': 0.25, 'build_nodes': 1, 'source_preparation_limit_bytes': 128 * 1024 ** 2,
+             'residual_closure_policy': 'original-job-pinned-vctip/1',
++            'reference_contract': 'iw7.gsc-reference-native/1',
+             'native_executed': False}
+ 
+ 
+ def validate_plan(plan):
++    if plan.get('schema') != 'iw7.gsc-audit-build-plan/2' or plan.get('reference_contract') != 'iw7.gsc-reference-native/1':
++        raise ValueError('Reviewed plan must include the native reference phase')
+     source = prepare.inspect_sources(require_zlib=False)
+     for key in ('source_revision', 'tool_source_sha256', 'tables_sha256', 'zlib_commit'):
+         if plan[key] != source[key]:
+@@ -80,6 +103,9 @@ def validate_plan(plan):
+     for key in ('python', 'pwsh', 'cmake', 'ctest', 'scheduler', 'job_source', 'members_source', 'wrapper'):
+         if sha_file(plan[key]) != plan[key + '_sha256']:
+             raise ValueError('Reviewed executable/source changed: ' + key)
++    for key, path in REFERENCE_FILES.items():
++        if Path(plan[key]).resolve() != ROOT / path or sha_file(plan[key]) != plan[key + '_sha256']:
++            raise ValueError('Reviewed reference source changed: ' + key)
+     for item in plan['inputs']:
+         if sha_file(item['path']) != item['sha256']:
+             raise ValueError('Recorded GSC input changed')
+@@ -103,7 +129,7 @@ def execute(plan, plan_sha256):
+         raise ValueError('Fresh supervising run identity required')
+     output = Path(plan['output'])
+     output.mkdir(parents=True)
+-    receipt = {'schema': 'iw7.gsc-audit-build-run/2', 'plan': plan, 'plan_sha256': plan_sha256,
++    receipt = {'schema': 'iw7.gsc-audit-build-run/3', 'plan': plan, 'plan_sha256': plan_sha256,
+                'run_id': run_id, 'root_pid': os.getpid(), 'steps': [],
+                'lease_token': os.environ['IW7_GSC_AUDIT_LEASE_TOKEN'],
+                'lease_owner_pid': int(os.environ['IW7_GSC_AUDIT_LEASE_OWNER']),
+@@ -178,6 +204,10 @@ def execute(plan, plan_sha256):
+             run('witness-' + item['role'], [plan['python'], '-B', plan['wrapper'], '--tool', str(tool), '--tool-sha256', tool_hash,
+                 '--source-revision', source['source_revision'], '--source-sha256', source['source_sha256'],
+                 '--tables-sha256', source['tables_sha256'], '--input', item['path'], '--output', str(output / ('witness-' + item['role']))], 90)
++        pins_path = output / 'reference-pins.json'
++        receipt['reference_pins'] = reference_pins(plan, source, tool_hash)
++        pins_path.write_text(json.dumps(receipt['reference_pins'], indent=2) + '\n', encoding='utf-8')
++        run('native-reference-tests', reference_command(plan, tool), 300)
+         final_source = prepare.inspect_sources(require_zlib=True)
+         if final_source != source or sha_file(tool) != tool_hash or sha_file(plan['wrapper']) != plan['wrapper_sha256']:
+             raise ValueError('Source/dependency/tool/wrapper changed during build validation')
+@@ -185,6 +215,11 @@ def execute(plan, plan_sha256):
+             raise ValueError('Compiler changed during build')
+         artifacts = [('source-manifest', identity / 'source-manifest.json'), ('tool', tool),
+                      ('wrapper', Path(plan['wrapper']))]
++        artifacts.extend((key.replace('_', '-'), Path(plan[key])) for key in REFERENCE_FILES)
++        artifacts.extend([('reference-pins', pins_path), ('reference-controls', output / 'references/controls.json')])
++        for role in ('variant', 'original'):
++            for form in ('native', 'bound'):
++                artifacts.append(('reference-' + role + '-' + form, output / ('references/' + role + '-' + form + '.json')))
+         for item in plan['inputs']:
+             witness_root = output / ('witness-' + item['role'])
+             artifacts.extend([('input-' + item['role'], Path(item['path'])),
+diff --git a/audit/completion.ps1 b/audit/completion.ps1
+index 69bd44b1c2ca4f6c4076c9fe9d0c82aaa5e68ee7..a2aa0104f75f00956473cffb26a6ea62b1f3170d 100644
+--- a/audit/completion.ps1
++++ b/audit/completion.ps1
+@@ -99,12 +99,17 @@ function Get-AuditExpectedCommands($Plan,$Source,[string]$ToolHash,[bool]$Initia
+             '--source-revision',$Source.source_revision,'--source-sha256',$Source.source_sha256,'--tables-sha256',$Source.tables_sha256,
+             '--input',$item.path,'--output',(Join-Path $Plan.output ('witness-'+$item.role)))
+     }
++    $commands['native-reference-tests']=@($Plan.python,'-B',$Plan.reference_tests,'--tool',$tool,
++        '--pins',(Join-Path $Plan.output 'reference-pins.json'),'--source-root',$Plan.tool_root,
++        '--consumption-validator',$Plan.wrapper,'--variant',$Plan.inputs[0].path,'--original',$Plan.inputs[1].path,
++        '--output',(Join-Path $Plan.output 'references'))
+     return $commands
+ }
+ 
+ function Assert-AuditCompletionReceipt($Receipt,$Plan,$Context,[scriptblock]$ReadFile,[scriptblock]$CheckClock) {
+     & $CheckClock
+-    if ($Receipt.schema -cne 'iw7.gsc-audit-build-run/2' -or $Receipt.success -isnot [bool] -or !$Receipt.success -or
++    if ($Receipt.schema -cne 'iw7.gsc-audit-build-run/3' -or $Plan.schema -cne 'iw7.gsc-audit-build-plan/2' -or
++        $Plan.reference_contract -cne 'iw7.gsc-reference-native/1' -or $Receipt.success -isnot [bool] -or !$Receipt.success -or
+         $Receipt.failure -or $Receipt.storage_limit_exceeded -isnot [bool] -or $Receipt.storage_limit_exceeded -or
+         !(Test-AuditResidualInteger $Receipt.peak_observed_output_bytes) -or $Receipt.peak_observed_output_bytes -ge 1800MB -or
+         $Receipt.plan_sha256 -cne $Context.PlanSHA256 -or $Receipt.run_id -cne $Context.RunID -or
+@@ -146,6 +151,17 @@ function Assert-AuditCompletionReceipt($Receipt,$Plan,$Context,[scriptblock]$Rea
+     if ($steps.Count -ne $commands.Count) { throw 'Incomplete or duplicate completion steps' }
+     $expected=[ordered]@{'source-manifest'=(Join-Path $Plan.output 'identity/source-manifest.json');
+         'tool'=(Join-Path $native 'Release/iw7-gsc-audit.exe');'wrapper'=$Plan.wrapper;'compiler-config-0'=$config}
++    foreach ($key in @('reference_reader','reference_profile','reference_tests')) {
++        Assert-AuditDigest $Plan[$key+'_sha256']
++        $expected[$key.Replace('_','-')]=$Plan[$key]
++    }
++    $expected['reference-pins']=Join-Path $Plan.output 'reference-pins.json'
++    $expected['reference-controls']=Join-Path $Plan.output 'references/controls.json'
++    foreach ($role in @('variant','original')) {
++        foreach ($form in @('native','bound')) {
++            $expected['reference-'+$role+'-'+$form]=Join-Path $Plan.output ('references/'+$role+'-'+$form+'.json')
++        }
++    }
+     $lastCreated=$began;$index=0
+     foreach ($name in $commands.Keys) {
+         $step=$steps[$index++];$created=ConvertTo-AuditReceiptUtc $step.creation_utc
+@@ -172,7 +188,9 @@ function Assert-AuditCompletionReceipt($Receipt,$Plan,$Context,[scriptblock]$Rea
+             [IO.Path]::GetFullPath($artifact.path) -ine [IO.Path]::GetFullPath($expected[$artifact.role]) -or
+             !(Test-AuditResidualUInt32 $artifact.bytes)) { throw 'Exact unique artifact scope required' }
+         Assert-AuditDigest $artifact.sha256
+-        $json=$artifact.role -eq 'source-manifest' -or $artifact.role.StartsWith('witness-') -or $artifact.role.StartsWith('result-')
++        $json=$artifact.role -eq 'source-manifest' -or $artifact.role.StartsWith('witness-') -or $artifact.role.StartsWith('result-') -or
++            $artifact.role -in @('reference-pins','reference-controls','reference-variant-native','reference-variant-bound',
++                'reference-original-native','reference-original-bound')
+         $maximum=if ($artifact.role -eq 'tool' -or $artifact.role.StartsWith('assembly-')) {64MB} else {8MB}
+         $file=& $ReadFile $artifact.path $maximum $json
+         & $CheckClock
+@@ -226,8 +244,61 @@ function Assert-AuditCompletionReceipt($Receipt,$Plan,$Context,[scriptblock]$Rea
+         if ($decoded.Length -ne $assembly.Bytes -or (Get-AuditByteHash $decoded) -cne $assembly.SHA256) { throw 'Assembly bytes differ' }
+         & $CheckClock
+     }
++    $referencePins=[ordered]@{decoder=[ordered]@{tool_sha256=$Receipt.tool_sha256;source_revision=$source.source_revision;
++        source_sha256=$source.source_sha256;tables_sha256=$source.tables_sha256};profile_sha256=$Plan.reference_profile_sha256;
++        reference_validator_sha256=$Plan.reference_reader_sha256;consumption_validator_sha256=$Plan.wrapper_sha256}
++    foreach ($key in @('reference_reader','reference_profile','reference_tests')) {
++        if ($files[$key.Replace('_','-')].SHA256 -cne $Plan[$key+'_sha256']) { throw 'Reference source pin drift' }
++    }
++    Assert-AuditSameJson $Receipt.reference_pins $referencePins 'receipt reference pins'
++    Assert-AuditSameJson $files['reference-pins'].Json $referencePins 'written reference pins'
++    $controls=[ordered]@{schema='iw7.gsc-reference-controls/1';pins=$referencePins;opcode_cases=153;unsupported_refusals=2;
++        unresolved_controls=4;native_invocations=159;beacon_roles=@('variant','original');tests_run=3;failures=0;errors=0;skipped=0;successful=$true}
++    Assert-AuditSameJson $files['reference-controls'].Json $controls 'complete native reference controls'
++    foreach ($input in $Plan.inputs) {
++        $refNative=$files['reference-'+$input.role+'-native'].Json;$refBound=$files['reference-'+$input.role+'-bound'].Json
++        if ($refNative.schema -cne 'iw7.gsc-reference-native/1' -or $refNative.profile_sha256 -cne $Plan.reference_profile_sha256 -or
++            $refBound.schema -cne 'iw7.gsc-reference-bound/1' -or
++            $refBound.scope -cne 'encoded-script-references-under-pinned-iw7-profile' -or
++            $refBound.table_authority -cne 'community-source-only' -or $refBound.input_sha256 -cne $input.sha256 -or
++            $refBound.complete_instruction_coverage_verified -isnot [bool] -or !$refBound.complete_instruction_coverage_verified) {
++            throw 'Input-bound native reference contract required'
++        }
++        Assert-AuditSameJson $refNative.consumption $files['witness-'+$input.role].Json.native 'same reference/consumption bytes and decoder'
++        Assert-AuditSameJson $refBound.pins $referencePins 'bound reference pins'
++        foreach ($flag in @('native_execution_authenticated','native_builtin_semantics_verified','asset_dependency_closure_verified',
++            'retail_runtime_compatibility_verified','runtime_validation_passed','owner_acceptance','package_ready')) {
++            if ($refBound[$flag] -isnot [bool] -or $refBound[$flag]) { throw 'Reference result promoted an unrelated gate' }
++        }
++        $instructionCount=0L
++        foreach ($function in @($refNative.functions)) { $instructionCount+=@($function.instructions).Count }
++        if (!(Test-AuditResidualUInt32 $refBound.instruction_count) -or $refBound.instruction_count -ne $instructionCount) {
++            throw 'Reference instruction count differs'
++        }
++        $external=@($refBound.references|Where-Object {$_.kind -in @('external_call','external_address')})
++        $dynamic=@($refBound.references|Where-Object {$_.kind -eq 'pointer'})
++        $isVariant=$input.role -ceq 'variant'
++        if ($refBound.encoded_external_script_reference_absence -isnot [bool] -or
++            $refBound.encoded_external_script_reference_absence -ne $isVariant -or $dynamic.Count -ne 0 -or
++            ($isVariant -and ($external.Count -ne 0 -or @($refBound.blockers).Count -ne 0))) {
++            throw 'Reference positive/negative control disagrees'
++        }
++        if (!$isVariant) {
++            if ($external.Count -ne 2 -or @($refBound.blockers).Count -ne 2) { throw 'Original external controls missing' }
++            $index=0
++            foreach ($target in @('flag_exist','flag')) {
++                $block=$refBound.blockers[$index];$reference=$external[$index]
++                if ($block.cause -cne 'external_script_reference' -or $block.detail.namespace -cne 'scripts/engine/utility' -or
++                    $block.detail.target -cne $target -or $block.bytecode_offset -ne @(212,226)[$index] -or
++                    $block.stack_offset -ne @(318,345)[$index] -or $reference.namespace.name -cne 'scripts/engine/utility' -or
++                    $reference.target.name -cne $target) { throw 'Original utility control differs' }
++                $index++
++            }
++        }
++        & $CheckClock
++    }
+     return [ordered]@{CompilerImage=[IO.Path]::GetFullPath($compiler.compiler);ToolSHA256=$Receipt.tool_sha256;
+-        SourceSHA256=$source.source_sha256;RunID=$Receipt.run_id;Verified=$true}
++        SourceSHA256=$source.source_sha256;RunID=$Receipt.run_id;Verified=$true;ReferenceContractVerified=$true}
+ }
+ 
+ function Get-AuditClosureCapture($Owner,[long]$StartedMs,$Record,[scriptblock]$MeasureOutput) {
+diff --git a/audit/reference-contract.md b/audit/reference-contract.md
+index af86a7eb63db713635080a3a287c31b3053d5203..99b7a7c23db1d7bd2a1d44d2174acd9f8fb1b55f 100644
+--- a/audit/reference-contract.md
++++ b/audit/reference-contract.md
+@@ -133,12 +133,36 @@ rejects stale profiles.
+ 
+ `test_reference_native.py` is prepared but has **not** executed. It compares the
+ new native stream with the independent reader for all opcode specimens and both
+-real Beacon inputs, and retains separate native/bound JSON artifacts. Before any
+-execution, a new reviewed Plan must pin this source, both readers, the profile,
+-input bytes and executable; include the additional test/witness phase and its
+-artifacts in supervision; obtain resource admission and explicit GO. The existing
+-seven-phase v6 recipe does not execute or qualify the new reference contract.
+-No v6 witness is retroactively upgraded.
++real Beacon inputs, and retains separate native/bound JSON artifacts. The recipe
++now includes this as its eighth phase (`native-reference-tests`), after all seven
++existing phases. Its 153 opcode cases, four unresolved/dynamic controls and two
++Beacon inputs require 159 native invocations. The two existing native/consumption
++witnesses and all 13 existing native test methods remain mandatory. Actual token
++namespace/target IDs are exercised by the original Beacon's utility calls.
++
++Plan `/2` pins the reference reader, profile and test harness separately. After
++building the executable, its measured hash and the build source identity form
++`reference-pins.json`; the additional phase receives exactly those pins. Receipt
++`/3` requires all eight ordered phases, 27 artifacts, the native/bound reference
++pairs, and a successful controls summary with no failures or skips. The collector
++rechecks those files under guards, the source pins, exact equality with the old
++consumption witnesses, instruction counts, variant positive/original negative
++outcomes, both utility blockers, and the still-false unrelated acceptance gates.
++The actual independent operand parse runs in the pinned validation phase; the
++closure collector does not claim to implement another GSC decoder.
++
++With the retained initialized zlib, qualified residual closure holds 30 guards:
++27 artifacts, the receipt, compiler and telemetry image. The unchanged bounds
++remain 32 files, 128 MiB, and the original two-second drain. Optional existing
++zlib initialization logic would add two phases/artifacts and use all 32 guards;
++this planned run reuses the initialized dependency. Eight MiB/20,000-node JSON
++limits remain unchanged. No second repository copy is needed.
++
++Before execution, the exact new Plan still requires source/Plan review, resource
++admission and explicit GO. No new build/Run/lease has occurred. The historical
++seven-phase v6 recipe does not qualify this contract, and no v6 witness is
++retroactively upgraded. Historical run receipts `/1` and `/2` are not accepted
++as `/3` reference evidence.
+ 
+ Once this exact native-to-reader agreement is proven and its successful build
+ record linked, Creator may clear the **encoded GSC reference** gate for the
+diff --git a/audit/residual-closure-contract.md b/audit/residual-closure-contract.md
+index 4172ff92a1751d5a1d1b312840295b81a17c32e8..9dd8b9803c5ba1bf85ffcae7e7976aac35f6f11c 100644
+--- a/audit/residual-closure-contract.md
++++ b/audit/residual-closure-contract.md
+@@ -71,7 +71,7 @@ import providers, read files, stop processes or release leases. The launcher now
+ imports it together with `completion.ps1`. Pure tests exercise identity/refusal cases without
+ loading native types or evaluating any previous run as a new successful build.
+ 
+-The source candidate `completion.ps1` now validates schema `/2` build receipts with
++The v6 source `eabe74ab` validated schema `/2` build receipts with
+ a fresh supervising run nonce, exact root PID, plan digest/full contents, lease
+ token/owner, source/dependency digest, configured compiler and ordered 7 (or 9 with
+ zlib initialization) successful commands. It independently reads 17 (or 19) declared
+@@ -79,6 +79,17 @@ artifacts, compares individual step results and the written source manifest, reh
+ the executable/binder/inputs/configuration and verifies both bound witnesses and
+ their assembly bytes/cursors. Historical `/1` receipts are refused.
+ 
++The later encoded-reference recipe uses Plan `/2` and receipt `/3`, with eight
++phases and 27 artifacts (ten/29 only when initializing zlib). It retains every
++v6 consumption check and adds the pinned native reference phase, independent
++reader results and synthetic/Beacon control summary. Actual native/bound pairs
++must match the old consumption witnesses for the same input bytes and decoder.
++Variant encoded-reference absence must be positive; the original must retain
++both exact utility-reference blockers. Asset/runtime/package gates stay false.
++See [the reference contract](reference-contract.md). The retained dependency is
++already initialized; no clone is planned. This extension has source/mock evidence
++only and does not reuse v6 as native reference proof.
++
+ File reads use live guards, at most 32 files and 128 MiB total; JSON files are at most
+ 8 MiB with duplicate/case-ambiguous keys and more than 20,000 nodes refused. Compiler
+ and telemetry guards stay open from hashing through the final collector observation,
+@@ -103,3 +114,10 @@ file checks = 338 PowerShell checks; four Python preparation tests; all 13 Power
+ ASTs and Python ASTs parse, and `git diff --check` passes. Owned-closure tests import
+ the receipt suite, so its 57 checks are counted once. No compiler, native observer,
+ lease, game, new Plan or Run was started by these checks.
++
++For the reference extension, the receipt suite has 86 checks and the owned
++closure suite retains its 69 checks. It verifies all 30 guards survive until
++post-Stop closure (29 for natural closure); the unchanged hard limit is 32.
++The 29 additional receipt controls reject missing/failed reference phases,
++source/pin drift, incomplete/skipped native controls, mismatched bytes/counts,
++reversed qualifications, removed utility blockers and premature package claims.
+diff --git a/audit/test_build_recipe.py b/audit/test_build_recipe.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..80b8b3eb2033a9873414e7cf90cb24698eb62a2b
+--- /dev/null
++++ b/audit/test_build_recipe.py
+@@ -0,0 +1,68 @@
++"""Pure reference-recipe pins/command controls. No process, lease or output write."""
++import copy
++from pathlib import Path
++from types import SimpleNamespace
++import unittest
++from unittest.mock import patch
++import uuid
++
++import build
++
++
++class RecipeTests(unittest.TestCase):
++    def setUp(self):
++        self.source = {'source_revision': 'b' * 40, 'tool_source_sha256': 'a' * 64,
++                       'tables_sha256': 'a' * 64, 'zlib_commit': 'c' * 40, 'source_sha256': 'd' * 64}
++        self.plan = {'schema': 'iw7.gsc-audit-build-plan/2', 'reference_contract': 'iw7.gsc-reference-native/1',
++                     **self.source, 'tool_root': str(build.ROOT), 'physical_bytes': 4 * build.GIB,
++                     'commit_bytes': 6 * build.GIB, 'sdk_root': str(build.ROOT), 'sdk_revision': 'e' * 40,
++                     'output': str(build.ROOT / 'build' / ('source-test-' + uuid.uuid4().hex)),
++                     'output_limit_bytes': 2 * build.GIB, 'output_stop_threshold_bytes': 1800 * 1024 ** 2,
++                     'residual_closure_policy': 'original-job-pinned-vctip/1',
++                     'inputs': [{'role': 'variant', 'path': 'variant.gscbin', 'sha256': 'a' * 64},
++                                {'role': 'original', 'path': 'original.gscbin', 'sha256': 'a' * 64}]}
++        for key in ('python', 'pwsh', 'cmake', 'ctest', 'scheduler', 'job_source', 'members_source', 'wrapper'):
++            self.plan[key], self.plan[key + '_sha256'] = key, 'a' * 64
++        for key, relative in build.REFERENCE_FILES.items():
++            self.plan[key], self.plan[key + '_sha256'] = str(build.ROOT / relative), 'a' * 64
++        for mocked in (patch.object(build.prepare, 'inspect_sources', return_value=self.source),
++                       patch.object(build.prepare, 'git', return_value='e' * 40),
++                       patch.object(build, 'sha_file', return_value='a' * 64),
++                       patch.object(build.shutil, 'disk_usage', return_value=SimpleNamespace(free=10 * build.GIB))):
++            mocked.start()
++            self.addCleanup(mocked.stop)
++
++    def test_complete_plan_accepted_and_legacy_refused(self):
++        build.validate_plan(self.plan)
++        self.plan['schema'] = 'iw7.gsc-audit-build-plan/1'
++        with self.assertRaisesRegex(ValueError, 'reference phase'):
++            build.validate_plan(self.plan)
++
++    def test_all_three_reference_paths_and_hashes_bound(self):
++        for key in build.REFERENCE_FILES:
++            for field, value in [(key, str(build.ROOT / 'other.py')), (key + '_sha256', 'f' * 64)]:
++                candidate = copy.deepcopy(self.plan)
++                candidate[field] = value
++                with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'reference source'):
++                    build.validate_plan(candidate)
++
++    def test_runtime_pins_bind_built_executable_and_independent_readers(self):
++        pins = build.reference_pins(self.plan, self.source, 'f' * 64)
++        self.assertEqual(pins['decoder'], {'tool_sha256': 'f' * 64, 'source_revision': 'b' * 40,
++                                         'source_sha256': 'd' * 64, 'tables_sha256': 'a' * 64})
++        self.assertEqual(set(pins), {'decoder', 'profile_sha256', 'reference_validator_sha256', 'consumption_validator_sha256'})
++        self.assertEqual(pins['consumption_validator_sha256'], self.plan['wrapper_sha256'])
++
++    def test_command_executes_reference_harness_with_both_inputs(self):
++        tool = Path('native.exe')
++        argv = build.reference_command(self.plan, tool)
++        self.assertEqual(argv[:3], ['python', '-B', self.plan['reference_tests']])
++        options = dict(zip(argv[3::2], argv[4::2]))
++        self.assertEqual(options, {'--tool': str(tool), '--pins': str(Path(self.plan['output']) / 'reference-pins.json'),
++                                  '--source-root': str(build.ROOT), '--consumption-validator': 'wrapper',
++                                  '--variant': 'variant.gscbin', '--original': 'original.gscbin',
++                                  '--output': str(Path(self.plan['output']) / 'references')})
++
++
++if __name__ == '__main__':
++    unittest.main()
+diff --git a/audit/test_completion.ps1 b/audit/test_completion.ps1
+index 531a865624ff87f2fc09db3d584a082fcea02ffe..7d7d1e2d78e99ec93edb825f713ea7780a6cfb11 100644
+--- a/audit/test_completion.ps1
++++ b/audit/test_completion.ps1
+@@ -8,7 +8,11 @@ function Check([bool]$Value,[string]$Message) {if (!$Value) {throw $Message};$sc
+ function Copy-Data($Value) { $Value|ConvertTo-Json -Depth 64 -Compress|ConvertFrom-Json -AsHashtable -DateKind String }
+ function Fixture {
+     $a='a'*64;$z='c'*64;$rev='b'*40;$zrev='d'*40
+-    $script:plan=[ordered]@{tool_root='C:\mock';output='C:\mock\build\fresh';python='C:\python.exe';pwsh='C:\pwsh.exe';
++    $script:plan=[ordered]@{schema='iw7.gsc-audit-build-plan/2';reference_contract='iw7.gsc-reference-native/1';
++        reference_reader='C:\mock\audit\references.py';reference_reader_sha256=$a;
++        reference_profile='C:\mock\audit\reference-profile.json';reference_profile_sha256=$a;
++        reference_tests='C:\mock\audit\test_reference_native.py';reference_tests_sha256=$a;
++        tool_root='C:\mock';output='C:\mock\build\fresh';python='C:\python.exe';pwsh='C:\pwsh.exe';
+         cmake='C:\cmake.exe';ctest='C:\ctest.exe';wrapper='C:\sdk\binder.py';wrapper_sha256=$a;
+         source_revision=$rev;tool_source_sha256=$a;tables_sha256=$a;zlib_commit=$zrev;zlib_local='C:\zlib';
+         residual_closure_policy='original-job-pinned-vctip/1';inputs=@(
+@@ -30,9 +34,12 @@ function Fixture {
+             '--source-revision',$rev,'--source-sha256',$source.source_sha256,'--tables-sha256',$a,
+             '--input',('C:\inputs\'+$role+'.gscbin'),'--output',($output+'\witness-'+$role))
+     }
++    $commands['native-reference-tests']=@('C:\python.exe','-B','C:\mock\audit\test_reference_native.py','--tool',$tool,
++        '--pins',($output+'\reference-pins.json'),'--source-root','C:\mock','--consumption-validator','C:\sdk\binder.py',
++        '--variant','C:\inputs\variant.gscbin','--original','C:\inputs\original.gscbin','--output',($output+'\references'))
+     $compiler=[ordered]@{configuration=$native+'\CMakeFiles\4.1.2\CMakeCXXCompiler.cmake';configuration_sha256=$a;
+         compiler='C:/mock/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe';compiler_sha256='fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619'}
+-    $script:receipt=[ordered]@{schema='iw7.gsc-audit-build-run/2';success=$true;failure=$null;storage_limit_exceeded=$false;
++    $script:receipt=[ordered]@{schema='iw7.gsc-audit-build-run/3';success=$true;failure=$null;storage_limit_exceeded=$false;
+         peak_observed_output_bytes=1000;plan_sha256=$a;run_id=$script:context.RunID;root_pid=50;lease_token='fresh-lease';lease_owner_pid=40;
+         plan=(Copy-Data $script:plan);started_utc='2026-10-12T00:00:00.010000+00:00';finished_utc='2026-10-12T00:00:20.000000+00:00';
+         build_source_manifest=$source;tool_sha256=$a;compilers=@($compiler);steps=@();completion_artifacts=@()}
+@@ -67,7 +74,35 @@ function Fixture {
+         Add-File ('input-'+$input.role) $input.path $a 20
+         Add-File ('witness-'+$input.role) ($output+'\witness-'+$input.role+'\consumption.json') $a 100 $bound
+         Add-File ('assembly-'+$input.role) ($output+'\witness-'+$input.role+'\disassembly.gscasm') $asmHash $asm.Length
++        $referencePins=[ordered]@{decoder=$pins;profile_sha256=$a;reference_validator_sha256=$a;consumption_validator_sha256=$a}
++        $refNative=[ordered]@{schema='iw7.gsc-reference-native/1';profile_sha256=$a;consumption=$witness;
++            functions=@([ordered]@{bytecode_begin=1;token_id=0;name_hex='6d61696e';instructions=@(@{bytecode_begin=1})})}
++        $refBound=[ordered]@{schema='iw7.gsc-reference-bound/1';scope='encoded-script-references-under-pinned-iw7-profile';
++            input_sha256=$a;pins=$referencePins;instruction_count=1;category_counts=@{};references=@();blockers=@();
++            complete_instruction_coverage_verified=$true;encoded_external_script_reference_absence=($input.role -ceq 'variant');
++            table_authority='community-source-only';native_execution_authenticated=$false;native_builtin_semantics_verified=$false;
++            asset_dependency_closure_verified=$false;retail_runtime_compatibility_verified=$false;
++            runtime_validation_passed=$false;owner_acceptance=$false;package_ready=$false}
++        if ($input.role -ceq 'original') {
++            $index=0
++            foreach ($target in @('flag_exist','flag')) {
++                $refBound.references+=@{kind='external_call';namespace=@{name='scripts/engine/utility'};target=@{name=$target}}
++                $refBound.blockers+=[ordered]@{cause='external_script_reference';bytecode_offset=@(212,226)[$index];
++                    stack_offset=@(318,345)[$index];detail=@{namespace='scripts/engine/utility';target=$target}}
++                $index++
++            }
++        }
++        Add-File ('reference-'+$input.role+'-native') ($output+'\references\'+$input.role+'-native.json') $a 100 $refNative
++        Add-File ('reference-'+$input.role+'-bound') ($output+'\references\'+$input.role+'-bound.json') $a 100 $refBound
+     }
++    $script:receipt.reference_pins=Copy-Data $referencePins
++    foreach ($key in @('reference_reader','reference_profile','reference_tests')) {
++        Add-File $key.Replace('_','-') $script:plan[$key] $a 100
++    }
++    Add-File 'reference-pins' ($output+'\reference-pins.json') $a 100 $referencePins
++    $controls=[ordered]@{schema='iw7.gsc-reference-controls/1';pins=$referencePins;opcode_cases=153;unsupported_refusals=2;
++        unresolved_controls=4;native_invocations=159;beacon_roles=@('variant','original');tests_run=3;failures=0;errors=0;skipped=0;successful=$true}
++    Add-File 'reference-controls' ($output+'\references\controls.json') $a 100 $controls
+     $script:reads=0
+ }
+ $read={param($Path,$Maximum,$AsJson) $script:reads++;$script:files[[IO.Path]::GetFullPath($Path)]}
+@@ -79,12 +114,13 @@ function Refuse([scriptblock]$Change,[string]$Name) {
+ }
+ Fixture
+ $verified=Validate
+-Check ($verified.Verified -and $script:reads -eq 17) 'Complete exact-run evidence validates every artifact'
++Check ($verified.Verified -and $verified.ReferenceContractVerified -and $script:reads -eq 27) 'Complete exact-run evidence validates every artifact'
+ foreach ($field in @('plan_sha256','run_id','lease_token','root_pid','lease_owner_pid')) {
+     $script:field=$field
+     Refuse {$script:receipt[$script:field]='stale'} "wrong $field"
+ }
+ Refuse {$script:receipt.schema='iw7.gsc-audit-build-run/1'} 'historical v4/v5 schema'
++Refuse {$script:receipt.schema='iw7.gsc-audit-build-run/2'} 'v6 has no native reference qualification'
+ Refuse {$script:receipt.success='true'} 'string success'
+ Refuse {$script:receipt.success=$false} 'failed candidate'
+ Refuse {$script:receipt.failure='late failure'} 'candidate error'
+@@ -129,4 +165,26 @@ foreach ($role in @('variant','original')) {
+     Refuse {$script:files[$script:wp].Json.native.assembly_hex='00'} 'assembly bytes changed'
+     Refuse {$script:files[$script:wp].Json.runtime_ready=$true} 'unrelated runtime claim'
+ }
++Refuse {$script:receipt.steps=$script:receipt.steps[0..6]} 'new reference phase missing'
++Refuse {$script:receipt.steps[7].exit_code=1} 'reference native tests fail'
++Refuse {$script:receipt.steps[7].command[2]='C:\old.py'} 'old reference harness'
++Refuse {$script:receipt.reference_pins.profile_sha256='f'*64} 'receipt profile pins drift'
++Refuse {$script:files['C:\mock\audit\references.py'].SHA256='f'*64} 'reader file drift'
++Refuse {$script:files['C:\mock\build\fresh\reference-pins.json'].Json.profile_sha256='f'*64} 'written reference pins drift'
++foreach ($field in @('opcode_cases','unsupported_refusals','unresolved_controls','native_invocations','tests_run','failures','errors','skipped')) {
++    $script:field=$field
++    Refuse {$script:files['C:\mock\build\fresh\references\controls.json'].Json[$script:field]++} "reference control $field differs"
++}
++foreach ($role in @('variant','original')) {
++    $script:rb='C:\mock\build\fresh\references\'+$role+'-bound.json'
++    $script:rn='C:\mock\build\fresh\references\'+$role+'-native.json'
++    Refuse {$script:files[$script:rn].Json.profile_sha256='f'*64} 'native reference profile drift'
++    Refuse {$script:files[$script:rn].Json.consumption.input_sha256='f'*64} 'reference stream describes other bytes'
++    Refuse {$script:files[$script:rb].Json.input_sha256='f'*64} 'bound reference input drift'
++    Refuse {$script:files[$script:rb].Json.encoded_external_script_reference_absence=!$script:files[$script:rb].Json.encoded_external_script_reference_absence} 'false reference qualification'
++    Refuse {$script:files[$script:rb].Json.instruction_count++} 'false instruction count'
++    Refuse {$script:files[$script:rb].Json.package_ready=$true} 'reference promotes package'
++}
++Refuse {$script:files['C:\mock\build\fresh\references\original-bound.json'].Json.blockers=@()} 'original utility blockers removed'
++Refuse {$script:files['C:\mock\build\fresh\references\original-bound.json'].Json.blockers[1].detail.target='other'} 'wrong utility control'
+ Write-Output "Completion receipt: $script:checks checks passed; synthetic source-only evidence."
+diff --git a/audit/test_owned_closure.ps1 b/audit/test_owned_closure.ps1
+index 16417237bb75ccad183d6594a4e24b6b137ae7b3..d8b1d70e68e4e9689ff2f14cb814a8d3f2af1d48 100644
+--- a/audit/test_owned_closure.ps1
++++ b/audit/test_owned_closure.ps1
+@@ -1,4 +1,4 @@
+-# Imports/runs the 57 synthetic receipt cases, then exercises the real orchestrator
++# Imports/runs the synthetic receipt cases, then exercises the real orchestrator
+ # against owned-handle, member-query, file-guard and monotonic-clock mocks.
+ . (Join-Path $PSScriptRoot 'test_completion.ps1')
+ $script:checks=0
+@@ -20,7 +20,8 @@ function New-ClosureFixture {
+     $script:owner=[pscustomobject]@{}
+     $script:owner|Add-Member ScriptMethod Stop {
+         $script:stops++;$script:capturesAtStop=$script:captures
+-        $script:stopGuards=$script:guarded.ContainsKey($script:compilerPath) -and $script:guarded.ContainsKey($script:telemetryPath)
++        $script:stopGuards=$script:guarded.ContainsKey($script:compilerPath) -and $script:guarded.ContainsKey($script:telemetryPath) -and
++            $script:guarded.Count -eq 30
+         $script:stopped=$true;$script:now+=$script:stopCost
+     }
+     $script:owner|Add-Member ScriptMethod Dispose {$script:disposed++}
+@@ -63,12 +64,12 @@ Complete
+ Check ($script:record.QualifiedClosure.AcceptanceGranted -and $script:record.QualifiedClosure.CompletionVerified -and
+     $script:record.QualifiedClosure.ClosureVerified -and !$script:record.Success) 'Qualified closure grants no global build success itself'
+ Check ($script:stops -eq 1 -and $script:capturesAtStop -eq 2 -and $script:stopGuards) 'Two real collector calls and both guards precede the sole owned Stop'
+-Check ($script:closedGuards -eq 20 -and $script:guarded.Count -eq 0) 'All receipt/artifact/image guards released after post-Stop closure'
++Check ($script:closedGuards -eq 30 -and $script:guarded.Count -eq 0) 'All receipt/artifact/image guards released after post-Stop closure'
+ Check (!$script:record.QualifiedClosure.Identity.CompilerAncestryProven) 'No invented compiler parent'
+ New-ClosureFixture;$script:preActive=0
+ Complete-AuditBuildEvidence $script:owner $script:record 0 $script:plan $script:context $measure $false
+ Check ($script:stops -eq 0 -and $script:captures -eq 0 -and $script:record.QualifiedClosure.AcceptanceGranted -and
+-    $script:closedGuards -eq 19) 'Natural zero closure validates identical receipt/artifact/compiler evidence without Stop'
++    $script:closedGuards -eq 29) 'Natural zero closure validates identical receipt/artifact/compiler evidence without Stop'
+ 
+ function Refuse-Closure([scriptblock]$Change,[string]$Name,[bool]$ShouldStop=$false) {
+     New-ClosureFixture;& $Change;$caught=$null
+diff --git a/audit/test_reference_native.py b/audit/test_reference_native.py
+index fb4882749df68488c954653eb93c4a6018cea77c..8245010aadaad0ac7c700698601a5a79b493feb0 100644
+--- a/audit/test_reference_native.py
++++ b/audit/test_reference_native.py
+@@ -1,7 +1,7 @@
+ """OPT-IN native reference controls. Requires a reviewed Plan/admission/GO.
+ 
+-Not called by source-only tests or the existing v6 build recipe. A future reviewed
+-recipe must record this phase and its artifacts before using any qualification.
++Not called by source-only tests or the historical v6 build recipe. The new Plan/2
++recipe records this phase and all artifacts; it still requires explicit GO.
+ """
+ import argparse
+ import importlib.util
+@@ -14,12 +14,15 @@ import references as r
+ from test_references import container, literal, opcode_control
+ 
+ ARGS = PINS = CONSUMPTION = PROFILE = TABLES = None
++OBSERVED = {'opcode_cases': 0, 'unsupported_refusals': 0, 'unresolved_controls': 0,
++            'native_invocations': 0, 'beacon_roles': []}
+ 
+ 
+ class NativeReferenceTests(unittest.TestCase):
+     def call(self, raw, accepted=True):
+         self.assertEqual(r.sha(r.read(ARGS.tool, 64 * 1024 * 1024)), PINS['decoder']['tool_sha256'])
+         result = CONSUMPTION.run_bounded([str(ARGS.tool), '--stdin-gscbin-references'], raw)
++        OBSERVED['native_invocations'] += 1
+         code, output, error = result.returncode, result.stdout, result.stderr
+         self.assertEqual(r.sha(r.read(ARGS.tool, 64 * 1024 * 1024)), PINS['decoder']['tool_sha256'])
+         if not accepted:
+@@ -40,6 +43,9 @@ class NativeReferenceTests(unittest.TestCase):
+                 if result:
+                     expected = row['kind'] not in ('external_call', 'external_address', 'pointer')
+                     self.assertEqual(result[1]['encoded_external_script_reference_absence'], expected)
++                else:
++                    OBSERVED['unsupported_refusals'] += 1
++                OBSERVED['opcode_cases'] += 1
+ 
+     def test_unresolved_symbols_and_dynamic_targets_remain_blocking(self):
+         controls = [container(b'\x1b\xff\xff\x19'), container(b'\x54\x19'),
+@@ -50,6 +56,7 @@ class NativeReferenceTests(unittest.TestCase):
+                 result = self.call(raw)[1]
+                 self.assertFalse(result['encoded_external_script_reference_absence'])
+                 self.assertTrue(result['blockers'])
++                OBSERVED['unresolved_controls'] += 1
+ 
+     def test_beacon_variant_and_original(self):
+         for role, path, digest, absent, count in [
+@@ -66,6 +73,7 @@ class NativeReferenceTests(unittest.TestCase):
+                                      [(212, 318, 'flag_exist'), (226, 345, 'flag')])
+                 (ARGS.output / (role + '-native.json')).write_text(json.dumps(native, indent=2) + '\n', encoding='utf-8')
+                 (ARGS.output / (role + '-bound.json')).write_text(json.dumps(bound, indent=2) + '\n', encoding='utf-8')
++                OBSERVED['beacon_roles'].append(role)
+ 
+ 
+ if __name__ == '__main__':
+@@ -83,4 +91,10 @@ if __name__ == '__main__':
+     if ARGS.output.exists():
+         raise ValueError('Use a fresh reviewed output directory')
+     ARGS.output.mkdir(parents=True)
+-    unittest.main(argv=[sys.argv[0]], verbosity=2)
++    run = unittest.main(argv=[sys.argv[0]], verbosity=2, exit=False)
++    summary = {'schema': 'iw7.gsc-reference-controls/1', 'pins': PINS, **OBSERVED,
++               'tests_run': run.result.testsRun, 'failures': len(run.result.failures),
++               'errors': len(run.result.errors), 'skipped': len(run.result.skipped),
++               'successful': run.result.wasSuccessful()}
++    (ARGS.output / 'controls.json').write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
++    sys.exit(0 if summary['successful'] and not summary['skipped'] and summary['tests_run'] == 3 else 1)

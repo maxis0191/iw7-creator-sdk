@@ -1,0 +1,2493 @@
+From bfa2d4af5e9687bcf30b6a45ad04db403f63538a Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 10:12:20 +0200
+Subject: [PATCH] Classify exact IW7 encoded references with independent byte
+ coverage
+
+
+diff --git a/audit/README.md b/audit/README.md
+index f8330af981937bdd779537c869c6c5421ada44fb..49ed9f9b25d15bdebb034ad50e1fe135ea09b223 100644
+--- a/audit/README.md
++++ b/audit/README.md
+@@ -3,10 +3,18 @@
+ This separate Windows/MSVC executable reads one original `.gscbin` from binary
+ stdin. It emits a JSON witness only after strict container, zlib, disassembler and
+ local-function-resolution checks succeed. It does not compile GSC, write assets,
+-run a game or establish dependency closure. **Revision `6f650cb9` compiled and
+-passed native tests plus two Beacon witness runs, but overall build supervision
+-failed on an unqualified residual descendant. Current diagnostic instrumentation
+-has not run natively; another attempt requires reviewed source and admission.**
++run a game or establish general dependency closure. **Revision `eabe74ab` passed
++the v6 native build, 13 native test methods, both Beacon consumption witnesses and
++qualified original-job closure. The new encoded-reference contract described
++below is source-only and has not run natively.** Historical v4/v5 global failures
++remain failures; their successful cleanup is not rewritten as build acceptance.
++
++The [encoded-reference contract](reference-contract.md) adds a separate native
++mode, an exhaustive opcode/operand profile and an independent byte reader. It
++can qualify absence of encoded external GSC references, with unknown or dynamic
++references blocking explicitly. It keeps native semantics, assets, runtime and
++package readiness as separate gates. A new Plan/review/GO is required to build
++and execute this mode; the v6 witnesses cannot stand in for its new evidence.
+ 
+ The source baseline is xensik/gsc-tool
+ `3300e430d1efef00e54c66a8bd416e18a2a9882a`. This checkout was cloned from the
+diff --git a/audit/main.cpp b/audit/main.cpp
+index 49b846d174dd6c9cb77b3209a60b8372597e0cbd..4ab20561c51e78cec56c13bb4eb1f347bbeea89c 100644
+--- a/audit/main.cpp
++++ b/audit/main.cpp
+@@ -90,7 +90,7 @@ auto unpack(std::vector<u8> const& data) -> std::pair<std::vector<u8>, std::vect
+     return { std::vector<u8>(data.begin() + 16 + compressed_size, data.end()), std::move(stack) };
+ }
+ 
+-auto audit(std::vector<u8> const& input) -> std::string
++auto audit(std::vector<u8> const& input, bool references) -> std::string
+ {
+     auto [code, stack] = unpack(input);
+     gsc::iw7::context context{ gsc::instance::server };
+@@ -119,8 +119,37 @@ auto audit(std::vector<u8> const& input) -> std::string
+             << ",\"stack_end\":" << f.stack_end << '}';
+     }
+     out << "],\"assembly_bytes\":" << assembly.size() << ",\"assembly_sha256\":\"" << sha256(assembly)
+-        << "\",\"assembly_hex\":\"" << hex(assembly.data(), assembly.size()) << "\"}\n";
+-    return out.str();
++        << "\",\"assembly_hex\":\"" << hex(assembly.data(), assembly.size()) << "\"}";
++    if (!references) return out.str() + '\n';
++
++    // This stream attests decoder boundaries. Semantic classification is done
++    // independently from the original bytes by the pinned Python policy reader.
++    // Never publish a partial success report if bounds or serialization fail.
++    std::ostringstream report;
++    report << "{\"schema\":\"iw7.gsc-reference-native/1\",\"profile_sha256\":\""
++        << AUDIT_REFERENCE_PROFILE_SHA256 << "\",\"consumption\":" << out.str() << ",\"functions\":[";
++    if (program->functions.size() > 10000) throw std::runtime_error("reference function limit exceeded");
++    usize instructions = 0;
++    for (usize i = 0; i < program->functions.size(); ++i)
++    {
++        auto const& f = *program->functions[i];
++        if (i) report << ',';
++        report << "{\"bytecode_begin\":" << f.index << ",\"token_id\":" << f.id
++            << ",\"name_hex\":\"" << hex(reinterpret_cast<u8 const*>(f.name.data()), f.name.size())
++            << "\",\"instructions\":[";
++        for (usize j = 0; j < f.instructions.size(); ++j)
++        {
++            if (++instructions > 100000) throw std::runtime_error("reference instruction limit exceeded");
++            auto const& inst = *f.instructions[j];
++            if (j) report << ',';
++            report << "{\"bytecode_begin\":" << inst.index << ",\"bytecode_bytes\":" << inst.size
++                << ",\"opcode\":" << static_cast<unsigned>(code.at(inst.index))
++                << ",\"stack_begin\":" << inst.stack_begin << ",\"stack_end\":" << inst.stack_end << '}';
++        }
++        report << "]}";
++    }
++    report << "]}\n";
++    return report.str();
+ }
+ }
+ 
+@@ -128,9 +157,10 @@ int main(int argc, char** argv)
+ {
+     try
+     {
+-        if (argc != 2 || std::string_view{ argv[1] } != "--stdin-gscbin")
+-            throw std::runtime_error("usage: iw7-gsc-audit --stdin-gscbin < input.gscbin");
+-        std::cout << audit(read_input());
++        if (argc != 2 || (std::string_view{ argv[1] } != "--stdin-gscbin" &&
++            std::string_view{ argv[1] } != "--stdin-gscbin-references"))
++            throw std::runtime_error("usage: iw7-gsc-audit {--stdin-gscbin|--stdin-gscbin-references} < input.gscbin");
++        std::cout << audit(read_input(), std::string_view{ argv[1] } == "--stdin-gscbin-references");
+         return 0;
+     }
+     catch (std::exception const& error)
+diff --git a/audit/make_reference_profile.py b/audit/make_reference_profile.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..235df4ad37d88b0433fecc4636751bccb11d1285
+--- /dev/null
++++ b/audit/make_reference_profile.py
+@@ -0,0 +1,106 @@
++"""Reproduce the reviewed IW7 encoding profile from local source; no native execution."""
++import hashlib
++import json
++from pathlib import Path
++import re
++import subprocess
++
++ROOT = Path(__file__).resolve().parents[1]
++BASE = '3300e430d1efef00e54c66a8bd416e18a2a9882a'
++
++
++def make_profile(root=ROOT):
++    def git(*args):
++        return subprocess.check_output(['git', '-C', str(root), *args], text=True).strip()
++
++    groups = {}
++
++    def group(kind, size, names):
++        for name in names.split():
++            name = 'OP_' + name
++            if name in groups:
++                raise ValueError('Duplicate policy opcode: ' + name)
++            groups[name] = (kind, size)
++
++    group('plain', 1, '''CastFieldObject plus GetGameRef GetThisthread greater shift_right dec bit_or
++        equality ClearLocalVariableFieldCached0 notify PreScriptCall GetUndefined SetLocalVariableFieldCached0
++        GetLevel size AddArray endon shift_left EvalLocalArrayRefCached0 Return SafeSetVariableFieldCached0
++        GetSelfObject GetGame EvalArray GetSelf End less_equal EvalLocalVariableCached0 EvalLocalVariableCached1
++        EvalLocalVariableCached2 EvalLocalVariableCached3 EvalLocalVariableCached4 EvalLocalVariableCached5
++        checkclearparams waittillmatch2 minus greater_equal vector ClearArray DecTop CastBool EvalArrayRef GetZero
++        wait waittill GetAnimObject mod clearparams EmptyArray BoolComplement less BoolNot waittillFrameEnd
++        GetLevelObject inc GetAnim SetVariableField divide multiply EvalLocalVariableRefCached0 bit_and
++        voidCodepos inequality bit_ex_or''')
++    group('scalar', 2, 'GetByte GetNegByte waittillmatch')
++    group('scalar', 3, 'GetUnsignedShort GetNegUnsignedShort')
++    group('scalar', 5, 'GetInteger GetFloat')
++    group('scalar', 13, 'GetVector')
++    group('slot', 2, '''ClearLocalVariableFieldCached SetLocalVariableFieldCached RemoveLocalVariables
++        EvalLocalVariableRefCached EvalLocalArrayRefCached SafeSetVariableFieldCached EvalLocalVariableCached
++        SafeSetWaittillVariableFieldCached EvalLocalVariableObjectCached EvalLocalArrayCached
++        CreateLocalVariable EvalNewLocalArrayRefCached0 SafeCreateVariableFieldCached SetNewLocalVariableFieldCached0''')
++    group('field', 5, '''EvalSelfFieldVariable SetLevelFieldVariableField ClearFieldVariable EvalFieldVariable
++        EvalFieldVariableRef EvalLevelFieldVariable SetAnimFieldVariableField SetSelfFieldVariableField
++        EvalAnimFieldVariableRef EvalLevelFieldVariableRef EvalAnimFieldVariable EvalSelfFieldVariableRef''')
++    group('string', 5, 'GetString GetIString')
++    group('animation', 9, 'GetAnimation')
++    group('animtree', 2, 'GetAnimTree')
++    group('pointer', 1, 'ScriptMethodCallPointer ScriptFunctionCallPointer')
++    group('pointer', 2, '''CallBuiltinPointer CallBuiltinMethodPointer ScriptThreadCallPointer
++        ScriptChildThreadCallPointer ScriptMethodThreadCallPointer ScriptMethodChildThreadCallPointer''')
++    group('local_address', 4, 'GetLocalFunction')
++    group('local_call', 4, 'ScriptLocalFunctionCall2 ScriptLocalFunctionCall ScriptLocalMethodCall')
++    group('local_call', 5, '''ScriptLocalThreadCall ScriptLocalChildThreadCall
++        ScriptLocalMethodThreadCall ScriptLocalMethodChildThreadCall''')
++    group('external_address', 4, 'GetFarFunction')
++    group('external_call', 4, 'ScriptFarFunctionCall2 ScriptFarFunctionCall ScriptFarMethodCall')
++    group('external_call', 5, '''ScriptFarThreadCall ScriptFarChildThreadCall
++        ScriptFarMethodThreadCall ScriptFarMethodChildThreadCall''')
++    group('builtin_function_address', 3, 'GetBuiltinFunction')
++    group('builtin_method_address', 3, 'GetBuiltinMethod')
++    group('builtin_function', 3, 'CallBuiltin0 CallBuiltin1 CallBuiltin2 CallBuiltin3 CallBuiltin4 CallBuiltin5')
++    group('builtin_method', 3, '''CallBuiltinMethod0 CallBuiltinMethod1 CallBuiltinMethod2
++        CallBuiltinMethod3 CallBuiltinMethod4 CallBuiltinMethod5''')
++    group('builtin_function', 4, 'CallBuiltin')
++    group('builtin_method', 4, 'CallBuiltinMethod')
++    group('branch_i16', 3, 'JumpOnFalse JumpOnTrue JumpOnFalseExpr JumpOnTrueExpr')
++    group('branch_back_u16', 3, 'jumpback')
++    group('branch_i32', 5, 'jump')
++    group('switch', 5, 'switch')
++    group('switch_table', 3, 'endswitch')
++    # Registered upstream, but context::opcode_size deliberately throws. Do not
++    # silently give these the size-one interpretation from the instruction switch.
++    group('unsupported_size', None, 'ClearVariableField EvalNewLocalVariableRefCached0')
++    code_path = 'src/gsc/engine/iw7_code.cpp'
++    code = (root / code_path).read_text(encoding='utf-8')
++    entries = [(int(raw, 16), name) for raw, name in re.findall(
++        r'\{\s*(0x[0-9A-Fa-f]+),\s*opcode::(OP_\w+)\s*\}', code)]
++    if len(entries) != 153 or set(name for _, name in entries) != set(groups):
++        raise ValueError('IW7 opcode taxonomy is not exhaustive')
++    files = sorted(p.relative_to(root).as_posix() for p in (root / 'src/gsc/engine').glob('iw7*'))
++    files += ['include/xsk/gsc/engine/iw7.hpp', 'include/xsk/gsc/common/assembly.hpp', 'src/gsc/context.cpp']
++    records = [{'path': path, 'sha256': hashlib.sha256((root / path).read_bytes()).hexdigest()}
++               for path in sorted(files)]
++    provenance = []
++    for path in files:
++        if path.startswith('src/gsc/engine/iw7') or path.endswith('engine/iw7.hpp'):
++            blob = git('rev-parse', BASE + ':' + path)
++            current = git('hash-object', str(root / path))
++            if blob != current:
++                raise ValueError('Community table changed from the pinned upstream baseline: ' + path)
++            provenance.append({'path': path, 'base_blob': blob,
++                               'last_change': git('log', '-1', '--format=%H', BASE, '--', path)})
++    return {'schema': 'iw7.gsc-reference-profile/1', 'engine': 'iw7-pc-server',
++            'features': ['str4', 'tok4', 'offs9'], 'max_string_id': 0x13FCC,
++            'upstream_url': 'https://github.com/xensik/gsc-tool', 'upstream_base': BASE,
++            'table_authority': 'community-source-only', 'retail_runtime_attested': False,
++            'counts': {'opcodes': 153, 'functions': 806, 'methods': 1483, 'tokens': 13220},
++            'table_files': records,
++            'tables_sha256': hashlib.sha256(json.dumps(records, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
++            'table_provenance': provenance,
++            'opcodes': [{'id': raw, 'name': name, 'kind': groups[name][0], 'bytes': groups[name][1]}
++                        for raw, name in entries]}
++
++
++if __name__ == '__main__':
++    print(json.dumps(make_profile(), indent=2))
+diff --git a/audit/prepare.py b/audit/prepare.py
+index 758256b1936fb8a0ace47523765c973e283bba77..d9d2738c3291652527fa74508ae875b4c5a87731 100644
+--- a/audit/prepare.py
++++ b/audit/prepare.py
+@@ -51,13 +51,19 @@ def inspect_sources(require_zlib=True):
+ 
+ def prepare(output):
+     manifest = inspect_sources(require_zlib=True)
++    profile_raw = (ROOT / 'audit/reference-profile.json').read_bytes()
++    profile = json.loads(profile_raw)
++    if (profile.get('schema') != 'iw7.gsc-reference-profile/1'
++            or profile.get('tables_sha256') != manifest['tables_sha256']):
++        raise ValueError('Reviewed reference profile does not match the source tables')
+     output = output.resolve()
+     if output.exists() or not output.is_relative_to(ROOT / 'build'):
+         raise ValueError('Use a fresh ignored identity directory under build/')
+     output.mkdir(parents=True)
+     header = ('#pragma once\n' + ''.join(f'#define AUDIT_{key} "{value}"\n' for key, value in
+               [('SOURCE_REVISION', manifest['source_revision']), ('SOURCE_SHA256', manifest['source_sha256']),
+-               ('TABLES_SHA256', manifest['tables_sha256'])]))
++               ('TABLES_SHA256', manifest['tables_sha256']),
++               ('REFERENCE_PROFILE_SHA256', hashlib.sha256(profile_raw).hexdigest())]))
+     (output / 'audit_identity.hpp').write_text(header, encoding='utf-8', newline='\n')
+     (output / 'source-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
+     return manifest
+diff --git a/audit/reference-contract.md b/audit/reference-contract.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..84f262ad107a7d3cf7218af24ce9ab8fe396862f
+--- /dev/null
++++ b/audit/reference-contract.md
+@@ -0,0 +1,155 @@
++# Encoded IW7 GSC references — source contract, 2026-10-12
++
++This contract answers one precise question: does the complete input encode any
++external script reference or an unresolved/dynamic reference under the pinned
++IW7 PC server decoder profile? It is not a proof of all dependencies, native
++builtin behavior, asset availability, retail compatibility or runtime acceptance.
++
++The existing `--stdin-gscbin` and `iw7.gsc-consumption-native/1` remain unchanged.
++The separate `--stdin-gscbin-references` mode emits `iw7.gsc-reference-native/1`:
++
++```json
++{
++  "schema": "iw7.gsc-reference-native/1",
++  "profile_sha256": "independently pinned profile file SHA256",
++  "consumption": {"schema": "iw7.gsc-consumption-native/1"},
++  "functions": [{
++    "bytecode_begin": 1,
++    "token_id": 0,
++    "name_hex": "6d61696e",
++    "instructions": [{
++      "bytecode_begin": 1,
++      "bytecode_bytes": 1,
++      "opcode": 25,
++      "stack_begin": 13,
++      "stack_end": 13
++    }]
++  }]
++}
++```
++
++The consumption object above is abbreviated for documentation only. The real
++stream requires the full existing closed schema. Symbols use hex, so arbitrary
++decoder bytes cannot break JSON or be silently replaced by Unicode conversion.
++Native reports have at most 10,000 functions and 100,000 instructions. They are
++emitted only after decoding and local resolution finish. There is no success
++stream on a decoder error.
++
++## Independent reader and pins
++
++`references.validate(raw, native, pins, source_root, consumption_validator)` is
++read-only and does not execute any process. `raw` must be the same original input
++bytes. `source_root` supplies the retained source tables, rehashed individually.
++The supplied module is the existing pure SDK consumption validator. Expected pins
++must come from the reviewed build/consumer configuration, never from the report:
++
++```text
++decoder = {tool_sha256, source_revision, source_sha256, tables_sha256}
++profile_sha256
++reference_validator_sha256
++consumption_validator_sha256
++```
++
++The reader verifies the module files, profile, every table file and table digest;
++then invokes the existing strict consumption validator. It independently parses
++the container, function headers, **every** opcode and every stack operand. Native
++function symbols, instruction extents, stack spans and function partitions must
++equal the independent parse exactly. Unknown fields and bool-for-integer witness
++substitution are refused. Branches must land on instruction boundaries in their
++own function; local script addresses must resolve to actual function entries.
++
++`load_report(path)` rejects duplicate JSON keys and bounds the file to 64 MiB.
++Callers using another JSON loader must enforce the same uniqueness rule.
++`inspect_bytes` is exposed for pure byte-level tests only. Its result is not a
++native-bound qualification and must not be promoted directly into a Creator gate.
++
++The bound result contains all typed `references`, `blockers` with bytecode and
++stack positions, category counts and `complete_instruction_coverage_verified`.
++`encoded_external_script_reference_absence` is true only when the full checks
++pass and the blocker list is empty. It is not a hardcoded false placeholder.
++Malformed input, unsupported decoding or a mismatched witness raises an error;
++it never returns a partially qualified result.
++
++## Opcode/operand taxonomy
++
++The frozen profile lists each of the 153 registered opcode IDs explicitly. There
++is no default category that treats a new opcode as safe.
++
++| Category | Encoded operands and qualification |
++| --- | --- |
++| Local script calls and `GetLocalFunction` | Signed 24-bit offset shifted by one (`offs9`), relative to the operand position; optional thread argument count. Must resolve to an input function. |
++| External script calls and `GetFarFunction` | Two stack `u32` tokens, each followed by a NUL string only for token zero; three code relocation bytes and optional argument count. Both calls and taking an address block absence. |
++| Native builtin calls/addresses | `u16` ID resolved against the function or method table; explicit or opcode-implied argument count. Known entries are listed separately; unknown entries block. |
++| Calls through pointers | Zero or one encoded argument-count byte. Target is dynamic and blocks, even if Far call count is zero or a preceding address looks local. No unproved dataflow inference. |
++| Animation and animtree operands | One or two stack strings and code placeholders. Listed as asset references; unresolved/encrypted names block. Known names do not grant asset closure. |
++| Strings and fields | Exact NUL stack strings; fields use code `u32` token or indirect stack value. Unknown token, encrypted placeholder or unresolved indirect field blocks. Plain strings are not guessed to be GSC imports based on path syntax. Empty ordinary strings are valid. |
++| Branches and switch tables | Signed/unsigned branch operands; switch rows consume seven code bytes each and conditionally consume a stack string. Every destination and cursor is checked. Unknown default sentinel blocks. |
++| Plain, scalar and local-slot operations | Explicit fixed widths with no encoded reference. Their bytes are still fully covered. |
++| Registered but unsupported sizes | `OP_ClearVariableField` (0x3C) and `OP_EvalNewLocalVariableRefCached0` (0x7C) already throw in the native size resolver. They remain explicit refusals. |
++
++Every instruction is inspected, including unreachable instructions. A Far=0
++counter cannot replace this process. Known `precachemodel`, `loadfx`, `spawn` and
++other native calls may depend on assets or engine behavior; the name table does
++not establish those semantics. This reader performs no argument dataflow analysis.
++
++## Table provenance
++
++The source authority is the community xensik/gsc-tool baseline
++`3300e430d1efef00e54c66a8bd416e18a2a9882a`, not an official retail engine schema.
++`reference-profile.json` records exact upstream blobs and last-changing commits
++for the IW7 tables/context declaration, plus actual SHA256s for all eight files
++covered by the native table digest. Builtin comments containing engine addresses
++or `nullptr` are provenance data, not evidence those functions work in this server.
++
++The compiled tables have 806 function names, 1,483 method names and 13,220 token
++entries. The source token file also contains commented-out empty slots; the
++reader excludes them. It never fills gaps or treats those comments as resolved
++symbols. Literal/token fallback values with unresolved placeholder prefixes,
++invalid UTF-8 names and encrypted strings remain explicit blockers.
++
++`make_reference_profile.py` reproduces the reviewed profile from retained local
++Git objects without fetching. It refuses a missing category or a table changed
++from the pinned upstream baseline. Regeneration is an explicit source change;
++`prepare.py` refuses a stale table digest before creating build identity. The
++profile's bytes and Python reader enter the tool source digest, and the profile
++SHA is also compiled into the reference witness.
++
++## Evidence and the route to qualification
++
++Source-only tests have read the exact retained Beacon binaries without executing
++them or a native tool. The variant has 570 instructions (8 local script calls,
++54 known builtin calls), zero external/pointer references and zero unresolved
++symbols. The original has 560 instructions and two external references to
++`scripts/engine/utility`: `flag_exist` at bytecode 212 / stack 318, and `flag` at
++bytecode 226 / stack 345. The recorded input hashes remain the v6 input hashes.
++These are independently decoded byte observations, not a new native witness.
++
++`test_references.py` exercises the full 153-opcode profile, numeric namespaces,
++address-only imports, pointer targets, unknown symbols, assets, switch operands,
++truncation, false spans, hidden instructions, witness changes and pin mismatches.
++It uses a real pure consumption validator and explicitly synthetic native-shaped
++fixtures for tampering controls. `test_plan.py` checks profile/header binding and
++rejects stale profiles.
++
++`test_reference_native.py` is prepared but has **not** executed. It compares the
++new native stream with the independent reader for all opcode specimens and both
++real Beacon inputs, and retains separate native/bound JSON artifacts. Before any
++execution, a new reviewed Plan must pin this source, both readers, the profile,
++input bytes and executable; include the additional test/witness phase and its
++artifacts in supervision; obtain resource admission and explicit GO. The existing
++seven-phase v6 recipe does not execute or qualify the new reference contract.
++No v6 witness is retroactively upgraded.
++
++Once this exact native-to-reader agreement is proven and its successful build
++record linked, Creator may clear the **encoded GSC reference** gate for the
++variant. External-reference originals and dynamic/unknown inputs stay blocked
++with concrete reasons. Any broader GSC dependency claim still requires proof of
++native script-loading/callback semantics. Asset closure requires the relevant
++model/animation/material and retail evidence; package finalization requires its
++own reviewed consumer rules. This change does not modify Creator.
++
++The result therefore keeps `native_execution_authenticated`,
++`native_builtin_semantics_verified`, `asset_dependency_closure_verified`,
++`retail_runtime_compatibility_verified`, `runtime_validation_passed`,
++`owner_acceptance` and `package_ready` false. They are separate evidentiary gates;
++the encoded-reference result itself can become true when its stated proof succeeds.
+diff --git a/audit/reference-observation-20261012.json b/audit/reference-observation-20261012.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..1b9da30959863dabcb8d20493f7c3f1d0249d4e7
+--- /dev/null
++++ b/audit/reference-observation-20261012.json
+@@ -0,0 +1,279 @@
++{
++  "schema": "iw7.gsc-reference-source-observation/1",
++  "date": "2026-10-12",
++  "base_tool_revision": "eabe74ab65d8ce2a943b54d24b15a60749a0cf2a",
++  "reader_sha256": "32a73cd20f5507d3c8004e66519e1979f6dca1bdbd83b9639bf1c6b034c67ce6",
++  "profile_sha256": "e87230812b01059ece4327d9d465b8b20e5e1162d3cd698492aed70405bbf360",
++  "tables_sha256": "6e3ed82737908b5c7be76290a178a66b5c63456a12097e964139154f4b46de4b",
++  "native_reference_stream_observed": false,
++  "creator_qualification_granted": false,
++  "records": [
++    {
++      "role": "variant",
++      "input_sha256": "db486793b92e7e3c0a30c70b565fb432a4940e172a3f97da7e9db377f0e46d42",
++      "input_bytes": 1992,
++      "function_count": 8,
++      "instruction_count": 570,
++      "category_counts": {
++        "plain": 223,
++        "string": 39,
++        "builtin_function": 43,
++        "branch_i16": 32,
++        "field": 98,
++        "slot": 90,
++        "local_call": 8,
++        "branch_back_u16": 5,
++        "scalar": 18,
++        "builtin_method": 11,
++        "branch_i32": 3
++      },
++      "function_spans": [
++        {
++          "bytecode_begin": 1,
++          "declared_bytes": 146,
++          "bytecode_end": 147,
++          "stack_begin": 0,
++          "stack_end": 281
++        },
++        {
++          "bytecode_begin": 147,
++          "declared_bytes": 34,
++          "bytecode_end": 181,
++          "stack_begin": 281,
++          "stack_end": 322
++        },
++        {
++          "bytecode_begin": 181,
++          "declared_bytes": 540,
++          "bytecode_end": 721,
++          "stack_begin": 322,
++          "stack_end": 774
++        },
++        {
++          "bytecode_begin": 721,
++          "declared_bytes": 46,
++          "bytecode_end": 767,
++          "stack_begin": 774,
++          "stack_end": 837
++        },
++        {
++          "bytecode_begin": 767,
++          "declared_bytes": 381,
++          "bytecode_end": 1148,
++          "stack_begin": 837,
++          "stack_end": 1226
++        },
++        {
++          "bytecode_begin": 1148,
++          "declared_bytes": 110,
++          "bytecode_end": 1258,
++          "stack_begin": 1226,
++          "stack_end": 1519
++        },
++        {
++          "bytecode_begin": 1258,
++          "declared_bytes": 50,
++          "bytecode_end": 1308,
++          "stack_begin": 1519,
++          "stack_end": 1582
++        },
++        {
++          "bytecode_begin": 1308,
++          "declared_bytes": 172,
++          "bytecode_end": 1480,
++          "stack_begin": 1582,
++          "stack_end": 1808
++        }
++      ],
++      "instruction_inventory_sha256": "301506e1b8c6b9405716f5226bf1c5a8737bddb3fcbd2e822fb687d62fc3da63",
++      "external_references": [],
++      "native_builtin_names": [
++        "anglestoforward",
++        "delete",
++        "destroy",
++        "distancesquared",
++        "getdvar",
++        "getdvarint",
++        "getentitynumber",
++        "getfirstarraykey",
++        "getnextarraykey",
++        "getplayerangles",
++        "gettime",
++        "isalive",
++        "isdefined",
++        "isplayer",
++        "makeusable",
++        "newclienthudelem",
++        "precachemodel",
++        "print",
++        "sethintstring",
++        "setmodel",
++        "settext",
++        "spawn",
++        "spawnstruct"
++      ],
++      "blockers": [],
++      "encoded_absence_observed_by_independent_reader": true
++    },
++    {
++      "role": "original",
++      "input_sha256": "31b55a5d58a90d6b980a91543c907d26b91a4f6767d5350e8a35ae0e19fa2cef",
++      "input_bytes": 1951,
++      "function_count": 7,
++      "instruction_count": 560,
++      "category_counts": {
++        "plain": 218,
++        "string": 39,
++        "builtin_function": 41,
++        "branch_i16": 31,
++        "field": 95,
++        "slot": 90,
++        "local_call": 7,
++        "branch_back_u16": 5,
++        "external_call": 2,
++        "scalar": 18,
++        "builtin_method": 11,
++        "branch_i32": 3
++      },
++      "function_spans": [
++        {
++          "bytecode_begin": 1,
++          "declared_bytes": 146,
++          "bytecode_end": 147,
++          "stack_begin": 0,
++          "stack_end": 206
++        },
++        {
++          "bytecode_begin": 147,
++          "declared_bytes": 34,
++          "bytecode_end": 181,
++          "stack_begin": 206,
++          "stack_end": 247
++        },
++        {
++          "bytecode_begin": 181,
++          "declared_bytes": 561,
++          "bytecode_end": 742,
++          "stack_begin": 247,
++          "stack_end": 678
++        },
++        {
++          "bytecode_begin": 742,
++          "declared_bytes": 381,
++          "bytecode_end": 1123,
++          "stack_begin": 678,
++          "stack_end": 977
++        },
++        {
++          "bytecode_begin": 1123,
++          "declared_bytes": 110,
++          "bytecode_end": 1233,
++          "stack_begin": 977,
++          "stack_end": 1180
++        },
++        {
++          "bytecode_begin": 1233,
++          "declared_bytes": 50,
++          "bytecode_end": 1283,
++          "stack_begin": 1180,
++          "stack_end": 1243
++        },
++        {
++          "bytecode_begin": 1283,
++          "declared_bytes": 172,
++          "bytecode_end": 1455,
++          "stack_begin": 1243,
++          "stack_end": 1394
++        }
++      ],
++      "instruction_inventory_sha256": "7e5ce1ae65021dd3c537b261e6e39e10a23d22f1cb2141b60a5875ddf7735a32",
++      "external_references": [
++        {
++          "kind": "external_call",
++          "opcode": "OP_ScriptFarFunctionCall",
++          "bytecode_offset": 212,
++          "stack_offset": 318,
++          "namespace": {
++            "token_id": 2626,
++            "name_hex": "736372697074732f656e67696e652f7574696c697479",
++            "name": "scripts/engine/utility",
++            "resolved": true
++          },
++          "target": {
++            "token_id": 28212,
++            "name_hex": "666c61675f6578697374",
++            "name": "flag_exist",
++            "resolved": true
++          },
++          "relocation_hex": "000000"
++        },
++        {
++          "kind": "external_call",
++          "opcode": "OP_ScriptFarFunctionCall",
++          "bytecode_offset": 226,
++          "stack_offset": 345,
++          "namespace": {
++            "token_id": 2626,
++            "name_hex": "736372697074732f656e67696e652f7574696c697479",
++            "name": "scripts/engine/utility",
++            "resolved": true
++          },
++          "target": {
++            "token_id": 28197,
++            "name_hex": "666c6167",
++            "name": "flag",
++            "resolved": true
++          },
++          "relocation_hex": "000000"
++        }
++      ],
++      "native_builtin_names": [
++        "anglestoforward",
++        "delete",
++        "destroy",
++        "distancesquared",
++        "getdvar",
++        "getdvarint",
++        "getentitynumber",
++        "getfirstarraykey",
++        "getnextarraykey",
++        "getplayerangles",
++        "gettime",
++        "isalive",
++        "isdefined",
++        "isplayer",
++        "makeusable",
++        "newclienthudelem",
++        "precachemodel",
++        "print",
++        "sethintstring",
++        "setmodel",
++        "settext",
++        "spawn",
++        "spawnstruct"
++      ],
++      "blockers": [
++        {
++          "cause": "external_script_reference",
++          "bytecode_offset": 212,
++          "stack_offset": 318,
++          "detail": {
++            "namespace": "scripts/engine/utility",
++            "target": "flag_exist"
++          }
++        },
++        {
++          "cause": "external_script_reference",
++          "bytecode_offset": 226,
++          "stack_offset": 345,
++          "detail": {
++            "namespace": "scripts/engine/utility",
++            "target": "flag"
++          }
++        }
++      ],
++      "encoded_absence_observed_by_independent_reader": false
++    }
++  ],
++  "next_gate": "Reviewed source, new Plan/admission/GO, native reference controls and successful supervised artifacts; then Creator consumer review."
++}
+diff --git a/audit/reference-profile.json b/audit/reference-profile.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..7b2bbecb0febfc16b9af082aa67c180746121f16
+--- /dev/null
++++ b/audit/reference-profile.json
+@@ -0,0 +1,1007 @@
++{
++  "schema": "iw7.gsc-reference-profile/1",
++  "engine": "iw7-pc-server",
++  "features": [
++    "str4",
++    "tok4",
++    "offs9"
++  ],
++  "max_string_id": 81868,
++  "upstream_url": "https://github.com/xensik/gsc-tool",
++  "upstream_base": "3300e430d1efef00e54c66a8bd416e18a2a9882a",
++  "table_authority": "community-source-only",
++  "retail_runtime_attested": false,
++  "counts": {
++    "opcodes": 153,
++    "functions": 806,
++    "methods": 1483,
++    "tokens": 13220
++  },
++  "table_files": [
++    {
++      "path": "include/xsk/gsc/common/assembly.hpp",
++      "sha256": "66316ae789cbde3d4abf49bfbe89d3227a08a37ae5067796d2deb70300bed47c"
++    },
++    {
++      "path": "include/xsk/gsc/engine/iw7.hpp",
++      "sha256": "0cc3c2ce8e1efd566ad453070b8d46be9a206b3fb9d728a63342c92e4d10af0a"
++    },
++    {
++      "path": "src/gsc/context.cpp",
++      "sha256": "f6b02dff5aabe80e9309d942b9e8c357cb51d88702b4bf3d6aa5804418be9d20"
++    },
++    {
++      "path": "src/gsc/engine/iw7.cpp",
++      "sha256": "f3ea2230eeb490a17d372a55ba325c6d72828d6c15ea3f7ec0960da650a42ecb"
++    },
++    {
++      "path": "src/gsc/engine/iw7_code.cpp",
++      "sha256": "9e4c5d2bb5fe25a0956f4be4ab61746014436534df60e7d2131af9206d14c3c0"
++    },
++    {
++      "path": "src/gsc/engine/iw7_func.cpp",
++      "sha256": "cff443aae2f4f868ce4436b715663a889072e67602e704e92cb08d93a27b11dd"
++    },
++    {
++      "path": "src/gsc/engine/iw7_meth.cpp",
++      "sha256": "f2e20de8f5266673710156b2b11bce7f609459d2499ee9f85d51301bd91c7711"
++    },
++    {
++      "path": "src/gsc/engine/iw7_token.cpp",
++      "sha256": "3f6a339f7f54d553f7cf6ba6da064bdf8edb0127fa44779db646ed7cab1c855c"
++    }
++  ],
++  "tables_sha256": "6e3ed82737908b5c7be76290a178a66b5c63456a12097e964139154f4b46de4b",
++  "table_provenance": [
++    {
++      "path": "src/gsc/engine/iw7.cpp",
++      "base_blob": "1ce2f96d30ac91c9a1627cd1923dc980cf3a3faf",
++      "last_change": "529403c4be8c91baa3e0646cb4102b3edc1fae13"
++    },
++    {
++      "path": "src/gsc/engine/iw7_code.cpp",
++      "base_blob": "9ff94f81a65c805809133d81fe5bda5a7c1e0292",
++      "last_change": "22a7be33c75a348fb5ace188482f8567e6200d5a"
++    },
++    {
++      "path": "src/gsc/engine/iw7_func.cpp",
++      "base_blob": "9271732a44bc7a2bfab5f2902a4c7365640c0644",
++      "last_change": "8c567d9d7cbcfa751beddd21a6571e61d8e7fde5"
++    },
++    {
++      "path": "src/gsc/engine/iw7_meth.cpp",
++      "base_blob": "e51a14af6bdbefb2e34cbe4a53043a9cffae19e1",
++      "last_change": "8c567d9d7cbcfa751beddd21a6571e61d8e7fde5"
++    },
++    {
++      "path": "src/gsc/engine/iw7_token.cpp",
++      "base_blob": "5d7fb0572c70ffe199b0f8ce44f35ea90cce29aa",
++      "last_change": "8c567d9d7cbcfa751beddd21a6571e61d8e7fde5"
++    },
++    {
++      "path": "include/xsk/gsc/engine/iw7.hpp",
++      "base_blob": "abcc8adab534760dddad6669006d72487c197ae5",
++      "last_change": "8c567d9d7cbcfa751beddd21a6571e61d8e7fde5"
++    }
++  ],
++  "opcodes": [
++    {
++      "id": 23,
++      "name": "OP_SetNewLocalVariableFieldCached0",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 24,
++      "name": "OP_EvalSelfFieldVariable",
++      "kind": "field",
++      "bytes": 5
++    },
++    {
++      "id": 25,
++      "name": "OP_Return",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 26,
++      "name": "OP_CallBuiltin0",
++      "kind": "builtin_function",
++      "bytes": 3
++    },
++    {
++      "id": 27,
++      "name": "OP_CallBuiltin1",
++      "kind": "builtin_function",
++      "bytes": 3
++    },
++    {
++      "id": 28,
++      "name": "OP_CallBuiltin2",
++      "kind": "builtin_function",
++      "bytes": 3
++    },
++    {
++      "id": 29,
++      "name": "OP_CallBuiltin3",
++      "kind": "builtin_function",
++      "bytes": 3
++    },
++    {
++      "id": 30,
++      "name": "OP_CallBuiltin4",
++      "kind": "builtin_function",
++      "bytes": 3
++    },
++    {
++      "id": 31,
++      "name": "OP_CallBuiltin5",
++      "kind": "builtin_function",
++      "bytes": 3
++    },
++    {
++      "id": 32,
++      "name": "OP_CallBuiltin",
++      "kind": "builtin_function",
++      "bytes": 4
++    },
++    {
++      "id": 33,
++      "name": "OP_BoolNot",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 34,
++      "name": "OP_ScriptFarMethodThreadCall",
++      "kind": "external_call",
++      "bytes": 5
++    },
++    {
++      "id": 35,
++      "name": "OP_JumpOnTrueExpr",
++      "kind": "branch_i16",
++      "bytes": 3
++    },
++    {
++      "id": 36,
++      "name": "OP_SetLevelFieldVariableField",
++      "kind": "field",
++      "bytes": 5
++    },
++    {
++      "id": 37,
++      "name": "OP_CastBool",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 38,
++      "name": "OP_EvalNewLocalArrayRefCached0",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 39,
++      "name": "OP_CallBuiltinPointer",
++      "kind": "pointer",
++      "bytes": 2
++    },
++    {
++      "id": 40,
++      "name": "OP_inequality",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 41,
++      "name": "OP_GetThisthread",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 42,
++      "name": "OP_ClearFieldVariable",
++      "kind": "field",
++      "bytes": 5
++    },
++    {
++      "id": 43,
++      "name": "OP_GetFloat",
++      "kind": "scalar",
++      "bytes": 5
++    },
++    {
++      "id": 44,
++      "name": "OP_SafeCreateVariableFieldCached",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 45,
++      "name": "OP_ScriptFarFunctionCall2",
++      "kind": "external_call",
++      "bytes": 4
++    },
++    {
++      "id": 46,
++      "name": "OP_ScriptFarFunctionCall",
++      "kind": "external_call",
++      "bytes": 4
++    },
++    {
++      "id": 47,
++      "name": "OP_ScriptFarChildThreadCall",
++      "kind": "external_call",
++      "bytes": 5
++    },
++    {
++      "id": 48,
++      "name": "OP_ClearLocalVariableFieldCached0",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 49,
++      "name": "OP_ClearLocalVariableFieldCached",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 50,
++      "name": "OP_checkclearparams",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 51,
++      "name": "OP_CastFieldObject",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 52,
++      "name": "OP_End",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 53,
++      "name": "OP_size",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 54,
++      "name": "OP_EmptyArray",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 55,
++      "name": "OP_bit_and",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 56,
++      "name": "OP_less_equal",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 57,
++      "name": "OP_voidCodepos",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 58,
++      "name": "OP_ScriptMethodThreadCallPointer",
++      "kind": "pointer",
++      "bytes": 2
++    },
++    {
++      "id": 59,
++      "name": "OP_endswitch",
++      "kind": "switch_table",
++      "bytes": 3
++    },
++    {
++      "id": 60,
++      "name": "OP_ClearVariableField",
++      "kind": "unsupported_size",
++      "bytes": null
++    },
++    {
++      "id": 61,
++      "name": "OP_divide",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 62,
++      "name": "OP_ScriptFarMethodChildThreadCall",
++      "kind": "external_call",
++      "bytes": 5
++    },
++    {
++      "id": 63,
++      "name": "OP_GetUnsignedShort",
++      "kind": "scalar",
++      "bytes": 3
++    },
++    {
++      "id": 64,
++      "name": "OP_JumpOnTrue",
++      "kind": "branch_i16",
++      "bytes": 3
++    },
++    {
++      "id": 65,
++      "name": "OP_GetSelf",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 66,
++      "name": "OP_ScriptFarThreadCall",
++      "kind": "external_call",
++      "bytes": 5
++    },
++    {
++      "id": 67,
++      "name": "OP_ScriptLocalThreadCall",
++      "kind": "local_call",
++      "bytes": 5
++    },
++    {
++      "id": 68,
++      "name": "OP_SetLocalVariableFieldCached0",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 69,
++      "name": "OP_SetLocalVariableFieldCached",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 70,
++      "name": "OP_plus",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 71,
++      "name": "OP_BoolComplement",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 72,
++      "name": "OP_ScriptMethodCallPointer",
++      "kind": "pointer",
++      "bytes": 1
++    },
++    {
++      "id": 73,
++      "name": "OP_inc",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 74,
++      "name": "OP_RemoveLocalVariables",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 75,
++      "name": "OP_JumpOnFalseExpr",
++      "kind": "branch_i16",
++      "bytes": 3
++    },
++    {
++      "id": 76,
++      "name": "OP_switch",
++      "kind": "switch",
++      "bytes": 5
++    },
++    {
++      "id": 77,
++      "name": "OP_clearparams",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 78,
++      "name": "OP_EvalLocalVariableRefCached0",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 79,
++      "name": "OP_EvalLocalVariableRefCached",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 80,
++      "name": "OP_ScriptLocalMethodCall",
++      "kind": "local_call",
++      "bytes": 4
++    },
++    {
++      "id": 81,
++      "name": "OP_EvalFieldVariable",
++      "kind": "field",
++      "bytes": 5
++    },
++    {
++      "id": 82,
++      "name": "OP_EvalFieldVariableRef",
++      "kind": "field",
++      "bytes": 5
++    },
++    {
++      "id": 83,
++      "name": "OP_GetString",
++      "kind": "string",
++      "bytes": 5
++    },
++    {
++      "id": 84,
++      "name": "OP_ScriptFunctionCallPointer",
++      "kind": "pointer",
++      "bytes": 1
++    },
++    {
++      "id": 85,
++      "name": "OP_EvalLevelFieldVariable",
++      "kind": "field",
++      "bytes": 5
++    },
++    {
++      "id": 86,
++      "name": "OP_GetVector",
++      "kind": "scalar",
++      "bytes": 13
++    },
++    {
++      "id": 87,
++      "name": "OP_endon",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 88,
++      "name": "OP_greater_equal",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 89,
++      "name": "OP_GetSelfObject",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 90,
++      "name": "OP_SetAnimFieldVariableField",
++      "kind": "field",
++      "bytes": 5
++    },
++    {
++      "id": 91,
++      "name": "OP_SetVariableField",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 92,
++      "name": "OP_ScriptLocalFunctionCall2",
++      "kind": "local_call",
++      "bytes": 4
++    },
++    {
++      "id": 93,
++      "name": "OP_ScriptLocalFunctionCall",
++      "kind": "local_call",
++      "bytes": 4
++    },
++    {
++      "id": 94,
++      "name": "OP_EvalLocalArrayRefCached0",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 95,
++      "name": "OP_EvalLocalArrayRefCached",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 96,
++      "name": "OP_GetFarFunction",
++      "kind": "external_address",
++      "bytes": 4
++    },
++    {
++      "id": 97,
++      "name": "OP_less",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 98,
++      "name": "OP_GetGameRef",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 99,
++      "name": "OP_waittillFrameEnd",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 100,
++      "name": "OP_SafeSetVariableFieldCached0",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 101,
++      "name": "OP_SafeSetVariableFieldCached",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 102,
++      "name": "OP_ScriptMethodChildThreadCallPointer",
++      "kind": "pointer",
++      "bytes": 2
++    },
++    {
++      "id": 103,
++      "name": "OP_GetLevel",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 104,
++      "name": "OP_notify",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 105,
++      "name": "OP_DecTop",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 106,
++      "name": "OP_shift_left",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 107,
++      "name": "OP_ScriptLocalMethodThreadCall",
++      "kind": "local_call",
++      "bytes": 5
++    },
++    {
++      "id": 108,
++      "name": "OP_ScriptLocalMethodChildThreadCall",
++      "kind": "local_call",
++      "bytes": 5
++    },
++    {
++      "id": 109,
++      "name": "OP_greater",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 110,
++      "name": "OP_EvalLocalVariableCached0",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 111,
++      "name": "OP_EvalLocalVariableCached1",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 112,
++      "name": "OP_EvalLocalVariableCached2",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 113,
++      "name": "OP_EvalLocalVariableCached3",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 114,
++      "name": "OP_EvalLocalVariableCached4",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 115,
++      "name": "OP_EvalLocalVariableCached5",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 116,
++      "name": "OP_EvalLocalVariableCached",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 117,
++      "name": "OP_SafeSetWaittillVariableFieldCached",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 118,
++      "name": "OP_jump",
++      "kind": "branch_i32",
++      "bytes": 5
++    },
++    {
++      "id": 119,
++      "name": "OP_ScriptThreadCallPointer",
++      "kind": "pointer",
++      "bytes": 2
++    },
++    {
++      "id": 120,
++      "name": "OP_GetZero",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 121,
++      "name": "OP_wait",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 122,
++      "name": "OP_minus",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 123,
++      "name": "OP_SetSelfFieldVariableField",
++      "kind": "field",
++      "bytes": 5
++    },
++    {
++      "id": 124,
++      "name": "OP_EvalNewLocalVariableRefCached0",
++      "kind": "unsupported_size",
++      "bytes": null
++    },
++    {
++      "id": 125,
++      "name": "OP_multiply",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 126,
++      "name": "OP_CreateLocalVariable",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 127,
++      "name": "OP_ScriptLocalChildThreadCall",
++      "kind": "local_call",
++      "bytes": 5
++    },
++    {
++      "id": 128,
++      "name": "OP_GetInteger",
++      "kind": "scalar",
++      "bytes": 5
++    },
++    {
++      "id": 129,
++      "name": "OP_mod",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 130,
++      "name": "OP_EvalAnimFieldVariableRef",
++      "kind": "field",
++      "bytes": 5
++    },
++    {
++      "id": 131,
++      "name": "OP_GetBuiltinFunction",
++      "kind": "builtin_function_address",
++      "bytes": 3
++    },
++    {
++      "id": 132,
++      "name": "OP_GetGame",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 133,
++      "name": "OP_waittill",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 134,
++      "name": "OP_dec",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 135,
++      "name": "OP_EvalLocalVariableObjectCached",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 136,
++      "name": "OP_PreScriptCall",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 137,
++      "name": "OP_GetAnim",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 138,
++      "name": "OP_GetUndefined",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 139,
++      "name": "OP_EvalLevelFieldVariableRef",
++      "kind": "field",
++      "bytes": 5
++    },
++    {
++      "id": 140,
++      "name": "OP_GetAnimObject",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 141,
++      "name": "OP_GetLevelObject",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 142,
++      "name": "OP_bit_ex_or",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 143,
++      "name": "OP_equality",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 144,
++      "name": "OP_ClearArray",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 145,
++      "name": "OP_jumpback",
++      "kind": "branch_back_u16",
++      "bytes": 3
++    },
++    {
++      "id": 146,
++      "name": "OP_GetAnimation",
++      "kind": "animation",
++      "bytes": 9
++    },
++    {
++      "id": 147,
++      "name": "OP_EvalAnimFieldVariable",
++      "kind": "field",
++      "bytes": 5
++    },
++    {
++      "id": 148,
++      "name": "OP_GetAnimTree",
++      "kind": "animtree",
++      "bytes": 2
++    },
++    {
++      "id": 149,
++      "name": "OP_GetIString",
++      "kind": "string",
++      "bytes": 5
++    },
++    {
++      "id": 150,
++      "name": "OP_EvalArrayRef",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 151,
++      "name": "OP_EvalSelfFieldVariableRef",
++      "kind": "field",
++      "bytes": 5
++    },
++    {
++      "id": 152,
++      "name": "OP_GetNegByte",
++      "kind": "scalar",
++      "bytes": 2
++    },
++    {
++      "id": 153,
++      "name": "OP_GetBuiltinMethod",
++      "kind": "builtin_method_address",
++      "bytes": 3
++    },
++    {
++      "id": 154,
++      "name": "OP_CallBuiltinMethodPointer",
++      "kind": "pointer",
++      "bytes": 2
++    },
++    {
++      "id": 155,
++      "name": "OP_EvalArray",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 156,
++      "name": "OP_vector",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 157,
++      "name": "OP_ScriptFarMethodCall",
++      "kind": "external_call",
++      "bytes": 4
++    },
++    {
++      "id": 158,
++      "name": "OP_EvalLocalArrayCached",
++      "kind": "slot",
++      "bytes": 2
++    },
++    {
++      "id": 159,
++      "name": "OP_GetByte",
++      "kind": "scalar",
++      "bytes": 2
++    },
++    {
++      "id": 160,
++      "name": "OP_ScriptChildThreadCallPointer",
++      "kind": "pointer",
++      "bytes": 2
++    },
++    {
++      "id": 161,
++      "name": "OP_bit_or",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 162,
++      "name": "OP_AddArray",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 163,
++      "name": "OP_waittillmatch2",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 164,
++      "name": "OP_waittillmatch",
++      "kind": "scalar",
++      "bytes": 2
++    },
++    {
++      "id": 165,
++      "name": "OP_GetLocalFunction",
++      "kind": "local_address",
++      "bytes": 4
++    },
++    {
++      "id": 166,
++      "name": "OP_GetNegUnsignedShort",
++      "kind": "scalar",
++      "bytes": 3
++    },
++    {
++      "id": 167,
++      "name": "OP_shift_right",
++      "kind": "plain",
++      "bytes": 1
++    },
++    {
++      "id": 168,
++      "name": "OP_CallBuiltinMethod0",
++      "kind": "builtin_method",
++      "bytes": 3
++    },
++    {
++      "id": 169,
++      "name": "OP_CallBuiltinMethod1",
++      "kind": "builtin_method",
++      "bytes": 3
++    },
++    {
++      "id": 170,
++      "name": "OP_CallBuiltinMethod2",
++      "kind": "builtin_method",
++      "bytes": 3
++    },
++    {
++      "id": 171,
++      "name": "OP_CallBuiltinMethod3",
++      "kind": "builtin_method",
++      "bytes": 3
++    },
++    {
++      "id": 172,
++      "name": "OP_CallBuiltinMethod4",
++      "kind": "builtin_method",
++      "bytes": 3
++    },
++    {
++      "id": 173,
++      "name": "OP_CallBuiltinMethod5",
++      "kind": "builtin_method",
++      "bytes": 3
++    },
++    {
++      "id": 174,
++      "name": "OP_CallBuiltinMethod",
++      "kind": "builtin_method",
++      "bytes": 4
++    },
++    {
++      "id": 175,
++      "name": "OP_JumpOnFalse",
++      "kind": "branch_i16",
++      "bytes": 3
++    }
++  ]
++}
+diff --git a/audit/references.py b/audit/references.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..1503787e51a72dae8df063aad6670a387dfe7bb7
+--- /dev/null
++++ b/audit/references.py
+@@ -0,0 +1,340 @@
++"""Read-only, independently decoded IW7 encoded-reference qualification.
++
++No subprocess, network, native execution, package operation, or runtime claim.
++The caller supplies independently trusted pins and the existing pure consumption
++validator. A report is evidence content, not authentication of an execution.
++"""
++import hashlib
++import json
++from pathlib import Path
++import re
++import struct
++import zlib
++
++ROOT = Path(__file__).resolve().parent
++INPUT_LIMIT = 8 * 1024 * 1024
++STACK_LIMIT = 16 * 1024 * 1024
++REPORT_LIMIT = 64 * 1024 * 1024
++KINDS = frozenset('plain scalar slot field string animation animtree pointer local_address local_call '
++                  'external_address external_call builtin_function_address builtin_method_address '
++                  'builtin_function builtin_method branch_i16 branch_back_u16 branch_i32 switch '
++                  'switch_table unsupported_size'.split())
++TABLE_PATHS = frozenset(['src/gsc/engine/iw7.cpp', 'src/gsc/engine/iw7_code.cpp',
++    'src/gsc/engine/iw7_func.cpp', 'src/gsc/engine/iw7_meth.cpp', 'src/gsc/engine/iw7_token.cpp',
++    'include/xsk/gsc/engine/iw7.hpp', 'include/xsk/gsc/common/assembly.hpp', 'src/gsc/context.cpp'])
++
++
++def sha(data):
++    return hashlib.sha256(data).hexdigest()
++
++
++def unique(pairs):
++    result = {}
++    for key, value in pairs:
++        if key in result:
++            raise ValueError('Duplicate JSON key: ' + key)
++        result[key] = value
++    return result
++
++
++def read(path, limit):
++    with Path(path).open('rb') as stream:
++        raw = stream.read(limit + 1)
++    if len(raw) > limit:
++        raise ValueError('File exceeds reference reader limit')
++    return raw
++
++
++def load_report(path):
++    return json.loads(read(path, REPORT_LIMIT), object_pairs_hook=unique)
++
++
++def unpack(raw):
++    if not isinstance(raw, bytes) or len(raw) < 16 or len(raw) > INPUT_LIMIT or raw[:4] != b'GSC\0':
++        raise ValueError('Expected bounded GSC container')
++    packed, length, code_length = struct.unpack_from('<III', raw, 4)
++    if not packed or not code_length or length > STACK_LIMIT or packed + code_length != len(raw) - 16:
++        raise ValueError('Invalid GSC lengths')
++    inflater = zlib.decompressobj()
++    try:
++        stack = inflater.decompress(raw[16:16 + packed], length + 1)
++    except zlib.error as error:
++        raise ValueError('Invalid zlib stack') from error
++    if len(stack) != length or not inflater.eof or inflater.unused_data or inflater.unconsumed_tail:
++        raise ValueError('Stack is truncated, trailing or overproducing')
++    code = raw[16 + packed:]
++    if code[0] != 0x34:
++        raise ValueError('Missing initial OP_End')
++    return code, stack
++
++
++def load_profile(source_root, expected_sha, expected_tables_sha):
++    """Rehash every source table against the separately pinned reviewed profile."""
++    raw = read(ROOT / 'reference-profile.json', 256 * 1024)
++    if sha(raw) != expected_sha:
++        raise ValueError('Reference profile pin mismatch')
++    profile = json.loads(raw, object_pairs_hook=unique)
++    if (profile['schema'] != 'iw7.gsc-reference-profile/1' or profile['engine'] != 'iw7-pc-server'
++            or profile['features'] != ['str4', 'tok4', 'offs9'] or profile['max_string_id'] != 0x13FCC
++            or profile['table_authority'] != 'community-source-only' or profile['retail_runtime_attested'] is not False
++            or profile['counts'] != {'opcodes': 153, 'functions': 806, 'methods': 1483, 'tokens': 13220}):
++        raise ValueError('Unsupported reference profile')
++    records = profile['table_files']
++    if len(records) != len(TABLE_PATHS) or {r['path'] for r in records} != TABLE_PATHS:
++        raise ValueError('Incomplete table provenance')
++    canonical = json.dumps(records, sort_keys=True, separators=(',', ':')).encode()
++    if sha(canonical) != expected_tables_sha or profile['tables_sha256'] != expected_tables_sha:
++        raise ValueError('Reference/native table digest mismatch')
++    sources = {}
++    source_root = Path(source_root).resolve()
++    for record in records:
++        path = (source_root / record['path']).resolve()
++        if not path.is_relative_to(source_root):
++            raise ValueError('Table source escapes supplied root')
++        content = read(path, 4 * 1024 * 1024)
++        if sha(content) != record['sha256']:
++            raise ValueError('Table source pin mismatch: ' + record['path'])
++        sources[record['path']] = content.decode('utf-8')
++    opcodes = profile['opcodes']
++    native_map = [(int(raw, 16), name) for raw, name in re.findall(
++        r'\{\s*(0x[0-9A-Fa-f]+),\s*opcode::(OP_\w+)\s*\}', sources['src/gsc/engine/iw7_code.cpp'])]
++    if len(opcodes) != 153 or [(r['id'], r['name']) for r in opcodes] != native_map:
++        raise ValueError('Opcode profile does not cover the exact IW7 map')
++    if len({r['id'] for r in opcodes}) != 153 or any(r['kind'] not in KINDS for r in opcodes):
++        raise ValueError('Unknown or duplicate opcode category')
++    for row in opcodes:
++        if row['kind'] == 'unsupported_size':
++            if row['bytes'] is not None:
++                raise ValueError('Unsupported opcode must remain blocked')
++        elif type(row['bytes']) is not int or not 1 <= row['bytes'] <= 13:
++            raise ValueError('Invalid opcode size policy')
++    tables = {}
++    for name, suffix, count in [('functions', 'func', 806), ('methods', 'meth', 1483), ('tokens', 'token', 13220)]:
++        # These exact pinned tables contain simple ASCII literals. No permissive
++        # C++ escape interpretation or guessed name is allowed for future tables.
++        text = sources['src/gsc/engine/iw7_' + suffix + '.cpp']
++        entries = re.findall(r'^\s*\{\s*(0x[0-9A-Fa-f]+),\s*"([^"\\\r\n]*)"\s*\}', text, re.MULTILINE)
++        table = {int(key, 16): value.encode('ascii') for key, value in entries}
++        if len(entries) != count or len(table) != count:
++            raise ValueError('Symbol table is incomplete or ambiguous: ' + name)
++        tables[name] = table
++    return profile, tables
++
++
++class Reader:
++    def __init__(self, raw):
++        self.raw, self.pos = raw, 0
++
++    def u32(self):
++        if self.pos + 4 > len(self.raw):
++            raise ValueError('Truncated stack integer at ' + str(self.pos))
++        value = struct.unpack_from('<I', self.raw, self.pos)[0]
++        self.pos += 4
++        return value
++
++    def string(self):
++        end = self.raw.find(b'\0', self.pos)
++        if end < 0:
++            raise ValueError('Unterminated stack string at ' + str(self.pos))
++        value = self.raw[self.pos:end]
++        self.pos = end + 1
++        return value
++
++
++def displayed(raw):
++    return b'_encstr_' + raw.hex().upper().encode() if raw and raw[0] & 0xC0 == 0x80 else raw
++
++
++def offset24(raw):
++    value = int.from_bytes(raw, 'little')
++    return (value - 0x1000000 if value & 0x800000 else value) >> 1
++
++
++def inspect_bytes(raw, profile, tables):
++    """Independent parse, for comparison with native boundaries. Not attestation.
++
++    Exported for lightweight byte-level controls; Creator must use validate().
++    Every opcode is visited, including unreachable instructions and all switch
++    entries. Literal strings are not guessed to be script imports.
++    """
++    code, stack = unpack(raw)
++    sr, pos, total = Reader(stack), 1, 0
++    policy = {r['id']: r for r in profile['opcodes']}
++    if len(policy) != 153 or any(r['kind'] not in KINDS for r in policy.values()):
++        raise ValueError('Incomplete or unknown opcode policy')
++    functions, spans, references, blockers, categories = [], [], [], [], {}
++
++    def block(cause, at, stack_at, detail):
++        blockers.append({'cause': cause, 'bytecode_offset': at, 'stack_offset': stack_at, 'detail': detail})
++
++    def symbol(raw_name, token_id, kind, at, start):
++        value = displayed(raw_name)
++        resolved = (bool(value) or kind in ('string', 'switch_string')) and not value.startswith(
++            (b'_id_', b'_func_', b'_meth_', b'_encstr_'))
++        try:
++            text = value.decode('utf-8')
++        except UnicodeDecodeError:
++            text, resolved = None, False
++        if not resolved:
++            block('unresolved_' + kind, at, start, {'token_id': token_id, 'name_hex': value.hex()})
++        return {'token_id': token_id, 'name_hex': value.hex(), 'name': text, 'resolved': resolved}
++
++    def stack_symbol(kind, at):
++        start = sr.pos
++        token = sr.u32()
++        value = sr.string() if token == 0 else tables['tokens'].get(token, f'_id_{token:04X}'.encode())
++        return symbol(value, token, kind, at, start)
++
++    while pos < len(code):
++        if len(functions) >= 10000:
++            raise ValueError('Function limit exceeded')
++        begin, stack_begin = pos, sr.pos
++        size = sr.u32()
++        fn = stack_symbol('function_symbol', begin)
++        end = begin + size
++        if not size or end > len(code):
++            raise ValueError('Invalid function extent')
++        insts, branch_targets = [], []
++        while pos < end:
++            total += 1
++            if total > 100000:
++                raise ValueError('Instruction limit exceeded')
++            row = policy.get(code[pos])
++            if row is None:
++                raise ValueError('Unmapped opcode at bytecode offset ' + str(pos))
++            kind, width, ss = row['kind'], row['bytes'], sr.pos
++            if kind == 'unsupported_size':
++                raise ValueError('Decoder has no supported size for ' + row['name'] + ' at ' + str(pos))
++            if type(width) is not int or width < 1 or pos + width > end:
++                raise ValueError('Instruction exceeds function at ' + str(pos))
++            ref = {'kind': kind, 'opcode': row['name'], 'bytecode_offset': pos, 'stack_offset': ss}
++            categories[kind] = categories.get(kind, 0) + 1
++            if kind.startswith('external_'):
++                ref.update(namespace=stack_symbol('external_namespace', pos), target=stack_symbol('external_target', pos))
++                ref['relocation_hex'] = code[pos + 1:pos + 4].hex()
++                if width == 5:
++                    ref['argument_count'] = code[pos + 4]
++                block('external_script_reference', pos, ss, {'namespace': ref['namespace']['name'], 'target': ref['target']['name']})
++                references.append(ref)
++            elif kind.startswith('local_'):
++                ref['target_offset'] = pos + 1 + offset24(code[pos + 1:pos + 4])
++                if width == 5:
++                    ref['argument_count'] = code[pos + 4]
++                references.append(ref)
++            elif kind.startswith('builtin_'):
++                table = 'methods' if 'method' in kind else 'functions'
++                token = int.from_bytes(code[pos + width - 2:pos + width], 'little')
++                prefix = '_meth_' if table == 'methods' else '_func_'
++                value = tables[table].get(token, (prefix + f'{token:04X}').encode())
++                ref['target'] = symbol(value, token, 'native_symbol', pos, ss)
++                if width == 4:
++                    ref['argument_count'] = code[pos + 1]
++                elif not kind.endswith('_address'):
++                    ref['argument_count'] = int(row['name'][-1])
++                references.append(ref)
++            elif kind == 'pointer':
++                if width == 2:
++                    ref['argument_count'] = code[pos + 1]
++                block('dynamic_call_target', pos, ss, row['name'])
++                references.append(ref)
++            elif kind in ('string', 'animtree', 'animation'):
++                values = [symbol(sr.string(), None, kind, pos, ss)]
++                if kind == 'animation':
++                    values.append(symbol(sr.string(), None, kind, pos, sr.pos))
++                if kind != 'string':
++                    ref['symbols'] = values
++                    references.append(ref)
++            elif kind == 'field':
++                token = int.from_bytes(code[pos + 1:pos + 5], 'little')
++                if token <= profile['max_string_id']:
++                    symbol(tables['tokens'].get(token, f'_id_{token:04X}'.encode()), token, 'field', pos, ss)
++                else:
++                    indirect = sr.u32()
++                    if indirect == 0:
++                        symbol(sr.string(), None, 'field', pos, ss)
++                    else:
++                        # Decoder emits a decimal number, not a resolved symbol.
++                        block('unresolved_indirect_field', pos, ss, {'encoded_id': token, 'stack_id': indirect})
++            elif kind == 'branch_i16':
++                branch_targets.append(pos + 3 + int.from_bytes(code[pos + 1:pos + 3], 'little', signed=True))
++            elif kind == 'branch_back_u16':
++                branch_targets.append(pos + 3 - int.from_bytes(code[pos + 1:pos + 3], 'little'))
++            elif kind == 'branch_i32':
++                branch_targets.append(pos + 5 + int.from_bytes(code[pos + 1:pos + 5], 'little', signed=True))
++            elif kind == 'switch':
++                branch_targets.append(pos + 4 + int.from_bytes(code[pos + 1:pos + 5], 'little', signed=True))
++            elif kind == 'switch_table':
++                count = int.from_bytes(code[pos + 1:pos + 3], 'little')
++                width += count * 7
++                if pos + width > end:
++                    raise ValueError('Switch table exceeds function')
++                for entry in range(pos + 3, pos + width, 7):
++                    value = int.from_bytes(code[entry:entry + 4], 'little')
++                    if value < 0x100000:
++                        literal = sr.string()
++                        if value:
++                            symbol(literal, None, 'switch_string', pos, ss)
++                        elif literal != b'\x01':
++                            block('unknown_switch_default_encoding', pos, ss, literal.hex())
++                    branch_targets.append(entry + 4 + offset24(code[entry + 4:entry + 7]))
++            elif kind not in ('plain', 'scalar', 'slot'):
++                raise ValueError('Unimplemented opcode category: ' + kind)
++            insts.append({'bytecode_begin': pos, 'bytecode_bytes': width, 'opcode': code[pos],
++                          'stack_begin': ss, 'stack_end': sr.pos})
++            pos += width
++        boundaries = {inst['bytecode_begin'] for inst in insts}
++        if any(target not in boundaries for target in branch_targets):
++            raise ValueError('Branch target is not an instruction in its function')
++        functions.append({'bytecode_begin': begin, 'token_id': fn['token_id'], 'name_hex': fn['name_hex'], 'instructions': insts})
++        spans.append({'bytecode_begin': begin, 'declared_bytes': size, 'bytecode_end': end,
++                      'stack_begin': stack_begin, 'stack_end': sr.pos})
++    if sr.pos != len(stack):
++        raise ValueError('Unconsumed stack suffix')
++    by_address = {f['bytecode_begin']: f for f in functions}
++    for ref in references:
++        if ref['kind'].startswith('local_'):
++            target = by_address.get(ref['target_offset'])
++            if target is None:
++                raise ValueError('Local script target is not a function entry at ' + str(ref['bytecode_offset']))
++            ref['target_name_hex'] = target['name_hex']
++    return {'functions': functions, 'function_spans': spans, 'references': references, 'blockers': blockers,
++            'instruction_count': total, 'category_counts': categories,
++            'encoded_external_script_reference_absence': not blockers}
++
++
++def exact(actual, expected):
++    """Canonical JSON comparison rejects bool-as-int and extra/missing fields."""
++    return json.dumps(actual, sort_keys=True, separators=(',', ':'), allow_nan=False) == json.dumps(
++        expected, sort_keys=True, separators=(',', ':'), allow_nan=False)
++
++
++def validate(raw, native, pins, source_root, consumption_validator):
++    fields = {'decoder', 'profile_sha256', 'reference_validator_sha256', 'consumption_validator_sha256'}
++    if not isinstance(pins, dict) or set(pins) != fields:
++        raise ValueError('Require independent decoder, profile and both validator pins')
++    for key in fields - {'decoder'}:
++        if not isinstance(pins[key], str) or not re.fullmatch('[0-9a-f]{64}', pins[key]):
++            raise ValueError('Invalid pin: ' + key)
++    if sha(read(__file__, 1024 * 1024)) != pins['reference_validator_sha256']:
++        raise ValueError('Reference validator pin mismatch')
++    if sha(read(consumption_validator.__file__, 1024 * 1024)) != pins['consumption_validator_sha256']:
++        raise ValueError('Consumption validator pin mismatch')
++    if (not isinstance(native, dict) or set(native) != {'schema', 'profile_sha256', 'consumption', 'functions'}
++            or native['schema'] != 'iw7.gsc-reference-native/1' or native['profile_sha256'] != pins['profile_sha256']):
++        raise ValueError('Invalid native reference schema or profile pin')
++    consumption_validator.validate_witness(raw, native['consumption'], pins['decoder'])
++    profile, tables = load_profile(source_root, pins['profile_sha256'], pins['decoder']['tables_sha256'])
++    parsed = inspect_bytes(raw, profile, tables)
++    if not exact(native['functions'], parsed['functions']):
++        raise ValueError('Native instruction/symbol/stack coverage disagrees with independent byte reader')
++    if not exact(native['consumption']['functions'], parsed['function_spans']):
++        raise ValueError('Native function coverage disagrees with independent byte reader')
++    return {'schema': 'iw7.gsc-reference-bound/1', 'scope': 'encoded-script-references-under-pinned-iw7-profile',
++            'input_sha256': sha(raw), 'pins': pins, 'instruction_count': parsed['instruction_count'],
++            'category_counts': parsed['category_counts'], 'references': parsed['references'], 'blockers': parsed['blockers'],
++            'complete_instruction_coverage_verified': True,
++            'encoded_external_script_reference_absence': parsed['encoded_external_script_reference_absence'],
++            'table_authority': 'community-source-only', 'native_execution_authenticated': False,
++            'native_builtin_semantics_verified': False, 'asset_dependency_closure_verified': False,
++            'retail_runtime_compatibility_verified': False, 'runtime_validation_passed': False,
++            'owner_acceptance': False, 'package_ready': False}
+diff --git a/audit/test_plan.py b/audit/test_plan.py
+index ecc2a04f19b928a0f107f15bf82348a40e65fc29..0972a85c2091d208c7c34610800a3825413c89df 100644
+--- a/audit/test_plan.py
++++ b/audit/test_plan.py
+@@ -1,5 +1,7 @@
+ """Pure preparation/provenance tests; no Git copy, compiler or native executable."""
+ import tempfile
++import hashlib
++import json
+ from pathlib import Path
+ import unittest
+ from unittest.mock import patch
+@@ -12,7 +14,7 @@ class PreparationTests(unittest.TestCase):
+         self.temporary = tempfile.TemporaryDirectory()
+         self.addCleanup(self.temporary.cleanup)
+         self.root = Path(self.temporary.name)
+-        self.files = ['audit/main.cpp', 'src/gsc/engine/iw7.cpp', 'include/xsk/gsc/engine/iw7.hpp',
++        self.files = ['audit/main.cpp', 'audit/reference-profile.json', 'src/gsc/engine/iw7.cpp', 'include/xsk/gsc/engine/iw7.hpp',
+                       'include/xsk/gsc/common/assembly.hpp', 'src/gsc/context.cpp']
+         for name in self.files:
+             path = self.root / name
+@@ -37,6 +39,9 @@ class PreparationTests(unittest.TestCase):
+         self.addCleanup(patch.stopall)
+         patch.object(prepare, 'ROOT', self.root).start()
+         patch.object(prepare, 'git', side_effect=fake_git).start()
++        profile = {'schema': 'iw7.gsc-reference-profile/1',
++                   'tables_sha256': prepare.inspect_sources(require_zlib=False)['tables_sha256']}
++        (self.root / 'audit/reference-profile.json').write_text(json.dumps(profile))
+ 
+     def materialize(self):
+         (self.zlib / '.git').touch()
+@@ -79,10 +84,20 @@ class PreparationTests(unittest.TestCase):
+         target = self.root / 'build/identity'
+         source = prepare.prepare(target)
+         self.assertIn(source['source_sha256'], (target / 'audit_identity.hpp').read_text())
++        profile_hash = hashlib.sha256((self.root / 'audit/reference-profile.json').read_bytes()).hexdigest()
++        self.assertIn(profile_hash, (target / 'audit_identity.hpp').read_text())
+         self.assertEqual(source['zlib_commit'], 'b' * 40)
+         with self.assertRaises(ValueError):
+             prepare.prepare(target)
+ 
++    def test_stale_reference_profile_cannot_generate_identity(self):
++        self.materialize()
++        (self.root / 'src/gsc/engine/iw7.cpp').write_text('changed table source')
++        target = self.root / 'build/identity'
++        with self.assertRaisesRegex(ValueError, 'reference profile'):
++            prepare.prepare(target)
++        self.assertFalse(target.exists())
++
+ 
+ if __name__ == '__main__':
+     unittest.main()
+diff --git a/audit/test_reference_native.py b/audit/test_reference_native.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..fb4882749df68488c954653eb93c4a6018cea77c
+--- /dev/null
++++ b/audit/test_reference_native.py
+@@ -0,0 +1,86 @@
++"""OPT-IN native reference controls. Requires a reviewed Plan/admission/GO.
++
++Not called by source-only tests or the existing v6 build recipe. A future reviewed
++recipe must record this phase and its artifacts before using any qualification.
++"""
++import argparse
++import importlib.util
++import json
++from pathlib import Path
++import sys
++import unittest
++
++import references as r
++from test_references import container, literal, opcode_control
++
++ARGS = PINS = CONSUMPTION = PROFILE = TABLES = None
++
++
++class NativeReferenceTests(unittest.TestCase):
++    def call(self, raw, accepted=True):
++        self.assertEqual(r.sha(r.read(ARGS.tool, 64 * 1024 * 1024)), PINS['decoder']['tool_sha256'])
++        result = CONSUMPTION.run_bounded([str(ARGS.tool), '--stdin-gscbin-references'], raw)
++        code, output, error = result.returncode, result.stdout, result.stderr
++        self.assertEqual(r.sha(r.read(ARGS.tool, 64 * 1024 * 1024)), PINS['decoder']['tool_sha256'])
++        if not accepted:
++            self.assertNotEqual(code, 0)
++            self.assertEqual(output, b'')
++            self.assertIn(b'audit refused:', error)
++            return None
++        self.assertEqual(code, 0, error.decode(errors='replace'))
++        self.assertEqual(error, b'')
++        native = json.loads(output, object_pairs_hook=r.unique)
++        bound = r.validate(raw, native, PINS, ARGS.source_root, CONSUMPTION)
++        return native, bound
++
++    def test_all_153_opcode_controls(self):
++        for row in PROFILE['opcodes']:
++            with self.subTest(opcode=row['name']):
++                result = self.call(opcode_control(row, TABLES), row['kind'] != 'unsupported_size')
++                if result:
++                    expected = row['kind'] not in ('external_call', 'external_address', 'pointer')
++                    self.assertEqual(result[1]['encoded_external_script_reference_absence'], expected)
++
++    def test_unresolved_symbols_and_dynamic_targets_remain_blocking(self):
++        controls = [container(b'\x1b\xff\xff\x19'), container(b'\x54\x19'),
++                    container(b'\x60\0\0\0\x19', literal(b'scripts/example') + literal(b'target')),
++                    container(b'\x53\0\0\0\0\x19', b'\x80unknown\0')]
++        for raw in controls:
++            with self.subTest(raw=raw):
++                result = self.call(raw)[1]
++                self.assertFalse(result['encoded_external_script_reference_absence'])
++                self.assertTrue(result['blockers'])
++
++    def test_beacon_variant_and_original(self):
++        for role, path, digest, absent, count in [
++            ('variant', ARGS.variant, 'db486793b92e7e3c0a30c70b565fb432a4940e172a3f97da7e9db377f0e46d42', True, 570),
++            ('original', ARGS.original, '31b55a5d58a90d6b980a91543c907d26b91a4f6767d5350e8a35ae0e19fa2cef', False, 560)]:
++            with self.subTest(role=role):
++                raw = r.read(path, r.INPUT_LIMIT)
++                self.assertEqual(r.sha(raw), digest)
++                native, bound = self.call(raw)
++                self.assertEqual(bound['encoded_external_script_reference_absence'], absent)
++                self.assertEqual(bound['instruction_count'], count)
++                if role == 'original':
++                    self.assertEqual([(b['bytecode_offset'], b['stack_offset'], b['detail']['target']) for b in bound['blockers']],
++                                     [(212, 318, 'flag_exist'), (226, 345, 'flag')])
++                (ARGS.output / (role + '-native.json')).write_text(json.dumps(native, indent=2) + '\n', encoding='utf-8')
++                (ARGS.output / (role + '-bound.json')).write_text(json.dumps(bound, indent=2) + '\n', encoding='utf-8')
++
++
++if __name__ == '__main__':
++    parser = argparse.ArgumentParser(description=__doc__)
++    for name in ('tool', 'pins', 'source-root', 'consumption-validator', 'variant', 'original', 'output'):
++        parser.add_argument('--' + name, type=Path, required=True)
++    ARGS = parser.parse_args()
++    PINS = json.loads(r.read(ARGS.pins, 16 * 1024), object_pairs_hook=r.unique)
++    if r.sha(r.read(ARGS.consumption_validator, 1024 * 1024)) != PINS['consumption_validator_sha256']:
++        raise ValueError('Consumption module must match the independent pin before import')
++    spec = importlib.util.spec_from_file_location('consumption_native_controls', ARGS.consumption_validator)
++    CONSUMPTION = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(CONSUMPTION)
++    PROFILE, TABLES = r.load_profile(ARGS.source_root, PINS['profile_sha256'], PINS['decoder']['tables_sha256'])
++    if ARGS.output.exists():
++        raise ValueError('Use a fresh reviewed output directory')
++    ARGS.output.mkdir(parents=True)
++    unittest.main(argv=[sys.argv[0]], verbosity=2)
+diff --git a/audit/test_references.py b/audit/test_references.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec7a24a660c53ed62783caa5d2da826f8aa46803
+--- /dev/null
++++ b/audit/test_references.py
+@@ -0,0 +1,272 @@
++"""Lightweight byte-level controls; never starts the native executable."""
++import argparse
++import copy
++import importlib.util
++import json
++from pathlib import Path
++import struct
++import sys
++import unittest
++from unittest.mock import patch
++import subprocess
++from types import SimpleNamespace
++import zlib
++
++import references as r
++from make_reference_profile import make_profile
++
++CONSUMPTION = None
++BEACONS = None
++SOURCE = Path(__file__).resolve().parents[1]
++
++
++def container(body, extra=b'', name=b'main', token=0):
++    stack = struct.pack('<II', len(body), token) + (name + b'\0' if not token else b'') + extra
++    return wrap(b'\x34' + body, stack)
++
++
++def wrap(code, stack):
++    packed = zlib.compress(stack)
++    return b'GSC\0' + struct.pack('<III', len(packed), len(stack), len(code)) + packed + code
++
++
++def literal(value):
++    return b'\0\0\0\0' + value + b'\0'
++
++
++def opcode_control(row, tables):
++    """Minimal encoded specimen for each explicit IW7 profile category."""
++    kind, width = row['kind'], row['bytes']
++    if kind == 'unsupported_size':
++        return container(bytes([row['id'], 0x19]))
++    operands, stack = bytearray(width - 1), b''
++    if kind.startswith('local_'): operands[:3] = b'\xfe\xff\xff'
++    if kind.startswith('external_'): stack = literal(b'scripts/test') + literal(b'main')
++    if kind.startswith('builtin_'):
++        table = tables['methods' if 'method' in kind else 'functions']
++        operands[-2:] = struct.pack('<H', next(iter(table)))
++    if kind == 'field': operands[:] = struct.pack('<I', 1)
++    if kind in ('string', 'animtree', 'animation'): stack = b'text\0' * (2 if kind == 'animation' else 1)
++    if kind == 'branch_back_u16': operands[:] = struct.pack('<H', 3)
++    if kind == 'switch': operands[:] = struct.pack('<i', 1)
++    return container(bytes([row['id']]) + operands + b'\x19', stack)
++
++
++class ReferenceTests(unittest.TestCase):
++    @classmethod
++    def setUpClass(cls):
++        raw_profile = (SOURCE / 'audit/reference-profile.json').read_bytes()
++        p = json.loads(raw_profile)
++        cls.profile_sha = r.sha(raw_profile)
++        cls.profile, cls.tables = r.load_profile(SOURCE, cls.profile_sha, p['tables_sha256'])
++
++    def inspect(self, raw):
++        return r.inspect_bytes(raw, self.profile, self.tables)
++
++    def witness(self, raw):
++        """Synthetic native shape for tamper controls; never labelled execution."""
++        parsed = self.inspect(raw)
++        code, stack = r.unpack(raw)
++        pins = {'decoder': {'source_revision': '1' * 40, 'source_sha256': '2' * 64,
++                           'tables_sha256': self.profile['tables_sha256'], 'tool_sha256': '3' * 64},
++                'profile_sha256': self.profile_sha, 'reference_validator_sha256': r.sha(Path(r.__file__).read_bytes()),
++                'consumption_validator_sha256': r.sha(Path(CONSUMPTION.__file__).read_bytes())}
++        consumption = {'schema': 'iw7.gsc-consumption-native/1', 'engine': 'iw7-pc',
++            'input_bytes': len(raw), 'input_sha256': r.sha(raw), 'bytecode_bytes': len(code), 'bytecode_sha256': r.sha(code),
++            'stack_bytes': len(stack), 'stack_sha256': r.sha(stack), 'bytecode_consumed': len(code), 'stack_consumed': len(stack),
++            'initial_op_end_verified': True, 'branch_targets_verified': True, 'complete_consumption_verified': True,
++            'functions': parsed['function_spans'], 'assembly_hex': '', 'assembly_bytes': 0, 'assembly_sha256': r.sha(b'')}
++        consumption.update({k: v for k, v in pins['decoder'].items() if k != 'tool_sha256'})
++        return {'schema': 'iw7.gsc-reference-native/1', 'profile_sha256': self.profile_sha,
++                'consumption': consumption, 'functions': parsed['functions']}, pins
++
++    def test_profile_provenance_and_exact_reproduction(self):
++        self.assertEqual(make_profile(), self.profile)
++        self.assertEqual(len(self.tables['tokens']), 13220)
++        # Commented-out empty slots in the source are NOT entries in token_map_.
++        self.assertNotIn(0x00C7, self.tables['tokens'])
++        self.assertEqual(self.profile['table_authority'], 'community-source-only')
++
++    def test_changed_table_or_profile_is_refused(self):
++        real_read = r.read
++        def changed_read(path, limit):
++            data = real_read(path, limit)
++            return data + b'\n' if Path(path).name == 'iw7_func.cpp' else data
++        with patch.object(r, 'read', side_effect=changed_read), self.assertRaisesRegex(ValueError, 'Table source pin'):
++            r.load_profile(SOURCE, self.profile_sha, self.profile['tables_sha256'])
++        with self.assertRaisesRegex(ValueError, 'profile pin'):
++            r.load_profile(SOURCE, '0' * 64, self.profile['tables_sha256'])
++
++    def test_original_external_literal_control(self):
++        body = b'\x2e\0\0\0\x2e\0\0\0\x19'
++        stack = literal(b'scripts/engine/utility') + literal(b'flag_exist')
++        stack += literal(b'scripts/engine/utility') + literal(b'flag')
++        result = self.inspect(container(body, stack))
++        self.assertFalse(result['encoded_external_script_reference_absence'])
++        self.assertEqual([x['target']['name'] for x in result['references']], ['flag_exist', 'flag'])
++
++    def test_far_address_alone_blocks_and_numeric_namespace_is_resolved(self):
++        namespace = next(k for k, v in self.tables['tokens'].items() if v.startswith(b'scripts/'))
++        target = next(k for k, v in self.tables['tokens'].items() if v == b'main')
++        raw = container(b'\x60\0\0\0\x19', struct.pack('<II', namespace, target))
++        result = self.inspect(raw)
++        self.assertEqual(result['references'][0]['kind'], 'external_address')
++        self.assertFalse(result['encoded_external_script_reference_absence'])
++        self.assertEqual(result['references'][0]['namespace']['token_id'], namespace)
++
++    def test_local_address_resolves_by_offset_and_invalid_target_refused(self):
++        good = container(b'\xa5\xfe\xff\xff\x19')  # offset -1 from operand -> function at 1
++        self.assertTrue(self.inspect(good)['encoded_external_script_reference_absence'])
++        with self.assertRaisesRegex(ValueError, 'function entry'):
++            self.inspect(container(b'\xa5\0\0\0\x19'))
++
++    def test_every_pointer_opcode_blocks_even_without_far(self):
++        for row in self.profile['opcodes']:
++            if row['kind'] == 'pointer':
++                with self.subTest(opcode=row['name']):
++                    result = self.inspect(container(bytes([row['id']]) + bytes(row['bytes'] - 1) + b'\x19'))
++                    self.assertEqual(result['blockers'][0]['cause'], 'dynamic_call_target')
++                    self.assertFalse(result['encoded_external_script_reference_absence'])
++
++    def test_builtins_are_separate_and_unknown_ids_block(self):
++        token = next(k for k, v in self.tables['functions'].items() if v == b'precachemodel')
++        known = self.inspect(container(b'\x1b' + struct.pack('<H', token) + b'\x19'))
++        self.assertTrue(known['encoded_external_script_reference_absence'])
++        self.assertEqual(known['references'][0]['target']['name'], 'precachemodel')
++        unknown = self.inspect(container(b'\x1b\xff\xff\x19'))
++        self.assertEqual(unknown['blockers'][0]['cause'], 'unresolved_native_symbol')
++        self.assertFalse(unknown['encoded_external_script_reference_absence'])
++
++    def test_assets_separate_strings_not_import_heuristics(self):
++        raw = container(b'\x53\0\0\0\0\x92' + bytes(8) + b'\x94\0\x19',
++                        b'scripts/engine/utility\0tree\0anim\0tree\0')
++        result = self.inspect(raw)
++        self.assertTrue(result['encoded_external_script_reference_absence'])
++        self.assertEqual([x['kind'] for x in result['references']], ['animation', 'animtree'])
++        empty = self.inspect(container(b'\x53\0\0\0\0\x19', b'\0'))
++        self.assertFalse(empty['blockers'])
++
++    def test_unknown_function_field_external_and_encrypted_strings_block(self):
++        cases = [container(b'\x19', token=0xFFFFFF),
++                 container(b'\x18' + struct.pack('<I', 0xC7) + b'\x19'),
++                 container(b'\x18' + struct.pack('<I', 0x14000) + b'\x19', struct.pack('<I', 7)),
++                 container(b'\x60\0\0\0\x19', struct.pack('<I', 0xFFFFFF) + literal(b'main')),
++                 container(b'\x53\0\0\0\0\x19', b'\x80unknown\0')]
++        for raw in cases:
++            with self.subTest(raw=raw):
++                self.assertFalse(self.inspect(raw)['encoded_external_script_reference_absence'])
++
++    def test_switch_table_full_coverage_and_branches(self):
++        # entry starts at 4, target 11, signed offs9 = 3, packed as 6.
++        for key, text in [(0, b'\x01\0'), (1, b'case\0'), (0x800001, b'')]:
++            raw = container(b'\x3b\x01\0' + struct.pack('<I', key) + b'\x06\0\0\x19', text)
++            self.assertEqual(self.inspect(raw)['functions'][0]['instructions'][0]['bytecode_bytes'], 10)
++        with self.assertRaisesRegex(ValueError, 'Branch target'):
++            self.inspect(container(b'\x76\xff\xff\xff\x7f\x19'))
++        with self.assertRaisesRegex(ValueError, 'Switch table'):
++            self.inspect(container(b'\x3b\xff\xff\x19'))
++
++    def test_unmapped_unsupported_and_unclassified_refused(self):
++        for opcode in (0x00, 0x3C, 0x7C):
++            with self.subTest(opcode=opcode), self.assertRaises(ValueError):
++                self.inspect(container(bytes([opcode, 0x19])))
++        broken = copy.deepcopy(self.profile)
++        broken['opcodes'].pop()
++        with self.assertRaisesRegex(ValueError, 'Incomplete'):
++            r.inspect_bytes(container(b'\x19'), broken, self.tables)
++        broken = copy.deepcopy(self.profile)
++        broken['opcodes'][0]['kind'] = 'unreviewed'
++        with self.assertRaisesRegex(ValueError, 'unknown'):
++            r.inspect_bytes(container(b'\x19'), broken, self.tables)
++
++    def test_truncation_suffix_and_container_controls(self):
++        valid = container(b'\x19')
++        for raw in (valid[:-1], valid + b'\0', wrap(b'\x34\x19', struct.pack('<II', 1, 0) + b'main\0junk'),
++                    container(b'\x53\0\0\0\0\x19', b'unterminated'), container(b'\x2e\0\0\0\x19')):
++            with self.subTest(raw=raw), self.assertRaises(ValueError):
++                self.inspect(raw)
++
++    def test_bound_contract_and_guard_flags(self):
++        raw = container(b'\x19')
++        native, pins = self.witness(raw)
++        result = r.validate(raw, native, pins, SOURCE, CONSUMPTION)
++        self.assertTrue(result['encoded_external_script_reference_absence'])
++        for flag in ('native_execution_authenticated', 'native_builtin_semantics_verified',
++                     'asset_dependency_closure_verified', 'retail_runtime_compatibility_verified',
++                     'runtime_validation_passed', 'owner_acceptance', 'package_ready'):
++            self.assertIs(result[flag], False)
++
++    def test_future_native_harness_with_mocked_capture_only(self):
++        import test_reference_native as harness
++        raw = container(b'\x19')
++        native, pins = self.witness(raw)
++        pins['decoder']['tool_sha256'] = r.sha(Path(r.__file__).read_bytes())
++        capture = subprocess.CompletedProcess([], 0, json.dumps(native).encode(), b'')
++        with patch.object(harness, 'ARGS', SimpleNamespace(tool=Path(r.__file__), source_root=SOURCE)), \
++                patch.object(harness, 'PINS', pins), patch.object(harness, 'CONSUMPTION', CONSUMPTION), \
++                patch.object(CONSUMPTION, 'run_bounded', return_value=capture) as mocked:
++            result = harness.NativeReferenceTests().call(raw)
++        self.assertTrue(result[1]['encoded_external_script_reference_absence'])
++        mocked.assert_called_once_with([str(Path(r.__file__)), '--stdin-gscbin-references'], raw)
++
++    def test_false_spans_symbols_oversize_hidden_opcode_and_pin_forgery_refused(self):
++        raw = container(b'\x1a\x01\0\x19')
++        native, pins = self.witness(raw)
++        for field, value in [('bytecode_begin', 2), ('bytecode_bytes', 4), ('opcode', 0x19),
++                             ('stack_begin', 0), ('stack_end', 999), ('bytecode_begin', True)]:
++            changed = copy.deepcopy(native)
++            changed['functions'][0]['instructions'][0][field] = value
++            with self.subTest(field=field, value=value), self.assertRaises(ValueError):
++                r.validate(raw, changed, pins, SOURCE, CONSUMPTION)
++        for mutation in ('name', 'missing', 'extra', 'consumption', 'input', 'profile', 'validator'):
++            changed, changed_pins = copy.deepcopy(native), copy.deepcopy(pins)
++            test_raw = raw
++            if mutation == 'name': changed['functions'][0]['name_hex'] = 'ff'
++            if mutation == 'missing': changed['functions'][0]['instructions'].pop()
++            if mutation == 'extra': changed['functions'][0]['extra'] = True
++            if mutation == 'consumption': changed['consumption']['stack_consumed'] -= 1
++            if mutation == 'input': test_raw = container(b'\x19')
++            if mutation == 'profile': changed_pins['profile_sha256'] = '0' * 64
++            if mutation == 'validator': changed_pins['reference_validator_sha256'] = '0' * 64
++            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
++                r.validate(test_raw, changed, changed_pins, SOURCE, CONSUMPTION)
++
++    def test_all_153_opcodes_have_explicit_positive_or_refusal_controls(self):
++        for row in self.profile['opcodes']:
++            with self.subTest(opcode=row['name']):
++                if row['kind'] == 'unsupported_size':
++                    with self.assertRaisesRegex(ValueError, 'no supported size'):
++                        self.inspect(opcode_control(row, self.tables))
++                    continue
++                result = self.inspect(opcode_control(row, self.tables))
++                self.assertEqual(result['instruction_count'], 2)
++
++    def test_existing_beacon_bytes(self):
++        if not BEACONS:
++            self.skipTest('Pass explicit existing Beacon paths for read-only real-byte controls')
++        variant, original = [Path(p).read_bytes() for p in BEACONS]
++        self.assertEqual(r.sha(variant), 'db486793b92e7e3c0a30c70b565fb432a4940e172a3f97da7e9db377f0e46d42')
++        self.assertEqual(r.sha(original), '31b55a5d58a90d6b980a91543c907d26b91a4f6767d5350e8a35ae0e19fa2cef')
++        positive, negative = self.inspect(variant), self.inspect(original)
++        self.assertEqual(positive['instruction_count'], 570)
++        self.assertEqual(positive['blockers'], [])
++        self.assertTrue(positive['encoded_external_script_reference_absence'])
++        self.assertEqual(negative['instruction_count'], 560)
++        self.assertEqual([(b['bytecode_offset'], b['stack_offset'], b['detail']['target']) for b in negative['blockers']],
++                         [(212, 318, 'flag_exist'), (226, 345, 'flag')])
++
++
++if __name__ == '__main__':
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--consumption-validator', type=Path, required=True)
++    parser.add_argument('--variant', type=Path)
++    parser.add_argument('--original', type=Path)
++    args = parser.parse_args()
++    if bool(args.variant) != bool(args.original):
++        parser.error('Supply both existing Beacon inputs or neither')
++    spec = importlib.util.spec_from_file_location('consumption_control', args.consumption_validator)
++    CONSUMPTION = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(CONSUMPTION)
++    if args.variant:
++        BEACONS = (args.variant, args.original)
++    unittest.main(argv=[sys.argv[0]], verbosity=2)
+diff --git a/include/xsk/gsc/common/assembly.hpp b/include/xsk/gsc/common/assembly.hpp
+index c30878c17f38d2ee5c2f20925cbf23b716b1b794..5080024b3e270123788c5474b839c0a2e4a6e5a1 100644
+--- a/include/xsk/gsc/common/assembly.hpp
++++ b/include/xsk/gsc/common/assembly.hpp
+@@ -232,6 +232,9 @@ struct instruction
+ 
+     usize index;
+     usize size;
++    // Exact stack consumption is populated by the disassembler, not the compiler.
++    usize stack_begin = 0;
++    usize stack_end = 0;
+     sourcepos pos;
+     opcode opcode;
+     std::vector<std::string> data;
+diff --git a/src/gsc/disassembler.cpp b/src/gsc/disassembler.cpp
+index 765c8d5e34b93f8607ac047d86afdb974b46601d..f6c5c7bdbbb5bd8becf5fad2e4cd206d79e8391e 100644
+--- a/src/gsc/disassembler.cpp
++++ b/src/gsc/disassembler.cpp
+@@ -109,7 +109,9 @@ auto disassembler::dissasemble_function(function& func) -> void
+         if (strict_ && (!inst->size || inst->size > size))
+             throw disasm_error("strict audit: instruction exceeds declared function size");
+ 
++        inst->stack_begin = stack_.pos();
+         dissasemble_instruction(*inst);
++        inst->stack_end = stack_.pos();
+ 
+         if (inst->size > size || inst->index + inst->size != script_.pos())
+             throw disasm_error("bad instruction size");
