@@ -1,4 +1,4 @@
-# Bounded beacon FF build, pending coordinator GO
+# Bounded beacon FF build
 
 `Build-BeaconFF.ps1` defaults to a **read-only plan**. No helper with top-level
 native loading is imported before explicit `-Run`. Planning can run while the
@@ -143,3 +143,27 @@ This does not test native job closure, actual hardlink
 staging/restoration, EXE execution, FF serialization or readback of the new FF.
 Those require the separately admitted first execution; no source-only test is
 reported as its successful result.
+
+## First native execution, 2026-10-12
+
+After the coordinator's explicit GO, the first actual build, verify, dump and
+native reader phases all exited 0 with zero remaining job members. The new
+`sdk_beacon` FF is **1,048 bytes**, SHA256
+`76ed0701dc1480c501604db04999f300394c65877aa24a70dfe7afc2cd662d4a`.
+The exact five-asset inventory passes. Native readback confirms 24 vertices,
+12 triangles, one bone/surface/LOD and the retained LOD1M metadata.
+
+The full 8 GiB RAM/11 GiB commit admission was used. Maximum observed outputs
+were 1,198,238 bytes; 1,197,187 bytes remain as evidence after restoration,
+principally two generated TOC cache files. All 78 staged input entries are gone,
+source identities/metadata are preserved, and the lease was released; the fresh
+registry read was empty. Each stdout was at most 1,212 bytes; all stderr streams
+were empty. Bootstrap logs mention missing English language zones;
+this did not prevent the required inventory or geometry checks.
+
+The [sanitized execution record](beacon-ff-validation-2026-10-12.json) binds the
+source, final H1 tool receipt, shared job implementation and retained local state.
+The actual FF is retained in ignored `runtime/beacon-v1-ff-build-20261012/mod.ff`.
+No client or dedicated was launched. Recipient material resolution, pixels,
+Use/HUD/rejoin, multiplayer and H1 map conversion remain unvalidated. `Ready`
+remains false; the next game test belongs to a separate coordinator allocation.

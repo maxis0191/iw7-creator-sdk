@@ -1,7 +1,8 @@
 # Creative capabilities: proof, gaps and implementation steps
 
 This2026-10-12 map uses reviewed project `21b91e3` and the program's single prior
-official-source review. No new upstream update check, build or game test was run.
+official-source review. The later original-beacon offline FF execution is recorded
+below; no new upstream update check or game test was run in this SDK tranche.
 The desired BO3-like freedom is a target: easy original/H1 assets, custom HUD,
 gameplay, weapons/enemies/maps, multiplayer distribution and public dedicateds.
 A server GSC module catalogue alone does not deliver that target.
@@ -10,6 +11,7 @@ A server GSC module catalogue alone does not deliver that target.
 | --- | --- | --- |
 | Server gameplay, private HUD | Existing CP modules; normal native dedicated and HudElem paths | Shared VM/canonical-string/reliable-command budgets; new beacon compiled/link/pair cleanup. No arbitrary sandboxed plugins. |
 | Original rigid geometry | [1040B model witness](deployments/2026-10-07-model-visible.json): visible24-vertex cube at two poses, downloaded exact FF, LOD fix | Dark geometry only; full material/lighting, donor conversion and animated weights are distinct. Earlier MODEL-LAB pending paragraphs predate this witness. |
+| Beacon FF serialization | [1048B sdk_beacon FF](../sdk/modding/beacon-ff-validation-2026-10-12.json): new pinned tool build/verify/dump/read, exact five assets and native original-geometry readback | No beacon gameplay, recipient material binding, pixels, Use/HUD/rejoin or multiplayer evidence yet. |
 | Client Lua/LUI in FF | [HUD delivery](deployments/2026-10-07-hud-delivery.json): visible Lua text, cold cache, corrected seeded update | Native loader/version required; per-frame gameplay data bridge, complex menus, independent two-client/WAN tests remain. GSC HudElem is not LUI. |
 | H1 rigid/skinned import | Existing pinned H1 converter plus new bounded blend reader/patch from H1 owner | Converter group/count/subdivision errors need actual tool compilation, roundtrip and recipient pixels. Full H1 import is unproved. |
 | Original resident image/material | ZoneTool reader supports resident DDS/TGA; source fix prepared by surfaces owner | Material resolution currently depends on zone-name prefix/early DB lookup. Prove generic-name FF and resident images without PAK before exposing easy imports. |

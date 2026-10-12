@@ -225,3 +225,16 @@ default-plan-only SDK adapter for the actual `sdk_beacon` name. It reuses shared
 transaction/admission/NTFS helpers and the H1 owner's final job implementation.
 The real metadata plan passes without native loading; Run remains dependent on
 the new macro-qualified ZoneTool receipt, final job source hash and parent GO.
+
+## Native beacon FF checkpoint, 2026-10-12
+
+Those prerequisites were subsequently met. The first admitted native execution
+completed build, exact five-asset verification, dump and geometry readback with
+exit 0 and zero job members in all four phases. The new FF is 1,048 bytes, SHA256
+`76ed0701dc1480c501604db04999f300394c65877aa24a70dfe7afc2cd662d4a`.
+The [execution record](../sdk/modding/beacon-ff-validation-2026-10-12.json)
+binds the tool/source/state hashes and validation limits. All temporary input
+entries were removed, stock preservation checks passed and the complete 8/11 GiB
+reservation was released. No game was launched. This establishes FF serialization
+and original-model readback, not rendering, interaction, recipient material
+binding, H1 donor import or map support. Ready and owner acceptance remain false.
