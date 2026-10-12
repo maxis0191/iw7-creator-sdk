@@ -1,0 +1,97 @@
+From 6f650cb9c981317b970dad0abae6846165f80166 Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 08:20:31 +0200
+Subject: [PATCH 9/9] Fix Windows zlib header order in the audit entry point
+
+
+diff --git a/audit/README.md b/audit/README.md
+index ba1cef129c856458b9ac6f11d96b01aaef49573f..a21ba7daa7eca6510aeac5b8f4fa6dd413a839a4 100644
+--- a/audit/README.md
++++ b/audit/README.md
+@@ -3,8 +3,9 @@
+ This separate Windows/MSVC executable reads one original `.gscbin` from binary
+ stdin. It emits a JSON witness only after strict container, zlib, disassembler and
+ local-function-resolution checks succeed. It does not compile GSC, write assets,
+-run a game or establish dependency closure. **Native compilation and execution
+-are pending resource admission. No successful native witness exists yet.**
++run a game or establish dependency closure. **Native compilation has been attempted
++but failed. No successful native witness exists yet; another attempt requires
++reviewed source and resource admission.**
+ 
+ The source baseline is xensik/gsc-tool
+ `3300e430d1efef00e54c66a8bd416e18a2a9882a`. This checkout was cloned from the
+@@ -99,6 +100,7 @@ suffixes, unknown/initial opcodes, last-function sizes and missing NULs.
+ Additional cases cover valid forward/backward/switch branches, nonempty integer
+ and default switch tables, and invalid out-of-function/inside-operand destinations.
+ These native tests have **not run**. No game or C++ audit executable was started.
++The failed admitted build did emit the reader test executable, which was not run.
+ Four pure preparation tests pass: missing/dirty/wrong zlib is refused, dependency
+ bytes affect the combined source hash, and build identity needs a fresh ignored
+ path. PowerShell scripts pass syntax parsing; `test_supervision.ps1` additionally
+@@ -213,6 +215,50 @@ Shared providers, original BuildJob source, decoder and SDK binder are unchanged
+ A new committed source pin, fresh Plan and separate run root require coordinator
+ review and another explicit GO. The previous GO authorized only the failed attempt.
+ 
++## Second admitted attempt and Windows header correction
++
++The single v3 attempt on 2026-10-12 at 06:15:26 UTC used source `5a891be` and Plan
++SHA256 `ee6c031d67a028dff0c058e06c6a67b5c0de9c8ef72fc4be8f73de1b533e38e9`.
++Original-handle identity and CIM registration succeeded on the first attempt.
++Local zlib initialization and CMake configuration succeeded. MSBuild emitted the
++zlib/GSC static libraries and the reader-test executable, then failed compiling
++`audit/main.cpp`; no CTest, native negative tests or Beacon binder was run.
++The first error was C2146 at `zconf.h:402` before `Bytef`, followed by C2371 on
++`far`. An unqualified descendant remained two seconds after root exit; the
++original job was stopped, zero active members were confirmed and the lease was
++released. Main's process identity was unchanged; no game files were staged.
++
++The preserved ignored root is `build/native-registration-fixed-20261012`:
++
++- `supervision.json`: `2b25b721be9e56f524d9fefa510d5ddf4d71c54e33f4abcc1ae993fe93a2fcb3`
++- `build-receipt.json`: `f8a8222fb2873a308ddf4ea207485850ee995ab82fafeee8e6579e1652685d6d`
++- `build.stdout.log`: `31f295b64b63bfe1d87b97982ceda986a4b87e79433d0099e8d9c38dd2ab3d4e`
++
++The inspected Windows SDK 10.0.26100.0 `minwindef.h` defines `far` as empty (line
++94) and `FAR` as `far` (line 150). The original include order was Windows/BCrypt,
++xsk IW7, then zlib. IW7 includes `xsk/stdinc.hpp`, which deliberately undefines
++`far` under `_WINDOWS_` (line 40), while `FAR` still expands to the now-undefined
++identifier. zlib therefore parses `typedef Byte far Bytef` at line 402. This
++matches the first compiler error without changing any disassembler behavior.
++
++The correction includes zlib before the xsk IW7 header. Windows/zlib declarations
++are parsed while their macro chain is intact; xsk still removes `far` before its
++own script-engine declarations. Third-party headers, CMake settings and decoder
++logic remain unchanged. A fresh native compile is required to verify the fix.
++
++The actual recorded compiler was MSVC 14.44.35207 Hostx64/x64, SHA256
++`fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619`.
++The failed target's `CL.command.1.tlog` contains only its two-byte BOM, so an exact
++expanded `cl.exe` command was not captured and is not reconstructed as evidence.
++The retained generated Release project specifies C++20, MaxSpeed, MultiThreaded
++runtime, `PrecompiledHeader=NotUsing`, no forced include, and definitions `WIN32`,
++`_WINDOWS`, `NDEBUG`, `_WIN32_WINNT=0x0A00`, `CMAKE_INTDIR="Release"`. Include paths
++are the run identity directory, tool include directory and pinned zlib directory.
++MSBuild used the recorded `--parallel 1 -- /m:1 /nr:false
++/p:MultiProcessorCompilation=false` command. Source, dependency, input and compiler
++hashes were unchanged after closure; source occupied 91,980,138 bytes excluding
++build output and run output was about 35.1 MB. The v3 failure remains immutable.
++
+ ```text
+ python -B audit/prepare.py --output build/identity-reviewed
+ cmake -S audit -B build/audit-native -G "Visual Studio 17 2022" -A x64 -DAUDIT_IDENTITY_DIR=ABSOLUTE_IDENTITY_DIRECTORY
+diff --git a/audit/main.cpp b/audit/main.cpp
+index e065e8daa072e8cff1e6e6ecf4186b1a0cca2725..49b846d174dd6c9cb77b3209a60b8372597e0cbd 100644
+--- a/audit/main.cpp
++++ b/audit/main.cpp
+@@ -5,8 +5,10 @@
+ #include <bcrypt.h>
+ #include <io.h>
+ #include <fcntl.h>
+-#include "xsk/gsc/engine/iw7.hpp"
++// zlib must see Windows' complete FAR -> far -> empty macro chain before
++// xsk/stdinc.hpp intentionally undefines far for the script engine.
+ #include "zlib.h"
++#include "xsk/gsc/engine/iw7.hpp"
+ #include "audit_identity.hpp"
+ 
+ namespace

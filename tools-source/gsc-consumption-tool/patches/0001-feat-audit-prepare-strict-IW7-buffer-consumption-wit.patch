@@ -1,0 +1,757 @@
+From 38bf8fd345572cc6232acdbafed2594c35b88ea5 Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 07:32:38 +0200
+Subject: [PATCH 1/9] feat(audit): prepare strict IW7 buffer consumption
+ witness
+
+
+diff --git a/audit/CMakeLists.txt b/audit/CMakeLists.txt
+new file mode 100644
+index 0000000000000000000000000000000000000000..56234555cd1eadad3d89595e60fe49a29639cc34
+--- /dev/null
++++ b/audit/CMakeLists.txt
+@@ -0,0 +1,34 @@
++cmake_minimum_required(VERSION 3.24)
++project(iw7_gsc_audit LANGUAGES C CXX)
++if(NOT WIN32 OR NOT MSVC)
++    message(FATAL_ERROR "This audited target currently requires Windows/MSVC and BCrypt")
++endif()
++if(NOT EXISTS "${AUDIT_IDENTITY_DIR}/audit_identity.hpp")
++    message(FATAL_ERROR "Run audit/prepare.py from a clean committed checkout first")
++endif()
++set(CMAKE_CXX_STANDARD 20)
++set(CMAKE_CXX_STANDARD_REQUIRED ON)
++set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
++set(ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
++file(GLOB GSC_SOURCES CONFIGURE_DEPENDS "${ROOT}/src/gsc/*.cpp" "${ROOT}/src/gsc/common/*.cpp"
++    "${ROOT}/src/gsc/engine/iw7*.cpp")
++file(GLOB UTILS_SOURCES CONFIGURE_DEPENDS "${ROOT}/src/utils/*.cpp")
++file(GLOB ZLIB_SOURCES CONFIGURE_DEPENDS "${ROOT}/deps/zlib/*.c")
++if(NOT EXISTS "${ROOT}/deps/zlib/zlib.h")
++    message(FATAL_ERROR "Pinned zlib source is required; initialization is an admitted preparation step")
++endif()
++add_library(audit_zlib STATIC ${ZLIB_SOURCES})
++target_include_directories(audit_zlib PUBLIC "${ROOT}/deps/zlib")
++target_compile_definitions(audit_zlib PRIVATE _CRT_SECURE_NO_WARNINGS)
++add_library(audit_gsc STATIC ${GSC_SOURCES} ${UTILS_SOURCES})
++target_include_directories(audit_gsc PUBLIC "${ROOT}/include")
++target_link_libraries(audit_gsc PUBLIC audit_zlib)
++target_compile_options(audit_gsc PRIVATE /bigobj /Zc:__cplusplus)
++add_executable(iw7-gsc-audit main.cpp)
++target_include_directories(iw7-gsc-audit PRIVATE "${AUDIT_IDENTITY_DIR}")
++target_compile_definitions(iw7-gsc-audit PRIVATE _WIN32_WINNT=0x0A00)
++target_link_libraries(iw7-gsc-audit PRIVATE audit_gsc bcrypt)
++enable_testing()
++add_executable(audit-reader-tests reader_tests.cpp)
++target_link_libraries(audit-reader-tests PRIVATE audit_gsc)
++add_test(NAME strict-reader COMMAND audit-reader-tests)
+diff --git a/audit/README.md b/audit/README.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..38d914da2e2ad5ec811cc0c26755f44eb8807b84
+--- /dev/null
++++ b/audit/README.md
+@@ -0,0 +1,122 @@
++# Strict IW7 consumption audit — source candidate
++
++This separate Windows/MSVC executable reads one original `.gscbin` from binary
++stdin. It emits a JSON witness only after strict container, zlib, disassembler and
++local-function-resolution checks succeed. It does not compile GSC, write assets,
++run a game or establish dependency closure. **Native compilation and execution
++are pending resource admission. No successful native witness exists yet.**
++
++The source baseline is xensik/gsc-tool
++`3300e430d1efef00e54c66a8bd416e18a2a9882a`. This checkout was cloned from the
++already retained local repository without hard links or recursive submodules.
++The shared source was not edited. Publication belongs to the coordinator's private
++tooling workflow; the only configured remote is the local source repository and
++local `push.default=nothing` prevents an implicit push.
++
++## Decoder contract
++
++- The historical `disassemble()` API remains available. The dedicated audit calls
++  `disassemble_strict()` with bounded readers and IW7 PC tables.
++- The first byte must be the table's `OP_End`. Every function has a positive
++  declared length within the remaining bytecode. Every instruction must fit its
++  function, including variable-size instructions and the final function.
++- Both final cursors must equal their full buffer lengths. There is no guessed
++  padding, ignored suffix, implicit terminator repair or relaxed fallback.
++- Strict C strings require a NUL within remaining bytes. Invalid forward/reverse
++  seeks, absolute positions and alignments throw. Existing unknown/unhandled
++  opcode refusals and unresolved local-function refusals remain.
++- The three-byte integer reader now reads exactly three bytes in either mode;
++  its values are preserved while its former four-byte overread is removed.
++- The container uses exact declared lengths. The compressed stream must reach
++  `Z_STREAM_END`, consume all compressed bytes and produce exactly the declared
++  stack size. Concatenated streams and added data are refused.
++- An empty assembler shape is legitimate only as one initial `OP_End`, an empty
++  decompressed stack and no functions. Arbitrary extra bytes are not padding.
++
++Limits are 8 MiB of input and 16 MiB of decompressed stack; these are refusal
++limits, not a compatibility guarantee for all retail scripts. Parsing every
++instruction proves structural consumption under these pinned tables, not engine
++acceptance, runtime semantics or the completeness of the reverse-engineered tables.
++
++## Evidence and identity
++
++`audit/prepare.py` requires a clean committed checkout and generates an ignored
++header plus source manifest. It records the source revision, a canonical digest
++of tracked source files, a separate digest of the IW7 tables and opcode sizing/
++name definitions, and the expected zlib gitlink. It performs no build.
++
++The native witness `iw7.gsc-consumption-native/1` contains hashes and lengths of
++the exact input read from stdin, decoded bytecode, decoded stack and emitted
++assembly; final cursors; contiguous consumption records for each function; and
++the source/table identity compiled into the executable. SHA256 uses Windows
++BCrypt. Assembly is returned as hex to avoid altering its exact bytes in JSON.
++The witness is a measurement by an explicitly pinned tool, not a signature.
++
++The SDK wrapper `sdk/modding/audit_gsc_consumption.py` independently checks framing
++and decompression, passes those same original bytes through stdin, requires
++caller-supplied source/table/revision and executable pins, and hashes the tool
++before and after execution. It validates all witness hashes, cursors, per-function
++partitions and assembly bytes. The executable hash is bound by the wrapper;
++the native decoder binds the bytes it actually read. Consumers must trust the
++reviewed build-to-executable pin, not a self-reported revision on its own.
++
++The wrapper deliberately keeps external dependency absence, asset closure,
++runtime readiness and owner acceptance false. A separate complete import analysis
++may later use the bound assembly; no existing Creator/Recipient gate is changed.
++
++## Prepared tests and current evidence
++
++Nine pure SDK tests pass using synthetic framing and mocked process results.
++They cover input/tool/source/table/assembly binding, both cursor requirements,
++function partitions, compressed/container suffixes, duplicate JSON fields, native
++failure handling and replacement of the executable during an audit. They do not
++execute C++ or establish a real successful witness.
++
++`reader_tests.cpp` is prepared for native reader bounds, NUL, seek/align, exact
++three-byte reads and historical-seek compatibility. `test_native.py` has ten
++native test methods covering valid minimal/string/multiple-function inputs,
++token-encoded external calls, truncation, added bytes in both buffers, zlib
++suffixes, unknown/initial opcodes, last-function sizes and missing NULs.
++These native tests have **not run**. No game or native tool was started.
++
++## Admission and build plan
++
++1. Coordinator releases the active MaterialC workload, fetches the private
++   project origin and rereads current `origin/main:docs/RESOURCE-WORKFLOW.md`.
++   Use its reviewed `Invoke-IW7ResourceJob`, `Kind Build`, **4 GiB physical /
++   6 GiB commit**, one MSBuild node, `/MP` disabled and BelowNormal priority.
++   Keep configuration, compilation and native tests in that admitted synchronous
++   job; preserve diagnostics on failure and release only after children exit.
++2. Verify this source commit and cleanliness. Initialize only the pinned zlib
++   dependency from the existing local source, without network or SDK/game copies.
++   Require `51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf` and a clean checkout.
++   Do not initialize cxxopts: this dedicated target does not use it. Expected
++   extra source/dependency storage is about 10 MiB (existing zlib checkout
++   4,468,081 bytes plus 5,343 KiB Git pack), within the 128 MiB preparation budget.
++3. Generate a fresh ignored identity directory with `python -B audit/prepare.py`.
++   Record its manifest, the source commit, dependency commit and installed compiler
++   and CMake versions. CMake is already available with the local VS 2022 Build
++   Tools; no installation was performed. Set a separate **2 GiB build-output
++   disk allowance**, measured during execution; the 128 MiB limit covers source
++   preparation, not build outputs. Stop and report if that allowance is insufficient.
++4. Configure `audit/CMakeLists.txt` with VS 2022, x64, the generated identity
++   directory and an ignored `build/audit-native` output directory. Build Release
++   with `--parallel 1 -- /m:1 /nr:false /p:MultiProcessorCompilation=false`.
++   This compiles GSC core plus IW7 tables, utils and zlib, excluding ARC, other
++   engine tables and the historical CLI. Exact build/link compatibility is pending.
++5. Run CTest's reader test, then `python -B audit/test_native.py --tool TOOL -v`.
++   Only if those pass, run the pinned SDK wrapper on the already retained Beacon
++   variant and original negative control. A complete-consumption refusal is a
++   result to investigate; never relax suffix or function checks to obtain success.
++   Verify all source/dependency hashes again, hash the executable, retain exact
++   command/exit/measurement evidence and finish the coordinator's private review.
++
++Illustrative commands, to execute only inside the admitted job after step 2:
++
++```text
++python -B audit/prepare.py --output build/identity-reviewed
++cmake -S audit -B build/audit-native -G "Visual Studio 17 2022" -A x64 -DAUDIT_IDENTITY_DIR=ABSOLUTE_IDENTITY_DIRECTORY
++cmake --build build/audit-native --config Release --parallel 1 -- /m:1 /nr:false /p:MultiProcessorCompilation=false
++ctest --test-dir build/audit-native -C Release --output-on-failure
++python -B audit/test_native.py --tool build/audit-native/Release/iw7-gsc-audit.exe -v
++```
+diff --git a/audit/main.cpp b/audit/main.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec48d3cc993e6d02fbb77a3f65c343b98b472851
+--- /dev/null
++++ b/audit/main.cpp
+@@ -0,0 +1,139 @@
++// Dedicated IW7 PC structural audit. GPLv3; see ../LICENSE.
++#define NOMINMAX
++#define WIN32_LEAN_AND_MEAN
++#include <windows.h>
++#include <bcrypt.h>
++#include <io.h>
++#include <fcntl.h>
++#include "xsk/gsc/engine/iw7.hpp"
++#include "zlib.h"
++#include "audit_identity.hpp"
++
++namespace
++{
++using namespace xsk;
++constexpr usize input_limit = 8 * 1024 * 1024;
++constexpr usize stack_limit = 16 * 1024 * 1024;
++
++auto hex(u8 const* data, usize size) -> std::string
++{
++    static constexpr char digits[] = "0123456789abcdef";
++    std::string result;
++    result.reserve(size * 2);
++    for (usize i = 0; i < size; ++i)
++    {
++        result.push_back(digits[data[i] >> 4]);
++        result.push_back(digits[data[i] & 15]);
++    }
++    return result;
++}
++
++auto sha256(std::vector<u8> const& data) -> std::string
++{
++    BCRYPT_ALG_HANDLE algorithm = nullptr;
++    if (BCryptOpenAlgorithmProvider(&algorithm, BCRYPT_SHA256_ALGORITHM, nullptr, 0) < 0)
++        throw std::runtime_error("SHA256 provider failed");
++    std::array<u8, 32> digest{};
++    auto status = BCryptHash(algorithm, nullptr, 0, const_cast<u8*>(data.data()),
++        static_cast<ULONG>(data.size()), digest.data(), static_cast<ULONG>(digest.size()));
++    BCryptCloseAlgorithmProvider(algorithm, 0);
++    if (status < 0) throw std::runtime_error("SHA256 failed");
++    return hex(digest.data(), digest.size());
++}
++
++auto read_input() -> std::vector<u8>
++{
++    if (_setmode(_fileno(stdin), _O_BINARY) == -1)
++        throw std::runtime_error("binary stdin unavailable");
++    std::vector<u8> data;
++    std::array<char, 8192> block{};
++    while (std::cin)
++    {
++        std::cin.read(block.data(), block.size());
++        auto count = static_cast<usize>(std::cin.gcount());
++        if (count > input_limit - data.size()) throw std::runtime_error("input exceeds audit limit");
++        data.insert(data.end(), block.data(), block.data() + count);
++    }
++    if (!std::cin.eof()) throw std::runtime_error("stdin read failed");
++    return data;
++}
++
++auto unpack(std::vector<u8> const& data) -> std::pair<std::vector<u8>, std::vector<u8>>
++{
++    if (data.size() < 16 || std::memcmp(data.data(), "GSC\0", 4))
++        throw std::runtime_error("expected GSC container");
++    utils::reader input{ data.data(), data.size(), false, true };
++    input.seek(4);
++    auto compressed_size = input.read<u32>();
++    auto stack_size = input.read<u32>();
++    auto code_size = input.read<u32>();
++    if (!compressed_size || !code_size || code_size > input_limit || stack_size > stack_limit ||
++        static_cast<usize>(compressed_size) + code_size != data.size() - 16)
++        throw std::runtime_error("invalid container lengths or trailing container bytes");
++    // One spare byte distinguishes declared size from an overproducing stream.
++    std::vector<u8> stack(static_cast<usize>(stack_size) + 1);
++    z_stream stream{};
++    stream.next_in = const_cast<u8*>(data.data() + 16);
++    stream.avail_in = compressed_size;
++    stream.next_out = stack.data();
++    stream.avail_out = static_cast<uInt>(stack.size());
++    if (inflateInit(&stream) != Z_OK) throw std::runtime_error("inflate initialization failed");
++    auto result = inflate(&stream, Z_FINISH);
++    auto consumed = stream.total_in;
++    auto produced = stream.total_out;
++    inflateEnd(&stream);
++    if (result != Z_STREAM_END || consumed != compressed_size || produced != stack_size)
++        throw std::runtime_error("compressed stack is truncated, trailing or size mismatched");
++    stack.resize(stack_size);
++    return { std::vector<u8>(data.begin() + 16 + compressed_size, data.end()), std::move(stack) };
++}
++
++auto audit(std::vector<u8> const& input) -> std::string
++{
++    auto [code, stack] = unpack(input);
++    gsc::iw7::context context{ gsc::instance::server };
++    context.init(gsc::build::prod, {});
++    auto [program, consumed] = context.disassembler().disassemble_strict(code, stack);
++    auto assembly = context.printer().print(*program);
++    // Emit only after every decoder check and function resolution succeeded.
++    std::ostringstream out;
++    out << "{\"schema\":\"iw7.gsc-consumption-native/1\",\"engine\":\"iw7-pc\","
++        << "\"source_revision\":\"" << AUDIT_SOURCE_REVISION << "\","
++        << "\"source_sha256\":\"" << AUDIT_SOURCE_SHA256 << "\","
++        << "\"tables_sha256\":\"" << AUDIT_TABLES_SHA256 << "\","
++        << "\"input_bytes\":" << input.size() << ",\"input_sha256\":\"" << sha256(input) << "\","
++        << "\"bytecode_bytes\":" << code.size() << ",\"bytecode_sha256\":\"" << sha256(code) << "\","
++        << "\"stack_bytes\":" << stack.size() << ",\"stack_sha256\":\"" << sha256(stack) << "\","
++        << "\"bytecode_consumed\":" << consumed.bytecode_consumed << ","
++        << "\"stack_consumed\":" << consumed.stack_consumed << ","
++        << "\"initial_op_end_verified\":true,\"complete_consumption_verified\":true,"
++        << "\"functions\":[";
++    for (usize i = 0; i < consumed.functions.size(); ++i)
++    {
++        auto const& f = consumed.functions[i];
++        if (i) out << ',';
++        out << "{\"bytecode_begin\":" << f.bytecode_begin << ",\"declared_bytes\":" << f.declared_bytes
++            << ",\"bytecode_end\":" << f.bytecode_end << ",\"stack_begin\":" << f.stack_begin
++            << ",\"stack_end\":" << f.stack_end << '}';
++    }
++    out << "],\"assembly_bytes\":" << assembly.size() << ",\"assembly_sha256\":\"" << sha256(assembly)
++        << "\",\"assembly_hex\":\"" << hex(assembly.data(), assembly.size()) << "\"}\n";
++    return out.str();
++}
++}
++
++int main(int argc, char** argv)
++{
++    try
++    {
++        if (argc != 2 || std::string_view{ argv[1] } != "--stdin-gscbin")
++            throw std::runtime_error("usage: iw7-gsc-audit --stdin-gscbin < input.gscbin");
++        std::cout << audit(read_input());
++        return 0;
++    }
++    catch (std::exception const& error)
++    {
++        std::cerr << "audit refused: " << error.what() << '\n';
++        return 1;
++    }
++}
+diff --git a/audit/prepare.py b/audit/prepare.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..5ef8ec368e08be0f1f49029d3e923c598ee4e6c6
+--- /dev/null
++++ b/audit/prepare.py
+@@ -0,0 +1,52 @@
++"""Generate build identity only. Does not configure, compile, download or execute native code."""
++import argparse
++import hashlib
++import json
++from pathlib import Path
++import subprocess
++
++ROOT = Path(__file__).resolve().parents[1]
++
++
++def git(*args):
++    return subprocess.check_output(['git', '-C', str(ROOT), *args], text=True).strip()
++
++
++def digest(files):
++    records = [{'path': p.as_posix(), 'sha256': hashlib.sha256((ROOT / p).read_bytes()).hexdigest()}
++               for p in sorted(files)]
++    return hashlib.sha256(json.dumps(records, sort_keys=True, separators=(',', ':')).encode()).hexdigest(), records
++
++
++def prepare(output):
++    if git('status', '--porcelain', '--untracked-files=all'):
++        raise ValueError('A clean committed source checkout is required')
++    output = output.resolve()
++    if output.exists() or not output.is_relative_to(ROOT / 'build'):
++        raise ValueError('Use a fresh ignored identity directory under build/')
++    files = [Path(p) for p in git('ls-files').splitlines()
++             if p.startswith(('src/', 'include/', 'audit/')) and (ROOT / p).is_file()]
++    tables = [p for p in files if p.as_posix().startswith('src/gsc/engine/iw7')]
++    tables += [Path('include/xsk/gsc/engine/iw7.hpp'), Path('include/xsk/gsc/common/assembly.hpp'),
++               Path('src/gsc/context.cpp')]
++    source_hash, source_records = digest(files)
++    table_hash, table_records = digest(set(tables))
++    revision = git('rev-parse', 'HEAD')
++    output.mkdir(parents=True)
++    header = ('#pragma once\n' + ''.join(f'#define AUDIT_{key} "{value}"\n' for key, value in
++              [('SOURCE_REVISION', revision), ('SOURCE_SHA256', source_hash), ('TABLES_SHA256', table_hash)]))
++    (output / 'audit_identity.hpp').write_text(header, encoding='utf-8', newline='\n')
++    manifest = {'schema': 'iw7.gsc-audit-build-source/1', 'source_revision': revision,
++                'source_sha256': source_hash, 'tables_sha256': table_hash,
++                'source_files': source_records, 'table_files': table_records,
++                'zlib_commit': git('rev-parse', 'HEAD:deps/zlib'), 'native_built': False}
++    (output / 'source-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
++    return manifest
++
++
++if __name__ == '__main__':
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--output', required=True, type=Path)
++    args = parser.parse_args()
++    result = prepare(args.output)
++    print(json.dumps({key: value for key, value in result.items() if not key.endswith('_files')}, indent=2))
+diff --git a/audit/reader_tests.cpp b/audit/reader_tests.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..8fcf3d58d2cbe26d2b42913681e99e35121ee254
+--- /dev/null
++++ b/audit/reader_tests.cpp
+@@ -0,0 +1,45 @@
++// Native tests to run only after resource admission and compilation.
++#include "xsk/stdinc.hpp"
++#include "xsk/utils/reader.hpp"
++#include <limits>
++
++using namespace xsk;
++template<class F> auto refuses(F operation) -> void
++{
++    try { operation(); }
++    catch (utils::reader::error const&) { return; }
++    throw std::runtime_error("expected a bounded-reader refusal");
++}
++
++int main()
++{
++    try
++    {
++        std::array<u8, 4> bytes{ 'a', 0, 'b', 'c' };
++        utils::reader r{ bytes.data(), bytes.size(), false, true };
++        if (r.read_cstr() != "a" || r.pos() != 2) throw std::runtime_error("valid string");
++        refuses([&] { r.read_cstr(); });
++        if (r.pos() != 2) throw std::runtime_error("failed string moved cursor");
++        refuses([&] { r.seek(3); });
++        refuses([&] { r.seek(std::numeric_limits<usize>::max()); });
++        refuses([&] { r.seek_neg(3); });
++        refuses([&] { r.pos(5); });
++        refuses([&] { r.align(0); });
++        refuses([&] { r.align(3); });
++        r.pos(3);
++        refuses([&] { r.align(8); });
++        r.seek(1);
++        refuses([&] { r.read<u8>(); });
++        refuses([&] { r.read_cstr(); });
++        std::array<u8, 3> triple{ 1, 2, 3 };
++        utils::reader le{ triple.data(), triple.size(), false, true };
++        utils::reader be{ triple.data(), triple.size(), true, true };
++        if (le.read_i24() != 0x030201 || be.read_i24() != 0x010203)
++            throw std::runtime_error("three-byte read");
++        utils::reader old{ bytes.data(), bytes.size() };
++        old.seek(5);
++        if (old.pos() != 0) throw std::runtime_error("historical seek changed");
++        return 0;
++    }
++    catch (std::exception const& e) { std::cerr << e.what() << '\n'; return 1; }
++}
+diff --git a/audit/test_native.py b/audit/test_native.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..17df94fc1970d175e45dc861339d91f914fa5447
+--- /dev/null
++++ b/audit/test_native.py
+@@ -0,0 +1,99 @@
++"""Opt-in native negative controls; NOT executed by source-only checks."""
++import argparse
++import hashlib
++import json
++from pathlib import Path
++import struct
++import subprocess
++import unittest
++import zlib
++
++TOOL = None
++
++
++def container(code, stack, compressed=None):
++    compressed = zlib.compress(stack) if compressed is None else compressed
++    return b'GSC\0' + struct.pack('<III', len(compressed), len(stack), len(code)) + compressed + code
++
++
++def function(size, name=b'main\0'):
++    return struct.pack('<II', size, 0) + name
++
++
++class NativeAuditTests(unittest.TestCase):
++    def call(self, raw, success):
++        result = subprocess.run([str(TOOL), '--stdin-gscbin'], input=raw, capture_output=True, timeout=30)
++        if success:
++            self.assertEqual(result.returncode, 0, result.stderr.decode(errors='replace'))
++            self.assertEqual(result.stderr, b'')
++            witness = json.loads(result.stdout)
++            self.assertEqual(witness['input_sha256'], hashlib.sha256(raw).hexdigest())
++            self.assertEqual(witness['bytecode_consumed'], witness['bytecode_bytes'])
++            self.assertEqual(witness['stack_consumed'], witness['stack_bytes'])
++            self.assertTrue(witness['complete_consumption_verified'])
++            return witness
++        self.assertNotEqual(result.returncode, 0)
++        self.assertEqual(result.stdout, b'', 'A failed decoder must not emit a success witness')
++        self.assertIn(b'audit refused:', result.stderr)
++
++    def test_valid_minimal_and_empty_assembler_shape(self):
++        self.call(container(b'\x34\x19', function(1)), True)
++        self.call(container(b'\x34', b''), True)
++
++    def test_valid_string_and_multiple_functions(self):
++        code = b'\x34\x53\0\0\0\0\x19\x19'
++        stack = function(6) + b'hello\0' + function(1, b'second\0')
++        self.assertEqual(len(self.call(container(code, stack), True)['functions']), 2)
++
++    def test_external_token_call_is_reported_not_hidden(self):
++        # Namespace and target use token IDs: no literal module path in stack.
++        stack = function(5) + struct.pack('<II', 1, 2)
++        witness = self.call(container(b'\x34\x2e\0\0\0\x19', stack), True)
++        self.assertIn(b'OP_ScriptFarFunctionCall', bytes.fromhex(witness['assembly_hex']))
++
++    def test_container_truncated_or_trailing(self):
++        valid = container(b'\x34\x19', function(1))
++        for raw in (valid[:-1], valid + b'\0', valid[:12], b'BAD!' + valid[4:]):
++            with self.subTest(raw=raw):
++                self.call(raw, False)
++
++    def test_compressed_stack_truncated_trailing_and_overproducing(self):
++        stack = function(1)
++        for compressed in (zlib.compress(stack)[:-1], zlib.compress(stack) + b'\0',
++                           zlib.compress(stack) + zlib.compress(b'extra'), zlib.compress(stack + b'extra')):
++            with self.subTest(compressed=compressed):
++                self.call(container(b'\x34\x19', stack, compressed), False)
++
++    def test_both_kinds_of_buffer_suffix_are_refused(self):
++        for code, stack in ((b'\x34\x19\x19', function(1)),
++                            (b'\x34\x19', function(1) + b'\0')):
++            with self.subTest(code=code, stack=stack):
++                self.call(container(code, stack), False)
++
++    def test_initial_opcode_and_unknown_opcode(self):
++        for code in (b'\x19\x19', b'\x34\xff'):
++            with self.subTest(code=code):
++                self.call(container(code, function(1)), False)
++
++    def test_last_function_size_zero_too_short_and_too_long(self):
++        for code, stack in ((b'\x34\x19', function(0)), (b'\x34\x19', function(2)),
++                            (b'\x34\x53\0\0\0\0\x19', function(1) + b'value\0')):
++            with self.subTest(code=code, stack=stack):
++                self.call(container(code, stack), False)
++
++    def test_truncated_function_header_and_unterminated_name(self):
++        for stack in (b'\1', struct.pack('<II', 1, 0), function(1, b'main')):
++            with self.subTest(stack=stack):
++                self.call(container(b'\x34\x19', stack), False)
++
++    def test_unterminated_instruction_string_and_out_of_bounds_seek(self):
++        self.call(container(b'\x34\x53\0\0\0\0\x19', function(6) + b'value'), False)
++        self.call(container(b'\x34\x53\0', function(2) + b'value\0'), False)
++
++
++if __name__ == '__main__':
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--tool', required=True, type=Path)
++    args, remaining = parser.parse_known_args()
++    TOOL = args.tool.resolve(strict=True)
++    unittest.main(argv=['test_native.py', *remaining])
+diff --git a/include/xsk/gsc/disassembler.hpp b/include/xsk/gsc/disassembler.hpp
+index 34b5d2a07c7d993a97fd3aa6a112b26ff80ecc9a..5c5ecbd19f09d84d71c877519411e13570de73b4 100644
+--- a/include/xsk/gsc/disassembler.hpp
++++ b/include/xsk/gsc/disassembler.hpp
+@@ -11,6 +11,17 @@
+ namespace xsk::gsc
+ {
+ 
++struct function_consumption
++{
++    usize bytecode_begin, declared_bytes, bytecode_end, stack_begin, stack_end;
++};
++
++struct disassembly_consumption
++{
++    usize bytecode_bytes = 0, bytecode_consumed = 0, stack_bytes = 0, stack_consumed = 0;
++    std::vector<function_consumption> functions;
++};
++
+ struct disassembler
+ {
+ private:
+@@ -19,14 +30,19 @@ private:
+     assembly::ptr assembly_;
+     utils::reader script_;
+     utils::reader stack_;
++    disassembly_consumption consumption_;
++    bool strict_ = false;
+ 
+ public:
+     explicit disassembler(context const* ctx);
+     auto disassemble(buffer const& script, buffer const& stack) -> assembly::ptr;
+     auto disassemble(std::vector<u8> const& script, std::vector<u8> const& stack) -> assembly::ptr;
+     auto disassemble(u8 const* script, usize script_size, u8 const* stack, usize stack_size) -> assembly::ptr;
++    auto disassemble_strict(std::vector<u8> const& script, std::vector<u8> const& stack)
++        -> std::pair<assembly::ptr, disassembly_consumption>;
+ 
+ private:
++    auto disassemble_impl(u8 const* script, usize script_size, u8 const* stack, usize stack_size, bool strict) -> assembly::ptr;
+     auto dissasemble_function(function& func) -> void;
+     auto dissasemble_instruction(instruction& inst) -> void;
+     auto disassemble_field(instruction& inst) -> void;
+diff --git a/include/xsk/utils/reader.hpp b/include/xsk/utils/reader.hpp
+index 098ff09af6015be2a69cc18bb7c6d4cb906dafbd..acd3d380576ad824f86755ce91070b675ecbb3e9 100644
+--- a/include/xsk/utils/reader.hpp
++++ b/include/xsk/utils/reader.hpp
+@@ -18,11 +18,12 @@ private:
+     usize size_;
+     usize pos_ = 0;
+     bool swap_;
++    bool strict_ = false;
+ 
+ public:
+     explicit reader(bool swap = false);
+     reader(std::vector<u8> const& data, bool swap = false);
+-    reader(u8 const* data, usize size, bool swap = false);
++    reader(u8 const* data, usize size, bool swap = false, bool strict = false);
+     template <typename T>
+     auto read() -> T;
+     auto read_i24() -> i32;
+diff --git a/src/gsc/disassembler.cpp b/src/gsc/disassembler.cpp
+index 3b74f5c3c7ac234d505ea7cdf8b171faf543a615..53933094e391e77aabae3d74d58ef4c554827f5c 100644
+--- a/src/gsc/disassembler.cpp
++++ b/src/gsc/disassembler.cpp
+@@ -27,27 +27,66 @@ auto disassembler::disassemble(std::vector<u8> const& script, std::vector<u8> co
+ 
+ auto disassembler::disassemble(u8 const* script, usize script_size, u8 const* stack, usize stack_size) -> assembly::ptr
+ {
+-    stack_ = utils::reader{ stack, stack_size, ctx_->endian() == endian::big };
+-    script_ = utils::reader{ script, script_size, ctx_->endian() == endian::big };
++    return disassemble_impl(script, script_size, stack, stack_size, false);
++}
++
++auto disassembler::disassemble_strict(std::vector<u8> const& script, std::vector<u8> const& stack)
++    -> std::pair<assembly::ptr, disassembly_consumption>
++{
++    auto result = disassemble_impl(script.data(), script.size(), stack.data(), stack.size(), true);
++    return { std::move(result), consumption_ };
++}
++
++auto disassembler::disassemble_impl(u8 const* script, usize script_size, u8 const* stack, usize stack_size, bool strict) -> assembly::ptr
++{
++    strict_ = strict;
++    consumption_ = {};
++    stack_ = utils::reader{ stack, stack_size, ctx_->endian() == endian::big, strict };
++    script_ = utils::reader{ script, script_size, ctx_->endian() == endian::big, strict };
+     assembly_ = assembly::make();
+ 
+-    script_.seek(1);
++    if (strict)
++    {
++        if (ctx_->engine() != engine::iw7 || ctx_->endian() != endian::little)
++            throw disasm_error("strict audit supports IW7 PC only");
++        if (script_.read<u8>() != ctx_->opcode_id(opcode::OP_End))
++            throw disasm_error("strict audit: expected initial OP_End");
++    }
++    else script_.seek(1);
+ 
+     while (script_.is_avail() && stack_.is_avail())
+     {
++        auto stack_begin = stack_.pos();
+         func_ = function::make();
+         func_->index = script_.pos();
+         func_->size = stack_.read<u32>();
++        if (strict && (!func_->size || func_->size > script_.size() - script_.pos()))
++            throw disasm_error("strict audit: declared function size out of bounds");
+         func_->id = (ctx_->features() & feature::hash) ? 0 : (ctx_->features() & feature::tok4) ? stack_.read<u32>() : stack_.read<u16>();
+         func_->name = (ctx_->features() & feature::hash) ? ctx_->hash_name(stack_.read<u64>()) : func_->id == 0 ? decrypt_string(stack_.read_cstr()) : ctx_->token_name(func_->id);
+ 
+         dissasemble_function(*func_);
+ 
++        if (strict)
++        {
++            if (script_.pos() - func_->index != func_->size)
++                throw disasm_error("strict audit: function consumption mismatch");
++            consumption_.functions.push_back({ func_->index, func_->size, script_.pos(), stack_begin, stack_.pos() });
++        }
++
+         assembly_->functions.push_back(std::move(func_));
+     }
+ 
++    if (strict && (script_.pos() != script_.size() || stack_.pos() != stack_.size()))
++        throw disasm_error("strict audit: trailing bytecode or stack bytes");
++
+     resolve_functions();
+ 
++    consumption_.bytecode_bytes = script_size;
++    consumption_.bytecode_consumed = script_.pos();
++    consumption_.stack_bytes = stack_size;
++    consumption_.stack_consumed = stack_.pos();
++
+     return std::move(assembly_);
+ }
+ 
+@@ -62,6 +101,9 @@ auto disassembler::dissasemble_function(function& func) -> void
+         inst->opcode = ctx_->opcode_enum(script_.read<u8>());
+         inst->size = ctx_->opcode_size(inst->opcode);
+ 
++        if (strict_ && (!inst->size || inst->size > size))
++            throw disasm_error("strict audit: instruction exceeds declared function size");
++
+         dissasemble_instruction(*inst);
+ 
+         if (inst->size > size || inst->index + inst->size != script_.pos())
+diff --git a/src/utils/reader.cpp b/src/utils/reader.cpp
+index e271def1a0e96fe02939fd26326395997904469a..6d5a6cac850739aa0ba18f150ed31a3c70817b9c 100644
+--- a/src/utils/reader.cpp
++++ b/src/utils/reader.cpp
+@@ -17,7 +17,7 @@ reader::reader(std::vector<u8> const& data, bool swap) : data_{ data.data() }, s
+ {
+ }
+ 
+-reader::reader(u8 const* data, usize size, bool swap) : data_{ data }, size_{ size }, swap_{ swap }
++reader::reader(u8 const* data, usize size, bool swap, bool strict) : data_{ data }, size_{ size }, swap_{ swap }, strict_{ strict }
+ {
+ }
+ 
+@@ -199,7 +199,10 @@ auto reader::read_i24() -> i32
+ 
+     if (!swap_)
+     {
+-        auto value = *reinterpret_cast<i32 const*>(data_ + pos_) & 0xFFFFFF;
++        // Exactly three bytes; a four-byte load can cross the buffer boundary.
++        auto value = static_cast<i32>(data_[pos_]) |
++            (static_cast<i32>(data_[pos_ + 1]) << 8) |
++            (static_cast<i32>(data_[pos_ + 2]) << 16);
+         pos_ += 3;
+         return value;
+     }
+@@ -214,6 +217,16 @@ auto reader::read_i24() -> i32
+ 
+ auto reader::read_cstr() -> std::string
+ {
++    if (strict_)
++    {
++        if (pos_ >= size_) throw error("reader: unterminated string");
++        auto end = static_cast<u8 const*>(std::memchr(data_ + pos_, 0, size_ - pos_));
++        if (!end) throw error("reader: unterminated string");
++        auto length = static_cast<usize>(end - (data_ + pos_));
++        auto ret = std::string{ reinterpret_cast<char const*>(data_ + pos_), length };
++        pos_ += length + 1;
++        return ret;
++    }
+     auto ret = std::string{ reinterpret_cast<char const*>(data_ + pos_) };
+     pos_ += static_cast<u32>(ret.size() + 1);
+     return ret;
+@@ -242,11 +255,14 @@ auto reader::is_avail() const -> bool
+ 
+ auto reader::seek(usize size) -> void
+ {
++    if (strict_ && (pos_ > size_ || size > size_ - pos_))
++        throw error("reader: seek out of bounds");
+     if (pos_ + size <= size_) pos_ += size;
+ }
+ 
+ auto reader::seek_neg(usize size) -> void
+ {
++    if (strict_ && size > pos_) throw error("reader: reverse seek out of bounds");
+     if (pos_ >= size) pos_ -= size;
+ }
+ 
+@@ -254,6 +270,13 @@ auto reader::align(usize size) -> usize
+ {
+     auto pos = pos_;
+ 
++    if (strict_)
++    {
++        if (!size || (size & (size - 1))) throw error("reader: invalid alignment");
++        seek((size - (pos_ & (size - 1))) & (size - 1));
++        return pos_ - pos;
++    }
++
+     pos_ = (pos_ + (size - 1)) & ~(size - 1);
+ 
+     return pos_ - pos;
+@@ -276,6 +299,7 @@ auto reader::pos() const -> usize
+ 
+ auto reader::pos(usize pos) -> void
+ {
++    if (strict_ && pos > size_) throw error("reader: position out of bounds");
+     if (pos <= size_) pos_ = pos;
+ }
+ 

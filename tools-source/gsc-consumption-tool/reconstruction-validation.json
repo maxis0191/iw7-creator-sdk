@@ -1,0 +1,19 @@
+{
+  "archive_hashes_verified": true,
+  "patches": 9,
+  "git_tree_verified": true,
+  "commit_id_reproduced": false,
+  "binary_reproducibility_verified": false,
+  "native_executed": false,
+  "reconstructed_revision": "91de807f23c396a508c2be968b9294199fdccf83",
+  "source_tree_oid": "7a68aeeac3ba89ec189d8397d5ad830ba8acb580",
+  "schema": "iw7.gsc-tool-source-reconstruction/1",
+  "original_revision": "6f650cb9c981317b970dad0abae6846165f80166",
+  "base_revision": "3300e430d1efef00e54c66a8bd416e18a2a9882a",
+  "patch_files": 9,
+  "changed_blobs": 17,
+  "source_checkout_bytes": 30297904,
+  "source_checkout_limit_bytes": 67108864,
+  "method": "Local shared clone for temporary verification only; no submodules or native execution",
+  "archive_bytes": 202693
+}

@@ -1,16 +1,40 @@
 # Community mod SDK: first executable contract
 
-2026-10-12 source tranche, based on project `21b91e3`. Ownership is
-`sdk/modding/` and these two MODDING documents. The parent coordinates integration,
-private PR/CI/merge and heavy admission. No runtime/native/operations changes or
-new runtime acceptance are part of this tranche.
+Current checkpoint, 2026-10-12: PR148 is merged as `178708b` under the recorded
+owner CI-admission exception; CI did not pass. The SDK now has real Beacon FF
+build/readback and Creator finalization evidence, plus protected run 5 Use/HUD and
+controlled base-client restart/rejoin with verified Aurora cdata and restoration.
+Run 5 retains two unresolved retail errors in issue 150; it is a targeted witness,
+not global engine integrity, human acceptance or actual second-player/WAN proof.
+Material C adds offline geometry/pixel-byte verification, not rendered material.
 
-The immediate vertical is **a shared imported beacon, authoritative Use,
-per-player/team HUD, and a second player's join/rejoin**. This joins asset and
-gameplay work; it is a small foundation for the requested creative freedom, not
-BO3 equivalence. Begin with the already witnessed original rigid model, replace
-it with H1 geometry/material, then add a controlled two-bone animation using the
-same manifest structure. Do not claim weapon/AI support from a static mesh.
+The PR151 tranche adds original two-bone authoring, independent readers, original
+PCM/FLAC sound preparation, a bounded H1 trigger adapter, recipient evidence
+analysis, a local-flag Beacon variant, a strict-consumption binder and passive
+ticket telemetry. Source Test-Platform at `f99041f` passes 540 cases (537 pass,
+three skips), PowerShell checks and four actual GSC syntax parses. Later focused
+checks cover the diagnostic rig and four-PAK stock binding.
+
+Measured capabilities and remaining gaps are separate:
+
+| Area | Verified progress | Still open |
+| --- | --- | --- |
+| Original models/animation | Rig E FF builds/verifies/dumps; seven assets and CPU authoring evidence | Strict redump rejects two loader-modified pointer fields; rendered skinning and animation |
+| Original sound | Real FFmpeg decode reproduces the complete original WAV | SAB/FF construction, delivery and IW7 playback |
+| Compiled GSC | Two real complete-consumption witnesses, one CTest and 13 native methods pass | Build supervisor fails on a residual descendant; import-absence consumer and package closure |
+| Recipient dependencies | C identifies pak17; D's four-PAK overlay advances to global_cp and restores | Another fatal body remains unknown; no successful reference CSV |
+| Material C | Offline original pixels and reviewed runtime candidate | Full16/16 admission refused before any game invocation; no rendered witness |
+| World/map authoring | Strict trigger-record conversion and source-backed H1 route audit | Havok world collision, playable map, actual H1 donor import |
+
+The nine reviewed GSC tool patches and licenses are retained in the private
+source archive with a verified source tree; reconstruction does not reproduce the
+original commit ID or promise binary identity. No Main deployment, human/WAN
+acceptance, weapon/AI qualification or BO3 equivalence follows from this checkpoint.
+[Current evidence](STATE.md), [runtime limits](MODDING-ENGINE-RE.md).
+
+The original source-only SDK checkpoint was based on `21b91e3`; its contract and
+preparation behavior below remain applicable to fresh inputs. It must not be read
+as the current validation status of the whole platform.
 
 ## Files and commands
 
@@ -37,11 +61,13 @@ python -B sdk/modding/prepare_beacon.py --writer-run <existing-writer-run> --out
 
 The prepared directory contains an opt-in GSC, `manifest.json`, original XMB/XSB,
 NCS table, the existing recipient-material ignore recipe and `sdk_beacon.csv`.
-Only the server source hash is filled from real bytes. The new fastfile hash,
-inventory, rendering and acceptance remain unknown. Run the reviewed tool with
-`-buildzone sdk_beacon` only in an admitted existing tool environment. The old
-model wrapper's allowlisted name/route is not automatically a beacon launcher.
-Distribution/agent owners must adapt their reviewed route before runtime.
+For each freshly prepared directory, only the server source hash is initially
+filled. The admitted [Beacon builder](../sdk/modding/Build-BeaconFF.ps1) and
+[Creator](../sdk/modding/CREATOR.md) supply measured FF/inventory receipts; the
+already completed Beacon experiments do not fill facts for an arbitrary new build.
+Rendering and acceptance remain separately gated, and unresolved recipient
+dependencies still prevent distribution. The historical model-only wrapper is
+not a substitute for the now-reviewed named Beacon route.
 
 Preparation requires the existing original writer's exact source pin,
 24 vertices/12 triangles/one bone/LOD, measured material reference, LOD distance

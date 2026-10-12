@@ -1,0 +1,618 @@
+From e1b052f4f5469b4633fc0a1ad11390da80df63c3 Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 07:46:22 +0200
+Subject: [PATCH 5/9] build(audit): prepare admitted reproducible build with
+ dependency provenance
+
+
+diff --git a/audit/README.md b/audit/README.md
+index 89bd23a5cc9bb3dfba08cad288465cc737cad838..a22d86e0b0e4d47eab57994635ba9c0ed1e67aec 100644
+--- a/audit/README.md
++++ b/audit/README.md
+@@ -25,10 +25,17 @@ local `push.default=nothing` prevents an implicit push.
+ - Strict C strings require a NUL within remaining bytes. Invalid forward/reverse
+   seeks, absolute positions and alignments throw. Existing unknown/unhandled
+   opcode refusals and unresolved local-function refusals remain.
++- Scalar reads use `memcpy` into aligned objects, including floats and both byte
++  orders. Strict `read_bytes` checks its full range; an empty range returns an
++  empty string in both modes. Valid historical reads and silent historical seeks
++  retain their behavior.
+ - Strict jump and switch labels must target an instruction boundary within their
+   own function; destinations outside it or inside an operand are refused. The
+   pinned compiler emits its final `OP_End` after labels, so no speculative
+   one-past-function target is accepted.
++- Branch arithmetic widens to signed 64-bit before adding offsets, then checks
++  bounds before conversion. Signed 24-bit offsets are extended explicitly,
++  avoiding the previous signed left shift.
+ - The three-byte integer reader now reads exactly three bytes in either mode;
+   its values are preserved while its former four-byte overread is removed.
+ - The container uses exact declared lengths. The compressed stream must reach
+@@ -45,9 +52,14 @@ acceptance, runtime semantics or the completeness of the reverse-engineered tabl
+ ## Evidence and identity
+ 
+ `audit/prepare.py` requires a clean committed checkout and generates an ignored
+-header plus source manifest. It records the source revision, a canonical digest
+-of tracked source files, a separate digest of the IW7 tables and opcode sizing/
+-name definitions, and the expected zlib gitlink. It performs no build.
++header plus source manifest **only after** zlib is initialized at the exact clean
++gitlink. It records the source revision, a digest of tracked tool files, a digest
++of the actual dependency files, and a combined `source_sha256` binding both.
++A separate digest covers the IW7 tables and opcode sizing/name definitions.
++`--inspect-only` works before initialization but returns `source_sha256=null` and
++`dependencies_materialized=false`; that state cannot produce a build header.
++The old schema-1 identity generated before zlib was available is historical source
++inventory only and must not be used to build. No build occurs during preparation.
+ 
+ The native witness `iw7.gsc-consumption-native/1` contains hashes and lengths of
+ the exact input read from stdin, decoded bytecode, decoded stack and emitted
+@@ -70,20 +82,26 @@ may later use the bound assembly; no existing Creator/Recipient gate is changed.
+ 
+ ## Prepared tests and current evidence
+ 
+-Nine pure SDK tests pass using synthetic framing and mocked process results.
++Thirteen SDK tests pass using synthetic framing, mocked process results and small
++Python pipe subprocesses.
+ They cover input/tool/source/table/assembly binding, both cursor requirements,
+ function partitions, compressed/container suffixes, duplicate JSON fields, native
+-failure handling and replacement of the executable during an audit. They do not
++failure handling, bounded stdout/stderr capture, timeout, closed schema and
++replacement of the executable during an audit. They do not
+ execute C++ or establish a real successful witness.
+ 
+ `reader_tests.cpp` is prepared for native reader bounds, NUL, seek/align, exact
+-three-byte reads and historical-seek compatibility. `test_native.py` has ten
++three-byte reads, unaligned scalar extrema/floats and historical compatibility.
++`test_native.py` has thirteen
+ native test methods covering valid minimal/string/multiple-function inputs,
+ token-encoded external calls, truncation, added bytes in both buffers, zlib
+ suffixes, unknown/initial opcodes, last-function sizes and missing NULs.
+-Two additional methods cover valid forward/backward/switch branches and invalid
+-out-of-function/inside-operand destinations (twelve methods total).
++Additional cases cover valid forward/backward/switch branches, nonempty integer
++and default switch tables, and invalid out-of-function/inside-operand destinations.
+ These native tests have **not run**. No game or native tool was started.
++Four pure preparation tests pass: missing/dirty/wrong zlib is refused, dependency
++bytes affect the combined source hash, and build identity needs a fresh ignored
++path. PowerShell scripts have passed syntax parsing only.
+ 
+ ## Admission and build plan
+ 
+@@ -104,7 +122,9 @@ These native tests have **not run**. No game or native tool was started.
+    and CMake versions. CMake is already available with the local VS 2022 Build
+    Tools; no installation was performed. Set a separate **2 GiB build-output
+    disk allowance**, measured during execution; the 128 MiB limit covers source
+-   preparation, not build outputs. Stop and report if that allowance is insufficient.
++   preparation, not build outputs. The runner polls every 250 ms and stops at
++   1,800 MiB, keeping margin before 2 GiB. This is a polling guard, not an OS quota:
++   an observed overshoot is recorded as failure, never reported as within budget.
+ 4. Configure `audit/CMakeLists.txt` with VS 2022, x64, the generated identity
+    directory and an ignored `build/audit-native` output directory. Build Release
+    with `--parallel 1 -- /m:1 /nr:false /p:MultiProcessorCompilation=false`.
+@@ -119,6 +139,18 @@ These native tests have **not run**. No game or native tool was started.
+ 
+ Illustrative commands, to execute only inside the admitted job after step 2:
+ 
++The reproducible entry point is `audit/build.ps1 -Plan PLAN_JSON -PlanSha256 HASH`.
++Its default only displays the plan. `-Execute` is the explicit coordinator action:
++it acquires `Invoke-IW7ResourceJob` before initializing zlib or starting any build.
++`audit/build.py` generates the plan from exact source/SDK revisions, input hashes,
++tool/wrapper/scheduler hashes and absolute output roots. Its execution mode requires
++the parent scheduler's lease token and owner PID. The child runner retains a .NET
++Process object and closes only its own process tree on timeout/storage failure;
++stdout/stderr stream to files instead of accumulating in memory. Commands, process
++identities, exit codes, compiler identity, source/dependency manifests, tool hash,
++storage observations and both Beacon consumption receipts remain in the ignored
++output directory. Source and dependency bytes are checked again after all steps.
++
+ ```text
+ python -B audit/prepare.py --output build/identity-reviewed
+ cmake -S audit -B build/audit-native -G "Visual Studio 17 2022" -A x64 -DAUDIT_IDENTITY_DIR=ABSOLUTE_IDENTITY_DIRECTORY
+diff --git a/audit/build.ps1 b/audit/build.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..36c04675cf62bebbad52ce8f308eb33f058af33c
+--- /dev/null
++++ b/audit/build.ps1
+@@ -0,0 +1,44 @@
++[CmdletBinding()]
++param(
++    [Parameter(Mandatory)][string]$Plan,
++    [Parameter(Mandatory)][string]$PlanSha256,
++    [switch]$Execute
++)
++$ErrorActionPreference = 'Stop'
++$planPath = (Resolve-Path -LiteralPath $Plan).Path
++$planBytes = [IO.File]::ReadAllBytes($planPath)
++if ($planBytes.Length -gt 1MB) { throw 'Build plan exceeds size limit' }
++$hasher = [Security.Cryptography.SHA256]::Create()
++try { $actualHash = [Convert]::ToHexString($hasher.ComputeHash($planBytes)).ToLowerInvariant() } finally { $hasher.Dispose() }
++if ($actualHash -ne $PlanSha256.ToLowerInvariant()) {
++    throw 'Reviewed build plan hash mismatch'
++}
++$planData = [Text.Encoding]::UTF8.GetString($planBytes) | ConvertFrom-Json
++$repo = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
++if ($planData.tool_root -ne $repo -or $planData.physical_bytes -ne 4GB -or $planData.commit_bytes -ne 6GB -or
++    $planData.output_limit_bytes -ne 2GB) { throw 'Build plan scope or budget mismatch' }
++if (-not $Execute) {
++    $planData | ConvertTo-Json -Depth 12
++    return
++}
++# The coordinator must explicitly admit this execution; no initialization occurs
++# before the reviewed account-wide scheduler acquires the heavy-workload slot.
++$scheduler = (Resolve-Path -LiteralPath $planData.scheduler).Path
++if ((Get-FileHash -LiteralPath $scheduler -Algorithm SHA256).Hash.ToLowerInvariant() -ne $planData.scheduler_sha256) {
++    throw 'Reviewed scheduler changed'
++}
++. $scheduler
++Invoke-IW7ResourceJob -Scope $repo -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner 'strict IW7 GSC audit build' -Body {
++    if (-not $lease.Token) { throw 'Scheduler did not expose the acquired lease token' }
++    $previousOwner = $env:IW7_GSC_AUDIT_LEASE_OWNER
++    $previousToken = $env:IW7_GSC_AUDIT_LEASE_TOKEN
++    try {
++        $env:IW7_GSC_AUDIT_LEASE_OWNER = [string]$PID
++        $env:IW7_GSC_AUDIT_LEASE_TOKEN = [string]$lease.Token
++        & $planData.python -B (Join-Path $PSScriptRoot 'build.py') --plan $planPath --plan-sha256 $PlanSha256 --execute
++        if ($LASTEXITCODE -ne 0) { throw "GSC audit build/test failed with exit $LASTEXITCODE; retain receipt and logs" }
++    } finally {
++        $env:IW7_GSC_AUDIT_LEASE_OWNER = $previousOwner
++        $env:IW7_GSC_AUDIT_LEASE_TOKEN = $previousToken
++    }
++}
+diff --git a/audit/build.py b/audit/build.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..a3d94beebda47d6a052ffd71729606a2f129c9e5
+--- /dev/null
++++ b/audit/build.py
+@@ -0,0 +1,199 @@
++"""Plan or execute a pinned build; execution belongs inside build.ps1's resource lease."""
++import argparse
++from datetime import datetime, timezone
++import hashlib
++import json
++import os
++from pathlib import Path
++import shutil
++import re
++import subprocess
++import sys
++
++import prepare
++
++ROOT = prepare.ROOT
++GIB = 1024 ** 3
++
++
++def sha_file(path):
++    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
++
++
++def size(path):
++    return sum(p.stat().st_size for p in path.rglob('*') if p.is_file()) if path.exists() else 0
++
++
++def plan(args):
++    source = prepare.inspect_sources(require_zlib=False)
++    sdk = args.sdk_root.resolve(strict=True)
++    zlib = args.zlib_local.resolve(strict=True)
++    if prepare.git('rev-parse', 'HEAD', root=zlib) != source['zlib_commit'] or prepare.git('status', '--porcelain', root=zlib):
++        raise ValueError('Local zlib source must match the exact clean gitlink')
++    wrapper = sdk / 'sdk/modding/audit_gsc_consumption.py'
++    if prepare.git('status', '--porcelain', '--', str(wrapper), root=sdk):
++        raise ValueError('SDK wrapper has uncommitted edits')
++    output = args.output.resolve()
++    if output.exists() or not output.is_relative_to(ROOT / 'build'):
++        raise ValueError('Use a fresh build output root under build/')
++    inputs = []
++    for role, path in (('variant', args.variant), ('original', args.original)):
++        path = path.resolve(strict=True)
++        inputs.append({'role': role, 'path': str(path), 'sha256': sha_file(path), 'bytes': path.stat().st_size})
++    scheduler = args.scheduler.resolve(strict=True)
++    cmake = args.cmake.resolve(strict=True)
++    ctest = cmake.with_name('ctest.exe')
++    pwsh = Path(shutil.which('pwsh')).resolve(strict=True)
++    return {'schema': 'iw7.gsc-audit-build-plan/1', 'tool_root': str(ROOT),
++            'source_revision': source['source_revision'], 'tool_source_sha256': source['tool_source_sha256'],
++            'tables_sha256': source['tables_sha256'], 'zlib_commit': source['zlib_commit'],
++            'zlib_local': str(zlib), 'sdk_root': str(sdk), 'sdk_revision': prepare.git('rev-parse', 'HEAD', root=sdk),
++            'wrapper': str(wrapper), 'wrapper_sha256': sha_file(wrapper),
++            'scheduler': str(scheduler), 'scheduler_sha256': sha_file(scheduler),
++            'python': sys.executable, 'python_sha256': sha_file(sys.executable),
++            'pwsh': str(pwsh), 'pwsh_sha256': sha_file(pwsh),
++            'cmake': str(cmake), 'cmake_sha256': sha_file(cmake), 'ctest': str(ctest), 'ctest_sha256': sha_file(ctest),
++            'output': str(output), 'inputs': inputs, 'physical_bytes': 4 * GIB, 'commit_bytes': 6 * GIB,
++            'output_limit_bytes': 2 * GIB, 'output_stop_threshold_bytes': 1800 * 1024 ** 2,
++            'storage_poll_seconds': 0.25, 'build_nodes': 1, 'source_preparation_limit_bytes': 128 * 1024 ** 2,
++            'native_executed': False}
++
++
++def validate_plan(plan):
++    source = prepare.inspect_sources(require_zlib=False)
++    for key in ('source_revision', 'tool_source_sha256', 'tables_sha256', 'zlib_commit'):
++        if plan[key] != source[key]:
++            raise ValueError('Reviewed source plan changed: ' + key)
++    if Path(plan['tool_root']).resolve() != ROOT or plan['physical_bytes'] != 4 * GIB or plan['commit_bytes'] != 6 * GIB:
++        raise ValueError('Plan scope or admission budget differs')
++    if prepare.git('rev-parse', 'HEAD', root=Path(plan['sdk_root'])) != plan['sdk_revision']:
++        raise ValueError('Reviewed SDK revision changed')
++    for key in ('python', 'pwsh', 'cmake', 'ctest', 'scheduler', 'wrapper'):
++        if sha_file(plan[key]) != plan[key + '_sha256']:
++            raise ValueError('Reviewed executable/source changed: ' + key)
++    for item in plan['inputs']:
++        if sha_file(item['path']) != item['sha256']:
++            raise ValueError('Recorded GSC input changed')
++    output = Path(plan['output']).resolve()
++    if not output.is_relative_to(ROOT / 'build') or output.exists():
++        raise ValueError('Fresh ignored output root required')
++    if plan['output_limit_bytes'] != 2 * GIB or plan['output_stop_threshold_bytes'] != 1800 * 1024 ** 2:
++        raise ValueError('Storage guard differs')
++    if shutil.disk_usage(ROOT).free < 2 * GIB + 128 * 1024 ** 2:
++        raise ValueError('Insufficient disk space for declared output/source allowance')
++
++
++def execute(plan):
++    if os.environ.get('IW7_GSC_AUDIT_LEASE_OWNER') != str(os.getppid()) or not os.environ.get('IW7_GSC_AUDIT_LEASE_TOKEN'):
++        raise ValueError('Invoke through build.ps1 inside its admitted resource job')
++    validate_plan(plan)
++    output = Path(plan['output'])
++    output.mkdir(parents=True)
++    receipt = {'schema': 'iw7.gsc-audit-build-run/1', 'plan': plan, 'steps': [],
++               'lease_token': os.environ['IW7_GSC_AUDIT_LEASE_TOKEN'],
++               'lease_owner_pid': int(os.environ['IW7_GSC_AUDIT_LEASE_OWNER']),
++               'started_utc': datetime.now(timezone.utc).isoformat(), 'success': False,
++               'peak_observed_output_bytes': 0, 'storage_limit_exceeded': False,
++               'storage_guard': 'polling stop at 1800 MiB; not an OS disk quota'}
++
++    def save():
++        (output / 'build-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
++
++    def run(name, command, timeout=1800):
++        stdout, stderr = output / (name + '.stdout.log'), output / (name + '.stderr.log')
++        specification = {'command': [str(value) for value in command], 'cwd': str(ROOT), 'output_root': str(output),
++                         'stdout': str(stdout), 'stderr': str(stderr), 'result': str(output / (name + '.result.json')),
++                         'timeout_seconds': timeout, 'stop_bytes': plan['output_stop_threshold_bytes'],
++                         'limit_bytes': plan['output_limit_bytes']}
++        spec_path = output / (name + '.command.json')
++        spec_path.write_text(json.dumps(specification), encoding='utf-8')
++        result = subprocess.run([plan['pwsh'], '-NoProfile', '-NonInteractive', '-File', str(ROOT / 'audit/run_process.ps1'),
++                                 '-Spec', str(spec_path)], cwd=ROOT, creationflags=subprocess.CREATE_NO_WINDOW)
++        step = json.loads(Path(specification['result']).read_text(encoding='utf-8-sig'))
++        step['name'] = name
++        receipt['steps'].append(step)
++        receipt['peak_observed_output_bytes'] = max(receipt['peak_observed_output_bytes'], step['peak_output_bytes'])
++        receipt['storage_limit_exceeded'] |= step['storage_limit_exceeded']
++        save()
++        if result.returncode or receipt['storage_limit_exceeded']:
++            raise RuntimeError('Build step failed: ' + name)
++
++    try:
++        dependency = ROOT / 'deps/zlib'
++        local = Path(plan['zlib_local'])
++        if prepare.git('rev-parse', 'HEAD', root=local) != plan['zlib_commit'] or prepare.git('status', '--porcelain', root=local):
++            raise ValueError('Local zlib identity changed before initialization')
++        if not (dependency / '.git').exists():
++            if dependency.exists() and any(dependency.iterdir()):
++                raise ValueError('Unowned zlib contents')
++            run('zlib-clone', ['git', 'clone', '--no-hardlinks', '--no-checkout', '--no-recurse-submodules', '--', str(local), str(dependency)])
++            run('zlib-checkout', ['git', '-C', str(dependency), 'checkout', '--detach', plan['zlib_commit']])
++        if size(ROOT) - size(ROOT / 'build') > plan['source_preparation_limit_bytes']:
++            raise ValueError('Source preparation exceeded 128 MiB; retain files for review')
++        identity = output / 'identity'
++        source = prepare.prepare(identity)
++        if source['tool_source_sha256'] != plan['tool_source_sha256'] or source['tables_sha256'] != plan['tables_sha256']:
++            raise ValueError('Source identity changed during zlib initialization')
++        receipt['build_source_manifest'] = source
++        run('cmake-version', [plan['cmake'], '--version'])
++        native = output / 'native'
++        run('configure', [plan['cmake'], '-S', str(ROOT / 'audit'), '-B', str(native), '-G', 'Visual Studio 17 2022',
++                          '-A', 'x64', '-DAUDIT_IDENTITY_DIR=' + str(identity)])
++        compiler_records = []
++        for compiler_file in native.rglob('CMakeCXXCompiler.cmake'):
++            match = re.search(r'set\(CMAKE_CXX_COMPILER "([^"]+)"\)', compiler_file.read_text())
++            if not match:
++                raise ValueError('Configured compiler identity unavailable')
++            compiler_records.append({'configuration_sha256': sha_file(compiler_file),
++                                     'compiler': match.group(1), 'compiler_sha256': sha_file(match.group(1))})
++        if not compiler_records:
++            raise ValueError('No configured compiler record')
++        receipt['compilers'] = compiler_records
++        run('build', [plan['cmake'], '--build', str(native), '--config', 'Release', '--parallel', '1', '--',
++                      '/m:1', '/nr:false', '/p:MultiProcessorCompilation=false'])
++        run('reader-tests', [plan['ctest'], '--test-dir', str(native), '-C', 'Release', '--output-on-failure'])
++        tool = native / 'Release/iw7-gsc-audit.exe'
++        tool_hash = sha_file(tool)
++        receipt['tool_sha256'] = tool_hash
++        run('native-negative-tests', [plan['python'], '-B', str(ROOT / 'audit/test_native.py'), '--tool', str(tool), '-v'], 120)
++        for item in plan['inputs']:
++            if sha_file(item['path']) != item['sha256']:
++                raise ValueError('GSC input changed before witness run')
++            run('witness-' + item['role'], [plan['python'], '-B', plan['wrapper'], '--tool', str(tool), '--tool-sha256', tool_hash,
++                '--source-revision', source['source_revision'], '--source-sha256', source['source_sha256'],
++                '--tables-sha256', source['tables_sha256'], '--input', item['path'], '--output', str(output / ('witness-' + item['role']))], 90)
++        final_source = prepare.inspect_sources(require_zlib=True)
++        if final_source != source or sha_file(tool) != tool_hash or sha_file(plan['wrapper']) != plan['wrapper_sha256']:
++            raise ValueError('Source/dependency/tool/wrapper changed during build validation')
++        if any(sha_file(record['compiler']) != record['compiler_sha256'] for record in compiler_records):
++            raise ValueError('Compiler changed during build')
++        receipt['success'] = True
++    except Exception as error:
++        receipt['failure'] = str(error)
++        raise
++    finally:
++        receipt['finished_utc'] = datetime.now(timezone.utc).isoformat()
++        save()
++    return receipt
++
++
++if __name__ == '__main__':
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--plan', type=Path)
++    parser.add_argument('--plan-sha256')
++    parser.add_argument('--execute', action='store_true')
++    parser.add_argument('--sdk-root', type=Path)
++    parser.add_argument('--zlib-local', type=Path)
++    parser.add_argument('--cmake', type=Path)
++    parser.add_argument('--scheduler', type=Path)
++    parser.add_argument('--variant', type=Path)
++    parser.add_argument('--original', type=Path)
++    parser.add_argument('--output', type=Path)
++    args = parser.parse_args()
++    if args.execute:
++        raw = args.plan.read_bytes()
++        if hashlib.sha256(raw).hexdigest() != args.plan_sha256:
++            raise ValueError('Reviewed plan digest differs')
++        execute(json.loads(raw))
++    else:
++        print(json.dumps(plan(args), indent=2))
+diff --git a/audit/prepare.py b/audit/prepare.py
+index 5ef8ec368e08be0f1f49029d3e923c598ee4e6c6..758256b1936fb8a0ace47523765c973e283bba77 100644
+--- a/audit/prepare.py
++++ b/audit/prepare.py
+@@ -8,45 +8,67 @@ import subprocess
+ ROOT = Path(__file__).resolve().parents[1]
+ 
+ 
+-def git(*args):
+-    return subprocess.check_output(['git', '-C', str(ROOT), *args], text=True).strip()
++def git(*args, root=None):
++    return subprocess.check_output(['git', '-C', str(root or ROOT), *args], text=True).strip()
+ 
+ 
+-def digest(files):
+-    records = [{'path': p.as_posix(), 'sha256': hashlib.sha256((ROOT / p).read_bytes()).hexdigest()}
++def digest(files, root=None):
++    root = root or ROOT
++    records = [{'path': p.as_posix(), 'sha256': hashlib.sha256((root / p).read_bytes()).hexdigest()}
+                for p in sorted(files)]
+     return hashlib.sha256(json.dumps(records, sort_keys=True, separators=(',', ':')).encode()).hexdigest(), records
+ 
+ 
+-def prepare(output):
++def inspect_sources(require_zlib=True):
+     if git('status', '--porcelain', '--untracked-files=all'):
+         raise ValueError('A clean committed source checkout is required')
+-    output = output.resolve()
+-    if output.exists() or not output.is_relative_to(ROOT / 'build'):
+-        raise ValueError('Use a fresh ignored identity directory under build/')
+     files = [Path(p) for p in git('ls-files').splitlines()
+              if p.startswith(('src/', 'include/', 'audit/')) and (ROOT / p).is_file()]
+     tables = [p for p in files if p.as_posix().startswith('src/gsc/engine/iw7')]
+     tables += [Path('include/xsk/gsc/engine/iw7.hpp'), Path('include/xsk/gsc/common/assembly.hpp'),
+                Path('src/gsc/context.cpp')]
+-    source_hash, source_records = digest(files)
++    tool_hash, source_records = digest(files)
+     table_hash, table_records = digest(set(tables))
+     revision = git('rev-parse', 'HEAD')
++    zlib_root = ROOT / 'deps/zlib'
++    zlib_commit = git('rev-parse', 'HEAD:deps/zlib')
++    zlib_records, zlib_hash = [], None
++    if (zlib_root / '.git').exists():
++        if git('rev-parse', 'HEAD', root=zlib_root) != zlib_commit or git('status', '--porcelain', '--untracked-files=all', root=zlib_root):
++            raise ValueError('Pinned clean zlib checkout required')
++        zlib_hash, zlib_records = digest([Path(p) for p in git('ls-files', root=zlib_root).splitlines()], zlib_root)
++    elif require_zlib:
++        raise ValueError('Initialize pinned zlib before generating build identity')
++    source_hash = (hashlib.sha256(json.dumps({'tool': tool_hash, 'zlib': zlib_hash, 'zlib_commit': zlib_commit},
++                                           sort_keys=True, separators=(',', ':')).encode()).hexdigest()
++                   if zlib_hash else None)
++    return {'schema': 'iw7.gsc-audit-build-source/2', 'source_revision': revision,
++            'tool_source_sha256': tool_hash, 'source_sha256': source_hash, 'tables_sha256': table_hash,
++            'source_files': source_records, 'table_files': table_records, 'zlib_commit': zlib_commit,
++            'zlib_source_sha256': zlib_hash, 'zlib_source_files': zlib_records,
++            'dependencies_materialized': bool(zlib_hash), 'native_built': False}
++
++
++def prepare(output):
++    manifest = inspect_sources(require_zlib=True)
++    output = output.resolve()
++    if output.exists() or not output.is_relative_to(ROOT / 'build'):
++        raise ValueError('Use a fresh ignored identity directory under build/')
+     output.mkdir(parents=True)
+     header = ('#pragma once\n' + ''.join(f'#define AUDIT_{key} "{value}"\n' for key, value in
+-              [('SOURCE_REVISION', revision), ('SOURCE_SHA256', source_hash), ('TABLES_SHA256', table_hash)]))
++              [('SOURCE_REVISION', manifest['source_revision']), ('SOURCE_SHA256', manifest['source_sha256']),
++               ('TABLES_SHA256', manifest['tables_sha256'])]))
+     (output / 'audit_identity.hpp').write_text(header, encoding='utf-8', newline='\n')
+-    manifest = {'schema': 'iw7.gsc-audit-build-source/1', 'source_revision': revision,
+-                'source_sha256': source_hash, 'tables_sha256': table_hash,
+-                'source_files': source_records, 'table_files': table_records,
+-                'zlib_commit': git('rev-parse', 'HEAD:deps/zlib'), 'native_built': False}
+     (output / 'source-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
+     return manifest
+ 
+ 
+ if __name__ == '__main__':
+     parser = argparse.ArgumentParser(description=__doc__)
+-    parser.add_argument('--output', required=True, type=Path)
++    parser.add_argument('--output', type=Path)
++    parser.add_argument('--inspect-only', action='store_true')
+     args = parser.parse_args()
+-    result = prepare(args.output)
++    if args.inspect_only == bool(args.output):
++        parser.error('Choose --inspect-only or --output')
++    result = inspect_sources(require_zlib=False) if args.inspect_only else prepare(args.output)
+     print(json.dumps({key: value for key, value in result.items() if not key.endswith('_files')}, indent=2))
+diff --git a/audit/run_process.ps1 b/audit/run_process.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..a1f8afed0aac84188c0c6d9fa6051ddc0a77c1d2
+--- /dev/null
++++ b/audit/run_process.ps1
+@@ -0,0 +1,66 @@
++[CmdletBinding()]
++param([Parameter(Mandatory)][string]$Spec)
++$ErrorActionPreference = 'Stop'
++$data = Get-Content -LiteralPath $Spec -Raw | ConvertFrom-Json
++$outputRoot = [IO.Path]::GetFullPath($data.output_root)
++function Measure-Output {
++    $sum = (Get-ChildItem -LiteralPath $outputRoot -Recurse -File -Force | Measure-Object Length -Sum).Sum
++    if ($null -eq $sum) { return [long]0 }
++    return [long]$sum
++}
++$info = [Diagnostics.ProcessStartInfo]::new()
++$info.FileName = $data.command[0]
++$info.WorkingDirectory = $data.cwd
++$info.UseShellExecute = $false
++$info.CreateNoWindow = $true
++$info.RedirectStandardOutput = $true
++$info.RedirectStandardError = $true
++foreach ($argument in @($data.command | Select-Object -Skip 1)) { [void]$info.ArgumentList.Add([string]$argument) }
++$process = [Diagnostics.Process]::new()
++$process.StartInfo = $info
++$out = [IO.File]::Create($data.stdout)
++$err = [IO.File]::Create($data.stderr)
++$result = [ordered]@{ command=$data.command; pid=$null; creation_utc=$null; exit_code=$null; peak_output_bytes=[long]0; failure=$null }
++$watch = [Diagnostics.Stopwatch]::StartNew()
++$started = $false
++$stdoutTask = $null
++$stderrTask = $null
++try {
++    if (-not $process.Start()) { throw 'Owned process did not start' }
++    $started = $true
++    $result.pid = $process.Id
++    $result.creation_utc = $process.StartTime.ToUniversalTime().ToString('o')
++    $process.PriorityClass = 'BelowNormal'
++    $stdoutTask = $process.StandardOutput.BaseStream.CopyToAsync($out)
++    $stderrTask = $process.StandardError.BaseStream.CopyToAsync($err)
++    while (-not $process.WaitForExit(250)) {
++        $size = Measure-Output
++        $result.peak_output_bytes = [math]::Max($result.peak_output_bytes, $size)
++        if ($size -ge $data.stop_bytes -or $watch.Elapsed.TotalSeconds -gt $data.timeout_seconds) {
++            throw 'Output storage guard or process timeout reached'
++        }
++    }
++    $result.exit_code = $process.ExitCode
++} catch {
++    $result.failure = $_.Exception.Message
++} finally {
++    if ($started -and -not $process.HasExited) {
++        # Retained Process object + .NET descendant handling, never taskkill by a
++        # bare PID. This affects only the process tree started by this invocation.
++        $process.Kill($true)
++        if (-not $process.WaitForExit(30000)) { throw 'Owned build tree did not exit; keep lease quarantined' }
++    }
++    if ($started) { $result.exit_code = $process.ExitCode }
++    foreach ($task in @($stdoutTask, $stderrTask)) {
++        if ($null -ne $task -and -not $task.Wait(30000)) { $result.failure = 'Output pipe drain timed out' }
++    }
++    $out.Dispose()
++    $err.Dispose()
++    $result.peak_output_bytes = [math]::Max($result.peak_output_bytes, (Measure-Output))
++    $result.elapsed_seconds = $watch.Elapsed.TotalSeconds
++    $result.storage_limit_exceeded = $result.peak_output_bytes -gt $data.limit_bytes
++    $result | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $data.result -Encoding utf8
++    $process.Dispose()
++}
++if ($result.failure -or $result.exit_code -ne 0 -or $result.storage_limit_exceeded) { exit 1 }
++exit 0
+diff --git a/audit/test_plan.py b/audit/test_plan.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..ecc2a04f19b928a0f107f15bf82348a40e65fc29
+--- /dev/null
++++ b/audit/test_plan.py
+@@ -0,0 +1,88 @@
++"""Pure preparation/provenance tests; no Git copy, compiler or native executable."""
++import tempfile
++from pathlib import Path
++import unittest
++from unittest.mock import patch
++
++import prepare
++
++
++class PreparationTests(unittest.TestCase):
++    def setUp(self):
++        self.temporary = tempfile.TemporaryDirectory()
++        self.addCleanup(self.temporary.cleanup)
++        self.root = Path(self.temporary.name)
++        self.files = ['audit/main.cpp', 'src/gsc/engine/iw7.cpp', 'include/xsk/gsc/engine/iw7.hpp',
++                      'include/xsk/gsc/common/assembly.hpp', 'src/gsc/context.cpp']
++        for name in self.files:
++            path = self.root / name
++            path.parent.mkdir(parents=True, exist_ok=True)
++            path.write_text(name)
++        self.zlib = self.root / 'deps/zlib'
++        self.zlib.mkdir(parents=True)
++        self.zlib_dirty = False
++        self.zlib_revision = 'b' * 40
++        def fake_git(*args, root=None):
++            if root == self.zlib:
++                if args[0] == 'status':
++                    return ' M adler32.c' if self.zlib_dirty else ''
++                if args[0] == 'rev-parse':
++                    return self.zlib_revision
++                return 'adler32.c'
++            if args[0] == 'status':
++                return ''
++            if args[0] == 'ls-files':
++                return '\n'.join(self.files)
++            return 'b' * 40 if args[-1] == 'HEAD:deps/zlib' else 'a' * 40
++        self.addCleanup(patch.stopall)
++        patch.object(prepare, 'ROOT', self.root).start()
++        patch.object(prepare, 'git', side_effect=fake_git).start()
++
++    def materialize(self):
++        (self.zlib / '.git').touch()
++        (self.zlib / 'adler32.c').write_text('dependency source')
++
++    def test_uninitialized_dependency_cannot_produce_build_identity(self):
++        source = prepare.inspect_sources(require_zlib=False)
++        self.assertIsNone(source['source_sha256'])
++        self.assertFalse(source['dependencies_materialized'])
++        with self.assertRaisesRegex(ValueError, 'Initialize pinned zlib'):
++            prepare.prepare(self.root / 'build/identity')
++        self.assertFalse((self.root / 'build').exists())
++
++    def test_dependency_bytes_bind_full_source_without_changing_tool_or_tables(self):
++        before = prepare.inspect_sources(require_zlib=False)
++        self.materialize()
++        bound = prepare.inspect_sources()
++        self.assertEqual(before['tool_source_sha256'], bound['tool_source_sha256'])
++        self.assertEqual(before['tables_sha256'], bound['tables_sha256'])
++        self.assertTrue(bound['dependencies_materialized'])
++        (self.zlib / 'adler32.c').write_text('changed source')
++        changed = prepare.inspect_sources()
++        self.assertNotEqual(bound['source_sha256'], changed['source_sha256'])
++        self.assertNotEqual(bound['zlib_source_sha256'], changed['zlib_source_sha256'])
++
++    def test_dirty_or_wrong_revision_dependency_is_refused(self):
++        self.materialize()
++        self.zlib_dirty = True
++        with self.assertRaises(ValueError):
++            prepare.inspect_sources()
++        self.zlib_dirty = False
++        self.zlib_revision = 'c' * 40
++        with self.assertRaises(ValueError):
++            prepare.inspect_sources()
++
++    def test_identity_requires_fresh_ignored_path_and_embeds_full_hash(self):
++        self.materialize()
++        with self.assertRaises(ValueError):
++            prepare.prepare(self.root / 'outside')
++        target = self.root / 'build/identity'
++        source = prepare.prepare(target)
++        self.assertIn(source['source_sha256'], (target / 'audit_identity.hpp').read_text())
++        self.assertEqual(source['zlib_commit'], 'b' * 40)
++        with self.assertRaises(ValueError):
++            prepare.prepare(target)
++
++
++if __name__ == '__main__':
++    unittest.main()

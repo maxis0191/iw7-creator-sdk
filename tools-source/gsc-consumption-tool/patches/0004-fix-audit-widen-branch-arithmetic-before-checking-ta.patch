@@ -1,0 +1,95 @@
+From f2726164c7233d011d67e9b28ebe4b06f1417e70 Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 07:45:06 +0200
+Subject: [PATCH 4/9] fix(audit): widen branch arithmetic before checking
+ targets
+
+
+diff --git a/audit/test_native.py b/audit/test_native.py
+index 0b373096d8173c15aedee6cd86ab3d78f946ee79..e6033d4062f6a3fd2c66358ba81910ac192174fa 100644
+--- a/audit/test_native.py
++++ b/audit/test_native.py
+@@ -91,6 +91,18 @@ class NativeAuditTests(unittest.TestCase):
+         self.call(container(b'\x34\x91\xff\xff\x19', function(4)), False)
+         self.call(container(b'\x34\x4c\xff\xff\xff\x7f\x19', function(6)), False)
+ 
++    def test_nonempty_switch_integer_and_default_targets(self):
++        # switch at 1 -> endswitch at 7; entry offset base 14; final OP_End at 17.
++        for target, success in ((6, True), (17, True), (0, False), (18, False), (2, False), (11, False)):
++            for default in (False, True):
++                encoded_offset = ((target - 14) << 1) & 0xffffff
++                code = (b'\x34\x4c' + struct.pack('<i', 2) + b'\x19\x3b\x01\0'
++                        + struct.pack('<I', 0 if default else 0x800001)
++                        + encoded_offset.to_bytes(3, 'little') + b'\x34')
++                stack = function(len(code) - 1) + (b'\x01\0' if default else b'')
++                with self.subTest(target=target, default=default):
++                    self.call(container(code, stack), success)
++
+     def test_last_function_size_zero_too_short_and_too_long(self):
+         for code, stack in ((b'\x34\x19', function(0)), (b'\x34\x19', function(2)),
+                             (b'\x34\x53\0\0\0\0\x19', function(1) + b'value\0')):
+diff --git a/include/xsk/gsc/disassembler.hpp b/include/xsk/gsc/disassembler.hpp
+index 5c5ecbd19f09d84d71c877519411e13570de73b4..331613a7f6a012133168062539895a07dcf069c3 100644
+--- a/include/xsk/gsc/disassembler.hpp
++++ b/include/xsk/gsc/disassembler.hpp
+@@ -53,6 +53,7 @@ private:
+     auto disassemble_call_builtin(instruction& inst, bool method, bool args) -> void;
+     auto disassemble_call_builtin_v2(instruction& inst, bool method, bool args) -> void;
+     auto disassemble_jump(instruction& inst, bool expr, bool back) -> void;
++    auto checked_branch_target(i64 address) const -> usize;
+     auto disassemble_switch(instruction& inst) -> void;
+     auto disassemble_switch_table(instruction& inst) -> void;
+     auto disassemble_offset() -> i32;
+diff --git a/src/gsc/disassembler.cpp b/src/gsc/disassembler.cpp
+index 9308234cf81667f880d25d8a3c392a0a8847b555..765c8d5e34b93f8607ac047d86afdb974b46601d 100644
+--- a/src/gsc/disassembler.cpp
++++ b/src/gsc/disassembler.cpp
+@@ -504,16 +504,26 @@ auto disassembler::disassemble_call_builtin_v2(instruction& inst, bool method, b
+ 
+ auto disassembler::disassemble_jump(instruction& inst, bool expr, bool back) -> void
+ {
+-    auto addr = inst.index + (expr ? 3 + script_.read<i16>() : back ? 3 - script_.read<u16>() : 5 + script_.read<i32>());
++    // Widen before arithmetic: INT32_MAX + 5 must not overflow signed int.
++    auto delta = expr ? i64{ 3 } + script_.read<i16>() : back ? i64{ 3 } - script_.read<u16>() : i64{ 5 } + script_.read<i32>();
++    auto addr = checked_branch_target(static_cast<i64>(inst.index) + delta);
+     auto label = std::format("loc_{:X}", addr);
+ 
+     inst.data.emplace_back(label);
+     func_->labels.insert({ addr, label });
+ }
+ 
++auto disassembler::checked_branch_target(i64 address) const -> usize
++{
++    if (strict_ && (address < static_cast<i64>(func_->index) ||
++        address >= static_cast<i64>(func_->index) + static_cast<i64>(func_->size)))
++        throw disasm_error("strict audit: branch target outside its function");
++    return static_cast<usize>(address);
++}
++
+ auto disassembler::disassemble_switch(instruction& inst) -> void
+ {
+-    auto addr = inst.index + 4 + script_.read<i32>();
++    auto addr = checked_branch_target(static_cast<i64>(inst.index) + i64{ 4 } + script_.read<i32>());
+     auto label = std::format("loc_{:X}", addr);
+ 
+     inst.data.emplace_back(label);
+@@ -587,7 +597,7 @@ auto disassembler::disassemble_switch_table(instruction& inst) -> void
+             }
+         }
+ 
+-        auto addr = index + 4 + offs;
++        auto addr = checked_branch_target(static_cast<i64>(index) + i64{ 4 } + offs);
+         auto label = std::format("loc_{:X}", addr);
+ 
+         inst.data.emplace_back(label);
+@@ -600,7 +610,9 @@ auto disassembler::disassemble_switch_table(instruction& inst) -> void
+ 
+ auto disassembler::disassemble_offset() -> i32
+ {
+-    return (script_.read_i24() << 8) >> ((ctx_->features() & feature::offs8) ? 8 : (ctx_->features() & feature::offs9) ? 9 : 10);
++    auto raw = script_.read_i24();
++    auto signed24 = (raw & 0x800000) ? raw - 0x1000000 : raw;
++    return signed24 >> ((ctx_->features() & feature::offs8) ? 0 : (ctx_->features() & feature::offs9) ? 1 : 2);
+ }
+ 
+ auto disassembler::resolve_functions() -> void

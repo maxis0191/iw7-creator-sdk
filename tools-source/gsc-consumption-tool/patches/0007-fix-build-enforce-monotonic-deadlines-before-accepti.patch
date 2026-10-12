@@ -1,0 +1,274 @@
+From 2dfbbf37d9fa329dd64599c11c806afe1ac2515c Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 07:58:43 +0200
+Subject: [PATCH 7/9] fix(build): enforce monotonic deadlines before accepting
+ closure
+
+
+diff --git a/audit/README.md b/audit/README.md
+index 0b72a434d2d58ccb1a196193cc8a7f9141ae0163..6cbe82c21b5a16714733acb20c86dd7ce6f561d5 100644
+--- a/audit/README.md
++++ b/audit/README.md
+@@ -101,7 +101,10 @@ and default switch tables, and invalid out-of-function/inside-operand destinatio
+ These native tests have **not run**. No game or native tool was started.
+ Four pure preparation tests pass: missing/dirty/wrong zlib is refused, dependency
+ bytes affect the combined source hash, and build identity needs a fresh ignored
+-path. PowerShell scripts have passed syntax parsing only.
++path. PowerShell scripts pass syntax parsing; `test_supervision.ps1` additionally
++passes 37 checks with mocked clocks/getters/measurements and no native execution.
++Those checks cover late zero-active observations, costly output measurement and
++owner getters, exact boundaries and time spent stopping the original job.
+ 
+ ## Admission and build plan
+ 
+@@ -164,6 +167,11 @@ successful `supervision.json` with root exit zero, zero active members, confirme
+ tree closure and lease release. A forced residual cleanup never converts failure
+ to success.
+ 
++Snapshots are timestamped before reading the original owner's getters. The clock
++is checked again after all getters and disk measurement, before accepting closure.
++At or beyond 2,000 ms of drain, 10,000 ms of cleanup, or the global deadline, even
++a zero-active snapshot is too late. Cleanup timing begins before `Stop` itself.
++
+ ```text
+ python -B audit/prepare.py --output build/identity-reviewed
+ cmake -S audit -B build/audit-native -G "Visual Studio 17 2022" -A x64 -DAUDIT_IDENTITY_DIR=ABSOLUTE_IDENTITY_DIRECTORY
+diff --git a/audit/build.ps1 b/audit/build.ps1
+index 3dfce12a4222d48cbab1ec53ff7d29096960d247..e11cc889c510269009bcbda5d681406082fa87c3 100644
+--- a/audit/build.ps1
++++ b/audit/build.ps1
+@@ -34,6 +34,7 @@ if ($planData.job_source_sha256 -ne 'f6be2a4cafddb78b5e07a6802354575ada418cb7643
+     throw 'Original job owner pin differs'
+ }
+ . $planData.scheduler
++. (Join-Path $PSScriptRoot 'supervision.ps1')
+ function Quote-BuildArgument([string]$Value) {
+     if ($Value.IndexOf([char]0) -ge 0) { throw 'NUL argument' }
+     $text = [Text.StringBuilder]::new()
+@@ -88,29 +89,10 @@ try {
+     $record.RootImage = $owner.Image
+     if ($record.RootImage -ine $planData.python) { throw 'Original root image differs' }
+     Add-IW7ResourceProcess -Token $lease.Token -ProcessId $owner.PID
+-    $watch = [Diagnostics.Stopwatch]::StartNew()
+-    $rootExitedAt = $null
++    $startedMs = Get-AuditMonotonicMs
+     $owner.Resume()
+-    while ($true) {
+-        $exited = $owner.Exited
+-        $active = $owner.Active
+-        $record.LastObservation = [ordered]@{ ElapsedMs=$watch.ElapsedMilliseconds; RootExited=$exited; Active=$active }
+-        $record.PeakObservedOutputBytes = [math]::Max($record.PeakObservedOutputBytes, (Measure-OwnedOutput))
+-        if ($record.PeakObservedOutputBytes -ge 1800MB -or $watch.Elapsed.TotalSeconds -ge 3600) {
+-            throw 'Owned build exceeded storage stop threshold or deadline'
+-        }
+-        if ($exited -and $null -eq $rootExitedAt) { $rootExitedAt = $watch.ElapsedMilliseconds }
+-        if ($exited -and $active -eq 0) {
+-            $record.RootExitCode = $owner.ExitCode
+-            $record.JobActiveAtClose = 0
+-            $closed = $true
+-            break
+-        }
+-        if ($null -ne $rootExitedAt -and $watch.ElapsedMilliseconds - $rootExitedAt -ge 2000) {
+-            throw 'Unqualified residual compiler/telemetry descendants; refuse and close only original job'
+-        }
+-        Start-Sleep -Milliseconds 250
+-    }
++    Wait-AuditOwnedBuild $owner $record $startedMs { Measure-OwnedOutput }
++    $closed = $true
+     if ($record.RootExitCode -ne 0) { throw "Build root failed: $($record.RootExitCode)" }
+     $candidate = Get-Content -LiteralPath (Join-Path $outputRoot 'build-receipt.json') -Raw | ConvertFrom-Json
+     if (!$candidate.success) { throw 'Build candidate receipt is not successful' }
+@@ -121,21 +103,8 @@ try {
+ } finally {
+     if ($owner -and !$closed) {
+         try {
+-            $record.StopOriginalJobRequested = $true
+-            $owner.Stop()
+-            $closing = [Diagnostics.Stopwatch]::StartNew()
+-            do {
+-                $exited = $owner.Exited
+-                $active = $owner.Active
+-                $record.ClosureObservation = [ordered]@{ RootExited=$exited; Active=$active; ElapsedMs=$closing.ElapsedMilliseconds }
+-                if ($exited -and $active -eq 0) {
+-                    $closed = $true
+-                    $record.RootExitCode = $owner.ExitCode
+-                    $record.JobActiveAtClose = 0
+-                    break
+-                }
+-                Start-Sleep -Milliseconds 100
+-            } while ($closing.ElapsedMilliseconds -lt 10000)
++            Stop-AuditOwnedBuild $owner $record { Measure-OwnedOutput }
++            $closed = $true
+         } catch { $record.ClosureError = $_.Exception.Message }
+     }
+     $record.TreeClosed = $closed -or $null -eq $owner
+diff --git a/audit/supervision.ps1 b/audit/supervision.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..b4cec15ce5b11114561c71a03619858598f44424
+--- /dev/null
++++ b/audit/supervision.ps1
+@@ -0,0 +1,66 @@
++# Import defines predicates only; no process, scheduler, lease or native type.
++function Get-AuditMonotonicMs { [Environment]::TickCount64 }
++function Wait-AuditPoll([int]$Milliseconds) { Start-Sleep -Milliseconds $Milliseconds }
++
++function Get-AuditOwnedSnapshot($Owner, [long]$StartedMs) {
++    # Take the timestamp BEFORE getters. Slow getters belong to this observation,
++    # rather than moving the first root-exit time forward and granting more time.
++    $began = (Get-AuditMonotonicMs) - $StartedMs
++    $exited = $Owner.Exited
++    $active = $Owner.Active
++    $exitCode = if ($exited) { $Owner.ExitCode } else { $null }
++    [pscustomobject]@{ ElapsedMs=$began; CompletedMs=((Get-AuditMonotonicMs)-$StartedMs);
++        RootExited=$exited; Active=$active; RootExitCode=$exitCode }
++}
++
++function Wait-AuditOwnedBuild($Owner, $Record, [long]$StartedMs, [scriptblock]$MeasureOutput) {
++    $rootExitedAt = $null
++    while ($true) {
++        $sample = Get-AuditOwnedSnapshot $Owner $StartedMs
++        $Record.LastObservation = $sample
++        if ($sample.RootExited -and $null -eq $rootExitedAt) {
++            $rootExitedAt = $sample.ElapsedMs
++            $Record.RootExitObservedMs = $rootExitedAt
++        }
++        $Record.PeakObservedOutputBytes = [math]::Max($Record.PeakObservedOutputBytes, (& $MeasureOutput))
++        $now = (Get-AuditMonotonicMs) - $StartedMs
++        $Record.ObservationCheckedMs = $now
++        # Every deadline is checked AFTER all observation/measurement work and
++        # BEFORE accepting a closed snapshot. Equality is already too late.
++        if ($Record.PeakObservedOutputBytes -ge 1800MB -or $now -ge 3600000) {
++            throw 'Owned build exceeded storage stop threshold or deadline'
++        }
++        if ($null -ne $rootExitedAt -and $now - $rootExitedAt -ge 2000) {
++            throw 'Unqualified residual compiler/telemetry descendants; drain deadline reached'
++        }
++        if ($sample.RootExited -and $sample.Active -eq 0) {
++            $Record.RootExitCode = $sample.RootExitCode
++            $Record.JobActiveAtClose = 0
++            return
++        }
++        Wait-AuditPoll 250
++    }
++}
++
++function Stop-AuditOwnedBuild($Owner, $Record, [scriptblock]$MeasureOutput) {
++    # Include the time spent by Stop itself in the cleanup deadline.
++    $started = Get-AuditMonotonicMs
++    $Record.StopOriginalJobRequested = $true
++    $Owner.Stop()
++    while ($true) {
++        $sample = Get-AuditOwnedSnapshot $Owner $started
++        $Record.ClosureObservation = $sample
++        $Record.PeakObservedOutputBytes = [math]::Max($Record.PeakObservedOutputBytes, (& $MeasureOutput))
++        $now = (Get-AuditMonotonicMs) - $started
++        $Record.ClosureCheckedMs = $now
++        if ($now -ge 10000) {
++            throw 'Original job closure deadline reached; retain lease'
++        }
++        if ($sample.RootExited -and $sample.Active -eq 0) {
++            $Record.RootExitCode = $sample.RootExitCode
++            $Record.JobActiveAtClose = 0
++            return
++        }
++        Wait-AuditPoll 100
++    }
++}
+diff --git a/audit/test_supervision.ps1 b/audit/test_supervision.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..e20f3b7a8f7feb72f5cc61897d2d7e0997f9a106
+--- /dev/null
++++ b/audit/test_supervision.ps1
+@@ -0,0 +1,92 @@
++# Pure monotonic-clock and owner mocks. No native type, process, lease or sleep.
++$ErrorActionPreference = 'Stop'
++. (Join-Path $PSScriptRoot 'supervision.ps1')
++function Get-AuditMonotonicMs { $script:fixture.Now }
++function Wait-AuditPoll([int]$Milliseconds) { $script:fixture.Now += $Milliseconds }
++function New-Fixture([object[]]$Samples, [long[]]$Measures=@(0), [long]$Initial=0, [long]$StopDelay=0) {
++    $script:fixture = [pscustomobject]@{Now=$Initial; Samples=$Samples; Poll=0; Current=$null;
++        Measures=$Measures; MeasureIndex=0; StopDelay=$StopDelay; Stops=0 }
++    $owner = [pscustomobject]@{}
++    $owner | Add-Member ScriptProperty Exited {
++        $i = [math]::Min($script:fixture.Poll, $script:fixture.Samples.Count - 1)
++        $script:fixture.Current = $script:fixture.Samples[$i]
++        $script:fixture.Poll++
++        $script:fixture.Now += $script:fixture.Current.ExitDelay
++        return $script:fixture.Current.Exited
++    }
++    $owner | Add-Member ScriptProperty Active {
++        $script:fixture.Now += $script:fixture.Current.ActiveDelay
++        return $script:fixture.Current.Active
++    }
++    $owner | Add-Member ScriptProperty ExitCode {
++        $script:fixture.Now += $script:fixture.Current.CodeDelay
++        return 0
++    }
++    $owner | Add-Member ScriptMethod Stop { $script:fixture.Stops++; $script:fixture.Now += $script:fixture.StopDelay }
++    $record = [ordered]@{PeakObservedOutputBytes=[long]0;RootExitCode=$null;JobActiveAtClose=$null}
++    [pscustomobject]@{Owner=$owner;Record=$record}
++}
++function Sample([int]$Active=0, [long]$ExitDelay=0, [long]$ActiveDelay=0, [long]$CodeDelay=0) {
++    [pscustomobject]@{Exited=$true;Active=$Active;ExitDelay=$ExitDelay;ActiveDelay=$ActiveDelay;CodeDelay=$CodeDelay}
++}
++$measure = {
++    $i = [math]::Min($script:fixture.MeasureIndex, $script:fixture.Measures.Count - 1)
++    $script:fixture.Now += $script:fixture.Measures[$i]
++    $script:fixture.MeasureIndex++
++    [long]0
++}
++$script:checks = 0
++function Assert-Check([bool]$Condition, [string]$Message) {
++    if (!$Condition) { throw $Message }
++    $script:checks++
++}
++function Refuse([scriptblock]$Action, [string]$Pattern, $Record) {
++    $caught = $null
++    try { & $Action } catch { $caught = $_.Exception.Message }
++    Assert-Check ($caught -match $Pattern) "Expected refusal matching '$Pattern', got '$caught'"
++    Assert-Check ($null -eq $Record.JobActiveAtClose) 'Late observation must not accept zero active members'
++}
++
++$f = New-Fixture @((Sample)) @(1999)
++Wait-AuditOwnedBuild $f.Owner $f.Record 0 $measure
++Assert-Check ($f.Record.JobActiveAtClose -eq 0 -and $f.Record.RootExitObservedMs -eq 0) '1999 ms drain boundary must pass'
++
++foreach ($cost in @(2000,2001)) {
++    $f = New-Fixture @((Sample)) @($cost)
++    Refuse { Wait-AuditOwnedBuild $f.Owner $f.Record 0 $measure } 'drain deadline' $f.Record
++    Assert-Check ($f.Record.RootExitObservedMs -eq 0) 'Output measurement cost must not shift root exit time'
++}
++foreach ($sample in @((Sample -ExitDelay 2000),(Sample -ActiveDelay 2000),(Sample -CodeDelay 2000))) {
++    $f = New-Fixture @($sample)
++    Refuse { Wait-AuditOwnedBuild $f.Owner $f.Record 0 $measure } 'drain deadline' $f.Record
++}
++$f = New-Fixture @((Sample -Active 1),(Sample -ExitDelay 1750))
++Refuse { Wait-AuditOwnedBuild $f.Owner $f.Record 0 $measure } 'drain deadline' $f.Record
++Assert-Check ($f.Record.LastObservation.ElapsedMs -eq 250 -and $f.Record.ObservationCheckedMs -eq 2000) 'Late second poll crossing must be retained'
++
++$f = New-Fixture @((Sample)) @(0) 3599999
++Wait-AuditOwnedBuild $f.Owner $f.Record 0 $measure
++Assert-Check ($f.Record.JobActiveAtClose -eq 0) 'Global deadline minus one must pass'
++foreach ($fixtureArgs in @(@{Initial=3600000;Measures=@(0)},@{Initial=3599999;Measures=@(1)})) {
++    $f = New-Fixture -Samples @((Sample)) @fixtureArgs
++    Refuse { Wait-AuditOwnedBuild $f.Owner $f.Record 0 $measure } 'stop threshold or deadline' $f.Record
++}
++
++$f = New-Fixture @((Sample)) @(9999)
++Stop-AuditOwnedBuild $f.Owner $f.Record $measure
++Assert-Check ($f.Record.JobActiveAtClose -eq 0 -and $script:fixture.Stops -eq 1) 'Cleanup at 9999 ms must pass after exact Stop'
++foreach ($cost in @(10000,10001)) {
++    $f = New-Fixture @((Sample)) @($cost)
++    Refuse { Stop-AuditOwnedBuild $f.Owner $f.Record $measure } 'closure deadline' $f.Record
++}
++foreach ($sample in @((Sample -ExitDelay 10000),(Sample -ActiveDelay 10000),(Sample -CodeDelay 10000))) {
++    $f = New-Fixture @($sample)
++    Refuse { Stop-AuditOwnedBuild $f.Owner $f.Record $measure } 'closure deadline' $f.Record
++}
++$f = New-Fixture @((Sample)) @(0) 0 10000
++Refuse { Stop-AuditOwnedBuild $f.Owner $f.Record $measure } 'closure deadline' $f.Record
++$f = New-Fixture @((Sample -Active 1),(Sample -ExitDelay 9900))
++Refuse { Stop-AuditOwnedBuild $f.Owner $f.Record $measure } 'closure deadline' $f.Record
++Assert-Check ($f.Record.ClosureObservation.ElapsedMs -eq 100 -and $f.Record.ClosureCheckedMs -eq 10000) 'Late cleanup poll crossing must be retained'
++
++Write-Output "Monotonic supervision: $script:checks checks passed; no native execution."
