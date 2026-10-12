@@ -37,5 +37,28 @@ def materialize(project, build_root, output_root, tools_root, *, client_source=N
     require(evidence["api"] == "beacon-finalize/1" and evidence["blockers"] == result["blockers"] and
             all(evidence[key] is False for key in ("closure_complete", "package_ready", "runtime_ready", "owner_accepted")),
             "Materialized candidate evidence differs")
+    manifest = finalizer.decoded(files["manifest.json"])
+    representations = evidence["node_representations"]
+    require(isinstance(representations, list) and len(representations) == len(finalizer.NODE_FILES) and
+            all(isinstance(item, dict) for item in representations) and
+            {item["id"] for item in representations} == set(finalizer.NODE_FILES),
+            "Materialized candidate node representation identities differ")
+    for ident, relative in finalizer.NODE_FILES.items():
+        name = "evidence/serialized-nodes/" + relative
+        raw = files[name]
+        expected = {"id": ident, "path": name, "bytes": len(raw), "sha256": finalizer.sha(raw),
+                    "representation": "Exact retained FF dump bytes"}
+        actual = next(item for item in representations if item["id"] == ident)
+        require(finalizer.encoded(actual) == finalizer.encoded(expected),
+                "Materialized candidate node representation differs: " + ident)
+        nodes = [node for node in manifest["package"]["closure"]["nodes"] if node["id"] == ident]
+        require(len(nodes) == 1 and nodes[0]["sha256"] == expected["sha256"],
+                "Materialized candidate node closure hash differs: " + ident)
+    # Recompute these pure reports; a stored success/failure summary is not proof.
+    for stage in ("plan", "package"):
+        report = finalizer.sdk.validate(manifest, root=output if stage == "package" else None,
+            stage=stage, client_source=client_source, server_source=server_source)
+        require(files["validation-" + stage + ".json"] == finalizer.encoded(report),
+                "Materialized candidate validation report differs: " + stage)
     inputs.recheck()
     return {**result, "creator_output_verified": True, "candidate_files_verified": inputs.records}

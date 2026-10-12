@@ -867,6 +867,95 @@ class CreatorTests(unittest.TestCase):
         self.assertIn("candidate hash differs: ff", " ".join(report["errors"]))
         self.assertTrue(fixture.output.exists(), "Preserve the changed candidate for inspection; never delete external replacements")
 
+    def materialize_post_write_tools(self, mutation):
+        tools = self.materialize_tools()
+        path = tools / "sdk/modding/Finalize-BeaconProject.py"
+        path.write_text(path.read_text() + "\n" + textwrap.dedent('''\
+            # Fault injection only after the real finalizer has written all files.
+            original_finalize = finalize
+            def finalize(*args, **kwargs):
+                result = original_finalize(*args, **kwargs)
+                root = Path(result['candidate_root'])
+            ''') + textwrap.indent(textwrap.dedent(mutation).strip() + "\n", "    ") + "    return result\n")
+        return tools
+
+    def test_materialize_rejects_same_size_corruption_of_each_serialized_node(self):
+        for relative in ("xmodel/paris_model_probe.xmb", "xsurface/paris_model_probe_lod0.xsb",
+                         "netconststrings/ncs_mdl_paris_model_probe.json", "sdk_beacon"):
+            with self.subTest(node=relative):
+                fixture = self.materialize_fixture()
+                tools = self.materialize_post_write_tools(f'''\
+                    file = root / 'evidence/serialized-nodes' / {relative!r}
+                    raw = file.read_bytes()
+                    file.write_bytes(raw[:-1] + bytes([raw[-1] ^ 1]))
+                    assert file.stat().st_size == len(raw)
+                    ''')
+                code, report = self.invoke_materialize(fixture, tools=tools, mutates=True)
+                self.assertEqual(code, 1, report)
+                self.assertFalse(report["materialized"])
+                self.assertIn("node representation differs", " ".join(report["errors"]))
+                self.assertTrue(fixture.output.exists())
+
+    def test_materialize_rejects_changed_node_mapping_and_metadata(self):
+        for field, mutation, message in (
+                ("id", "nodes[0]['id'] = nodes[1]['id']", "node representation identities differ"),
+                ("path", "nodes[0]['path'] = nodes[0]['path'][:-1] + 'z'", "node representation differs"),
+                ("bytes", "nodes[0]['bytes'] += 1", "node representation differs"),
+                ("sha256", "nodes[0]['sha256'] = '0' * 64", "node representation differs")):
+            with self.subTest(field=field):
+                fixture = self.materialize_fixture()
+                tools = self.materialize_post_write_tools(f'''\
+                    file = root / 'finalization.json'
+                    original = file.read_bytes()
+                    evidence = decoded(original)
+                    nodes = evidence['node_representations']
+                    {mutation}
+                    changed = encoded(evidence)
+                    file.write_bytes(changed)
+                    result['bytes_written'] += len(changed) - len(original)
+                    ''')
+                code, report = self.invoke_materialize(fixture, tools=tools, mutates=True)
+                self.assertEqual(code, 1, report)
+                self.assertFalse(report["materialized"])
+                self.assertIn(message, " ".join(report["errors"]))
+
+    def test_materialize_checks_manifest_even_when_node_receipt_matches_corrupted_bytes(self):
+        fixture = self.materialize_fixture()
+        tools = self.materialize_post_write_tools('''\
+            receipt = root / 'finalization.json'
+            original = receipt.read_bytes()
+            evidence = decoded(original)
+            node = evidence['node_representations'][0]
+            file = root / node['path']
+            raw = file.read_bytes()
+            changed = raw[:-1] + bytes([raw[-1] ^ 1])
+            file.write_bytes(changed)
+            node['sha256'] = sha(changed)
+            receipt.write_bytes(encoded(evidence))
+            assert receipt.stat().st_size == len(original)
+            ''')
+        code, report = self.invoke_materialize(fixture, tools=tools, mutates=True)
+        self.assertEqual(code, 1, report)
+        self.assertFalse(report["materialized"])
+        self.assertIn("node closure hash differs", " ".join(report["errors"]))
+
+    def test_materialize_recomputes_both_validation_reports(self):
+        for stage in ("plan", "package"):
+            with self.subTest(stage=stage):
+                fixture = self.materialize_fixture()
+                tools = self.materialize_post_write_tools(f'''\
+                    file = root / 'validation-{stage}.json'
+                    original = file.read_bytes()
+                    validation = decoded(original)
+                    validation['schema'] = 'x' + validation['schema'][1:]
+                    file.write_bytes(encoded(validation))
+                    assert file.stat().st_size == len(original)
+                    ''')
+                code, report = self.invoke_materialize(fixture, tools=tools, mutates=True)
+                self.assertEqual(code, 1, report)
+                self.assertFalse(report["materialized"])
+                self.assertIn("validation report differs: " + stage, " ".join(report["errors"]))
+
 
 if __name__ == "__main__":
     unittest.main()

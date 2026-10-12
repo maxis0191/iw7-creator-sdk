@@ -266,10 +266,15 @@ receipt, prior build state or evidence gate is amended.
 
 After finalization, Creator reopens the ten required candidate files through the
 bounded reader, checks the total written byte count, FF/GSC/manifest hashes,
-output paths, stored evidence and remaining blockers, then rechecks file identities
-and hashes. `materialized=true` therefore requires actual checked files, not a
-positive boolean returned by a finalizer. Changed post-write output is refused
-and retained for inspection; Creator does not delete external replacements.
+output paths, stored evidence and remaining blockers. Each of the four serialized
+assets must match its exact ID/path/size/hash record and the manifest closure hash;
+missing, duplicate or redirected representation records are refused. The two
+validation reports must exactly match newly computed pure SDK reports for the
+measured manifest and candidate. Creator then rechecks file identities and hashes.
+`materialized=true` therefore requires actual checked files, not a positive boolean
+returned by a finalizer. Changed post-write output is refused and retained for
+inspection; Creator does not delete external replacements. These integrity checks
+do not authenticate historical execution statements in the local evidence.
 
 **Exit 0 means the local candidate was created and checked.** It can correctly
 report `materialized=true`, `build_verified=true`, `package_ready=false` and
@@ -284,7 +289,7 @@ This is an authoring checkpoint, not package, gameplay or connection
 acceptance. No ZIP, deployment, game launch, server connection or resource lease
 is implicit.
 
-Thirteen real CLI additions cover successful local output with blockers,
+Seventeen real CLI additions cover successful local output with blockers,
 historical binding limits, changed FF/source hashes, unclosed/unrestored builds,
 fresh/nonoverlapping destinations, missing inputs, refused build/ZIP/audit options,
 recipient proofs, active-project collisions, unchanged Plan/Build options, a
@@ -292,6 +297,18 @@ builder that must never be called, a false success without files and post-write
 payload drift. They use the existing asset-free finalizer fixtures. An initial
 test-double indentation error was corrected; it did not execute a builder or
 change a production gate.
+
+Review of the first Materialize implementation found that merely rehashing the
+four serialized assets did not compare them with their expected receipt/manifest
+hashes. Flipping one byte in the XSurface after finalization, without changing its
+size, incorrectly returned success. The corrective checks above reject that case
+for all four assets, changed representation mappings/metadata, a corrupted asset
+whose receipt hash was also updated, and altered plan/package reports. These
+eleven post-write fault cases use only synthetic fixtures and preserve the rejected
+candidate. The previously created real candidate was not modified for this review.
+Correction validation: 78 Creator/consumer tests pass, including 59 real Creator
+CLI test methods. The finalizer suite passes 34 tests; its one symlink-creation
+case is skipped because Windows does not grant that operation in this session.
 
 On 2026-10-12, the new action was also exercised against the retained real
 source-bound build from the earlier Creator run. It returned exit 0 after
