@@ -4,10 +4,18 @@
 native decoder's final bytecode and symbol-stack cursors. It is a separate utility;
 Creator, Finalizer, Recipient and the Beacon evidence gates are unchanged.
 
-**Current status: source candidate only.** Thirteen wrapper tests pass with synthetic
-framing, mocked native responses and small bounded Python pipe subprocesses. The native executable has not been compiled
-or executed. Neither Beacon nor any retail script has a complete-consumption
-witness yet. The corrected Beacon offline record remains observed-only.
+**Current status: native steps passed; overall build acceptance is still blocked.**
+The 2026-10-12 v4 attempt compiled the auditor, passed reader CTest and all thirteen
+native tests, then produced bound complete-consumption measurements for the two
+retained Beacon inputs. The original job still had one unqualified descendant
+after its two-second drain, so its supervisor correctly marked the attempt failed,
+stopped that original job, confirmed zero active members and released the lease.
+These real measurements do not convert the failed supervision into a successful
+build or reopen Creator/Recipient gates. No retail script was audited.
+
+The thirteen earlier wrapper tests remain synthetic/mock/pipe evidence, separate
+from the new native results. See [v4 result](gsc-consumption-native-20261012.json)
+and the [private source archive](../../tools-source/gsc-consumption-tool/README.md).
 
 The separate tooling source is based on xensik/gsc-tool commit
 `3300e430d1efef00e54c66a8bd416e18a2a9882a`, branch
@@ -15,6 +23,27 @@ The separate tooling source is based on xensik/gsc-tool commit
 `IW7-Tools/gsc-tool-audit` checkout. Its `audit/README.md` records the source,
 strict checks, prepared native tests and admission plan. No shared provider,
 runtime input, game asset or original Beacon GSC is changed.
+
+The preserved v4 source is `6f650cb9c981317b970dad0abae6846165f80166`; the local
+executable SHA256 is `54f0ce337fda98acfeb75e54e538d4936f820d42f530589060f6ac65966d3398`.
+Its header-order correction compiled successfully. The earlier v1 CIM failure and
+v3 zlib-header failure remain in source history and immutable ignored run roots.
+The text patch archive reconstructs the exact source tree, while its `git am`
+commits can have different identities; it makes no binary reproducibility claim.
+
+The variant consumed all 1,480 bytecode bytes and 1,808 stack bytes across eight
+functions. Its 15,850-byte assembly matches the prior observed disassembly hash.
+The original consumed all 1,455 bytecode bytes and 1,394 stack bytes across seven
+functions; its assembly explicitly contains both utility `flag_exist`/`flag` far
+calls. The variant had no observed far-call line. Both bound receipts still set
+external-GSC dependency absence, full asset closure, runtime readiness and owner
+acceptance false. Complete structural consumption is not a general import proof.
+
+The remaining build-lifecycle issue needs original-job descendant identity
+evidence and a reviewed closure policy. No identity was captured for v4's residual
+member, so it must not be retrospectively classified as harmless telemetry. Do
+not lengthen the drain, kill by process name or label the existing run successful.
+Any future native attempt requires a fresh reviewed Plan and coordinator GO.
 
 The native audit must read the original container from binary stdin, verify exact
 container/zlib lengths, require the initial `OP_End`, respect each declared

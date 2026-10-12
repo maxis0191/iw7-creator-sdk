@@ -69,9 +69,12 @@ third-party server scripts or game data.
 The native v3 build successfully registered its original job and built zlib/GSC
 libraries plus the reader-test executable, then failed in the audit entry point's
 Windows/zlib header order. No CTest, native negative test or Beacon consumption
-receipt was produced. The final include-order correction is source-reviewed only
-until a new admitted compile proves otherwise. See the reconstructed
-`audit/README.md` for the failure and correction evidence.
+receipt was produced. The later v4 attempt compiled the include-order correction
+and passed native tests and both Beacon binder steps, but overall supervision
+failed on an unqualified residual descendant. See the reconstructed
+`audit/README.md` for earlier failures and the project's
+[v4 evidence](../../sdk/modding/gsc-consumption-audit.md) for that later measurement.
+The archived tool source remains exactly the revision in the manifest.
 
 `reconstruction-validation.json` records only the local source reconstruction
 check. Passing it does not establish executable correctness, complete GSC import

@@ -1,0 +1,113 @@
+{
+  "schema": "iw7.gsc-native-validation/1",
+  "recorded_date": "2026-10-12",
+  "status": "NativeStepsPassedSupervisionFailed",
+  "source_revision": "6f650cb9c981317b970dad0abae6846165f80166",
+  "source_sha256": "667c9aef556aafd55021eeec5b968bcc9786d1fa3ebbcf6f18e67af6be22c3f0",
+  "tables_sha256": "757964caf826b02c423ab9cd8b2ef3a3758720f50aef1a2fb517869e93474ef6",
+  "tool_sha256": "54f0ce337fda98acfeb75e54e538d4936f820d42f530589060f6ac65966d3398",
+  "plan_sha256": "85d2d63856d825c8da29b162dfc6798230a90f0584e75941b98e96ace42778d8",
+  "compiler_sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619",
+  "build_candidate_success": true,
+  "supervision_success": false,
+  "supervision_failure": "Unqualified residual compiler/telemetry descendants; drain deadline reached",
+  "original_root_exit_code": 0,
+  "original_job_stop_requested": true,
+  "job_active_at_confirmed_close": 0,
+  "tree_closed": true,
+  "lease_released": true,
+  "residual_member_identity_captured": false,
+  "main_process_identity_unchanged": true,
+  "game_files_staged": false,
+  "retries": 0,
+  "steps": [
+    {
+      "name": "cmake-version",
+      "exit_code": 0
+    },
+    {
+      "name": "configure",
+      "exit_code": 0
+    },
+    {
+      "name": "build",
+      "exit_code": 0
+    },
+    {
+      "name": "reader-tests",
+      "exit_code": 0
+    },
+    {
+      "name": "native-negative-tests",
+      "exit_code": 0
+    },
+    {
+      "name": "witness-variant",
+      "exit_code": 0
+    },
+    {
+      "name": "witness-original",
+      "exit_code": 0
+    }
+  ],
+  "native_reader_ctest": {
+    "passed": 1,
+    "failed": 0
+  },
+  "native_test_methods": {
+    "passed": 13,
+    "failed": 0
+  },
+  "peak_observed_output_bytes": 37470324,
+  "evidence_sha256": {
+    "supervision": "4b95208c4ad5ae2ea758ff2c8463429d4950665463735e4223d1246c77c134b0",
+    "build_receipt": "7ff2f0fe81dbc6891b931196ae7efd664727ec8d83f67935135a244ce6633731",
+    "build_stdout": "4639e1e32ac8329d5fc3df8009ad1665dca00e9a4b88d5cbc8a9826e4f561f8d",
+    "reader_ctest_stdout": "78002609365fb849424f5144f09d99500ad6c849b2c59965c581fb6c7bb45a2c",
+    "native_test_stderr": "2e67d0872603f0a9885b5b64b172ab7d2ce7402f2e14fd7746bf929c0b85e615"
+  },
+  "measurements": [
+    {
+      "role": "variant",
+      "receipt_sha256": "6ad7444029f6d412fd6f2770260e9c7f21154f20c826f5dfc1810debeb704e2c",
+      "input_sha256": "db486793b92e7e3c0a30c70b565fb432a4940e172a3f97da7e9db377f0e46d42",
+      "input_bytes": 1992,
+      "bytecode_bytes": 1480,
+      "stack_bytes": 1808,
+      "bytecode_consumed": 1480,
+      "stack_consumed": 1808,
+      "assembly_bytes": 15850,
+      "assembly_sha256": "43e9b36a90cfe30ec713d52cdc63bbb7668cfc17acfae187de369079abeae1df",
+      "branch_targets_verified": true,
+      "function_count": 8,
+      "complete_consumption_measured": true,
+      "tool_rehashed_after_execution": true,
+      "external_gsc_dependency_absence_verified": false
+    },
+    {
+      "role": "original",
+      "receipt_sha256": "1af853b2bcb2e409e0486f4a6b034c00700c5a0a9244fc53d2163bbedd0c0bb0",
+      "input_sha256": "31b55a5d58a90d6b980a91543c907d26b91a4f6767d5350e8a35ae0e19fa2cef",
+      "input_bytes": 1951,
+      "bytecode_bytes": 1455,
+      "stack_bytes": 1394,
+      "bytecode_consumed": 1455,
+      "stack_consumed": 1394,
+      "assembly_bytes": 15231,
+      "assembly_sha256": "b6efa60bb5c5cc30ad724363720d2249292a592a384557cbc509aaf24ddbe725",
+      "branch_targets_verified": true,
+      "function_count": 7,
+      "complete_consumption_measured": true,
+      "tool_rehashed_after_execution": true,
+      "external_gsc_dependency_absence_verified": false
+    }
+  ],
+  "gates": {
+    "overall_build_accepted": false,
+    "creator_recipient_changed": false,
+    "external_dependency_absence_verified": false,
+    "asset_closure_complete": false,
+    "runtime_ready": false,
+    "owner_accepted": false
+  }
+}
