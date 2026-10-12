@@ -18,6 +18,9 @@ param(
 # Local orchestration only. Project manifests never supply executable commands.
 # Plan imports the reviewed Python validators and never writes files or loads native code.
 $ErrorActionPreference='Stop'
+$Action=@('Plan','Build')|Where-Object {$_ -ieq $Action}
+$Adapter=@('None','BeaconV1','AnimationProbe','MaterialV2')|Where-Object {$_ -ieq $Adapter}
+$Target=$Target.ToLowerInvariant()
 $python=(Get-Command python -ErrorAction Stop).Source
 $inputData=[ordered]@{project=$Project;action=$Action;adapter=$Adapter;build_parameters=$BuildParameters;
     active_projects=@($ActiveProject);client_source=$ClientSource;server_source=$ServerSource;protocol=$Protocol;
@@ -29,7 +32,7 @@ from pathlib import Path
 
 args = json.loads(sys.argv[1])
 report = {"action": args["action"], "adapter": args["adapter"], "steps": [],
-          "plan_valid": False, "build_executed": False, "materialized": False,
+          "plan_valid": False, "build_executed": False, "build_verified": False, "materialized": False,
           "packaged": False, "runtime_ready": False, "owner_accepted": False,
           "errors": [], "pending": []}
 
@@ -88,11 +91,17 @@ try:
         if args["build_parameters"]:
             parameters = packager.read_manifest(args["build_parameters"])
             allowed = {"SourceRoot", "SourceReceiptSHA256", "StockRoot", "StockReceipt", "StockReceiptSHA256",
-                       "CandidateRoot", "CandidateArtifactSHA256", "ReaderRoot", "RunRoot", "OpsRoot", "JobSource", "JobSourceSHA256"}
+                       "CandidateRoot", "CandidateArtifactSHA256", "ReaderRoot", "RunRoot", "OpsRoot", "JobSource", "JobSourceSHA256",
+                       "StockBindingReceipt", "StockBindingReceiptSHA256", "ReviewedStockManifest", "ReviewedStockManifestSHA256"}
             if not isinstance(parameters, dict) or set(parameters) - allowed:
                 raise ValueError("BuildParameters contains unknown fields; Run and arbitrary commands are prohibited")
             required = {"SourceRoot", "SourceReceiptSHA256", "StockRoot", "StockReceipt", "StockReceiptSHA256",
                         "CandidateRoot", "ReaderRoot", "RunRoot", "OpsRoot", "JobSource"}
+            binding = {"StockBindingReceipt", "StockBindingReceiptSHA256", "ReviewedStockManifest", "ReviewedStockManifestSHA256"}
+            if binding & set(parameters):
+                required |= binding
+            if args["action"] == "Build":
+                required |= binding | {"CandidateArtifactSHA256", "JobSourceSHA256"}
             if required - set(parameters):
                 raise ValueError("BuildParameters missing required fields: " + ", ".join(sorted(required - set(parameters))))
             if any(not isinstance(value, str) or not value for value in parameters.values()):
@@ -113,10 +122,37 @@ try:
         raise ValueError("BuildParameters requires an explicit supported adapter")
     else:
         step("adapter-plan", "not-requested", ["Contract planning only; no build adapter selected"])
+    if args["action"] == "Build":
+        if args["adapter"] != "BeaconV1" or not args["build_parameters"]:
+            raise ValueError("Build requires BeaconV1 and complete BuildParameters; no build attempted")
+        if not args["finalize_root"] or not args["output"]:
+            raise ValueError("Build requires fresh FinalizeRoot and Output paths")
+        if bool(args["recipient_proof"]) != bool(args["recipient_root"]):
+            raise ValueError("RecipientProof and RecipientRoot must be supplied together")
+        if args["recipient_proof"]:
+            if not packager.no_redirects(args["recipient_proof"]).is_file() or not packager.no_redirects(args["recipient_root"]).is_dir():
+                raise ValueError("Recipient proof file and root must exist without redirects")
+        fresh = [Path(os.path.abspath(value)) for value in (parameters["RunRoot"], args["finalize_root"], args["output"])]
+        for path in fresh:
+            packager.no_redirects(path.parent)
+            if path.exists() or path.is_symlink():
+                raise ValueError("Fresh output path required: " + str(path))
+        for index, first in enumerate(fresh):
+            for second in fresh[index + 1:]:
+                if first == second or first in second.parents or second in first.parents:
+                    raise ValueError("RunRoot, FinalizeRoot and Output must be separate, non-nested paths")
+        for directory in projects:
+            if any(path == directory or path in directory.parents or directory in path.parents for path in fresh):
+                raise ValueError("Build outputs must be outside all input projects")
+        finalizer = root / "sdk/modding/Finalize-BeaconProject.py"
+        if not finalizer.is_file():
+            raise ValueError("Reviewed Finalize-BeaconProject.py is missing from ToolsRoot")
+        report.update(build_root=str(fresh[0]), finalize_root=str(fresh[1]), output=str(fresh[2]))
+        step("build-preflight", "passed", ["Explicit build pins and separate fresh output paths supplied; no build attempted yet"])
     step("payload-and-closure", "pending" if report["pending"] else "not-run",
          report["pending"] or ["Package file hashes and closure will be checked by the finalizer and package gate"])
     report["plan_valid"] = not report["errors"]
-except (OSError, ValueError, TypeError, KeyError, AttributeError, RecursionError) as error:
+except (OSError, ValueError, TypeError, KeyError, AttributeError, RecursionError, ImportError) as error:
     report["errors"].append(str(error))
     step("preflight", "failed", [str(error)])
 print(json.dumps(report, ensure_ascii=True))
@@ -130,9 +166,11 @@ if($report.adapter_plan_requested -and $report.plan_valid){
         if((Get-FileHash -LiteralPath $BuildParameters).Hash -ine $report.build_parameters_sha256){throw 'BuildParameters changed during planning.'}
         $parameters=Get-Content -LiteralPath $BuildParameters -Raw|ConvertFrom-Json -AsHashtable
         $builder=Join-Path $ToolsRoot 'sdk/modding/Build-BeaconFF.ps1'
+        $supported=(Get-Command $builder -ErrorAction Stop).Parameters
+        foreach($key in $parameters.Keys){if(!$supported.ContainsKey($key)){throw "Beacon builder does not support parameter $key; stock binding integration may be pending."}}
         $planText=& $builder @parameters
         $plan=($planText -join "`n")|ConvertFrom-Json -AsHashtable
-        if($plan.Schema -cne 'iw7.beacon-ff-plan/1' -or $plan.Ready){throw 'Unexpected beacon adapter plan.'}
+        if($plan.Schema -cne 'iw7.beacon-ff-plan/1' -or $plan.Ready -cne $false -or $plan.CandidatePending -isnot [bool]){throw 'Unexpected beacon adapter plan.'}
         $report.steps+=@{name='adapter-plan';status='passed';details=@('Real Build-BeaconFF read-only plan completed; no native build was run')}
         $report.adapter_plan=$plan
     } catch {
@@ -141,17 +179,61 @@ if($report.adapter_plan_requested -and $report.plan_valid){
     }
 }
 if($Action -ceq 'Build'){
-    # Deliberate pre-mutation gate until the stock binding and finalizer API have
-    # been integrated and independently reviewed. Presence of a file is no proof.
-    $report.errors+=@('Build chain is not connected: stock binding and Finalize-BeaconProject integration are pending; no lease, staging or build attempted.')
-    $report.steps+=@{name='build';status='blocked';details=@($report.errors[-1])}
+    if($report.plan_valid -and $report.adapter_plan){
+        $phase='build'
+        try {
+            if((Get-FileHash -LiteralPath $BuildParameters).Hash -ine $report.build_parameters_sha256){throw 'BuildParameters changed after adapter planning.'}
+            if($report.adapter_plan.CandidatePending){throw 'Beacon candidate is not pinned and verified.'}
+            # Native admission, process ownership, time/byte budgets and restore
+            # belong to the reviewed builder. Do not create another reservation.
+            $report.build_executed=$true
+            $null=& $builder @parameters -Run
+            $report.steps+=@{name='build';status='completed';details=@('Builder returned; finalizer must still verify its persisted evidence')}
+            $phase='finalize'
+            $finalizer=Join-Path $ToolsRoot 'sdk/modding/Finalize-BeaconProject.py'
+            $finalArgs=@('-B',$finalizer,'--project',$Project,'--build-root',$report.build_root,'--output-root',$report.finalize_root,
+                '--client-source',$ClientSource,'--server-source',$ServerSource)
+            if($RecipientProof){$finalArgs+=@('--recipient-proof',$RecipientProof,'--recipient-root',$RecipientRoot)}
+            $finalText=& $python @finalArgs
+            $finalExit=$LASTEXITCODE
+            $final=($finalText -join "`n")|ConvertFrom-Json -AsHashtable
+            $report.finalization=$final
+            if($finalExit -ne 0 -or $final.api -cne 'beacon-finalize/1' -or $final.materialized -cne $true -or $final.runtime_ready -cne $false){throw 'Finalizer refused or returned an unexpected evidence contract.'}
+            if([IO.Path]::GetFullPath($final.candidate_root) -ine $report.finalize_root -or [IO.Path]::GetFullPath($final.manifest_path) -ine (Join-Path $report.finalize_root 'manifest.json')){throw 'Finalizer returned unexpected output paths.'}
+            $report.build_verified=$true;$report.materialized=$true
+            $report.steps+=@{name='finalize';status='passed';details=@('Measured candidate created from verified build evidence; runtime acceptance remains false')}
+            $phase='package'
+            if($final.closure_complete -cne $true -or $final.package_ready -cne $true){
+                $report.pending+=@($final.blockers)
+                throw ('Candidate materialized; package blocked by incomplete closure or static qualification: '+($final.blockers -join '; '))
+            }
+            $packager=Join-Path $ToolsRoot 'ops/modding/Package-CommunityMod.py'
+            $packageArgs=@('-B',$packager,$final.manifest_path,'--root',$final.candidate_root,'--output',$report.output,
+                '--sdk-root',(Join-Path $ToolsRoot 'sdk/modding'),'--client-source',$ClientSource,'--server-source',$ServerSource,
+                '--protocol',[string]$Protocol,'--target',$Target)
+            foreach($active in $ActiveProject){$packageArgs+=@('--active',(Join-Path $active 'manifest.json'),$active)}
+            $packageText=& $python @packageArgs
+            $packageExit=$LASTEXITCODE
+            $package=($packageText -join "`n")|ConvertFrom-Json -AsHashtable
+            $report.package_result=$package
+            if($packageExit -ne 0 -or $package.valid -cne $true -or $package.packaged -cne $true){throw ('Package gate refused: '+($package.errors -join '; '))}
+            if([IO.Path]::GetFullPath($package.archive) -ine $report.output -or (Get-FileHash -LiteralPath $report.output).Hash -ine $package.archive_sha256 -or (Get-Item -LiteralPath $report.output).Length -ne $package.archive_bytes){throw 'Published archive does not match package receipt.'}
+            $report.packaged=$true
+            $report.steps+=@{name='package';status='passed';details=@('Existing ZIP writer rechecked payloads and compatibility; archive hash measured')}
+        } catch {
+            $report.errors+=@($_.Exception.Message)
+            $report.steps+=@{name=$phase;status='blocked';details=@($_.Exception.Message)}
+        }
+    } else {
+        $report.steps+=@{name='build';status='blocked';details=@('Preflight failed; no native builder invoked')}
+    }
 } else {
     $report.steps+=@{name='build';status='not-run';details=@('Plan does not compile, finalize or package')}
 }
-$report.steps+=@{name='package';status='not-run';details=@('No ZIP created; static plan validity is not build or runtime acceptance')}
+if(!@($report.steps|Where-Object name -EQ 'package').Count){$report.steps+=@{name='package';status='not-run';details=@('No ZIP created; static plan validity is not build or runtime acceptance')}}
 if($Json){$report|ConvertTo-Json -Depth 20}
 else {
     foreach($step in $report.steps){Write-Output ('[{0}] {1}' -f $step.status,$step.name);foreach($detail in $step.details){Write-Output ('  '+$detail)}}
-    Write-Output ('Plan valid: {0}; build executed: false; packaged: false; runtime accepted: false' -f $report.plan_valid)
+    Write-Output ('Plan valid: {0}; build executed: {1}; build verified: {2}; materialized: {3}; packaged: {4}; runtime accepted: false' -f $report.plan_valid,$report.build_executed,$report.build_verified,$report.materialized,$report.packaged)
 }
-if($Action -ceq 'Build' -or !$report.plan_valid){exit 1}
+if(!$report.plan_valid -or $report.errors.Count -or ($Action -ceq 'Build' -and !$report.packaged)){exit 1}
