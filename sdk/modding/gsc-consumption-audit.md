@@ -4,8 +4,8 @@
 native decoder's final bytecode and symbol-stack cursors. It is a separate utility;
 Creator, Finalizer, Recipient and the Beacon evidence gates are unchanged.
 
-**Current status: source candidate only.** Nine wrapper tests pass with synthetic
-framing and mocked native responses. The native executable has not been compiled
+**Current status: source candidate only.** Thirteen wrapper tests pass with synthetic
+framing, mocked native responses and small bounded Python pipe subprocesses. The native executable has not been compiled
 or executed. Neither Beacon nor any retail script has a complete-consumption
 witness yet. The corrected Beacon offline record remains observed-only.
 
@@ -26,7 +26,10 @@ boundary inside their function. The emitted assembly bytes must belong to that s
 The wrapper requires explicit executable, source revision, source digest and table
 digest pins. It verifies input/buffer/assembly hashes, lengths, both cursor values
 and contiguous per-function ranges. The executable is hashed before and after
-execution. Its source/table claims are trusted only through a reviewed build and
+execution. Both output pipes share a limit enforced during reading, with timeout
+and termination through the owned process handle; oversized, failed or truncated
+results are refused. The native witness must have exactly the declared schema
+fields, so added claims or unknown keys are refused. Its source/table claims are trusted only through a reviewed build and
 the supplied executable pin. These are audit receipts, not signed attestations.
 
 After native admission and successful tests, invoke it with:

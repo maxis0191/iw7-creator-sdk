@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import struct
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -98,15 +99,40 @@ class ConsumptionWitnessTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             json.loads('{"schema":1,"schema":2}', object_pairs_hook=audit.unique_object)
 
+    def test_extra_fields_and_extra_claims_are_refused(self):
+        raw, _, pins, witness = fixture()
+        for field in ('unexpected', 'external_gsc_dependency_absent', 'runtime_ready'):
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'exactly'):
+                audit.validate_witness(raw, dict(witness, **{field: True}), pins)
+
+    def test_bounded_pipe_capture_reads_exact_input_and_output(self):
+        payload = b'original input\0' * 256
+        result = audit.run_bounded([sys.executable, '-c',
+            'import sys; data=sys.stdin.buffer.read(); sys.stdout.buffer.write(data); sys.stderr.buffer.write(b"note")'],
+            payload, limit=len(payload) + 4, timeout=5)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, payload)
+        self.assertEqual(result.stderr, b'note')
+
+    def test_bounded_pipe_capture_refuses_stdout_stderr_and_combined_overflow(self):
+        for code in ('sys.stdout.buffer.write(b"x"*65537)', 'sys.stderr.buffer.write(b"x"*65537)',
+                     'sys.stdout.buffer.write(b"x"*40000); sys.stderr.buffer.write(b"x"*40000)'):
+            with self.subTest(code=code), self.assertRaisesRegex(ValueError, 'limit'):
+                audit.run_bounded([sys.executable, '-c', 'import sys; ' + code], b'', limit=65536, timeout=5)
+
+    def test_bounded_pipe_capture_closes_timed_out_owned_process(self):
+        with self.assertRaisesRegex(ValueError, 'timed out'):
+            audit.run_bounded([sys.executable, '-c', 'import time; time.sleep(10)'], b'', limit=1024, timeout=0.1)
+
     def test_wrapper_passes_same_bytes_and_never_promotes_import_or_runtime_gates(self):
         raw, assembly, pins, witness = fixture()
         with tempfile.TemporaryDirectory() as folder:
             tool = Path(folder) / 'fake.exe'
             tool.write_bytes(b'fake-tool')
             result = subprocess.CompletedProcess([], 0, json.dumps(witness).encode(), b'')
-            with patch.object(audit.subprocess, 'run', return_value=result) as run:
+            with patch.object(audit, 'run_bounded', return_value=result) as run:
                 receipt, emitted = audit.audit_bytes(raw, tool, pins)
-            self.assertEqual(run.call_args.kwargs['input'], raw)
+            self.assertEqual(run.call_args.args[1], raw)
             self.assertEqual(emitted, assembly)
             self.assertTrue(receipt['complete_consumption_verified'])
             for gate in ('external_gsc_dependency_absence_verified', 'asset_closure_complete', 'runtime_ready', 'owner_accepted'):
@@ -120,10 +146,10 @@ class ConsumptionWitnessTests(unittest.TestCase):
             def replaced(*args, **kwargs):
                 tool.write_bytes(b'replaced')
                 return subprocess.CompletedProcess([], 0, json.dumps(witness).encode(), b'')
-            with patch.object(audit.subprocess, 'run', side_effect=replaced), self.assertRaisesRegex(ValueError, 'changed'):
+            with patch.object(audit, 'run_bounded', side_effect=replaced), self.assertRaisesRegex(ValueError, 'changed'):
                 audit.audit_bytes(raw, tool, pins)
             tool.write_bytes(b'fake-tool')
-            with patch.object(audit.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, b'', b'bad')), self.assertRaises(ValueError):
+            with patch.object(audit, 'run_bounded', return_value=subprocess.CompletedProcess([], 1, b'', b'bad')), self.assertRaises(ValueError):
                 audit.audit_bytes(raw, tool, pins)
 
 

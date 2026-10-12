@@ -2,10 +2,13 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import struct
 import subprocess
+import threading
+import time
 import zlib
 
 INPUT_LIMIT = 8 * 1024 * 1024
@@ -62,6 +65,8 @@ def validate_witness(raw, witness, pins):
                 'bytecode_consumed': len(code), 'stack_consumed': len(stack),
                 'initial_op_end_verified': True, 'branch_targets_verified': True, 'complete_consumption_verified': True}
     expected.update({key: value for key, value in pins.items() if key != 'tool_sha256'})
+    if set(witness) != set(expected) | {'functions', 'assembly_bytes', 'assembly_sha256', 'assembly_hex'}:
+        raise ValueError('Native witness must use exactly the expected schema fields')
     for key, value in expected.items():
         if type(witness.get(key)) is not type(value) or witness[key] != value:
             raise ValueError('Native witness mismatch: ' + key)
@@ -102,13 +107,89 @@ def unique_object(pairs):
     return result
 
 
+def run_bounded(command, payload, limit=OUTPUT_LIMIT, timeout=60):
+    """Bound both pipes while draining; kill via the exact Popen process handle."""
+    if limit < 1 or timeout <= 0:
+        raise ValueError('Positive capture limit and timeout required')
+    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+    buffers = [bytearray(), bytearray()]
+    lock, failed = threading.Lock(), threading.Event()
+    errors = []
+
+    def refuse(reason):
+        with lock:
+            errors.append(reason)
+            failed.set()
+        # On Windows Popen.kill uses its retained process handle, not a PID
+        # lookup. This dedicated executable does not spawn child processes.
+        try:
+            process.kill()
+        except ProcessLookupError:
+            pass
+
+    def drain(stream, index):
+        try:
+            while True:
+                block = stream.read(65536)
+                if not block:
+                    break
+                with lock:
+                    overflow = len(block) > limit - sum(map(len, buffers))
+                    if not overflow:
+                        buffers[index].extend(block)
+                if overflow:
+                    refuse('Native output exceeded the combined pipe limit')
+                    break
+        except Exception as error:
+            refuse('Native output read failed: ' + str(error))
+        finally:
+            stream.close()
+
+    def feed():
+        try:
+            process.stdin.write(payload)
+            process.stdin.flush()
+        except (BrokenPipeError, OSError):
+            refuse('Native process refused or truncated stdin')
+        finally:
+            try:
+                process.stdin.close()
+            except OSError:
+                pass
+
+    workers = [threading.Thread(target=drain, args=(process.stdout, 0), daemon=True),
+               threading.Thread(target=drain, args=(process.stderr, 1), daemon=True),
+               threading.Thread(target=feed, daemon=True)]
+    deadline = time.monotonic() + timeout
+    try:
+        for worker in workers:
+            worker.start()
+        try:
+            process.wait(timeout=max(0.001, deadline - time.monotonic()))
+        except subprocess.TimeoutExpired:
+            refuse('Native audit timed out')
+            process.wait(timeout=5)
+        for worker in workers:
+            worker.join(timeout=max(0.001, deadline - time.monotonic()))
+        if any(worker.is_alive() for worker in workers):
+            refuse('Native pipe capture did not finish')
+        if failed.is_set():
+            raise ValueError(errors[0])
+        return subprocess.CompletedProcess(command, process.returncode, bytes(buffers[0]), bytes(buffers[1]))
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=5)
+
+
 def audit_bytes(raw, tool, pins):
     validate_pins(pins)
     unpack(raw)
     tool = Path(tool).resolve(strict=True)
     if sha(read_bounded(tool, 64 * 1024 * 1024)) != pins['tool_sha256']:
         raise ValueError('Native tool pin mismatch')
-    result = subprocess.run([str(tool), '--stdin-gscbin'], input=raw, capture_output=True, timeout=60)
+    result = run_bounded([str(tool), '--stdin-gscbin'], raw)
     if result.returncode or result.stderr or len(result.stdout) > OUTPUT_LIMIT:
         raise ValueError('Native audit failed or exceeded output limit')
     if sha(read_bounded(tool, 64 * 1024 * 1024)) != pins['tool_sha256']:
