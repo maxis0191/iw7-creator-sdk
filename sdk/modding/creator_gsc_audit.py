@@ -16,8 +16,8 @@ WRAPPER_SHA256 = "42dd0dcb01c014cfbfbabb18d404d4c6ccd1b6d04ed27a5b16e63dde54e72d
 ROLES = {"compilation", "plan", "build", "supervision", "input", "consumption", "assembly"}
 V2_SOURCE_REVISION = "eabe74ab65d8ce2a943b54d24b15a60749a0cf2a"
 V2_TOOL_SOURCE = "e762caa7429679946ea5804a0fe3b678d1ab97db5ed3ff063d028327f554a9cf"
-V3_SOURCE_REVISION = "42e6c403a789b38ede39fd58ff0cb5f77da7d002"
-V3_TOOL_SOURCE = "68ba75b9ee7a6b3cb6e5812c55581291ed8344dd37ee90ba6a56d0dbd58eede6"
+V3_SOURCE_REVISION = "03d3956d648b7aa4637fe1007f9d69ea463631e9"
+V3_TOOL_SOURCE = "23b4de72afa23b1cefc6b03172a18ac945b60e0ab530ea4c40e0493ea34ae350"
 REFERENCE_SOURCES = {"reference_reader": ("audit/references.py", "fdb52f27225c61b563a09cd710cfeca769a9d01a8c971b882edeb277efe98a7c"),
     "reference_profile": ("audit/reference-profile.json", "e87230812b01059ece4327d9d465b8b20e5e1162d3cd698492aed70405bbf360"),
     "reference_tests": ("audit/test_reference_native.py", "ea8a9ee474cc5f8425004620aa83b59d1de97f1ff45fe6406638a2a62e6a7141")}

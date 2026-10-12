@@ -163,6 +163,44 @@ class CreatorReferenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unsupported global audit protocol"):
             self.f.inspect()
 
+    def test_consistent_previous_producer_records_are_no_longer_accepted(self):
+        previous = "42e6c403a789b38ede39fd58ff0cb5f77da7d002"
+        old_digest = "68ba75b9ee7a6b3cb6e5812c55581291ed8344dd37ee90ba6a56d0dbd58eede6"
+        self.f.pins["source_revision"] = previous
+        self.f.plan.update(source_revision=previous, tool_source_sha256=old_digest)
+        self.f.build["build_source_manifest"].update(source_revision=previous, tool_source_sha256=old_digest)
+        for witness in (self.f.bound, self.f.extra["original_consumption"]):
+            witness["pins"]["source_revision"] = previous
+            witness["native"]["source_revision"] = previous
+        for role in ("variant", "original"):
+            self.f.extra[role + "_native"]["consumption"]["source_revision"] = previous
+            self.f.extra[role + "_native"]["synthetic_result"]["pins"]["decoder"]["source_revision"] = previous
+        step = next(x for x in self.f.build["steps"] if x["name"] == "witness-variant")
+        step["command"][step["command"].index("--source-revision") + 1] = previous
+        self.f.save()
+        with self.assertRaisesRegex(ValueError, "Unreviewed completion producer"):
+            self.f.inspect()
+
+    def test_new_revision_cannot_keep_previous_tool_source_digest(self):
+        old_digest = "68ba75b9ee7a6b3cb6e5812c55581291ed8344dd37ee90ba6a56d0dbd58eede6"
+        self.f.plan["tool_source_sha256"] = old_digest
+        self.f.build["build_source_manifest"]["tool_source_sha256"] = old_digest
+        self.f.save()
+        with self.assertRaisesRegex(ValueError, "Unreviewed completion producer"):
+            self.f.inspect()
+
+    def test_previous_native_witness_cannot_be_mixed_into_new_run(self):
+        self.f.extra["variant_native"]["consumption"]["source_revision"] = "42e6c403a789b38ede39fd58ff0cb5f77da7d002"
+        self.f.save()
+        with self.assertRaisesRegex(ValueError, "Same-Run reference and consumption"):
+            self.f.inspect()
+
+    def test_even_identical_reference_file_from_another_run_is_refused(self):
+        self.f.paths["variant_native"] = self.f.base / "previous-run/references/variant-native.json"
+        self.f.save()
+        with self.assertRaisesRegex(ValueError, "variant_native path differs"):
+            self.f.inspect()
+
     def test_native_consumption_must_match_companion_from_same_run(self):
         self.f.extra["variant_native"]["consumption"]["stack_consumed"] = 0
         self.f.save()

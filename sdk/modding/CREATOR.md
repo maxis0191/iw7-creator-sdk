@@ -221,8 +221,14 @@ validation. V4/v5 retain their historical global failures.
 of `/1`. It requires Plan `iw7.gsc-audit-build-plan/2`, build receipt
 `iw7.gsc-audit-build-run/3` and the unchanged supervision `/1`, whose completion
 record must also set `ReferenceContractVerified=true`. Only producer
-`42e6c403a789b38ede39fd58ff0cb5f77da7d002` with tool source digest
-`68ba75b9ee7a6b3cb6e5812c55581291ed8344dd37ee90ba6a56d0dbd58eede6` is accepted.
+`03d3956d648b7aa4637fe1007f9d69ea463631e9` with tool source digest
+`23b4de72afa23b1cefc6b03172a18ac945b60e0ab530ea4c40e0493ea34ae350` is accepted.
+This reviewed collector correction replaces three hashtable-style indexers on a
+JSON-derived PSCustomObject Plan. It supersedes producer `42e6c403`, whose v7 Run
+remains globally failed even though its reference witnesses were produced. The
+reader, profile, harness, tables, wrapper and two GSC input pins are unchanged.
+The explicit consumer pin update is source preparation only: V8 has not been
+qualified here and no real reference proof is attached to the prepared project.
 
 The top-level fields remain `schema`, `run_root`, `source_sha256`, `pins`, `files`,
 with one additional `references` object: `{source_root, pins}`. The latter pins
@@ -263,6 +269,12 @@ witnesses from a globally failed Run remain refused, including a collector failu
 after all reference controls passed; they cannot override supervision failure.
 The new binding tests use an explicitly synthetic decoder double; they establish
 consumer enforcement, not a native qualification or a second operand-decoder test.
+The producer-pin correction passes 15 reference-linkage, 19 historical audit and
+19 composition tests. Additional cases refuse a consistently repinned old
+producer, the old tool-source digest under the new revision, an old native witness
+inside new records and even an identical reference file at another Run's path.
+Global success and fresh same-Run completion remain mandatory; changing these
+source constants cannot reclassify v7 or authorize another execution.
 
 For an already prepared original-beacon project, optional `-BuildParameters`
 accepts the existing local `Build-BeaconFF.ps1` argument object. Creator rejects
