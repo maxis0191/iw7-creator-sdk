@@ -231,3 +231,40 @@ matches all 35 changed blobs, the exact tree and physical table pins; prior patc
 and native evidence remain unchanged. The next step is review of a fresh Plan
 pinned to this correction and the completed SDK archive, followed only by an
 explicit execution GO.
+
+## V8: qualified native encoded-reference proof
+
+After favorable independent source and exact-Plan review, one explicit GO ran
+source `03d3956d` with SDK `a901c2c7` on 2026-10-12. All eight phases passed:
+CTest 1/1, thirteen existing native methods, both consumption binders and all
+159 reference invocations (153 opcode cases, four unresolved controls, two Beacon
+inputs). The two unsupported opcode specimens were refused as required.
+
+**V8 global supervision passed.** The corrected collector verified the complete
+receipt and reference contract. Thirty guards held 2,913,874 bytes through two
+fresh original-job residual captures, identity qualification, the owned Stop and
+zero-member confirmation. The final observation/budget check was 422 ms after
+root exit observation, within the unchanged 2,000 ms drain. The lease was released.
+Fresh inventory at 09:29:41 UTC found no lease, builder or former run process;
+Main's identity was unchanged. This is the exact pinned original-job/image-file
+contract, not compiler ancestry or loaded-memory attestation.
+
+The executable SHA256 is
+`fbaeff90961d1c5c3aec5f293c6dcb7b9dd92ab049e6aebe3ea399b47a007211`.
+The variant has 570 instructions, complete 1480/1480 bytecode and 1808/1808 stack
+consumption, and no encoded external-script blocker under the pinned profile.
+The original has 560 instructions, 1455/1455 and 1394/1394 consumption, and retains
+the utility `flag_exist` (212/318) and `flag` (226/345) blockers. Consumption and
+reference evidence are distinct, with the nested reference consumption equal to
+the separate same-run witness. Pure rereading reproduced both bound reports and
+all 27 artifact hashes after the run; it did not execute the auditor again.
+
+See [the V8 qualification checkpoint](gsc-reference-qualified-v8-20261012.json)
+for all artifact, Plan, source, compiler, historical compilation and supervision
+pins. The historical Beacon compilation record remains schema `/2` and was not
+copied or rerun; V8 read its retained exact binaries. The new proof qualifies only
+the variant's encoded-reference gate. Builtin semantics, complete asset closure,
+retail/runtime compatibility, package readiness and owner acceptance remain false.
+V4/V5/V7 remain failures; V6 remains its distinct consumption/closure success.
+No Creator source, tool source, game, stock or previous evidence was changed.
+The coordinator owns consumer integration and the private PR/CI/merge workflow.

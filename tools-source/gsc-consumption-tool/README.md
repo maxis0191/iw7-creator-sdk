@@ -198,3 +198,15 @@ qualify a deadline or closure, obtain a lease, or execute native code. **V7 rema
 globally failed.** See the [correction checkpoint](../../sdk/modding/gsc-reference-collector-correction-20261012.json).
 A fresh reviewed Plan and explicit GO remain required for native qualification;
 the archive itself does not authorize another Run.
+
+The separately reviewed and authorized V8 attempt subsequently passed all eight
+native phases and global supervision using original source `03d3956d` and SDK
+`a901c2c7`. The reference collector qualified its 27 artifacts; original-job
+residual closure completed within 422 ms of the 2,000 ms drain, and the lease was
+released. Fresh inventory confirmed no builders and Main unchanged. The source
+archive, reconstruction, all sixteen patches and historical V7 evidence remain
+unchanged. This validates that original-source executable, not binary
+reproducibility from the reconstructed commit. See the
+[V8 qualification checkpoint](../../sdk/modding/gsc-reference-qualified-v8-20261012.json).
+The variant's encoded-reference result is positive; the original's two utility
+references remain blockers. No asset/runtime/package/owner gate is promoted.
