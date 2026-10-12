@@ -193,5 +193,25 @@
       "reported_tests": 25
     }
   ],
-  "followup_scope": "Documentation and sanitized native receipts may follow this exact source run; no runtime/source delta is covered implicitly."
+  "followup_scope": "Documentation and sanitized native receipts may follow this exact source run; no runtime/source delta is covered implicitly.",
+  "targeted_followups": [
+    {
+      "source_commit": "5edd9a40b9fe0d66214adeb515ef25681a1de94f",
+      "scope": "Test-T7Catalogue.ps1: observed startup output correction",
+      "checks": 112,
+      "passed": true,
+      "native_process_started": false,
+      "real_lease_acquired": false,
+      "log": "runtime/t7-catalogue-b-integration.local.log",
+      "log_sha256": "939a488453dc0ec60ed6478bfa777de08b147a847b38d701e9b94514ee4f6d75"
+    },
+    {
+      "source_commit": "8abb885e134342f0778c293746613b95e52fde7e",
+      "scope": "World/T7 raw source pin integration, exact LF checkout, retained patch attributes, and 55 World stage source checks",
+      "checks": 55,
+      "passed": true,
+      "link_profile_sha256": "6a512862b3f6b8c2d3fe2b77404122820527a43617df9f50881cd83f10db5747",
+      "independent_review": "P2 closed; checked blob and working file bytes; no full suite rerun"
+    }
+  ]
 }
