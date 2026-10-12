@@ -83,6 +83,91 @@ try {
 }finally{$service.Dispose();$client.Dispose()}
 ''')
 
+    def test_inprocess_beacon_http_exact_route_bytes_and_independent_size_limits(self):
+        self.run_powershell_fixture(r'''
+Add-Type -Path (Join-Path $Repo 'ops/hud-lab/HudHttp.cs')
+$beacon='/mods/sdk_beacon/mod.ff'
+if([IW7HudHttp]::BeaconRoute -cne $beacon){throw 'Beacon route contract changed'}
+$pattern='Original IW7 transport test bytes; synthetic, not a fastfile|'
+function Payload([int]$Length){
+    # Original deterministic bytes, no game assets or generated FF dependency.
+    $text=($pattern*[int][math]::Ceiling($Length/$pattern.Length)).Substring(0,$Length)
+    return ,([Text.Encoding]::ASCII.GetBytes($text))
+}
+function Reject([byte[]]$Bytes,[string]$Route,[string]$Hash){
+    $log=Join-Path $Fixture ('refused-'+[guid]::NewGuid().ToString('N')+'.jsonl')
+    $service=$null;$failed=$false
+    try{$service=[IW7HudHttp]::new($Bytes,$Hash,$log,$Route)}catch{$failed=$true}
+    finally{if($service){$service.Dispose()}}
+    if(!$failed -or (Test-Path -LiteralPath $log)){throw 'Rejected payload/route allocated a service or journal'}
+}
+# Each size refusal uses its own valid hash: a hash failure must not conceal a
+# regression in the route-specific size gate. Legacy routes retain 1600 bytes.
+foreach($route in @([IW7HudHttp]::Route,[IW7HudHttp]::ModelRoute,$beacon)){
+    $limit=if($route -ceq $beacon){1MB}else{1600}
+    foreach($length in @(0,($limit+1))){
+        $bad=Payload $length
+        $sha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bad))
+        Reject $bad $route $sha
+    }
+}
+$bytes=Payload 1601
+$sha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes))
+Reject $bytes $beacon ('0'*64)
+$ambiguous=@('/mods/sdk_beacon/mod.ff?x=1','/mods/sdk_beacon/mod.ff/', '/mods/SDK_BEACON/mod.ff',
+    '/mods//sdk_beacon/mod.ff','/mods/sdk_beacon/./mod.ff',
+    '/mods/sdk_beacon/%6dod.ff','/mods/sdk_beacon%2fmod.ff','/mods/sdk_beacon/mod.ff%00')
+foreach($route in $ambiguous){Reject $bytes $route $sha}
+
+$cases=@(@{Route=$beacon;Length=1601},@{Route=$beacon;Length=1MB},
+    @{Route=[IW7HudHttp]::Route;Length=1600},@{Route=[IW7HudHttp]::ModelRoute;Length=1600})
+foreach($case in $cases){
+    $bytes=Payload $case.Length
+    $sha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes))
+    $expected=[Convert]::ToBase64String($bytes)
+    $log=Join-Path $Fixture ('accepted-'+[guid]::NewGuid().ToString('N')+'.jsonl')
+    $service=[IW7HudHttp]::new($bytes,$sha,$log,$case.Route)
+    $client=[Net.Http.HttpClient]::new();$client.Timeout=[TimeSpan]::FromSeconds(3)
+    try{
+        if($service.AssetRoute -cne $case.Route -or $service.SHA256 -cne $sha){throw 'Service identity mismatch'}
+        $bytes[0]=$bytes[0] -bxor 255 # actual service must retain its immutable clone
+        if($case.Route -ceq $beacon -and $case.Length -eq 1601){
+            # Raw targets prevent HttpClient URI normalization from silently
+            # converting dot segments/escapes into an allowed route.
+            foreach($target in @($ambiguous)+@('/',[IW7HudHttp]::Route,[IW7HudHttp]::ModelRoute)){
+                $tcp=[Net.Sockets.TcpClient]::new()
+                try{
+                    $tcp.ReceiveTimeout=2000;$tcp.SendTimeout=2000
+                    $tcp.Connect('127.0.0.1',([uri]$service.BaseUrl).Port)
+                    $stream=$tcp.GetStream()
+                    $request=[Text.Encoding]::ASCII.GetBytes("GET $target HTTP/1.1`r`nHost: 127.0.0.1`r`nConnection: close`r`n`r`n")
+                    $stream.Write($request,0,$request.Length)
+                    $reader=[IO.StreamReader]::new($stream,[Text.Encoding]::ASCII)
+                    try{$response=$reader.ReadToEnd()}finally{$reader.Dispose()}
+                    if($response -cne "HTTP/1.1 404 Not Found`r`nContent-Length: 0`r`nConnection: close`r`n`r`n"){
+                        throw 'Ambiguous/cross-package target exposed bytes'
+                    }
+                }finally{$tcp.Dispose()}
+            }
+            if($service.CompletedGets -ne 0 -or (Get-Item -LiteralPath $log).Length -ne 0){throw 'Rejected targets became successful download evidence'}
+        }
+        $r=$client.GetAsync($service.BaseUrl+$case.Route).GetAwaiter().GetResult()
+        try{
+            $received=$r.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
+            if([int]$r.StatusCode -ne 200 -or $r.Content.Headers.ContentLength -ne $case.Length -or
+                $received.Length -ne $case.Length -or [Convert]::ToBase64String($received) -cne $expected -or
+                [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($received)) -cne $sha){throw 'Exact immutable HTTP bytes/hash/size differ'}
+        }finally{$r.Dispose()}
+        $deadline=[datetime]::UtcNow.AddSeconds(2)
+        while($service.CompletedGets -lt 1 -and [datetime]::UtcNow -lt $deadline){Start-Sleep -Milliseconds 10}
+        $rows=@(Get-Content -LiteralPath $log | ForEach-Object {$_|ConvertFrom-Json})
+        if($service.CompletedGets -ne 1 -or $rows.Count -ne 1 -or $rows[0].method -cne 'GET' -or
+            $rows[0].path -cne $case.Route -or $rows[0].sha256 -cne $sha -or $rows[0].bytes -ne $case.Length){throw 'Exact route/download journal differs'}
+    }finally{$service.Dispose();$client.Dispose()}
+    if(!$service.Stopped -or $service.Error){throw 'HTTP worker closure unconfirmed'}
+}
+''')
+
     def test_real_profile_transactions_preserve_cache_shadows_and_refuse_unplanned_content(self):
         self.run_powershell_fixture(r'''
 . (Join-Path $Repo 'ops/Base-Client.Core.ps1')

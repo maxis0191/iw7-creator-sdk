@@ -1,0 +1,73 @@
+{
+  "schema": "iw7.beacon-ff-validation/1",
+  "date": "2026-10-12",
+  "sdk_source_commit": "74c9e4acd281122d986abcb3e75c0d5cfc21322c",
+  "attempts": 1,
+  "status": "bootstrap_inventory_and_geometry_verified",
+  "source_receipt_sha256": "b8229d50751fa990a925b4cb3c3e2c8110a373d645764d0580959d55d78277aa",
+  "tool_artifact_receipt_sha256": "f0d4d7db132d51c789a999e33ab0ce905b2df749db453029f91356b9aa2e2165",
+  "tool_executable_sha256": "e7c956fd713f5d1b1b16cd55ef162aa487031430690ab1394ee60d3d02a13d04",
+  "job_source_sha256": "f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387",
+  "local_state_sha256": "42574b89b444c5dfbe948a8a634d084e8b1c2dd26478089c62b6ec278380a5e2",
+  "fastfile": {
+    "zone": "sdk_beacon",
+    "package_destination": "mods/sdk_beacon/mod.ff",
+    "bytes": 1048,
+    "sha256": "76ed0701dc1480c501604db04999f300394c65877aa24a70dfe7afc2cd662d4a"
+  },
+  "phases": [
+    {"name": "build", "exit_code": 0, "job_active_at_close": 0, "stdout_bytes": 1212, "stderr_bytes": 0},
+    {"name": "verify", "exit_code": 0, "job_active_at_close": 0, "stdout_bytes": 1095, "stderr_bytes": 0},
+    {"name": "dump", "exit_code": 0, "job_active_at_close": 0, "stdout_bytes": 668, "stderr_bytes": 0},
+    {"name": "read", "exit_code": 0, "job_active_at_close": 0, "stdout_bytes": 436, "stderr_bytes": 0}
+  ],
+  "inventory": [
+    "material,,mopw/character_park_clown_zombie_shoes",
+    "xmodelsurfs,paris_model_probe_lod0",
+    "xmodel,paris_model_probe",
+    "netconststrings,ncs_mdl_paris_model_probe",
+    "rawfile,sdk_beacon"
+  ],
+  "geometry": {
+    "vertices": 24, "triangles": 12, "bones": 1, "surfaces": 1, "lods": 1,
+    "lod0_dist": 1000000, "shadow_cutoff_lod": 6, "collision_lod": 255,
+    "geometry_roundtrip_verified": true,
+    "xmb_readback_sha256": "cb7e4824cebcc201e97925c4d603e1b5645c8f6efa012aa5bfe30d85ccf1bf13",
+    "xsb_readback_sha256": "d1bcc267099b758506c965add1564fdaecc8814b2a60954c95e79500f9d57b83",
+    "normal_encoding": "H1-1010102-candidate",
+    "iw7_normal_encoding_verified": false
+  },
+  "resources": {
+    "reserved_physical_bytes": 8589934592,
+    "reserved_commit_bytes": 11811160064,
+    "output_stop_threshold_bytes": 67108864,
+    "stream_log_limit_bytes": 2097152,
+    "max_output_bytes_observed": 1198238,
+    "retained_bytes_after_restoration": 1197187,
+    "retained_stock_inputs": 72,
+    "temporary_staged_inputs": 78,
+    "temporary_inputs_remaining": 0,
+    "stock_copy_bytes": 77,
+    "pdb_copied": false,
+    "stock_preserved": true,
+    "restoration_confirmed": true,
+    "lease_released": true,
+    "registry_empty_after_completion": true
+  },
+  "limitations": {
+    "recipient_material_resolved_in_game": false,
+    "pixels_verified": false,
+    "use_hud_and_rejoin_verified": false,
+    "multiplayer_verified": false,
+    "maps_runtime_validated": false,
+    "owner_accepted": false,
+    "ready": false
+  },
+  "notes": [
+    "Original geometry was serialized into a new sdk_beacon FF and re-read by the retained native reader; it is not an H1 donor conversion test.",
+    "The reader's own ff_built=false field describes its geometry-only operation; the separate ZoneTool build phase above proves this FF was built.",
+    "Bootstrap reported missing eng_code_pre_gfx, eng_code_post_gfx and eng_common language zones; all phases completed successfully and the exact five-asset inventory passed.",
+    "Stock preservation uses source file identity, size, time and attributes plus read guards; no new full-game content hash or copy was performed.",
+    "Two generated toc cache files dominate retained output size. No dedicated, client, game, PDB copy or network service was started."
+  ]
+}

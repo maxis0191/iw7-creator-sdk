@@ -12,6 +12,7 @@ public sealed class IW7HudHttp : IDisposable
 {
     public const string Route = "/mods/paris_lab_hud/mod.ff";
     public const string ModelRoute = "/mods/paris_model_probe/mod.ff";
+    public const string BeaconRoute = "/mods/sdk_beacon/mod.ff";
     public string AssetRoute { get; private set; }
     private readonly byte[] payload;
     private readonly string journal;
@@ -33,11 +34,12 @@ public sealed class IW7HudHttp : IDisposable
     public IW7HudHttp(byte[] bytes, string expectedHash, string logPath, string route)
     {
         // Explicit experiment routes only; no arbitrary paths or directory serving.
-        if (route != Route && route != ModelRoute)
+        if (route != Route && route != ModelRoute && route != BeaconRoute)
             throw new ArgumentException("Unreviewed laboratory asset route.");
         AssetRoute = route;
-        if (bytes == null || bytes.Length == 0 || bytes.Length > 1600)
-            throw new ArgumentException("HUD HTTP payload must be 1..1600 bytes.");
+        int maximum = route == BeaconRoute ? 1024 * 1024 : 1600;
+        if (bytes == null || bytes.Length == 0 || bytes.Length > maximum)
+            throw new ArgumentException("Laboratory HTTP payload exceeds its route-specific bound.");
         payload = (byte[])bytes.Clone();
         using (var hash = System.Security.Cryptography.SHA256.Create())
             SHA256 = BitConverter.ToString(hash.ComputeHash(payload)).Replace("-", "");
