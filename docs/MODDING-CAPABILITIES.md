@@ -1,26 +1,31 @@
 # Creative capabilities: proof, gaps and implementation steps
 
-This2026-10-12 map uses reviewed project `21b91e3` and the program's single prior
-official-source review. The later original-beacon offline FF execution is recorded
-below; no new upstream update check or game test was run in this SDK tranche.
-The desired BO3-like freedom is a target: easy original/H1 assets, custom HUD,
+The initial 2026-10-12 map used reviewed project `21b91e3` and the program's single
+prior official-source review. That historical source/offline snapshot is distinct
+from the later [SelfContained Use/rejoin Plan B checkpoint](SELF-CONTAINED-BEACON-RUNTIME.md)
+and [BO3 catalogue J observation](../tools-source/asset-bridge/t7-bridge/catalogue-runtime-j-20261012.json).
+The owner now prioritizes BO3/T7 asset work and skips H1 import. Retained H1,
+image and animation notes below are historical boundaries, not newly revalidated
+capabilities or instructions to resume those experiments. This document update
+performs no upstream check or runtime test.
+The desired BO3-like freedom remains a target: easy original/BO3 assets, custom HUD,
 gameplay, weapons/enemies/maps, multiplayer distribution and public dedicateds.
 A server GSC module catalogue alone does not deliver that target.
 
 | Creative operation | Strongest retained witness | Missing proof / next implementation |
 | --- | --- | --- |
-| Server gameplay, private HUD | Existing CP modules; normal native dedicated and HudElem paths | Shared VM/canonical-string/reliable-command budgets; new beacon compiled/link/pair cleanup. No arbitrary sandboxed plugins. |
-| Original rigid geometry | [1040B model witness](deployments/2026-10-07-model-visible.json): visible24-vertex cube at two poses, downloaded exact FF, LOD fix | Dark geometry only; full material/lighting, donor conversion and animated weights are distinct. Earlier MODEL-LAB pending paragraphs predate this witness. |
-| Beacon FF serialization | [1048B sdk_beacon FF](../sdk/modding/beacon-ff-validation-2026-10-12.json): new pinned tool build/verify/dump/read, exact five assets and native original-geometry readback | No beacon gameplay, recipient material binding, pixels, Use/HUD/rejoin or multiplayer evidence yet. |
+| Server gameplay, private HUD | [SelfContained Plan B](../sdk/modding/self-contained-use-rejoin-b-20261012.json): fresh source compile/load/init, two real protected Use events and visible HudElem counters | Two known OP_CastFieldObject errors remain; runtime integrity and owner acceptance are false. Independent two-player/WAN proof and shared VM/canonical-string/reliable-command budgets remain. No arbitrary sandboxed plugins. |
+| Original rigid geometry | [1040B model witness](deployments/2026-10-07-model-visible.json), plus five usable Plan B frames showing the original 24-vertex/12-triangle cube | Observed shape/HUD only; one rejoin frame is nearly black. Texture/UV/normal/lighting conformity, donor conversion and animated weights remain distinct. |
+| Beacon FF serialization and interaction | [1048B offline FF](../sdk/modding/beacon-ff-validation-2026-10-12.json) and later [Plan B runtime](SELF-CONTAINED-BEACON-RUNTIME.md): Use/HUD, same server entity/team state and reset personal state across controlled client restart | Recipient shoes-material appearance and overall pixels remain unqualified. This is one sequential client, not independent multiplayer or WAN; package readiness remains false. |
 | Client Lua/LUI in FF | [HUD delivery](deployments/2026-10-07-hud-delivery.json): visible Lua text, cold cache, corrected seeded update | Native loader/version required; per-frame gameplay data bridge, complex menus, independent two-client/WAN tests remain. GSC HudElem is not LUI. |
-| H1 rigid/skinned import | Existing pinned H1 converter plus new bounded blend reader/patch from H1 owner | Converter group/count/subdivision errors need actual tool compilation, roundtrip and recipient pixels. Full H1 import is unproved. |
+| BO3/T7 asset import; retained H1 history | [Catalogue J](../tools-source/asset-bridge/t7-bridge/catalogue-runtime-j-20261012.json) names core_pre_gfx; [Core A qualification and collection K](../tools-source/asset-bridge/t7-bridge/catalogue-core-bootstrap-k-20261012.json) bind the two observed dependencies | Input identity is verified, but initialization-complete, real model export and content compatibility remain unproved. Evaluate the distinct K invocation before further action. H1 import is skipped; its converter notes remain historical. |
 | Original resident image/material | ZoneTool reader supports resident DDS/TGA; source fix prepared by surfaces owner | Material resolution currently depends on zone-name prefix/early DB lookup. Prove generic-name FF and resident images without PAK before exposing easy imports. |
 | Skeletal animation | Animation owner's bounded H1/IW7 XAB envelope/bone/notetrack preflight | Compressed tracks not decoded; no imported motion. Two-bone original keyed clip, native writer/readback, two rendered poses and notetrack next. |
 | New weapons | Weapon JSON/reference paths exist in pinned ZoneTool | View/world model, hands/rig, fire/reload/PAP, sounds/FX, notetracks and peer replication. No playable custom weapon witnessed. |
 | New enemies/AI | Retail enemy-port experiments, GSC/callback/BT/ASM research | Imported model does not supply behavior; callback registration, animclass/ATR, movement/attack/death/FX/audio and late join require complete closure. |
 | More active actors | Known native allocation/serialization/client audit | Previous64 candidate crashed;48 requires coherent engine+client patch, not a dvar or static-renderer list expansion. |
 | Custom maps/gametypes | Later pinned downloader has usermap allowlist | No complete map compiler/collision/nav/lighting/spawn/stock gameplay or playable new-map proof. Not qualified in community v1. |
-| Community multiplayer | Small local mod FF download/cache-update proof; dedicated foundations | One fs_game, content/version/source checks, two fresh clients, update and rollback, WAN/public join; no EXE/DLL auto-delivery. |
+| Community multiplayer | Small local FF download/cache-update proof; Plan B retains the exact cache and server state across controlled client restart | One sequential client does not prove two independent players or WAN/public join. Content/version/source checks, joint update/rollback and one fs_game remain required; no EXE/DLL auto-delivery. |
 | Independent mod composition | Exact dependencies/conflicts and transport graph validation | No native multi-mod linker/isolated namespace/ABI. One asset-bearing fs_game; compose only through a reviewed build with joint closure and tests. |
 
 The machine-readable [catalogue](../sdk/modding/capabilities.json) keeps blocked
@@ -29,7 +34,23 @@ reviewed capability change records appropriate proof. Adding a JSON flag alone
 cannot qualify a native feature. Evidence references are claims to audit, not
 authenticated attestations. Runtime/owner acceptance remains separate.
 
-## H1/model owner: actual converter correction
+Plan B's HUD displays personal/team `0/0 -> 1/1`, then `0/1 -> 1/2` after
+controlled client restart. The cube uses the recipient shoes material; its
+normals writer remains an H1 encoding candidate. Neither the dark faces nor the
+weapon's apparent green laser prove texture or normal correctness. Issue150's
+two known errors remain open despite successful targeted interaction.
+
+The separately reviewed [FLAC build C](../tools-source/asset-bridge/surfaces/sound/native-checksum/FLAC-BUILD-C.md)
+qualifies compilation and the bounded C++ probe. The subsequent actual
+[DumpOnly A checkpoint](../tools-source/asset-bridge/surfaces/sound/dump-only-checkpoint-2026-10-12.json)
+proves corrected 4096/4096 block metadata and unchanged seek/frame bytes on the
+preserved F banks. Strict external PCM comparison and audible playback remain
+unproved. The original F dump's strict decoder failure is retained unchanged.
+
+## Retained H1/model converter correction; import skipped
+
+This section preserves the earlier source proposal. It is not the current BO3/T7
+work plan and does not authorize a new H1 build, conversion or runtime.
 
 Source base is owner fork `bigmangeekf/x64-zt` at
 `fab935826c898806855376662a8a03317b3ad8f1`, already retained. The parallel owner's
@@ -43,10 +64,10 @@ The accompanying `blend_bridge.py` converts raw H1 uint16 indices to supported
 IW7 groups1–4, checks skeleton1..255 (H1 uint8 count) and exact byte length/readback, preserving
 opaque weights. The reported apply/reverse and byte tests are source preparation,
 not native compilation. Integration reference: `docs/ASSET-BRIDGE-H1.md` and the
-H1 owner's commit. After review/admission, compile the patched existing tool,
-convert one bounded input with known bones/weights, re-read XMB/XSB/FF and exercise
-the beacon pair scene. A group5–8 donor must fail before output instead of silently
-producing corrupt geometry. Retain failed negative tests alongside visible proof.
+H1 owner's commit. The historical proposed proof was a patched tool compilation,
+one bounded conversion with known bones/weights, XMB/XSB/FF readback and a beacon
+pair scene. A group5–8 donor had to fail before output rather than silently produce
+corrupt geometry. These requirements remain recorded; H1 import is not resumed.
 
 ## Surfaces owner: remove a concrete import trap
 
@@ -90,16 +111,20 @@ FastDL; a deterministic ZIP is not a compatible executable or deployed service.
 binary identity. Cache-update correction/provenance must be tracked separately.
 
 Agent testing must extend the reviewed existing fixture, preserving fresh engine
-godmode/inactivity0/cheats0 and Main. The model fixture currently requires one
-player; merely calling it twice cannot validate multiplayer. A second client
+godmode/inactivity0/cheats0 and Main. Plan B uses one sequential protected
+player; its two client generations do not validate independent multiplayer. A second client
 needs the documented simultaneous-receiver exception and complete pair admission.
-Assert actual Use effects/replicated model orientation/HUD counts; a dispatched
-input acknowledgment or READY_MODEL log is insufficient. Use full-quality frames
-for material/animation claims, reduced clients only for qualified logic evidence.
+The retained Plan B observations include actual Use effects and HUD counts;
+a dispatched input acknowledgment or READY_MODEL log alone is insufficient.
+Use full-quality controlled frames for material/animation claims. Reduced frames
+support the limited visible shape/HUD observations already recorded, without
+qualifying texture, UV, normal or lighting fidelity.
 
-Milestones keep the same contract: original beacon → H1 geometry with corrected
-blend handling → resident material with generic zone name → keyed two-bone motion
-→ complete weapon/enemy. Each milestone gets its own measured payload/closure,
+The current priority is one BO3/T7 asset through an actual catalogue/export and
+its measured closure; H1 geometry is no longer a prerequisite. The original
+Beacon's protected Use/restart and limited geometry/HUD witness are retained.
+Resident material fidelity, keyed motion and complete weapon/enemy behavior remain
+separate milestones. Each milestone gets its own measured payload/closure,
 join/update/teardown evidence and explicit supported source pins. Public release
 also needs content provenance/redistribution decisions and a real public-server
-join witness. None of those is inferred from this source-only SDK delivery.
+join witness. The targeted SDK runtime pass does not qualify those broader goals.
