@@ -95,10 +95,25 @@ identity predicate with 96 additional source checks. The first ten patch files a
 unchanged. That revision grants no Stop or acceptance and does not import the
 predicate into its launcher. It requires positive original-job membership and
 pinned file identity without inventing a compiler ancestry. The subsequent concrete
-supervisor integration is a separate candidate and is not part of this archive.
+supervisor integration is preserved separately by patch twelve below.
 The existing source-only reconstruction was extended in place; its 22 changed blobs
 and tree `5f01dbcc65c7b5a399db0bbeed4074973f8d2b4a` match the archived source.
 No new clone, dependency initialization, Plan, native execution or cleanup occurred.
+
+The twelfth patch adds independently reviewed revision
+`eabe74ab65d8ce2a943b54d24b15a60749a0cf2a`, which connects the original-job supervisor
+to bounded guarded receipt/identity validation. Its 338 PowerShell checks and four
+Python preparation tests passed; this is source/mock evidence only. The earlier
+eleven patches are unchanged. Schema `/2` build receipts bind a fresh run identity,
+root PID, exact plan and lease, ordered successful steps, source/tool/compiler pins
+and both input/assembly witnesses. Qualified telemetry cleanup requires two fresh
+original-job member queries, retained compiler/vctip read guards, an original-job
+Stop and a fresh zero-members/root-zero result within the unchanged drain deadline.
+The existing source-only reconstruction was extended in place and all 26 changed
+blobs and tree `74143703049b4fbb9ba702d1ea74bc58be5607ac` match the archived revision.
+Actual two-second drain timing remains unverified. A fresh Plan may be reviewed,
+but no native execution is authorized by this archive. v4/v5 remain global failures
+and their historical `/1` receipts cannot qualify under the new closure contract.
 
 `reconstruction-validation.json` records only the local source reconstruction
 check. Passing it does not establish executable correctness, complete GSC import
