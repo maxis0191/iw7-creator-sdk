@@ -42,11 +42,53 @@ PAKS = (("assetfile17.pak", 104595492, "6f5c0d1937b5a707d4e1fb3009f68a827714d9e4
 FIVE_PROFILE = "observed-cp-paks-17-19-37-53-69"
 FIVE_PAKS = PAKS + (("assetfile69.pak", 386465828, "042c8d62a3a24acd21a5502a5a111e6e426e870505da3cdd62ada3c3a23c496f"),)
 E2_FATAL_SHA = "867e858ecd4bffde50a04e62488e42b73f528177e0e01b51a081bc030dbbb280"
+COMPLETE_PROFILE = "doom-reviewed-all-asset-paks-20261012"
+F_FATAL_SHA = "67995123ab95d54de3ddb9ffb0f52015daa0978f3c782c977a7c9a3a3c9f58f3"
+INVENTORY_SHA = "683c8a39b6bd289a2acc0a27129a038361d5a217d6ef129d07da739feb6f76bf"
+INVENTORY_LIMIT = 128 * 1024
+BASE_PAK = ("assetfile1.pak", 10469412, "2c9ee05175e04f14644687de63212cdd1d2b332bd7ca9c423ebd4d28595740a9")
+# Immutable reviewed names/bytes/hashes from f57b530; never scan a stock root.
+COMPLETE_PAKS = (
+    ("assetfile17.pak", 104595492, "6f5c0d1937b5a707d4e1fb3009f68a827714d9e4a72ff2d6570b57dbf6b0f058"),
+    ("assetfile19.pak", 418201636, "064b6d23cfcec2baedf1a5589fcd602fb1cfbdbb2040d88d21cb8a8ca7779b0d"),
+    ("assetfile21.pak", 944406564, "5db444e20c87a85fa896778fb5e650a6b532e192ed2d28bcdec909c2416498b3"),
+    ("assetfile25.pak", 87621668, "8d2232f08d2690914682d3f094055ce04283bd67053a5a6773cced101a9a19b6"),
+    ("assetfile26.pak", 403406884, "d19de294a551e84a6ef14bd5d045e3315a25d4a454d0e0e4ad35f33807320ea5"),
+    ("assetfile36.pak", 61964324, "6835e02f5a1a8e99edb97b43e51c27d2603f2903a3d2687e2185168c37608fb9"),
+    ("assetfile37.pak", 53477412, "839c1da30e43b9c5c78cc457d3fa3ef61bd85ae818c81a2d2d0b30ff187fb349"),
+    ("assetfile52.pak", 42762276, "e377d1eea6b9f84689146ab3eb930de4ff020151242bc6d6b217b3637bb3f522"),
+    ("assetfile53.pak", 3817508, "b0c4ac18f4f9965a396b74ce8fbe2118d6fd6f68d92e7295ad29bc7bc2fbf773"),
+    ("assetfile68.pak", 26148900, "e35faa16d54246d545181967a08c5739066f88470e16874812cf8384102d3f15"),
+    ("assetfile69.pak", 386465828, "042c8d62a3a24acd21a5502a5a111e6e426e870505da3cdd62ada3c3a23c496f"),
+    ("assetfile84.pak", 311001124, "ff5edecc4b9c59542418573e952ce97d380bb4bdd51233d179a63ccb5d662864"),
+    ("assetfile85.pak", 325582884, "335685b9eef52b686a19122e1004503c6ae7d0fad62bfc4577dbb9d4218ddf65"),
+    ("assetfile100.pak", 240828452, "87fdac4e56255896c27cbd1722711b3e03cb76871cc46d6acdd0ed6fef7a27d3"),
+    ("assetfile101.pak", 395509796, "919308f769389718621883149ec9801eafab8895e3a9e74ae73e1d702aa30b38"),
+    ("assetfile116.pak", 321585188, "5619c4fc9e5e5de9fce26385b8265e292dddabfc5619772ebb332a90ce6c0998"),
+    ("assetfile117.pak", 17383460, "ab9b6e1d626f29393c99370ec107192776f89e7b88e01219191473fe58f37e7b"),
+    ("assetfile132.pak", 15335460, "5c13268f235a78ea682c528974206b38aa9bc705412eb9239ffa09a67a979c27"),
+    ("assetfile133.pak", 6619172, "3258818e9d584301e6cd081029cef67376f422a3cb77955d7adb3cd44c419af6"),
+    ("assetfile148.pak", 9650212, "b86aa968ea633983f61266ed945554d1a2f7f9c5ef17d11938d2516f36ab669c"),
+    ("assetfile149.pak", 229867556, "5a733ff9189e8f52a1a4a999a142be0a3fb6a58d18ba6266439e7de48ff8ab02"),
+    ("assetfile164.pak", 242434084, "a2ba6569d99c2af4122e47ada2200248e2359fb17dce2850eb61e3e921086b27"),
+    ("assetfile165.pak", 6045732, "06418d501c15f041af0f3d52df649be8d228265a33d33bd80dc20c6596bf879d"),
+    ("assetfile180.pak", 33882148, "46079f24957408d20b5ab3fe4aca99df838bf3a4e4e9dc7e93015bbe96037e00"),
+    ("assetfile181.pak", 1376292, "481c3f64b6ef7f1eb2a7bd82378ccabfc9f524a6db63ecf42f8f3e9a9aeb066f"),
+    ("assetfile196.pak", 229412, "ef73a72b327a1f819ead79e52c97df6502bb8efe53b384225b9bc0c32e0799c2"),
+    ("assetfile197.pak", 1376292, "3bfd3de923aad62df54b78faa394198bfd083725aa46c5b3163749fcf5b4c518"),
+    ("assetfile212.pak", 229412, "a09af42dbe7d0ef71bd21f402adb8e09907b3d6745dd958e08fbf3725fe87e57"),
+    ("assetfile213.pak", 1376292, "032c32788051bf53d85dd3f3b98bd7319be571fba26af33de5bb03c24bf8dec5"),
+    ("assetfile228.pak", 229412, "2ac06f84f11ffb56d9313e1ebf5fd920d0209e30a7d5e3e867692d5822a76e46"),
+    ("assetfile229.pak", 1572900, "b29bc71373e6558ad150944cd12a0bb06e52b78c02e4135779abf5a66b5476ed"),
+    ("assetfile244.pak", 524324, "56d3108877108e1c81bc7aa9a229c3f83bfc3bdd8c8f348a58aad71618ec4da2"),
+)
 STOCK_PROFILES = {
     OVERLAY_PROFILE: {"schema": "iw7.recipient-stock-observation/1", "paks": PAKS,
                       "bytes": 580092048, "limit": 600 * 1024**2, "additional": 0, "evidence": None},
     FIVE_PROFILE: {"schema": "iw7.recipient-stock-observation/2", "paks": FIVE_PAKS,
                    "bytes": 966557876, "limit": 966557876, "additional": 386465828, "evidence": E2_FATAL_SHA},
+    COMPLETE_PROFILE: {"schema": "iw7.recipient-stock-observation/3", "paks": COMPLETE_PAKS,
+                       "bytes": 4695508096, "limit": 4695508096, "additional": 4115416048, "evidence": F_FATAL_SHA},
 }
 DIAGNOSTIC_LIMITS = {"DiagnosticPollMilliseconds": 250, "DiagnosticTextBytes": 16384,
                      "DiagnosticControlLimit": 8, "DiagnosticMessageTimeoutMilliseconds": 200,
@@ -105,12 +147,14 @@ class Reader:
     """Bounded streams plus whole-group identity/hash recheck before returning."""
     def __init__(self):
         self.records = {}
+        self.limits = {}
         self.absent = []
         self.total = 0
 
     def read(self, path, expected=None, limit=v.LIMIT, retain=True):
         path = v.no_redirects(absolute(str(path)))
         key = path_key(path)
+        limit = min(limit, self.limits.get(key, limit))
         before = path.stat()
         v.require(stat.S_ISREG(before.st_mode) and before.st_size <= limit, "File type or byte bound differs")
         v.require(len(self.records) < 128 and self.total + before.st_size <= 256 * 1024**2, "Read group exceeds bound")
@@ -133,6 +177,7 @@ class Reader:
             same(record, self.records[key][0], "Previously read file")
             v.require(v.identity(before) == self.records[key][1], "File replaced between reads")
         self.records[key] = record, v.identity(before)
+        self.limits[key] = limit
         self.total += count
         return b"".join(chunks) if retain else record
 
@@ -150,7 +195,7 @@ class Reader:
         for record, identity in list(self.records.values()):
             path = v.no_redirects(Path(record["path"]))
             v.require(v.identity(path.stat()) == identity, "Evidence changed across group")
-            self.read(path, record["sha256"], limit=64 * 1024**2, retain=False)
+            self.read(path, record["sha256"], limit=self.limits[record["path"]], retain=False)
         for path in list(self.absent):
             self.absent_path(path)
 
@@ -239,6 +284,7 @@ def stock_budget(baseline, overlay, profile_id=None):
     """Recompute receipt arithmetic only; never opens a stock source."""
     v.require(profile_id is None or profile_id in STOCK_PROFILES, "Unknown named stock budget profile")
     profile = STOCK_PROFILES[profile_id or OVERLAY_PROFILE]
+    same([x["Relative"] for x in overlay], ["zone/" + x[0] for x in profile["paks"]], "Named stock budget ordered scope")
     v.require(len(overlay) == len(profile["paks"]) and sum(x["Bytes"] for x in overlay) == profile["bytes"], "Named stock budget count/bytes differ")
     v.require(all(x.get("StockProfileId") == profile_id if profile_id is not None else "StockProfileId" not in x for x in overlay), "Mixed or incomplete stock profile identities")
     unique, names = {}, set()
@@ -262,6 +308,63 @@ def stock_budget(baseline, overlay, profile_id=None):
     if profile_id is not None:
         result.update(SupplementalProfile=profile_id, AdditionalBytesBeyondFourPAKs=profile["additional"])
     return result
+
+
+def complete_inventory(reader, spec, pins, rows, baseline, root):
+    """Read/hash/parse the same bounded metadata bytes; no stock path is opened."""
+    v.require(v.digest(spec["RecipientCompleteInventoryReceiptSHA256"]) == INVENTORY_SHA and
+              pins.get(path_key(spec["RecipientCompleteInventoryReceipt"])) == INVENTORY_SHA,
+              "Fixed independent complete inventory pin required")
+    raw = reader.read(spec["RecipientCompleteInventoryReceipt"], INVENTORY_SHA, limit=INVENTORY_LIMIT)
+    inventory = v.json_bytes(raw)
+    exact_keys(inventory, ("Schema", "CapturedUtc", "Purpose", "StockRoot", "DirectoryScope", "ReviewedManifest",
+        "ReviewedManifestSHA256", "RetailPayloadBytesRead", "InventoryElapsedSeconds", "Summary", "MissingReviewedFiles",
+        "UnsafeAttributes", "ProposedAllAssetBudget", "Files"), "Complete inventory")
+    v.require(inventory["Schema"] == "iw7.recipient-pak-inventory-proposal/1" and
+              v.digest(inventory["ReviewedManifestSHA256"]) == REVIEWED_SHA, "Complete inventory schema/manifest differs")
+    same_path(inventory["StockRoot"], root, "Complete inventory stock root")
+    same_path(inventory["ReviewedManifest"], spec["ReviewedStockManifest"], "Complete inventory manifest")
+    utc_stamp(inventory["CapturedUtc"])
+    integer(inventory["RetailPayloadBytesRead"], 0, 0, "Inventory retail bytes read")
+    integer(inventory["UnsafeAttributes"], 0, 0, "Inventory unsafe attributes")
+    same(inventory["MissingReviewedFiles"], [], "Inventory missing reviewed files")
+    entries = inventory["Files"]
+    v.require(isinstance(entries, list) and len(entries) == 82, "Exact 82-file metadata inventory required")
+    assets, names, image_count = {}, set(), 0
+    for entry in entries:
+        exact_keys(entry, ("Name", "Family", "Bytes", "SourceId", "ModifiedUtc", "Attributes", "ReviewedSHA256", "ContentVerified"), "Inventory file")
+        v.require(entry["Family"] in ("assetfile", "imagefile") and isinstance(entry["Name"], str) and
+                  re.fullmatch(entry["Family"] + r"[1-9][0-9]*\.pak", entry["Name"]) and
+                  entry["Name"] not in names, "Inventory family/name/uniqueness differs")
+        names.add(entry["Name"])
+        integer(entry["Bytes"], 1, 2**63 - 1, "Inventory file bytes")
+        integer(entry["Attributes"], 0, 2**31 - 1, "Inventory file attributes")
+        v.require(not entry["Attributes"] & (1 | 16 | 1024) and entry["ContentVerified"] is False,
+                  "Inventory is ordinary descriptive metadata only")
+        v.require(isinstance(entry["SourceId"], str) and re.fullmatch(r"[A-F0-9]{8}:[A-F0-9]{16}", entry["SourceId"]), "Inventory source identity invalid")
+        utc_stamp(entry["ModifiedUtc"])
+        v.digest(entry["ReviewedSHA256"])
+        if entry["Family"] == "assetfile":
+            assets[entry["Name"]] = entry
+        else:
+            image_count += 1
+    v.require(image_count == 49 and set(assets) == {x[0] for x in (BASE_PAK,) + COMPLETE_PAKS} and
+              len({x["SourceId"] for x in assets.values()}) == 33 and sum(x["Bytes"] for x in assets.values()) == 4705977508,
+              "Complete 33-asset inventory scope/identity/budget differs")
+    for name, size, checksum in (BASE_PAK,) + COMPLETE_PAKS:
+        entry, row = assets[name], rows[name.casefold()]
+        v.require(entry["Bytes"] == size == row["Length"] and row["RelativePath"] == name and
+                  v.digest(entry["ReviewedSHA256"]) == checksum == v.digest(row["SHA256"]), "Complete inventory differs from fixed reviewed asset")
+    pak1 = [x for x in baseline if x["Relative"] == "zone/assetfile1.pak"]
+    v.require(len(pak1) == 1, "Complete profile requires exactly one baseline pak1")
+    inventory_match(pak1[0], assets["assetfile1.pak"])
+    return assets
+
+
+def inventory_match(descriptor, entry):
+    v.require(descriptor["ExpectedSourceId"] == entry["SourceId"] and descriptor["Bytes"] == entry["Bytes"] and
+              descriptor["Attributes"] == entry["Attributes"] and utc_stamp(descriptor["ModifiedUtc"]) == utc_stamp(entry["ModifiedUtc"]) and
+              v.digest(descriptor["ExpectedSHA256"]) == v.digest(entry["ReviewedSHA256"]), "Complete profile descriptor differs from independent inventory")
 
 
 def bind_stock_overlay(reader, spec, pins, plan):
@@ -323,20 +426,28 @@ def bind_stock_overlay(reader, spec, pins, plan):
     profile_id = overlay["Profile"]
     v.require(isinstance(profile_id, str) and profile_id in STOCK_PROFILES, "Unknown supplemental stock profile")
     profile = STOCK_PROFILES[profile_id]
+    inventory_markers = ("RecipientCompleteInventoryReceipt" in spec, "RecipientCompleteInventoryReceiptSHA256" in spec)
+    is_complete = profile_id == COMPLETE_PROFILE
+    v.require(all(inventory_markers) if is_complete else not any(inventory_markers), "Complete inventory spec/profile contract differs")
     overlay_keys = ("Schema", "Profile", "ToolSource", "StockRoot", "ReviewedStockManifestSHA256", "CapturedUtc", "ContentVerification", "Inputs")
-    exact_keys(overlay, overlay_keys + (("AdditionalDependencyEvidenceSHA256",) if profile["evidence"] else ()), "Recipient stock observation")
+    exact_keys(overlay, overlay_keys + (("AdditionalDependencyEvidenceSHA256",) if profile["evidence"] else ()) +
+               (("CompleteInventoryEvidenceSHA256",) if is_complete else ()), "Recipient stock observation")
     v.require(overlay["Schema"] == profile["schema"] and
               overlay["ToolSource"] == TOOL_SOURCE and v.digest(overlay["ReviewedStockManifestSHA256"]) == REVIEWED_SHA and
               overlay["ContentVerification"] == "DeferredUntilAdmittedRun", "Exact unverified supplemental profile required")
     if profile["evidence"]:
-        v.require(v.digest(overlay["AdditionalDependencyEvidenceSHA256"]) == profile["evidence"], "Reviewed E2 fatal dependency evidence pin differs")
+        v.require(v.digest(overlay["AdditionalDependencyEvidenceSHA256"]) == profile["evidence"], "Reviewed fatal dependency evidence pin differs")
+    assets = None
+    if is_complete:
+        v.require(v.digest(overlay["CompleteInventoryEvidenceSHA256"]) == INVENTORY_SHA, "Complete inventory observation pin differs")
+        assets = complete_inventory(reader, spec, pins, rows, base_inputs, root)
     # The newer producer also enriches four-PAK /1 plans. Accept exactly both
     # named fields plus every per-input ID, or the historical four-PAK shape.
     named_markers = ("SupplementalProfile" in plan["StockBudget"], "AdditionalBytesBeyondFourPAKs" in plan["StockBudget"],
                      any("StockProfileId" in x for x in plan["StockInputs"]))
     named_mode = any(named_markers)
     v.require(not named_mode or all(named_markers), "Incomplete named stock profile contract")
-    v.require(profile_id == OVERLAY_PROFILE or named_mode, "Five-PAK profile requires explicit named contract")
+    v.require(profile_id == OVERLAY_PROFILE or named_mode, "This stock profile requires explicit named contract")
     if named_mode:
         v.require(plan["StockBudget"]["SupplementalProfile"] == profile_id, "Named budget and observation profile differ")
     same_path(overlay["StockRoot"], root, "Supplemental stock root")
@@ -353,6 +464,8 @@ def bind_stock_overlay(reader, spec, pins, plan):
         extra_inputs.append(stock_descriptor(entry, supplemental=True))
         if named_mode:
             extra_inputs[-1]["StockProfileId"] = profile_id
+        if is_complete:
+            inventory_match(extra_inputs[-1], assets[name])
     same(plan["StockInputs"], base_inputs + extra_inputs, "Baseline plus exact overlay descriptors")
     budget = stock_budget(base_inputs, extra_inputs, profile_id if named_mode else None)
     v.require(budget["SupplementalLogicalBytes"] == profile["bytes"] <= budget["SupplementalLimitBytes"] and
@@ -361,6 +474,8 @@ def bind_stock_overlay(reader, spec, pins, plan):
     return {"profile": profile_id, "observation_schema": profile["schema"],
             "producer_contract": "named-profile/1" if named_mode else "legacy-four-pak/1",
             "additional_dependency_evidence_sha256": profile["evidence"],
+            "complete_inventory_sha256": INVENTORY_SHA if is_complete else None,
+            "complete_inventory_metadata_bound": is_complete,
             "baseline_receipt_sha256": BASELINE_SHA, "reviewed_manifest_sha256": REVIEWED_SHA,
             "baseline_observation_sha256": v.digest(spec["StockBindingReceiptSHA256"]),
             "overlay_observation_sha256": v.digest(spec["RecipientStockBindingReceiptSHA256"]),
@@ -429,16 +544,22 @@ def bind_run(expectations):
     overlay_markers = ("RecipientStockBindingReceipt" in original_spec, "RecipientStockBindingReceiptSHA256" in original_spec,
                        "StockBudget" in plan, path_key(adapter.parent / "Recipient.Stock.ps1") in pins)
     overlay_mode = any(overlay_markers)
+    inventory_markers = ("RecipientCompleteInventoryReceipt" in original_spec, "RecipientCompleteInventoryReceiptSHA256" in original_spec)
+    inventory_mode = any(inventory_markers)
+    if inventory_mode:
+        v.require(overlay_mode and all(inventory_markers), "Incomplete complete inventory source roles")
     if overlay_mode:
         v.require(all(overlay_markers), "Incomplete explicit supplemental stock contract")
         v.require(plan.get("FatalTextDiagnostic") is False and state.get("DiagnosticOnly") is False, "Diagnostic-only run cannot bind recipient observations")
         for key, value in DIAGNOSTIC_LIMITS.items():
             integer(plan[key], value, value, key)
     else:
-        v.require(not any("StockProfile" in x or "StockProfileId" in x or x["Relative"] in {"zone/" + p[0] for p in FIVE_PAKS}
+        v.require(not any("StockProfile" in x or "StockProfileId" in x or x["Relative"] in {"zone/" + p[0] for p in COMPLETE_PAKS}
                           for x in normalized_plan["StockInputs"]), "Supplemental stock requires explicit profile")
     stock_receipts = {}
-    receipt_roles = ("StockReceipt", "StockBindingReceipt", "ReviewedStockManifest", "PythonExe") + (("RecipientStockBindingReceipt",) if overlay_mode else ())
+    receipt_roles = (("StockReceipt", "StockBindingReceipt", "ReviewedStockManifest", "PythonExe") +
+                     (("RecipientStockBindingReceipt",) if overlay_mode else ()) +
+                     (("RecipientCompleteInventoryReceipt",) if inventory_mode else ()))
     for field in receipt_roles:
         key = path_key(original_spec[field])
         v.require(pins.get(key) == v.digest(original_spec[field + "SHA256"]), "Original spec input pin absent: " + field)
@@ -458,7 +579,10 @@ def bind_run(expectations):
         allowed_sources.add(optional_light)
     same(sorted(pins), sorted(allowed_sources), "Exact source pin roles")
     for path, checksum in pins.items():
-        reader.read(path, checksum, limit=64 * 1024**2 if path == path_key(python) else v.LIMIT, retain=False)
+        limit = 64 * 1024**2 if path == path_key(python) else v.LIMIT
+        if inventory_mode and path == path_key(original_spec["RecipientCompleteInventoryReceipt"]):
+            limit = INVENTORY_LIMIT
+        reader.read(path, checksum, limit=limit, retain=False)
     for name, binding in providers.items():
         exact_keys(binding, ("Path", "SHA256"), "Provider")
         reader.read(binding["Path"], binding["SHA256"], retain=False)

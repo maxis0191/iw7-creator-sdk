@@ -169,18 +169,22 @@ class RunBindingTests(unittest.TestCase):
     def repin(self, name, data):
         self.run_pins[name] = self.write(self.root / name, data)
 
-    def overlay_fixture(self, named=False, five=False):
+    def overlay_fixture(self, named=False, five=False, complete=False):
         """Metadata only; none of the declared retail sources exist."""
-        if five:
+        if five or complete:
             named = True
         stock_root = Path(self.original_spec["StockRoot"])
         observation, history, rows = [], [], {}
         relatives = ["main/techsets_cp_zmb.ff", "main/cp_zmb.ff", "zone/techsets_cp_zmb.ff", "zone/cp_zmb.ff"]
         relatives += [f"fixture{n}.bin" for n in range(67)] + ["main/fileSysCheck.cfg"]
+        if complete:
+            relatives[4] = "zone/assetfile1.pak"
         for index, relative in enumerate(relatives):
-            reviewed_name = relative.split("/")[-1] if relative.endswith(".ff") else relative
+            reviewed_name = relative.split("/")[-1] if relative.endswith(".ff") or relative == "zone/assetfile1.pak" else relative
             size = 77 if index == 71 else (17 if index < 4 else 100 + index)
             checksum = v.sha(reviewed_name.encode())
+            if relative == "zone/assetfile1.pak":
+                _, size, checksum = b.BASE_PAK
             mode = "HardLink" if index < 63 else "Copy"
             entry = {"Relative": relative, "Source": str(stock_root / reviewed_name), "Mode": mode, "Bytes": size,
                 "ModifiedUtc": "2026-09-29T21:46:02.6684337Z", "Attributes": 33 if index == 71 else 32,
@@ -195,7 +199,10 @@ class RunBindingTests(unittest.TestCase):
         if five:
             self.overlay.update(Schema="iw7.recipient-stock-observation/2", Profile=b.FIVE_PROFILE,
                                 AdditionalDependencyEvidenceSHA256=b.E2_FATAL_SHA.upper())
-        for index, (name, size, checksum) in enumerate(b.FIVE_PAKS if five else b.PAKS):
+        if complete:
+            self.overlay.update(Schema="iw7.recipient-stock-observation/3", Profile=b.COMPLETE_PROFILE,
+                                AdditionalDependencyEvidenceSHA256=b.F_FATAL_SHA.upper())
+        for index, (name, size, checksum) in enumerate(b.COMPLETE_PAKS if complete else b.FIVE_PAKS if five else b.PAKS):
             self.overlay["Inputs"].append({"Relative": "zone/" + name, "Source": str(stock_root / name), "Mode": "HardLink",
                 "Bytes": size, "ModifiedUtc": "2026-09-29T21:46:02.6684337Z", "Attributes": 32,
                 "SourceId": f"BBBBBBBB:{index + 1:016X}", "SHA256": checksum, "ReviewedStockRelative": name})
@@ -211,6 +218,27 @@ class RunBindingTests(unittest.TestCase):
         self.baseline_observation = {"Schema": "iw7.ff-stock-observation/1", "CapturedUtc": "2026-10-12T06:30:00Z", "StockRoot": str(stock_root),
             "BaselineReceiptSHA256": baseline_sha, "ReviewedStockManifestSHA256": reviewed_sha, "Inputs": observation}
         self.overlay["ReviewedStockManifestSHA256"] = reviewed_sha
+        if complete:
+            base_entry = next(x for x in observation if x["Relative"] == "zone/assetfile1.pak")
+            entries = [{"Name": x["ReviewedStockRelative"], "Family": "assetfile", "Bytes": x["Bytes"],
+                        "SourceId": x["SourceId"], "ModifiedUtc": x["ModifiedUtc"], "Attributes": x["Attributes"],
+                        "ReviewedSHA256": x["SHA256"], "ContentVerified": False} for x in [base_entry, *self.overlay["Inputs"]]]
+            entries += [{"Name": f"imagefile{n}.pak", "Family": "imagefile", "Bytes": 1, "SourceId": f"DDDDDDDD:{n:016X}",
+                         "ModifiedUtc": "2026-09-29T00:00:00Z", "Attributes": 32, "ReviewedSHA256": "f" * 64,
+                         "ContentVerified": False} for n in range(1, 50)]
+            self.inventory = {"Schema": "iw7.recipient-pak-inventory-proposal/1", "StockRoot": str(stock_root),
+                              "ReviewedManifest": self.original_spec["ReviewedStockManifest"], "ReviewedManifestSHA256": reviewed_sha,
+                              "CapturedUtc": "2026-10-12T07:36:04.2604339Z", "Purpose": "Synthetic metadata only",
+                              "DirectoryScope": "Direct root children", "RetailPayloadBytesRead": 0, "InventoryElapsedSeconds": 0,
+                              "Summary": {}, "MissingReviewedFiles": [], "UnsafeAttributes": 0, "ProposedAllAssetBudget": {}, "Files": entries}
+            path = self.base / "complete-inventory.json"
+            checksum = self.json(path, self.inventory)
+            patch = mock.patch.object(b, "INVENTORY_SHA", checksum)
+            patch.start()
+            self.addCleanup(patch.stop)
+            self.original_spec.update(RecipientCompleteInventoryReceipt=str(path), RecipientCompleteInventoryReceiptSHA256=checksum)
+            self.plan["SourceHashes"][str(path)] = checksum
+            self.overlay["CompleteInventoryEvidenceSHA256"] = checksum
         self.original_spec["RecipientStockBindingReceipt"] = str(self.base / "overlay.json")
         for field, obj in (("StockReceipt", self.baseline), ("StockBindingReceipt", self.baseline_observation),
                            ("ReviewedStockManifest", self.reviewed), ("RecipientStockBindingReceipt", self.overlay)):
@@ -813,6 +841,208 @@ class RunBindingTests(unittest.TestCase):
         self.save_state()
         with self.assertRaisesRegex(ValueError, "restoration entries"):
             b.bind_run(self.expect)
+
+    def test_complete_profile_binds_all_107_paths_with_zero_retail_reads(self):
+        self.overlay_fixture(complete=True)
+        original_read = b.Reader.read
+        inventory_path = Path(self.original_spec["RecipientCompleteInventoryReceipt"])
+        inventory_limits = []
+        def metadata_only(reader, path, *args, **kwargs):
+            self.assertFalse(Path(path).is_relative_to(Path(self.original_spec["StockRoot"])))
+            self.assertFalse(str(path).lower().endswith(".pak"))
+            if Path(path) == inventory_path:
+                inventory_limits.append(kwargs.get("limit", v.LIMIT))
+                self.assertLessEqual(kwargs.get("limit", v.LIMIT), 128 * 1024)
+            return original_read(reader, path, *args, **kwargs)
+        with mock.patch.object(b.Reader, "read", metadata_only):
+            report = b.bind_run(self.expect)
+        binding, budget = report["stock_profile_binding"], report["stock_profile_binding"]["budget_from_receipts"]
+        self.assertEqual(binding["profile"], "doom-reviewed-all-asset-paks-20261012")
+        self.assertEqual(binding["observation_schema"], "iw7.recipient-stock-observation/3")
+        self.assertTrue(binding["complete_inventory_metadata_bound"])
+        self.assertEqual(binding["complete_inventory_sha256"], b.INVENTORY_SHA)
+        self.assertEqual(binding["additional_dependency_evidence_sha256"], "67995123ab95d54de3ddb9ffb0f52015daa0978f3c782c977a7c9a3a3c9f58f3")
+        self.assertEqual(len(binding["supplemental_input_records"]), 32)
+        self.assertEqual(len(self.state["Inputs"]), 107)
+        self.assertEqual(budget["SupplementalLogicalBytes"], 4695508096)
+        self.assertEqual(budget["SupplementalLimitBytes"], 4695508096)
+        self.assertEqual(budget["AdditionalBytesBeyondFourPAKs"], 4115416048)
+        self.assertEqual(budget["StockHardLinks"], 103)
+        self.assertEqual(budget["StockCopiedBytes"], 77)
+        self.assertEqual(budget["SupplementalCopiedBytes"], 0)
+        self.assertGreaterEqual(len(inventory_limits), 3)
+        for field in ("native_execution_authenticated", "stock_content_remeasured", "imports_analyzed", "dependency_graph_complete",
+                      "closure_complete", "package_ready", "runtime_ready", "owner_accepted"):
+            self.assertIs(report[field], False)
+
+    def test_complete_profile_two_phases_does_not_claim_complete_imports(self):
+        self.make_fixture(script=True)
+        self.overlay_fixture(complete=True)
+        result = b.bind_run(self.expect)
+        self.assertTrue(result["phases"]["script"]["analysis"]["stack_integrity_verified"])
+        self.assertFalse(result["imports_analyzed"])
+        self.assertFalse(result["package_ready"])
+
+    def test_complete_profile_rejects_mixed_schema_evidence_inventory_and_names(self):
+        self.overlay_fixture(complete=True)
+        original = copy.deepcopy(self.overlay)
+        for key, value in (("Schema", "iw7.recipient-stock-observation/2"), ("Profile", b.FIVE_PROFILE),
+                           ("AdditionalDependencyEvidenceSHA256", b.E2_FATAL_SHA), ("CompleteInventoryEvidenceSHA256", "0" * 64),
+                           ("Inputs", original["Inputs"][:31]), ("Inputs", original["Inputs"] + original["Inputs"][-1:]),
+                           ("Inputs", list(reversed(original["Inputs"])))):
+            self.repin_stock_receipt("RecipientStockBindingReceipt", {**copy.deepcopy(original), key: value})
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                b.bind_run(self.expect)
+        bad = copy.deepcopy(original)
+        del bad["CompleteInventoryEvidenceSHA256"]
+        self.repin_stock_receipt("RecipientStockBindingReceipt", bad)
+        with self.assertRaises(ValueError):
+            b.bind_run(self.expect)
+
+    def test_complete_inventory_requires_both_independent_spec_fields_and_source_pin(self):
+        self.overlay_fixture(complete=True)
+        original = copy.deepcopy(self.original_spec)
+        for field in ("RecipientCompleteInventoryReceipt", "RecipientCompleteInventoryReceiptSHA256"):
+            self.original_spec = copy.deepcopy(original)
+            del self.original_spec[field]
+            self.sync_overlay()
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "Incomplete complete inventory"):
+                b.bind_run(self.expect)
+        self.original_spec = original
+        del self.plan["SourceHashes"][original["RecipientCompleteInventoryReceipt"]]
+        self.sync_overlay()
+        with self.assertRaisesRegex(ValueError, "Original spec input pin absent"):
+            b.bind_run(self.expect)
+
+    def test_old_profiles_reject_complete_inventory_spec_and_observation_fields(self):
+        self.overlay_fixture(five=True)
+        self.repin_stock_receipt("RecipientStockBindingReceipt", {**self.overlay, "CompleteInventoryEvidenceSHA256": b.INVENTORY_SHA})
+        with self.assertRaisesRegex(ValueError, "fields differ"):
+            b.bind_run(self.expect)
+        self.repin_stock_receipt("RecipientStockBindingReceipt", self.overlay)
+        path = self.base / "irrelevant-inventory.json"
+        checksum = self.json(path, {})
+        self.original_spec.update(RecipientCompleteInventoryReceipt=str(path), RecipientCompleteInventoryReceiptSHA256=checksum)
+        self.plan["SourceHashes"][str(path)] = checksum
+        self.sync_overlay()
+        with self.assertRaisesRegex(ValueError, "inventory spec/profile"):
+            b.bind_run(self.expect)
+
+    def test_complete_inventory_changed_bytes_cannot_self_authorize_new_fixed_pin(self):
+        self.overlay_fixture(complete=True)
+        changed = copy.deepcopy(self.inventory)
+        changed["Files"][1]["Bytes"] -= 1
+        self.repin_stock_receipt("RecipientCompleteInventoryReceipt", changed)
+        # Even a caller repin cannot change the reviewed immutable inventory.
+        self.overlay["CompleteInventoryEvidenceSHA256"] = self.original_spec["RecipientCompleteInventoryReceiptSHA256"]
+        self.repin_stock_receipt("RecipientStockBindingReceipt", self.overlay)
+        with self.assertRaisesRegex(ValueError, "inventory observation pin"):
+            b.bind_run(self.expect)
+
+    def test_complete_inventory_descriptor_comparison_covers_ids_time_attributes_and_hash(self):
+        self.overlay_fixture(complete=True)
+        original = copy.deepcopy(self.overlay)
+        for key, value in (("SourceId", "BBBBBBBB:000000000000FFFF"), ("ModifiedUtc", "2026-09-29T21:46:02.6684338Z"),
+                           ("Attributes", 0), ("SHA256", "0" * 64), ("Bytes", 104595491), ("Mode", "Copy"),
+                           ("Relative", "zone/imagefile17.pak"), ("Relative", "zone/assetfile1.pak"),
+                           ("Source", str(self.base / "assetfile17.pak"))):
+            bad = copy.deepcopy(original)
+            bad["Inputs"][0][key] = value
+            self.repin_stock_receipt("RecipientStockBindingReceipt", bad)
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                b.bind_run(self.expect)
+
+    def test_complete_inventory_binds_existing_baseline_pak1(self):
+        self.overlay_fixture(complete=True)
+        original = copy.deepcopy(self.baseline_observation)
+        for key, value in (("SourceId", "AAAAAAAA:000000000000FFFF"), ("ModifiedUtc", "2026-09-29T21:46:02.6684338Z"), ("Attributes", 0)):
+            bad = copy.deepcopy(original)
+            bad["Inputs"][4][key] = value
+            self.repin_stock_receipt("StockBindingReceipt", bad)
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "descriptor differs from independent inventory"):
+                b.bind_run(self.expect)
+
+    def test_complete_inventory_semantics_are_checked_after_same_snapshot_hash(self):
+        self.overlay_fixture(complete=True)
+        original = copy.deepcopy(self.inventory)
+        changes = [("Schema", "future"), ("StockRoot", str(self.base / "other")), ("RetailPayloadBytesRead", True),
+                   ("MissingReviewedFiles", ["assetfile17.pak"]), ("UnsafeAttributes", 1), ("Files", original["Files"][:81])]
+        for key, value in changes:
+            bad = {**copy.deepcopy(original), key: value}
+            checksum = v.sha(json.dumps(bad, indent=2).encode())
+            with mock.patch.object(b, "INVENTORY_SHA", checksum):
+                self.repin_stock_receipt("RecipientCompleteInventoryReceipt", bad)
+                self.repin_stock_receipt("RecipientStockBindingReceipt", {**self.overlay, "CompleteInventoryEvidenceSHA256": checksum})
+                with self.subTest(key=key), self.assertRaises(ValueError):
+                    b.bind_run(self.expect)
+
+    def test_complete_inventory_rejects_asset_id_alias_or_content_claim(self):
+        self.overlay_fixture(complete=True)
+        original = copy.deepcopy(self.inventory)
+        for key, value in (("SourceId", original["Files"][0]["SourceId"]), ("ContentVerified", True),
+                           ("Name", "assetfile18.pak"), ("Family", "imagefile"), ("Bytes", True), ("ReviewedSHA256", "0" * 64)):
+            bad = copy.deepcopy(original)
+            bad["Files"][1][key] = value
+            checksum = v.sha(json.dumps(bad, indent=2).encode())
+            with mock.patch.object(b, "INVENTORY_SHA", checksum):
+                self.repin_stock_receipt("RecipientCompleteInventoryReceipt", bad)
+                self.repin_stock_receipt("RecipientStockBindingReceipt", {**self.overlay, "CompleteInventoryEvidenceSHA256": checksum})
+                with self.subTest(key=key), self.assertRaises(ValueError):
+                    b.bind_run(self.expect)
+
+    def test_complete_profile_budget_rejects_old_ceiling_ids_and_scope(self):
+        self.overlay_fixture(complete=True)
+        original = copy.deepcopy(self.plan["StockBudget"])
+        for key, value in (("SupplementalProfile", b.FIVE_PROFILE), ("SupplementalLimitBytes", 966557876),
+                           ("SupplementalLimitBytes", 4695508097), ("AdditionalBytesBeyondFourPAKs", 3728950220),
+                           ("StockHardLinks", 76), ("ContentVerified", True), ("AdditionalResidentBytesMeasured", True)):
+            self.plan["StockBudget"] = {**original, key: value}
+            self.sync_overlay()
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                b.bind_run(self.expect)
+        extras = copy.deepcopy(self.plan["StockInputs"][72:])
+        extras[0]["Relative"] = "zone/imagefile17.pak"
+        with self.assertRaisesRegex(ValueError, "ordered scope"):
+            b.stock_budget(self.plan["StockInputs"][:72], extras, b.COMPLETE_PROFILE)
+
+    def test_complete_profile_cannot_accept_failed_f_or_unclosed_original_job(self):
+        self.overlay_fixture(complete=True)
+        self.state["Failure"] = "Could not find asset file assetfile101.pak"
+        self.save_state()
+        with self.assertRaisesRegex(ValueError, "cleanup/lease/failure"):
+            b.bind_run(self.expect)
+        del self.state["Failure"]
+        self.state["Phases"][0]["JobActiveAtClose"] = 1
+        self.save_state()
+        with self.assertRaisesRegex(ValueError, "JobActiveAtClose"):
+            b.bind_run(self.expect)
+
+    def test_complete_profile_requires_recovery_and_absence_of_last_pak(self):
+        self.overlay_fixture(complete=True)
+        target = self.work / "zone/assetfile244.pak"
+        self.write(target, b"synthetic stale link")
+        with self.assertRaisesRegex(ValueError, "still exists"):
+            b.bind_run(self.expect)
+        target.unlink()
+        self.state["Transaction"]["Files"] = [x for x in self.state["Transaction"]["Files"] if x["Path"] != "zone/assetfile244.pak"]
+        self.run_pins["backup/recovery.local.json"] = self.json(self.root / "backup/recovery.local.json", self.state["Transaction"])
+        self.save_state()
+        with self.assertRaisesRegex(ValueError, "restoration entries"):
+            b.bind_run(self.expect)
+
+    def test_complete_inventory_limit_applies_before_initial_and_repeated_reads(self):
+        self.overlay_fixture(complete=True)
+        path = Path(self.original_spec["RecipientCompleteInventoryReceipt"])
+        original = path.read_bytes()
+        path.write_bytes(original + b" " * (b.INVENTORY_LIMIT + 1 - len(original)))
+        with self.assertRaisesRegex(ValueError, "byte bound"):
+            b.bind_run(self.expect)
+        path.write_bytes(original)
+        reader = b.Reader()
+        reader.read(path, limit=b.INVENTORY_LIMIT)
+        path.write_bytes(original + b" " * (b.INVENTORY_LIMIT + 1 - len(original)))
+        with self.assertRaisesRegex(ValueError, "byte bound"):
+            reader.read(path, limit=64 * 1024**2)
 
 
 if __name__ == "__main__":
