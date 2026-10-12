@@ -7,15 +7,19 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
-// One immutable asset, one bounded worker, no filesystem routing or child process.
+// Up to three fixed immutable assets, one bounded worker, no filesystem routing or child process.
 public sealed class IW7HudHttp : IDisposable
 {
     public const string Route = "/mods/paris_lab_hud/mod.ff";
     public const string ModelRoute = "/mods/paris_model_probe/mod.ff";
     public const string BeaconRoute = "/mods/sdk_beacon/mod.ff";
     public const string SelfContainedBeaconRoute = "/mods/sdk_beacon_self_contained/mod.ff";
+    public const string SoundRoute = "/mods/sdk_original_sound_v1/mod.ff";
+    public const string SoundLoadedRoute = "/mods/sdk_original_sound_v1/mod.sabl";
+    public const string SoundStreamedRoute = "/mods/sdk_original_sound_v1/mod.sabs";
+    // Legacy properties identify the primary FF; the journal identifies every completed asset GET.
     public string AssetRoute { get; private set; }
-    private readonly byte[] payload;
+    private readonly Asset[] assets;
     private readonly string journal;
     private readonly TcpListener listener;
     private readonly Thread worker;
@@ -33,19 +37,50 @@ public sealed class IW7HudHttp : IDisposable
         : this(bytes, expectedHash, logPath, Route) { }
 
     public IW7HudHttp(byte[] bytes, string expectedHash, string logPath, string route)
+        : this(LegacyAsset(bytes, expectedHash, route), logPath) { }
+
+    public IW7HudHttp(byte[] ff, string ffHash, byte[] sabl, string sablHash,
+        byte[] sabs, string sabsHash, string logPath)
+        : this(new[] {
+            new Asset(ff, ffHash, SoundRoute, 1600),
+            new Asset(sabl, sablHash, SoundLoadedRoute, 128 * 1024),
+            new Asset(sabs, sabsHash, SoundStreamedRoute, 4096)
+        }, logPath) { }
+
+    private sealed class Asset
     {
-        // Explicit experiment routes only; no arbitrary paths or directory serving.
+        public readonly string Route;
+        public readonly byte[] Payload;
+        public readonly string SHA256;
+
+        public Asset(byte[] bytes, string expectedHash, string route, int maximum)
+        {
+            if (bytes == null || bytes.Length == 0 || bytes.Length > maximum)
+                throw new ArgumentException("Laboratory HTTP payload exceeds its route-specific bound.");
+            Payload = (byte[])bytes.Clone();
+            using (var hash = System.Security.Cryptography.SHA256.Create())
+                SHA256 = BitConverter.ToString(hash.ComputeHash(Payload)).Replace("-", "");
+            if (!String.Equals(SHA256, expectedHash, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("HUD HTTP payload hash mismatch.");
+            Route = route;
+        }
+    }
+
+    private static Asset[] LegacyAsset(byte[] bytes, string expectedHash, string route)
+    {
+        // Preserve the historical one-asset whitelist, including its route-specific bounds.
         if (route != Route && route != ModelRoute && route != BeaconRoute && route != SelfContainedBeaconRoute)
             throw new ArgumentException("Unreviewed laboratory asset route.");
-        AssetRoute = route;
         int maximum = route == BeaconRoute || route == SelfContainedBeaconRoute ? 1024 * 1024 : 1600;
-        if (bytes == null || bytes.Length == 0 || bytes.Length > maximum)
-            throw new ArgumentException("Laboratory HTTP payload exceeds its route-specific bound.");
-        payload = (byte[])bytes.Clone();
-        using (var hash = System.Security.Cryptography.SHA256.Create())
-            SHA256 = BitConverter.ToString(hash.ComputeHash(payload)).Replace("-", "");
-        if (!String.Equals(SHA256, expectedHash, StringComparison.OrdinalIgnoreCase))
-            throw new ArgumentException("HUD HTTP payload hash mismatch.");
+        return new[] { new Asset(bytes, expectedHash, route, maximum) };
+    }
+
+    private IW7HudHttp(Asset[] approvedAssets, string logPath)
+    {
+        // Every clone/hash/bound check completes before journal creation or listening.
+        assets = approvedAssets;
+        AssetRoute = assets[0].Route;
+        SHA256 = assets[0].SHA256;
         journal = Path.GetFullPath(logPath);
         // Never append evidence from an earlier run.
         using (new FileStream(journal, FileMode.CreateNew, FileAccess.Write, FileShare.Read)) { }
@@ -93,15 +128,21 @@ public sealed class IW7HudHttp : IDisposable
         if (length < 4 || header[length-4] != 13 || header[length-3] != 10 ||
             header[length-2] != 13 || header[length-1] != 10) return;
         string first = Encoding.ASCII.GetString(header, 0, length).Split(new[] {"\r\n"}, StringSplitOptions.None)[0];
-        bool allowed = first == "GET " + AssetRoute + " HTTP/1.1" || first == "GET " + AssetRoute + " HTTP/1.0";
+        Asset selected = null;
+        foreach (Asset asset in assets)
+        {
+            if (first == "GET " + asset.Route + " HTTP/1.1" || first == "GET " + asset.Route + " HTTP/1.0")
+            { selected = asset; break; }
+        }
+        bool allowed = selected != null;
         byte[] response = Encoding.ASCII.GetBytes(allowed ?
-            "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: " + payload.Length + "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n" :
+            "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: " + selected.Payload.Length + "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n" :
             "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
         stream.Write(response, 0, response.Length);
         if (!allowed) return;
-        stream.Write(payload, 0, payload.Length); stream.Flush();
-        string row = "{\"utc\":\"" + DateTime.UtcNow.ToString("o") + "\",\"method\":\"GET\",\"path\":\"" + AssetRoute +
-            "\",\"bytes\":" + payload.Length + ",\"sha256\":\"" + SHA256 + "\"}\n";
+        stream.Write(selected.Payload, 0, selected.Payload.Length); stream.Flush();
+        string row = "{\"utc\":\"" + DateTime.UtcNow.ToString("o") + "\",\"method\":\"GET\",\"path\":\"" + selected.Route +
+            "\",\"bytes\":" + selected.Payload.Length + ",\"sha256\":\"" + selected.SHA256 + "\"}\n";
         try { File.AppendAllText(journal, row, new UTF8Encoding(false)); }
         catch (IOException e) { Error = "HTTP journal failed: " + e.Message; return; }
         Interlocked.Increment(ref gets);

@@ -168,6 +168,185 @@ foreach($case in $cases){
 }
 ''')
 
+    def test_sound_http_validates_all_inputs_before_side_effects_and_keeps_legacy_routes(self):
+        self.run_powershell_fixture(r'''
+Add-Type -Path (Join-Path $Repo 'ops/hud-lab/HudHttp.cs')
+function Hash([byte[]]$Bytes){[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($Bytes))}
+function Payloads([int[]]$Lengths){
+    $items=[byte[][]]::new(3)
+    for($i=0;$i -lt 3;$i++){$items[$i]=[byte[]]::new($Lengths[$i])}
+    return ,$items
+}
+function Refuse([byte[][]]$Items,[string[]]$Hashes){
+    $log=Join-Path $Fixture ([guid]::NewGuid().ToString('N')+'.jsonl')
+    $service=$null;$failed=$false
+    try{$service=[IW7HudHttp]::new($Items[0],$Hashes[0],$Items[1],$Hashes[1],$Items[2],$Hashes[2],$log)}catch{$failed=$true}
+    finally{if($service){$service.Dispose()}}
+    if(!$failed -or (Test-Path -LiteralPath $log)){throw 'Invalid sound input created a journal/service'}
+}
+$limits=@(1600,131072,4096)
+for($index=0;$index -lt 3;$index++){
+    foreach($length in @(-1,0,($limits[$index]+1))){
+        $items=Payloads @(1,1,1);$hashes=[string[]]@((Hash $items[0]),(Hash $items[1]),(Hash $items[2]))
+        if($length -lt 0){$items[$index]=$null}else{
+            $items[$index]=[byte[]]::new($length);$hashes[$index]=Hash $items[$index]
+        }
+        Refuse $items $hashes # Valid hashes isolate size refusal, including a failing final SAB.
+    }
+    $items=Payloads @(1,1,1);$hashes=[string[]]@((Hash $items[0]),(Hash $items[1]),(Hash $items[2]))
+    $hashes[$index]='0'*64;Refuse $items $hashes
+}
+foreach($lengths in @(@(1,1,1),$limits)){
+    $items=Payloads $lengths;$hashes=@((Hash $items[0]),(Hash $items[1]),(Hash $items[2]))
+    $log=Join-Path $Fixture ([guid]::NewGuid().ToString('N')+'.jsonl')
+    $service=[IW7HudHttp]::new($items[0],$hashes[0].ToLowerInvariant(),$items[1],$hashes[1],$items[2],$hashes[2],$log)
+    try{
+        if($service.AssetRoute -cne [IW7HudHttp]::SoundRoute -or $service.SHA256 -cne $hashes[0]){throw 'Primary FF identity differs'}
+    }finally{$service.Dispose()}
+    if(!$service.Stopped -or $service.Error){throw 'Idle sound worker failed to close'}
+}
+# Sound routes never become selectable one-asset routes.
+$one=[byte[]]@(42);$sha=Hash $one
+foreach($route in @([IW7HudHttp]::SoundRoute,[IW7HudHttp]::SoundLoadedRoute,[IW7HudHttp]::SoundStreamedRoute)){
+    $log=Join-Path $Fixture ([guid]::NewGuid().ToString('N')+'.jsonl');$service=$null;$failed=$false
+    try{$service=[IW7HudHttp]::new($one,$sha,$log,$route)}catch{$failed=$true}
+    finally{if($service){$service.Dispose()}}
+    if(!$failed -or (Test-Path -LiteralPath $log)){throw 'Legacy overload admitted a sound route'}
+}
+# Cover the fourth historical route alongside the pre-existing HUD/model/beacon tests.
+$route=[IW7HudHttp]::SelfContainedBeaconRoute
+foreach($length in @(0,(1MB+1))){
+    $bytes=[byte[]]::new($length);$log=Join-Path $Fixture ([guid]::NewGuid().ToString('N')+'.jsonl')
+    $service=$null;$failed=$false
+    try{$service=[IW7HudHttp]::new($bytes,(Hash $bytes),$log,$route)}catch{$failed=$true}
+    finally{if($service){$service.Dispose()}}
+    if(!$failed -or (Test-Path -LiteralPath $log)){throw 'Self-contained beacon limit regressed'}
+}
+$bytes=[byte[]]::new(1MB);$sha=Hash $bytes
+$service=[IW7HudHttp]::new($bytes,$sha,(Join-Path $Fixture 'legacy.jsonl'),$route)
+$client=[Net.Http.HttpClient]::new();$client.Timeout=[TimeSpan]::FromSeconds(3)
+try{
+    $response=$client.GetAsync($service.BaseUrl+$route).GetAwaiter().GetResult()
+    try{
+        $received=$response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
+        if([int]$response.StatusCode -ne 200 -or $received.Length -ne 1MB -or (Hash $received) -cne $sha){throw 'Historical fourth route bytes differ'}
+    }finally{$response.Dispose()}
+    foreach($sound in @([IW7HudHttp]::SoundRoute,[IW7HudHttp]::SoundLoadedRoute,[IW7HudHttp]::SoundStreamedRoute)){
+        $response=$client.GetAsync($service.BaseUrl+$sound).GetAwaiter().GetResult()
+        try{if([int]$response.StatusCode -ne 404){throw 'Historical instance exposed sound'}}finally{$response.Dispose()}
+    }
+}finally{$service.Dispose();$client.Dispose()}
+if(!$service.Stopped -or $service.Error -or $service.CompletedGets -ne 1){throw 'Historical instance closure/evidence differs'}
+''')
+
+    def test_sound_http_three_immutable_assets_raw_get_routes_and_per_file_journal(self):
+        self.run_powershell_fixture(r'''
+Add-Type -Path (Join-Path $Repo 'ops/hud-lab/HudHttp.cs')
+function Hash([byte[]]$Bytes){[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($Bytes))}
+function Request([IW7HudHttp]$Service,[string]$Line){
+    $tcp=[Net.Sockets.TcpClient]::new();$buffer=[IO.MemoryStream]::new()
+    try{
+        $tcp.ReceiveTimeout=2000;$tcp.SendTimeout=2000
+        $tcp.Connect('127.0.0.1',([uri]$Service.BaseUrl).Port);$stream=$tcp.GetStream()
+        $request=[Text.Encoding]::ASCII.GetBytes($Line+"`r`nHost: 127.0.0.1`r`nConnection: close`r`n`r`n")
+        $stream.Write($request,0,$request.Length);$stream.CopyTo($buffer)
+        $all=$buffer.ToArray();$text=[Text.Encoding]::ASCII.GetString($all)
+        $end=$text.IndexOf("`r`n`r`n",[StringComparison]::Ordinal)
+        if($end -lt 0){throw 'Missing response header'}
+        $body=[byte[]]::new($all.Length-$end-4);[Array]::Copy($all,$end+4,$body,0,$body.Length)
+        [pscustomobject]@{Header=$text.Substring(0,$end+4);Bytes=$body}
+    }finally{$buffer.Dispose();$tcp.Dispose()}
+}
+$routes=@('/mods/sdk_original_sound_v1/mod.ff','/mods/sdk_original_sound_v1/mod.sabl','/mods/sdk_original_sound_v1/mod.sabs')
+if([IW7HudHttp]::SoundRoute -cne $routes[0] -or [IW7HudHttp]::SoundLoadedRoute -cne $routes[1] -or
+    [IW7HudHttp]::SoundStreamedRoute -cne $routes[2]){throw 'Fixed sound routes differ'}
+$lengths=@(1600,131072,4096);$items=[byte[][]]::new(3);$hashes=[string[]]::new(3)
+for($i=0;$i -lt 3;$i++){
+    $items[$i]=[Text.Encoding]::ASCII.GetBytes(([string][char](65+$i))*$lengths[$i]);$hashes[$i]=Hash $items[$i]
+}
+$log=Join-Path $Fixture 'sound.jsonl';$started=[datetime]::UtcNow
+$service=[IW7HudHttp]::new($items[0],$hashes[0],$items[1],$hashes[1],$items[2],$hashes[2],$log)
+try{
+    for($i=0;$i -lt 3;$i++){$items[$i][0]=0} # Every array must have been cloned.
+    $order=@(2,0,1,1,0,2,0);$expected=@()
+    for($requestIndex=0;$requestIndex -lt $order.Count;$requestIndex++){
+        $i=$order[$requestIndex];$version=if($requestIndex -lt 3){'1.0'}else{'1.1'}
+        $response=Request $service ('GET '+$routes[$i]+' HTTP/'+$version)
+        $header="HTTP/1.1 200 OK`r`nContent-Type: application/octet-stream`r`nContent-Length: "+$lengths[$i]+"`r`nCache-Control: no-store`r`nConnection: close`r`n`r`n"
+        if($response.Header -cne $header -or $response.Bytes.Length -ne $lengths[$i] -or
+            (Hash $response.Bytes) -cne $hashes[$i]){throw 'Selected immutable sound bytes/hash/header differ'}
+        $expected+=@{Path=$routes[$i];Bytes=$lengths[$i];SHA256=$hashes[$i]}
+    }
+    # Raw targets intentionally avoid HttpClient's path normalization.
+    $refused=@()
+    foreach($route in $routes){
+        foreach($bad in @(($route+'?x=1'),($route+'/'), $route.ToUpperInvariant(),$route.Replace('/mods/','//mods/'),
+            $route.Replace('/mod.','/./mod.'),$route.Replace('/mod.','/%6dod.'),($route+'%00'),
+            $route.Replace('/mod.','%2fmod.'),$route.Replace('/mod.','/../mod.'))){
+            $refused+=('GET '+$bad+' HTTP/1.1')
+        }
+        $refused+=@("HEAD $route HTTP/1.1","POST $route HTTP/1.1","get $route HTTP/1.1",
+            "GET $route HTTP/2.0","GET  $route HTTP/1.1","GET http://127.0.0.1$route HTTP/1.1")
+    }
+    foreach($route in @('/',[IW7HudHttp]::Route,[IW7HudHttp]::ModelRoute,[IW7HudHttp]::BeaconRoute,
+        [IW7HudHttp]::SelfContainedBeaconRoute,'/mods/sdk_original_sound_v1/extra.ff')){$refused+=('GET '+$route+' HTTP/1.1')}
+    if($refused.Count -ne 51){throw 'Raw negative request matrix is incomplete'}
+    foreach($line in $refused){
+        $response=Request $service $line
+        if($response.Header -cne "HTTP/1.1 404 Not Found`r`nContent-Length: 0`r`nConnection: close`r`n`r`n" -or
+            $response.Bytes.Length -ne 0){throw 'Noncanonical request exposed an asset'}
+    }
+}finally{$service.Dispose()}
+if(!$service.Stopped -or $service.Error -or $service.CompletedGets -ne 7){throw 'HTTP closure/GET count differs'}
+$rows=@(Get-Content -LiteralPath $log | ForEach-Object {$_|ConvertFrom-Json})
+if($rows.Count -ne $expected.Count){throw 'Rejected request entered the journal'}
+for($i=0;$i -lt $rows.Count;$i++){
+    $row=$rows[$i];$want=$expected[$i];$utc=[datetime]$row.utc
+    if($row.method -cne 'GET' -or $row.path -cne $want.Path -or $row.bytes -ne $want.Bytes -or
+        $row.sha256 -cne $want.SHA256 -or $utc -lt $started -or $utc -gt [datetime]::UtcNow){throw 'Per-file journal evidence differs'}
+}
+foreach($i in 0..2){
+    $wantCount=if($i -eq 0){3}else{2}
+    if(@($rows|Where-Object path -CEQ $routes[$i]).Count -ne $wantCount){throw 'Repeated FF counted as a different file'}
+}
+''')
+
+    def test_sound_http_journal_failure_request_budget_and_partial_read_closure(self):
+        self.run_powershell_fixture(r'''
+Add-Type -Path (Join-Path $Repo 'ops/hud-lab/HudHttp.cs')
+$bytes=[byte[]]@(42);$sha=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes))
+function Service([string]$Name){[IW7HudHttp]::new($bytes,$sha,$bytes,$sha,$bytes,$sha,(Join-Path $Fixture $Name))}
+$service=Service 'partial.jsonl';$tcp=$null
+try{
+    $tcp=[Net.Sockets.TcpClient]::new('127.0.0.1',([uri]$service.BaseUrl).Port)
+    $partial=[Text.Encoding]::ASCII.GetBytes('GET ');$tcp.GetStream().Write($partial,0,$partial.Length)
+    Start-Sleep -Milliseconds 50;$watch=[Diagnostics.Stopwatch]::StartNew();$service.Dispose()
+    if(!$service.Stopped -or $watch.ElapsedMilliseconds -gt 5500 -or $service.Error -or $service.CompletedGets){throw 'Partial request closure/evidence failed'}
+}finally{if($tcp){$tcp.Dispose()};$service.Dispose()}
+# An exclusive reader denies the append while leaving the journal itself intact.
+$service=Service 'journal-failure.jsonl';$lock=$null;$client=[Net.Http.HttpClient]::new();$client.Timeout=[TimeSpan]::FromSeconds(3)
+try{
+    $lock=[IO.FileStream]::new((Join-Path $Fixture 'journal-failure.jsonl'),[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+    $response=$client.GetAsync($service.BaseUrl+[IW7HudHttp]::SoundLoadedRoute).GetAwaiter().GetResult()
+    try{if([int]$response.StatusCode -ne 200){throw 'Fixture did not reach journal append'}}finally{$response.Dispose()}
+    $deadline=[datetime]::UtcNow.AddSeconds(2)
+    while(!$service.Error -and [datetime]::UtcNow -lt $deadline){Start-Sleep -Milliseconds 10}
+    if($service.Error -notlike 'HTTP journal failed:*' -or $service.CompletedGets -ne 0 -or $lock.Length -ne 0){throw 'Failed journal became successful GET evidence'}
+}finally{if($lock){$lock.Dispose()};$service.Dispose();$client.Dispose()}
+if(!$service.Stopped){throw 'Journal-failed worker remains alive'}
+$service=Service 'budget.jsonl';$client=[Net.Http.HttpClient]::new();$client.Timeout=[TimeSpan]::FromSeconds(3)
+try{
+    for($i=0;$i -lt 64;$i++){
+        $response=$client.GetAsync($service.BaseUrl+'/rejected').GetAwaiter().GetResult()
+        try{if([int]$response.StatusCode -ne 404){throw 'Budget fixture route unexpectedly accepted'}}finally{$response.Dispose()}
+    }
+    $deadline=[datetime]::UtcNow.AddSeconds(2)
+    while(!$service.Stopped -and [datetime]::UtcNow -lt $deadline){Start-Sleep -Milliseconds 10}
+    if(!$service.Stopped -or $service.Error -cne 'HTTP request budget exhausted.' -or $service.CompletedGets -ne 0 -or
+        (Get-Item -LiteralPath (Join-Path $Fixture 'budget.jsonl')).Length -ne 0){throw 'Global request budget or journal changed'}
+}finally{$service.Dispose();$client.Dispose()}
+''')
+
     def test_real_profile_transactions_preserve_cache_shadows_and_refuse_unplanned_content(self):
         self.run_powershell_fixture(r'''
 . (Join-Path $Repo 'ops/Base-Client.Core.ps1')
