@@ -1,0 +1,235 @@
+{
+  "Schema": "iw7.sdk-self-contained-startup/1",
+  "Attempt": "B",
+  "Date": "2026-10-12",
+  "SourceCommit": "f0986b0a3fbb247ca481dcd402ac7837088a66ea",
+  "ReviewedSourcePlanSHA256": "C739887FBD996F66D2BEF4AF8D78DA958F48072780F5F69A059122FE41CE26A4",
+  "ReviewedParametersSHA256": "8B81C937B1BDE9BEA59F00AD8C21E25C8ADE178F5E345CC7BAE705BF4058BEFC",
+  "PrecedingFailedAttempt": "sdk/modding/self-contained-startup-a-20261012.json",
+  "Preflight": {
+    "Passed": true,
+    "CompletedUtc": "2026-10-12T10:39:11.3937562Z",
+    "DryRunSHA256": "BFEC2FD01484D678182C1F13849EFA1FB892E63E0C898D2C1F84FD4C34937F75",
+    "RuntimeReservationBeforePreflight": true,
+    "PhysicalBytes": 4294967296,
+    "CommitBytes": 4294967296,
+    "ExecutableRehashed": true,
+    "ProviderInventoried": true,
+    "PrivacyManifestSHA256": "7497191CB3612533333AD48AB4F4F4BB1F852039EE273179DF7BF6B5FE0E9B9C"
+  },
+  "Invocation": {
+    "Count": 1,
+    "Phase": "StartupOnly",
+    "NativeStartedUtc": "2026-10-12T10:39:30.6303632Z",
+    "CompletedUtc": "2026-10-12T10:40:48.4573579Z",
+    "Debugger": false,
+    "PlannedClients": 0,
+    "HTTPStarted": false,
+    "NativeGameStarted": true,
+    "UseRejoinInvoked": false,
+    "Passed": true,
+    "NativeSHA256": "7862B2A5C21047A8FD4095C6DF2FA96A40B3766F92649FCFFE80ABB193517A97",
+    "Failure": null
+  },
+  "Stage": {
+    "UpdaterFiles": 84,
+    "UpdaterBytes": 394436292,
+    "CopiedBytes": 394436292,
+    "ProviderUnchangedAtStage": true,
+    "IndependentFileIdentities": true,
+    "UpdaterInventorySHA256": "2649231856356E5B5BEE4A6D043AA13E547CCC26E3D5F7B8A385E0F1A03F4F6A",
+    "Scripts": [
+      {
+        "Name": "agent_vertical_fixture.gsc",
+        "InputSHA256": "2186E99A6F95F91AE8E272F589DA0E69E9C16A524B558B9B4039F9ABDFA1441A",
+        "SHA256": "CCD0CED6F4DD69B29657F0CB23CCB95A4B9AB4E58652A736E8EFC148286A9A5E"
+      },
+      {
+        "Name": "sdk_beacon_self_contained.gsc",
+        "InputSHA256": "9DE9B76DC25293146999C71653BD407D8CB639E107293F6DE87084FED90EEE1C",
+        "SHA256": "9DE9B76DC25293146999C71653BD407D8CB639E107293F6DE87084FED90EEE1C"
+      }
+    ],
+    "ExactScriptCount": 2,
+    "Verified": true,
+    "FFSHA256": "3FA49BCDFD08857BB37C198AF7A49AF78675B940B022E160343552D3F8B71DA8"
+  },
+  "Observation": {
+    "FreshSourceCompileLinkInitObserved": true,
+    "LoadedSourceLine": 66,
+    "ObserverArmedLine": 71,
+    "ExecutingInitLine": 73,
+    "SDKInitializedLine": 74,
+    "SourceSHA256": "9DE9B76DC25293146999C71653BD407D8CB639E107293F6DE87084FED90EEE1C",
+    "RuntimeBytecodeEqualsOfflineWitness": false,
+    "ObjectSpawnOrUseVerified": false,
+    "Privacy": {
+      "Private": true,
+      "LanOnly": true,
+      "HeartbeatSuppressed": true,
+      "FreshLogOffset": 3851,
+      "ObservedTick": 130685906
+    },
+    "LoopbackConfiguredByPinnedLauncher": true,
+    "LoopbackEndpointIndependentlyCaptured": false,
+    "FreshNativePlayerProtectionObserved": false,
+    "ProtectionQualification": "Zero clients; no player encounter or client protection claim."
+  },
+  "RuntimeIntegrity": {
+    "Passed": false,
+    "TotalErrors": 2,
+    "KnownUnresolvedErrors": 2,
+    "NewUnresolvedErrors": 0,
+    "IncompleteErrors": 0,
+    "KnownSignatures": [
+      "init_cryobomb",
+      "init_forgefreeze"
+    ],
+    "RemainingIssue": 150,
+    "KnownBlocksRemainErrors": true,
+    "ErrorAllowancesChanged": false,
+    "LogsSuppressed": false,
+    "ClosedLogs": [
+      {
+        "Role": "server.stdout.log",
+        "LogSHA256": "DD736331657D41B3E79C68254119BCF952D4C97EAAC07BABEF0F36CA9D0F90EF",
+        "LogBytes": 5306,
+        "ErrorCount": 2,
+        "KnownUnresolvedCount": 2,
+        "NewUnresolvedCount": 0,
+        "IncompleteCount": 0,
+        "Outcome": "known unresolved errors"
+      },
+      {
+        "Role": "server.stderr.log",
+        "LogSHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+        "LogBytes": 0,
+        "ErrorCount": 0,
+        "KnownUnresolvedCount": 0,
+        "NewUnresolvedCount": 0,
+        "IncompleteCount": 0,
+        "Outcome": "no errors observed"
+      }
+    ]
+  },
+  "Restoration": {
+    "Restored": true,
+    "ManagedFilesRestored": true,
+    "StaticMainUnchanged": true,
+    "MainBankDeltaObserved": false,
+    "MainIdentityPreserved": true,
+    "CleanupError": null,
+    "FreshAuditUtc": "2026-10-12T10:41:37.2976669Z",
+    "CandidateManagedFilesFreshlyVerified": true,
+    "BaseManagedFilesFreshlyVerified": true,
+    "BaseMutableFiles": 0,
+    "BaseProfiles": 0,
+    "CandidateVacancyVerified": true,
+    "LeaseCount": 0,
+    "OnlyRetainedMainObserved": true,
+    "NormalStopUsesThirtySecondsEmptyUDP": true,
+    "IndependentUDPTimeSeriesCaptured": false
+  },
+  "Evidence": [
+    {
+      "Role": "outer/dryrun.local.json",
+      "SHA256": "BFEC2FD01484D678182C1F13849EFA1FB892E63E0C898D2C1F84FD4C34937F75",
+      "Bytes": 17154
+    },
+    {
+      "Role": "outer/preflight-complete.local.json",
+      "SHA256": "E220709929D10CC10534CD7E1082056CC6FB80F885F7A8A71BD13777C2A4B57B",
+      "Bytes": 472
+    },
+    {
+      "Role": "outer/preflight-lease.local.json",
+      "SHA256": "992D8B395CA7936E5D5BA5F7296B5555C8857126D6C3B2AABA07DC46FCC1E022",
+      "Bytes": 806
+    },
+    {
+      "Role": "outer/wrapper-result.local.json",
+      "SHA256": "454393818C6D282FD80F0D3772C12D97045BAC88A2212046E00034C832931F69",
+      "Bytes": 399
+    },
+    {
+      "Role": "outer/closure-confirmation.local.json",
+      "SHA256": "FE5E4D00E50517222437A637D12C1BBD27F6C4E3D849C9AEB36A68DB376083F2",
+      "Bytes": 1526
+    },
+    {
+      "Role": "outer/closed-runtime-errors.local.json",
+      "SHA256": "9119C274734249ADE392DF9655BEAF3F446BE8CE7112DFA5399B04EB8FFD850F",
+      "Bytes": 5147
+    },
+    {
+      "Role": "outer/invoke-once.local.ps1",
+      "SHA256": "0C24E95CA8F82C4631F772B27E9109B7229833C8EDECDD571AB65C84E0EE13DF",
+      "Bytes": 7864
+    },
+    {
+      "Role": "outer/command.local.txt",
+      "SHA256": "EF36047A519683057A16179190E9E992EC226D2B5685437CBF21BF598ED812F2",
+      "Bytes": 143
+    },
+    {
+      "Role": "agent/result.json",
+      "SHA256": "D746A37497652E46E20CE5D58378F7E5097B7FAE28F71EF6753B71A33E2F18BB",
+      "Bytes": 637
+    },
+    {
+      "Role": "agent/scenario.result.json",
+      "SHA256": "A97A8CF2A1F1595F0E5EA7ABBE89E853E563DDA89F55F176B61CA3AC92780158",
+      "Bytes": 743
+    },
+    {
+      "Role": "agent/startup-privacy.local.json",
+      "SHA256": "CC2206A58A4B9248C0FDAACC64C16F66AFCB83345EA7D70CFB79513C71A17539",
+      "Bytes": 152
+    },
+    {
+      "Role": "agent/plan.local.json",
+      "SHA256": "00225DC50971C54613392DD6AD821538F91083AFAB7C072139344BE4E3AA4E2F",
+      "Bytes": 17156
+    },
+    {
+      "Role": "agent/updater-data.local.json",
+      "SHA256": "287840C554F096C8EA164042CD1F8A4ACD517EF3CE186BFC222D2F882D549B9C",
+      "Bytes": 435
+    },
+    {
+      "Role": "agent/vertical-scripts.local.json",
+      "SHA256": "7FE825FAC16FAD7B14AB5B6EC48C5DF5840C3B93D0A3FF2914B05C8C1921092A",
+      "Bytes": 620
+    },
+    {
+      "Role": "agent/bank-isolation.local.json",
+      "SHA256": "36FDE7F5519D3978BB0FBAB840E8F97722F5E43DC4912207A30A0531036CB5FC",
+      "Bytes": 12100
+    },
+    {
+      "Role": "agent/server.launch.local.json",
+      "SHA256": "23CC00EF7357EC573CAA0E4D2184298FFD777DF91B52C8705F2E55919F381AFE",
+      "Bytes": 373
+    },
+    {
+      "Role": "agent/server.identity.local.json",
+      "SHA256": "4E917E938159240D90E276DCA04BD980D09FCA54E4BF7F25DF87B203E841936A",
+      "Bytes": 475
+    },
+    {
+      "Role": "agent/base-executable-backup/agent-main-audit.local.json",
+      "SHA256": "2C50FE21E4B8785D30113B263FA6F9E863C4F9B1EEB16C5E5C0B0BFF39921693",
+      "Bytes": 21799
+    },
+    {
+      "Role": "agent/dedicated-backup/recovery.local.json",
+      "SHA256": "2F87A4E857951D8022FC2A91B433EB0EFE302DDB5B1B3AA304EF75AEB1F2A14F",
+      "Bytes": 9806
+    }
+  ],
+  "Ready": false,
+  "CommunityPackageValidated": false,
+  "PixelsVerified": false,
+  "OwnerAccepted": false,
+  "Next": "Review the distinct UseRejoin 12/12 GiB plan. Admission must pass without lowered estimates; no UseRejoin GO follows from Startup B."
+}
