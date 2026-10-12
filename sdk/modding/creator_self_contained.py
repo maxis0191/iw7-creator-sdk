@@ -10,11 +10,11 @@ SOURCE_NAME = "sdk_beacon_self_contained.gsc"
 SOURCE_BYTES = 5535
 SOURCE_SHA256 = "9de9b76dc25293146999c71653bd407d8cb639e107293f6de87084fed90eee1c"
 MANIFEST_NAME = "creator_beacon_self_contained.manifest.json"
-MANIFEST_SHA256 = "5e7b7bcca2384e6f744a06b3bc26776ecb37143a6e956c7d7728a8d2a761dc8c"
+MANIFEST_SHA256 = "1102a8d411c4bf105a07749ed4c4b779c042af1e680b1e99c5efd20b577e92af"
 PENDING = [
     "Variant Build is not connected: a separate source receipt, zone recipe, FF/rawfile identity and finalization path are required.",
     "A source-bound compiled import audit must attest complete bytecode AND stack consumption and qualify all external/dynamic targets; zero observed Far calls is insufficient.",
-    "Utility remains conservatively unresolved until that import audit supports reviewing its removal; this is not a measured utility import in the variant.",
+    "Utility is an unresolved qualification question, not an asserted dependency of the variant; a complete bound import audit is still required to qualify dependency absence.",
     "Recipient material, technique-set, image and transitive dependencies still require exact closed-Run content evidence; presence checks alone do not close the graph.",
 ]
 
@@ -79,6 +79,8 @@ def select(project, root, packager):
         "build_adapter_qualified": False, "compiled_input_bound": False, "bytecode_fully_consumed_verified": False,
         "stack_fully_consumed_verified": False, "external_gsc_dependency_absence_verified": False,
         "recipient_closure_complete": False, "package_ready": False, "runtime_ready": False, "owner_accepted": False,
-        "utility_requirement": "conservative unresolved requirement; removal needs a complete bound import audit",
+        "unresolved_qualifications": [{"id": "compiled-gsc-import-absence", "status": "unresolvedQualification",
+            "subject": "scripts/engine/utility and any other external/dynamic GSC targets",
+            "dependency_edge_asserted": False, "reason": "No complete source-bound import qualification has been accepted by this selector."}],
         "proposed_contract": manifest, "pending": list(PENDING)}
     return manifest, selection

@@ -40,7 +40,7 @@
       "roots": ["xmodel:paris_model_probe", "scriptfile:custom_scripts/cp/sdk_beacon_self_contained.gsc"],
       "nodes": [
         {"id": "scriptfile:custom_scripts/cp/sdk_beacon_self_contained.gsc", "kind": "scriptfile", "scope": "server", "sha256": null,
-         "requires": ["xmodel:paris_model_probe", "scriptfile:scripts/engine/utility.gsc"]},
+         "requires": ["xmodel:paris_model_probe"]},
         {"id": "xmodel:paris_model_probe", "kind": "xmodel", "scope": "client", "sha256": null,
          "requires": ["xsurface:paris_model_probe_lod0", "material:mopw/character_park_clown_zombie_shoes", "netconststrings:ncs_mdl_paris_model_probe", "rawfile:sdk_beacon_self_contained"]},
         {"id": "xsurface:paris_model_probe_lod0", "kind": "other", "scope": "client", "sha256": null, "requires": []},
@@ -49,7 +49,7 @@
         {"id": "netconststrings:ncs_mdl_paris_model_probe", "kind": "other", "scope": "client", "sha256": null, "requires": []},
         {"id": "rawfile:sdk_beacon_self_contained", "kind": "other", "scope": "client", "sha256": null, "requires": []}
       ],
-      "unresolved": ["scriptfile:scripts/engine/utility.gsc", "techset:mopw_l_sm_replace_i0c0s0o0n0p0", "image:park_clown_zombie_shoes_n_3e46d100_packed_nog", "image:park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs"]
+      "unresolved": ["techset:mopw_l_sm_replace_i0c0s0o0n0p0", "image:park_clown_zombie_shoes_n_3e46d100_packed_nog", "image:park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs"]
     },
     "evidence": [
       {"kind": "source-check", "status": "pending", "reference": null, "authority": "agent", "maps": []},

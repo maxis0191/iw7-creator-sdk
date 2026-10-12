@@ -154,7 +154,11 @@ class CreatorTests(unittest.TestCase):
         contract = selected["proposed_contract"]
         self.assertEqual(contract["namespace"], "sdk_beacon_self_contained")
         self.assertEqual(contract["package"]["closure"]["status"], "incomplete")
-        self.assertIn("scriptfile:scripts/engine/utility.gsc", contract["package"]["closure"]["unresolved"])
+        utility = "scriptfile:scripts/engine/utility.gsc"
+        self.assertNotIn(utility, contract["package"]["closure"]["unresolved"])
+        self.assertFalse(any(utility in node["requires"] for node in contract["package"]["closure"]["nodes"]))
+        self.assertEqual(selected["unresolved_qualifications"][0]["status"], "unresolvedQualification")
+        self.assertFalse(selected["unresolved_qualifications"][0]["dependency_edge_asserted"])
         self.assertIn("zero observed Far calls is insufficient", " ".join(selected["pending"]))
         self.assertNotIn("adapter_plan_requested", report)
 
@@ -165,8 +169,8 @@ class CreatorTests(unittest.TestCase):
         self.assertTrue(report["source_selection"]["project_manifest_present"])
         path = self.project / "manifest.json"
         data = json.loads(path.read_bytes())
-        data["package"]["closure"]["unresolved"].remove("scriptfile:scripts/engine/utility.gsc")
-        data["package"]["closure"]["nodes"][0]["requires"].remove("scriptfile:scripts/engine/utility.gsc")
+        data["package"]["closure"]["status"] = "complete"
+        data["package"]["closure"]["unresolved"] = []
         path.write_text(json.dumps(data))
         code, report = self.invoke("-Adapter", "BeaconSelfContainedV1")
         self.assertEqual(code, 1)
@@ -273,7 +277,7 @@ class CreatorTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("source pin changed in ToolsRoot", " ".join(report["errors"]))
 
-    def test_self_contained_tools_contract_cannot_silently_drop_utility(self):
+    def test_self_contained_tools_contract_cannot_silently_claim_closure(self):
         tools, _ = self.flow_fixture()
         for relative in ("creator_self_contained.py", "creator_beacon_self_contained.manifest.json",
                          "examples/beacon-self-contained/sdk_beacon_self_contained.gsc"):
@@ -283,8 +287,8 @@ class CreatorTests(unittest.TestCase):
         self.variant_project()
         path = tools / "sdk/modding/creator_beacon_self_contained.manifest.json"
         data = json.loads(path.read_bytes())
-        data["package"]["closure"]["unresolved"].remove("scriptfile:scripts/engine/utility.gsc")
-        data["package"]["closure"]["nodes"][0]["requires"].remove("scriptfile:scripts/engine/utility.gsc")
+        data["package"]["closure"]["status"] = "complete"
+        data["package"]["closure"]["unresolved"] = []
         path.write_text(json.dumps(data))
         code, report = self.invoke("-Adapter", "BeaconSelfContainedV1", tools=tools)
         self.assertEqual(code, 1)

@@ -81,10 +81,12 @@ The model `paris_model_probe`, its surfaces and NCS names still collide with the
 original Beacon/model probe. Explicit conflicts and the real delivered-asset
 collision checker remain active. This source plan is not a coexistence claim.
 
-The graph stays incomplete. The original utility requirement is carried as a
-**conservative unresolved requirement**, not an assertion that the new source
-still imports utility. Removing it needs a reviewed complete compiled import
-audit. Material, technique-set, image and further transitive recipient closure
+The graph stays incomplete. Utility is an **unresolved qualification question**,
+reported in `source_selection.unresolved_qualifications` with status
+`unresolvedQualification`; the variant graph does not assert a utility dependency
+edge. Qualifying its absence, and that of other external/dynamic targets, still
+needs a complete source-bound compiled import audit. Material, technique-set,
+image and further transitive recipient closure
 remain separate requirements; four non-default presence rows cannot satisfy them.
 All content hashes and offline/runtime evidence entries in the proposed package
 contract remain pending.
@@ -113,7 +115,7 @@ contract; it intentionally supplies no native execution path.
 The 38 Creator tests include 12 new cases for this selector. They exercise the
 real CLI and SDK/Distribution validators: exact source/contract selection,
 canonical option spelling, missing compatibility, original-variant collisions,
-unchanged BeaconV1 refusal, changed sources, dropped utility edges, duplicate
+unchanged BeaconV1 refusal, changed sources, forged closure claims, duplicate
 manifest fields, forged zero-Far summaries and refusal before an instrumented
 builder could run. Plan/refused-Build snapshots must stay unchanged. Existing
 synthetic flow tests and real-finalizer fixture tests retain the original build,
