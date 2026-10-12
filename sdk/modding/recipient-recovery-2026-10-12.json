@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-12",
+  "audit": "Targeted existing recipient exports; no schema change or native execution",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "retained_root_hint": "doom-negative-textures/runtime/dt",
+  "material": {
+    "path": "dump/paris_enemy_doom_source/materials/mopw/character_park_clown_zombie_shoes.json",
+    "bytes": 1405,
+    "sha256": "687924c80afb088a285c5df4704475b0786310738687fc555db77a3974c7c8b6",
+    "representation": "Exact historical ZoneTool JSON bytes, freshly rehashed",
+    "runtime_verified": false
+  },
+  "material_closure_sha256": "ca4a771420356ef465b0cf975834e567dc90411e7f7d9e8dbce072ce9722ed21",
+  "material_load_log_sha256": "683ca650526ed01b65e0aef257857eeb6853a6d55e20f7bd0ac5042936a68cee",
+  "diffuse": {
+    "name": "park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs",
+    "manifest_sha256": "1aac066ece8eb6651b751bb7d38b86feca0dac27be82da39176335f2c0b8af65",
+    "files": [
+      {
+        "path": "dump/paris_enemy_cp_zmb_doom_negative_20261006_images/streamed_images/park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs.iw7Image",
+        "bytes": 187,
+        "sha256": "d3533c4a77a047f636539b072c78a73ccfa949668d2f73a7e739824193e3668c"
+      },
+      {
+        "path": "dump/paris_enemy_cp_zmb_doom_negative_20261006_images/streamed_images/park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs_stream0.pixels",
+        "bytes": 21872,
+        "sha256": "4ca90d004b2909e2fa0c2af9d0c6b0f33a8da9583e71005a5e08e3fd4a59eecf"
+      },
+      {
+        "path": "dump/paris_enemy_cp_zmb_doom_negative_20261006_images/streamed_images/park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs_stream1.pixels",
+        "bytes": 65536,
+        "sha256": "48676edac73abd15d2020c9a2db8a828cc2accb04b4d9134f94e553294c2e3ae"
+      },
+      {
+        "path": "dump/paris_enemy_cp_zmb_doom_negative_20261006_images/streamed_images/park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs_stream2.pixels",
+        "bytes": 262144,
+        "sha256": "4a0bd398976cf583a78ea378b962cbbb75280da183e8d5fbe686f958b887d905"
+      },
+      {
+        "path": "dump/paris_enemy_cp_zmb_doom_negative_20261006_images/streamed_images/park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs_stream3.pixels",
+        "bytes": 1048576,
+        "sha256": "f48124af03addb5d98d729fce1ec90693ba465c953993c6122c76ce1e4cbf479"
+      }
+    ],
+    "total_bytes": 1398315,
+    "fresh_hashes_match_historical_manifest": true,
+    "runtime_verified": false
+  },
+  "missing": [
+    "Current compiled scripts/engine/utility and its import inventory",
+    "Exact normal-image and technique-set serialized representation in the targeted inspected exports",
+    "Fresh non-default recipient resolution and documented transitive boundary"
+  ],
+  "closure_complete": false,
+  "package_ready": false,
+  "copied_retail_bytes": 0,
+  "native_executed": false
+}
