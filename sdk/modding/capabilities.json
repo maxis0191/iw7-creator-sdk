@@ -1,0 +1,21 @@
+{
+  "schema": "iw7.modding-capabilities/1",
+  "baseline_project": "21b91e3ebace48fda5ed60024719168064b2cca5",
+  "capabilities": {
+    "iw7-cp/1": {"sides": ["engine"], "evidence_level": "historical-runtime", "reference": "docs/STATE.md", "limit": "Five stock CP maps; no generic new gamemode/map promise."},
+    "model-netconststrings/1": {"sides": ["engine"], "evidence_level": "historical-runtime", "reference": "docs/deployments/2026-10-07-model-visible.json", "limit": "Single custom rigid model index; combined packs still require collision and join tests."},
+    "mod-fastfile-download/1": {"sides": ["client"], "evidence_level": "historical-runtime", "reference": "docs/deployments/2026-10-07-hud-delivery.json", "limit": "mod.ff and optional mod.sabl/mod.sabs; no PAK/native installer; cache-update fix requires suitable client."},
+    "mod-fastfile-host/1": {"sides": ["server"], "evidence_level": "historical-runtime", "reference": "docs/HUD-LAB.md", "limit": "One selected fs_game with real mod.ff and engine hash. Public/WAN service not qualified by local GET."},
+    "gsc-custom-scripts/1": {"sides": ["server"], "evidence_level": "historical-runtime", "reference": "docs/MODULES.md", "limit": "Dedicated-guarded CP scripts; global VM/canonical-name budget, not isolated plugins."},
+    "gsc-private-hud/1": {"sides": ["server"], "evidence_level": "historical-runtime", "reference": "src/custom_scripts/cp/paris_doom.gsc", "limit": "Server HudElem, not custom client LUI. Avoid repeated unchanged network text updates."},
+    "script-model/1": {"sides": ["server"], "evidence_level": "historical-runtime", "reference": "ops/model-lab/model_fixture.gsc", "limit": "Precached model and NCS needed at client and server; spawn request alone is not visible pixels."},
+    "xmodel-rigid/1": {"sides": ["client"], "evidence_level": "historical-runtime", "reference": "docs/deployments/2026-10-07-model-visible.json", "limit": "24-vertex original cube, one bone/LOD, visible dark geometry; not general H1 conversion or full lighting."},
+    "lua-fastfile/1": {"sides": ["client"], "evidence_level": "historical-runtime", "reference": "docs/deployments/2026-10-07-hud-delivery.json", "limit": "Requires reviewed Lua loader source. Static HUD witness; arbitrary gameplay-to-LUI channel not proved."},
+    "h1-rigid-import/1": {"sides": ["client"], "evidence_level": "blocked", "reference": "docs/MODDING-CAPABILITIES.md", "limit": "Converter exists but new source bounds/subdivision corrections need reviewed tool roundtrip and recipient rendering."},
+    "resident-custom-material/1": {"sides": ["client"], "evidence_level": "blocked", "reference": "docs/MODDING-CAPABILITIES.md", "limit": "Material parser name/dependency resolution correction and resident DDS/TGA witness pending."},
+    "skeletal-animation-import/1": {"sides": ["client"], "evidence_level": "blocked", "reference": "docs/ENEMY-PORTING.md", "limit": "Rig/rest pose/weights, XAnim tracks, notetracks, ASM/BT and actual motion require separate validation."},
+    "custom-weapon/1": {"sides": ["engine", "client", "server"], "evidence_level": "blocked", "reference": "docs/MODEL-LAB.md", "limit": "View/world model, hands, animation, definition, sound, FX and network consumers not qualified."},
+    "custom-ai/1": {"sides": ["engine", "server"], "evidence_level": "blocked", "reference": "docs/ENEMY-PORTING.md", "limit": "Retail port experiments are not a generic custom enemy implementation."},
+    "agent-capacity-48/1": {"sides": ["engine", "client", "server"], "evidence_level": "blocked", "reference": "docs/UPSTREAM-2026-10-06.md", "limit": "Allocation, serialization, restoration and client consumer boundaries; previous 64 candidate crashed."}
+  }
+}
