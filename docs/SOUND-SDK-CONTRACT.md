@@ -1,6 +1,7 @@
 # Private sound research package: SDK contract
 
-Owner decision, 2026-10-12: this private research package declares static content
+Implementation decision under the owner's modding authorization, 2026-10-12:
+this private research package declares static content
 integrity and the existing CP, mod transport and GSC capabilities it actually
 requires. There is no registered `custom-sound/1` capability; do not invent or
 declare it as qualified. No currently required capability is removed to obtain
