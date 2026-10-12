@@ -3,8 +3,8 @@
   "upstream_source": "https://github.com/xensik/gsc-tool",
   "base_revision": "3300e430d1efef00e54c66a8bd416e18a2a9882a",
   "base_tree_oid": "8af839d54cba3536954cfd1abd0e33c60112727d",
-  "source_revision": "6f650cb9c981317b970dad0abae6846165f80166",
-  "source_tree_oid": "7a68aeeac3ba89ec189d8397d5ad830ba8acb580",
+  "source_revision": "f813f9758006e33857339c19ece48a642212ac5f",
+  "source_tree_oid": "3247af037caf3c7c99bd33bc760f83f3be649a40",
   "patch_format": "git format-patch --full-index --no-signature --no-stat",
   "patches": [
     {
@@ -60,6 +60,12 @@
       "original_commit": "6f650cb9c981317b970dad0abae6846165f80166",
       "bytes": 5827,
       "sha256": "e6128a3bfab937a23499b8b166a6bc5c647c338e9b3a6f2841ff19a654456426"
+    },
+    {
+      "path": "patches/0010-Capture-bounded-original-job-residual-identities-bef.patch",
+      "original_commit": "f813f9758006e33857339c19ece48a642212ac5f",
+      "bytes": 24816,
+      "sha256": "cf1edb77b4c3da27a6f96d51a86c8b7e911c44a957d26677e54447d5c6eb50d6"
     }
   ],
   "licenses": [
@@ -89,23 +95,30 @@
     {
       "path": "audit/README.md",
       "mode": "100644",
-      "blob_oid": "a21ba7daa7eca6510aeac5b8f4fa6dd413a839a4",
-      "bytes": 18023,
-      "sha256": "374a67ea07d284b4c36c53ad2c3d4f094f35d2cab2f074fd273aaaa8c45ae344"
+      "blob_oid": "bde0f522e125ba26c96c99b4348dd08de03ea267",
+      "bytes": 21273,
+      "sha256": "191506b8b6e3532460565b78a8bc989987094b39fe96a39df3cda3cc3304ca13"
     },
     {
       "path": "audit/build.ps1",
       "mode": "100644",
-      "blob_oid": "8c2b94164b0aafdf9bf5f7f0427904d8de8bc315",
-      "bytes": 6303,
-      "sha256": "00360b8487df04d234bfef41bca089ce3ed8e62657da56f1c9bf4ad741a271ec"
+      "blob_oid": "aa80a9e79802bcdabe0406b02c903032361aab30",
+      "bytes": 6770,
+      "sha256": "2e0ac5b8e66b1852710f7361c562f7d17fcbe05542bd7d8d0d82283a528b05b1"
     },
     {
       "path": "audit/build.py",
       "mode": "100644",
-      "blob_oid": "8860d140e696e65edc53e4562558a719e54b8850",
-      "bytes": 11901,
-      "sha256": "9c8cd0dc5e2bbfb56e9635fc7b0d1470bac53028726b4fee5c35bfde3d3b2712"
+      "blob_oid": "3f1d865028875b7bfe2020c7f9b500752d7e7cd6",
+      "bytes": 12335,
+      "sha256": "18e68017a1a9e479e5051b0b0198111e14a0fcd8fa62024eb4371896c1926e12"
+    },
+    {
+      "path": "audit/diagnostics.ps1",
+      "mode": "100644",
+      "blob_oid": "5e1e18573bf0cb2d8fabac0f943cc3441e744e4b",
+      "bytes": 4183,
+      "sha256": "971284b7643182a351a0294c8df52e74794ecc57a7fb870749ccd141f5222379"
     },
     {
       "path": "audit/main.cpp",
@@ -138,9 +151,16 @@
     {
       "path": "audit/supervision.ps1",
       "mode": "100644",
-      "blob_oid": "378c0ab660ed34aa970e445847f53c64eb69830c",
-      "bytes": 7658,
-      "sha256": "abcdb23d151840c019da3e22a0bbfafb8ea6e1745d620878148848ab346ee939"
+      "blob_oid": "b59f4044a9775b4062aa54114bc94bf98a0b7c21",
+      "bytes": 8141,
+      "sha256": "4f815f80567107308bfcef507f156845a19fe2dfa503825212a187e182763a44"
+    },
+    {
+      "path": "audit/test_diagnostics.ps1",
+      "mode": "100644",
+      "blob_oid": "a119fa149931e310ce4195d0ba6dfedc36c344ec",
+      "bytes": 6968,
+      "sha256": "74bbe2abb232bebccbc13b1b29073202e373b6e8450754a924bdd3003b9bcb92"
     },
     {
       "path": "audit/test_native.py",

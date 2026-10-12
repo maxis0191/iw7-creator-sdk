@@ -76,6 +76,15 @@ failed on an unqualified residual descendant. See the reconstructed
 [v4 evidence](../../sdk/modding/gsc-consumption-audit.md) for that later measurement.
 The archived tool source remains exactly the revision in the manifest.
 
+The tenth patch adds the reviewed residual-member diagnostic to revision
+`f813f9758006e33857339c19ece48a642212ac5f`. The first nine patch files are preserved
+byte for byte. This append belongs to the tranche after the nine-patch/v4
+checkpoint; it does not revise that earlier history or turn v4 into a success.
+The diagnostic reuses the project's pinned read-only original-job observer,
+records bounded identity/image-file hash evidence and grants no new acceptance.
+It has passed source/mock review but has not run natively. A fresh separately
+reviewed Plan and explicit coordinator GO are still required.
+
 `reconstruction-validation.json` records only the local source reconstruction
 check. Passing it does not establish executable correctness, complete GSC import
 analysis, asset closure, runtime readiness or owner gameplay acceptance.
