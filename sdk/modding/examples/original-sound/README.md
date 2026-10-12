@@ -43,8 +43,8 @@ python -B sdk/modding/examples/original-sound/test_example.py -v
 
 The real SDK Plan result must be `valid=true`, `ready=false`,
 `runtime_ready=false`, `owner_accepted=false` and `checked=[]`. Tests use only
-source, synthetic JSON representations and temporary synthetic GSC files; they
-never create or inspect FF/SAB/sample payloads.
+source, synthetic JSON representations, temporary copies of the reviewed GSC and
+rejected modified variants; they never create or inspect FF/SAB/sample payloads.
 Materializer tests require PowerShell 7 and the repository's existing `python`
 command. Without PowerShell they are explicitly skipped, not reported as passed.
 
@@ -109,21 +109,31 @@ completed producer gate binds them to the pinned run. The internal adapter is
 not a replacement for `Materialize-Plan.ps1` or that producer gate.
 
 Only the exact canonical GSC under `PackageRoot` is read from disk, with a 16 KiB
-limit and rejection of linked paths. Its bytes are measured twice as sequential
-snapshots, not held under a persistent lock. The resulting hashes are:
+limit and rejection of linked paths. It must match the fixed reviewed neutral
+source: **1266 bytes**, SHA-256
+`88934abec9af1ac1af54f9831f967b9cfafa3144e3cae19c28f93b5bb36cc1af`.
+This independent pin is not derived from the delivered file or refreshed from a
+mutable repository template. Every byte matters: CRLF conversion, a BOM, added
+whitespace, an include or a changed call is refused. No GSC parser or silent
+normalization is used. A source variant requires its own reviewed dependency
+proof, outside this fixed fixture's qualification.
+
+The accepted delivered bytes are measured twice as sequential snapshots, not
+held under a persistent lock. The resulting hashes are:
 
 | SDK node | Exact hashed representation |
 | --- | --- |
 | Bank `sound` | Original dumped JSON bytes, including formatting |
 | Branding rawfile `other` | Exact dumped rawfile contents |
-| Server `scriptfile` | Bytes of the GSC staged for delivery, not the repository template |
+| Server `scriptfile` | Bytes of the GSC staged for delivery, required to match the reviewed fixed source pin |
 
 The FF hash remains a separate payload measurement. Alias, sample and auxiliary
 records are internal bank evidence, not invented native asset callbacks or new
 SDK nodes. The closure reference binds the producer state hash and the delivered
 GSC hash. An old receipt, malformed representation or missing GSC cannot produce a
-complete closure. GSC measurement proves file identity, not its syntax, behavior,
-installation or a server asset lookup.
+complete closure. The fixed source identity supplies this fixture's reviewed
+absence of additional script dependencies. It does not establish runtime
+compilation, behavior, installation or a server asset lookup.
 
 On success, `closure.status=complete`, `StaticClosureComplete=true`,
 `RepresentationsRevalidated=true` and `ServerSourceMeasured=true`.
@@ -164,3 +174,14 @@ runtime-link evidence for each declared map. Native lookup, playback, audibility
 owner acceptance and any deployment remain separate gates. Do not turn pending
 records into passes to bypass them. No package or runtime test was performed for
 this source example.
+
+## GSC closure correction
+
+The first static-closure adapter (`39c4ab8`) accepted any bounded GSC at the
+canonical path and incorrectly treated its measured hash as enough to declare no
+script dependencies. Independent review reproduced acceptance of an injected
+include/call. Three real-materializer regression cases also reproduced exit 0 for
+an injected include, an absent thread call and an unrelated source before this
+correction. The adapter now requires the pinned reviewed bytes before completing
+closure. Tests also reject same-size changes, CRLF, BOM and an extra newline;
+the positive case stages and measures the exact approved source.

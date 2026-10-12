@@ -90,13 +90,29 @@ class ServerSourceTests(unittest.TestCase):
         self.assertTrue(self.root.name.startswith("iw7-original-sound-server-"))
         self.temp.cleanup()
 
-    def test_hash_is_of_the_delivered_bytes_not_the_repository_template(self):
-        for raw in (b"// synthetic fixture A\ninit() { return; }\n", b"// synthetic fixture B\r\ninit() { return; }\r\n"):
-            with self.subTest(raw=raw):
+    def test_exact_reviewed_fixture_is_measured_from_the_delivered_file(self):
+        raw = (HERE / closure_adapter.SERVER_SOURCE).read_bytes()
+        self.assertEqual(len(raw), 1266)
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), "88934abec9af1ac1af54f9831f967b9cfafa3144e3cae19c28f93b5bb36cc1af")
+        self.path.write_bytes(raw)
+        report = closure_adapter.read_server_source(self.root, self.entry)
+        self.assertEqual(report["bytes"], len(raw))
+        self.assertEqual(report["sha256"], hashlib.sha256(self.path.read_bytes()).hexdigest())
+
+    def test_other_source_and_byte_variants_are_refused_without_normalization(self):
+        reviewed = (HERE / closure_adapter.SERVER_SOURCE).read_bytes()
+        variants = {
+            "different-source": b"init() { return; }\n",
+            "same-size-change": reviewed.replace(b"runtime_ready=0", b"runtime_ready=1"),
+            "crlf": reviewed.replace(b"\n", b"\r\n"),
+            "bom": b"\xef\xbb\xbf" + reviewed,
+            "extra-newline": reviewed + b"\n",
+        }
+        for name, raw in variants.items():
+            with self.subTest(variant=name):
                 self.path.write_bytes(raw)
-                report = closure_adapter.read_server_source(self.root, self.entry)
-                self.assertEqual(report["bytes"], len(raw))
-                self.assertEqual(report["sha256"], hashlib.sha256(raw).hexdigest())
+                with self.assertRaisesRegex(ValueError, "reviewed neutral GSC bytes required"):
+                    closure_adapter.read_server_source(self.root, self.entry)
 
     def test_missing_empty_and_oversized_gsc_are_refused(self):
         with self.assertRaises(FileNotFoundError):
@@ -213,7 +229,7 @@ class MaterializerTests(unittest.TestCase):
         return hashlib.sha256(raw).hexdigest()
 
     def add_static_closure(self):
-        """Synthetic metadata and one temporary GSC only; no FF/SAB/sample bytes."""
+        """Synthetic metadata and a temporary reviewed GSC copy; no FF/SAB/sample bytes."""
         r = closure_adapter.reader
         common = sdk.load_manifest(ROOT / "tools-source/asset-bridge/surfaces/source_contract.json")
         alias = sound_source.alias_csv(common["alias_csv_fields"])
@@ -237,7 +253,7 @@ class MaterializerTests(unittest.TestCase):
         self.package_root = self.directory / "package"
         self.gsc = self.package_root / closure_adapter.SERVER_SOURCE
         self.gsc.parent.mkdir(parents=True)
-        self.gsc.write_bytes(b"// Synthetic delivered source; no actual gameplay.\ninit() { return; }\n")
+        self.gsc.write_bytes((HERE / closure_adapter.SERVER_SOURCE).read_bytes())
 
     def run_materializer(self, *, bad_state_pin=False):
         run = Path(self.plan["RunRoot"])
@@ -375,6 +391,25 @@ class MaterializerTests(unittest.TestCase):
         self.add_static_closure()
         self.gsc.unlink()
         self.assert_refused_without_output()
+
+    def test_static_closure_refuses_injected_include(self):
+        self.add_static_closure()
+        self.gsc.write_bytes(b"#include custom_scripts/cp/not_in_manifest;\n" + self.gsc.read_bytes())
+        result = self.assert_refused_without_output()
+        self.assertIn("reviewed neutral GSC bytes required", result.stderr)
+
+    def test_static_closure_refuses_injected_thread_call(self):
+        self.add_static_closure()
+        self.gsc.write_bytes(self.gsc.read_bytes().replace(
+            b"level thread shutdown(state);", b"level thread not_in_manifest();\n    level thread shutdown(state);"))
+        result = self.assert_refused_without_output()
+        self.assertIn("reviewed neutral GSC bytes required", result.stderr)
+
+    def test_static_closure_refuses_different_source_at_canonical_path(self):
+        self.add_static_closure()
+        self.gsc.write_bytes(b"init() { return; }\n")
+        result = self.assert_refused_without_output()
+        self.assertIn("reviewed neutral GSC bytes required", result.stderr)
 
 
 if __name__ == "__main__":

@@ -22,10 +22,14 @@ SERVER_DESTINATION = "iw7-mod/custom_scripts/cp/" + IDENT + ".gsc"
 SCRIPT_NODE = "scriptfile:custom_scripts/cp/" + IDENT + ".gsc"
 BANK_NODE = "soundbank:community_original_sound_v1.all"
 RAWFILE_NODE = "rawfile:mod"
+# Fixed neutral fixture reviewed in PR176. A delivered variant needs separate
+# source/dependency evidence; never refresh this pin from an arbitrary template.
+APPROVED_SERVER_BYTES = 1266
+APPROVED_SERVER_SHA256 = "88934abec9af1ac1af54f9831f967b9cfafa3144e3cae19c28f93b5bb36cc1af"
 
 
 def read_server_source(package_root, entry):
-    """Measure the exact package file; no claim that its behavior was tested."""
+    """Measure and match the fixed reviewed bytes; no runtime behavior claim."""
     root = Path(package_root)
     reader.require(root.is_absolute(), "absolute package root required")
     reader.require(entry["role"] == "server" and entry["source"] == SERVER_SOURCE
@@ -36,10 +40,13 @@ def read_server_source(package_root, entry):
     inputs = reader.Inputs()
     raw = inputs.read(path, 16384)
     reader.require(0 < len(raw) <= 16384, "nonempty bounded server GSC required")
+    digest = reader.sha(raw)
+    reader.require(len(raw) == APPROVED_SERVER_BYTES and digest == APPROVED_SERVER_SHA256,
+                   "exact reviewed neutral GSC bytes required; variants need separate closure evidence")
     # Same bounded snapshot twice. The later package gate must remeasure it.
     inputs.read(path, 16384)
     return {"source": SERVER_SOURCE, "destination": SERVER_DESTINATION,
-            "bytes": len(raw), "sha256": reader.sha(raw)}
+            "bytes": len(raw), "sha256": digest}
 
 
 def complete(request, package_root):
