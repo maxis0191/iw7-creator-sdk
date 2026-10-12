@@ -82,8 +82,12 @@ byte for byte. This append belongs to the tranche after the nine-patch/v4
 checkpoint; it does not revise that earlier history or turn v4 into a success.
 The diagnostic reuses the project's pinned read-only original-job observer,
 records bounded identity/image-file hash evidence and grants no new acceptance.
-It has passed source/mock review but has not run natively. A fresh separately
-reviewed Plan and explicit coordinator GO are still required.
+The separately admitted v5 diagnostic subsequently identified a residual original-
+job `vctip.exe` by image-file hash, creation time, parent PID and membership in
+31 ms. All functional native steps passed, but its parent identity was not
+captured and global supervision remained failed. See the
+[v5 checkpoint](../../sdk/modding/gsc-residual-diagnostic-20261012.json).
+Another attempt still requires a fresh reviewed Plan and coordinator GO.
 
 `reconstruction-validation.json` records only the local source reconstruction
 check. Passing it does not establish executable correctness, complete GSC import

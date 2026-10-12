@@ -45,6 +45,24 @@ member, so it must not be retrospectively classified as harmless telemetry. Do
 not lengthen the drain, kill by process name or label the existing run successful.
 Any future native attempt requires a fresh reviewed Plan and coordinator GO.
 
+The separately admitted v5 diagnostic then ran source
+`f813f9758006e33857339c19ece48a642212ac5f` and repeated all functional passes.
+Its original-job observer identified one residual `vctip.exe` from MSVC
+14.44.35207, with image-file SHA256
+`d591358c6aee4b673562ca3b3a15c250e612708394fe3b44a7a7eda2470570a5` and size 335,288
+bytes. Creation time, kernel parent PID and original-job membership were captured;
+the complete observation and file hash took 31 ms. The parent process's identity
+was not captured, so no compiler ancestry or harmless-telemetry classification is
+inferred from its PID. This v5 identity does not retroactively identify v4's member.
+
+V5 preserved `Success=false`, stopped only the original job, confirmed zero active
+members and released the lease. Its candidate executable is
+`9cb1d946403e9e49812ed3db8bb59d7fefc0607078f65b963fc610eac04a564a`; it was rehashed
+after closure with source, dependency, compiler and input pins unchanged. See the
+[sanitized v5 checkpoint](gsc-residual-diagnostic-20261012.json). The next decision
+concerns a reviewed closure contract with sufficient ancestry evidence; the
+diagnostic itself did not add one or authorize another native attempt.
+
 The native audit must read the original container from binary stdin, verify exact
 container/zlib lengths, require the initial `OP_End`, respect each declared
 function size including the final one, reject unbounded strings/seeks and unknown
