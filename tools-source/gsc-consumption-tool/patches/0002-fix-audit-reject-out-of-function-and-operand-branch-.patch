@@ -1,0 +1,87 @@
+From 531079edabb476ef4214a19bb6dc12c5f6e1983b Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 07:37:52 +0200
+Subject: [PATCH 2/9] fix(audit): reject out-of-function and operand branch
+ targets
+
+
+diff --git a/audit/README.md b/audit/README.md
+index 38d914da2e2ad5ec811cc0c26755f44eb8807b84..89bd23a5cc9bb3dfba08cad288465cc737cad838 100644
+--- a/audit/README.md
++++ b/audit/README.md
+@@ -25,6 +25,10 @@ local `push.default=nothing` prevents an implicit push.
+ - Strict C strings require a NUL within remaining bytes. Invalid forward/reverse
+   seeks, absolute positions and alignments throw. Existing unknown/unhandled
+   opcode refusals and unresolved local-function refusals remain.
++- Strict jump and switch labels must target an instruction boundary within their
++  own function; destinations outside it or inside an operand are refused. The
++  pinned compiler emits its final `OP_End` after labels, so no speculative
++  one-past-function target is accepted.
+ - The three-byte integer reader now reads exactly three bytes in either mode;
+   its values are preserved while its former four-byte overread is removed.
+ - The container uses exact declared lengths. The compressed stream must reach
+@@ -77,6 +81,8 @@ three-byte reads and historical-seek compatibility. `test_native.py` has ten
+ native test methods covering valid minimal/string/multiple-function inputs,
+ token-encoded external calls, truncation, added bytes in both buffers, zlib
+ suffixes, unknown/initial opcodes, last-function sizes and missing NULs.
++Two additional methods cover valid forward/backward/switch branches and invalid
++out-of-function/inside-operand destinations (twelve methods total).
+ These native tests have **not run**. No game or native tool was started.
+ 
+ ## Admission and build plan
+diff --git a/audit/main.cpp b/audit/main.cpp
+index ec48d3cc993e6d02fbb77a3f65c343b98b472851..e065e8daa072e8cff1e6e6ecf4186b1a0cca2725 100644
+--- a/audit/main.cpp
++++ b/audit/main.cpp
+@@ -106,7 +106,7 @@ auto audit(std::vector<u8> const& input) -> std::string
+         << "\"stack_bytes\":" << stack.size() << ",\"stack_sha256\":\"" << sha256(stack) << "\","
+         << "\"bytecode_consumed\":" << consumed.bytecode_consumed << ","
+         << "\"stack_consumed\":" << consumed.stack_consumed << ","
+-        << "\"initial_op_end_verified\":true,\"complete_consumption_verified\":true,"
++        << "\"initial_op_end_verified\":true,\"branch_targets_verified\":true,\"complete_consumption_verified\":true,"
+         << "\"functions\":[";
+     for (usize i = 0; i < consumed.functions.size(); ++i)
+     {
+diff --git a/audit/test_native.py b/audit/test_native.py
+index 17df94fc1970d175e45dc861339d91f914fa5447..0b373096d8173c15aedee6cd86ab3d78f946ee79 100644
+--- a/audit/test_native.py
++++ b/audit/test_native.py
+@@ -75,6 +75,22 @@ class NativeAuditTests(unittest.TestCase):
+             with self.subTest(code=code):
+                 self.call(container(code, function(1)), False)
+ 
++    def test_valid_forward_backward_and_switch_targets(self):
++        # Branch labels must resolve to instruction boundaries in this function.
++        for code in (b'\x34\x76' + struct.pack('<i', 0) + b'\x19',
++                     b'\x34\x91' + struct.pack('<H', 3) + b'\x19',
++                     b'\x34\x4c' + struct.pack('<i', 2) + b'\x19\x3b\0\0'):
++            with self.subTest(code=code):
++                self.call(container(code, function(len(code) - 1)), True)
++
++    def test_branch_targets_outside_function_or_inside_operand(self):
++        for offset in (1, -6, -4, 0x7fffffff, -0x80000000):
++            code = b'\x34\x76' + struct.pack('<i', offset) + b'\x19'
++            with self.subTest(offset=offset):
++                self.call(container(code, function(6)), False)
++        self.call(container(b'\x34\x91\xff\xff\x19', function(4)), False)
++        self.call(container(b'\x34\x4c\xff\xff\xff\x7f\x19', function(6)), False)
++
+     def test_last_function_size_zero_too_short_and_too_long(self):
+         for code, stack in ((b'\x34\x19', function(0)), (b'\x34\x19', function(2)),
+                             (b'\x34\x53\0\0\0\0\x19', function(1) + b'value\0')):
+diff --git a/src/gsc/disassembler.cpp b/src/gsc/disassembler.cpp
+index 53933094e391e77aabae3d74d58ef4c554827f5c..9308234cf81667f880d25d8a3c392a0a8847b555 100644
+--- a/src/gsc/disassembler.cpp
++++ b/src/gsc/disassembler.cpp
+@@ -71,6 +71,11 @@ auto disassembler::disassemble_impl(u8 const* script, usize script_size, u8 cons
+         {
+             if (script_.pos() - func_->index != func_->size)
+                 throw disasm_error("strict audit: function consumption mismatch");
++            std::unordered_set<usize> boundaries;
++            for (auto const& instruction : func_->instructions) boundaries.insert(instruction->index);
++            for (auto const& label : func_->labels)
++                if (!boundaries.contains(label.first))
++                    throw disasm_error("strict audit: branch target is not an instruction in its function");
+             consumption_.functions.push_back({ func_->index, func_->size, script_.pos(), stack_begin, stack_.pos() });
+         }
+ 

@@ -1,0 +1,220 @@
+{
+  "schema": "iw7.gsc-tool-source-archive/1",
+  "upstream_source": "https://github.com/xensik/gsc-tool",
+  "base_revision": "3300e430d1efef00e54c66a8bd416e18a2a9882a",
+  "base_tree_oid": "8af839d54cba3536954cfd1abd0e33c60112727d",
+  "source_revision": "6f650cb9c981317b970dad0abae6846165f80166",
+  "source_tree_oid": "7a68aeeac3ba89ec189d8397d5ad830ba8acb580",
+  "patch_format": "git format-patch --full-index --no-signature --no-stat",
+  "patches": [
+    {
+      "path": "patches/0001-feat-audit-prepare-strict-IW7-buffer-consumption-wit.patch",
+      "original_commit": "38bf8fd345572cc6232acdbafed2594c35b88ea5",
+      "bytes": 35377,
+      "sha256": "c693b8a7e83c8b97ed1fbfd4671a45dc81e7bd2f177b2d440b91dafb69da89f2"
+    },
+    {
+      "path": "patches/0002-fix-audit-reject-out-of-function-and-operand-branch-.patch",
+      "original_commit": "531079edabb476ef4214a19bb6dc12c5f6e1983b",
+      "bytes": 5196,
+      "sha256": "e177e6bad746cdac47424d41aee57e176259495b529b5d51ea33792e9d49ec13"
+    },
+    {
+      "path": "patches/0003-fix-audit-read-scalars-without-alignment-or-aliasing.patch",
+      "original_commit": "a2d5f4d4ba642bd0200ae5f921860acfd8110dd1",
+      "bytes": 10505,
+      "sha256": "57d638dfd7cf64ed4c9f32636acae4abdde32b2723eb76faf7ab7b9009943a1b"
+    },
+    {
+      "path": "patches/0004-fix-audit-widen-branch-arithmetic-before-checking-ta.patch",
+      "original_commit": "f2726164c7233d011d67e9b28ebe4b06f1417e70",
+      "bytes": 4996,
+      "sha256": "59d8a74c1e951ce834d6f4d22ab2cb5bfc257eb12a48121e7b24977bdbdfb878"
+    },
+    {
+      "path": "patches/0005-build-audit-prepare-admitted-reproducible-build-with.patch",
+      "original_commit": "e1b052f4f5469b4633fc0a1ad11390da80df63c3",
+      "bytes": 34135,
+      "sha256": "eecd25bd52c547bfd80e626b645862fadfa79c6a71c05f1ea4dca50766b051e8"
+    },
+    {
+      "path": "patches/0006-fix-build-supervise-original-job-and-retain-uncertai.patch",
+      "original_commit": "f01bb43337c16779af6a5e216d70cd28157daa0a",
+      "bytes": 14850,
+      "sha256": "4ec22fc62fa364a6966624eba165d267c9cc301c002b01f457b3e561ae7c09cd"
+    },
+    {
+      "path": "patches/0007-fix-build-enforce-monotonic-deadlines-before-accepti.patch",
+      "original_commit": "2dfbbf37d9fa329dd64599c11c806afe1ac2515c",
+      "bytes": 14051,
+      "sha256": "41278b4e9ef6f67d273f4a2976bbe169b1d24f29c05c08dd1c02c050123afd03"
+    },
+    {
+      "path": "patches/0008-Resume-original-audit-job-before-bounded-CIM-registr.patch",
+      "original_commit": "5a891beec470f17da19dba530ab47bd111e77ae0",
+      "bytes": 25951,
+      "sha256": "9406ff5e800458618fcf16bd027e3006312fd9e50811cef25e9af2ea7d277bee"
+    },
+    {
+      "path": "patches/0009-Fix-Windows-zlib-header-order-in-the-audit-entry-poi.patch",
+      "original_commit": "6f650cb9c981317b970dad0abae6846165f80166",
+      "bytes": 5827,
+      "sha256": "e6128a3bfab937a23499b8b166a6bc5c647c338e9b3a6f2841ff19a654456426"
+    }
+  ],
+  "licenses": [
+    {
+      "path": "licenses/gsc-tool-LICENSE.txt",
+      "source_revision": "6f650cb9c981317b970dad0abae6846165f80166",
+      "source_path": "LICENSE",
+      "bytes": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "licenses/zlib-LICENSE.txt",
+      "source_revision": "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf",
+      "source_path": "LICENSE",
+      "bytes": 1002,
+      "sha256": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243"
+    }
+  ],
+  "changed_source_blobs": [
+    {
+      "path": "audit/CMakeLists.txt",
+      "mode": "100644",
+      "blob_oid": "56234555cd1eadad3d89595e60fe49a29639cc34",
+      "bytes": 1811,
+      "sha256": "3cb56966be0be1aafccc2f97fb712e658c453446443fcade581b66404e2790d9"
+    },
+    {
+      "path": "audit/README.md",
+      "mode": "100644",
+      "blob_oid": "a21ba7daa7eca6510aeac5b8f4fa6dd413a839a4",
+      "bytes": 18023,
+      "sha256": "374a67ea07d284b4c36c53ad2c3d4f094f35d2cab2f074fd273aaaa8c45ae344"
+    },
+    {
+      "path": "audit/build.ps1",
+      "mode": "100644",
+      "blob_oid": "8c2b94164b0aafdf9bf5f7f0427904d8de8bc315",
+      "bytes": 6303,
+      "sha256": "00360b8487df04d234bfef41bca089ce3ed8e62657da56f1c9bf4ad741a271ec"
+    },
+    {
+      "path": "audit/build.py",
+      "mode": "100644",
+      "blob_oid": "8860d140e696e65edc53e4562558a719e54b8850",
+      "bytes": 11901,
+      "sha256": "9c8cd0dc5e2bbfb56e9635fc7b0d1470bac53028726b4fee5c35bfde3d3b2712"
+    },
+    {
+      "path": "audit/main.cpp",
+      "mode": "100644",
+      "blob_oid": "49b846d174dd6c9cb77b3209a60b8372597e0cbd",
+      "bytes": 6059,
+      "sha256": "0281d96926a1a321ccbf5681e30b22b349929fbdfcfa81fd37402cab05686234"
+    },
+    {
+      "path": "audit/prepare.py",
+      "mode": "100644",
+      "blob_oid": "758256b1936fb8a0ace47523765c973e283bba77",
+      "bytes": 3975,
+      "sha256": "61ea74309865e9340d56950d4ca3dda28ae891c2d60c868e55d58160dbd86fef"
+    },
+    {
+      "path": "audit/reader_tests.cpp",
+      "mode": "100644",
+      "blob_oid": "b8dc5e0cc5c4b7415f1fad779099a3e2d49cd9d5",
+      "bytes": 3680,
+      "sha256": "2a67879f7cbc17df14176886f715880ed68ef91ebb25b1f69493f08b3d1fb685"
+    },
+    {
+      "path": "audit/run_process.ps1",
+      "mode": "100644",
+      "blob_oid": "a1f8afed0aac84188c0c6d9fa6051ddc0a77c1d2",
+      "bytes": 3078,
+      "sha256": "9d2468c700b33e1e6b882be8441733b1ab358af165d27ec51a0f647781bc2458"
+    },
+    {
+      "path": "audit/supervision.ps1",
+      "mode": "100644",
+      "blob_oid": "378c0ab660ed34aa970e445847f53c64eb69830c",
+      "bytes": 7658,
+      "sha256": "abcdb23d151840c019da3e22a0bbfafb8ea6e1745d620878148848ab346ee939"
+    },
+    {
+      "path": "audit/test_native.py",
+      "mode": "100644",
+      "blob_oid": "e6033d4062f6a3fd2c66358ba81910ac192174fa",
+      "bytes": 6322,
+      "sha256": "2b6f9ad25a356942ff1b7413cb0690516a4420ade9db984cb4457301ee917eb5"
+    },
+    {
+      "path": "audit/test_plan.py",
+      "mode": "100644",
+      "blob_oid": "ecc2a04f19b928a0f107f15bf82348a40e65fc29",
+      "bytes": 3796,
+      "sha256": "a24860d48f0831d4a57afc14c7cf6bccbaa4c32f4ac6b6b075c70160f8bab6b4"
+    },
+    {
+      "path": "audit/test_registration.ps1",
+      "mode": "100644",
+      "blob_oid": "a7838016b1179b5fe0f6abbe4e6ecda370af64df",
+      "bytes": 8689,
+      "sha256": "31d2658bb0a8d7c8779a5dc8bc1528c12fc14e32fe79d1aab4f6937a8bbc89bf"
+    },
+    {
+      "path": "audit/test_supervision.ps1",
+      "mode": "100644",
+      "blob_oid": "e20f3b7a8f7feb72f5cc61897d2d7e0997f9a106",
+      "bytes": 5057,
+      "sha256": "03775036b467157ea1f01b3267fe9da47d71df59c8ec0b4c0e0916745c9d51a4"
+    },
+    {
+      "path": "include/xsk/gsc/disassembler.hpp",
+      "mode": "100644",
+      "blob_oid": "331613a7f6a012133168062539895a07dcf069c3",
+      "bytes": 2530,
+      "sha256": "1ee7188736a3dded98f759e4f5203b3687c298ea9658899c3c310d72ef16da0f"
+    },
+    {
+      "path": "include/xsk/utils/reader.hpp",
+      "mode": "100644",
+      "blob_oid": "acd3d380576ad824f86755ce91070b675ecbb3e9",
+      "bytes": 1074,
+      "sha256": "bcd1df5ee44d0b39443fce19431f1452821b72f709f3a04d5fc9573d1f4690b7"
+    },
+    {
+      "path": "src/gsc/disassembler.cpp",
+      "mode": "100644",
+      "blob_oid": "765c8d5e34b93f8607ac047d86afdb974b46601d",
+      "bytes": 25278,
+      "sha256": "7a85643e8a7f66230f91c4453547bb873c8e10bfafbc7cda092e3f23e13b8f9b"
+    },
+    {
+      "path": "src/utils/reader.cpp",
+      "mode": "100644",
+      "blob_oid": "6b154c4b1795ee248a9e76bde5276b4861c4ba1b",
+      "bytes": 4735,
+      "sha256": "e97a6502b6c49644533b50adf128fbad5aaf4a01eaf8dade6805afb883c7945b"
+    }
+  ],
+  "dependency_gitlinks": [
+    {
+      "path": "deps/cxxopts",
+      "revision": "eb787304d67ec22f7c3a184ee8b4c481d04357fd"
+    },
+    {
+      "path": "deps/zlib",
+      "revision": "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf"
+    }
+  ],
+  "scope": {
+    "text_source_only": true,
+    "dependency_sources_included": false,
+    "native_executables_included": false,
+    "retail_inputs_included": false,
+    "commit_id_reproduction_promised": false,
+    "binary_reproducibility_verified": false
+  }
+}
