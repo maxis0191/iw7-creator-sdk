@@ -396,7 +396,9 @@
       "Picmip": 2,
       "NativeCapture": true,
       "RequestedUtc": "2026-10-12T18:08:06.8832979Z",
-      "VisuallyInspected": false
+      "VisuallyInspected": true,
+      "ReviewSource": "Coordinator and animation reviewer, reported after closure",
+      "GeometryViewUsable": true
     },
     {
       "RelativePath": "base-client/vertical-before-use/pre-action.bmp",
@@ -406,7 +408,9 @@
       "Picmip": 2,
       "NativeCapture": true,
       "RequestedUtc": "2026-10-12T18:08:10.6858509Z",
-      "VisuallyInspected": false
+      "VisuallyInspected": true,
+      "ReviewSource": "Coordinator and animation reviewer, reported after closure",
+      "GeometryViewUsable": true
     },
     {
       "RelativePath": "base-client/vertical-after/pre-action.bmp",
@@ -416,7 +420,9 @@
       "Picmip": 2,
       "NativeCapture": true,
       "RequestedUtc": "2026-10-12T18:08:11.7891357Z",
-      "VisuallyInspected": false
+      "VisuallyInspected": true,
+      "ReviewSource": "Coordinator and animation reviewer, reported after closure",
+      "GeometryViewUsable": true
     },
     {
       "RelativePath": "base-client-rejoin/vertical-before/pre-action.bmp",
@@ -426,7 +432,9 @@
       "Picmip": 2,
       "NativeCapture": true,
       "RequestedUtc": "2026-10-12T18:09:29.5209862Z",
-      "VisuallyInspected": false
+      "VisuallyInspected": true,
+      "ReviewSource": "Coordinator and animation reviewer, reported after closure",
+      "GeometryViewUsable": false
     },
     {
       "RelativePath": "base-client-rejoin/vertical-before-use/pre-action.bmp",
@@ -436,7 +444,9 @@
       "Picmip": 2,
       "NativeCapture": true,
       "RequestedUtc": "2026-10-12T18:09:33.5216898Z",
-      "VisuallyInspected": false
+      "VisuallyInspected": true,
+      "ReviewSource": "Coordinator and animation reviewer, reported after closure",
+      "GeometryViewUsable": true
     },
     {
       "RelativePath": "base-client-rejoin/vertical-after/pre-action.bmp",
@@ -446,7 +456,9 @@
       "Picmip": 2,
       "NativeCapture": true,
       "RequestedUtc": "2026-10-12T18:09:34.7870705Z",
-      "VisuallyInspected": false
+      "VisuallyInspected": true,
+      "ReviewSource": "Coordinator and animation reviewer, reported after closure",
+      "GeometryViewUsable": true
     }
   ],
   "Evidence": [
@@ -495,5 +507,29 @@
   "CommunityPackageValidated": false,
   "PixelsVerified": false,
   "OwnerAccepted": false,
-  "Next": "Review the closed ticket measurements for a narrowly scoped initializer correction candidate. No automatic callback patch, new run or rendering qualification follows from this targeted success."
+  "Next": "Review the closed ticket measurements for a narrowly scoped initializer correction candidate. No automatic callback patch, new run or rendering qualification follows from this targeted success.",
+  "VisualReview": {
+    "Source": "Coordinator inspected both after frames; animation reviewer inspected all six existing captures. Report received after the initial runtime evidence commit.",
+    "NewCaptureOrInvocation": false,
+    "GeometryObserved": true,
+    "HUDProgressionObserved": true,
+    "HUDDisplayedPersonalThenTeam": [
+      "0/0",
+      "1/1",
+      "0/1",
+      "1/2"
+    ],
+    "ActivateBeaconVisibleInAfterFrames": 2,
+    "UsableGeometryViews": 5,
+    "UnusableDarkView": "base-client-rejoin/vertical-before/pre-action.bmp",
+    "ObservedShape": "Small cuboid, consistent with the reviewed24-vertex/12-triangle fixture, bounds plus/minus8 at scale1.",
+    "MaterialSourceReference": "prepare_ff.py:8",
+    "ReusedMaterial": "mopw/character_park_clown_zombie_shoes",
+    "OriginalBeaconTextureProven": false,
+    "GreenLineInterpretation": "Appears to be the weapon laser; not evidence of beacon material.",
+    "NormalsWriterQualification": "Still an H1 candidate",
+    "TextureUVNormalLightingConformityProven": false,
+    "DarkFrameCauseProven": false,
+    "OverallPixelsQualified": false
+  }
 }
