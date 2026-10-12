@@ -140,3 +140,35 @@ review the exact tool source/head, complete the coordinator's private build and
 publication workflow, and pin the resulting executable. Distinguish the specific
 qualified v6 run above from historical failed runs and source/mock tests; this
 auditor build result does not itself promote any consumer package or runtime gate.
+
+## Encoded-reference source candidate, 2026-10-12
+
+The archived source chain now includes `bfa2d4af` (reference contract), `805f076`
+(reviewed literal-offset correction), and `42e6c403` (supervised reference recipe).
+The original and corrected contracts were reviewed without an outstanding finding;
+the new recipe/Plan still need review and explicit GO before any native execution.
+The existing v6 receipts and historical failed-run evidence are unchanged.
+
+The independent reader visits all encoded instructions and operands under the
+pinned IW7 profile, resolves local targets and numeric namespace/function IDs,
+separates native builtins/assets, and blocks unknown or pointer targets with exact
+positions. Source-only reads of the retained variant cover 570 instructions with
+zero blockers; the original covers 560 and exposes utility `flag_exist` at
+bytecode 212 / stack 318 and `flag` at 226 / 345. The checked absence is scoped to
+encoded GSC references, not all engine/builtin/asset dependencies.
+
+The separate native mode must still generate real reference witnesses. Plan `/2`
+and receipt `/3` add an eighth required phase with all 153 opcode specimens,
+four unresolved/dynamic controls and both Beacon inputs (159 planned invocations).
+Consumption `/1`, CTest and the 13 existing native methods remain mandatory.
+Closure requires the native/bound pairs, written pins/control summary and matching
+old consumption evidence under the unchanged guard/deadline limits. The reader can
+return `encoded_external_script_reference_absence=true` after exact native-to-byte
+agreement; this result alone cannot promote native semantics, asset closure,
+package readiness, runtime or owner acceptance.
+
+The source tranche passed 367 PowerShell checks and 28 Python tests. No new native
+build, Run, lease or Creator change has occurred. The archive reuses the retained
+reconstruction and preserves the first twelve patches. The
+[source checkpoint](gsc-reference-source-20261012.json) records the relevant hashes
+without including binaries, machine paths or a fabricated native reference proof.

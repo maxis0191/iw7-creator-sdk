@@ -1,0 +1,125 @@
+From 805f07676bb1bdad9effee5d907a5fe9f4bcfa01 Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 10:19:58 +0200
+Subject: [PATCH] Report reference diagnostics at each literal operand start
+
+
+diff --git a/audit/reference-contract.md b/audit/reference-contract.md
+index 84f262ad107a7d3cf7218af24ce9ab8fe396862f..af86a7eb63db713635080a3a287c31b3053d5203 100644
+--- a/audit/reference-contract.md
++++ b/audit/reference-contract.md
+@@ -153,3 +153,21 @@ The result therefore keeps `native_execution_authenticated`,
+ `retail_runtime_compatibility_verified`, `runtime_validation_passed`,
+ `owner_acceptance` and `package_ready` false. They are separate evidentiary gates;
+ the encoded-reference result itself can become true when its stated proof succeeds.
++
++## Review correction: literal operand positions
++
++Review of source commit `bfa2d4af` found that the second animation string's
++diagnostic used the cursor after reading the string. With `tree\0` followed by
++an encrypted `anim` string, it reported stack offset 24 instead of the operand's
++start at 18. A regression reproduced the failure. Literal decoding now captures
++the cursor before reading; the instruction span remains exactly 13 through 24.
++The analogous audit also replaced the general instruction stack position with
++each string's actual start for switch rows/default sentinels and indirect field
++literals. Function/namespace token readers already saved their start correctly.
++
++The source-only reference suite now has 19 passing methods, including the
++animation, switch and indirect-field position regressions and both retained
++Beacon inputs. The original source observation JSON keeps its initial reader
++hash as historical evidence; the corrected reader reproduces the same Beacon
++references, counts and qualification observations. No native run or archive
++finalization is implied by this diagnostic correction.
+diff --git a/audit/references.py b/audit/references.py
+index 1503787e51a72dae8df063aad6670a387dfe7bb7..be209894eb320736d2936f261622c69849204c79 100644
+--- a/audit/references.py
++++ b/audit/references.py
+@@ -185,6 +185,11 @@ def inspect_bytes(raw, profile, tables):
+         value = sr.string() if token == 0 else tables['tokens'].get(token, f'_id_{token:04X}'.encode())
+         return symbol(value, token, kind, at, start)
+ 
++    def stack_literal(kind, at):
++        start = sr.pos
++        value = sr.string()
++        return symbol(value, None, kind, at, start)
++
+     while pos < len(code):
+         if len(functions) >= 10000:
+             raise ValueError('Function limit exceeded')
+@@ -238,9 +243,9 @@ def inspect_bytes(raw, profile, tables):
+                 block('dynamic_call_target', pos, ss, row['name'])
+                 references.append(ref)
+             elif kind in ('string', 'animtree', 'animation'):
+-                values = [symbol(sr.string(), None, kind, pos, ss)]
++                values = [stack_literal(kind, pos)]
+                 if kind == 'animation':
+-                    values.append(symbol(sr.string(), None, kind, pos, sr.pos))
++                    values.append(stack_literal(kind, pos))
+                 if kind != 'string':
+                     ref['symbols'] = values
+                     references.append(ref)
+@@ -251,7 +256,7 @@ def inspect_bytes(raw, profile, tables):
+                 else:
+                     indirect = sr.u32()
+                     if indirect == 0:
+-                        symbol(sr.string(), None, 'field', pos, ss)
++                        stack_literal('field', pos)
+                     else:
+                         # Decoder emits a decimal number, not a resolved symbol.
+                         block('unresolved_indirect_field', pos, ss, {'encoded_id': token, 'stack_id': indirect})
+@@ -271,11 +276,12 @@ def inspect_bytes(raw, profile, tables):
+                 for entry in range(pos + 3, pos + width, 7):
+                     value = int.from_bytes(code[entry:entry + 4], 'little')
+                     if value < 0x100000:
++                        literal_start = sr.pos
+                         literal = sr.string()
+                         if value:
+-                            symbol(literal, None, 'switch_string', pos, ss)
++                            symbol(literal, None, 'switch_string', pos, literal_start)
+                         elif literal != b'\x01':
+-                            block('unknown_switch_default_encoding', pos, ss, literal.hex())
++                            block('unknown_switch_default_encoding', pos, literal_start, literal.hex())
+                     branch_targets.append(entry + 4 + offset24(code[entry + 4:entry + 7]))
+             elif kind not in ('plain', 'scalar', 'slot'):
+                 raise ValueError('Unimplemented opcode category: ' + kind)
+diff --git a/audit/test_references.py b/audit/test_references.py
+index ec7a24a660c53ed62783caa5d2da826f8aa46803..175561f19fa308bbab65b8dcc7be90358bfdf373 100644
+--- a/audit/test_references.py
++++ b/audit/test_references.py
+@@ -146,6 +146,36 @@ class ReferenceTests(unittest.TestCase):
+         empty = self.inspect(container(b'\x53\0\0\0\0\x19', b'\0'))
+         self.assertFalse(empty['blockers'])
+ 
++    def test_animation_second_literal_reports_start_not_end(self):
++        raw = container(b'\x92' + bytes(8) + b'\x19', b'tree\0\x80anim\0')
++        result = self.inspect(raw)
++        self.assertEqual([(b['cause'], b['bytecode_offset'], b['stack_offset']) for b in result['blockers']],
++                         [('unresolved_animation', 1, 18)])
++        instruction = result['functions'][0]['instructions'][0]
++        self.assertEqual((instruction['stack_begin'], instruction['stack_end']), (13, 24))
++        self.assertEqual(result['function_spans'][0]['stack_end'], 24)
++        self.assertFalse(result['encoded_external_script_reference_absence'])
++
++    def test_literal_diagnostics_locate_each_switch_and_indirect_field_operand(self):
++        # Two switch strings; both destinations point to the final Return at 18.
++        body = b'\x3b\x02\0' + struct.pack('<I', 1) + b'\x14\0\0'
++        body += struct.pack('<I', 1) + b'\x06\0\0\x19'
++        result = self.inspect(container(body, b'good\0\x80case\0'))
++        self.assertEqual([(b['cause'], b['stack_offset']) for b in result['blockers']],
++                         [('unresolved_switch_string', 18)])
++        instruction = result['functions'][0]['instructions'][0]
++        self.assertEqual((instruction['stack_begin'], instruction['stack_end']), (13, 24))
++        default_body = b'\x3b\x02\0' + struct.pack('<I', 0) + b'\x14\0\0'
++        default_body += struct.pack('<I', 0) + b'\x06\0\0\x19'
++        result = self.inspect(container(default_body, b'\x01\0bad\0'))
++        self.assertEqual([(b['cause'], b['stack_offset']) for b in result['blockers']],
++                         [('unknown_switch_default_encoding', 15)])
++        # The indirect field token starts at 13; its actual string starts at 17.
++        result = self.inspect(container(b'\x18' + struct.pack('<I', 0x14000) + b'\x19',
++                                        struct.pack('<I', 0) + b'\x80field\0'))
++        self.assertEqual([(b['cause'], b['stack_offset']) for b in result['blockers']],
++                         [('unresolved_field', 17)])
++
+     def test_unknown_function_field_external_and_encrypted_strings_block(self):
+         cases = [container(b'\x19', token=0xFFFFFF),
+                  container(b'\x18' + struct.pack('<I', 0xC7) + b'\x19'),

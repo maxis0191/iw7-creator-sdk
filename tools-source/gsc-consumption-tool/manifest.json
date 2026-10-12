@@ -3,8 +3,8 @@
   "upstream_source": "https://github.com/xensik/gsc-tool",
   "base_revision": "3300e430d1efef00e54c66a8bd416e18a2a9882a",
   "base_tree_oid": "8af839d54cba3536954cfd1abd0e33c60112727d",
-  "source_revision": "eabe74ab65d8ce2a943b54d24b15a60749a0cf2a",
-  "source_tree_oid": "74143703049b4fbb9ba702d1ea74bc58be5607ac",
+  "source_revision": "42e6c403a789b38ede39fd58ff0cb5f77da7d002",
+  "source_tree_oid": "92a8a96529f8ee5acaa72363c261b97a56b9ebfb",
   "patch_format": "git format-patch --full-index --no-signature --no-stat",
   "patches": [
     {
@@ -78,6 +78,24 @@
       "original_commit": "eabe74ab65d8ce2a943b54d24b15a60749a0cf2a",
       "bytes": 63719,
       "sha256": "2d08c8d5249f65deb62d403fa0d4fdd8d8da400534cf5ce482b0b0da8df3b4ee"
+    },
+    {
+      "path": "patches/0013-Classify-exact-IW7-encoded-references-with-independent-byte-coverage.patch",
+      "original_commit": "bfa2d4af5e9687bcf30b6a45ad04db403f63538a",
+      "bytes": 96813,
+      "sha256": "3e8946e3728608d6000a16ddd4e260f058d53cd3248ca8a93e36876ef3196b10"
+    },
+    {
+      "path": "patches/0014-Report-reference-diagnostics-at-each-literal-operand-start.patch",
+      "original_commit": "805f07676bb1bdad9effee5d907a5fe9f4bcfa01",
+      "bytes": 7533,
+      "sha256": "69a3398bb1e8b0677a9a2821914315611d574702137e2e5ea69b133f01ae77f2"
+    },
+    {
+      "path": "patches/0015-Require-native-reference-controls-in-the-supervised-build-recipe.patch",
+      "original_commit": "42e6c403a789b38ede39fd58ff0cb5f77da7d002",
+      "bytes": 43948,
+      "sha256": "d3b1f93bbcf6f1e6d80f31ac46790fcbd0264ecf13e415526b890f0dd26ff3c9"
     }
   ],
   "licenses": [
@@ -107,30 +125,30 @@
     {
       "path": "audit/README.md",
       "mode": "100644",
-      "blob_oid": "f8330af981937bdd779537c869c6c5421ada44fb",
-      "bytes": 22885,
-      "sha256": "ecaf0fe7eea76a8c3c9da86544dab22b26d4dea4780d069423d187ac1427bf96"
+      "blob_oid": "34b544a631a242ec9a6cca1c96ed93cb795929e4",
+      "bytes": 23888,
+      "sha256": "fb124a02eb11be4b37748f5323d24f7e1012f0ebd642c1565120a1a6e331f37c"
     },
     {
       "path": "audit/build.ps1",
       "mode": "100644",
-      "blob_oid": "87f53027f4e7a48a7d5ba891fd126dc4070db13d",
-      "bytes": 7679,
-      "sha256": "c191e1c4eb6c86e6e473dbb9447d3ebfa5293377220149272786dc2401f06fbc"
+      "blob_oid": "fe37f9e46e55d5a74688888e44c53011eed8ed73",
+      "bytes": 7805,
+      "sha256": "3e743e002f18e688271fdb5351071818996d3ba760b897510a488a1dc700ffcd"
     },
     {
       "path": "audit/build.py",
       "mode": "100644",
-      "blob_oid": "be482cb61562f17a109f9d40560ac529c9634d0d",
-      "bytes": 13998,
-      "sha256": "084af7e4f91cd9f1dcfafe06880fb1cd46bc1ca41415fd9299bcd972c8bcb762"
+      "blob_oid": "d4e654500dcc119eb1cb384214a82ce4cdf43880",
+      "bytes": 16504,
+      "sha256": "de6aacdaf934f38279330d2603e7a74004c2807ef55e01e01511f218284e6477"
     },
     {
       "path": "audit/completion.ps1",
       "mode": "100644",
-      "blob_oid": "69bd44b1c2ca4f6c4076c9fe9d0c82aaa5e68ee7",
-      "bytes": 19631,
-      "sha256": "9710dd10beaa1db17d0bca51916679145f5d76460bc3c43463f888bc9aff3ad0"
+      "blob_oid": "a2aa0104f75f00956473cffb26a6ea62b1f3170d",
+      "bytes": 25240,
+      "sha256": "ffa1feeaf8f712eb33ba38daaea95e56585b29c24a48721ac0dee82b46678330"
     },
     {
       "path": "audit/diagnostics.ps1",
@@ -142,16 +160,23 @@
     {
       "path": "audit/main.cpp",
       "mode": "100644",
-      "blob_oid": "49b846d174dd6c9cb77b3209a60b8372597e0cbd",
-      "bytes": 6059,
-      "sha256": "0281d96926a1a321ccbf5681e30b22b349929fbdfcfa81fd37402cab05686234"
+      "blob_oid": "4ab20561c51e78cec56c13bb4eb1f347bbeea89c",
+      "bytes": 7844,
+      "sha256": "9a8357b3b2363b97c27176c722aa4e9cd254a5420edef57121b738c8ae538480"
+    },
+    {
+      "path": "audit/make_reference_profile.py",
+      "mode": "100644",
+      "blob_oid": "235df4ad37d88b0433fecc4636751bccb11d1285",
+      "bytes": 6660,
+      "sha256": "20320a4fe12c953fb164dbbdb41531723f7edc146f955393d5946a6c4c8e389d"
     },
     {
       "path": "audit/prepare.py",
       "mode": "100644",
-      "blob_oid": "758256b1936fb8a0ace47523765c973e283bba77",
-      "bytes": 3975,
-      "sha256": "61ea74309865e9340d56950d4ca3dda28ae891c2d60c868e55d58160dbd86fef"
+      "blob_oid": "d9d2738c3291652527fa74508ae875b4c5a87731",
+      "bytes": 4396,
+      "sha256": "8c7aa044afe32b962ff1095ab15e6ef6f6c5502b3d60894494a7be4ff00c4e7e"
     },
     {
       "path": "audit/reader_tests.cpp",
@@ -161,11 +186,39 @@
       "sha256": "2a67879f7cbc17df14176886f715880ed68ef91ebb25b1f69493f08b3d1fb685"
     },
     {
+      "path": "audit/reference-contract.md",
+      "mode": "100644",
+      "blob_oid": "99b7a7c23db1d7bd2a1d44d2174acd9f8fb1b55f",
+      "bytes": 12303,
+      "sha256": "6d47a2454bbca266d98b025b4f3d9fc02e9b30c12c0f4a29b4705132d449def2"
+    },
+    {
+      "path": "audit/reference-observation-20261012.json",
+      "mode": "100644",
+      "blob_oid": "1b9da30959863dabcb8d20493f7c3f1d0249d4e7",
+      "bytes": 7700,
+      "sha256": "b2c9caf27f8daf0bd006c0af4e3b72e010da26236f8bbea076fa540c3f18fe68"
+    },
+    {
+      "path": "audit/reference-profile.json",
+      "mode": "100644",
+      "blob_oid": "7b2bbecb0febfc16b9af082aa67c180746121f16",
+      "bytes": 19533,
+      "sha256": "e87230812b01059ece4327d9d465b8b20e5e1162d3cd698492aed70405bbf360"
+    },
+    {
+      "path": "audit/references.py",
+      "mode": "100644",
+      "blob_oid": "be209894eb320736d2936f261622c69849204c79",
+      "bytes": 18396,
+      "sha256": "fdb52f27225c61b563a09cd710cfeca769a9d01a8c971b882edeb277efe98a7c"
+    },
+    {
       "path": "audit/residual-closure-contract.md",
       "mode": "100644",
-      "blob_oid": "4172ff92a1751d5a1d1b312840295b81a17c32e8",
-      "bytes": 7416,
-      "sha256": "ec3abde7e824f2034990c5cad457bc4df86afe49b434b222d61b51ec377a46da"
+      "blob_oid": "9dd8b9803c5ba1bf85ffcae7e7976aac35f6f11c",
+      "bytes": 8628,
+      "sha256": "a698513bb58d2c4c705ac98d480d430e46f8c548a5454e005529b506cffde054"
     },
     {
       "path": "audit/residual_policy.ps1",
@@ -189,11 +242,18 @@
       "sha256": "b6125dfaa4c6b16e4ebc6f54f160369788cfe5290f4c734edb925101af4f3471"
     },
     {
+      "path": "audit/test_build_recipe.py",
+      "mode": "100644",
+      "blob_oid": "80b8b3eb2033a9873414e7cf90cb24698eb62a2b",
+      "bytes": 4119,
+      "sha256": "f1c3399c253b0279ab6a3b364d71ecb91565455ca7eeda17646738215fd6db60"
+    },
+    {
       "path": "audit/test_completion.ps1",
       "mode": "100644",
-      "blob_oid": "531a865624ff87f2fc09db3d584a082fcea02ffe",
-      "bytes": 10868,
-      "sha256": "5663c05d8dbdc3d3336335062dc318573b7dbbcf4c7b337bb532d01845a47555"
+      "blob_oid": "7d7d1e2d78e99ec93edb825f713ea7780a6cfb11",
+      "bytes": 16224,
+      "sha256": "389bfe557a33931961fbc9081a50d08f4ae80895d7ce68018b0bc28e2e6c3ba2"
     },
     {
       "path": "audit/test_completion_files.ps1",
@@ -219,16 +279,30 @@
     {
       "path": "audit/test_owned_closure.ps1",
       "mode": "100644",
-      "blob_oid": "16417237bb75ccad183d6594a4e24b6b137ae7b3",
-      "bytes": 9175,
-      "sha256": "3a671c4576a0ce3d88374bae786c24ca26aec3ea81388604ddddc73804b7e538"
+      "blob_oid": "d8b1d70e68e4e9689ff2f14cb814a8d3f2af1d48",
+      "bytes": 9218,
+      "sha256": "6c603f87f3cce850c402da44efc044c9c257f6137649ea0c2958e99782a99a28"
     },
     {
       "path": "audit/test_plan.py",
       "mode": "100644",
-      "blob_oid": "ecc2a04f19b928a0f107f15bf82348a40e65fc29",
-      "bytes": 3796,
-      "sha256": "a24860d48f0831d4a57afc14c7cf6bccbaa4c32f4ac6b6b075c70160f8bab6b4"
+      "blob_oid": "0972a85c2091d208c7c34610800a3825413c89df",
+      "bytes": 4661,
+      "sha256": "6ba5783e7233b3885f17b685217b2cc4e9042b26e4b79d982201a82d6c190f2d"
+    },
+    {
+      "path": "audit/test_reference_native.py",
+      "mode": "100644",
+      "blob_oid": "8245010aadaad0ac7c700698601a5a79b493feb0",
+      "bytes": 5650,
+      "sha256": "ea8a9ee474cc5f8425004620aa83b59d1de97f1ff45fe6406638a2a62e6a7141"
+    },
+    {
+      "path": "audit/test_references.py",
+      "mode": "100644",
+      "blob_oid": "175561f19fa308bbab65b8dcc7be90358bfdf373",
+      "bytes": 17588,
+      "sha256": "79eade6b38af3ff29fd5b0c8ff4c670aaeede8929b64b18077e4f89f07716038"
     },
     {
       "path": "audit/test_registration.ps1",
@@ -252,6 +326,13 @@
       "sha256": "03775036b467157ea1f01b3267fe9da47d71df59c8ec0b4c0e0916745c9d51a4"
     },
     {
+      "path": "include/xsk/gsc/common/assembly.hpp",
+      "mode": "100644",
+      "blob_oid": "5080024b3e270123788c5474b839c0a2e4a6e5a1",
+      "bytes": 6559,
+      "sha256": "c458a23c14ffff4b347523c951fd3dbbd4d1448b552ad5f2dd0542a72456952e"
+    },
+    {
       "path": "include/xsk/gsc/disassembler.hpp",
       "mode": "100644",
       "blob_oid": "331613a7f6a012133168062539895a07dcf069c3",
@@ -268,9 +349,9 @@
     {
       "path": "src/gsc/disassembler.cpp",
       "mode": "100644",
-      "blob_oid": "765c8d5e34b93f8607ac047d86afdb974b46601d",
-      "bytes": 25278,
-      "sha256": "7a85643e8a7f66230f91c4453547bb873c8e10bfafbc7cda092e3f23e13b8f9b"
+      "blob_oid": "f6c5c7bdbbb5bd8becf5fad2e4cd206d79e8391e",
+      "bytes": 25360,
+      "sha256": "0bb538fdfb2e1449250d5184f9af9507028951184d4c93185251691e71c82c67"
     },
     {
       "path": "src/utils/reader.cpp",

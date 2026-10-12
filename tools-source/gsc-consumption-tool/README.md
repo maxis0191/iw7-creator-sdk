@@ -127,3 +127,44 @@ the different `git am` reconstructed revision, and no package/runtime gate is pr
 `reconstruction-validation.json` records only the local source reconstruction
 check. Passing it does not establish executable correctness, complete GSC import
 analysis, asset closure, runtime readiness or owner gameplay acceptance.
+
+## Encoded-reference source tranche
+
+Patches thirteen through fifteen preserve the complete source chain:
+`bfa2d4af5e9687bcf30b6a45ad04db403f63538a` adds the exhaustive reference profile,
+independent byte reader and separate native mode;
+`805f07676bb1bdad9effee5d907a5fe9f4bcfa01` fixes literal diagnostic offsets after
+independent review; `42e6c403a789b38ede39fd58ff0cb5f77da7d002` adds the actual
+native reference phase to the supervised recipe. The first twelve patches and
+license files remain byte-for-byte unchanged. Contract/correction review was
+favorable; the recipe and next exact Plan still require separate review and GO.
+
+The existing retained reconstruction was extended in place to tree
+`92a8a96529f8ee5acaa72363c261b97a56b9ebfb`; all 35 changed blobs match. Its checkout
+is 30,588,390 bytes under the existing 64 MiB source-only allowance. No new clone,
+dependency initialization, native execution or deletion occurred. Git `am` creates
+a different commit identity; this is source-tree reconstruction, not executable
+reproducibility.
+
+The reference profile also pins actual source-table bytes. The retained baseline
+had LF table files whereas the reviewed Windows source has CRLF. Seven existing
+table files were materialized as CRLF only after that exact candidate encoding
+matched each pinned SHA256; their normalized Git blobs and tree remained unchanged.
+The index was refreshed with those identical blobs. No Git configuration changed.
+The reconstructed profile now verifies all eight physical source files as well as
+the tree. Future reconstructions must check these physical pins too; a matching
+Git tree alone does not promise a matching source digest or table byte encoding.
+
+The recipe uses Plan `/2` and receipt `/3`, preserving consumption `/1` and all
+earlier native tests. Its eighth phase plans 159 native invocations: 153 opcode
+controls (two expected refusals), four unresolved/dynamic cases and two exact
+Beacon binaries. It retains four native/bound reference JSONs, the controls
+summary, written runtime pins and the pinned reader/profile/harness. Twenty-seven
+completion artifacts and thirty residual-closure guards fit the unchanged
+32-file/128-MiB/two-second limits with the existing zlib dependency. No new Run or
+lease is authorized by this archive.
+
+Source/mock validation passed 367 PowerShell checks and 28 Python tests, including
+read-only decoding of the retained Beacon bytes. This does not supply the new
+native reference stream. See [the sanitized source checkpoint](../../sdk/modding/gsc-reference-source-20261012.json)
+and reconstructed `audit/reference-contract.md` for exact scope and remaining gates.
