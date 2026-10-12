@@ -4,6 +4,16 @@
 was changed. All following native commands are **planned, not executed** by this
 audit. The coordinator owns admission after the current engine/animation work.
 
+Availability refresh, **2026-10-12 03:36:51 UTC**: the previously inspected
+`doom-negative-textures` worktree and `runtime/dt` are now absent. The cause was
+not established by this audit. The earlier recorded hashes remain observations
+of bytes that existed when read, not a claim that their source files are still
+available. Do not execute this plan against that missing root or silently rewrite
+the old stock receipt. Identify suitable retained stock and explicitly rebind
+its provenance in a fresh plan before admission. No restoration or copying was
+performed here. The separately retained beacon FF and final state still exist
+with their published hashes unchanged.
+
 ## What the existing contract actually requires
 
 `iw7.mod-package/1` distinguishes delivered client/server nodes from `recipient`

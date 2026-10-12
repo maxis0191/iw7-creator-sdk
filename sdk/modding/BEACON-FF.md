@@ -167,3 +167,9 @@ The actual FF is retained in ignored `runtime/beacon-v1-ff-build-20261012/mod.ff
 No client or dedicated was launched. Recipient material resolution, pixels,
 Use/HUD/rejoin, multiplayer and H1 map conversion remain unvalidated. `Ready`
 remains false; the next game test belongs to a separate coordinator allocation.
+
+At the 2026-10-12 03:36:51 UTC availability refresh, the old
+`doom-negative-textures` stock worktree/root was absent. The completed beacon
+`mod.ff` and `state.local.json` remain present with their final hashes unchanged.
+Do not replay the old stock parameters: a future build needs a verified suitable
+retained root and a fresh provenance plan. Historical receipts were not edited.
