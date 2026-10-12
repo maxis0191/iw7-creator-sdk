@@ -96,8 +96,10 @@ contract hash and proposed contract. Only `source_bytes_verified` becomes true.
 Compiled input binding, complete bytecode/stack consumption, external-GSC absence,
 recipient closure, build qualification, package/runtime readiness and owner
 acceptance remain false. Local `validation.local.json` files and zero-Far summaries
-are not accepted as evidence by this selector. Existing audit/recipient binders
-are unchanged and are not invoked by this command.
+are not accepted as evidence by this selector. The optional explicit
+`GscAuditEvidence` consumer below reports compiled evidence separately, without
+changing the proposed package contract or these source-only selection flags.
+Existing native audit and recipient binders remain unchanged.
 
 `Build` is explicitly refused before any builder or finalizer call. This adapter
 also refuses `BuildParameters`, `RecipientProof`, `RecipientRoot`, `FinalizeRoot`
@@ -112,7 +114,7 @@ content closure. Native execution and distributable ZIP creation require a
 distinct coordinator GO. This tranche implements the selectable input and its
 contract; it intentionally supplies no native execution path.
 
-The 38 Creator tests include 12 new cases for this selector. They exercise the
+The source-selection tests include 12 cases for this selector. They exercise the
 real CLI and SDK/Distribution validators: exact source/contract selection,
 canonical option spelling, missing compatibility, original-variant collisions,
 unchanged BeaconV1 refusal, changed sources, forged closure claims, duplicate
@@ -120,6 +122,98 @@ manifest fields, forged zero-Far summaries and refusal before an instrumented
 builder could run. Plan/refused-Build snapshots must stay unchanged. Existing
 synthetic flow tests and real-finalizer fixture tests retain the original build,
 materialization and recipient gates; no native tools or distributable ZIPs run.
+
+### Attach retained GSC audit records
+
+An explicit `-GscAuditEvidence <expectations.json>` is accepted only with
+`-Adapter BeaconSelfContainedV1 -Action Plan`. It invokes the pure reader in
+`creator_gsc_audit.py`, never the native audit runner. Other adapters and Build
+reject this option before reading the evidence. The selected project still needs
+the exact variant source and normal compatibility checks.
+
+The expectation object has exactly these fields:
+
+| Field | Required value |
+| --- | --- |
+| `schema` | `iw7.creator-gsc-audit-input/1` |
+| `run_root` | Explicit absolute directory of the retained GSC audit Run |
+| `source_sha256` | Exact variant source SHA above |
+| `pins` | Independent `tool_sha256`, `source_revision`, `source_sha256`, `tables_sha256` accepted by the unchanged consumption validator |
+| `files` | Exactly seven roles below, each `{ "path": absolute_path, "sha256": expected_raw_digest }` |
+
+The roles are `compilation`, `plan`, `build`, `supervision`, `input`,
+`consumption` and `assembly`. Build and supervision must be the Run's
+`build-receipt.json` and `supervision.json`; consumption and assembly must be its
+`witness-variant/consumption.json` and `witness-variant/disassembly.gscasm`.
+The input must equal the reviewed plan's explicit variant container path/hash/size.
+No directory discovery, executable read, process query, native launch, stock
+inspection, resource admission or output write occurs in this command.
+
+Supply hashes from an independent review. Do not derive trust anchors from an
+untrusted final state. The reader can check consistency with the supplied pins;
+it cannot establish that the caller reviewed them. Changing both evidence and
+trusted pins remains outside that guarantee. Files use stable bounded snapshots
+of at most 2 MiB each and a 16 MiB group bound, with a second hash pass. The
+expectation file is limited to 1 MiB and checked again before returning. These
+reads are not a transactional snapshot against a hostile concurrent writer.
+
+The historical compilation record must be the corrected
+`iw7.beacon-self-contained-offline/2` form, with exact source bytes, successful
+parse/compile/disassembly phase records, container and assembly bindings. It must
+keep external-dependency absence, asset closure, runtime and owner claims false.
+The old local compilation record with a withdrawn absence claim is refused.
+This is a linkage to a historical record, not a fresh compilation or authenticated
+proof that a particular compiler produced the bytes.
+
+The consumer imports only the pinned `audit_gsc_consumption.py` validator and
+calls `validate_pins` and `validate_witness`. It remeasures container structure,
+compressed stack integrity, exact bytecode/stack hashes and terminal function
+cursors, then compares the witness's emitted assembly bytes with the separate
+assembly file. The recorded variant command must bind the same input, output,
+tool and source pins. Far/Pointer counts describe the emitted assembly only;
+zero does not certify semantic import absence or a complete dependency graph.
+
+The JSON `gsc_audit` has schema `iw7.creator-gsc-audit-observation/1` and keeps
+these different questions separate:
+
+- `artifact_records_bound`, `historical_compilation_record_bound` and
+  `native_witness_bytes_bound`: selected bytes and records agree with the pins.
+- `structural_consumption_measured`, bytecode/stack cursor values and observed
+  opcode counts: the pure validator has checked the retained witness bytes.
+- `supervision_success_reported`: the historical supervisor's boolean. A `/1`
+  build, including v5, can display structural measurements while its global
+  failure remains explicit. A `/1` success boolean never upgrades the protocol.
+- `global_completion_record_linked`: only the reviewed `/2` producer
+  `eabe74ab65d8ce2a943b54d24b15a60749a0cf2a`, with matching source digest, can
+  link the exact plan/build/supervision, nonce/root/lease, successful completion
+  fields, named steps/artifact roles and terminal closure within the recorded
+  two-second drain and global/output limits. Missing or contradictory records
+  fail. This consumer links the pinned supervisor report; it does not repeat
+  its guarded completion validation.
+
+`global_build_revalidated`, `native_execution_authenticated` and
+`compilation_provenance_authenticated` stay false. Creator does not reopen the
+compiler/tool, individual result files, original-control witnesses or historical
+job guards. It cannot authenticate their past execution or guard lifetime from
+unsigned local receipts. The full native build qualification belongs to the
+separately reviewed producer and its retained evidence.
+
+External GSC absence, recipient closure, finalization, package/runtime readiness
+and owner acceptance stay false. The proposed package contract is unchanged.
+`require_finalization(...)` re-reads the evidence and refuses with these remaining
+requirements; it is not a new variant finalizer and is not routed through the
+original Beacon builder. A valid observational Plan can exit zero with these
+blocking requirements still listed in `pending`.
+
+Validation: 42 real Creator CLI tests plus 19 pure consumer tests pass. They cover
+independent pins, changed source/container/assembly, incomplete cursors, false
+acceptance claims, wrong run/nonce, missing closure/release, deadlines, unknown
+producer/schema, changed artifacts between passes and finalization refusal.
+Native invocation is trapped as a test failure. The real v6 retained files also
+pass the consumer and CLI: 1480 bytecode and 1808 stack bytes consumed, zero
+observed Far/Pointer opcodes, and `/2` completion linkage true. No compiler,
+executable rehash, stock read, lease, native run or package was performed by this
+validation. V4/v5 retain their historical global failures.
 
 For an already prepared original-beacon project, optional `-BuildParameters`
 accepts the existing local `Build-BeaconFF.ps1` argument object. Creator rejects

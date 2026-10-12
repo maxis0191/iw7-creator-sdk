@@ -627,6 +627,55 @@ class CreatorTests(unittest.TestCase):
         self.assertFalse((self.root / "candidate").exists())
         self.assertFalse((self.root / "result.zip").exists())
 
+    def gsc_audit_fixture(self, version=2):
+        spec = importlib.util.spec_from_file_location("creator_audit_fixture", SDK / "tests/test_creator_gsc_audit.py")
+        fixtures = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(fixtures)
+        fixture = fixtures.AuditFixture(self.root / ("gsc-audit-" + str(version)), version)
+        self.project = fixture.project
+        path = fixture.base / "expectations.json"
+        path.write_text(json.dumps(fixture.evidence), encoding="utf-8")
+        return fixture, path
+
+    def test_real_cli_links_v2_audit_records_without_build_or_package(self):
+        fixture, path = self.gsc_audit_fixture()
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1", "-GscAuditEvidence", str(path))
+        self.assertEqual(code, 0, report)
+        self.assertTrue(report["plan_valid"])
+        self.assertTrue(report["gsc_audit"]["global_completion_record_linked"])
+        self.assertTrue(report["gsc_audit"]["native_witness_bytes_bound"])
+        self.assertFalse(report["gsc_audit"]["external_gsc_dependency_absence_verified"])
+        self.assertFalse(report["gsc_audit"]["finalization_allowed"])
+        self.assertFalse(report["build_verified"])
+        self.assertFalse(report.get("adapter_plan_requested", False))
+        self.assertEqual(report["gsc_audit_evidence_sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
+
+    def test_real_cli_displays_v1_global_failure_without_reclassifying_it(self):
+        fixture, path = self.gsc_audit_fixture(version=1)
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1", "-GscAuditEvidence", str(path))
+        self.assertEqual(code, 0, report)
+        self.assertTrue(report["gsc_audit"]["structural_consumption_measured"])
+        self.assertFalse(report["gsc_audit"]["global_completion_record_linked"])
+        self.assertFalse(report["gsc_audit"]["supervision_success_reported"])
+        self.assertIn("supervision recorded failure", " ".join(report["pending"]))
+
+    def test_real_cli_refuses_altered_pinned_audit_input(self):
+        fixture, path = self.gsc_audit_fixture()
+        fixture.paths["input"].write_bytes(b"different container")
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1", "-GscAuditEvidence", str(path))
+        self.assertEqual(code, 1, report)
+        self.assertFalse(report["plan_valid"])
+        self.assertIn("hash differs", " ".join(report["errors"]))
+        self.assertNotIn("gsc_audit", report)
+
+    def test_audit_option_requires_selected_variant_plan_before_any_evidence_read(self):
+        for options in (("-Adapter", "BeaconV1"), ("-Adapter", "None"),
+                        ("-Adapter", "BeaconSelfContainedV1", "-Action", "Build")):
+            code, report = self.invoke(*options, "-GscAuditEvidence", str(self.root / "does-not-exist.json"))
+            self.assertEqual(code, 1, report)
+            self.assertIn("requires explicit BeaconSelfContainedV1 Plan", " ".join(report["errors"]))
+            self.assertNotIn("gsc_audit", report)
+
 
 if __name__ == "__main__":
     unittest.main()

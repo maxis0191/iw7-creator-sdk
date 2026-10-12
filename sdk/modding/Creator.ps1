@@ -12,6 +12,7 @@ param(
     [string]$Output,
     [string]$RecipientProof,
     [string]$RecipientRoot,
+    [string]$GscAuditEvidence,
     [string]$ToolsRoot=(Split-Path (Split-Path $PSScriptRoot -Parent) -Parent),
     [switch]$Json
 )
@@ -25,7 +26,7 @@ $python=(Get-Command python -ErrorAction Stop).Source
 $inputData=[ordered]@{project=$Project;action=$Action;adapter=$Adapter;build_parameters=$BuildParameters;
     active_projects=@($ActiveProject);client_source=$ClientSource;server_source=$ServerSource;protocol=$Protocol;
     target=$Target;tools_root=$ToolsRoot;finalize_root=$FinalizeRoot;output=$Output;
-    recipient_proof=$RecipientProof;recipient_root=$RecipientRoot}
+    recipient_proof=$RecipientProof;recipient_root=$RecipientRoot;gsc_audit_evidence=$GscAuditEvidence}
 function Assert-CreatorBuildParameters($Parameters) {
     # This is a caller-side allowlist, not the builder's broader parameter set.
     # In particular, Run is never allowed in a JSON-provided splat.
@@ -92,6 +93,8 @@ def unique_parameters(pairs):
     return result
 
 try:
+    if args["gsc_audit_evidence"] and (args["adapter"] != "BeaconSelfContainedV1" or args["action"] != "Plan"):
+        raise ValueError("GscAuditEvidence requires explicit BeaconSelfContainedV1 Plan; it never authorizes Build")
     root = Path(args["tools_root"]).resolve(strict=True)
     sdk = module(root / "sdk/modding/manifest.py", "creator_sdk")
     packager = module(root / "ops/modding/Package-CommunityMod.py", "creator_packager")
@@ -177,6 +180,17 @@ try:
             raise ValueError("BeaconSelfContainedV1 accepts source-only Plan selection; build/output/recipient inputs cannot qualify this adapter")
         if args["action"] != "Plan":
             raise ValueError("BeaconSelfContainedV1 Build is not connected or qualified; no builder, compiler, finalizer or package writer was invoked")
+        if args["gsc_audit_evidence"]:
+            evidence_path = packager.no_redirects(args["gsc_audit_evidence"])
+            evidence_bytes = selector.snapshot(evidence_path, packager, 1024 * 1024)
+            audit = module(root / "sdk/modding/creator_gsc_audit.py", "creator_gsc_audit")
+            report["gsc_audit"] = audit.inspect(project, root, selector.json_snapshot(evidence_bytes), packager)
+            if selector.snapshot(evidence_path, packager, 1024 * 1024) != evidence_bytes:
+                raise ValueError("GscAuditEvidence changed during inspection")
+            report["gsc_audit_evidence_sha256"] = hashlib.sha256(evidence_bytes).hexdigest()
+            report["pending"].extend(report["gsc_audit"]["unresolved_qualifications"])
+            step("gsc-audit-records", "passed", ["Pinned source/container/witness bytes linked; historical completion status reported separately",
+                 "Import absence, variant finalization and recipient closure remain unqualified"])
         step("adapter-plan", "pending", ["Source-only planning contract selected; native adapter and complete evidence remain required"])
     elif args["adapter"] != "None":
         message = args["adapter"] + " adapter is named but not connected or qualified in Creator"
