@@ -51,10 +51,17 @@ $rp=Read-BeaconJson $readerProvenance
 if($rp.WriterSHA256 -cne 'B77B422EE5441E45243122974D9B3BFC117F9CB60F153D4FEC4F3ABBAC1D0926' -or $rp.Roundtrip.lod0_dist -ne 1000000 -or !$rp.Roundtrip.read_existing_supported){throw 'Exact original LOD1M reader required.'}
 Assert-BeaconHash $reader $rp.WriterSHA256
 $candidate=$null
+$preparationContract=$null
+$preparationPath=Join-Path $CandidateRoot 'preparation.local.json'
+if(Test-Path -LiteralPath $preparationPath){
+    $preparation=Read-BeaconJson $preparationPath;Assert-BeaconPreparation $preparation
+    $preparationContract=[ordered]@{Status='SourcePreparationContractVerified';PreparationSHA256=(Get-FileHash -LiteralPath $preparationPath).Hash;
+        PatchCount=3;PatchedCPPs=5;CompileUnits=413;DependencyLibraries=18;MapRuntimeValidated=$false;BuildValidated=$false}
+}
 if($CandidateArtifactSHA256){$candidate=Assert-BeaconCandidate $CandidateRoot $CandidateArtifactSHA256}
 $work=Join-Path $RunRoot 'work'
 $plan=[ordered]@{Schema='iw7.beacon-ff-plan/1';Work=$work;SourceRoot=$SourceRoot;SourceFiles=$names;StockInputs=$inputs;
-    CandidatePending=($null -eq $candidate);Candidate=$candidate;Reader=$reader;JobSource=$JobSource;JobSourceSHA256=$JobSourceSHA256;
+    CandidatePending=($null -eq $candidate);Candidate=$candidate;CandidatePreparation=$preparationContract;Reader=$reader;JobSource=$JobSource;JobSourceSHA256=$JobSourceSHA256;
     Phases=@('buildzone sdk_beacon','verifyzone sdk_beacon','dumpzone sdk_beacon','reader --verify-existing roundtrip');
     PhysicalBytes=8GB;CommitBytes=11GB;TimeoutSeconds=240;ReaderTimeoutSeconds=30;LogBytesPerStream=2MB;NewOutputStopBytes=64MB;
     CopyStock=$false;CopyPreparedSources=$false;SentinelCopyOnly=$true;PAKs=@('zone/assetfile1.pak');CPPreload=$false;Ready=$false}

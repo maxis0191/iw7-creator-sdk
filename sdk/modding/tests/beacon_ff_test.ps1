@@ -34,4 +34,37 @@ if($bytes -ne 60){throw 'Final output accounting omitted a receipt/artifact or i
 Assert-BeaconOutputBudget 64MB
 ExpectRefusal {Assert-BeaconOutputBudget (64MB+1)}
 ExpectRefusal {Assert-BeaconOutputBudget -1}
-'PASS: two PowerShell parses; inventory, identity and final-output boundary fixtures; no Add-Type/native/runtime.'
+$source=Join-Path $sdk 'source-fixture'
+$prep=[pscustomobject]@{
+    schema='iw7.zonetool-isolated-overlay/1';source_pin='fab935826c898806855376662a8a03317b3ad8f1';source=$source
+    feature_macro='EXPERIMENTAL_IW7';compile_units=413;patched_units=5;dependency_libraries=18
+    patches=[pscustomobject]@{
+        'zonetool-fab9358-h1-xsurface.patch'='e50c7f18b9e3b8904b441ddf10bb32a3315442d22afec7d174bda699f9db26a0'
+        'strict-content-sources.patch'='4d7049216f24474e077ab704dac625c7f335c8264434b7de525e56a96a988d08'
+        'zonetool-fab9358-h1-map-layout.patch'='75c26c4eb9d2260dc71a722d4e54aaa49fea03a4e8c0e8554f3643231d0e3cd7'
+    }
+    readonly_inputs=@('h1/converter/iw7/assets/xsurface.cpp','iw7/assets/material.cpp','iw7/assets/techset.cpp',
+        'iw7/assets/gfximage.cpp','h1/converter/iw7/assets/clipmap.cpp') | ForEach-Object {[pscustomobject]@{path=(Join-Path $source ('src/zonetool/zonetool/'+$_))}}
+    experimental_unvalidated_capabilities=@('h1_clipmap_and_mapents_conversion')
+}
+Assert-BeaconPreparation $prep
+$mutations=@(
+    {param($p) $p.patches | Add-Member NoteProperty 'extra.patch' ('a'*64)},
+    {param($p) $p.patches.PSObject.Properties.Remove('zonetool-fab9358-h1-map-layout.patch')},
+    {param($p) $p.patches.'zonetool-fab9358-h1-map-layout.patch'='b'*64},
+    {param($p) $p.patches=@($p.patches,$p.patches,$p.patches)},
+    {param($p) $p.readonly_inputs[4].path=$p.readonly_inputs[0].path},
+    {param($p) $p.readonly_inputs+=,[pscustomobject]@{path=(Join-Path $source 'extra.cpp')}},
+    {param($p) $p.patched_units=4},
+    {param($p) $p.compile_units='413'},
+    {param($p) $p.dependency_libraries=19},
+    {param($p) $p.experimental_unvalidated_capabilities=@()},
+    {param($p) $p.experimental_unvalidated_capabilities+=,'unknown'},
+    {param($p) $p.source_pin='0'*40}
+)
+foreach($mutation in $mutations){
+    $invalid=$prep|ConvertTo-Json -Depth 6|ConvertFrom-Json
+    & $mutation $invalid
+    ExpectRefusal {Assert-BeaconPreparation $invalid}
+}
+'PASS: two PowerShell parses; inventory, identity, output bounds and exact source-contract fixtures (12 contract refusals); no Add-Type/native/runtime.'

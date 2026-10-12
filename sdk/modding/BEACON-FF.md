@@ -79,11 +79,24 @@ The coordinated H1 producer is `runtime/zt-full-a`; EXE is
 `build-artifact.local.json` schema `iw7.zonetool-community-candidate/1`, exact
 EXE path/bytes/hash, linked preparation/result hashes and `macro_compiled=true`.
 It also verifies the real compiler-command tlog bytes/hash and the
-`EXPERIMENTAL_IW7` token. Preparation must name pin `fab9358`, two patches,
-413 units and18 libraries; final result must show successful last attempt,
+`EXPERIMENTAL_IW7` token. Preparation must name pin `fab9358`, exactly three
+patches with their pinned names and SHA256 values, five exact patched CPP source
+identities, 413 units and 18 libraries; final result must show successful last attempt,
 zero job members, unchanged inputs and released build lease. Compilation alone
 is never renamed `TestsPassedReviewedBinary`. PDB/symbol suitability and runtime
 remain separate evidence owned by the producer/coordinator.
+
+The third patch is `zonetool-fab9358-h1-map-layout.patch`, SHA256
+`75c26c4eb9d2260dc71a722d4e54aaa49fea03a4e8c0e8554f3643231d0e3cd7`.
+Its `map-layout-source.json` binds the historical field rename and fifth CPP,
+`h1/converter/iw7/assets/clipmap.cpp`, with status
+`experimental_runtime_unvalidated` and `runtime_validation=false`. The SDK
+requires preparation to retain the corresponding unvalidated capability; it
+does not qualify maps, collision or scriptables. Both the preparation and final
+artifact must contain the exact same three pinned patches; missing, substituted
+or additional patches are refused. The source plan may report only
+`SourcePreparationContractVerified`, with `BuildValidated=false` and
+`MapRuntimeValidated=false`; it cannot manufacture a passed build receipt.
 
 The local, ignored `runtime/beacon-v1-ff-parameters.local.json` contains actual
 absolute paths for this machine; `runtime/beacon-v1-ff-plan.local.json` lists
@@ -120,9 +133,12 @@ the mandatory private/password/loopback/heartbeat-suppression privacy gate.
 
 Default planning completed against the real prepared source, original reader
 and72 stock metadata records with `CandidatePending=true`, native job type absent
-and work directory still absent.21 standard-library tests pass (including bounded
+and work directory still absent. The live H1 preparation contract reports three
+patches, five CPPs, 413 compile units and 18 libraries; build and map runtime
+validation remain false.21 standard-library tests pass (including bounded
 pipe tests without a subprocess). PowerShell parsing, six inventory fixtures,
-complete-identity refusals and final-output boundary checks pass without Add-Type.
+complete-identity refusals, final-output boundaries and twelve malformed source
+contract refusals pass without Add-Type.
 This does not test native job closure, actual hardlink
 staging/restoration, EXE execution, FF serialization or readback of the new FF.
 Those require the separately admitted first execution; no source-only test is

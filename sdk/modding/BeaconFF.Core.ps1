@@ -39,6 +39,35 @@ function Get-BeaconInventory([string]$Log) {
     if($rows.Count -ne 5 -or @($rows|Sort-Object -Unique).Count -ne 5 -or @($expected|Where-Object {$_ -cnotin $rows}).Count){throw 'Exact five-asset beacon inventory required.'}
     $rows
 }
+function Assert-BeaconPatchSet($Patches) {
+    $expected=[ordered]@{
+        'zonetool-fab9358-h1-xsurface.patch'='e50c7f18b9e3b8904b441ddf10bb32a3315442d22afec7d174bda699f9db26a0'
+        'strict-content-sources.patch'='4d7049216f24474e077ab704dac625c7f335c8264434b7de525e56a96a988d08'
+        'zonetool-fab9358-h1-map-layout.patch'='75c26c4eb9d2260dc71a722d4e54aaa49fea03a4e8c0e8554f3643231d0e3cd7'
+    }
+    if($Patches -isnot [pscustomobject] -or @($Patches.PSObject.Properties).Count -ne 3){throw 'Exact three-patch object required.'}
+    foreach($name in $expected.Keys){
+        if($name -cnotin $Patches.PSObject.Properties.Name -or $Patches.$name -isnot [string] -or $Patches.$name -ine $expected[$name]){throw 'Pinned H1, strict-material or map-layout patch differs.'}
+    }
+}
+function Assert-BeaconPreparation($Preparation) {
+    $prep=$Preparation
+    if($prep.schema -cne 'iw7.zonetool-isolated-overlay/1' -or $prep.source_pin -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
+       $prep.feature_macro -cne 'EXPERIMENTAL_IW7' -or $prep.compile_units -ne 413 -or $prep.patched_units -ne 5 -or
+       $prep.dependency_libraries -ne 18){throw 'Pinned source preparation with five patched CPPs, 413 units and 18 libraries required.'}
+    foreach($field in @('compile_units','patched_units','dependency_libraries')){
+        if($prep.$field -isnot [int] -and $prep.$field -isnot [long]){throw 'Integer source preparation counts required.'}
+    }
+    Assert-BeaconPatchSet $prep.patches
+    $cpp=@('src/zonetool/zonetool/h1/converter/iw7/assets/xsurface.cpp','src/zonetool/zonetool/iw7/assets/material.cpp',
+        'src/zonetool/zonetool/iw7/assets/techset.cpp','src/zonetool/zonetool/iw7/assets/gfximage.cpp','src/zonetool/zonetool/h1/converter/iw7/assets/clipmap.cpp')
+    if($prep.source -isnot [string] -or ![IO.Path]::IsPathFullyQualified($prep.source)){throw 'Absolute retained source required.'}
+    $actual=@($prep.readonly_inputs | Where-Object {[IO.Path]::GetExtension($_.path) -ieq '.cpp'} | ForEach-Object {[IO.Path]::GetFullPath($_.path)})
+    $expected=@($cpp | ForEach-Object {[IO.Path]::GetFullPath((Join-Path $prep.source $_))})
+    if($actual.Count -ne 5 -or @($expected | Where-Object {$_ -notin $actual}).Count){throw 'Exact five retained CPP identities required.'}
+    $unvalidated=@($prep.experimental_unvalidated_capabilities)
+    if($unvalidated.Count -ne 1 -or $unvalidated[0] -cne 'h1_clipmap_and_mapents_conversion'){throw 'Explicit unvalidated map conversion capability required.'}
+}
 function Assert-BeaconCandidate([string]$Root,[string]$ArtifactSHA256) {
     $path=Join-Path $Root 'build-artifact.local.json';Assert-BeaconHash $path $ArtifactSHA256
     $artifact=Read-BeaconJson $path
@@ -49,8 +78,9 @@ function Assert-BeaconCandidate([string]$Root,[string]$ArtifactSHA256) {
     Assert-BeaconHash (Join-Path $Root 'result.local.json') $artifact.result_sha256
     $prep=Read-BeaconJson (Join-Path $Root 'preparation.local.json')
     $result=Read-BeaconJson (Join-Path $Root 'result.local.json')
-    if($prep.schema -cne 'iw7.zonetool-isolated-overlay/1' -or $prep.source_pin -cne 'fab935826c898806855376662a8a03317b3ad8f1' -or
-       $prep.feature_macro -cne 'EXPERIMENTAL_IW7' -or $prep.compile_units -ne 413 -or $prep.dependency_libraries -ne 18 -or @($prep.patches).Count -ne 2){throw 'Pinned H1 plus material source preparation required.'}
+    Assert-BeaconPreparation $prep
+    if($artifact.source_pin -cne $prep.source_pin -or $artifact.compile_units_verified -ne 413){throw 'Final artifact source pin or verified compile count differs.'}
+    Assert-BeaconPatchSet $artifact.patch_sha256
     if($result.Schema -cne 'iw7.zonetool-full-build/1' -or $result.Failure -or !$result.ReadOnlyInputsUnchanged -or
        !$result.JobClosureVerified -or !$result.LeaseReleased -or !@($result.Attempts).Count -or
        $result.Attempts[-1].ExitCode -ne 0 -or $result.Attempts[-1].JobActiveAtClose -ne 0){throw 'Final closed successful build evidence required.'}
