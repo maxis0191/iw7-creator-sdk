@@ -115,7 +115,52 @@ identity checks and current temporary-path absence checks. The overlay cannot
 be omitted from recovery. A positive result adds `stock_profile_binding` with
 the receipt hashes, four supplemental input records and recomputed budget;
 `content_remeasured` stays false.
-Legacy plans keep `stock_profile_binding=null` and do not silently gain PAK roles.
+Plans without an overlay keep `stock_profile_binding=null` and do not silently
+gain PAK roles.
+
+### Named four- and five-PAK producer contracts
+
+The reviewed producer `a8c16c037c92aae058ade16355240a409a150af0` has two
+explicit stock profiles. The adapter supports three exact record shapes:
+
+| Observation | Plan/input shape | Supplemental scope and ceiling |
+| --- | --- | --- |
+| `/1`, `observed-cp-paks-17-19-37-53` | Historical budget, no `StockProfileId` | Four PAKs, 580092048 bytes, 600 MiB ceiling |
+| Same `/1` profile | Both named budget fields and every supplemental `StockProfileId` | Same four PAKs and ceiling |
+| `/2`, `observed-cp-paks-17-19-37-53-69` | Both named budget fields and every supplemental `StockProfileId` | Five PAKs, exactly 966557876 bytes and ceiling |
+
+The named fields are `SupplementalProfile` and `AdditionalBytesBeyondFourPAKs`.
+The latter must be zero for four PAKs or 386465828 for five. Every supplemental
+input's `StockProfileId` must equal the observation's explicit profile. Partial
+named fields, missing/mixed input IDs, unknown profiles and cross-schema receipts
+are rejected. A five-PAK plan cannot use the historical unnamed shape. No profile
+is inferred from file availability, an input count or a caller-supplied budget.
+
+The fifth and last input must be `zone/assetfile69.pak`, sourced directly from
+the same stock root, with 386465828 bytes and reviewed expected SHA256
+`042c8d62a3a24acd21a5502a5a111e6e426e870505da3cdd62ada3c3a23c496f`.
+The `/2` observation additionally requires `AdditionalDependencyEvidenceSHA256`
+equal to the original E2 fatal record's reviewed digest
+`867e858ecd4bffde50a04e62488e42b73f528177e0e01b51a081bc030dbbb280`.
+This checks a fixed evidence reference; the adapter does not reopen that fatal
+record or reinterpret its failure as a positive observation. The `/1` observation
+does not accept this extra field. A sixth entry, another PAK, reordered entries
+or changed source/hash/size/identity/attributes still fail.
+
+The five-PAK profile produces 77 stock descriptors, 76 stock hardlinks and the
+existing 77-byte sentinel copy: 80 managed paths with E7 and both requests.
+All 80 require exact restoration entries and current absence. The actual
+reviewed baseline plus this overlay declares 46 unique stock identities and
+1419496893 hash-read bytes. These totals are recomputed from receipt metadata;
+they are not retail reads or memory measurements. Supplemental copying remains
+zero, and content/closure/package/runtime/owner qualification remains false.
+
+`stock_profile_binding` reports `observation_schema`, the explicit `profile`,
+`producer_contract` (`legacy-four-pak/1` or `named-profile/1`) and the fixed
+`additional_dependency_evidence_sha256` (null for four PAKs). The existing
+receipt hashes, descriptors and recomputed budget remain included. The outer
+plan, Run and binding schemas stay `/1`; an unchanged outer schema does not
+authorize arbitrary new inner fields.
 
 **No retail source is opened or hashed by these semantic checks.** Stock source
 paths are compared lexically and attributes/identities are checked as recorded
@@ -205,7 +250,7 @@ closure, package, runtime and owner-acceptance booleans remain false.
 python -B -m unittest discover -s sdk/modding/tests -p test_recipient_run_binding.py -v
 ```
 
-The 38 adapter tests pass alongside the existing 26 recipient tests. The 35
+The 49 adapter tests pass alongside the existing 26 recipient tests. The 35
 Finalizer tests remain unchanged: 34 pass and one platform symlink-privilege
 test is skipped on this Windows host. The adapter's reparse-attribute test runs.
 
@@ -217,8 +262,8 @@ hashes are explicitly mocked; no synthetic executable is launched. A real
 successful retained Run remains necessary for an integration witness.
 
 The overlay fixtures use synthetic 72-entry baseline metadata and mock only its
-baseline/manifest pins; the four PAK names, sizes, hashes and 600 MiB ceiling are
-the real fixed contract. They cover both phase modes, incomplete/unknown source
+baseline/manifest pins; PAK names, sizes, hashes and profile ceilings use the real
+fixed contracts. They cover both phase modes, incomplete/unknown source
 roles, changed baseline/overlay receipts, false content claims, path/ID/hash/size/
 attribute changes, alias inconsistencies, missing recovery entries and remaining
 temporary links. A reader spy rejects any retail/PAK open during the valid test.
@@ -226,3 +271,20 @@ The separate read-only comparison of D's actual prospective plan and four small
 stock receipts passed: 45 distinct IDs and 1033031065 declared hash-read bytes,
 with 794820 bytes read including rechecks and zero retail reads. It is a receipt
 compatibility check, not a native success or a fresh stock-content measurement.
+
+The named-profile additions cover all three supported shapes, strict schema/E2
+evidence binding, the fifth PAK, partial/mixed IDs, wrong budgets, both phases,
+failed Run refusal, original-job closure and recovery/absence of the fifth path.
+The synthetic baseline is deliberately tiny and has different ID deduplication
+from retail; its hash-read totals are not presented as real stock totals.
+
+A separate read-only check of F's independently pinned prospective plan, spec
+and four small stock JSON receipts passed: 77 stock inputs, 80 managed paths,
+966557876 supplemental bytes, 46 IDs and 1419496893 declared hash-read bytes.
+Six JSON files were read, totaling 797904 bytes including the second hash pass;
+no retail source was opened. F's real, separately pinned final state is failed
+after an `assetfile101.pak` fatal request. The adapter rejects it at the completed
+status gate even though its tree and restoration were reported closed. This
+negative check read only the plan and state and supplied no fabricated source,
+output or observation pins. It proves the rejection gate, not a complete positive
+Run integration. E2 and F remain failures; stock sufficiency remains unresolved.

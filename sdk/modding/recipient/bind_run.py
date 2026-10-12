@@ -39,6 +39,15 @@ PAKS = (("assetfile17.pak", 104595492, "6f5c0d1937b5a707d4e1fb3009f68a827714d9e4
         ("assetfile19.pak", 418201636, "064b6d23cfcec2baedf1a5589fcd602fb1cfbdbb2040d88d21cb8a8ca7779b0d"),
         ("assetfile37.pak", 53477412, "839c1da30e43b9c5c78cc457d3fa3ef61bd85ae818c81a2d2d0b30ff187fb349"),
         ("assetfile53.pak", 3817508, "b0c4ac18f4f9965a396b74ce8fbe2118d6fd6f68d92e7295ad29bc7bc2fbf773"))
+FIVE_PROFILE = "observed-cp-paks-17-19-37-53-69"
+FIVE_PAKS = PAKS + (("assetfile69.pak", 386465828, "042c8d62a3a24acd21a5502a5a111e6e426e870505da3cdd62ada3c3a23c496f"),)
+E2_FATAL_SHA = "867e858ecd4bffde50a04e62488e42b73f528177e0e01b51a081bc030dbbb280"
+STOCK_PROFILES = {
+    OVERLAY_PROFILE: {"schema": "iw7.recipient-stock-observation/1", "paks": PAKS,
+                      "bytes": 580092048, "limit": 600 * 1024**2, "additional": 0, "evidence": None},
+    FIVE_PROFILE: {"schema": "iw7.recipient-stock-observation/2", "paks": FIVE_PAKS,
+                   "bytes": 966557876, "limit": 966557876, "additional": 386465828, "evidence": E2_FATAL_SHA},
+}
 DIAGNOSTIC_LIMITS = {"DiagnosticPollMilliseconds": 250, "DiagnosticTextBytes": 16384,
                      "DiagnosticControlLimit": 8, "DiagnosticMessageTimeoutMilliseconds": 200,
                      "DiagnosticRecordBytes": 65536}
@@ -226,8 +235,12 @@ def stock_descriptor(entry, *, supplemental=False):
     return result
 
 
-def stock_budget(baseline, overlay):
+def stock_budget(baseline, overlay, profile_id=None):
     """Recompute receipt arithmetic only; never opens a stock source."""
+    v.require(profile_id is None or profile_id in STOCK_PROFILES, "Unknown named stock budget profile")
+    profile = STOCK_PROFILES[profile_id or OVERLAY_PROFILE]
+    v.require(len(overlay) == len(profile["paks"]) and sum(x["Bytes"] for x in overlay) == profile["bytes"], "Named stock budget count/bytes differ")
+    v.require(all(x.get("StockProfileId") == profile_id if profile_id is not None else "StockProfileId" not in x for x in overlay), "Mixed or incomplete stock profile identities")
     unique, names = {}, set()
     for entry in baseline + overlay:
         name = entry["Relative"].casefold()
@@ -239,13 +252,16 @@ def stock_budget(baseline, overlay):
             v.require(previous["Bytes"] == entry["Bytes"] and v.digest(previous["ExpectedSHA256"]) == v.digest(entry["ExpectedSHA256"]), "Aliased stock identity has inconsistent size/hash")
         else:
             unique[identity] = entry
-    return {"BaselineEntries": len(baseline), "SupplementalEntries": len(overlay),
-            "SupplementalLogicalBytes": sum(x["Bytes"] for x in overlay), "SupplementalLimitBytes": 600 * 1024**2,
+    result = {"BaselineEntries": len(baseline), "SupplementalEntries": len(overlay),
+            "SupplementalLogicalBytes": sum(x["Bytes"] for x in overlay), "SupplementalLimitBytes": profile["limit"],
             "SupplementalCopiedBytes": sum(x["Bytes"] for x in overlay if x["Mode"] == "Copy"),
             "UniqueHashReadBytes": sum(x["Bytes"] for x in unique.values()), "UniqueHashReadFiles": len(unique),
             "StockHardLinks": sum(x["Mode"] == "HardLink" for x in baseline + overlay),
             "StockCopiedBytes": sum(x["Bytes"] for x in baseline + overlay if x["Mode"] == "Copy"),
             "ContentVerified": False, "AdditionalResidentBytesMeasured": False}
+    if profile_id is not None:
+        result.update(SupplementalProfile=profile_id, AdditionalBytesBeyondFourPAKs=profile["additional"])
+    return result
 
 
 def bind_stock_overlay(reader, spec, pins, plan):
@@ -304,15 +320,30 @@ def bind_stock_overlay(reader, spec, pins, plan):
     v.require(sum(x["Mode"] == "Copy" for x in base_inputs) == 1 and
               next(x["Bytes"] for x in base_inputs if x["Mode"] == "Copy") == 77, "Exact 77-byte sentinel copy required")
 
-    exact_keys(overlay, ("Schema", "Profile", "ToolSource", "StockRoot", "ReviewedStockManifestSHA256", "CapturedUtc", "ContentVerification", "Inputs"), "Recipient stock observation")
-    v.require(overlay["Schema"] == "iw7.recipient-stock-observation/1" and overlay["Profile"] == OVERLAY_PROFILE and
+    profile_id = overlay["Profile"]
+    v.require(isinstance(profile_id, str) and profile_id in STOCK_PROFILES, "Unknown supplemental stock profile")
+    profile = STOCK_PROFILES[profile_id]
+    overlay_keys = ("Schema", "Profile", "ToolSource", "StockRoot", "ReviewedStockManifestSHA256", "CapturedUtc", "ContentVerification", "Inputs")
+    exact_keys(overlay, overlay_keys + (("AdditionalDependencyEvidenceSHA256",) if profile["evidence"] else ()), "Recipient stock observation")
+    v.require(overlay["Schema"] == profile["schema"] and
               overlay["ToolSource"] == TOOL_SOURCE and v.digest(overlay["ReviewedStockManifestSHA256"]) == REVIEWED_SHA and
               overlay["ContentVerification"] == "DeferredUntilAdmittedRun", "Exact unverified supplemental profile required")
+    if profile["evidence"]:
+        v.require(v.digest(overlay["AdditionalDependencyEvidenceSHA256"]) == profile["evidence"], "Reviewed E2 fatal dependency evidence pin differs")
+    # The newer producer also enriches four-PAK /1 plans. Accept exactly both
+    # named fields plus every per-input ID, or the historical four-PAK shape.
+    named_markers = ("SupplementalProfile" in plan["StockBudget"], "AdditionalBytesBeyondFourPAKs" in plan["StockBudget"],
+                     any("StockProfileId" in x for x in plan["StockInputs"]))
+    named_mode = any(named_markers)
+    v.require(not named_mode or all(named_markers), "Incomplete named stock profile contract")
+    v.require(profile_id == OVERLAY_PROFILE or named_mode, "Five-PAK profile requires explicit named contract")
+    if named_mode:
+        v.require(plan["StockBudget"]["SupplementalProfile"] == profile_id, "Named budget and observation profile differ")
     same_path(overlay["StockRoot"], root, "Supplemental stock root")
     utc_stamp(overlay["CapturedUtc"])
-    v.require(isinstance(overlay["Inputs"], list) and len(overlay["Inputs"]) == 4, "Exactly four supplemental PAKs required")
+    v.require(isinstance(overlay["Inputs"], list) and len(overlay["Inputs"]) == len(profile["paks"]), "Exact named supplemental PAK count required")
     extra_inputs = []
-    for entry, (name, size, checksum) in zip(overlay["Inputs"], PAKS):
+    for entry, (name, size, checksum) in zip(overlay["Inputs"], profile["paks"]):
         exact_keys(entry, ("Relative", "Source", "Mode", "Bytes", "ModifiedUtc", "Attributes", "SourceId", "SHA256", "ReviewedStockRelative"), "Supplemental PAK")
         v.require(entry["Relative"] == "zone/" + name and entry["Mode"] == "HardLink" and entry["ReviewedStockRelative"] == name, "Supplemental PAK name/order/mode differs")
         integer(entry["Bytes"], size, size, "Supplemental PAK bytes")
@@ -320,12 +351,17 @@ def bind_stock_overlay(reader, spec, pins, plan):
         v.require(row["RelativePath"] == name and row["Length"] == size and v.digest(row["SHA256"]) == v.digest(entry["SHA256"]) == checksum, "Supplemental PAK reviewed hash/size differs")
         same_path(entry["Source"], root / name, "Supplemental PAK source")
         extra_inputs.append(stock_descriptor(entry, supplemental=True))
+        if named_mode:
+            extra_inputs[-1]["StockProfileId"] = profile_id
     same(plan["StockInputs"], base_inputs + extra_inputs, "Baseline plus exact overlay descriptors")
-    budget = stock_budget(base_inputs, extra_inputs)
-    v.require(budget["SupplementalLogicalBytes"] == 580092048 <= budget["SupplementalLimitBytes"] and
-              budget["SupplementalCopiedBytes"] == 0 and budget["StockHardLinks"] == 75, "Supplemental stock budget differs")
+    budget = stock_budget(base_inputs, extra_inputs, profile_id if named_mode else None)
+    v.require(budget["SupplementalLogicalBytes"] == profile["bytes"] <= budget["SupplementalLimitBytes"] and
+              budget["SupplementalCopiedBytes"] == 0 and budget["StockHardLinks"] == 71 + len(profile["paks"]), "Supplemental stock budget differs")
     same(plan["StockBudget"], budget, "Recomputed stock receipt budget")
-    return {"profile": OVERLAY_PROFILE, "baseline_receipt_sha256": BASELINE_SHA, "reviewed_manifest_sha256": REVIEWED_SHA,
+    return {"profile": profile_id, "observation_schema": profile["schema"],
+            "producer_contract": "named-profile/1" if named_mode else "legacy-four-pak/1",
+            "additional_dependency_evidence_sha256": profile["evidence"],
+            "baseline_receipt_sha256": BASELINE_SHA, "reviewed_manifest_sha256": REVIEWED_SHA,
             "baseline_observation_sha256": v.digest(spec["StockBindingReceiptSHA256"]),
             "overlay_observation_sha256": v.digest(spec["RecipientStockBindingReceiptSHA256"]),
             "supplemental_input_records": extra_inputs, "budget_from_receipts": budget, "content_remeasured": False}
@@ -399,7 +435,7 @@ def bind_run(expectations):
         for key, value in DIAGNOSTIC_LIMITS.items():
             integer(plan[key], value, value, key)
     else:
-        v.require(not any("StockProfile" in x or x["Relative"] in {"zone/" + p[0] for p in PAKS}
+        v.require(not any("StockProfile" in x or "StockProfileId" in x or x["Relative"] in {"zone/" + p[0] for p in FIVE_PAKS}
                           for x in normalized_plan["StockInputs"]), "Supplemental stock requires explicit profile")
     stock_receipts = {}
     receipt_roles = ("StockReceipt", "StockBindingReceipt", "ReviewedStockManifest", "PythonExe") + (("RecipientStockBindingReceipt",) if overlay_mode else ())
