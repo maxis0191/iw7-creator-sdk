@@ -1,0 +1,123 @@
+{
+  "Schema": "iw7.sdk-self-contained-runtime-source-plan/1",
+  "Date": "2026-10-12",
+  "SourceBase": "974c05863a5e586d066c62f725e322b71c7ea0f2",
+  "Scope": "Source and pure tests only; coordinator review and runtime GO pending",
+  "Helpers": [
+    {
+      "Path": "ops/Agent-Lab.ps1",
+      "SHA256": "D6FC7936D4A2A3B6AEC33105D3F8772BFE022AA5EBA65EB5DF6073B3E8A537D5",
+      "Bytes": 40978
+    },
+    {
+      "Path": "ops/modding/Agent-Vertical.Stage.ps1",
+      "SHA256": "C8E2DBF5FF2A8DA900BC6826B8CCCACC97B9E18F2F3542F22548F75BE0AB10F3",
+      "Bytes": 13594
+    },
+    {
+      "Path": "ops/modding/Agent-Vertical.Core.ps1",
+      "SHA256": "3968B56467E708C19542E2B039D7F0D7B895012FE2362EDDC20AAF05D00A7652",
+      "Bytes": 14124
+    },
+    {
+      "Path": "ops/modding/Agent-Vertical.Runtime.ps1",
+      "SHA256": "8F3097674740881C7CEC13FA3C0B8AAC44C3B7B9CC7DB6FC837F4AFC01F1D4BC",
+      "Bytes": 14428
+    },
+    {
+      "Path": "ops/hud-lab/HudHttp.cs",
+      "SHA256": "67A71C337BC6D72E9385C02E6A6710C4E3BA5678CA9C74D8C11DBD154136842D",
+      "Bytes": 5853
+    },
+    {
+      "Path": "ops/modding/Agent-Vertical.Stage.Tests.ps1",
+      "SHA256": "4C622219F9E28A602FBB78C7D0D2A5C2A2564CF6559E7379B0B5C0F5BFDAA18D",
+      "Bytes": 27556
+    }
+  ],
+  "Composition": {
+    "ManifestSHA256": "2C0F49DA7E7BD6989A80DD77B03CB8241D50811497702602CA35C88CC3A03136",
+    "FinalizationSHA256": "15E422D6EFEC55829DC1D263A2537B32E32FDA215DC5DC9A37CA274CF26EC567",
+    "PayloadKind": "GSCSource",
+    "SourceSHA256": "9DE9B76DC25293146999C71653BD407D8CB639E107293F6DE87084FED90EEE1C",
+    "SourceBytes": 5535,
+    "FFSHA256": "3FA49BCDFD08857BB37C198AF7A49AF78675B940B022E160343552D3F8B71DA8",
+    "FFBytes": 1048,
+    "ReadbackVerified": true,
+    "HistoricalOfflineReferenceLinked": true,
+    "RuntimeBytecodeEqualsOfflineWitness": false
+  },
+  "ScriptPlan": [
+    {
+      "Name": "agent_vertical_fixture.gsc",
+      "InputSHA256": "2186E99A6F95F91AE8E272F589DA0E69E9C16A524B558B9B4039F9ABDFA1441A",
+      "SHA256": "CCD0CED6F4DD69B29657F0CB23CCB95A4B9AB4E58652A736E8EFC148286A9A5E"
+    },
+    {
+      "Name": "sdk_beacon_self_contained.gsc",
+      "InputSHA256": "9DE9B76DC25293146999C71653BD407D8CB639E107293F6DE87084FED90EEE1C",
+      "SHA256": "9DE9B76DC25293146999C71653BD407D8CB639E107293F6DE87084FED90EEE1C"
+    }
+  ],
+  "Phases": [
+    {
+      "Name": "StartupOnly",
+      "Clients": 0,
+      "PhysicalBytes": 4294967296,
+      "CommitBytes": 4294967296,
+      "Debugger": false,
+      "ClientFilesMutable": false,
+      "HTTP": false
+    },
+    {
+      "Name": "UseRejoin",
+      "Clients": 1,
+      "GraphicsProfile": "Reduced",
+      "PhysicalBytes": 12884901888,
+      "CommitBytes": 12884901888,
+      "Debugger": false,
+      "SeparateAdmissionRequired": true
+    }
+  ],
+  "RetainedPackage": {
+    "ManifestSHA256": "7497191CB3612533333AD48AB4F4F4BB1F852039EE273179DF7BF6B5FE0E9B9C",
+    "ManifestReread": true,
+    "DeclaredExecutableSHA256": "7862B2A5C21047A8FD4095C6DF2FA96A40B3766F92649FCFFE80ABB193517A97",
+    "ExecutableBytes": 6090240,
+    "ExecutableRehashed": false,
+    "TestPrivacyOverlaySHA256": "4A9588A8D5540EF0C565126A6338E20B389D64DF4B8781E1E71B5722885FE91C",
+    "CurrentSourceCount": 34,
+    "ExactSourceCount": 31,
+    "NewlineOnlyCount": 3,
+    "CurrentSourceBytes": 389210,
+    "ProjectDirty": true,
+    "CleanBuildAttested": false
+  },
+  "RetainedProvider": {
+    "Run5PlanSHA256": "95869A3FCFBCFBAF9A8C524AB6A424629D3CEF6FBE60AB96923E83A0AA6B272A",
+    "InventorySHA256": "2649231856356E5B5BEE4A6D043AA13E547CCC26E3D5F7B8A385E0F1A03F4F6A",
+    "Files": 84,
+    "Directories": 23,
+    "Bytes": 394436292,
+    "CurrentInventoryVerified": false
+  },
+  "Validation": {
+    "StagePureChecks": 128,
+    "VerticalPureChecks": 145,
+    "PowerShellASTFiles": 5,
+    "Passed": true,
+    "GeneratedObserverGSCParsed": false,
+    "CSharpCompiled": false,
+    "FullDryRunInvoked": false,
+    "NativeImported": false,
+    "HTTPExecuted": false,
+    "CandidateStaged": false,
+    "LeaseAcquired": false,
+    "GameStarted": false
+  },
+  "Ready": false,
+  "CommunityPackageValidated": false,
+  "PixelsVerified": false,
+  "RuntimeIntegrityValidated": false,
+  "OwnerAccepted": false
+}
