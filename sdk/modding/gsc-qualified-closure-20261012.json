@@ -208,5 +208,92 @@
   "external_gsc_dependency_absence_verified": false,
   "asset_closure_complete": false,
   "runtime_ready": false,
-  "owner_accepted": false
+  "owner_accepted": false,
+  "completion_artifact_hashes": [
+    {
+      "role": "source-manifest",
+      "bytes": 69388,
+      "sha256": "a0263c8e656de0c9b309c2df8af025117ef8f69f6f44a36a938154d8b6f12a9a"
+    },
+    {
+      "role": "tool",
+      "bytes": 1246208,
+      "sha256": "99f72711793cc51403da802336a8fca510cc3865fd7cec8e41e7c0ca902fad45"
+    },
+    {
+      "role": "wrapper",
+      "bytes": 10323,
+      "sha256": "42dd0dcb01c014cfbfbabb18d404d4c6ccd1b6d04ed27a5b16e63dde54e72d07"
+    },
+    {
+      "role": "input-variant",
+      "bytes": 1992,
+      "sha256": "db486793b92e7e3c0a30c70b565fb432a4940e172a3f97da7e9db377f0e46d42"
+    },
+    {
+      "role": "witness-variant",
+      "bytes": 34680,
+      "sha256": "f96100f2f60f978daaa4ed30914cfd4a31901209c5ff72d138aa718706a8a7d8"
+    },
+    {
+      "role": "assembly-variant",
+      "bytes": 15850,
+      "sha256": "43e9b36a90cfe30ec713d52cdc63bbb7668cfc17acfae187de369079abeae1df"
+    },
+    {
+      "role": "input-original",
+      "bytes": 1951,
+      "sha256": "31b55a5d58a90d6b980a91543c907d26b91a4f6767d5350e8a35ae0e19fa2cef"
+    },
+    {
+      "role": "witness-original",
+      "bytes": 33280,
+      "sha256": "cd86deaac7e607953909128657c2bb7c5c52da02565fd6338678772a1b53773a"
+    },
+    {
+      "role": "assembly-original",
+      "bytes": 15231,
+      "sha256": "b6efa60bb5c5cc30ad724363720d2249292a592a384557cbc509aaf24ddbe725"
+    },
+    {
+      "role": "compiler-config-0",
+      "bytes": 6407,
+      "sha256": "1da43991d0fa17c1b38eface755f997e7ce258546919ef9a4f1b15b8e77869c8"
+    },
+    {
+      "role": "result-cmake-version",
+      "bytes": 399,
+      "sha256": "c13cc58b41acd8b4cfffcc377661b5364601d81f38ac7a5b339a480539cd494b"
+    },
+    {
+      "role": "result-configure",
+      "bytes": 797,
+      "sha256": "7543ba71ba2d7ce021bea3bc452b7989f8fdc445b7eecda319659434ab7455db"
+    },
+    {
+      "role": "result-build",
+      "bytes": 665,
+      "sha256": "fdcca0483da090ac2c0e52c8f86729f85890a34b796bc9eec6f684de1daea0a6"
+    },
+    {
+      "role": "result-reader-tests",
+      "bytes": 574,
+      "sha256": "0bb57c411a6e28c1b7a576ab72ae773076319e4a3318adbb4a30ec08f8befa5d"
+    },
+    {
+      "role": "result-native-negative-tests",
+      "bytes": 588,
+      "sha256": "7781cbe27ed331c9916767c8f5b38624e8727ff41f492cf35c12e2d5897cd264"
+    },
+    {
+      "role": "result-witness-variant",
+      "bytes": 1322,
+      "sha256": "8e5582acd23886c45431213a0a15cd6a270779043bf1867efde08ce69dc9d1d0"
+    },
+    {
+      "role": "result-witness-original",
+      "bytes": 1307,
+      "sha256": "934e9c84d9c7b6a6cc418c92ecc27af567e7212b83f209a79518fbfcc075b530"
+    }
+  ]
 }
