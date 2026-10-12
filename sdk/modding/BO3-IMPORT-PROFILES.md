@@ -22,8 +22,9 @@ universal limitations of the T7 source format, IW7 destination or SDK.
 
 The donor asset and its exact names remain unknown before an admitted catalogue
 and selective export. The current loader targets
-`BlackOps3_UnrankedDedicatedServer.exe`; the observed downloading installation
-contains `BlackOps3.exe`. Source addresses alone do not prove compatibility with
+`BlackOps3_UnrankedDedicatedServer.exe`; the installation whose completed download
+the owner confirmed at 10:24Z contains `BlackOps3.exe`. A bounded metadata inventory
+found no dedicated executable at the inspected locations. Source addresses alone do not prove compatibility with
 that client executable. Selective CLI execution, the exact executable identity
 and an observed export are still pending.
 
