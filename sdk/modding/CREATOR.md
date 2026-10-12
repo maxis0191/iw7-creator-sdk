@@ -1,8 +1,10 @@
 # Creator command: plan, build, finalize and package gates
 
 `Creator.ps1` accepts a local project directory containing the existing SDK
-`manifest.json`; payload paths remain relative to that project. It runs the real
-SDK and Distribution compatibility functions, not a second manifest validator.
+`manifest.json`; payload paths remain relative to that project. The explicitly
+selected `BeaconSelfContainedV1` source-only plan can instead use the existing
+variant folder without a manifest, as described below. Creator runs the real SDK
+and Distribution compatibility functions, not a second manifest validator.
 
 ```powershell
 ./sdk/modding/Creator.ps1 -Project ./sdk/modding/examples/beacon -Adapter BeaconV1 `
@@ -29,6 +31,93 @@ limited to `sdk_beacon` on `cp_zmb` and the exact reviewed original-template GSC
 It does not accept an arbitrary edited game project as a working compiler input.
 `AnimationProbe` and `MaterialV2` are named extension points with explicit blocked
 status until their actual adapters and evidence paths are connected.
+
+## Explicit self-contained source selection
+
+The original Beacon remains blocked for concrete, separate reasons:
+
+1. Its exact source contains two calls to `scripts/engine/utility`, and its
+   compiled negative control emitted two `OP_ScriptFarFunctionCall` instructions.
+   The current finalizer conservatively adds the utility dependency and requires
+   the current compiled recipient script plus its imports.
+2. `BeaconV1`, its preparation receipt, zone/rawfile names, native builder and
+   finalizer all target the original `sdk_beacon` identity and exact GSC template.
+   Replacing its GSC or changing a metadata summary cannot reuse that evidence.
+3. The separate variant's historical disassembly reports zero observed external
+   calls, but that run did not attest complete consumption of both bytecode and
+   stack. Even a future full-consumption receipt needs a complete semantic import
+   audit bound to the same source/compiler/container and opcode tables before
+   dependency absence can be accepted. Structure alone does not prove absence.
+
+The existing variant can now be selected explicitly for **Plan only**:
+
+```powershell
+./sdk/modding/Creator.ps1 -Project ./sdk/modding/examples/beacon-self-contained `
+  -Adapter BeaconSelfContainedV1 -Action Plan `
+  -ClientSource 77e6d4d24e918ee363b3feee3735c3b889dff7d7 `
+  -ServerSource 77e6d4d24e918ee363b3feee3735c3b889dff7d7 -Protocol 2 -Json
+```
+
+The source/protocol arguments are operator compatibility assertions, as in the
+original example; this command does not inspect an installed client or server.
+A separate folder containing the exact same `sdk_beacon_self_contained.gsc` is
+also accepted. `creator_self_contained.py` requires the 5,535-byte source hash
+`9de9b76dc25293146999c71653bd407d8cb639e107293f6de87084fed90eee1c` in both the selected
+project and reviewed ToolsRoot. Sources are read as bounded stable snapshots;
+redirects and a changed source are refused. The original example stays intact.
+
+The selector loads the pinned
+[Creator planning contract](creator_beacon_self_contained.manifest.json) into
+memory and sends it through the same SDK/Distribution plan validators. It writes
+no manifest, prepared project, source receipt, compiled input or output directory.
+If the project already contains `manifest.json`, its parsed content must equal
+that exact contract; a different manifest is refused rather than ignored. Both
+the source and contract template are pinned in code, so editing both project and
+ToolsRoot copies does not silently change the selected input.
+
+The proposed identity is `sdk_beacon_self_contained`, with its own entrypoint,
+enable dvar, `mods/sdk_beacon_self_contained` destination and proposed rawfile.
+The model `paris_model_probe`, its surfaces and NCS names still collide with the
+original Beacon/model probe. Explicit conflicts and the real delivered-asset
+collision checker remain active. This source plan is not a coexistence claim.
+
+The graph stays incomplete. The original utility requirement is carried as a
+**conservative unresolved requirement**, not an assertion that the new source
+still imports utility. Removing it needs a reviewed complete compiled import
+audit. Material, technique-set, image and further transitive recipient closure
+remain separate requirements; four non-default presence rows cannot satisfy them.
+All content hashes and offline/runtime evidence entries in the proposed package
+contract remain pending.
+
+The JSON `source_selection` records the measured source path/hash/length, planning
+contract hash and proposed contract. Only `source_bytes_verified` becomes true.
+Compiled input binding, complete bytecode/stack consumption, external-GSC absence,
+recipient closure, build qualification, package/runtime readiness and owner
+acceptance remain false. Local `validation.local.json` files and zero-Far summaries
+are not accepted as evidence by this selector. Existing audit/recipient binders
+are unchanged and are not invoked by this command.
+
+`Build` is explicitly refused before any builder or finalizer call. This adapter
+also refuses `BuildParameters`, `RecipientProof`, `RecipientRoot`, `FinalizeRoot`
+and `Output` in Plan, so it cannot accidentally route through `BeaconV1` or treat
+historical proof as variant qualification. A valid Plan exits zero with pending
+steps; it is neither a build permission nor a distributable package.
+
+The next integration needs separately reviewed preparation/zone/source receipts,
+FF and rawfile identities, a variant-specific native builder/finalizer path,
+source-bound compiled consumption plus import analysis, and independent recipient
+content closure. Native execution and distributable ZIP creation require a
+distinct coordinator GO. This tranche implements the selectable input and its
+contract; it intentionally supplies no native execution path.
+
+The 38 Creator tests include 12 new cases for this selector. They exercise the
+real CLI and SDK/Distribution validators: exact source/contract selection,
+canonical option spelling, missing compatibility, original-variant collisions,
+unchanged BeaconV1 refusal, changed sources, dropped utility edges, duplicate
+manifest fields, forged zero-Far summaries and refusal before an instrumented
+builder could run. Plan/refused-Build snapshots must stay unchanged. Existing
+synthetic flow tests and real-finalizer fixture tests retain the original build,
+materialization and recipient gates; no native tools or distributable ZIPs run.
 
 For an already prepared original-beacon project, optional `-BuildParameters`
 accepts the existing local `Build-BeaconFF.ps1` argument object. Creator rejects
