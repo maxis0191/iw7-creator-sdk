@@ -1,0 +1,111 @@
+{
+  "schema": "iw7.platform-source-validation/1",
+  "source_commit": "f9a02f80fffe9c32e3afd6b6d2b6946687f53636",
+  "completed_head_observed": "4f20082c2e8d98741dcceef58a4bb12ebd40f512",
+  "concurrent_delta": {
+    "files": [
+      "docs/BUGS.md",
+      "docs/CHANGELOG.md",
+      "docs/PLAN.md",
+      "docs/STATE.md",
+      "docs/TOOLS.md",
+      "docs/VALIDATION.md",
+      "tools-source/asset-bridge/t7-bridge/CATALOGUE-PLAN.md",
+      "tools-source/asset-bridge/t7-bridge/README.md"
+    ],
+    "scope": "Documentation only; test/runtime sources unchanged"
+  },
+  "exit_code": 0,
+  "command": "pwsh -NoLogo -NoProfile -NonInteractive -File ops/modding/Test-Platform.ps1 -GscToolPath tools/gsc-tool/gsc-tool.exe -SoundCandidateRoot <retained-content-surfaces>/runtime/zt-sound-md5-d",
+  "retained_t7_source_env_set": true,
+  "retained_e7_build_env_set": true,
+  "retained_t7_source_comparisons_passed": 3,
+  "retained_t7_command_comparisons_passed": 3,
+  "python_reported_run_counts": [
+    277,
+    17,
+    21,
+    12,
+    57,
+    11,
+    31,
+    49,
+    114,
+    41,
+    69,
+    55,
+    78,
+    15,
+    47,
+    27,
+    17,
+    26,
+    25
+  ],
+  "python_reported_total": 989,
+  "python_run_groups": 19,
+  "python_skipped_test_cases": 6,
+  "python_skipped_setup_classes": 2,
+  "powershell_suites_completed": 43,
+  "stage_controls": 157,
+  "vertical_controls": 145,
+  "explicit_gsc_parses": 4,
+  "generated_gsc_parses_within_stage": 3,
+  "t7_inspector_cases_in_python_total": 20,
+  "t7_deadline_regressions": 3,
+  "sound_candidate_evidence_cases": 13,
+  "sound_changed_pins_refused": 2,
+  "sound_candidate_binary_hashed": false,
+  "skips": [
+    "FinalizeTests.test_actual_symlink_input_rejected_when_supported: WinError 1314",
+    "community_distribution_test.test_traversal_and_symlink_boundary: host symlink privilege unavailable",
+    "mod_package_test.test_symlink_payload_and_root_rejected: host symlink privilege unavailable",
+    "test_dump.PreparationTests setUpClass: explicit --source-repo absent",
+    "test_native_preparation.NativePreparationTests setUpClass: explicit --source-repo absent",
+    "test_prepare_observer.RetainedSourceTests.test_old_index_and_dump_logic_remain_exact: optional retained source absent",
+    "test_prepare_observer.RetainedSourceTests.test_only_three_additions_are_present: optional retained source absent",
+    "test_prepare_observer.RetainedSourceTests.test_recorded_patch_equals_source_render: optional retained source absent"
+  ],
+  "local_sound_suites_not_invoked": [
+    "test_build_entry_guards.ps1: no SoundBuildPlanPath",
+    "test_build_lifecycle.ps1: no GscAuditProviderRoot",
+    "test_build_receipt.ps1: no GscAuditProviderRoot"
+  ],
+  "log": "runtime/platform-bo3-native-bootstrap.local.log",
+  "log_bytes": 147694,
+  "log_sha256": "6480a24ff608bee905e695fba65d2b97f15c5cfbe083c0abb4681d9762522c2c",
+  "native_build_invoked": false,
+  "native_helper_imported": false,
+  "game_invoked": false,
+  "download_invoked": false,
+  "real_lease_acquired": false,
+  "gameplay_accepted": false,
+  "ci_passed": false,
+  "receipt_head_observed": "0f48bc5393251226897603d140ead2821b0cd8d0",
+  "started_utc": "2026-10-12T12:03:34.482Z",
+  "log_completed_utc": "2026-10-12T14:06:19.838458+02:00",
+  "environment": {
+    "IW7_T7_SOURCE": "<retained-native-source>",
+    "IW7_T7_E7_BUILD": "<retained-E7-build>",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "t7_reuse_regressions": 5,
+  "t7_link_telemetry_cases": 10,
+  "world_adapter_checks": 56,
+  "world_finalization_checks": 45,
+  "world_console_policy_checks": 76,
+  "additional_local_plan_suites_not_registered_in_platform": [
+    {
+      "suite": "sound/native-checksum/test_response_plan.ps1",
+      "required_input": "PlanPath"
+    },
+    {
+      "suite": "world/test_observer_plan.ps1",
+      "required_inputs": [
+        "VCToolsRoot",
+        "WindowsSdkRoot",
+        "PythonExe"
+      ]
+    }
+  ]
+}
