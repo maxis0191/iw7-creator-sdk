@@ -97,11 +97,51 @@ stock; no game clone or full-map export. Admission must cover the complete load
 (retain the established 8 GiB RAM/11 GiB commit estimate unless evidence requires
 more). Source-only tests do not measure its actual peak.
 
-The old script exporter permits up to 64 MiB per buffer. A future strict 2 MiB
-export ceiling therefore needs a pre-write bound on its three lengths; an outer
-filesystem polling threshold is not a hard bound. This audit's new source/report
-files stay below 2 MiB and authorize no export. Do not quietly reuse a larger
-native limit under a smaller approved budget.
+The coordinator clarified that 2 MiB caps source preparation, not the future
+native export. The existing exporter needs no patch for that limit. Its exact
+single-utility payload bound is **134,217,763 bytes (128 MiB + 35 bytes)**:
+
+```text
+22-byte name + 1 NUL + 3 * 4-byte lengths
+            + compressedLen (0..64 MiB) + bytecodeLen (0..64 MiB)
+```
+
+The third length, `len`, is validated at 0..64 MiB but is only a four-byte scalar
+in this format; the exporter never writes or decompresses a third 64 MiB buffer.
+`shared/assets/scriptfile.hpp::dump` performs exactly those writes. The caller
+checks all lengths before writing and compares the final file to those exact
+bytes. For the fixed module and pack names above, the successful one-row manifest
+is at most 300 bytes: payload plus manifest is at most **134,218,063 bytes**.
+This is not a bound on the full map's memory footprint. In particular, the native
+content comparison can temporarily hold an expected string and a readback string
+of approximately the payload size in addition to the game's loaded buffers.
+
+The [budget record](recipient-export-budget-2026-10-12.json) fixes a proposed
+**256 MiB (268,435,456-byte) output stop threshold** for the complete future group,
+including logs, receipts, cache files, the one script export and the four-row
+reference result. Retain one 8 GiB RAM/11 GiB commit reservation for both phases,
+2 MiB per stdout/stderr stream and a 240-second native phase timeout (245-second
+outer allowance). The four-row reference command exits immediately; run the two
+commands sequentially, not as concatenated flags in one process.
+
+Use a fresh isolated working directory with verified hardlinks to suitable
+retained stock and the pinned EXE. Keep the export at its original output path;
+do not duplicate a potentially 128 MiB gscbin into another evidence folder.
+The global dump/CSV flags are disabled while loading source zones, image capture
+starts false, and early shader capture requires `-enemy-extract`, which is absent
+from both commands. Do not add `-enemy-extract`, `-enemy-image-dump` or `-dumpzone`.
+No textures or full-map dump are requested.
+
+Before Resume bind the original job PID/image/creation/priority and attach it to
+the lease. Monitor output bytes during and after each phase, commit pressure,
+timeout and stop requests. The 256 MiB filesystem threshold can overshoot between
+polls; the source-derived single-script bound above is independent of polling.
+Stop the original job on failure and require original root exit plus zero job
+members before removing only recorded staged links and the copied mutable
+sentinel. Recheck source identities/size/time/attributes, retain export/logs/cache
+as evidence, then release the lease. Unconfirmed closure/restoration retains
+reservation and inputs; preserve each failed attempt. No staging or execution
+has been performed for this plan.
 
 ## Provenance and remaining gates
 
