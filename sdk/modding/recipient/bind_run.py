@@ -5,7 +5,7 @@ No subprocess, engine, network, file writer, package gate or GSC disassembler.
 """
 import argparse
 import copy
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import importlib.util
 import math
@@ -30,6 +30,18 @@ PROVIDERS = (
 )
 PRODUCERS = ("recipient_phase.py", "recipient_contract.py", "Recipient.Core.ps1",
              "Run-RecipientClosure.ps1", "provider-pins.json")
+OVERLAY_PRODUCERS = ("Recipient.Stock.ps1", "recipient_dialog.py", "Recipient.Light.ps1")
+BASELINE_SHA = "4cf67ebe1645c6c0761b9a24cb4e4630edee9c5d737742c704d624fe60cb3850"
+REVIEWED_SHA = "9116255ef148a324df15fa914795a7917615f023973111fdc39ae7329a9dcbf4"
+TOOL_SOURCE = "fab935826c898806855376662a8a03317b3ad8f1"
+OVERLAY_PROFILE = "observed-cp-paks-17-19-37-53"
+PAKS = (("assetfile17.pak", 104595492, "6f5c0d1937b5a707d4e1fb3009f68a827714d9e4a72ff2d6570b57dbf6b0f058"),
+        ("assetfile19.pak", 418201636, "064b6d23cfcec2baedf1a5589fcd602fb1cfbdbb2040d88d21cb8a8ca7779b0d"),
+        ("assetfile37.pak", 53477412, "839c1da30e43b9c5c78cc457d3fa3ef61bd85ae818c81a2d2d0b30ff187fb349"),
+        ("assetfile53.pak", 3817508, "b0c4ac18f4f9965a396b74ce8fbe2118d6fd6f68d92e7295ad29bc7bc2fbf773"))
+DIAGNOSTIC_LIMITS = {"DiagnosticPollMilliseconds": 250, "DiagnosticTextBytes": 16384,
+                     "DiagnosticControlLimit": 8, "DiagnosticMessageTimeoutMilliseconds": 200,
+                     "DiagnosticRecordBytes": 65536}
 REQUESTS = ("recipient-material.csv", "recipient-scripts.txt")
 PROFILE = {"PhysicalBytes": 8 * 1024**3, "CommitBytes": 11 * 1024**3,
            "OutputStopBytes": 256 * 1024**2, "LogBytesPerStream": v.LIMIT,
@@ -189,6 +201,136 @@ def closed_phase(identity, phase, python, zones):
     same(identity["ObservedSourceZoneOrder"], zones, "Recorded zone order")
 
 
+def utc_stamp(value):
+    """Match .NET UTC roundtrip timestamps without losing the seventh digit."""
+    v.require(isinstance(value, str), "Stock timestamp required")
+    match = re.fullmatch(r"(20\d\d-\d\d-\d\dT\d\d:\d\d:\d\d)(?:\.(\d{1,7}))?(Z|[+-]\d\d:\d\d)", value)
+    v.require(match is not None, "Stock timestamp invalid")
+    parsed = datetime.fromisoformat(value).astimezone(timezone.utc)
+    return parsed.strftime("%Y-%m-%dT%H:%M:%S") + "." + (match[2] or "").ljust(7, "0") + "Z"
+
+
+def stock_descriptor(entry, *, supplemental=False):
+    integer(entry["Bytes"], 1, 2**63 - 1, "Stock bytes")
+    integer(entry["Attributes"], 0, 2**31 - 1, "Stock attributes")
+    v.require(not entry["Attributes"] & (16 | 1024) and
+              (not entry["Attributes"] & 1 or (not supplemental and entry["Relative"] == "main/fileSysCheck.cfg")), "Redirected/read-only stock metadata")
+    v.require(isinstance(entry["SourceId"], str) and re.fullmatch(r"[A-F0-9]{8}:[A-F0-9]{16}", entry["SourceId"]), "Stock source identity invalid")
+    v.digest(entry["SHA256"])
+    v.require("TargetId" not in entry, "Metadata cannot claim staged target identity")
+    result = {"Relative": str(v.safe_path(entry["Relative"])), "Source": str(absolute(entry["Source"])),
+              "Mode": "Copy" if entry["Relative"] == "main/fileSysCheck.cfg" else "HardLink",
+              "Bytes": entry["Bytes"], "ModifiedUtc": utc_stamp(entry["ModifiedUtc"]), "Attributes": entry["Attributes"],
+              "ExpectedSourceId": entry["SourceId"], "ExpectedSHA256": entry["SHA256"]}
+    result.update({"StockProfile": "RecipientSupplemental"} if supplemental else {"BaselineMode": entry["Mode"]})
+    return result
+
+
+def stock_budget(baseline, overlay):
+    """Recompute receipt arithmetic only; never opens a stock source."""
+    unique, names = {}, set()
+    for entry in baseline + overlay:
+        name = entry["Relative"].casefold()
+        v.require(name not in names, "Duplicate stock target")
+        names.add(name)
+        identity = entry["ExpectedSourceId"]
+        if identity in unique:
+            previous = unique[identity]
+            v.require(previous["Bytes"] == entry["Bytes"] and v.digest(previous["ExpectedSHA256"]) == v.digest(entry["ExpectedSHA256"]), "Aliased stock identity has inconsistent size/hash")
+        else:
+            unique[identity] = entry
+    return {"BaselineEntries": len(baseline), "SupplementalEntries": len(overlay),
+            "SupplementalLogicalBytes": sum(x["Bytes"] for x in overlay), "SupplementalLimitBytes": 600 * 1024**2,
+            "SupplementalCopiedBytes": sum(x["Bytes"] for x in overlay if x["Mode"] == "Copy"),
+            "UniqueHashReadBytes": sum(x["Bytes"] for x in unique.values()), "UniqueHashReadFiles": len(unique),
+            "StockHardLinks": sum(x["Mode"] == "HardLink" for x in baseline + overlay),
+            "StockCopiedBytes": sum(x["Bytes"] for x in baseline + overlay if x["Mode"] == "Copy"),
+            "ContentVerified": False, "AdditionalResidentBytesMeasured": False}
+
+
+def bind_stock_overlay(reader, spec, pins, plan):
+    """Semantic baseline/overlay linkage using bounded JSON receipts only."""
+    v.require(v.digest(spec["StockReceiptSHA256"]) == BASELINE_SHA and
+              v.digest(spec["ReviewedStockManifestSHA256"]) == REVIEWED_SHA, "Reviewed baseline/manifest pins required")
+    receipts = {field: v.json_bytes(reader.read(spec[field], pins[path_key(spec[field])]))
+                for field in ("StockReceipt", "StockBindingReceipt", "ReviewedStockManifest", "RecipientStockBindingReceipt")}
+    baseline, observation, reviewed, overlay = (receipts[field] for field in
+        ("StockReceipt", "StockBindingReceipt", "ReviewedStockManifest", "RecipientStockBindingReceipt"))
+    v.require(baseline["Schema"] == "iw7.model-ff-build/1" and baseline["Restored"] is True
+              and baseline["StockPreserved"] is True and baseline["RetainedLeaseToken"] is None, "Closed historical baseline required")
+    history = baseline["Inputs"]
+    v.require(isinstance(history, list) and len(history) == 72 and sum(x["Mode"] == "HardLink" for x in history) == 63
+              and sum(x["Mode"] == "Copy" for x in history) == 9, "Historical 72-entry profile differs")
+    historical = {str(v.safe_path(x["Relative"])).casefold(): x for x in history}
+    v.require(len(historical) == 72, "Duplicate historical stock path")
+    root = absolute(spec["StockRoot"])
+    v.require(observation["Schema"] == "iw7.ff-stock-observation/1" and
+              v.digest(observation["BaselineReceiptSHA256"]) == BASELINE_SHA and
+              v.digest(observation["ReviewedStockManifestSHA256"]) == REVIEWED_SHA, "Baseline observation binding differs")
+    same_path(observation["StockRoot"], root, "Baseline observation stock root")
+    utc_stamp(observation["CapturedUtc"])
+    for field in ("BaselineReceipt", "ReviewedStockManifest"):
+        if field in observation:
+            same_path(observation[field], spec["StockReceipt" if field == "BaselineReceipt" else field], "Baseline observation " + field)
+    v.require(not {"Restored", "StockPreserved", "Transaction", "RetainedLeaseToken", "Ready"} & set(observation), "Metadata observation cannot claim restoration/readiness")
+    v.require(isinstance(reviewed, list) and 1 <= len(reviewed) <= 4096, "Bounded reviewed stock manifest required")
+    rows = {}
+    for row in reviewed:
+        relative = str(v.safe_path(row["RelativePath"]))
+        v.require(relative.casefold() not in rows and row["Operation"] == "NTFSHardLinkImmutableStock", "Duplicate/invalid reviewed stock row")
+        integer(row["Length"], 0, 2**63 - 1, "Reviewed stock length")
+        v.digest(row["SHA256"])
+        rows[relative.casefold()] = row
+    observed = observation["Inputs"]
+    v.require(isinstance(observed, list) and len(observed) == 72, "Exact baseline observations required")
+    base_inputs = []
+    for entry in observed:
+        relative = str(v.safe_path(entry["Relative"]))
+        old = historical[relative.casefold()]
+        v.require(relative == old["Relative"] and entry["Bytes"] == old["Bytes"] and entry["Mode"] == old["Mode"], "Observation differs from historical baseline")
+        source = absolute(entry["Source"])
+        if entry.get("ExternalToolDependency") is True:
+            v.require(relative == "tlsdll.dll" and entry["Mode"] == "Copy" and entry["Bytes"] == 113152 and
+                      v.digest(entry["SHA256"]) == "6e00dbe90e4ccb60283fad72a769b36542e587019a0da9fa42cb6a0fcf91207a" and
+                      not entry.get("ReviewedStockRelative") and not source.is_relative_to(root), "Exact external TLS dependency required")
+        else:
+            v.require(entry.get("ExternalToolDependency") is None or entry.get("ExternalToolDependency") is False, "Invalid external dependency flag")
+            review_relative = relative.split("/")[-1] if re.fullmatch(r"(?:main|zone)/[^/]+\.ff", relative) or relative == "zone/assetfile1.pak" else relative
+            row = rows[review_relative.casefold()]
+            v.require(entry["ReviewedStockRelative"] == row["RelativePath"] == review_relative and
+                      row["Length"] == entry["Bytes"] and v.digest(row["SHA256"]) == v.digest(entry["SHA256"]), "Baseline content descriptor differs from reviewed row")
+            same_path(source, root.joinpath(*v.safe_path(review_relative).parts), "Baseline stock source")
+        base_inputs.append(stock_descriptor(entry))
+    v.require(sum(x["Mode"] == "Copy" for x in base_inputs) == 1 and
+              next(x["Bytes"] for x in base_inputs if x["Mode"] == "Copy") == 77, "Exact 77-byte sentinel copy required")
+
+    exact_keys(overlay, ("Schema", "Profile", "ToolSource", "StockRoot", "ReviewedStockManifestSHA256", "CapturedUtc", "ContentVerification", "Inputs"), "Recipient stock observation")
+    v.require(overlay["Schema"] == "iw7.recipient-stock-observation/1" and overlay["Profile"] == OVERLAY_PROFILE and
+              overlay["ToolSource"] == TOOL_SOURCE and v.digest(overlay["ReviewedStockManifestSHA256"]) == REVIEWED_SHA and
+              overlay["ContentVerification"] == "DeferredUntilAdmittedRun", "Exact unverified supplemental profile required")
+    same_path(overlay["StockRoot"], root, "Supplemental stock root")
+    utc_stamp(overlay["CapturedUtc"])
+    v.require(isinstance(overlay["Inputs"], list) and len(overlay["Inputs"]) == 4, "Exactly four supplemental PAKs required")
+    extra_inputs = []
+    for entry, (name, size, checksum) in zip(overlay["Inputs"], PAKS):
+        exact_keys(entry, ("Relative", "Source", "Mode", "Bytes", "ModifiedUtc", "Attributes", "SourceId", "SHA256", "ReviewedStockRelative"), "Supplemental PAK")
+        v.require(entry["Relative"] == "zone/" + name and entry["Mode"] == "HardLink" and entry["ReviewedStockRelative"] == name, "Supplemental PAK name/order/mode differs")
+        integer(entry["Bytes"], size, size, "Supplemental PAK bytes")
+        row = rows[name.casefold()]
+        v.require(row["RelativePath"] == name and row["Length"] == size and v.digest(row["SHA256"]) == v.digest(entry["SHA256"]) == checksum, "Supplemental PAK reviewed hash/size differs")
+        same_path(entry["Source"], root / name, "Supplemental PAK source")
+        extra_inputs.append(stock_descriptor(entry, supplemental=True))
+    same(plan["StockInputs"], base_inputs + extra_inputs, "Baseline plus exact overlay descriptors")
+    budget = stock_budget(base_inputs, extra_inputs)
+    v.require(budget["SupplementalLogicalBytes"] == 580092048 <= budget["SupplementalLimitBytes"] and
+              budget["SupplementalCopiedBytes"] == 0 and budget["StockHardLinks"] == 75, "Supplemental stock budget differs")
+    same(plan["StockBudget"], budget, "Recomputed stock receipt budget")
+    return {"profile": OVERLAY_PROFILE, "baseline_receipt_sha256": BASELINE_SHA, "reviewed_manifest_sha256": REVIEWED_SHA,
+            "baseline_observation_sha256": v.digest(spec["StockBindingReceiptSHA256"]),
+            "overlay_observation_sha256": v.digest(spec["RecipientStockBindingReceiptSHA256"]),
+            "supplemental_input_records": extra_inputs, "budget_from_receipts": budget, "content_remeasured": False}
+
+
 def bind_run(expectations):
     """Expectations must be supplied independently, never synthesized from state."""
     exact_keys(expectations, ("schema", "run_root", "state_sha256", "plan", "spec_path", "source_pins", "provider_pins", "run_files", "observation"), "Expectations")
@@ -248,8 +390,20 @@ def bind_run(expectations):
     original_spec = v.json_bytes(reader.read(spec_path, pins[path_key(spec_path)]))
     same_path(original_spec["RunRoot"], root, "Original spec RunRoot")
     same_path(original_spec["PythonExe"], python, "Original spec Python")
+    overlay_markers = ("RecipientStockBindingReceipt" in original_spec, "RecipientStockBindingReceiptSHA256" in original_spec,
+                       "StockBudget" in plan, path_key(adapter.parent / "Recipient.Stock.ps1") in pins)
+    overlay_mode = any(overlay_markers)
+    if overlay_mode:
+        v.require(all(overlay_markers), "Incomplete explicit supplemental stock contract")
+        v.require(plan.get("FatalTextDiagnostic") is False and state.get("DiagnosticOnly") is False, "Diagnostic-only run cannot bind recipient observations")
+        for key, value in DIAGNOSTIC_LIMITS.items():
+            integer(plan[key], value, value, key)
+    else:
+        v.require(not any("StockProfile" in x or x["Relative"] in {"zone/" + p[0] for p in PAKS}
+                          for x in normalized_plan["StockInputs"]), "Supplemental stock requires explicit profile")
     stock_receipts = {}
-    for field in ("StockReceipt", "StockBindingReceipt", "ReviewedStockManifest", "PythonExe"):
+    receipt_roles = ("StockReceipt", "StockBindingReceipt", "ReviewedStockManifest", "PythonExe") + (("RecipientStockBindingReceipt",) if overlay_mode else ())
+    for field in receipt_roles:
         key = path_key(original_spec[field])
         v.require(pins.get(key) == v.digest(original_spec[field + "SHA256"]), "Original spec input pin absent: " + field)
         if field != "PythonExe":
@@ -258,6 +412,8 @@ def bind_run(expectations):
     request_root = absolute(original_spec["RequestRoot"])
     candidate_records = [candidate_root / name for name in ("build-artifact.local.json", "preparation.local.json", "result.local.json")]
     allowed_sources = {path_key(adapter.parent / name) for name in PRODUCERS}
+    if overlay_mode:
+        allowed_sources.update(path_key(adapter.parent / name) for name in OVERLAY_PRODUCERS)
     allowed_sources.update(path_key(path) for path in (*candidate_records, python, spec_path))
     allowed_sources.update(stock_receipts.values())
     allowed_sources.update(path_key(request_root / name) for name in ("recipient-material-requests.csv", "recipient-script-requests.txt"))
@@ -272,6 +428,7 @@ def bind_run(expectations):
         reader.read(binding["Path"], binding["SHA256"], retain=False)
     declared_providers = v.json_bytes(reader.read(adapter.parent / "provider-pins.json"))
     same({k: v.digest(x) for k, x in declared_providers.items()}, {k: v.digest(x["SHA256"]) for k, x in providers.items()}, "Producer provider manifest")
+    stock_binding = bind_stock_overlay(reader, original_spec, pins, normalized_plan) if overlay_mode else None
     candidate = plan["Candidate"]
     same_path(candidate["Path"], candidate_root / "bin/zonetool-community.exe", "Candidate source")
     v.require(v.digest(candidate["ArtifactSHA256"]) == v.digest(original_spec["CandidateArtifactSHA256"])
@@ -375,6 +532,7 @@ def bind_run(expectations):
             "closed_run_record_bound": True, "observation_bytes_bound": True, "temporary_inputs_absent_now": True,
             "native_execution_authenticated": False, "stock_content_remeasured": False,
             "stock_receipt_files_rehashed": stock_receipts,
+            "stock_profile_binding": stock_binding,
             "actions_reconstructed_from_pinned_contract": actions, "argv_observed": False,
             "source_zone_order": zones, "phases": analyses,
             "files": [item[0] for item in reader.records.values()],
