@@ -26,6 +26,44 @@ $inputData=[ordered]@{project=$Project;action=$Action;adapter=$Adapter;build_par
     active_projects=@($ActiveProject);client_source=$ClientSource;server_source=$ServerSource;protocol=$Protocol;
     target=$Target;tools_root=$ToolsRoot;finalize_root=$FinalizeRoot;output=$Output;
     recipient_proof=$RecipientProof;recipient_root=$RecipientRoot}
+function Assert-CreatorBuildParameters($Parameters) {
+    # This is a caller-side allowlist, not the builder's broader parameter set.
+    # In particular, Run is never allowed in a JSON-provided splat.
+    $allowed=@('SourceRoot','SourceReceiptSHA256','StockRoot','StockReceipt','StockReceiptSHA256',
+        'CandidateRoot','CandidateArtifactSHA256','ReaderRoot','RunRoot','OpsRoot','JobSource','JobSourceSHA256',
+        'StockBindingReceipt','StockBindingReceiptSHA256','ReviewedStockManifest','ReviewedStockManifestSHA256')
+    if($Parameters -isnot [Collections.IDictionary]){throw 'BuildParameters must be an object.'}
+    foreach($key in $Parameters.Keys){
+        if($key -cnotin $allowed){throw 'BuildParameters contains unknown fields; Run and arbitrary commands are prohibited.'}
+        if($Parameters[$key] -isnot [string] -or !$Parameters[$key]){throw 'BuildParameters values must be nonempty strings.'}
+    }
+    $required=@('SourceRoot','SourceReceiptSHA256','StockRoot','StockReceipt','StockReceiptSHA256','CandidateRoot','ReaderRoot','RunRoot','OpsRoot','JobSource')
+    $binding=@('StockBindingReceipt','StockBindingReceiptSHA256','ReviewedStockManifest','ReviewedStockManifestSHA256')
+    if($Action -ceq 'Build' -or @($binding|Where-Object {$_ -cin $Parameters.Keys}).Count){$required+=$binding}
+    if($Action -ceq 'Build'){$required+=@('CandidateArtifactSHA256','JobSourceSHA256')}
+    foreach($key in $required){if($key -cnotin $Parameters.Keys){throw "BuildParameters missing required field: $key"}}
+}
+function Read-CreatorBuildParameters([string]$Path,[string]$ExpectedSHA256) {
+    # One bounded byte snapshot is both hashed and parsed. A later file rewrite
+    # cannot change this object or introduce parameters after its hash check.
+    $buffer=[byte[]]::new(1MB+1);$length=0
+    $stream=[IO.File]::Open($Path,'Open','Read','Read')
+    try {
+        while($length -lt $buffer.Length){
+            $count=$stream.Read($buffer,$length,$buffer.Length-$length)
+            if(!$count){break};$length+=$count
+        }
+    } finally {$stream.Dispose()}
+    if($length -gt 1MB){throw 'BuildParameters exceeds 1 MiB.'}
+    $memory=[IO.MemoryStream]::new($buffer,0,$length,$false)
+    try {$digest=(Get-FileHash -InputStream $memory -Algorithm SHA256).Hash}
+    finally {$memory.Dispose()}
+    if($ExpectedSHA256 -cnotmatch '^[a-f0-9]{64}$' -or $digest -ine $ExpectedSHA256){throw 'BuildParameters changed during planning.'}
+    $text=[Text.UTF8Encoding]::new($false,$true).GetString($buffer,0,$length).TrimStart([char]0xFEFF)
+    $parameters=$text|ConvertFrom-Json -AsHashtable
+    Assert-CreatorBuildParameters $parameters
+    return $parameters
+}
 $driver=@'
 import hashlib, importlib.util, json, os, sys
 from pathlib import Path
@@ -43,6 +81,14 @@ def module(path, name):
     spec = importlib.util.spec_from_file_location(name, path)
     result = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(result)
+    return result
+
+def unique_parameters(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate BuildParameters key: " + key)
+        result[key] = value
     return result
 
 try:
@@ -89,7 +135,12 @@ try:
         report["beacon_gsc_sha256"] = hashlib.sha256(template).hexdigest()
         step("adapter-identity", "passed", ["Fixed BeaconV1 template GSC, namespace and map match"])
         if args["build_parameters"]:
-            parameters = packager.read_manifest(args["build_parameters"])
+            with Path(args["build_parameters"]).open("rb") as stream:
+                parameter_bytes = stream.read(1024 * 1024 + 1)
+            if len(parameter_bytes) > 1024 * 1024:
+                raise ValueError("BuildParameters exceeds 1 MiB")
+            parameters = json.loads(parameter_bytes.decode("utf-8-sig"), object_pairs_hook=unique_parameters,
+                parse_constant=lambda value: (_ for _ in ()).throw(ValueError("Invalid JSON constant: " + value)))
             allowed = {"SourceRoot", "SourceReceiptSHA256", "StockRoot", "StockReceipt", "StockReceiptSHA256",
                        "CandidateRoot", "CandidateArtifactSHA256", "ReaderRoot", "RunRoot", "OpsRoot", "JobSource", "JobSourceSHA256",
                        "StockBindingReceipt", "StockBindingReceiptSHA256", "ReviewedStockManifest", "ReviewedStockManifestSHA256"}
@@ -111,7 +162,7 @@ try:
             if Path(parameters.get("OpsRoot", "")).resolve(strict=True) != root / "ops":
                 raise ValueError("BuildParameters OpsRoot must use this reviewed ToolsRoot")
             report["adapter_plan_requested"] = True
-            report["build_parameters_sha256"] = hashlib.sha256(Path(args["build_parameters"]).read_bytes()).hexdigest()
+            report["build_parameters_sha256"] = hashlib.sha256(parameter_bytes).hexdigest()
         else:
             step("adapter-plan", "pending", ["BuildParameters is required for stock/tool/receipt checks; no native build was run"])
     elif args["adapter"] != "None":
@@ -162,12 +213,11 @@ if($LASTEXITCODE -ne 0){throw 'Creator validator process failed; no build attemp
 $report=($raw -join "`n")|ConvertFrom-Json -AsHashtable
 if($report.adapter_plan_requested -and $report.plan_valid){
     try {
-        # Rehash after validation. Never permit Run in the caller's parameter object.
-        if((Get-FileHash -LiteralPath $BuildParameters).Hash -ine $report.build_parameters_sha256){throw 'BuildParameters changed during planning.'}
-        $parameters=Get-Content -LiteralPath $BuildParameters -Raw|ConvertFrom-Json -AsHashtable
+        $parameters=Read-CreatorBuildParameters $BuildParameters $report.build_parameters_sha256
         $builder=Join-Path $ToolsRoot 'sdk/modding/Build-BeaconFF.ps1'
         $supported=(Get-Command $builder -ErrorAction Stop).Parameters
         foreach($key in $parameters.Keys){if(!$supported.ContainsKey($key)){throw "Beacon builder does not support parameter $key; stock binding integration may be pending."}}
+        Assert-CreatorBuildParameters $parameters
         $planText=& $builder @parameters
         $plan=($planText -join "`n")|ConvertFrom-Json -AsHashtable
         if($plan.Schema -cne 'iw7.beacon-ff-plan/1' -or $plan.Ready -cne $false -or $plan.CandidatePending -isnot [bool]){throw 'Unexpected beacon adapter plan.'}
@@ -182,10 +232,11 @@ if($Action -ceq 'Build'){
     if($report.plan_valid -and $report.adapter_plan){
         $phase='build'
         try {
-            if((Get-FileHash -LiteralPath $BuildParameters).Hash -ine $report.build_parameters_sha256){throw 'BuildParameters changed after adapter planning.'}
+            $parameters=Read-CreatorBuildParameters $BuildParameters $report.build_parameters_sha256
             if($report.adapter_plan.CandidatePending){throw 'Beacon candidate is not pinned and verified.'}
             # Native admission, process ownership, time/byte budgets and restore
             # belong to the reviewed builder. Do not create another reservation.
+            Assert-CreatorBuildParameters $parameters
             $report.build_executed=$true
             $null=& $builder @parameters -Run
             $report.steps+=@{name='build';status='completed';details=@('Builder returned; finalizer must still verify its persisted evidence')}

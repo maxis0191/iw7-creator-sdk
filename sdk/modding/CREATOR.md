@@ -35,6 +35,12 @@ accepts the existing local `Build-BeaconFF.ps1` argument object. Creator rejects
 unknown fields (including `Run`), binds `SourceRoot` to the project and `OpsRoot`
 to the reviewed tools tree, and calls the actual adapter in read-only plan mode.
 Stock absence or stale receipts therefore fails the real adapter's checks.
+Python validates and hashes one bounded byte snapshot of BuildParameters.
+PowerShell independently reads one bounded snapshot, requires the same hash and
+parses those exact bytes; it never reopens the path between hashing and parsing.
+A separate explicit allowlist is checked immediately before both builder splats,
+so the builder's own support for `Run` cannot authorize that key from JSON. Build
+also obtains and verifies a fresh snapshot after adapter planning.
 `-ToolsRoot` is an explicit operator override for a complete reviewed checkout
 during isolated integration; it is never read from project content.
 
@@ -99,3 +105,9 @@ keep the two recipient blockers and no ZIP; an altered FF must leave both candid
 and archive absent. Only the native builder is replaced in these cases. Run these
 tests with a ToolsRoot containing the integrated Finalize-BeaconProject commit;
 they fail if that dependency is missing rather than silently skipping it.
+
+Regression tests rewrite the parameter file at each old read/hash boundary and
+after adapter planning. Both old read/hash races reproduced an unintended Run
+in the synthetic builder under Action Plan; the corrected snapshot logic permits
+no such transition. These tests use small fixture files and a synthetic builder,
+not native execution or stock.

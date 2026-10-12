@@ -13,6 +13,7 @@ import unittest
 import zipfile
 
 SDK = Path(__file__).resolve().parents[1]
+CREATOR = SDK / "Creator.ps1"
 REPO = SDK.parents[1]
 TOOLS = Path(os.environ.get("IW7_CREATOR_TEST_TOOLS_ROOT", REPO))
 PWSH = shutil.which("pwsh")
@@ -38,9 +39,9 @@ class CreatorTests(unittest.TestCase):
         return {p.relative_to(self.root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in self.root.rglob("*") if p.is_file()}
 
-    def invoke(self, *extra, environment=True, mutates=False, tools=TOOLS):
+    def invoke(self, *extra, environment=True, mutates=False, tools=TOOLS, wrapper=None):
         before = self.snapshot()
-        args = [PWSH, "-NoProfile", "-File", str(SDK / "Creator.ps1"), "-Project", str(self.project),
+        args = [PWSH, "-NoProfile", "-File", str(wrapper or CREATOR), "-Project", str(self.project),
                 "-ToolsRoot", str(tools), "-Json"]
         if environment:
             args += ["-ClientSource", PIN, "-ServerSource", PIN, "-Protocol", "2"]
@@ -282,6 +283,117 @@ class CreatorTests(unittest.TestCase):
                                    "-RecipientProof", str(self.root / "missing.json"), tools=tools)
         self.assertEqual(code, 1, report)
         self.assertIn("must be supplied together", " ".join(report["errors"]))
+
+    def test_parameter_rewrite_after_python_read_cannot_inject_run(self):
+        tools, parameter_file = self.flow_fixture()
+        malicious = json.loads(parameter_file.read_text())
+        malicious["Run"] = True
+        # Deterministic file rewrite at the first Python parameter read boundary.
+        # Only the isolated fixture's Path.open is wrapped; production has no hook.
+        hook = textwrap.dedent('''\
+            from pathlib import Path as _RacePath
+            _race_original_open = _RacePath.open
+            _race_done = False
+            class _RaceReader:
+                def __init__(self, stream):
+                    self.stream = stream
+                def __enter__(self):
+                    return self.stream.__enter__()
+                def __exit__(self, *args):
+                    result = self.stream.__exit__(*args)
+                    with _race_original_open(_race_target, 'wb') as output:
+                        output.write(_race_bytes)
+                    return result
+            def _race_open(self, *args, **kwargs):
+                global _race_done
+                stream = _race_original_open(self, *args, **kwargs)
+                if not _race_done and self == _race_target and args == ('rb',):
+                    _race_done = True
+                    return _RaceReader(stream)
+                return stream
+            _RacePath.open = _race_open
+            ''')
+        validator = tools / "sdk/modding/manifest.py"
+        with validator.open("a", encoding="utf-8") as output:
+            output.write("\n_race_target = Path(" + repr(str(parameter_file)) + ")\n")
+            output.write("_race_bytes = " + repr(json.dumps(malicious).encode()) + "\n")
+            output.write(hook)
+        code, report = self.invoke("-Adapter", "BeaconV1", "-BuildParameters", str(parameter_file), tools=tools, mutates=True)
+        self.assertIs(json.loads(parameter_file.read_text())["Run"], True, "The rewrite hook must actually fire")
+        self.assertFalse((self.root / "run").exists(), "Plan invoked the synthetic builder's Run branch")
+        self.assertEqual(code, 1, report)
+        self.assertIn("BuildParameters changed during planning", " ".join(report["errors"]))
+        self.assertFalse(report["build_executed"])
+
+    def test_parameter_rewrite_after_powershell_hash_does_not_change_snapshot(self):
+        tools, parameter_file = self.flow_fixture()
+        malicious = json.loads(parameter_file.read_text())
+        malicious["Run"] = True
+        def quote(value):
+            return "'" + str(value).replace("'", "''") + "'"
+        wrapper = self.root / "hash-rewrite-wrapper.ps1"
+        wrapper.write_text("$raceTarget=" + quote(parameter_file) + "\n$raceBytes=" + quote(json.dumps(malicious)) + "\n" + textwrap.dedent('''\
+            function Get-FileHash {
+                param([string]$LiteralPath,[IO.Stream]$InputStream,[string]$Algorithm='SHA256')
+                if($InputStream){$result=Microsoft.PowerShell.Utility\\Get-FileHash -InputStream $InputStream -Algorithm $Algorithm}
+                else{$result=Microsoft.PowerShell.Utility\\Get-FileHash -LiteralPath $LiteralPath -Algorithm $Algorithm}
+                if($InputStream -or $LiteralPath -eq $raceTarget){[IO.File]::WriteAllText($raceTarget,$raceBytes)}
+                return $result
+            }
+            ''') + "& " + quote(CREATOR) + " @args\nexit $LASTEXITCODE\n")
+        code, report = self.invoke("-Adapter", "BeaconV1", "-BuildParameters", str(parameter_file),
+                                   tools=tools, mutates=True, wrapper=wrapper)
+        self.assertIs(json.loads(parameter_file.read_text())["Run"], True, "The rewrite hook must actually fire")
+        self.assertFalse((self.root / "run").exists(), "A rewrite replaced the already-hashed snapshot")
+        self.assertEqual(code, 0, report)
+        self.assertTrue(report["plan_valid"])
+        self.assertFalse(report["build_executed"])
+
+    def test_parameter_rewrite_during_adapter_plan_blocks_explicit_build(self):
+        tools, parameter_file = self.flow_fixture()
+        malicious = json.loads(parameter_file.read_text())
+        malicious["Run"] = True
+        def quote(value):
+            return "'" + str(value).replace("'", "''") + "'"
+        builder = tools / "sdk/modding/Build-BeaconFF.ps1"
+        rewrite = "[IO.File]::WriteAllText(" + quote(parameter_file) + "," + quote(json.dumps(malicious)) + ");"
+        builder.write_text(builder.read_text().replace("if(!$Run){", "if(!$Run){" + rewrite))
+        code, report = self.invoke("-Action", "Build", "-Adapter", "BeaconV1", "-BuildParameters", str(parameter_file),
+                                   "-FinalizeRoot", str(self.root / "candidate"), "-Output", str(self.root / "result.zip"),
+                                   tools=tools, mutates=True)
+        self.assertIs(json.loads(parameter_file.read_text())["Run"], True)
+        self.assertEqual(code, 1, report)
+        self.assertIn("BuildParameters changed during planning", " ".join(report["errors"]))
+        self.assertFalse(report["build_executed"])
+        self.assertFalse((self.root / "run").exists())
+
+    def test_last_splat_allowlist_does_not_inherit_builder_run_parameter(self):
+        tools, parameter_file = self.flow_fixture()
+        def quote(value):
+            return "'" + str(value).replace("'", "''") + "'"
+        wrapper = self.root / "metadata-injection-wrapper.ps1"
+        marker = self.root / "metadata-hook.txt"
+        wrapper.write_text("$metadataMarker=" + quote(marker) + "\n" + textwrap.dedent('''\
+            function Get-Command {
+                [CmdletBinding()]param([Parameter(Position=0)][string]$Name)
+                $result=Microsoft.PowerShell.Core\\Get-Command -Name $Name
+                if($Name.EndsWith('Build-BeaconFF.ps1')){
+                    # Simulate a changed splat after snapshot validation, at the
+                    # metadata check that previously admitted every builder key.
+                    $splat=Get-Variable -Name parameters -Scope 1 -ValueOnly
+                    $splat['Run']=$true
+                    [IO.File]::WriteAllText($metadataMarker,'Injected Run into caller splat')
+                }
+                return $result
+            }
+            ''') + "& " + quote(CREATOR) + " @args\nexit $LASTEXITCODE\n")
+        code, report = self.invoke("-Adapter", "BeaconV1", "-BuildParameters", str(parameter_file),
+                                   tools=tools, mutates=True, wrapper=wrapper)
+        self.assertTrue(marker.is_file(), "Metadata hook must reach the already-parsed splat")
+        self.assertEqual(code, 1, report)
+        self.assertIn("Run and arbitrary commands are prohibited", " ".join(report["errors"]))
+        self.assertFalse(report["build_executed"])
+        self.assertFalse((self.root / "run").exists())
 
     def real_finalizer_flow(self, *, tamper=False):
         """Real Creator/finalizer; reuse asset-free receipt fixtures, no native work."""
