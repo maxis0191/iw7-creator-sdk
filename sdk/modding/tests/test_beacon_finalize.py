@@ -354,6 +354,21 @@ class FinalizeTests(unittest.TestCase):
         self.output = self.root / "missing-parent" / "output"
         self.rejected("No such|cannot find|system cannot")
 
+    def assert_nested_output_refused(self, input_root):
+        def snapshot():
+            return {p.relative_to(input_root).as_posix(): p.read_bytes() if p.is_file() else None
+                    for p in input_root.rglob("*")}
+        before = snapshot()
+        self.output = input_root / "nested-output"
+        self.rejected("Output overlaps input roots")
+        self.assertEqual(snapshot(), before, "Rejected output changed the input tree")
+
+    def test_nested_output_under_project_is_refused(self):
+        self.assert_nested_output_refused(self.project)
+
+    def test_nested_output_under_build_is_refused(self):
+        self.assert_nested_output_refused(self.build)
+
     def test_reparse_attribute_rejected(self):
         original = Path.lstat
         def attributes(path, *args, **kwargs):

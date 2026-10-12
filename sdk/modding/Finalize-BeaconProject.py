@@ -289,7 +289,8 @@ def finalize(project, build_root, output_root, *, client_source=None, server_sou
     output = Path(os.path.abspath(output_root))
     safe_existing(output.parent)
     require(not output.exists() and not output.is_symlink(), "Fresh output root required")
-    require(not project.is_relative_to(output) and not build.is_relative_to(output), "Output overlaps input roots")
+    require(all(not root.is_relative_to(output) and not output.is_relative_to(root) for root in (project, build)),
+            "Output overlaps input roots")
     for value in (client_source, server_source):
         require(value is None or isinstance(value, str) and re.fullmatch(r"[a-f0-9]{40}", value), "Source identity must be an exact lowercase commit")
     inputs = Inputs()

@@ -81,9 +81,10 @@ recipient node in the common closure, not hidden by the template omission.
 
 Input reads have fixed size bounds; total written file bytes, including the last
 validation report, cannot exceed 2 MiB. Redirected ancestors, symlinks/reparse
-points, unsafe relative names and existing output roots are refused. Inputs are
-rechecked immediately before writing. Error cleanup is nonrecursive and checks
-the identities of files/directories it created; changed or unrelated content is
+points, unsafe relative names and existing output roots are refused. The output
+must be outside both project and build trees, with no ancestry overlap in either
+direction. Inputs are rechecked immediately before writing. Error cleanup is
+nonrecursive and checks the identities of files/directories it created; changed or unrelated content is
 preserved. This is a local consistency guard, not a security boundary against a
 hostile process racing filesystem operations under the same account.
 
@@ -143,6 +144,11 @@ and package validation remained blocked. No native tool or game ran for this
 finalization check. The first local attempt rejected a mistaken expected newline
 on the rawfile marker; inspecting the actual 28 bytes corrected that expectation
 without changing the retained build or any readiness claim.
+
+Review correction on 2026-10-12: the initial overlap check refused output ancestors
+but allowed a fresh output below the project or build directory. Both directions
+are now rejected before materialization. Two regression cases reproduced the old
+failure and now verify refusal, absent output and unchanged input-tree contents.
 
 Next: integrate with Creator, retain the prospective source-receipt binding in
 new admitted builds, and obtain independently reviewed current recipient closure
