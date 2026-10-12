@@ -1,5 +1,10 @@
 # Community mod SDK: first executable contract
 
+SelfContained runtime preparation now selects the exact composed `.gsc` source
+through Agent-Lab, with separate dedicated-only and protected Use/rejoin phases.
+This is source/pure-test preparation; the complete preflight and game trial are
+pending. See [the pinned plan and limits](SELF-CONTAINED-BEACON-RUNTIME.md).
+
 Current checkpoint, 2026-10-12: PR148 is merged as `178708b` under the recorded
 owner CI-admission exception; CI did not pass. The SDK now has real Beacon FF
 build/readback and Creator finalization evidence, plus protected run 5 Use/HUD and
