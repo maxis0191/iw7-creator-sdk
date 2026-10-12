@@ -3,9 +3,10 @@ param(
     [Parameter(Mandatory)][string]$BuildPlanSHA256,
     [Parameter(Mandatory)][string]$BuildReceiptPath,
     [Parameter(Mandatory)][string]$BuildReceiptSHA256,
-    [Parameter(Mandatory)][string]$OutputPath
+    [Parameter(Mandatory)][string]$OutputPath,
+    [string]$PackageRoot
 )
-# Metadata-only: no payload copy/hash, package-stage validation or game action.
+# Receipt metadata plus optional bounded delivered GSC; never FF/SAB I/O or game action.
 $ErrorActionPreference='Stop'
 $repo=Split-Path (Split-Path (Split-Path (Split-Path $PSScriptRoot)))
 . "$repo/ops/Base-Client.Core.ps1"
@@ -42,6 +43,18 @@ if($output -ieq $producer -or $output.StartsWith($producer+[IO.Path]::DirectoryS
 }
 if(Test-Path -LiteralPath $output){throw 'Output exists; never overwrite a materialized plan.'}
 if(!(Test-Path -LiteralPath (Split-Path $output) -PathType Container)){throw 'Create an explicit owned output directory first.'}
+$completion=$null
+if($PSBoundParameters.ContainsKey('PackageRoot')){
+    if(![IO.Path]::IsPathFullyQualified($PackageRoot)){throw 'Absolute package root required for static closure.'}
+    $request=@{manifest=$manifest;reader=$state.Reader;producer_state_path=[IO.Path]::GetFullPath($BuildReceiptPath);
+        producer_state_sha256=$BuildReceiptSHA256}|ConvertTo-Json -Depth 32 -Compress
+    $result=@($request | & python -B "$PSScriptRoot/Complete-StaticClosure.py" --package-root $PackageRoot)
+    if($LASTEXITCODE){throw ('Static closure materialization refused: '+($result -join "`n"))}
+    $completion=($result -join "`n")|ConvertFrom-Json -AsHashtable
+    if(!$completion.representations_revalidated -or !$completion.static_closure_complete -or
+        $completion.client_payload_measured -or $completion.runtime_ready -or $completion.owner_accepted){throw 'Static closure scope differs.'}
+    $manifest=$completion.manifest
+}
 $raw=[Text.UTF8Encoding]::new($false).GetBytes(($manifest|ConvertTo-Json -Depth 25)+[Environment]::NewLine)
 if($raw.Length -gt 256KB){throw 'Materialized metadata exceeds 256 KiB.'}
 $stream=$null;$created=$false
@@ -55,7 +68,10 @@ try{
     if(!$validation.valid -or $validation.ready -or $validation.runtime_ready -or $validation.owner_accepted -or $validation.checked.Count){throw 'SDK plan validation overclaims qualification.'}
     [ordered]@{OutputPath=$output;ManifestSHA256=(Get-FileHash -LiteralPath $output).Hash;
         ProducerPlanSHA256=$BuildPlanSHA256;ProducerStateSHA256=$BuildReceiptSHA256;ProducerMetadataVerified=$true;
-        ClientMeasurementsCopiedFromReceipt=3;PayloadMeasured=$false;PackageReady=$false;RuntimeReady=$false;OwnerAccepted=$false;
+        ClientMeasurementsCopiedFromReceipt=3;ClientPayloadMeasured=$false;ServerSourceMeasured=($null -ne $completion);
+        PayloadMeasured=($null -ne $completion);StaticClosureComplete=($null -ne $completion);
+        RepresentationsRevalidated=($null -ne $completion);ServerSource=$(if($completion){$completion.server_source}else{$null});
+        PackageReady=$false;RuntimeReady=$false;OwnerAccepted=$false;
         Pending=$validation.pending}|ConvertTo-Json -Depth 6
 }catch{
     if($stream){$stream.Dispose()}

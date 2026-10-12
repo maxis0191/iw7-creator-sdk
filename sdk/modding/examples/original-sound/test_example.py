@@ -24,6 +24,8 @@ def load(relative, name):
 
 sdk = load("sdk/modding/manifest.py", "original_sound_example_sdk")
 compat = load("ops/modding/Distribution-Compat.py", "original_sound_example_compat")
+closure_adapter = load("sdk/modding/examples/original-sound/Complete-StaticClosure.py", "original_sound_example_closure")
+sound_source = load("tools-source/asset-bridge/surfaces/sound/prepare_sound.py", "original_sound_example_source")
 
 
 def plan_result(manifest):
@@ -74,6 +76,47 @@ class ExampleTests(unittest.TestCase):
         self.assertTrue(any("Capability source proof missing" in error for error in errors))
 
 
+class ServerSourceTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="iw7-original-sound-server-")
+        self.root = Path(self.temp.name).resolve()
+        self.addCleanup(self.cleanup)
+        self.entry = sdk.load_manifest(HERE / "manifest.json")["package"]["files"][3]
+        self.path = self.root / self.entry["source"]
+        self.path.parent.mkdir()
+
+    def cleanup(self):
+        self.assertEqual(self.root.parent, Path(tempfile.gettempdir()).resolve())
+        self.assertTrue(self.root.name.startswith("iw7-original-sound-server-"))
+        self.temp.cleanup()
+
+    def test_hash_is_of_the_delivered_bytes_not_the_repository_template(self):
+        for raw in (b"// synthetic fixture A\ninit() { return; }\n", b"// synthetic fixture B\r\ninit() { return; }\r\n"):
+            with self.subTest(raw=raw):
+                self.path.write_bytes(raw)
+                report = closure_adapter.read_server_source(self.root, self.entry)
+                self.assertEqual(report["bytes"], len(raw))
+                self.assertEqual(report["sha256"], hashlib.sha256(raw).hexdigest())
+
+    def test_missing_empty_and_oversized_gsc_are_refused(self):
+        with self.assertRaises(FileNotFoundError):
+            closure_adapter.read_server_source(self.root, self.entry)
+        for raw in (b"", b"x" * 16385):
+            self.path.write_bytes(raw)
+            with self.subTest(size=len(raw)), self.assertRaises(ValueError):
+                closure_adapter.read_server_source(self.root, self.entry)
+
+    def test_binding_cannot_select_an_unrelated_script(self):
+        changed = copy.deepcopy(self.entry)
+        changed["source"] = "server/unrelated.gsc"
+        with self.assertRaisesRegex(ValueError, "canonical delivered"):
+            closure_adapter.read_server_source(self.root, changed)
+
+    def test_relative_package_root_is_refused(self):
+        with self.assertRaisesRegex(ValueError, "absolute package root"):
+            closure_adapter.read_server_source("relative", self.entry)
+
+
 @unittest.skipUnless(POWERSHELL, "PowerShell 7 is required for the real materializer")
 class MaterializerTests(unittest.TestCase):
     def setUp(self):
@@ -85,6 +128,7 @@ class MaterializerTests(unittest.TestCase):
         self.plan_path = self.directory / "execution-plan.json"
         self.state_path = Path(self.plan["RunRoot"]) / "state.local.json"
         self.output = self.directory / "materialized.json"
+        self.package_root = None
 
     def cleanup(self):
         # Only the exact randomly allocated metadata directory is disposable.
@@ -168,6 +212,33 @@ class MaterializerTests(unittest.TestCase):
         path.write_bytes(raw)
         return hashlib.sha256(raw).hexdigest()
 
+    def add_static_closure(self):
+        """Synthetic metadata and one temporary GSC only; no FF/SAB/sample bytes."""
+        r = closure_adapter.reader
+        common = sdk.load_manifest(ROOT / "tools-source/asset-bridge/surfaces/source_contract.json")
+        alias = sound_source.alias_csv(common["alias_csv_fields"])
+        bank = dict(name=r.BANK, zone="mod", gameLanguage="all", soundLanguage="all", aliases=[r.ALIAS_PATH])
+        bank.update({key: [path] for key, (path, _) in r.AUXILIARY.items()})
+        self.bank_raw = json.dumps(bank, indent=2).encode() + b"\n"
+        self.state["Reader"]["dump_streaminfo_rewritten"] = True
+        self.state["Reader"]["closure_evidence"] = {
+            "schema": "iw7.original-sound-static-closure/1",
+            "representations": {"soundbank": r.representation(r.BANK_PATH, self.bank_raw),
+                                "rawfile": r.representation("mod", r.RAWFILE)},
+            "dependencies": {"source_alias": r.representation(r.ALIAS_PATH, alias),
+                             "aliases": r.representation(r.ALIAS_PATH, alias.replace(b"0.5,0.5", b"0.500000,0.500000")),
+                             "sample": {"bytes": 96394, "sha256": "1" * 64},
+                             "inventory": {"bytes": 123, "sha256": "2" * 64},
+                             "auxiliary": {key: r.representation(path, raw)
+                                           for key, (path, raw) in r.AUXILIARY.items()}},
+            "artifacts": {name: {key: self.state["Reader"][field][key] for key in ("bytes", "sha256")}
+                          for name, field in zip(("mod.ff", "mod.sabl", "mod.sabs"), ("fastfile", "loaded", "streamed"))},
+        }
+        self.package_root = self.directory / "package"
+        self.gsc = self.package_root / closure_adapter.SERVER_SOURCE
+        self.gsc.parent.mkdir(parents=True)
+        self.gsc.write_bytes(b"// Synthetic delivered source; no actual gameplay.\ninit() { return; }\n")
+
     def run_materializer(self, *, bad_state_pin=False):
         run = Path(self.plan["RunRoot"])
         for phase, spec, evidence in zip(self.state["Phases"], self.plan["Review"]["phase_specs"], self.phase_evidence):
@@ -176,12 +247,15 @@ class MaterializerTests(unittest.TestCase):
             phase["SoundReceipt"]["existing_runner_receipt_sha256"] = self.write_json(run / "logs" / name / "phase.json", evidence)
         plan_pin = self.write_json(self.plan_path, self.plan)
         state_pin = self.write_json(self.state_path, self.state)
-        result = subprocess.run([
+        command = [
             POWERSHELL, "-NoLogo", "-NoProfile", "-File", str(HERE / "Materialize-Plan.ps1"),
             "-BuildPlanPath", str(self.plan_path), "-BuildPlanSHA256", plan_pin,
             "-BuildReceiptPath", str(self.state_path), "-BuildReceiptSHA256", "0" * 64 if bad_state_pin else state_pin,
             "-OutputPath", str(self.output),
-        ], capture_output=True, text=True, encoding="utf-8", timeout=30)
+        ]
+        if self.package_root is not None:
+            command += ["-PackageRoot", str(self.package_root)]
+        result = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", timeout=30)
         self.assertFalse((run / "artifacts").exists(), "No test may create payloads")
         self.assertFalse((run / "work").exists(), "No producer executable or work is staged")
         return result
@@ -234,6 +308,73 @@ class MaterializerTests(unittest.TestCase):
         result = self.run_materializer()
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(self.output.read_text(encoding="utf-8"), "preserve this existing file")
+
+    def test_static_closure_maps_exact_representations_and_delivered_gsc(self):
+        self.add_static_closure()
+        # Native PowerShell receipt hashes may be uppercase; digest identity is unchanged.
+        for artifact in self.state["Artifacts"]:
+            artifact["SHA256"] = artifact["SHA256"].upper()
+        result = self.run_materializer()
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        report = json.loads(result.stdout)
+        for key in ("ProducerMetadataVerified", "ServerSourceMeasured", "StaticClosureComplete", "RepresentationsRevalidated"):
+            self.assertIs(report[key], True)
+        for key in ("ClientPayloadMeasured", "PackageReady", "RuntimeReady", "OwnerAccepted"):
+            self.assertIs(report[key], False)
+        materialized = sdk.load_manifest(self.output)
+        package = materialized["package"]
+        nodes = {node["id"]: node for node in package["closure"]["nodes"]}
+        self.assertEqual(package["closure"]["status"], "complete")
+        self.assertEqual(nodes[closure_adapter.BANK_NODE]["sha256"], hashlib.sha256(self.bank_raw).hexdigest())
+        self.assertNotEqual(nodes[closure_adapter.BANK_NODE]["sha256"], package["files"][0]["sha256"].lower())
+        self.assertEqual(nodes[closure_adapter.RAWFILE_NODE]["sha256"], hashlib.sha256(closure_adapter.reader.RAWFILE).hexdigest())
+        self.assertEqual(nodes[closure_adapter.SCRIPT_NODE]["sha256"], hashlib.sha256(self.gsc.read_bytes()).hexdigest())
+        self.assertEqual(package["files"][3]["sha256"], nodes[closure_adapter.SCRIPT_NODE]["sha256"])
+        self.assertIn(hashlib.sha256(self.state_path.read_bytes()).hexdigest(), package["closure"]["evidence_ref"])
+        self.assertIsNone(materialized["compatibility"]["network_protocol"])
+        self.assertEqual(package["evidence"], self.manifest["package"]["evidence"])
+        validated = plan_result(materialized)
+        self.assertTrue(validated["valid"], validated["errors"])
+        self.assertEqual(validated["pending"], ["Exact network_protocol must be measured before packaging"])
+        self.assertEqual(validated["checked"], [])
+        for key in ("ready", "runtime_ready", "owner_accepted"):
+            self.assertIs(validated[key], False)
+
+    def test_closure_evidence_alone_does_not_measure_server_or_complete_plan(self):
+        self.add_static_closure()
+        self.package_root = None
+        result = self.run_materializer()
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        materialized = sdk.load_manifest(self.output)
+        self.assertEqual(materialized["package"]["closure"]["status"], "incomplete")
+        self.assertIsNone(materialized["package"]["files"][3]["sha256"])
+        self.assertFalse(json.loads(result.stdout)["ServerSourceMeasured"])
+
+    def test_old_receipt_cannot_complete_static_closure(self):
+        self.package_root = self.directory / "absent-package"
+        self.assert_refused_without_output()
+
+    def test_static_closure_rejects_bank_pin_replaced_by_ff_pin(self):
+        self.add_static_closure()
+        self.state["Reader"]["closure_evidence"]["representations"]["soundbank"]["sha256"] = self.state["Reader"]["fastfile"]["sha256"]
+        result = self.assert_refused_without_output()
+        self.assertIn("representation bytes/hash mismatch", result.stderr)
+
+    def test_static_closure_rejects_changed_rawfile_even_with_refreshed_hash(self):
+        self.add_static_closure()
+        self.state["Reader"]["closure_evidence"]["representations"]["rawfile"] = closure_adapter.reader.representation("mod", b"unrelated rawfile")
+        self.assert_refused_without_output()
+
+    def test_static_closure_rejects_artifacts_disconnected_from_producer(self):
+        self.add_static_closure()
+        self.state["Reader"]["closure_evidence"]["artifacts"]["mod.ff"]["sha256"] = "9" * 64
+        result = self.assert_refused_without_output()
+        self.assertIn("closure artifact differs from reader", result.stderr)
+
+    def test_static_closure_requires_the_delivered_server_file(self):
+        self.add_static_closure()
+        self.gsc.unlink()
+        self.assert_refused_without_output()
 
 
 if __name__ == "__main__":
