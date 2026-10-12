@@ -1,0 +1,108 @@
+{
+  "schema": "iw7.beacon-self-contained-offline/1",
+  "source_bytes": 5535,
+  "source_sha256": "9de9b76dc25293146999c71653bd407d8cb639e107293f6de87084fed90eee1c",
+  "compiler_sha256": "1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb",
+  "retail_reference_sha256": "007f026cb956a4c256977d60c2691cc554e0cc78a13dfd1694469acf707bbdf7",
+  "phases": [
+    {
+      "name": "parse",
+      "exit_code": 0
+    },
+    {
+      "name": "comp",
+      "exit_code": 0
+    },
+    {
+      "name": "disasm",
+      "exit_code": 0
+    }
+  ],
+  "binary": {
+    "bytes": 1992,
+    "sha256": "db486793b92e7e3c0a30c70b565fb432a4940e172a3f97da7e9db377f0e46d42",
+    "compressed_stack_bytes": 496,
+    "stack_bytes": 1808,
+    "bytecode_bytes": 1480,
+    "literal_external_namespace_strings": 0
+  },
+  "assembly": {
+    "functions": [
+      "init",
+      "connections",
+      "joined",
+      "intro_flag_ready",
+      "interact",
+      "render",
+      "departed",
+      "shutdown"
+    ],
+    "instructions": 570,
+    "script_calls": 8,
+    "script_call_opcodes": [
+      "OP_ScriptLocalFunctionCall2",
+      "OP_ScriptLocalMethodCall",
+      "OP_ScriptLocalMethodThreadCall"
+    ],
+    "external_script_calls": 0,
+    "dynamic_script_references": 0,
+    "bytes": 15850,
+    "sha256": "43e9b36a90cfe30ec713d52cdc63bbb7668cfc17acfae187de369079abeae1df"
+  },
+  "external_gsc_dependency_absent_in_this_compilation": true,
+  "current_retail_scriptfile_binding_measured": false,
+  "creator_adapter_supported": false,
+  "asset_closure_complete": false,
+  "runtime_ready": false,
+  "owner_accepted": false,
+  "date": "2026-10-12",
+  "retail_reference": {
+    "repository": "https://github.com/mjkzy/iw7-gsc-dump",
+    "commit": "1dd48a78e55ef9c99519fc5221a206168ce2e98a",
+    "path": "decompiled/scripts/engine/utility.gsc",
+    "bytes": 94770,
+    "sha256": "007f026cb956a4c256977d60c2691cc554e0cc78a13dfd1694469acf707bbdf7",
+    "file_clean_at_inspection": true,
+    "flag_exist_lines": [
+      532,
+      538
+    ],
+    "flag_lines": [
+      540,
+      543
+    ],
+    "authority": "Historical decompilation; no current retail ScriptFile binding measured"
+  },
+  "original_negative_control": {
+    "source_sha256": "8ba85b3f5b3014d0c4d02b0e71f49bf617959b486502e4c63243b065abc2a0b6",
+    "binary": {
+      "bytes": 1951,
+      "sha256": "31b55a5d58a90d6b980a91543c907d26b91a4f6767d5350e8a35ae0e19fa2cef",
+      "compressed_stack_bytes": 480,
+      "stack_bytes": 1394,
+      "bytecode_bytes": 1455,
+      "literal_external_namespace_strings": 0
+    },
+    "external_script_calls": 2,
+    "targets": [
+      "scripts/engine/utility::flag_exist",
+      "scripts/engine/utility::flag"
+    ],
+    "assembly_sha256": "b6efa60bb5c5cc30ad724363720d2249292a592a384557cbc509aaf24ddbe725",
+    "audit_rejection": "External or dynamic call/reference opcode: OP_ScriptFarFunctionCall",
+    "literal_string_scan_is_not_import_proof": true
+  },
+  "tests": {
+    "cases_passed": 5,
+    "cases_skipped": 0,
+    "guard_host_model_combinations": 70,
+    "host_model_is_iw7_vm": false
+  },
+  "limits": [
+    "Only the separately compiled original variant is covered; the unchanged Beacon still has two utility calls.",
+    "Engine builtins and model/NCS/material/techset/image dependencies remain.",
+    "No current Creator or finalizer adapter accepts this variant.",
+    "No game, ZoneTool, resource lease, package, deployment or owner gameplay acceptance occurred.",
+    "No claim is made for malformed non-array level.flag values."
+  ]
+}
