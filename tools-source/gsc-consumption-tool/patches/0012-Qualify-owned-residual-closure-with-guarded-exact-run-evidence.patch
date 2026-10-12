@@ -1,0 +1,907 @@
+From eabe74ab65d8ce2a943b54d24b15a60749a0cf2a Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 09:22:18 +0200
+Subject: [PATCH] Qualify owned residual closure with guarded exact-run
+ completion evidence
+
+
+diff --git a/audit/README.md b/audit/README.md
+index 2be8b0e45b6835296aa9bef381be514fc94579da..f8330af981937bdd779537c869c6c5421ada44fb 100644
+--- a/audit/README.md
++++ b/audit/README.md
+@@ -317,10 +317,16 @@ immutable supervision SHA256 is `2060bdc7c829ce458810e5de2ca36b3ab28e304e6df7a51
+ 
+ See [the proposed closure contract](residual-closure-contract.md) for the Microsoft
+ documentation findings, required positive completion/identity/guard/closure evidence
+-and remaining implementation gate. `residual_policy.ps1` implements only the pure
+-identity predicate with 96 synthetic checks. It authorizes no action and is not
+-imported by the launcher. Existing 100 supervision/registration/diagnostic checks
+-and four Python preparation tests still pass. No new Plan or native run was made.
++and review/runtime gate. Commit `41fdc19` implemented only the pure identity predicate
++with 96 synthetic checks and no action authority. A distinct follow-up wires the
++bounded `completion.ps1` collector/receipt validator into the original-job supervisor.
++New schema `/2` run receipts bind a fresh run nonce, root PID, exact plan and lease,
++all successful phases and both independently reread input/assembly witnesses. File
++guards survive the two real member queries, original-job Stop and fresh closure.
++All work remains inside the original two-second drain; historical `/1` receipts
++cannot qualify. Natural zero closure also validates the complete receipt. Existing
++supervision/registration/diagnostic tests remain required alongside the new receipt,
++guard and owned-closure tests. No new Plan or native run was made.
+ 
+ ```text
+ python -B audit/prepare.py --output build/identity-reviewed
+diff --git a/audit/build.ps1 b/audit/build.ps1
+index aa80a9e79802bcdabe0406b02c903032361aab30..87f53027f4e7a48a7d5ba891fd126dc4070db13d 100644
+--- a/audit/build.ps1
++++ b/audit/build.ps1
+@@ -39,6 +39,8 @@ if ($planData.members_source_sha256 -ne '5a02254764277b62f752792f1ec4f5b93b85237
+ . $planData.scheduler
+ . (Join-Path $PSScriptRoot 'supervision.ps1')
+ . (Join-Path $PSScriptRoot 'diagnostics.ps1')
++. (Join-Path $PSScriptRoot 'residual_policy.ps1')
++. (Join-Path $PSScriptRoot 'completion.ps1')
+ function Quote-BuildArgument([string]$Value) {
+     if ($Value.IndexOf([char]0) -ge 0) { throw 'NUL argument' }
+     $text = [Text.StringBuilder]::new()
+@@ -74,6 +76,7 @@ $launcher = Get-Process -Id $PID
+ $oldPriority = $launcher.PriorityClass
+ $previousOwner = $env:IW7_GSC_AUDIT_LEASE_OWNER
+ $previousToken = $env:IW7_GSC_AUDIT_LEASE_TOKEN
++$previousRunID = $env:IW7_GSC_AUDIT_RUN_ID
+ $record = [ordered]@{ Schema='iw7.gsc-audit-build-supervision/1'; PlanSHA256=$PlanSha256; LeaseToken=$lease.Token;
+     OriginalJobSourceSHA256=$planData.job_source_sha256; MemberObserverSHA256=$planData.members_source_sha256;
+     StartedUtc=[datetime]::UtcNow.ToString('o');
+@@ -89,6 +92,8 @@ try {
+     Add-Type -Path $planData.members_source -ErrorAction Stop
+     $env:IW7_GSC_AUDIT_LEASE_OWNER = [string]$PID
+     $env:IW7_GSC_AUDIT_LEASE_TOKEN = [string]$lease.Token
++    $env:IW7_GSC_AUDIT_RUN_ID = [guid]::NewGuid().ToString('N')
++    $record.RunID = $env:IW7_GSC_AUDIT_RUN_ID
+     $arguments = @('-B',(Join-Path $PSScriptRoot 'build.py'),'--plan',$planPath,'--plan-sha256',$PlanSha256,'--execute')
+     $commandLine = ($arguments | ForEach-Object { Quote-BuildArgument $_ }) -join ' '
+     $closed = $false
+@@ -97,14 +102,23 @@ try {
+     $record.RootPID = $record.OriginalIdentity.PID
+     $record.RootCreatedUtc = $record.OriginalIdentity.CreatedUtc
+     $record.RootImage = $record.OriginalIdentity.Image
++    $completionContext=[ordered]@{PlanSHA256=$PlanSha256;RunID=$record.RunID;LeaseToken=[string]$lease.Token;
++        LeaseOwnerPID=$PID;OriginalIdentity=$record.OriginalIdentity}
+     $startedMs = Get-AuditMonotonicMs
+     $owner.Resume()
+     Register-AuditOwnedBuild $owner $lease.Token $record $startedMs { Measure-OwnedOutput }
+-    Wait-AuditOwnedBuild $owner $record $startedMs { Measure-OwnedOutput } { Save-AuditResidualObservation $owner $record }
+-    $closed = $true
++    Wait-AuditOwnedBuild $owner $record $startedMs { Measure-OwnedOutput } $null {
++        Complete-AuditBuildEvidence $owner $record $startedMs $planData $completionContext { Measure-OwnedOutput } $true
++    }
+     if ($record.RootExitCode -ne 0) { throw "Build root failed: $($record.RootExitCode)" }
+-    $candidate = Get-Content -LiteralPath (Join-Path $outputRoot 'build-receipt.json') -Raw | ConvertFrom-Json
+-    if (!$candidate.success) { throw 'Build candidate receipt is not successful' }
++    if (!$record.QualifiedClosure.ClosureVerified) {
++        Complete-AuditBuildEvidence $owner $record $startedMs $planData $completionContext { Measure-OwnedOutput } $false
++    }
++    $finalSample=Get-AuditOwnedSnapshot $owner $startedMs
++    Assert-AuditOwnedBudget $finalSample $record $startedMs { Measure-OwnedOutput }
++    if (!$finalSample.RootExited -or $finalSample.RootExitCode -ne 0 -or $finalSample.Active -ne 0 -or
++        !$record.QualifiedClosure.AcceptanceGranted) { throw 'Fresh qualified closure required before acceptance' }
++    $closed = $true
+     $record.Success = $true
+ } catch {
+     $failure = $_
+@@ -114,6 +128,7 @@ try {
+     $launcher.PriorityClass = $oldPriority
+     $env:IW7_GSC_AUDIT_LEASE_OWNER = $previousOwner
+     $env:IW7_GSC_AUDIT_LEASE_TOKEN = $previousToken
++    $env:IW7_GSC_AUDIT_RUN_ID = $previousRunID
+     [IO.Directory]::CreateDirectory($outputRoot) | Out-Null
+     $record.PeakObservedOutputBytes = [math]::Max($record.PeakObservedOutputBytes, (Measure-OwnedOutput))
+     if ($record.PeakObservedOutputBytes -gt 2GB) { $record.Success=$false; $record.StorageLimitExceeded=$true }
+diff --git a/audit/build.py b/audit/build.py
+index 3f1d865028875b7bfe2020c7f9b500752d7e7cd6..be482cb61562f17a109f9d40560ac529c9634d0d 100644
+--- a/audit/build.py
++++ b/audit/build.py
+@@ -64,6 +64,7 @@ def plan(args):
+             'output': str(output), 'inputs': inputs, 'physical_bytes': 4 * GIB, 'commit_bytes': 6 * GIB,
+             'output_limit_bytes': 2 * GIB, 'output_stop_threshold_bytes': 1800 * 1024 ** 2,
+             'storage_poll_seconds': 0.25, 'build_nodes': 1, 'source_preparation_limit_bytes': 128 * 1024 ** 2,
++            'residual_closure_policy': 'original-job-pinned-vctip/1',
+             'native_executed': False}
+ 
+ 
+@@ -87,20 +88,26 @@ def validate_plan(plan):
+         raise ValueError('Fresh ignored output root required')
+     if plan['output_limit_bytes'] != 2 * GIB or plan['output_stop_threshold_bytes'] != 1800 * 1024 ** 2:
+         raise ValueError('Storage guard differs')
++    if plan.get('residual_closure_policy') != 'original-job-pinned-vctip/1':
++        raise ValueError('Reviewed residual closure policy required')
+     if shutil.disk_usage(ROOT).free < 2 * GIB + 128 * 1024 ** 2:
+         raise ValueError('Insufficient disk space for declared output/source allowance')
+ 
+ 
+-def execute(plan):
++def execute(plan, plan_sha256):
+     if os.environ.get('IW7_GSC_AUDIT_LEASE_OWNER') != str(os.getppid()) or not os.environ.get('IW7_GSC_AUDIT_LEASE_TOKEN'):
+         raise ValueError('Invoke through build.ps1 inside its admitted resource job')
+     validate_plan(plan)
++    run_id = os.environ.get('IW7_GSC_AUDIT_RUN_ID', '')
++    if not re.fullmatch('[0-9a-f]{32}', run_id):
++        raise ValueError('Fresh supervising run identity required')
+     output = Path(plan['output'])
+     output.mkdir(parents=True)
+-    receipt = {'schema': 'iw7.gsc-audit-build-run/1', 'plan': plan, 'steps': [],
++    receipt = {'schema': 'iw7.gsc-audit-build-run/2', 'plan': plan, 'plan_sha256': plan_sha256,
++               'run_id': run_id, 'root_pid': os.getpid(), 'steps': [],
+                'lease_token': os.environ['IW7_GSC_AUDIT_LEASE_TOKEN'],
+                'lease_owner_pid': int(os.environ['IW7_GSC_AUDIT_LEASE_OWNER']),
+-               'started_utc': datetime.now(timezone.utc).isoformat(), 'success': False,
++               'started_utc': datetime.now(timezone.utc).isoformat(timespec='microseconds'), 'success': False,
+                'peak_observed_output_bytes': 0, 'storage_limit_exceeded': False,
+                'storage_guard': 'polling stop at 1800 MiB; not an OS disk quota'}
+ 
+@@ -119,6 +126,7 @@ def execute(plan):
+                                  '-Spec', str(spec_path)], cwd=ROOT, creationflags=subprocess.CREATE_NO_WINDOW)
+         step = json.loads(Path(specification['result']).read_text(encoding='utf-8-sig'))
+         step['name'] = name
++        step['wrapper_exit_code'] = result.returncode
+         receipt['steps'].append(step)
+         receipt['peak_observed_output_bytes'] = max(receipt['peak_observed_output_bytes'], step['peak_output_bytes'])
+         receipt['storage_limit_exceeded'] |= step['storage_limit_exceeded']
+@@ -152,7 +160,7 @@ def execute(plan):
+             match = re.search(r'set\(CMAKE_CXX_COMPILER "([^"]+)"\)', compiler_file.read_text())
+             if not match:
+                 raise ValueError('Configured compiler identity unavailable')
+-            compiler_records.append({'configuration_sha256': sha_file(compiler_file),
++            compiler_records.append({'configuration': str(compiler_file), 'configuration_sha256': sha_file(compiler_file),
+                                      'compiler': match.group(1), 'compiler_sha256': sha_file(match.group(1))})
+         if not compiler_records:
+             raise ValueError('No configured compiler record')
+@@ -175,12 +183,25 @@ def execute(plan):
+             raise ValueError('Source/dependency/tool/wrapper changed during build validation')
+         if any(sha_file(record['compiler']) != record['compiler_sha256'] for record in compiler_records):
+             raise ValueError('Compiler changed during build')
++        artifacts = [('source-manifest', identity / 'source-manifest.json'), ('tool', tool),
++                     ('wrapper', Path(plan['wrapper']))]
++        for item in plan['inputs']:
++            witness_root = output / ('witness-' + item['role'])
++            artifacts.extend([('input-' + item['role'], Path(item['path'])),
++                              ('witness-' + item['role'], witness_root / 'consumption.json'),
++                              ('assembly-' + item['role'], witness_root / 'disassembly.gscasm')])
++        for index, compiler in enumerate(compiler_records):
++            artifacts.append(('compiler-config-' + str(index), Path(compiler['configuration'])))
++        for step in receipt['steps']:
++            artifacts.append(('result-' + step['name'], output / (step['name'] + '.result.json')))
++        receipt['completion_artifacts'] = [{'role': role, 'path': str(path), 'bytes': path.stat().st_size,
++                                            'sha256': sha_file(path)} for role, path in artifacts]
+         receipt['success'] = True
+     except Exception as error:
+         receipt['failure'] = str(error)
+         raise
+     finally:
+-        receipt['finished_utc'] = datetime.now(timezone.utc).isoformat()
++        receipt['finished_utc'] = datetime.now(timezone.utc).isoformat(timespec='microseconds')
+         save()
+     return receipt
+ 
+@@ -202,6 +223,6 @@ if __name__ == '__main__':
+         raw = args.plan.read_bytes()
+         if hashlib.sha256(raw).hexdigest() != args.plan_sha256:
+             raise ValueError('Reviewed plan digest differs')
+-        execute(json.loads(raw))
++        execute(json.loads(raw), args.plan_sha256)
+     else:
+         print(json.dumps(plan(args), indent=2))
+diff --git a/audit/completion.ps1 b/audit/completion.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..69bd44b1c2ca4f6c4076c9fe9d0c82aaa5e68ee7
+--- /dev/null
++++ b/audit/completion.ps1
+@@ -0,0 +1,283 @@
++# Imported definitions only. Execution uses the admitted original owner exclusively.
++function Assert-AuditClosureClock($Record,[long]$StartedMs) {
++    $now=(Get-AuditMonotonicMs)-$StartedMs
++    if ($now -ge 3600000 -or $null -eq $Record.RootExitObservedMs -or
++        $now-$Record.RootExitObservedMs -ge 2000) { throw 'Qualified closure deadline reached' }
++}
++
++function Get-AuditByteHash([byte[]]$Bytes) {
++    [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($Bytes)).ToLowerInvariant()
++}
++
++function Assert-AuditJsonKeys($Element,[ref]$Count) {
++    $Count.Value++
++    if ($Count.Value -gt 20000) { throw 'Completion JSON node limit exceeded' }
++    if ($Element.ValueKind -eq [System.Text.Json.JsonValueKind]::Object) {
++        $seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
++        foreach ($property in $Element.EnumerateObject()) {
++            if (!$seen.Add($property.Name)) { throw 'Duplicate completion JSON key' }
++            Assert-AuditJsonKeys $property.Value $Count
++        }
++    } elseif ($Element.ValueKind -eq [System.Text.Json.JsonValueKind]::Array) {
++        foreach ($elementChild in $Element.EnumerateArray()) { Assert-AuditJsonKeys $elementChild $Count }
++    }
++}
++
++function Open-AuditCompletionFile([string]$Path,[long]$Maximum,[bool]$AsJson,$State,[scriptblock]$CheckClock) {
++    & $CheckClock
++    $full=[IO.Path]::GetFullPath($Path)
++    if ($State.Files.ContainsKey($full)) { return $State.Files[$full] }
++    if ($State.Guards.Count -ge 32) { throw 'Completion file count limit exceeded' }
++    $stream=[IO.File]::Open($full,'Open','Read','Read')
++    [void]$State.Guards.Add($stream) # Retained even on validation failure until owned scope unwinds.
++    & $CheckClock
++    if ($stream.Length -le 0 -or $stream.Length -gt $Maximum -or $State.Bytes+$stream.Length -gt 128MB) {
++        throw 'Completion file byte limit exceeded'
++    }
++    $hash=[Security.Cryptography.IncrementalHash]::CreateHash([Security.Cryptography.HashAlgorithmName]::SHA256)
++    $memory=if ($AsJson) {[IO.MemoryStream]::new()} else {$null}
++    try {
++        $buffer=[byte[]]::new(262144)
++        while (($read=$stream.Read($buffer,0,$buffer.Length)) -gt 0) {
++            $State.Bytes+=$read
++            if ($State.Bytes -gt 128MB) { throw 'Completion aggregate byte limit exceeded' }
++            $hash.AppendData($buffer,0,$read)
++            if ($memory) { $memory.Write($buffer,0,$read) }
++            & $CheckClock
++        }
++        $file=[ordered]@{Image=$full;Bytes=$stream.Length;
++            SHA256=[Convert]::ToHexString($hash.GetHashAndReset()).ToLowerInvariant();Scope='ImageFileBytesUnderReadGuard';Json=$null}
++        if ($AsJson) {
++            $text=[Text.UTF8Encoding]::new($false,$true).GetString($memory.ToArray()).TrimStart([char]0xfeff)
++            $doc=[System.Text.Json.JsonDocument]::Parse($text)
++            try { $nodes=0;Assert-AuditJsonKeys $doc.RootElement ([ref]$nodes) } finally { $doc.Dispose() }
++            & $CheckClock
++            $file.Json=ConvertFrom-Json -InputObject $text -AsHashtable -DateKind String -Depth 64
++        }
++        & $CheckClock
++        $State.Files[$full]=$file
++        return $file
++    } finally { $hash.Dispose();if ($memory) {$memory.Dispose()} }
++}
++
++function Close-AuditCompletionFiles($State) {
++    foreach ($guard in $State.Guards) { $guard.Dispose() }
++}
++
++function Assert-AuditSameJson($Actual,$Expected,[string]$Name) {
++    if (($Actual|ConvertTo-Json -Depth 64 -Compress) -cne ($Expected|ConvertTo-Json -Depth 64 -Compress)) {
++        throw "Completion mismatch: $Name"
++    }
++}
++function Assert-AuditDigest($Value) {
++    if ($Value -isnot [string] -or $Value -cnotmatch '^[0-9a-f]{64}$') { throw 'Complete lowercase SHA256 required' }
++}
++function ConvertTo-AuditReceiptUtc($Value) {
++    $stamp=[datetimeoffset]::MinValue
++    if ($Value -isnot [string] -or $Value -cnotmatch '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6,7}(Z|\+00:00)$' -or
++        ![datetimeoffset]::TryParse($Value,[Globalization.CultureInfo]::InvariantCulture,
++            [Globalization.DateTimeStyles]::None,[ref]$stamp) -or $stamp.Year -lt 2000) { throw 'Run UTC timestamp required' }
++    return $stamp
++}
++
++function Get-AuditExpectedCommands($Plan,$Source,[string]$ToolHash,[bool]$InitializeZlib) {
++    $native=Join-Path $Plan.output 'native';$tool=Join-Path $native 'Release/iw7-gsc-audit.exe'
++    $commands=[ordered]@{}
++    if ($InitializeZlib) {
++        $dependency=Join-Path $Plan.tool_root 'deps/zlib'
++        $commands['zlib-clone']=@('git','clone','--no-hardlinks','--no-checkout','--no-recurse-submodules','--',$Plan.zlib_local,$dependency)
++        $commands['zlib-checkout']=@('git','-C',$dependency,'checkout','--detach',$Plan.zlib_commit)
++    }
++    $commands['cmake-version']=@($Plan.cmake,'--version')
++    $commands['configure']=@($Plan.cmake,'-S',(Join-Path $Plan.tool_root 'audit'),'-B',$native,'-G','Visual Studio 17 2022','-A','x64',
++        ('-DAUDIT_IDENTITY_DIR='+(Join-Path $Plan.output 'identity')))
++    $commands['build']=@($Plan.cmake,'--build',$native,'--config','Release','--parallel','1','--','/m:1','/nr:false','/p:MultiProcessorCompilation=false')
++    $commands['reader-tests']=@($Plan.ctest,'--test-dir',$native,'-C','Release','--output-on-failure')
++    $commands['native-negative-tests']=@($Plan.python,'-B',(Join-Path $Plan.tool_root 'audit/test_native.py'),'--tool',$tool,'-v')
++    foreach ($item in $Plan.inputs) {
++        $commands['witness-'+$item.role]=@($Plan.python,'-B',$Plan.wrapper,'--tool',$tool,'--tool-sha256',$ToolHash,
++            '--source-revision',$Source.source_revision,'--source-sha256',$Source.source_sha256,'--tables-sha256',$Source.tables_sha256,
++            '--input',$item.path,'--output',(Join-Path $Plan.output ('witness-'+$item.role)))
++    }
++    return $commands
++}
++
++function Assert-AuditCompletionReceipt($Receipt,$Plan,$Context,[scriptblock]$ReadFile,[scriptblock]$CheckClock) {
++    & $CheckClock
++    if ($Receipt.schema -cne 'iw7.gsc-audit-build-run/2' -or $Receipt.success -isnot [bool] -or !$Receipt.success -or
++        $Receipt.failure -or $Receipt.storage_limit_exceeded -isnot [bool] -or $Receipt.storage_limit_exceeded -or
++        !(Test-AuditResidualInteger $Receipt.peak_observed_output_bytes) -or $Receipt.peak_observed_output_bytes -ge 1800MB -or
++        $Receipt.plan_sha256 -cne $Context.PlanSHA256 -or $Receipt.run_id -cne $Context.RunID -or
++        $Receipt.lease_token -cne $Context.LeaseToken -or !(Test-AuditResidualUInt32 $Receipt.root_pid) -or
++        $Receipt.root_pid -ne $Context.OriginalIdentity.PID -or !(Test-AuditResidualUInt32 $Receipt.lease_owner_pid) -or
++        $Receipt.lease_owner_pid -ne $Context.LeaseOwnerPID -or $Plan.residual_closure_policy -cne 'original-job-pinned-vctip/1') {
++        throw 'Fresh exact run/lease/plan completion receipt required'
++    }
++    Assert-AuditSameJson $Receipt.plan $Plan 'entire reviewed plan'
++    $began=ConvertTo-AuditReceiptUtc $Receipt.started_utc;$finished=ConvertTo-AuditReceiptUtc $Receipt.finished_utc
++    if ($began -lt (ConvertTo-AuditResidualUtc $Context.OriginalIdentity.CreatedUtc) -or $finished -lt $began -or
++        $finished -gt [datetimeoffset]::UtcNow) { throw 'Completion receipt time ordering differs' }
++    $source=$Receipt.build_source_manifest
++    if ($source.schema -cne 'iw7.gsc-audit-build-source/2' -or $source.source_revision -cne $Plan.source_revision -or
++        $source.tool_source_sha256 -cne $Plan.tool_source_sha256 -or $source.tables_sha256 -cne $Plan.tables_sha256 -or
++        $source.zlib_commit -cne $Plan.zlib_commit -or $source.dependencies_materialized -isnot [bool] -or
++        !$source.dependencies_materialized) { throw 'Bound source/dependency manifest required' }
++    Assert-AuditDigest $source.source_sha256;Assert-AuditDigest $source.zlib_source_sha256;Assert-AuditDigest $Receipt.tool_sha256
++    $combined='{"tool":"'+$source.tool_source_sha256+'","zlib":"'+$source.zlib_source_sha256+'","zlib_commit":"'+$source.zlib_commit+'"}'
++    if ((Get-AuditByteHash ([Text.Encoding]::UTF8.GetBytes($combined))) -cne $source.source_sha256) { throw 'Combined source digest differs' }
++    if (@($Plan.inputs).Count -ne 2 -or $Plan.inputs[0].role -cne 'variant' -or $Plan.inputs[1].role -cne 'original') {
++        throw 'Exactly ordered variant/original inputs required'
++    }
++    $compilers=@($Receipt.compilers)
++    if ($compilers.Count -ne 1 -or $compilers[0].compiler_sha256 -cne 'fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619') {
++        throw 'Exactly one pinned configured compiler required'
++    }
++    $compiler=$compilers[0];$native=[IO.Path]::GetFullPath((Join-Path $Plan.output 'native'))
++    if ($compiler.compiler -isnot [string] -or ![IO.Path]::IsPathFullyQualified($compiler.compiler) -or
++        [IO.Path]::GetFullPath($compiler.compiler) -notmatch '\\VC\\Tools\\MSVC\\14\.44\.35207\\bin\\Hostx64\\x64\\cl\.exe$') {
++        throw 'Pinned configured compiler path required'
++    }
++    $config=[IO.Path]::GetFullPath($compiler.configuration)
++    if (!$config.StartsWith($native+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase) -or
++        [IO.Path]::GetFileName($config) -cne 'CMakeCXXCompiler.cmake') { throw 'Compiler configuration escaped run output' }
++    Assert-AuditDigest $compiler.configuration_sha256
++    $commands=Get-AuditExpectedCommands $Plan $source $Receipt.tool_sha256 ($Receipt.steps[0].name -ceq 'zlib-clone')
++    $steps=@($Receipt.steps)
++    if ($steps.Count -ne $commands.Count) { throw 'Incomplete or duplicate completion steps' }
++    $expected=[ordered]@{'source-manifest'=(Join-Path $Plan.output 'identity/source-manifest.json');
++        'tool'=(Join-Path $native 'Release/iw7-gsc-audit.exe');'wrapper'=$Plan.wrapper;'compiler-config-0'=$config}
++    $lastCreated=$began;$index=0
++    foreach ($name in $commands.Keys) {
++        $step=$steps[$index++];$created=ConvertTo-AuditReceiptUtc $step.creation_utc
++        if ($step.name -cne $name -or !(Test-AuditResidualInteger $step.exit_code) -or $step.exit_code -ne 0 -or
++            !(Test-AuditResidualInteger $step.wrapper_exit_code) -or $step.wrapper_exit_code -ne 0 -or
++            $step.failure -or $step.storage_limit_exceeded -isnot [bool] -or $step.storage_limit_exceeded -or
++            !(Test-AuditResidualUInt32 $step.pid) -or $created -lt $lastCreated -or $created -gt $finished -or
++            !(Test-AuditResidualInteger $step.peak_output_bytes) -or $step.peak_output_bytes -ge 1800MB) {
++            throw 'Ordered successful bounded steps required'
++        }
++        $lastCreated=$created
++        Assert-AuditSameJson @($step.command) @($commands[$name]) ('command '+$name)
++        $expected['result-'+$name]=Join-Path $Plan.output ($name+'.result.json')
++    }
++    foreach ($input in $Plan.inputs) {
++        $expected['input-'+$input.role]=$input.path
++        $expected['witness-'+$input.role]=Join-Path $Plan.output ('witness-'+$input.role+'/consumption.json')
++        $expected['assembly-'+$input.role]=Join-Path $Plan.output ('witness-'+$input.role+'/disassembly.gscasm')
++    }
++    $artifacts=@($Receipt.completion_artifacts);$files=@{};$seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
++    if ($artifacts.Count -ne $expected.Count) { throw 'Complete bounded artifact set required' }
++    foreach ($artifact in $artifacts) {
++        if ($artifact.role -isnot [string] -or !$expected.Contains($artifact.role) -or !$seen.Add($artifact.role) -or
++            [IO.Path]::GetFullPath($artifact.path) -ine [IO.Path]::GetFullPath($expected[$artifact.role]) -or
++            !(Test-AuditResidualUInt32 $artifact.bytes)) { throw 'Exact unique artifact scope required' }
++        Assert-AuditDigest $artifact.sha256
++        $json=$artifact.role -eq 'source-manifest' -or $artifact.role.StartsWith('witness-') -or $artifact.role.StartsWith('result-')
++        $maximum=if ($artifact.role -eq 'tool' -or $artifact.role.StartsWith('assembly-')) {64MB} else {8MB}
++        $file=& $ReadFile $artifact.path $maximum $json
++        & $CheckClock
++        if ($file.SHA256 -cne $artifact.sha256 -or $file.Bytes -ne $artifact.bytes) { throw 'Completion artifact drift' }
++        $files[$artifact.role]=$file
++    }
++    if ($files.tool.SHA256 -cne $Receipt.tool_sha256 -or $files.wrapper.SHA256 -cne $Plan.wrapper_sha256 -or
++        $files['compiler-config-0'].SHA256 -cne $compiler.configuration_sha256) { throw 'Tool/wrapper/compiler configuration pins differ' }
++    Assert-AuditSameJson $files['source-manifest'].Json $source 'written source manifest'
++    foreach ($step in $steps) {
++        $copy=[ordered]@{};foreach ($key in $step.Keys) {if ($key -notin @('name','wrapper_exit_code')) {$copy[$key]=$step[$key]}}
++        Assert-AuditSameJson $files['result-'+$step.name].Json $copy ('step receipt '+$step.name)
++    }
++    foreach ($input in $Plan.inputs) {
++        $bound=$files['witness-'+$input.role].Json;$witness=$bound.native;$assembly=$files['assembly-'+$input.role]
++        if ($files['input-'+$input.role].SHA256 -cne $input.sha256 -or $files['input-'+$input.role].Bytes -ne $input.bytes -or
++            $bound.schema -cne 'iw7.gsc-consumption-bound/1' -or $bound.input_transport -cne 'same_bytes_via_stdin' -or
++            $witness.schema -cne 'iw7.gsc-consumption-native/1' -or $witness.engine -cne 'iw7-pc' -or
++            $witness.input_sha256 -cne $input.sha256 -or $witness.input_bytes -ne $input.bytes) { throw 'Exact input-bound witness required' }
++        foreach ($flag in @('tool_rehashed_after_execution','complete_consumption_verified')) {
++            if ($bound[$flag] -isnot [bool] -or !$bound[$flag]) { throw 'Positive binder evidence required' }
++        }
++        foreach ($flag in @('external_gsc_dependency_absence_verified','asset_closure_complete','runtime_ready','owner_accepted')) {
++            if ($bound[$flag] -isnot [bool] -or $bound[$flag]) { throw 'Unrelated acceptance gate changed' }
++        }
++        $pins=[ordered]@{tool_sha256=$Receipt.tool_sha256;source_revision=$source.source_revision;source_sha256=$source.source_sha256;tables_sha256=$source.tables_sha256}
++        foreach ($key in $pins.Keys) {
++            if ($bound.pins[$key] -cne $pins[$key] -or ($key -ne 'tool_sha256' -and $witness[$key] -cne $pins[$key])) { throw 'Witness source/tool pins differ' }
++        }
++        foreach ($flag in @('initial_op_end_verified','branch_targets_verified','complete_consumption_verified')) {
++            if ($witness[$flag] -isnot [bool] -or !$witness[$flag]) { throw 'Positive native consumption evidence required' }
++        }
++        $code=1L;$stack=0L
++        foreach ($function in @($witness.functions)) {
++            foreach ($key in @('bytecode_begin','declared_bytes','bytecode_end','stack_begin','stack_end')) {
++                if (!(Test-AuditResidualInteger $function[$key])) { throw 'Integer function cursor required' }
++            }
++            if ($function.bytecode_begin -ne $code -or $function.stack_begin -ne $stack -or $function.declared_bytes -le 0 -or
++                $function.bytecode_end -ne $code+$function.declared_bytes -or $function.stack_end -le $stack) { throw 'Witness function cursor gap' }
++            $code=$function.bytecode_end;$stack=$function.stack_end
++        }
++        foreach ($key in @('input_bytes','bytecode_bytes','bytecode_consumed','stack_bytes','stack_consumed','assembly_bytes')) {
++            if (!(Test-AuditResidualUInt32 $witness[$key])) { throw 'Positive integer witness lengths required' }
++        }
++        if ($code -ne $witness.bytecode_bytes -or $code -ne $witness.bytecode_consumed -or
++            $stack -ne $witness.stack_bytes -or $stack -ne $witness.stack_consumed -or
++            $witness.assembly_bytes -ne $assembly.Bytes -or $witness.assembly_sha256 -cne $assembly.SHA256 -or
++            $witness.assembly_hex -isnot [string] -or $witness.assembly_hex.Length -gt 16MB -or
++            $witness.assembly_hex -cnotmatch '^(?:[0-9a-f]{2})+$') { throw 'Complete cursor and assembly witness required' }
++        $decoded=[Convert]::FromHexString($witness.assembly_hex)
++        if ($decoded.Length -ne $assembly.Bytes -or (Get-AuditByteHash $decoded) -cne $assembly.SHA256) { throw 'Assembly bytes differ' }
++        & $CheckClock
++    }
++    return [ordered]@{CompilerImage=[IO.Path]::GetFullPath($compiler.compiler);ToolSHA256=$Receipt.tool_sha256;
++        SourceSHA256=$source.source_sha256;RunID=$Receipt.run_id;Verified=$true}
++}
++
++function Get-AuditClosureCapture($Owner,[long]$StartedMs,$Record,[scriptblock]$MeasureOutput) {
++    $began=Get-AuditMonotonicMs
++    $observation=Get-AuditOriginalJobMembers $Owner
++    Assert-AuditClosureClock $Record $StartedMs
++    $sample=Get-AuditOwnedSnapshot $Owner $StartedMs
++    Assert-AuditOwnedBudget $sample $Record $StartedMs $MeasureOutput
++    [ordered]@{BeganMs=$began;CompletedMs=(Get-AuditMonotonicMs);Observation=$observation;Sample=$sample;ImageFile=$null}
++}
++
++function Complete-AuditBuildEvidence($Owner,$Record,[long]$StartedMs,$Plan,$Context,[scriptblock]$MeasureOutput,[bool]$Residual) {
++    $state=@{Guards=[Collections.Generic.List[object]]::new();Files=@{};Bytes=0L}
++    $proof=[ordered]@{Mode=$(if($Residual){'OriginalJobPinnedResidual'}else{'OriginalJobNaturalClosure'});Residual=$Residual;CompletionVerified=$false;
++        Identity=$null;First=$null;Final=$null;StopRequested=$false;ClosureVerified=$false;AcceptanceGranted=$false;Error=$null}
++    $Record.QualifiedClosure=$proof
++    $check={ Assert-AuditClosureClock $Record $StartedMs }
++    $reader={param($Path,$Maximum,$AsJson) Open-AuditCompletionFile $Path $Maximum $AsJson $state $check}
++    try {
++        if ($Residual) { $proof.First=Get-AuditClosureCapture $Owner $StartedMs $Record $MeasureOutput }
++        $receipt=& $reader (Join-Path $Plan.output 'build-receipt.json') 8MB $true
++        $verified=Assert-AuditCompletionReceipt $receipt.Json $Plan $Context $reader $check
++        $proof.ReceiptSHA256=$receipt.SHA256;$proof.CompletionVerified=$true
++        $Record.CompletionEvidence=$verified
++        $compiler=& $reader $verified.CompilerImage 64MB $false
++        if ($compiler.SHA256 -cne 'fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619') { throw 'Configured compiler file drift' }
++        & $check
++        if ($Residual) {
++            $telemetry=& $reader (Join-Path ([IO.Path]::GetDirectoryName($verified.CompilerImage)) 'vctip.exe') 64MB $false
++            $proof.First.ImageFile=$telemetry
++            $proof.Final=Get-AuditClosureCapture $Owner $StartedMs $Record $MeasureOutput
++            $proof.Final.ImageFile=$telemetry
++            $proof.Identity=Get-AuditPinnedResidualIdentity $Context.OriginalIdentity $compiler $proof.First $proof.Final
++            & $check
++            # Still held: compiler/vctip, receipt and every checked artifact guard.
++            $proof.StopRequested=$true;$Record.StopOriginalJobRequested=$true
++            $Owner.Stop()
++            & $check
++        }
++        while ($true) {
++            $sample=Get-AuditOwnedSnapshot $Owner $StartedMs
++            Assert-AuditOwnedBudget $sample $Record $StartedMs $MeasureOutput
++            if (!$sample.RootExited -or $sample.RootExitCode -ne 0) { throw 'Original root success changed during closure' }
++            $proof.CloseObservation=$sample
++            if ($sample.Active -eq 0) { break }
++            if (!$Residual) { throw 'Member appeared after normal zero closure' }
++            Wait-AuditPoll 25
++        }
++        & $check
++        $proof.ClosureVerified=$true;$proof.AcceptanceGranted=$true
++    } catch { $proof.Error=$_.Exception.Message;throw }
++    finally { $proof.GuardedBytes=$state.Bytes;Close-AuditCompletionFiles $state }
++}
+diff --git a/audit/residual-closure-contract.md b/audit/residual-closure-contract.md
+index 554aef0d00ad4c7c33de6ab99ded2e6770141aee..4172ff92a1751d5a1d1b312840295b81a17c32e8 100644
+--- a/audit/residual-closure-contract.md
++++ b/audit/residual-closure-contract.md
+@@ -1,7 +1,7 @@
+ # Proposed original-job residual closure contract
+ 
+-Status: source review only, 2026-10-12. Not enabled in `build.ps1`. No new Plan or
+-execution was prepared. Both v4 and v5 remain **global FAIL**. This contract cannot
++Status: source candidate wired in a distinct follow-up to reviewed `41fdc19`,
++2026-10-12. No new Plan or execution was prepared. Both v4 and v5 remain **global FAIL**. This contract cannot
+ be applied retrospectively to change their receipts.
+ 
+ ## Microsoft telemetry controls investigated
+@@ -64,15 +64,42 @@ create a child between sampling and Stop. Any unproven build work remains a refu
+ 
+ ## Implemented source subset and remaining gate
+ 
+-`residual_policy.ps1` is a pure identity predicate over supplied evidence. Its
++`residual_policy.ps1` remains a pure identity predicate over supplied evidence. Its
+ positive result explicitly leaves collector provenance, guard lifetime, build
+ completion, closure and acceptance false, and authorizes no action. It does not
+-import providers, read files, stop processes or release leases. It is not imported
+-by the launcher. Pure tests exercise positive identity and refusal cases without
++import providers, read files, stop processes or release leases. The launcher now
++imports it together with `completion.ps1`. Pure tests exercise identity/refusal cases without
+ loading native types or evaluating any previous run as a new successful build.
+ 
+-Before enabling the policy, implement and review the bounded receipt validator and
+-guarded collector, integrate deadline checks around every operation and test the
+-original-owner Stop/fresh-zero sequence with mocks. A reviewed committed candidate,
+-new Plan and explicit coordinator GO are then required for one native attempt.
+-Neither source tests nor this proposal supply that runtime evidence.
++The source candidate `completion.ps1` now validates schema `/2` build receipts with
++a fresh supervising run nonce, exact root PID, plan digest/full contents, lease
++token/owner, source/dependency digest, configured compiler and ordered 7 (or 9 with
++zlib initialization) successful commands. It independently reads 17 (or 19) declared
++artifacts, compares individual step results and the written source manifest, rehashes
++the executable/binder/inputs/configuration and verifies both bound witnesses and
++their assembly bytes/cursors. Historical `/1` receipts are refused.
++
++File reads use live guards, at most 32 files and 128 MiB total; JSON files are at most
++8 MiB with duplicate/case-ambiguous keys and more than 20,000 nodes refused. Compiler
++and telemetry guards stay open from hashing through the final collector observation,
++original-job Stop and fresh zero confirmation. The first observation precedes guard
++creation; the second follows hashing while guards are still held. Natural zero closure
++also requires complete run/artifact/compiler evidence, without a telemetry Stop.
++Every blocking call is checked immediately on return. Calls cannot be preempted;
++late results fail, while existing owned failure cleanup confirms closure or quarantines
++the original owner/lease. The launcher takes another fresh snapshot after guards close
++and marks its owner closed only after all evidence and deadline checks succeed.
++
++Source/mock tests cover stale runs, file/identity drift, duplicate/missing results,
++member/query changes, slow reads/captures/getters/measurement/Stop/guard disposal,
++natural closure, deadline refusal and quarantine. Small managed-file tests verify
++that the guard blocks a writer and is released by its owner. These are not native
++runtime validation. A separately reviewed committed candidate, new Plan and explicit
++coordinator GO remain required for one future native attempt.
++
++Validation for this source candidate: 37 monotonic supervision + 38 registration/
++quarantine + 25 diagnostic + 96 identity + 57 receipt + 69 owned-closure + 16 guarded
++file checks = 338 PowerShell checks; four Python preparation tests; all 13 PowerShell
++ASTs and Python ASTs parse, and `git diff --check` passes. Owned-closure tests import
++the receipt suite, so its 57 checks are counted once. No compiler, native observer,
++lease, game, new Plan or Run was started by these checks.
+diff --git a/audit/residual_policy.ps1 b/audit/residual_policy.ps1
+index e784ad30ce10d0cda245699e371d90dbeb018cdd..dd877a33d8fe83fd55eec42363f9537144563a59 100644
+--- a/audit/residual_policy.ps1
++++ b/audit/residual_policy.ps1
+@@ -1,5 +1,6 @@
+ # Source-only identity predicate. No native load, I/O, process or lease action.
+-# Deliberately not imported by build.ps1. Identity qualification is not closure.
++# Imported by build.ps1; completion.ps1 supplies the guarded collector and closure.
++# Identity qualification alone still grants no authority or acceptance.
+ function ConvertTo-AuditResidualUtc($Value) {
+     $stamp=[datetimeoffset]::MinValue
+     if ($Value -isnot [string] -or
+diff --git a/audit/supervision.ps1 b/audit/supervision.ps1
+index b59f4044a9775b4062aa54114bc94bf98a0b7c21..ffbcfa4bb9ed7007bfcbd31e06492b9f6264d633 100644
+--- a/audit/supervision.ps1
++++ b/audit/supervision.ps1
+@@ -94,11 +94,20 @@ function Register-AuditOwnedBuild($Owner, [string]$LeaseToken, $Record, [long]$S
+     }
+ }
+ 
+-function Wait-AuditOwnedBuild($Owner, $Record, [long]$StartedMs, [scriptblock]$MeasureOutput, [scriptblock]$ObserveResidual=$null) {
++function Wait-AuditOwnedBuild($Owner, $Record, [long]$StartedMs, [scriptblock]$MeasureOutput, [scriptblock]$ObserveResidual=$null,
++    [scriptblock]$QualifyResidual=$null) {
+     $observedResidual=$false
+     while ($true) {
+         $sample = Get-AuditOwnedSnapshot $Owner $StartedMs
+         Assert-AuditOwnedBudget $sample $Record $StartedMs $MeasureOutput
++        if ($sample.RootExited -and $sample.Active -gt 0 -and !$observedResidual -and $QualifyResidual) {
++            $observedResidual=$true
++            & $QualifyResidual
++            Assert-AuditOwnedBudget $sample $Record $StartedMs $MeasureOutput
++            # A callback, including a successful Stop, cannot close an old sample.
++            # Re-query the retained original handles immediately, without a new clock.
++            continue
++        }
+         if ($sample.RootExited -and $sample.Active -gt 0 -and !$observedResidual -and $ObserveResidual) {
+             $observedResidual=$true
+             & $ObserveResidual
+diff --git a/audit/test_completion.ps1 b/audit/test_completion.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..531a865624ff87f2fc09db3d584a082fcea02ffe
+--- /dev/null
++++ b/audit/test_completion.ps1
+@@ -0,0 +1,132 @@
++$ErrorActionPreference='Stop'
++. (Join-Path $PSScriptRoot 'supervision.ps1')
++. (Join-Path $PSScriptRoot 'diagnostics.ps1')
++. (Join-Path $PSScriptRoot 'residual_policy.ps1')
++. (Join-Path $PSScriptRoot 'completion.ps1')
++$script:checks=0
++function Check([bool]$Value,[string]$Message) {if (!$Value) {throw $Message};$script:checks++}
++function Copy-Data($Value) { $Value|ConvertTo-Json -Depth 64 -Compress|ConvertFrom-Json -AsHashtable -DateKind String }
++function Fixture {
++    $a='a'*64;$z='c'*64;$rev='b'*40;$zrev='d'*40
++    $script:plan=[ordered]@{tool_root='C:\mock';output='C:\mock\build\fresh';python='C:\python.exe';pwsh='C:\pwsh.exe';
++        cmake='C:\cmake.exe';ctest='C:\ctest.exe';wrapper='C:\sdk\binder.py';wrapper_sha256=$a;
++        source_revision=$rev;tool_source_sha256=$a;tables_sha256=$a;zlib_commit=$zrev;zlib_local='C:\zlib';
++        residual_closure_policy='original-job-pinned-vctip/1';inputs=@(
++            [ordered]@{role='variant';path='C:\inputs\variant.gscbin';sha256=$a;bytes=20},
++            [ordered]@{role='original';path='C:\inputs\original.gscbin';sha256=$a;bytes=20})}
++    $script:context=[ordered]@{PlanSHA256=$a;RunID=('e'*32);LeaseToken='fresh-lease';LeaseOwnerPID=40;
++        OriginalIdentity=[ordered]@{Source='OriginalProcessHandle';PID=50;Image='C:\python.exe';Priority=16384;CreatedUtc='2026-10-12T00:00:00.0000000Z'}}
++    $combined='{"tool":"'+$a+'","zlib":"'+$z+'","zlib_commit":"'+$zrev+'"}'
++    $source=[ordered]@{schema='iw7.gsc-audit-build-source/2';source_revision=$rev;tool_source_sha256=$a;tables_sha256=$a;
++        zlib_commit=$zrev;dependencies_materialized=$true;zlib_source_sha256=$z;source_sha256=(Get-AuditByteHash ([Text.Encoding]::UTF8.GetBytes($combined)))}
++    $output='C:\mock\build\fresh';$native=$output+'\native';$tool=$native+'\Release\iw7-gsc-audit.exe'
++    $commands=[ordered]@{'cmake-version'=@('C:\cmake.exe','--version');
++        'configure'=@('C:\cmake.exe','-S','C:\mock\audit','-B',$native,'-G','Visual Studio 17 2022','-A','x64',('-DAUDIT_IDENTITY_DIR='+$output+'\identity'));
++        'build'=@('C:\cmake.exe','--build',$native,'--config','Release','--parallel','1','--','/m:1','/nr:false','/p:MultiProcessorCompilation=false');
++        'reader-tests'=@('C:\ctest.exe','--test-dir',$native,'-C','Release','--output-on-failure');
++        'native-negative-tests'=@('C:\python.exe','-B','C:\mock\audit\test_native.py','--tool',$tool,'-v')}
++    foreach ($role in @('variant','original')) {
++        $commands['witness-'+$role]=@('C:\python.exe','-B','C:\sdk\binder.py','--tool',$tool,'--tool-sha256',$a,
++            '--source-revision',$rev,'--source-sha256',$source.source_sha256,'--tables-sha256',$a,
++            '--input',('C:\inputs\'+$role+'.gscbin'),'--output',($output+'\witness-'+$role))
++    }
++    $compiler=[ordered]@{configuration=$native+'\CMakeFiles\4.1.2\CMakeCXXCompiler.cmake';configuration_sha256=$a;
++        compiler='C:/mock/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe';compiler_sha256='fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619'}
++    $script:receipt=[ordered]@{schema='iw7.gsc-audit-build-run/2';success=$true;failure=$null;storage_limit_exceeded=$false;
++        peak_observed_output_bytes=1000;plan_sha256=$a;run_id=$script:context.RunID;root_pid=50;lease_token='fresh-lease';lease_owner_pid=40;
++        plan=(Copy-Data $script:plan);started_utc='2026-10-12T00:00:00.010000+00:00';finished_utc='2026-10-12T00:00:20.000000+00:00';
++        build_source_manifest=$source;tool_sha256=$a;compilers=@($compiler);steps=@();completion_artifacts=@()}
++    $script:files=@{}
++    function Add-File($Role,$Path,$Hash,$Bytes,$Json=$null) {
++        $script:receipt.completion_artifacts+=,[ordered]@{role=$Role;path=$Path;sha256=$Hash;bytes=$Bytes}
++        $script:files[[IO.Path]::GetFullPath($Path)]=[ordered]@{Image=[IO.Path]::GetFullPath($Path);SHA256=$Hash;Bytes=$Bytes;
++            Scope='ImageFileBytesUnderReadGuard';Json=$(if($null -eq $Json){$null}else{Copy-Data $Json})}
++    }
++    Add-File 'source-manifest' ($output+'\identity\source-manifest.json') $a 100 $source
++    Add-File 'tool' $tool $a 100
++    Add-File 'wrapper' 'C:\sdk\binder.py' $a 100
++    Add-File 'compiler-config-0' $compiler.configuration $a 100
++    $number=0
++    foreach ($name in $commands.Keys) {
++        $step=[ordered]@{command=$commands[$name];pid=(100+(++$number));creation_utc=('2026-10-12T00:00:0'+$number+'.0000000Z');
++            exit_code=0;peak_output_bytes=1000;failure=$null;elapsed_seconds=0.1;storage_limit_exceeded=$false}
++        Add-File ('result-'+$name) ($output+'\'+$name+'.result.json') $a 100 $step
++        $step.name=$name;$step.wrapper_exit_code=0;$script:receipt.steps+=,$step
++    }
++    $asm=[Text.Encoding]::UTF8.GetBytes('example');$asmHash=Get-AuditByteHash $asm
++    foreach ($input in $script:plan.inputs) {
++        $pins=[ordered]@{tool_sha256=$a;source_revision=$rev;source_sha256=$source.source_sha256;tables_sha256=$a}
++        $witness=[ordered]@{schema='iw7.gsc-consumption-native/1';engine='iw7-pc';input_sha256=$a;input_bytes=20;
++            source_revision=$rev;source_sha256=$source.source_sha256;tables_sha256=$a;bytecode_bytes=10;bytecode_consumed=10;
++            stack_bytes=3;stack_consumed=3;initial_op_end_verified=$true;branch_targets_verified=$true;complete_consumption_verified=$true;
++            assembly_bytes=$asm.Length;assembly_sha256=$asmHash;assembly_hex=[Convert]::ToHexString($asm).ToLowerInvariant();
++            functions=@([ordered]@{bytecode_begin=1;declared_bytes=9;bytecode_end=10;stack_begin=0;stack_end=3})}
++        $bound=[ordered]@{schema='iw7.gsc-consumption-bound/1';input_transport='same_bytes_via_stdin';pins=$pins;native=$witness;
++            tool_rehashed_after_execution=$true;complete_consumption_verified=$true;external_gsc_dependency_absence_verified=$false;
++            asset_closure_complete=$false;runtime_ready=$false;owner_accepted=$false}
++        Add-File ('input-'+$input.role) $input.path $a 20
++        Add-File ('witness-'+$input.role) ($output+'\witness-'+$input.role+'\consumption.json') $a 100 $bound
++        Add-File ('assembly-'+$input.role) ($output+'\witness-'+$input.role+'\disassembly.gscasm') $asmHash $asm.Length
++    }
++    $script:reads=0
++}
++$read={param($Path,$Maximum,$AsJson) $script:reads++;$script:files[[IO.Path]::GetFullPath($Path)]}
++function Validate { Assert-AuditCompletionReceipt $script:receipt $script:plan $script:context $read {} }
++function Refuse([scriptblock]$Change,[string]$Name) {
++    Fixture;& $Change;$caught=$null
++    try {Validate|Out-Null} catch {$caught=$_.Exception.Message}
++    Check (![string]::IsNullOrEmpty($caught)) "Must refuse $Name"
++}
++Fixture
++$verified=Validate
++Check ($verified.Verified -and $script:reads -eq 17) 'Complete exact-run evidence validates every artifact'
++foreach ($field in @('plan_sha256','run_id','lease_token','root_pid','lease_owner_pid')) {
++    $script:field=$field
++    Refuse {$script:receipt[$script:field]='stale'} "wrong $field"
++}
++Refuse {$script:receipt.schema='iw7.gsc-audit-build-run/1'} 'historical v4/v5 schema'
++Refuse {$script:receipt.success='true'} 'string success'
++Refuse {$script:receipt.success=$false} 'failed candidate'
++Refuse {$script:receipt.failure='late failure'} 'candidate error'
++Refuse {$script:receipt.storage_limit_exceeded=$true} 'storage breach'
++Refuse {$script:receipt.peak_observed_output_bytes=1800MB} 'output stop threshold'
++Refuse {$script:receipt.plan.output='C:\old'} 'old output plan'
++Refuse {$script:receipt.started_utc='2026-10-11T00:00:00.000000+00:00'} 'predates root'
++Refuse {$script:receipt.finished_utc='2026-10-11T00:00:00.000000+00:00'} 'finish before start'
++Refuse {$script:receipt.build_source_manifest.source_revision='f'*40} 'source revision drift'
++Refuse {$script:receipt.build_source_manifest.zlib_commit='f'*40} 'dependency drift'
++Refuse {$script:receipt.build_source_manifest.source_sha256='a'*64} 'combined digest drift'
++Refuse {$script:receipt.build_source_manifest.dependencies_materialized=$false} 'unmaterialized dependencies'
++Refuse {$script:receipt.compilers*=2} 'multiple configured compilers'
++Refuse {$script:receipt.compilers[0].compiler_sha256='a'*64} 'compiler drift'
++Refuse {$script:receipt.compilers[0].configuration='C:\old\CMakeCXXCompiler.cmake'} 'compiler config outside run'
++Refuse {$script:receipt.steps=$script:receipt.steps[0..5]} 'missing original witness step'
++Refuse {$script:receipt.steps[2].name='configure'} 'duplicate step'
++Refuse {$script:receipt.steps[3].exit_code='0'} 'string reader exit'
++Refuse {$script:receipt.steps[3].exit_code=1} 'reader failure'
++Refuse {$script:receipt.steps[4].wrapper_exit_code=1} 'native test wrapper failure'
++Refuse {$script:receipt.steps[5].failure='failed'} 'binder error'
++Refuse {$script:receipt.steps[6].storage_limit_exceeded=$true} 'binder output breach'
++Refuse {$script:receipt.steps[2].command[4]='Debug'} 'changed command'
++Refuse {$script:receipt.steps[2].creation_utc=$script:receipt.steps[0].creation_utc} 'out of order phase creation'
++Refuse {$script:receipt.completion_artifacts=$script:receipt.completion_artifacts[0..15]} 'missing artifact'
++Refuse {$script:receipt.completion_artifacts[1].role='source-manifest'} 'duplicate artifact'
++Refuse {$script:receipt.completion_artifacts[1].path='C:\old.exe'} 'tool outside run'
++Refuse {$script:receipt.completion_artifacts[1].bytes='100'} 'string artifact bytes'
++Refuse {$script:files['C:\mock\build\fresh\native\Release\iw7-gsc-audit.exe'].SHA256='f'*64} 'tool file drift'
++Refuse {$script:files['C:\sdk\binder.py'].Bytes=99} 'binder file size drift'
++Refuse {$script:files['C:\mock\build\fresh\reader-tests.result.json'].Json.exit_code=1} 'step result overwritten'
++Refuse {$script:files['C:\mock\build\fresh\identity\source-manifest.json'].Json.source_revision='f'*40} 'written manifest drift'
++foreach ($role in @('variant','original')) {
++    $script:wp='C:\mock\build\fresh\witness-'+$role+'\consumption.json'
++    Refuse {$script:files[$script:wp].Json.native.input_sha256='f'*64} 'witness binds other input'
++    Refuse {$script:files[$script:wp].Json.complete_consumption_verified='true'} 'string binder proof'
++    Refuse {$script:files[$script:wp].Json.pins.tool_sha256='f'*64} 'witness tool drift'
++    Refuse {$script:files[$script:wp].Json.native.source_revision='f'*40} 'witness source drift'
++    Refuse {$script:files[$script:wp].Json.native.branch_targets_verified=$false} 'missing branch proof'
++    Refuse {$script:files[$script:wp].Json.native.bytecode_consumed=9} 'unconsumed suffix'
++    Refuse {$script:files[$script:wp].Json.native.functions[0].stack_begin=1} 'function gap'
++    Refuse {$script:files[$script:wp].Json.native.assembly_hex='00'} 'assembly bytes changed'
++    Refuse {$script:files[$script:wp].Json.runtime_ready=$true} 'unrelated runtime claim'
++}
++Write-Output "Completion receipt: $script:checks checks passed; synthetic source-only evidence."
+diff --git a/audit/test_completion_files.ps1 b/audit/test_completion_files.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..00a717387d2b376e908ba829083c17fbb0add50f
+--- /dev/null
++++ b/audit/test_completion_files.ps1
+@@ -0,0 +1,43 @@
++$ErrorActionPreference='Stop'
++. (Join-Path $PSScriptRoot 'completion.ps1')
++$script:checks=0
++function Check([bool]$Value,[string]$Message) {if (!$Value) {throw $Message};$script:checks++}
++function State { @{Guards=[Collections.Generic.List[object]]::new();Files=@{};Bytes=0L} }
++$path=Join-Path $PSScriptRoot 'completion.ps1'
++$state=State
++try {
++    $file=Open-AuditCompletionFile $path 1MB $false $state {}
++    Check ($file.SHA256 -ceq (Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant()) 'Streaming SHA matches source bytes'
++    Check ($state.Guards.Count -eq 1 -and $state.Guards[0].CanRead) 'Read guard remains live after hash returns'
++    $write=$null;$blocked=$false
++    try {$write=[IO.File]::Open($path,'Open','Write','ReadWrite')} catch {$blocked=$true} finally {if ($write){$write.Dispose()}}
++    Check $blocked 'Live source read guard denies a concurrent writer'
++    $cached=Open-AuditCompletionFile $path 1MB $false $state {}
++    Check ($state.Guards.Count -eq 1 -and $state.Bytes -eq $file.Bytes -and $cached.SHA256 -eq $file.SHA256) 'Guarded file cache cannot introduce another read generation'
++} finally {Close-AuditCompletionFiles $state}
++Check (!$state.Guards[0].CanRead) 'Guard disposed at owned scope end'
++foreach ($mode in @('file-bytes','aggregate','file-count','slow-read')) {
++    $state=State;$maximum=1MB;$script:clocks=0;$check={}
++    if ($mode -eq 'file-bytes') {$maximum=1}
++    if ($mode -eq 'aggregate') {$state.Bytes=128MB}
++    if ($mode -eq 'file-count') {1..32|ForEach-Object {[void]$state.Guards.Add([IO.MemoryStream]::new())}}
++    if ($mode -eq 'slow-read') {$check={$script:clocks++;if($script:clocks -ge 3){throw 'clock expired after stream read'}}}
++    $caught=$null
++    try {Open-AuditCompletionFile $path $maximum $false $state $check|Out-Null} catch {$caught=$_.Exception.Message}
++    finally {Close-AuditCompletionFiles $state}
++    Check (![string]::IsNullOrEmpty($caught)) "Bounded reader refuses $mode"
++    Check (@($state.Guards|Where-Object CanRead).Count -eq 0) "Refusal closes all $mode guards"
++}
++# A tiny synthetic JSON file is the only write; no build/Plan/native artifact.
++$temporary=[IO.Path]::GetTempFileName()
++try {
++    foreach ($body in @('{"ok":true}','{"same":1,"same":2}','{"key":1,"KEY":2}')) {
++        [IO.File]::WriteAllText($temporary,$body,[Text.UTF8Encoding]::new($false))
++        $state=State;$caught=$null;$file=$null
++        try {$file=Open-AuditCompletionFile $temporary 1024 $true $state {}} catch {$caught=$_.Exception.Message}
++        finally {Close-AuditCompletionFiles $state}
++        if ($body -eq '{"ok":true}') {Check ($file.Json.ok -eq $true -and !$caught) 'Bounded JSON parsed under retained read guard'}
++        else {Check ($caught -match 'Duplicate') 'Duplicate or case-ambiguous JSON keys rejected'}
++    }
++} finally {[IO.File]::Delete($temporary)}
++Write-Output "Completion file guards: $script:checks checks passed; small managed source/JSON I/O only."
+diff --git a/audit/test_owned_closure.ps1 b/audit/test_owned_closure.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..16417237bb75ccad183d6594a4e24b6b137ae7b3
+--- /dev/null
++++ b/audit/test_owned_closure.ps1
+@@ -0,0 +1,117 @@
++# Imports/runs the 57 synthetic receipt cases, then exercises the real orchestrator
++# against owned-handle, member-query, file-guard and monotonic-clock mocks.
++. (Join-Path $PSScriptRoot 'test_completion.ps1')
++$script:checks=0
++function Get-AuditMonotonicMs {$script:now}
++function Wait-AuditPoll([int]$Milliseconds) {$script:now+=$Milliseconds}
++function New-ClosureFixture {
++    Fixture
++    $script:now=100L;$script:stopped=$false;$script:stops=0;$script:captures=0;$script:disposed=0;$script:released=0
++    $script:fileCost=0;$script:captureCost=0;$script:stopCost=0;$script:sampleCost=0;$script:measureCost=0
++    $script:fileFailure=$false;$script:captureFailure=$false;$script:newMember=$false;$script:generationChange=$false
++    $script:preActive=1;$script:postActive=0;$script:postCode=0;$script:secondCaptureCost=0;$script:closeGuardCost=0
++    $script:postSampleCost=0;$script:measureBytes=0L;$script:postQueryFailure=$false
++    $script:guarded=@{};$script:closedGuards=0;$script:capturesAtStop=0;$script:stopGuards=$false
++    $script:files['C:\mock\build\fresh\build-receipt.json']=@{Image='C:\mock\build\fresh\build-receipt.json';SHA256=('a'*64);Bytes=100;Json=$script:receipt}
++    $script:compilerPath='C:\mock\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe'
++    $script:telemetryPath='C:\mock\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\vctip.exe'
++    $script:files[$script:compilerPath]=@{Image=$script:compilerPath;SHA256='fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619';Bytes=100;Scope='ImageFileBytesUnderReadGuard'}
++    $script:files[$script:telemetryPath]=@{Image=$script:telemetryPath;SHA256='d591358c6aee4b673562ca3b3a15c250e612708394fe3b44a7a7eda2470570a5';Bytes=335288;Scope='ImageFileBytesUnderReadGuard'}
++    $script:owner=[pscustomobject]@{}
++    $script:owner|Add-Member ScriptMethod Stop {
++        $script:stops++;$script:capturesAtStop=$script:captures
++        $script:stopGuards=$script:guarded.ContainsKey($script:compilerPath) -and $script:guarded.ContainsKey($script:telemetryPath)
++        $script:stopped=$true;$script:now+=$script:stopCost
++    }
++    $script:owner|Add-Member ScriptMethod Dispose {$script:disposed++}
++    $script:record=[ordered]@{RootExitObservedMs=0L;RootExitCode=$null;JobActiveAtClose=$null;PeakObservedOutputBytes=0L;
++        OriginalIdentity=$script:context.OriginalIdentity;Success=$false;TreeClosed=$false;LeaseReleased=$false}
++}
++function Open-AuditCompletionFile([string]$Path,[long]$Maximum,[bool]$AsJson,$State,[scriptblock]$CheckClock) {
++    & $CheckClock
++    $script:now+=$script:fileCost
++    if ($script:fileFailure) {throw 'file guard unavailable'}
++    & $CheckClock
++    $full=[IO.Path]::GetFullPath($Path)
++    $script:guarded[$full]=$true;$State.Bytes+=$script:files[$full].Bytes
++    return $script:files[$full]
++}
++function Close-AuditCompletionFiles($State) {$script:closedGuards=$script:guarded.Count;$script:guarded.Clear();$script:now+=$script:closeGuardCost}
++function Get-AuditOriginalJobMembers($Owner) {
++    if (![object]::ReferenceEquals($Owner,$script:owner)) {throw 'Capture must borrow the same original owner'}
++    $script:captures++;$script:now+=$script:captureCost
++    if ($script:captures -eq 2) {$script:now+=$script:secondCaptureCost}
++    if ($script:captureFailure) {throw 'native member query failed'}
++    $created=if ($script:generationChange -and $script:captures -eq 2) {'2026-10-12T00:00:02.0000000Z'} else {'2026-10-12T00:00:01.0000000Z'}
++    $member=[ordered]@{PID=70;CreatedUtc=$created;Image=$script:telemetryPath;ParentPID=60;InOriginalJob=$true;Error=$null;ParentError=$null}
++    $members=@($member)
++    if ($script:newMember -and $script:captures -eq 2) {$members+=,[ordered]@{PID=71;CreatedUtc=$created;Image='C:\other.exe';ParentPID=70;InOriginalJob=$true}}
++    [ordered]@{CapturedUtc='2026-10-12T00:00:21.0000000Z';AssignedCount=$members.Count;ListedCount=$members.Count;Members=$members}
++}
++function Get-AuditOwnedSnapshot($Owner,[long]$StartedMs) {
++    if (![object]::ReferenceEquals($Owner,$script:owner)) {throw 'Sample must use original owner'}
++    $began=$script:now;$script:now+=$script:sampleCost
++    if ($script:stopped) {$script:now+=$script:postSampleCost}
++    if ($script:stopped -and $script:postQueryFailure) {throw 'post-Stop original handle query failed'}
++    [pscustomobject]@{ElapsedMs=$began-$StartedMs;CompletedMs=$script:now-$StartedMs;RootExited=$true;
++        RootExitCode=$(if($script:stopped){$script:postCode}else{0});Active=$(if($script:stopped){$script:postActive}else{$script:preActive})}
++}
++$measure={$script:now+=$script:measureCost;$script:measureBytes}
++function Complete {Complete-AuditBuildEvidence $script:owner $script:record 0 $script:plan $script:context $measure $true}
++New-ClosureFixture
++Complete
++Check ($script:record.QualifiedClosure.AcceptanceGranted -and $script:record.QualifiedClosure.CompletionVerified -and
++    $script:record.QualifiedClosure.ClosureVerified -and !$script:record.Success) 'Qualified closure grants no global build success itself'
++Check ($script:stops -eq 1 -and $script:capturesAtStop -eq 2 -and $script:stopGuards) 'Two real collector calls and both guards precede the sole owned Stop'
++Check ($script:closedGuards -eq 20 -and $script:guarded.Count -eq 0) 'All receipt/artifact/image guards released after post-Stop closure'
++Check (!$script:record.QualifiedClosure.Identity.CompilerAncestryProven) 'No invented compiler parent'
++New-ClosureFixture;$script:preActive=0
++Complete-AuditBuildEvidence $script:owner $script:record 0 $script:plan $script:context $measure $false
++Check ($script:stops -eq 0 -and $script:captures -eq 0 -and $script:record.QualifiedClosure.AcceptanceGranted -and
++    $script:closedGuards -eq 19) 'Natural zero closure validates identical receipt/artifact/compiler evidence without Stop'
++
++function Refuse-Closure([scriptblock]$Change,[string]$Name,[bool]$ShouldStop=$false) {
++    New-ClosureFixture;& $Change;$caught=$null
++    try {Complete} catch {$caught=$_.Exception.Message}
++    Check (![string]::IsNullOrEmpty($caught) -and !$script:record.QualifiedClosure.AcceptanceGranted) "Must refuse closure: $Name"
++    Check (($script:stops -gt 0) -eq $ShouldStop) "Stop boundary: $Name"
++    Check ($script:guarded.Count -eq 0) "Release guards after refusal: $Name"
++}
++Refuse-Closure {$script:receipt.run_id='old'} 'stale run receipt'
++Refuse-Closure {$script:receipt.steps[3].exit_code=1} 'reader step failure'
++Refuse-Closure {$script:files[$script:telemetryPath].SHA256='a'*64} 'telemetry image drift'
++Refuse-Closure {$script:files[$script:compilerPath].SHA256='a'*64} 'compiler image drift'
++Refuse-Closure {$script:fileFailure=$true} 'hash/guard failure'
++Refuse-Closure {$script:captureFailure=$true} 'native query failure'
++Refuse-Closure {$script:newMember=$true} 'additional final member'
++Refuse-Closure {$script:generationChange=$true} 'same PID new process generation'
++Refuse-Closure {$script:captureCost=1900} 'slow first member query'
++Refuse-Closure {$script:secondCaptureCost=1900} 'slow second member query'
++Refuse-Closure {$script:fileCost=1900} 'slow guarded receipt read'
++Refuse-Closure {$script:measureCost=1900} 'slow output measurement'
++Refuse-Closure {$script:sampleCost=1900} 'slow original handle getters'
++Refuse-Closure {$script:stopCost=1900} 'slow original Stop' $true
++Refuse-Closure {$script:postActive=1} 'residual did not close before deadline' $true
++Refuse-Closure {$script:postCode=1} 'root exit changed in final sample' $true
++Refuse-Closure {$script:postSampleCost=1900} 'slow post-Stop original handle query' $true
++Refuse-Closure {$script:postQueryFailure=$true} 'failed post-Stop original handle query' $true
++Refuse-Closure {$script:measureBytes=1800MB} 'output stop threshold'
++Refuse-Closure {$script:now=3600000;$script:record.RootExitObservedMs=3599999L} 'global deadline despite fresh drain'
++
++# Callback success cannot be accepted using its old nonzero sample, nor after
++# guard disposal consumes the remaining drain. Exercise actual Wait integration.
++New-ClosureFixture
++Wait-AuditOwnedBuild $script:owner $script:record 0 $measure $null {Complete}
++Check ($script:record.JobActiveAtClose -eq 0 -and $script:stops -eq 1) 'Wait obtains its own fresh zero after qualified callback'
++New-ClosureFixture;$script:closeGuardCost=1900;$caught=$null
++try {Wait-AuditOwnedBuild $script:owner $script:record 0 $measure $null {Complete}} catch {$caught=$_.Exception.Message}
++Check ($caught -match 'deadline' -and $null -eq $script:record.JobActiveAtClose) 'Slow guard disposal cannot grant late Wait closure'
++
++# Failed confirmed closure retains both original owner and lease.
++New-ClosureFixture;$script:postActive=1
++try {Complete} catch {}
++Complete-AuditOwnedCleanup $script:owner $script:record $false $measure {$script:released++}
++Check (!$script:record.TreeClosed -and !$script:record.LeaseReleased -and !$script:record.Success -and
++    $script:released -eq 0 -and $script:disposed -eq 0) 'Unconfirmed closure quarantines owner and lease'
++Check ([object]::ReferenceEquals($script:GscAuditUnclosedOwner,$script:owner)) 'Quarantine retains exact original owner'
++Write-Output "Owned closure: $script:checks checks passed; mocks only, no native load or execution."
+diff --git a/audit/test_residual_policy.ps1 b/audit/test_residual_policy.ps1
+index 9fdf101b63206a4fc44573ecc54e7a9635322873..4db5453458c6c23a6bd7214306a7cc46bfb2aa6f 100644
+--- a/audit/test_residual_policy.ps1
++++ b/audit/test_residual_policy.ps1
+@@ -97,7 +97,7 @@ Refuse {$script:captures[1].BeganMs=104} 'overlapping or stale final capture'
+ Refuse {$script:captures[1].Observation.CapturedUtc='2026-10-12T08:00:59.0000000Z'} 'backwards observation UTC'
+ 
+ $launcher=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'build.ps1'))
+-Check ($launcher -notmatch 'residual_policy|Get-AuditPinnedResidualIdentity') 'Source-only predicate is not wired to launcher'
++Check ($launcher.Contains("'residual_policy.ps1'")) 'Predicate is imported by launcher for guarded qualification'
+ $source=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'residual_policy.ps1'))
+ Check ($source -notmatch 'Add-Type|Start-Process|Stop-Process|\.Stop\(|\.Kill\(|Get-FileHash|Exit-IW7ResourceLease') 'Predicate has no native process/file/lease actions'
+ Write-Output "Residual identity policy: $script:checks checks passed; source-only and no native execution."

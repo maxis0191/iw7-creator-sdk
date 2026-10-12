@@ -130,6 +130,170 @@ class CreatorTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("missing required fields", " ".join(report["errors"]))
 
+    def variant_project(self, manifest=False):
+        self.project = self.root / "variant"
+        self.project.mkdir()
+        (self.project / "sdk_beacon_self_contained.gsc").write_bytes(
+            (SDK / "examples/beacon-self-contained/sdk_beacon_self_contained.gsc").read_bytes())
+        if manifest:
+            (self.project / "manifest.json").write_bytes((SDK / "creator_beacon_self_contained.manifest.json").read_bytes())
+
+    def test_self_contained_plan_selects_exact_source_and_preserves_all_evidence_gaps(self):
+        self.variant_project()
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1")
+        self.assertEqual(code, 0, report)
+        self.assertTrue(report["plan_valid"])
+        selected = report["source_selection"]
+        self.assertTrue(selected["source_bytes_verified"])
+        self.assertEqual(selected["source"]["sha256"], "9de9b76dc25293146999c71653bd407d8cb639e107293f6de87084fed90eee1c")
+        self.assertFalse(selected["project_manifest_present"])
+        for key in ("contract_written", "build_adapter_qualified", "compiled_input_bound", "bytecode_fully_consumed_verified",
+                    "stack_fully_consumed_verified", "external_gsc_dependency_absence_verified", "recipient_closure_complete",
+                    "package_ready", "runtime_ready", "owner_accepted"):
+            self.assertIs(selected[key], False, key)
+        contract = selected["proposed_contract"]
+        self.assertEqual(contract["namespace"], "sdk_beacon_self_contained")
+        self.assertEqual(contract["package"]["closure"]["status"], "incomplete")
+        utility = "scriptfile:scripts/engine/utility.gsc"
+        self.assertNotIn(utility, contract["package"]["closure"]["unresolved"])
+        self.assertFalse(any(utility in node["requires"] for node in contract["package"]["closure"]["nodes"]))
+        self.assertEqual(selected["unresolved_qualifications"][0]["status"], "unresolvedQualification")
+        self.assertFalse(selected["unresolved_qualifications"][0]["dependency_edge_asserted"])
+        self.assertIn("zero observed Far calls is insufficient", " ".join(selected["pending"]))
+        self.assertNotIn("adapter_plan_requested", report)
+
+    def test_self_contained_optional_manifest_must_be_exact_planning_contract(self):
+        self.variant_project(manifest=True)
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1")
+        self.assertEqual(code, 0, report)
+        self.assertTrue(report["source_selection"]["project_manifest_present"])
+        path = self.project / "manifest.json"
+        data = json.loads(path.read_bytes())
+        data["package"]["closure"]["status"] = "complete"
+        data["package"]["closure"]["unresolved"] = []
+        path.write_text(json.dumps(data))
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1")
+        self.assertEqual(code, 1)
+        self.assertIn("must equal the reviewed", " ".join(report["errors"]))
+
+    def test_self_contained_duplicate_manifest_fields_are_refused(self):
+        self.variant_project(manifest=True)
+        path = self.project / "manifest.json"
+        path.write_bytes(b'{"namespace":"sdk_beacon_self_contained",' + path.read_bytes()[1:])
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1")
+        self.assertEqual(code, 1)
+        self.assertIn("Duplicate Creator manifest key", " ".join(report["errors"]))
+
+    def test_self_contained_is_explicit_and_keeps_original_adapter_identity(self):
+        self.variant_project()
+        code, report = self.invoke("-Adapter", "None")
+        self.assertEqual(code, 1)
+        self.assertNotIn("source_selection", report)
+        (self.project / "manifest.json").write_bytes((SDK / "examples/beacon/manifest.json").read_bytes())
+        (self.project / "sdk_beacon.gsc").write_bytes((self.project / "sdk_beacon_self_contained.gsc").read_bytes())
+        code, report = self.invoke("-Adapter", "BeaconV1")
+        self.assertEqual(code, 1)
+        self.assertIn("exact reviewed template GSC", " ".join(report["errors"]))
+
+    def test_self_contained_edited_source_is_refused_even_with_forged_audit_summary(self):
+        self.variant_project()
+        path = self.project / "sdk_beacon_self_contained.gsc"
+        path.write_bytes(path.read_bytes() + b"\n// modified\n")
+        (self.project / "validation.local.json").write_text(json.dumps({
+            "source_sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "observed_external_script_calls": 0,
+            "external_gsc_dependency_absence_verified": True}))
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1")
+        self.assertEqual(code, 1)
+        self.assertIn("exact separate reviewed source", " ".join(report["errors"]))
+
+    def test_self_contained_zero_far_summary_cannot_promote_consumption_or_closure(self):
+        self.variant_project()
+        (self.project / "validation.local.json").write_text(json.dumps({"observed_external_script_calls": 0,
+            "external_gsc_dependency_absence_verified": True, "bytecode_fully_consumed_verified": True,
+            "stack_fully_consumed_verified": True, "asset_closure_complete": True, "runtime_ready": True}))
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1")
+        self.assertEqual(code, 0, report)
+        selected = report["source_selection"]
+        for key in ("bytecode_fully_consumed_verified", "stack_fully_consumed_verified", "external_gsc_dependency_absence_verified",
+                    "recipient_closure_complete", "package_ready", "runtime_ready"):
+            self.assertIs(selected[key], False)
+
+    def test_self_contained_conflicts_and_real_asset_collision_with_original(self):
+        original = self.project
+        self.variant_project()
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1", "-ActiveProject", str(original))
+        self.assertEqual(code, 1)
+        self.assertIn("Active conflict", " ".join(report["errors"]))
+        self.assertIn("Delivered asset collision: xmodel:paris_model_probe", " ".join(report["errors"]))
+
+    def test_self_contained_missing_compatibility_is_not_qualified(self):
+        self.variant_project()
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1", environment=False)
+        self.assertEqual(code, 1)
+        self.assertFalse(report["plan_valid"])
+        self.assertTrue(any("Supply ClientSource" in x for x in report["pending"]))
+
+    def test_self_contained_cli_options_are_canonical_and_build_is_refused(self):
+        self.variant_project()
+        code, report = self.invoke("-Adapter", "beaconselfcontainedv1", "-Action", "plan")
+        self.assertEqual(code, 0, report)
+        self.assertEqual(report["adapter"], "BeaconSelfContainedV1")
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1", "-Action", "Build")
+        self.assertEqual(code, 1)
+        self.assertIn("Build is not connected or qualified", " ".join(report["errors"]))
+
+    def test_self_contained_execution_parameters_cannot_enter_original_builder(self):
+        tools, parameter_file = self.flow_fixture()
+        for relative in ("creator_self_contained.py", "creator_beacon_self_contained.manifest.json",
+                         "examples/beacon-self-contained/sdk_beacon_self_contained.gsc"):
+            destination = tools / "sdk/modding" / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes((SDK / relative).read_bytes())
+        (tools / "sdk/modding/Build-BeaconFF.ps1").write_text("throw 'ORIGINAL BUILDER MUST NEVER BE INVOKED'\n")
+        self.variant_project()
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1", "-Action", "Build", "-BuildParameters", str(parameter_file), tools=tools)
+        self.assertEqual(code, 1)
+        self.assertTrue(report["source_selection"]["source_bytes_verified"])
+        self.assertIn("source-only Plan selection", " ".join(report["errors"]))
+        self.assertNotIn("ORIGINAL BUILDER", " ".join(report["errors"]))
+        for option in ("-BuildParameters", "-RecipientProof", "-RecipientRoot", "-FinalizeRoot", "-Output"):
+            with self.subTest(option=option):
+                code, report = self.invoke("-Adapter", "BeaconSelfContainedV1", option, str(self.root / "absent"), tools=tools)
+                self.assertEqual(code, 1)
+                self.assertIn("source-only Plan selection", " ".join(report["errors"]))
+
+    def test_self_contained_tools_source_pin_cannot_be_replaced_with_project_bytes(self):
+        tools, _ = self.flow_fixture()
+        for relative in ("creator_self_contained.py", "creator_beacon_self_contained.manifest.json",
+                         "examples/beacon-self-contained/sdk_beacon_self_contained.gsc"):
+            destination = tools / "sdk/modding" / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes((SDK / relative).read_bytes())
+        self.variant_project()
+        fake = b"// both copies changed to the same unreviewed source\n"
+        (self.project / "sdk_beacon_self_contained.gsc").write_bytes(fake)
+        (tools / "sdk/modding/examples/beacon-self-contained/sdk_beacon_self_contained.gsc").write_bytes(fake)
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1", tools=tools)
+        self.assertEqual(code, 1)
+        self.assertIn("source pin changed in ToolsRoot", " ".join(report["errors"]))
+
+    def test_self_contained_tools_contract_cannot_silently_claim_closure(self):
+        tools, _ = self.flow_fixture()
+        for relative in ("creator_self_contained.py", "creator_beacon_self_contained.manifest.json",
+                         "examples/beacon-self-contained/sdk_beacon_self_contained.gsc"):
+            destination = tools / "sdk/modding" / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes((SDK / relative).read_bytes())
+        self.variant_project()
+        path = tools / "sdk/modding/creator_beacon_self_contained.manifest.json"
+        data = json.loads(path.read_bytes())
+        data["package"]["closure"]["status"] = "complete"
+        data["package"]["closure"]["unresolved"] = []
+        path.write_text(json.dumps(data))
+        code, report = self.invoke("-Adapter", "BeaconSelfContainedV1", tools=tools)
+        self.assertEqual(code, 1)
+        self.assertIn("planning contract pin changed", " ".join(report["errors"]))
+
     def flow_fixture(self, mode="incomplete"):
         """Real validators/ZIP writer; explicit doubles for native builder/finalizer.
 

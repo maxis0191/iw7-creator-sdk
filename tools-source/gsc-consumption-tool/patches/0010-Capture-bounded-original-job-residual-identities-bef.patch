@@ -1,0 +1,377 @@
+From f813f9758006e33857339c19ece48a642212ac5f Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 08:37:50 +0200
+Subject: [PATCH] Capture bounded original job residual identities before
+ failed closure
+
+
+diff --git a/audit/README.md b/audit/README.md
+index a21ba7daa7eca6510aeac5b8f4fa6dd413a839a4..bde0f522e125ba26c96c99b4348dd08de03ea267 100644
+--- a/audit/README.md
++++ b/audit/README.md
+@@ -3,9 +3,10 @@
+ This separate Windows/MSVC executable reads one original `.gscbin` from binary
+ stdin. It emits a JSON witness only after strict container, zlib, disassembler and
+ local-function-resolution checks succeed. It does not compile GSC, write assets,
+-run a game or establish dependency closure. **Native compilation has been attempted
+-but failed. No successful native witness exists yet; another attempt requires
+-reviewed source and resource admission.**
++run a game or establish dependency closure. **Revision `6f650cb9` compiled and
++passed native tests plus two Beacon witness runs, but overall build supervision
++failed on an unqualified residual descendant. Current diagnostic instrumentation
++has not run natively; another attempt requires reviewed source and admission.**
+ 
+ The source baseline is xensik/gsc-tool
+ `3300e430d1efef00e54c66a8bd416e18a2a9882a`. This checkout was cloned from the
+@@ -99,8 +100,9 @@ token-encoded external calls, truncation, added bytes in both buffers, zlib
+ suffixes, unknown/initial opcodes, last-function sizes and missing NULs.
+ Additional cases cover valid forward/backward/switch branches, nonempty integer
+ and default switch tables, and invalid out-of-function/inside-operand destinations.
+-These native tests have **not run**. No game or C++ audit executable was started.
+-The failed admitted build did emit the reader test executable, which was not run.
++The v3 attempt emitted the reader test executable without running it. The later
++v4 attempt passed reader CTest and all thirteen native methods, then ran both
++Beacon binders. No game was started; supervision still rejected that build.
+ Four pure preparation tests pass: missing/dirty/wrong zlib is refused, dependency
+ bytes affect the combined source hash, and build identity needs a fresh ignored
+ path. PowerShell scripts pass syntax parsing; `test_supervision.ps1` additionally
+@@ -259,6 +261,50 @@ MSBuild used the recorded `--parallel 1 -- /m:1 /nr:false
+ hashes were unchanged after closure; source occupied 91,980,138 bytes excluding
+ build output and run output was about 35.1 MB. The v3 failure remains immutable.
+ 
++## Native v4 measurements and residual diagnostic candidate
++
++The v4 Plan `85d2d63856d825c8da29b162dfc6798230a90f0584e75941b98e96ace42778d8`
++ran source `6f650cb9c981317b970dad0abae6846165f80166` on 2026-10-12. Compilation,
++reader CTest (1/1), native tests (13/13) and both original-byte Beacon binders passed.
++The candidate executable SHA256 is
++`54f0ce337fda98acfeb75e54e538d4936f820d42f530589060f6ac65966d3398` and its combined
++tool/zlib source digest is `667c9aef556aafd55021eeec5b968bcc9786d1fa3ebbcf6f18e67af6be22c3f0`.
++The variant measured bytecode 1480/1480 and stack 1808/1808; the original measured
++1455/1455 and 1394/1394. External dependency absence and runtime gates stayed false.
++
++The original root exited zero but one unidentified job member remained beyond
++the two-second drain. The original job was stopped, zero members confirmed and
++the lease released; overall `Success=false` remains authoritative. Preserve
++`build/native-header-fixed-20261012` and the candidate executable. Supervision SHA256
++is `4b95208c4ad5ae2ea758ff2c8463429d4950665463735e4223d1246c77c134b0`; candidate
++build receipt SHA256 is `7ff2f0fe81dbc6891b931196ae7efd664727ec8d83f67935135a244ce6633731`.
++The member was not identified at the time and must not be called harmless telemetry.
++
++The next source candidate reuses the unchanged `Rig.JobMembers.cs`, SHA256
++`5a02254764277b62f752792f1ec4f5b93b85237b171a3381a78d58f6af190e91`, from the reviewed
++Material/Rig observer family. Its original job handle is borrowed read-only,
++enumeration is bounded to 64 members, and each process is queried through a limited
++query handle for image, creation, parent PID and `IsProcessInJob`. No new owner,
++PID kill, environment switch or shared-provider modification is introduced.
++
++Our CMake/MSBuild chain does not satisfy the existing compiler classifier's direct
++child, single compiler generation and compiler-PID receipt requirements. Therefore
++this instrumentation is **diagnostic only**. The first residual observation records
++members before any owned stop. `diagnostics.ps1` hashes only complete observed
++member image files under read guards, capped at 64 MiB per image and 128 MiB total,
++with a 1,000 ms observation budget checked during streaming and after native calls.
++Blocking native/filesystem calls cannot be preempted; late observations are recorded
++incomplete and their cost still consumes the unchanged two-second drain. The hash
++attests image file bytes, not loaded memory or a safe telemetry classification.
++Observation and hash failures remain visible and never grant build acceptance.
++Native helper loading occurs only after full resource admission; Plan loads none.
++
++The 37 existing supervision and 38 registration/quarantine mock checks still pass.
++Twenty-five additional diagnostic checks cover source-file hashing, identity and
++capture failures, size/count/time policy, single observation, fresh closure and
++callback time charged to the drain. They use mocks plus one small managed source
++file hash; no observer native type, compiler, process, lease or game is launched.
++
+ ```text
+ python -B audit/prepare.py --output build/identity-reviewed
+ cmake -S audit -B build/audit-native -G "Visual Studio 17 2022" -A x64 -DAUDIT_IDENTITY_DIR=ABSOLUTE_IDENTITY_DIRECTORY
+diff --git a/audit/build.ps1 b/audit/build.ps1
+index 8c2b94164b0aafdf9bf5f7f0427904d8de8bc315..aa80a9e79802bcdabe0406b02c903032361aab30 100644
+--- a/audit/build.ps1
++++ b/audit/build.ps1
+@@ -23,7 +23,7 @@ if (-not $Execute) {
+ }
+ # The explicit Enter/Exit lifecycle is coordinator-approved: an unresolved
+ # original job retains its lease. No new scheduler or shared-provider mutation.
+-foreach ($entry in @('scheduler','job_source','python')) {
++foreach ($entry in @('scheduler','job_source','members_source','python')) {
+     $path = [string]$planData.$entry
+     $expected = [string]$planData.($entry + '_sha256')
+     if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) {
+@@ -33,8 +33,12 @@ foreach ($entry in @('scheduler','job_source','python')) {
+ if ($planData.job_source_sha256 -ne 'f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387') {
+     throw 'Original job owner pin differs'
+ }
++if ($planData.members_source_sha256 -ne '5a02254764277b62f752792f1ec4f5b93b85237b171a3381a78d58f6af190e91') {
++    throw 'Read-only original job observer pin differs'
++}
+ . $planData.scheduler
+ . (Join-Path $PSScriptRoot 'supervision.ps1')
++. (Join-Path $PSScriptRoot 'diagnostics.ps1')
+ function Quote-BuildArgument([string]$Value) {
+     if ($Value.IndexOf([char]0) -ge 0) { throw 'NUL argument' }
+     $text = [Text.StringBuilder]::new()
+@@ -71,14 +75,18 @@ $oldPriority = $launcher.PriorityClass
+ $previousOwner = $env:IW7_GSC_AUDIT_LEASE_OWNER
+ $previousToken = $env:IW7_GSC_AUDIT_LEASE_TOKEN
+ $record = [ordered]@{ Schema='iw7.gsc-audit-build-supervision/1'; PlanSHA256=$PlanSha256; LeaseToken=$lease.Token;
+-    OriginalJobSourceSHA256=$planData.job_source_sha256; StartedUtc=[datetime]::UtcNow.ToString('o');
++    OriginalJobSourceSHA256=$planData.job_source_sha256; MemberObserverSHA256=$planData.members_source_sha256;
++    StartedUtc=[datetime]::UtcNow.ToString('o');
+     RootPID=$null; RootCreatedUtc=$null; RootImage=$null; RootExitCode=$null; JobActiveAtClose=$null;
+     PeakObservedOutputBytes=[long]0; StopThresholdBytes=1800MB; OutputLimitBytes=2GB;
+     DeadlineSeconds=3600; DrainDeadlineMilliseconds=2000; TreeClosed=$false; LeaseReleased=$false; Success=$false }
+ try {
+     $launcher.PriorityClass = 'BelowNormal'
+-    if ('IW7.CommunityBuild.BuildJob' -as [type]) { throw 'Fresh PowerShell process required for reviewed BuildJob' }
++    if (('IW7.CommunityBuild.BuildJob' -as [type]) -or ('IW7.AnimationRig.JobMembers' -as [type])) {
++        throw 'Fresh PowerShell process required for reviewed native sources'
++    }
+     Add-Type -Path $planData.job_source -ErrorAction Stop
++    Add-Type -Path $planData.members_source -ErrorAction Stop
+     $env:IW7_GSC_AUDIT_LEASE_OWNER = [string]$PID
+     $env:IW7_GSC_AUDIT_LEASE_TOKEN = [string]$lease.Token
+     $arguments = @('-B',(Join-Path $PSScriptRoot 'build.py'),'--plan',$planPath,'--plan-sha256',$PlanSha256,'--execute')
+@@ -92,7 +100,7 @@ try {
+     $startedMs = Get-AuditMonotonicMs
+     $owner.Resume()
+     Register-AuditOwnedBuild $owner $lease.Token $record $startedMs { Measure-OwnedOutput }
+-    Wait-AuditOwnedBuild $owner $record $startedMs { Measure-OwnedOutput }
++    Wait-AuditOwnedBuild $owner $record $startedMs { Measure-OwnedOutput } { Save-AuditResidualObservation $owner $record }
+     $closed = $true
+     if ($record.RootExitCode -ne 0) { throw "Build root failed: $($record.RootExitCode)" }
+     $candidate = Get-Content -LiteralPath (Join-Path $outputRoot 'build-receipt.json') -Raw | ConvertFrom-Json
+diff --git a/audit/build.py b/audit/build.py
+index 8860d140e696e65edc53e4562558a719e54b8850..3f1d865028875b7bfe2020c7f9b500752d7e7cd6 100644
+--- a/audit/build.py
++++ b/audit/build.py
+@@ -44,6 +44,9 @@ def plan(args):
+     job_source = (scheduler.parent.parent / 'tools-source/asset-bridge/model/BuildJob.cs').resolve(strict=True)
+     if sha_file(job_source) != 'f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387':
+         raise ValueError('Reviewed original BuildJob source pin changed')
++    members_source = (scheduler.parent.parent / 'tools-source/asset-bridge/animation/rig/Rig.JobMembers.cs').resolve(strict=True)
++    if sha_file(members_source) != '5a02254764277b62f752792f1ec4f5b93b85237b171a3381a78d58f6af190e91':
++        raise ValueError('Reviewed read-only original job observer pin changed')
+     cmake = args.cmake.resolve(strict=True)
+     ctest = cmake.with_name('ctest.exe')
+     pwsh = Path(shutil.which('pwsh')).resolve(strict=True)
+@@ -54,6 +57,7 @@ def plan(args):
+             'wrapper': str(wrapper), 'wrapper_sha256': sha_file(wrapper),
+             'scheduler': str(scheduler), 'scheduler_sha256': sha_file(scheduler),
+             'job_source': str(job_source), 'job_source_sha256': sha_file(job_source),
++            'members_source': str(members_source), 'members_source_sha256': sha_file(members_source),
+             'python': sys.executable, 'python_sha256': sha_file(sys.executable),
+             'pwsh': str(pwsh), 'pwsh_sha256': sha_file(pwsh),
+             'cmake': str(cmake), 'cmake_sha256': sha_file(cmake), 'ctest': str(ctest), 'ctest_sha256': sha_file(ctest),
+@@ -72,7 +76,7 @@ def validate_plan(plan):
+         raise ValueError('Plan scope or admission budget differs')
+     if prepare.git('rev-parse', 'HEAD', root=Path(plan['sdk_root'])) != plan['sdk_revision']:
+         raise ValueError('Reviewed SDK revision changed')
+-    for key in ('python', 'pwsh', 'cmake', 'ctest', 'scheduler', 'job_source', 'wrapper'):
++    for key in ('python', 'pwsh', 'cmake', 'ctest', 'scheduler', 'job_source', 'members_source', 'wrapper'):
+         if sha_file(plan[key]) != plan[key + '_sha256']:
+             raise ValueError('Reviewed executable/source changed: ' + key)
+     for item in plan['inputs']:
+diff --git a/audit/diagnostics.ps1 b/audit/diagnostics.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..5e1e18573bf0cb2d8fabac0f943cc3441e744e4b
+--- /dev/null
++++ b/audit/diagnostics.ps1
+@@ -0,0 +1,68 @@
++# Read-only residual observation. Import compiles/starts nothing and owns nothing.
++function Get-AuditOriginalJobMembers($Owner) { [IW7.AnimationRig.JobMembers]::Capture($Owner) }
++
++function Get-AuditImageFileWitness([string]$Path, $Budget) {
++    # This is a hash of the image FILE while locked against write/delete, not a
++    # claim that loaded pages match it or that the member is harmless telemetry.
++    $stream=[IO.File]::Open($Path,'Open','Read','Read')
++    try {
++        if ($stream.Length -le 0 -or $stream.Length -gt 64MB -or $Budget.Bytes+$stream.Length -gt 128MB) {
++            throw 'Residual image hash byte budget exceeded'
++        }
++        $hash=[Security.Cryptography.SHA256]::Create()
++        try {
++            $buffer=[byte[]]::new(262144)
++            while (($count=$stream.Read($buffer,0,$buffer.Length)) -gt 0) {
++                $Budget.Bytes+=$count
++                if ($Budget.Bytes -gt 128MB -or (Get-AuditMonotonicMs)-$Budget.StartedMs -ge 1000) {
++                    throw 'Residual image hash time/byte budget exceeded'
++                }
++                [void]$hash.TransformBlock($buffer,0,$count,$null,0)
++            }
++            [void]$hash.TransformFinalBlock([byte[]]::new(0),0,0)
++            if ((Get-AuditMonotonicMs)-$Budget.StartedMs -ge 1000) { throw 'Residual observation deadline reached' }
++            [ordered]@{SHA256=[Convert]::ToHexString($hash.Hash).ToLowerInvariant();Bytes=$stream.Length;
++                Scope='ImageFileBytesUnderReadGuard'}
++        } finally { $hash.Dispose() }
++    } finally { $stream.Dispose() }
++}
++
++function Save-AuditResidualObservation($Owner, $Record) {
++    # Rig's telemetry classifier requires a direct cl child and PID-bound compile
++    # receipt. CMake/MSBuild has neither contract: this path is DIAGNOSTIC ONLY.
++    $budget=[ordered]@{StartedMs=(Get-AuditMonotonicMs);Bytes=0L}
++    $diagnostic=[ordered]@{Mode='ObservationOnly';ClassifierApplicable=$false;AcceptanceGranted=$false;
++        DeadlineMs=1000;MaxMembers=64;MaxImageBytes=64MB;MaxTotalImageBytes=128MB;
++        Observation=$null;Images=@();Complete=$false;Error=$null}
++    $Record.ResidualDiagnostic=$diagnostic
++    try {
++        $observation=Get-AuditOriginalJobMembers $Owner
++        $diagnostic.Observation=$observation
++        $members=@($observation.Members)
++        if ($members.Count -gt 64 -or $observation.AssignedCount -ne $members.Count -or
++            $observation.ListedCount -ne $members.Count) { throw 'Incomplete bounded original-job observation' }
++        foreach ($member in $members) {
++            if ((Get-AuditMonotonicMs)-$budget.StartedMs -ge 1000) { throw 'Residual observation deadline reached' }
++            $entry=[ordered]@{PID=$member.PID;CreatedUtc=$member.CreatedUtc;Image=$member.Image;
++                ParentPID=$member.ParentPID;InOriginalJob=$member.InOriginalJob;ImageFile=$null;Error=$null}
++            $diagnostic.Images+=,$entry
++            $timestamp=[datetimeoffset]::MinValue
++            if ($member.InOriginalJob -isnot [bool] -or !$member.InOriginalJob -or $member.Error -or $member.ParentError -or
++                !$member.ParentPID -or !$member.Image -or ![IO.Path]::IsPathFullyQualified($member.Image) -or
++                ![datetimeoffset]::TryParseExact($member.CreatedUtc,'o',[Globalization.CultureInfo]::InvariantCulture,
++                    [Globalization.DateTimeStyles]::None,[ref]$timestamp) -or $timestamp.Offset -ne [timespan]::Zero) {
++                $entry.Error='Original job member identity incomplete; no image hash attempted'
++                continue
++            }
++            try { $entry.ImageFile=Get-AuditImageFileWitness $member.Image $budget }
++            catch { $entry.Error=$_.Exception.Message }
++        }
++        if ((Get-AuditMonotonicMs)-$budget.StartedMs -ge 1000) { throw 'Residual observation deadline reached' }
++        $diagnostic.Complete=(@($diagnostic.Images|Where-Object Error).Count -eq 0)
++    } catch { $diagnostic.Error=$_.Exception.Message }
++    finally {
++        $diagnostic.ElapsedMs=(Get-AuditMonotonicMs)-$budget.StartedMs
++        $diagnostic.HashedBytes=$budget.Bytes
++    }
++    # No Stop, Dispose, lease release, PID action or success override here.
++}
+diff --git a/audit/supervision.ps1 b/audit/supervision.ps1
+index 378c0ab660ed34aa970e445847f53c64eb69830c..b59f4044a9775b4062aa54114bc94bf98a0b7c21 100644
+--- a/audit/supervision.ps1
++++ b/audit/supervision.ps1
+@@ -94,10 +94,18 @@ function Register-AuditOwnedBuild($Owner, [string]$LeaseToken, $Record, [long]$S
+     }
+ }
+ 
+-function Wait-AuditOwnedBuild($Owner, $Record, [long]$StartedMs, [scriptblock]$MeasureOutput) {
++function Wait-AuditOwnedBuild($Owner, $Record, [long]$StartedMs, [scriptblock]$MeasureOutput, [scriptblock]$ObserveResidual=$null) {
++    $observedResidual=$false
+     while ($true) {
+         $sample = Get-AuditOwnedSnapshot $Owner $StartedMs
+         Assert-AuditOwnedBudget $sample $Record $StartedMs $MeasureOutput
++        if ($sample.RootExited -and $sample.Active -gt 0 -and !$observedResidual -and $ObserveResidual) {
++            $observedResidual=$true
++            & $ObserveResidual
++            # Observation costs consume the existing drain/global deadlines.
++            # A callback can never turn the old nonzero snapshot into closure.
++            Assert-AuditOwnedBudget $sample $Record $StartedMs $MeasureOutput
++        }
+         if ($sample.RootExited -and $sample.Active -eq 0) {
+             $Record.RootExitCode = $sample.RootExitCode
+             $Record.JobActiveAtClose = 0
+diff --git a/audit/test_diagnostics.ps1 b/audit/test_diagnostics.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..a119fa149931e310ce4195d0ba6dfedc36c344ec
+--- /dev/null
++++ b/audit/test_diagnostics.ps1
+@@ -0,0 +1,98 @@
++# Pure mocks, plus one small managed file-hash check. No native load or process.
++$ErrorActionPreference='Stop'
++. (Join-Path $PSScriptRoot 'supervision.ps1')
++. (Join-Path $PSScriptRoot 'diagnostics.ps1')
++$script:checks=0
++function Check([bool]$Value,[string]$Message) { if (!$Value) { throw $Message }; $script:checks++ }
++function Get-AuditMonotonicMs { $script:now }
++function Wait-AuditPoll([int]$Milliseconds) { $script:now+=$Milliseconds }
++$script:now=0L
++$budget=[ordered]@{StartedMs=0L;Bytes=0L}
++$path=Join-Path $PSScriptRoot 'diagnostics.ps1'
++$real=Get-AuditImageFileWitness $path $budget
++Check ($real.SHA256 -ceq (Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant()) 'Managed streaming hash matches file'
++Check ($real.Bytes -eq (Get-Item -LiteralPath $path).Length -and $budget.Bytes -eq $real.Bytes) 'Hash accounts exact small source bytes'
++$budget=[ordered]@{StartedMs=0L;Bytes=128MB};$caught=$null
++try { Get-AuditImageFileWitness $path $budget } catch { $caught=$_.Exception.Message }
++Check ($caught -match 'byte budget') 'Total image byte budget refuses before reading another image'
++$script:now=1000L;$budget=[ordered]@{StartedMs=0L;Bytes=0L};$caught=$null
++try { Get-AuditImageFileWitness $path $budget } catch { $caught=$_.Exception.Message }
++Check ($caught -match 'time/byte budget') 'Streaming hash includes elapsed observation time'
++
++function Get-AuditOriginalJobMembers($Owner) {
++    $script:captures++
++    if ($script:captureFailure) { throw 'Native observation unavailable' }
++    $script:now+=$script:captureCost
++    $script:observation
++}
++function Get-AuditImageFileWitness([string]$Path,$Budget) {
++    $script:hashes++;$script:now+=$script:hashCost
++    if ($script:hashFailure) { throw 'Bounded image file unavailable' }
++    $Budget.Bytes+=10
++    [ordered]@{SHA256=('a'*64);Bytes=10;Scope='ImageFileBytesUnderReadGuard'}
++}
++function Fixture {
++    $script:now=0L;$script:captures=0;$script:hashes=0;$script:captureFailure=$false;$script:hashFailure=$false
++    $script:captureCost=0L;$script:hashCost=0L
++    $script:member=[pscustomobject]@{PID=7;Image='C:\mock\unknown.exe';CreatedUtc='2026-10-12T06:00:00.0000000Z';
++        ParentPID=6;InOriginalJob=$true;Error=$null;ParentError=$null}
++    $script:observation=[pscustomobject]@{CapturedUtc='2026-10-12T06:00:01.0000000Z';AssignedCount=1;ListedCount=1;Members=@($script:member)}
++    [ordered]@{PeakObservedOutputBytes=0L;JobActiveAtClose=$null;RootExitCode=$null;Success=$false}
++}
++$record=Fixture
++Save-AuditResidualObservation ([object]::new()) $record
++Check ($record.ResidualDiagnostic.Complete -and $script:hashes -eq 1) 'Unknown named original member may be observed without being classified'
++Check (!$record.ResidualDiagnostic.AcceptanceGranted -and !$record.ResidualDiagnostic.ClassifierApplicable -and !$record.Success) 'Diagnostics grant no acceptance'
++Check ($record.ResidualDiagnostic.Images[0].ParentPID -eq 6 -and $record.ResidualDiagnostic.Images[0].InOriginalJob) 'Original membership and kernel ParentPID retained'
++
++foreach ($property in @('InOriginalJob','CreatedUtc','Image','ParentPID')) {
++    $record=Fixture;$script:member.$property=$null
++    Save-AuditResidualObservation ([object]::new()) $record
++    Check (!$record.ResidualDiagnostic.Complete -and $script:hashes -eq 0) 'Incomplete identity never hashes/adopts an unrelated path'
++}
++foreach ($property in @('Error','ParentError')) {
++    $record=Fixture;$script:member.$property='unavailable'
++    Save-AuditResidualObservation ([object]::new()) $record
++    Check (!$record.ResidualDiagnostic.Complete -and $script:hashes -eq 0) 'Native identity error remains diagnostic failure'
++}
++$record=Fixture;$script:captureFailure=$true
++Save-AuditResidualObservation ([object]::new()) $record
++Check ($record.ResidualDiagnostic.Error -match 'unavailable' -and !$record.ResidualDiagnostic.Complete) 'Native capture error is preserved'
++$record=Fixture;$script:hashFailure=$true
++Save-AuditResidualObservation ([object]::new()) $record
++Check ($record.ResidualDiagnostic.Images[0].Error -match 'unavailable' -and !$record.ResidualDiagnostic.Complete) 'Image hash failure stays unknown'
++$record=Fixture;$script:observation.AssignedCount=2
++Save-AuditResidualObservation ([object]::new()) $record
++Check ($record.ResidualDiagnostic.Error -match 'Incomplete bounded' -and $script:hashes -eq 0) 'Truncated job list refuses image processing'
++$record=Fixture;$script:observation.Members=@($script:member)*65;$script:observation.AssignedCount=65;$script:observation.ListedCount=65
++Save-AuditResidualObservation ([object]::new()) $record
++Check ($record.ResidualDiagnostic.Error -match 'bounded' -and $script:hashes -eq 0) 'More than 64 members refused'
++foreach ($cost in @(1000,1001)) {
++    $record=Fixture;$script:hashCost=$cost
++    Save-AuditResidualObservation ([object]::new()) $record
++    Check (!$record.ResidualDiagnostic.Complete -and $record.ResidualDiagnostic.Error -match 'deadline') 'Late diagnostic never claims complete'
++}
++$record=Fixture;$script:captureCost=1000
++Save-AuditResidualObservation ([object]::new()) $record
++Check (!$record.ResidualDiagnostic.Complete -and $script:hashes -eq 0) 'Native capture time belongs to diagnostic budget'
++
++# Exercise the actual wait callback: exactly once, fresh zero observation only,
++# and no extension of the original 2 s drain when observation is slow.
++function Get-AuditOwnedSnapshot($Owner,[long]$StartedMs) {
++    $script:polls++
++    [pscustomobject]@{ElapsedMs=$script:now-$StartedMs;CompletedMs=$script:now-$StartedMs;
++        RootExited=$true;Active=$(if($script:polls -le 2){1}else{0});RootExitCode=0}
++}
++$record=Fixture;$script:polls=0;$script:callbacks=0
++Wait-AuditOwnedBuild ([object]::new()) $record 0 {0L} {$script:callbacks++;Save-AuditResidualObservation $null $record}
++Check ($script:callbacks -eq 1 -and $script:polls -eq 3 -and $record.JobActiveAtClose -eq 0) 'Single diagnostic then fresh owned zero observation'
++$record=Fixture;$script:polls=0;$caught=$null
++try { Wait-AuditOwnedBuild ([object]::new()) $record 0 {0L} {$script:now+=2000} } catch { $caught=$_.Exception.Message }
++Check ($caught -match 'drain deadline' -and $null -eq $record.JobActiveAtClose -and $record.RootExitObservedMs -eq 0) 'Diagnostic time cannot extend drain or accept stale snapshot'
++
++$launcher=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'build.ps1'))
++Check ($launcher.IndexOf('$lease = Enter-IW7ResourceLease') -lt $launcher.IndexOf('Add-Type -Path $planData.members_source')) 'Observer native load follows full admission'
++Check ($launcher.IndexOf('if (-not $Execute)') -lt $launcher.IndexOf('Add-Type -Path $planData.members_source')) 'Plan does not load native observer'
++$diagnostics=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'diagnostics.ps1'))
++Check ($diagnostics -notmatch '\.Stop\(|\.Kill\(|\.Dispose\(\).*Owner|Stop-Process|Exit-IW7ResourceLease') 'Diagnostic source has no process/lease mutation'
++Write-Output "Residual diagnostics: $script:checks checks passed; no native execution."

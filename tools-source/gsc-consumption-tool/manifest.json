@@ -3,8 +3,8 @@
   "upstream_source": "https://github.com/xensik/gsc-tool",
   "base_revision": "3300e430d1efef00e54c66a8bd416e18a2a9882a",
   "base_tree_oid": "8af839d54cba3536954cfd1abd0e33c60112727d",
-  "source_revision": "6f650cb9c981317b970dad0abae6846165f80166",
-  "source_tree_oid": "7a68aeeac3ba89ec189d8397d5ad830ba8acb580",
+  "source_revision": "eabe74ab65d8ce2a943b54d24b15a60749a0cf2a",
+  "source_tree_oid": "74143703049b4fbb9ba702d1ea74bc58be5607ac",
   "patch_format": "git format-patch --full-index --no-signature --no-stat",
   "patches": [
     {
@@ -60,6 +60,24 @@
       "original_commit": "6f650cb9c981317b970dad0abae6846165f80166",
       "bytes": 5827,
       "sha256": "e6128a3bfab937a23499b8b166a6bc5c647c338e9b3a6f2841ff19a654456426"
+    },
+    {
+      "path": "patches/0010-Capture-bounded-original-job-residual-identities-bef.patch",
+      "original_commit": "f813f9758006e33857339c19ece48a642212ac5f",
+      "bytes": 24816,
+      "sha256": "cf1edb77b4c3da27a6f96d51a86c8b7e911c44a957d26677e54447d5c6eb50d6"
+    },
+    {
+      "path": "patches/0011-Specify-pinned-original-job-residual-identity-without-closure.patch",
+      "original_commit": "41fdc19fd443bddafb90b9f6664266adb008c494",
+      "bytes": 22441,
+      "sha256": "38f9162c88a72c5fd5588b95554671d291c4ee76ad280e68f35e9391fb15e9c2"
+    },
+    {
+      "path": "patches/0012-Qualify-owned-residual-closure-with-guarded-exact-run-evidence.patch",
+      "original_commit": "eabe74ab65d8ce2a943b54d24b15a60749a0cf2a",
+      "bytes": 63719,
+      "sha256": "2d08c8d5249f65deb62d403fa0d4fdd8d8da400534cf5ce482b0b0da8df3b4ee"
     }
   ],
   "licenses": [
@@ -89,23 +107,37 @@
     {
       "path": "audit/README.md",
       "mode": "100644",
-      "blob_oid": "a21ba7daa7eca6510aeac5b8f4fa6dd413a839a4",
-      "bytes": 18023,
-      "sha256": "374a67ea07d284b4c36c53ad2c3d4f094f35d2cab2f074fd273aaaa8c45ae344"
+      "blob_oid": "f8330af981937bdd779537c869c6c5421ada44fb",
+      "bytes": 22885,
+      "sha256": "ecaf0fe7eea76a8c3c9da86544dab22b26d4dea4780d069423d187ac1427bf96"
     },
     {
       "path": "audit/build.ps1",
       "mode": "100644",
-      "blob_oid": "8c2b94164b0aafdf9bf5f7f0427904d8de8bc315",
-      "bytes": 6303,
-      "sha256": "00360b8487df04d234bfef41bca089ce3ed8e62657da56f1c9bf4ad741a271ec"
+      "blob_oid": "87f53027f4e7a48a7d5ba891fd126dc4070db13d",
+      "bytes": 7679,
+      "sha256": "c191e1c4eb6c86e6e473dbb9447d3ebfa5293377220149272786dc2401f06fbc"
     },
     {
       "path": "audit/build.py",
       "mode": "100644",
-      "blob_oid": "8860d140e696e65edc53e4562558a719e54b8850",
-      "bytes": 11901,
-      "sha256": "9c8cd0dc5e2bbfb56e9635fc7b0d1470bac53028726b4fee5c35bfde3d3b2712"
+      "blob_oid": "be482cb61562f17a109f9d40560ac529c9634d0d",
+      "bytes": 13998,
+      "sha256": "084af7e4f91cd9f1dcfafe06880fb1cd46bc1ca41415fd9299bcd972c8bcb762"
+    },
+    {
+      "path": "audit/completion.ps1",
+      "mode": "100644",
+      "blob_oid": "69bd44b1c2ca4f6c4076c9fe9d0c82aaa5e68ee7",
+      "bytes": 19631,
+      "sha256": "9710dd10beaa1db17d0bca51916679145f5d76460bc3c43463f888bc9aff3ad0"
+    },
+    {
+      "path": "audit/diagnostics.ps1",
+      "mode": "100644",
+      "blob_oid": "5e1e18573bf0cb2d8fabac0f943cc3441e744e4b",
+      "bytes": 4183,
+      "sha256": "971284b7643182a351a0294c8df52e74794ecc57a7fb870749ccd141f5222379"
     },
     {
       "path": "audit/main.cpp",
@@ -129,6 +161,20 @@
       "sha256": "2a67879f7cbc17df14176886f715880ed68ef91ebb25b1f69493f08b3d1fb685"
     },
     {
+      "path": "audit/residual-closure-contract.md",
+      "mode": "100644",
+      "blob_oid": "4172ff92a1751d5a1d1b312840295b81a17c32e8",
+      "bytes": 7416,
+      "sha256": "ec3abde7e824f2034990c5cad457bc4df86afe49b434b222d61b51ec377a46da"
+    },
+    {
+      "path": "audit/residual_policy.ps1",
+      "mode": "100644",
+      "blob_oid": "dd877a33d8fe83fd55eec42363f9537144563a59",
+      "bytes": 6084,
+      "sha256": "86c2d8f3f6c79e5dd644f11741521f74b3ccd6960f45189ba41da38f17ef3888"
+    },
+    {
       "path": "audit/run_process.ps1",
       "mode": "100644",
       "blob_oid": "a1f8afed0aac84188c0c6d9fa6051ddc0a77c1d2",
@@ -138,9 +184,30 @@
     {
       "path": "audit/supervision.ps1",
       "mode": "100644",
-      "blob_oid": "378c0ab660ed34aa970e445847f53c64eb69830c",
-      "bytes": 7658,
-      "sha256": "abcdb23d151840c019da3e22a0bbfafb8ea6e1745d620878148848ab346ee939"
+      "blob_oid": "ffbcfa4bb9ed7007bfcbd31e06492b9f6264d633",
+      "bytes": 8634,
+      "sha256": "b6125dfaa4c6b16e4ebc6f54f160369788cfe5290f4c734edb925101af4f3471"
+    },
+    {
+      "path": "audit/test_completion.ps1",
+      "mode": "100644",
+      "blob_oid": "531a865624ff87f2fc09db3d584a082fcea02ffe",
+      "bytes": 10868,
+      "sha256": "5663c05d8dbdc3d3336335062dc318573b7dbbcf4c7b337bb532d01845a47555"
+    },
+    {
+      "path": "audit/test_completion_files.ps1",
+      "mode": "100644",
+      "blob_oid": "00a717387d2b376e908ba829083c17fbb0add50f",
+      "bytes": 2936,
+      "sha256": "4309d27120e23dafad22e104971521bf08bc102b18f06753ca481f9193052c6c"
+    },
+    {
+      "path": "audit/test_diagnostics.ps1",
+      "mode": "100644",
+      "blob_oid": "a119fa149931e310ce4195d0ba6dfedc36c344ec",
+      "bytes": 6968,
+      "sha256": "74bbe2abb232bebccbc13b1b29073202e373b6e8450754a924bdd3003b9bcb92"
     },
     {
       "path": "audit/test_native.py",
@@ -148,6 +215,13 @@
       "blob_oid": "e6033d4062f6a3fd2c66358ba81910ac192174fa",
       "bytes": 6322,
       "sha256": "2b6f9ad25a356942ff1b7413cb0690516a4420ade9db984cb4457301ee917eb5"
+    },
+    {
+      "path": "audit/test_owned_closure.ps1",
+      "mode": "100644",
+      "blob_oid": "16417237bb75ccad183d6594a4e24b6b137ae7b3",
+      "bytes": 9175,
+      "sha256": "3a671c4576a0ce3d88374bae786c24ca26aec3ea81388604ddddc73804b7e538"
     },
     {
       "path": "audit/test_plan.py",
@@ -162,6 +236,13 @@
       "blob_oid": "a7838016b1179b5fe0f6abbe4e6ecda370af64df",
       "bytes": 8689,
       "sha256": "31d2658bb0a8d7c8779a5dc8bc1528c12fc14e32fe79d1aab4f6937a8bbc89bf"
+    },
+    {
+      "path": "audit/test_residual_policy.ps1",
+      "mode": "100644",
+      "blob_oid": "4db5453458c6c23a6bd7214306a7cc46bfb2aa6f",
+      "bytes": 7936,
+      "sha256": "d4aec293287c3e6c5adf6731c78f1ae18f9a219b5c9a11525a022ab00d319668"
     },
     {
       "path": "audit/test_supervision.ps1",

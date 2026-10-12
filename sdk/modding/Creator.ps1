@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory)][string]$Project,
     [ValidateSet('Plan','Build')][string]$Action='Plan',
-    [ValidateSet('None','BeaconV1','AnimationProbe','MaterialV2')][string]$Adapter='None',
+    [ValidateSet('None','BeaconV1','BeaconSelfContainedV1','AnimationProbe','MaterialV2')][string]$Adapter='None',
     [string]$BuildParameters,
     [string[]]$ActiveProject=@(),
     [string]$ClientSource,
@@ -19,7 +19,7 @@ param(
 # Plan imports the reviewed Python validators and never writes files or loads native code.
 $ErrorActionPreference='Stop'
 $Action=@('Plan','Build')|Where-Object {$_ -ieq $Action}
-$Adapter=@('None','BeaconV1','AnimationProbe','MaterialV2')|Where-Object {$_ -ieq $Adapter}
+$Adapter=@('None','BeaconV1','BeaconSelfContainedV1','AnimationProbe','MaterialV2')|Where-Object {$_ -ieq $Adapter}
 $Target=$Target.ToLowerInvariant()
 $python=(Get-Command python -ErrorAction Stop).Source
 $inputData=[ordered]@{project=$Project;action=$Action;adapter=$Adapter;build_parameters=$BuildParameters;
@@ -99,13 +99,20 @@ try:
         raise ValueError("At most 64 active projects can be inspected")
     project = packager.no_redirects(args["project"])
     if not project.is_dir():
-        raise ValueError("Project must be a directory containing manifest.json")
+        raise ValueError("Project must be a directory; generic planning requires manifest.json")
     report["project"] = str(project)
     projects = [project, *(packager.no_redirects(p) for p in args["active_projects"])]
     manifests = []
     for index, directory in enumerate(projects):
-        path = packager.payload_path(directory, "manifest.json")
-        data = sdk.load_manifest(path)
+        if index == 0 and args["adapter"] == "BeaconSelfContainedV1":
+            selector = module(root / "sdk/modding/creator_self_contained.py", "creator_self_contained")
+            data, selection = selector.select(directory, root, packager)
+            report["source_selection"] = selection
+            report["pending"].extend(selection["pending"])
+            step("source-selection", "passed", ["Exact separate source selected; proposed contract remains unbuilt and incomplete"])
+        else:
+            path = packager.payload_path(directory, "manifest.json")
+            data = sdk.load_manifest(path)
         manifests.append(data)
         result = sdk.validate(data, stage="plan", target=args["target"],
                               client_source=args["client_source"], server_source=args["server_source"])
@@ -165,6 +172,12 @@ try:
             report["build_parameters_sha256"] = hashlib.sha256(parameter_bytes).hexdigest()
         else:
             step("adapter-plan", "pending", ["BuildParameters is required for stock/tool/receipt checks; no native build was run"])
+    elif args["adapter"] == "BeaconSelfContainedV1":
+        if args["build_parameters"] or args["recipient_proof"] or args["recipient_root"] or args["finalize_root"] or args["output"]:
+            raise ValueError("BeaconSelfContainedV1 accepts source-only Plan selection; build/output/recipient inputs cannot qualify this adapter")
+        if args["action"] != "Plan":
+            raise ValueError("BeaconSelfContainedV1 Build is not connected or qualified; no builder, compiler, finalizer or package writer was invoked")
+        step("adapter-plan", "pending", ["Source-only planning contract selected; native adapter and complete evidence remain required"])
     elif args["adapter"] != "None":
         message = args["adapter"] + " adapter is named but not connected or qualified in Creator"
         step("adapter-plan", "blocked", [message])

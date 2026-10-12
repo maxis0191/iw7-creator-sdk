@@ -1,0 +1,62 @@
+{
+  "schema": "iw7.community-mod/1",
+  "namespace": "sdk_beacon_self_contained",
+  "requires": {
+    "engine": ["iw7-cp/1", "model-netconststrings/1"],
+    "client": ["mod-fastfile-download/1", "xmodel-rigid/1"],
+    "server": ["mod-fastfile-host/1", "gsc-custom-scripts/1", "gsc-private-hud/1", "script-model/1"]
+  },
+  "dependencies": [],
+  "conflicts": [
+    {"id": "sdk_beacon", "reason": "Shared probe model and NCS names; the two Beacon variants cannot coexist."},
+    {"id": "paris_model_probe", "reason": "Shared probe model and NCS asset names; do not load both packs."}
+  ],
+  "lifecycle": {
+    "activation": "map-load", "deactivation": "map-unload", "hot_reload": false,
+    "entrypoints": [{"side": "server", "path": "custom_scripts/cp/sdk_beacon_self_contained.gsc", "symbol": "init"}],
+    "cleanup": ["entities", "hud", "threads", "player-state"]
+  },
+  "compatibility": {
+    "engine": "iw7", "mode": "cp", "network_protocol": 2,
+    "client_match": "exact-content", "coexistence": "exclusive-fs-game"
+  },
+  "package": {
+    "schema": "iw7.mod-package/1", "id": "sdk_beacon_self_contained", "version": "0.1.0",
+    "maps": ["cp_zmb"], "delivery": "mod",
+    "native_requirements": {
+      "server_source": null, "client_source": null,
+      "client_capabilities": [], "compatible_client_sources": []
+    },
+    "files": [
+      {"id": "client_fastfile", "role": "client", "source": null,
+       "destination": "mods/sdk_beacon_self_contained/mod.ff", "bytes": null, "sha256": null,
+       "closure_roots": ["xmodel:paris_model_probe"]},
+      {"id": "server_gameplay", "role": "server", "source": "sdk_beacon_self_contained.gsc",
+       "destination": "iw7-mod/custom_scripts/cp/sdk_beacon_self_contained.gsc", "bytes": null, "sha256": null,
+       "closure_roots": ["scriptfile:custom_scripts/cp/sdk_beacon_self_contained.gsc"]}
+    ],
+    "closure": {
+      "status": "incomplete", "evidence_ref": null,
+      "roots": ["xmodel:paris_model_probe", "scriptfile:custom_scripts/cp/sdk_beacon_self_contained.gsc"],
+      "nodes": [
+        {"id": "scriptfile:custom_scripts/cp/sdk_beacon_self_contained.gsc", "kind": "scriptfile", "scope": "server", "sha256": null,
+         "requires": ["xmodel:paris_model_probe"]},
+        {"id": "xmodel:paris_model_probe", "kind": "xmodel", "scope": "client", "sha256": null,
+         "requires": ["xsurface:paris_model_probe_lod0", "material:mopw/character_park_clown_zombie_shoes", "netconststrings:ncs_mdl_paris_model_probe", "rawfile:sdk_beacon_self_contained"]},
+        {"id": "xsurface:paris_model_probe_lod0", "kind": "other", "scope": "client", "sha256": null, "requires": []},
+        {"id": "material:mopw/character_park_clown_zombie_shoes", "kind": "material", "scope": "recipient", "sha256": null,
+         "requires": ["techset:mopw_l_sm_replace_i0c0s0o0n0p0", "image:park_clown_zombie_shoes_n_3e46d100_packed_nog", "image:park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs"]},
+        {"id": "netconststrings:ncs_mdl_paris_model_probe", "kind": "other", "scope": "client", "sha256": null, "requires": []},
+        {"id": "rawfile:sdk_beacon_self_contained", "kind": "other", "scope": "client", "sha256": null, "requires": []}
+      ],
+      "unresolved": ["techset:mopw_l_sm_replace_i0c0s0o0n0p0", "image:park_clown_zombie_shoes_n_3e46d100_packed_nog", "image:park_clown_zombie_shoes_pink_c_park_clown_zombie_shoes_g_packed_cs"]
+    },
+    "evidence": [
+      {"kind": "source-check", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "offline-load", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "runtime-link", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "render", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "gameplay", "status": "pending", "reference": null, "authority": "owner", "maps": []}
+    ]
+  }
+}

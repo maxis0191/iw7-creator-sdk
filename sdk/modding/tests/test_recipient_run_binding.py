@@ -169,6 +169,91 @@ class RunBindingTests(unittest.TestCase):
     def repin(self, name, data):
         self.run_pins[name] = self.write(self.root / name, data)
 
+    def overlay_fixture(self, named=False, five=False):
+        """Metadata only; none of the declared retail sources exist."""
+        if five:
+            named = True
+        stock_root = Path(self.original_spec["StockRoot"])
+        observation, history, rows = [], [], {}
+        relatives = ["main/techsets_cp_zmb.ff", "main/cp_zmb.ff", "zone/techsets_cp_zmb.ff", "zone/cp_zmb.ff"]
+        relatives += [f"fixture{n}.bin" for n in range(67)] + ["main/fileSysCheck.cfg"]
+        for index, relative in enumerate(relatives):
+            reviewed_name = relative.split("/")[-1] if relative.endswith(".ff") else relative
+            size = 77 if index == 71 else (17 if index < 4 else 100 + index)
+            checksum = v.sha(reviewed_name.encode())
+            mode = "HardLink" if index < 63 else "Copy"
+            entry = {"Relative": relative, "Source": str(stock_root / reviewed_name), "Mode": mode, "Bytes": size,
+                "ModifiedUtc": "2026-09-29T21:46:02.6684337Z", "Attributes": 33 if index == 71 else 32,
+                "SourceId": f"AAAAAAAA:{(index % 2 + 1) if index < 4 else index + 1:016X}", "SHA256": checksum,
+                "ReviewedStockRelative": reviewed_name, "ExternalToolDependency": False}
+            observation.append(entry)
+            history.append({"Relative": relative, "Bytes": size, "Mode": mode})
+            rows[reviewed_name] = {"RelativePath": reviewed_name, "Length": size, "SHA256": checksum, "Operation": "NTFSHardLinkImmutableStock"}
+        self.overlay = {"Schema": "iw7.recipient-stock-observation/1", "Profile": b.OVERLAY_PROFILE, "ToolSource": b.TOOL_SOURCE,
+            "StockRoot": str(stock_root), "ReviewedStockManifestSHA256": "0" * 64, "CapturedUtc": "2026-10-12T06:30:00.1234567Z",
+            "ContentVerification": "DeferredUntilAdmittedRun", "Inputs": []}
+        if five:
+            self.overlay.update(Schema="iw7.recipient-stock-observation/2", Profile=b.FIVE_PROFILE,
+                                AdditionalDependencyEvidenceSHA256=b.E2_FATAL_SHA.upper())
+        for index, (name, size, checksum) in enumerate(b.FIVE_PAKS if five else b.PAKS):
+            self.overlay["Inputs"].append({"Relative": "zone/" + name, "Source": str(stock_root / name), "Mode": "HardLink",
+                "Bytes": size, "ModifiedUtc": "2026-09-29T21:46:02.6684337Z", "Attributes": 32,
+                "SourceId": f"BBBBBBBB:{index + 1:016X}", "SHA256": checksum, "ReviewedStockRelative": name})
+            rows[name] = {"RelativePath": name, "Length": size, "SHA256": checksum, "Operation": "NTFSHardLinkImmutableStock"}
+        self.reviewed = list(rows.values())
+        reviewed_sha = self.json(self.original_spec["ReviewedStockManifest"], self.reviewed)
+        self.baseline = {"Schema": "iw7.model-ff-build/1", "Restored": True, "StockPreserved": True, "RetainedLeaseToken": None, "Inputs": history}
+        baseline_sha = self.json(self.original_spec["StockReceipt"], self.baseline)
+        for field, checksum in (("BASELINE_SHA", baseline_sha), ("REVIEWED_SHA", reviewed_sha)):
+            patch = mock.patch.object(b, field, checksum)
+            patch.start()
+            self.addCleanup(patch.stop)
+        self.baseline_observation = {"Schema": "iw7.ff-stock-observation/1", "CapturedUtc": "2026-10-12T06:30:00Z", "StockRoot": str(stock_root),
+            "BaselineReceiptSHA256": baseline_sha, "ReviewedStockManifestSHA256": reviewed_sha, "Inputs": observation}
+        self.overlay["ReviewedStockManifestSHA256"] = reviewed_sha
+        self.original_spec["RecipientStockBindingReceipt"] = str(self.base / "overlay.json")
+        for field, obj in (("StockReceipt", self.baseline), ("StockBindingReceipt", self.baseline_observation),
+                           ("ReviewedStockManifest", self.reviewed), ("RecipientStockBindingReceipt", self.overlay)):
+            path = self.original_spec[field]
+            checksum = self.json(path, obj)
+            self.original_spec[field + "SHA256"] = checksum
+            self.plan["SourceHashes"][path] = checksum
+        for name in b.OVERLAY_PRODUCERS:
+            path = Path(self.plan["Adapter"]).parent / name
+            self.plan["SourceHashes"][str(path)] = self.write(path, ("synthetic " + name).encode())
+        base_inputs = [b.stock_descriptor(entry) for entry in observation]
+        extras = [b.stock_descriptor(entry, supplemental=True) for entry in self.overlay["Inputs"]]
+        if named:
+            for entry in extras:
+                entry["StockProfileId"] = self.overlay["Profile"]
+        self.plan["StockInputs"] = base_inputs + extras
+        self.plan["StockBudget"] = b.stock_budget(base_inputs, extras, self.overlay["Profile"] if named else None)
+        self.plan.update(FatalTextDiagnostic=False, **b.DIAGNOSTIC_LIMITS)
+        self.state["DiagnosticOnly"] = False
+        inputs = copy.deepcopy(self.plan["StockInputs"])
+        for item in inputs:
+            item.update(SourceId=item["ExpectedSourceId"], TargetId=item["ExpectedSourceId"] if item["Mode"] == "HardLink" else "CCCCCCCC:0000000000000001")
+        self.state["Inputs"] = inputs + self.state["Inputs"][-3:]
+        self.state["Transaction"]["Files"] = [{"Path": x["Relative"], "Existed": False, "SHA256": None} for x in self.state["Inputs"]]
+        self.run_pins["backup/recovery.local.json"] = self.json(self.root / "backup/recovery.local.json", self.state["Transaction"])
+        self.sync_overlay()
+
+    def sync_overlay(self):
+        self.plan["SourceHashes"][str(self.spec_path)] = self.json(self.spec_path, self.original_spec)
+        self.expect["source_pins"] = copy.deepcopy(self.plan["SourceHashes"])
+        self.expect["plan"]["sha256"] = self.json(self.expect["plan"]["path"], self.plan)
+        self.state["Plan"] = copy.deepcopy(self.plan)
+        for entry, staged in zip(self.state["Plan"]["StockInputs"], self.state["Inputs"]):
+            entry.update(SourceId=staged["SourceId"], TargetId=staged["TargetId"])
+        self.save_state()
+
+    def repin_stock_receipt(self, field, value):
+        path = self.original_spec[field]
+        checksum = self.json(path, value)
+        self.original_spec[field + "SHA256"] = checksum
+        self.plan["SourceHashes"][path] = checksum
+        self.sync_overlay()
+
     def test_references_only_binds_bytes_without_script_or_graph_claim(self):
         report = b.bind_run(self.expect)
         self.assertTrue(report["closed_run_record_bound"])
@@ -419,6 +504,314 @@ class RunBindingTests(unittest.TestCase):
         self.state["Plan"]["StockInputs"][0]["SourceId"] = "12345678:0000000000000099"
         self.save_state()
         with self.assertRaisesRegex(ValueError, "Shared plan/input identity"):
+            b.bind_run(self.expect)
+
+    def test_overlay_binds_79_paths_and_receipt_budget_without_opening_retail(self):
+        self.overlay_fixture()
+        original_read = b.Reader.read
+        stock_root = Path(self.original_spec["StockRoot"])
+        def bounded_read(reader, path, *args, **kwargs):
+            self.assertFalse(Path(path).is_relative_to(stock_root), "Retail files must not be opened")
+            self.assertFalse(str(path).lower().endswith(".pak"))
+            return original_read(reader, path, *args, **kwargs)
+        with mock.patch.object(b.Reader, "read", bounded_read):
+            report = b.bind_run(self.expect)
+        self.assertEqual(len(self.state["Inputs"]), 79)
+        binding = report["stock_profile_binding"]
+        self.assertEqual(binding["profile"], b.OVERLAY_PROFILE)
+        self.assertEqual([x["ExpectedSourceId"] for x in binding["supplemental_input_records"]],
+                         [x["SourceId"] for x in self.overlay["Inputs"]])
+        self.assertEqual(binding["budget_from_receipts"]["SupplementalLogicalBytes"], 580092048)
+        self.assertEqual(binding["budget_from_receipts"]["SupplementalLimitBytes"], 600 * 1024**2)
+        self.assertEqual(binding["budget_from_receipts"]["StockHardLinks"], 75)
+        self.assertEqual(binding["budget_from_receipts"]["StockCopiedBytes"], 77)
+        self.assertFalse(binding["content_remeasured"])
+        self.assertFalse(report["closure_complete"])
+        self.assertNotIn("script", report["phases"])
+
+    def test_overlay_can_bind_two_phases_without_import_or_package_claim(self):
+        self.make_fixture(script=True)
+        self.overlay_fixture()
+        result = b.bind_run(self.expect)
+        self.assertEqual(set(result["phases"]), {"references", "script"})
+        self.assertFalse(result["imports_analyzed"])
+        self.assertFalse(result["package_ready"])
+
+    def test_overlay_requires_complete_explicit_roles_and_reviewed_source_files(self):
+        self.overlay_fixture()
+        path = str(Path(self.plan["Adapter"]).parent / "Recipient.Stock.ps1")
+        del self.plan["SourceHashes"][path]
+        self.sync_overlay()
+        with self.assertRaisesRegex(ValueError, "Incomplete explicit"):
+            b.bind_run(self.expect)
+
+    def test_overlay_does_not_accept_unknown_hash_role_or_missing_dialog_source(self):
+        self.overlay_fixture()
+        path = str(Path(self.plan["Adapter"]).parent / "recipient_dialog.py")
+        checksum = self.plan["SourceHashes"].pop(path)
+        self.plan["SourceHashes"][str(self.base / "unknown-source.py")] = checksum
+        self.sync_overlay()
+        with self.assertRaisesRegex(ValueError, "Exact source pin roles"):
+            b.bind_run(self.expect)
+
+    def test_overlay_receipt_profile_claims_and_order_are_strict(self):
+        self.overlay_fixture()
+        original = copy.deepcopy(self.overlay)
+        for key, value in (("Schema", "future"), ("Profile", "all-paks"), ("ToolSource", "0" * 40),
+                           ("ContentVerification", "Verified"), ("Ready", False), ("Restored", True),
+                           ("Inputs", original["Inputs"][:3]), ("Inputs", list(reversed(original["Inputs"]))),
+                           ("ReviewedStockManifestSHA256", "0" * 64), ("CapturedUtc", "invalid")):
+            self.repin_stock_receipt("RecipientStockBindingReceipt", {**copy.deepcopy(original), key: value})
+            with self.subTest(key=key), self.assertRaises((ValueError, KeyError)):
+                b.bind_run(self.expect)
+
+    def test_overlay_entry_cannot_change_path_identity_hash_size_attributes_or_mode(self):
+        self.overlay_fixture()
+        original = copy.deepcopy(self.overlay)
+        for key, value in (("Relative", "zone/../assetfile17.pak"), ("Source", str(self.base / "outside.pak")), ("SourceId", "unknown"),
+                           ("SHA256", "0" * 64), ("Bytes", 104595491), ("Bytes", True), ("Mode", "Copy"), ("Attributes", 1),
+                           ("Attributes", 16), ("Attributes", 1024), ("TargetId", "BBBBBBBB:0000000000000001"), ("ModifiedUtc", "invalid")):
+            bad = copy.deepcopy(original)
+            bad["Inputs"][0][key] = value
+            self.repin_stock_receipt("RecipientStockBindingReceipt", bad)
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                b.bind_run(self.expect)
+
+    def test_overlay_metadata_with_changed_identity_cannot_match_old_plan(self):
+        self.overlay_fixture()
+        bad = copy.deepcopy(self.overlay)
+        bad["Inputs"][0]["SourceId"] = "BBBBBBBB:0000000000000099"
+        self.repin_stock_receipt("RecipientStockBindingReceipt", bad)
+        with self.assertRaisesRegex(ValueError, "exact overlay descriptors"):
+            b.bind_run(self.expect)
+
+    def test_overlay_preserves_seventh_timestamp_digit(self):
+        self.overlay_fixture()
+        changed = copy.deepcopy(self.overlay)
+        changed["Inputs"][0]["ModifiedUtc"] = "2026-09-29T21:46:02.6684338Z"
+        self.repin_stock_receipt("RecipientStockBindingReceipt", changed)
+        with self.assertRaisesRegex(ValueError, "exact overlay descriptors"):
+            b.bind_run(self.expect)
+
+    def test_overlay_requires_baseline_receipt_bytes_and_semantic_observation(self):
+        self.overlay_fixture()
+        original = copy.deepcopy(self.baseline_observation)
+        for key, value in (("BaselineReceiptSHA256", "0" * 64), ("Restored", True), ("Inputs", original["Inputs"][:71]),
+                           ("StockRoot", str(self.base / "other-stock"))):
+            self.repin_stock_receipt("StockBindingReceipt", {**copy.deepcopy(original), key: value})
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                b.bind_run(self.expect)
+        self.repin_stock_receipt("StockBindingReceipt", original)
+        bad = copy.deepcopy(self.baseline)
+        bad["Inputs"][0]["Mode"] = "Copy"
+        self.repin_stock_receipt("StockReceipt", bad)
+        with self.assertRaisesRegex(ValueError, "Reviewed baseline/manifest pins"):
+            b.bind_run(self.expect)
+
+    def test_overlay_budget_is_recomputed_not_promoted_from_declarations(self):
+        self.overlay_fixture()
+        original = copy.deepcopy(self.plan["StockBudget"])
+        for key, value in (("SupplementalLimitBytes", 700 * 1024**2), ("SupplementalCopiedBytes", 1), ("UniqueHashReadFiles", 1),
+                           ("UniqueHashReadBytes", 1), ("StockCopiedBytes", 0), ("ContentVerified", True),
+                           ("AdditionalResidentBytesMeasured", True), ("SupplementalEntries", 5)):
+            self.plan["StockBudget"] = {**original, key: value}
+            self.sync_overlay()
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "stock receipt budget"):
+                b.bind_run(self.expect)
+
+    def test_overlay_alias_size_hash_inconsistency_and_duplicate_baseline_are_rejected(self):
+        self.overlay_fixture()
+        bad = copy.deepcopy(self.baseline_observation)
+        bad["Inputs"][4]["SourceId"] = bad["Inputs"][0]["SourceId"]
+        self.repin_stock_receipt("StockBindingReceipt", bad)
+        self.plan["StockInputs"][4]["ExpectedSourceId"] = bad["Inputs"][4]["SourceId"]
+        self.sync_overlay()
+        with self.assertRaisesRegex(ValueError, "Aliased stock identity"):
+            b.bind_run(self.expect)
+        bad["Inputs"][4] = copy.deepcopy(bad["Inputs"][0])
+        self.repin_stock_receipt("StockBindingReceipt", bad)
+        self.plan["StockInputs"][4] = copy.deepcopy(self.plan["StockInputs"][0])
+        self.sync_overlay()
+        with self.assertRaisesRegex(ValueError, "Duplicate stock target"):
+            b.bind_run(self.expect)
+
+    def test_overlay_diagnostic_and_unclosed_runs_remain_rejected(self):
+        self.overlay_fixture()
+        self.plan["FatalTextDiagnostic"] = True
+        self.sync_overlay()
+        with self.assertRaisesRegex(ValueError, "Diagnostic-only"):
+            b.bind_run(self.expect)
+        self.plan["FatalTextDiagnostic"] = False
+        self.state["DiagnosticOnly"] = True
+        self.sync_overlay()
+        with self.assertRaisesRegex(ValueError, "Diagnostic-only"):
+            b.bind_run(self.expect)
+        self.state["DiagnosticOnly"] = False
+        self.state["Phases"][0]["PostRootExitObservations"] = []
+        self.sync_overlay()
+        with self.assertRaisesRegex(ValueError, "terminal observations"):
+            b.bind_run(self.expect)
+
+    def test_overlay_must_be_in_recovery_and_absent_after_restoration(self):
+        self.overlay_fixture()
+        self.write(self.work / "zone/assetfile17.pak", b"synthetic stale input")
+        with self.assertRaisesRegex(ValueError, "still exists"):
+            b.bind_run(self.expect)
+        (self.work / "zone/assetfile17.pak").unlink()
+        self.state["Transaction"]["Files"] = [x for x in self.state["Transaction"]["Files"] if x["Path"] != "zone/assetfile17.pak"]
+        self.run_pins["backup/recovery.local.json"] = self.json(self.root / "backup/recovery.local.json", self.state["Transaction"])
+        self.save_state()
+        with self.assertRaisesRegex(ValueError, "restoration entries"):
+            b.bind_run(self.expect)
+
+    def test_named_four_pak_producer_preserves_original_receipt_schema_and_budget(self):
+        self.overlay_fixture(named=True)
+        result = b.bind_run(self.expect)["stock_profile_binding"]
+        self.assertEqual(result["observation_schema"], "iw7.recipient-stock-observation/1")
+        self.assertEqual(result["producer_contract"], "named-profile/1")
+        self.assertEqual(result["budget_from_receipts"]["SupplementalProfile"], b.OVERLAY_PROFILE)
+        self.assertEqual(result["budget_from_receipts"]["AdditionalBytesBeyondFourPAKs"], 0)
+        self.assertEqual(result["budget_from_receipts"]["SupplementalLimitBytes"], 629145600)
+        self.assertEqual(result["budget_from_receipts"]["SupplementalLogicalBytes"], 580092048)
+        self.assertIsNone(result["additional_dependency_evidence_sha256"])
+
+    def test_five_pak_binds_80_paths_without_opening_any_retail_source(self):
+        self.overlay_fixture(five=True)
+        original_read = b.Reader.read
+        def metadata_only(reader, path, *args, **kwargs):
+            self.assertFalse(Path(path).is_relative_to(Path(self.original_spec["StockRoot"])))
+            self.assertFalse(str(path).lower().endswith(".pak"))
+            return original_read(reader, path, *args, **kwargs)
+        with mock.patch.object(b.Reader, "read", metadata_only):
+            report = b.bind_run(self.expect)
+        binding, budget = report["stock_profile_binding"], report["stock_profile_binding"]["budget_from_receipts"]
+        self.assertEqual(binding["profile"], "observed-cp-paks-17-19-37-53-69")
+        self.assertEqual(binding["observation_schema"], "iw7.recipient-stock-observation/2")
+        self.assertEqual(binding["additional_dependency_evidence_sha256"], "867e858ecd4bffde50a04e62488e42b73f528177e0e01b51a081bc030dbbb280")
+        self.assertEqual(len(self.state["Inputs"]), 80)
+        self.assertEqual(budget["SupplementalLogicalBytes"], 966557876)
+        self.assertEqual(budget["SupplementalLimitBytes"], 966557876)
+        self.assertEqual(budget["AdditionalBytesBeyondFourPAKs"], 386465828)
+        self.assertEqual(budget["SupplementalCopiedBytes"], 0)
+        self.assertEqual(budget["UniqueHashReadBytes"], 966567166)  # Tiny synthetic baseline only.
+        self.assertEqual(budget["UniqueHashReadFiles"], 75)
+        self.assertEqual(budget["StockHardLinks"], 76)
+        self.assertEqual(budget["StockCopiedBytes"], 77)
+        for key in ("native_execution_authenticated", "stock_content_remeasured", "imports_analyzed",
+                    "closure_complete", "package_ready", "runtime_ready", "owner_accepted"):
+            self.assertIs(report[key], False)
+
+    def test_five_pak_both_phases_still_cannot_qualify_script_import_absence(self):
+        self.make_fixture(script=True)
+        self.overlay_fixture(five=True)
+        report = b.bind_run(self.expect)
+        self.assertEqual(set(report["phases"]), {"references", "script"})
+        self.assertTrue(report["phases"]["script"]["analysis"]["stack_integrity_verified"])
+        self.assertFalse(report["imports_analyzed"])
+        self.assertFalse(report["dependency_graph_complete"])
+
+    def test_five_pak_schema_evidence_order_and_count_are_exact(self):
+        self.overlay_fixture(five=True)
+        original = copy.deepcopy(self.overlay)
+        changes = [("Schema", "iw7.recipient-stock-observation/1"), ("Profile", b.OVERLAY_PROFILE),
+                   ("Profile", b.FIVE_PROFILE + "-70"), ("AdditionalDependencyEvidenceSHA256", None),
+                   ("AdditionalDependencyEvidenceSHA256", "0" * 64), ("Inputs", original["Inputs"][:4]),
+                   ("Inputs", original["Inputs"] + original["Inputs"][-1:]), ("Inputs", list(reversed(original["Inputs"])))]
+        for key, value in changes:
+            self.repin_stock_receipt("RecipientStockBindingReceipt", {**copy.deepcopy(original), key: value})
+            with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                b.bind_run(self.expect)
+        bad = copy.deepcopy(original)
+        del bad["AdditionalDependencyEvidenceSHA256"]
+        self.repin_stock_receipt("RecipientStockBindingReceipt", bad)
+        with self.assertRaisesRegex(ValueError, "fields differ"):
+            b.bind_run(self.expect)
+
+    def test_four_pak_receipt_cannot_silently_adopt_five_pak_schema_or_evidence(self):
+        self.overlay_fixture(named=True)
+        for key, value in (("Schema", "iw7.recipient-stock-observation/2"), ("AdditionalDependencyEvidenceSHA256", b.E2_FATAL_SHA)):
+            self.repin_stock_receipt("RecipientStockBindingReceipt", {**self.overlay, key: value})
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                b.bind_run(self.expect)
+
+    def test_fifth_pak_names_hash_size_identity_and_writable_attributes_are_fixed(self):
+        self.overlay_fixture(five=True)
+        original = copy.deepcopy(self.overlay)
+        for key, value in (("Relative", "zone/assetfile70.pak"), ("Source", str(self.base / "assetfile69.pak")),
+                           ("Bytes", 386465827), ("Bytes", True), ("SHA256", "0" * 64), ("SourceId", "unknown"),
+                           ("Mode", "Copy"), ("Attributes", 1), ("Attributes", 1024), ("ModifiedUtc", "invalid")):
+            bad = copy.deepcopy(original)
+            bad["Inputs"][4][key] = value
+            self.repin_stock_receipt("RecipientStockBindingReceipt", bad)
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                b.bind_run(self.expect)
+
+    def test_five_pak_budget_cannot_reuse_four_pak_ceiling_or_claim_content(self):
+        self.overlay_fixture(five=True)
+        original = copy.deepcopy(self.plan["StockBudget"])
+        for key, value in (("SupplementalProfile", b.OVERLAY_PROFILE), ("AdditionalBytesBeyondFourPAKs", 0),
+                           ("SupplementalLimitBytes", 629145600), ("SupplementalLimitBytes", 966557877),
+                           ("SupplementalLogicalBytes", 580092048), ("SupplementalCopiedBytes", 1),
+                           ("StockHardLinks", 75), ("ContentVerified", True), ("AdditionalResidentBytesMeasured", True)):
+            self.plan["StockBudget"] = {**original, key: value}
+            self.sync_overlay()
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                b.bind_run(self.expect)
+
+    def test_named_contract_rejects_missing_budget_fields_or_partial_input_ids(self):
+        self.overlay_fixture(five=True)
+        original_budget, original_inputs = copy.deepcopy(self.plan["StockBudget"]), copy.deepcopy(self.plan["StockInputs"])
+        for field in ("SupplementalProfile", "AdditionalBytesBeyondFourPAKs", "one_input", "all_inputs", "legacy_shape"):
+            self.plan["StockBudget"], self.plan["StockInputs"] = copy.deepcopy(original_budget), copy.deepcopy(original_inputs)
+            if field in original_budget:
+                del self.plan["StockBudget"][field]
+            else:
+                for entry in self.plan["StockInputs"][72:73 if field == "one_input" else 77]:
+                    entry.pop("StockProfileId")
+                if field == "legacy_shape":
+                    self.plan["StockBudget"].pop("SupplementalProfile")
+                    self.plan["StockBudget"].pop("AdditionalBytesBeyondFourPAKs")
+            self.sync_overlay()
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                b.bind_run(self.expect)
+
+    def test_mixed_named_ids_are_rejected_even_with_repinned_staged_records(self):
+        self.overlay_fixture(five=True)
+        self.plan["StockInputs"][-1]["StockProfileId"] = b.OVERLAY_PROFILE
+        self.state["Inputs"][76]["StockProfileId"] = b.OVERLAY_PROFILE
+        self.sync_overlay()
+        with self.assertRaisesRegex(ValueError, "exact overlay descriptors"):
+            b.bind_run(self.expect)
+        with self.assertRaisesRegex(ValueError, "Mixed or incomplete"):
+            b.stock_budget(self.plan["StockInputs"][:72], self.plan["StockInputs"][72:], b.FIVE_PROFILE)
+
+    def test_five_pak_cannot_rebind_failed_e2_as_success(self):
+        self.overlay_fixture(five=True)
+        original = copy.deepcopy(self.state)
+        for key, value in (("Status", "Failed"), ("Failure", "Could not find asset file assetfile69.pak"),
+                           ("ReferencesVerified", False), ("CleanupError", "unresolved"), ("RetainedLeaseToken", "held")):
+            self.state = {**copy.deepcopy(original), key: value}
+            self.save_state()
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                b.bind_run(self.expect)
+
+    def test_fifth_pak_requires_original_job_closure_and_complete_restoration(self):
+        self.overlay_fixture(five=True)
+        original = copy.deepcopy(self.state)
+        self.state["Phases"][0]["JobActiveAtClose"] = 1
+        self.save_state()
+        with self.assertRaisesRegex(ValueError, "JobActiveAtClose"):
+            b.bind_run(self.expect)
+        self.state = original
+        self.save_state()
+        self.write(self.work / "zone/assetfile69.pak", b"synthetic stale link")
+        with self.assertRaisesRegex(ValueError, "still exists"):
+            b.bind_run(self.expect)
+        (self.work / "zone/assetfile69.pak").unlink()
+        self.state["Transaction"]["Files"] = [x for x in self.state["Transaction"]["Files"] if x["Path"] != "zone/assetfile69.pak"]
+        self.run_pins["backup/recovery.local.json"] = self.json(self.root / "backup/recovery.local.json", self.state["Transaction"])
+        self.save_state()
+        with self.assertRaisesRegex(ValueError, "restoration entries"):
             b.bind_run(self.expect)
 
 

@@ -39,11 +39,72 @@ calls. The variant had no observed far-call line. Both bound receipts still set
 external-GSC dependency absence, full asset closure, runtime readiness and owner
 acceptance false. Complete structural consumption is not a general import proof.
 
-The remaining build-lifecycle issue needs original-job descendant identity
+At the v4 checkpoint, the remaining build-lifecycle issue needed original-job descendant identity
 evidence and a reviewed closure policy. No identity was captured for v4's residual
 member, so it must not be retrospectively classified as harmless telemetry. Do
 not lengthen the drain, kill by process name or label the existing run successful.
 Any future native attempt requires a fresh reviewed Plan and coordinator GO.
+
+The separately admitted v5 diagnostic then ran source
+`f813f9758006e33857339c19ece48a642212ac5f` and repeated all functional passes.
+Its original-job observer identified one residual `vctip.exe` from MSVC
+14.44.35207, with image-file SHA256
+`d591358c6aee4b673562ca3b3a15c250e612708394fe3b44a7a7eda2470570a5` and size 335,288
+bytes. Creation time, kernel parent PID and original-job membership were captured;
+the complete observation and file hash took 31 ms. The parent process's identity
+was not captured, so no compiler ancestry or harmless-telemetry classification is
+inferred from its PID. This v5 identity does not retroactively identify v4's member.
+
+V5 preserved `Success=false`, stopped only the original job, confirmed zero active
+members and released the lease. Its candidate executable is
+`9cb1d946403e9e49812ed3db8bb59d7fefc0607078f65b963fc610eac04a564a`; it was rehashed
+after closure with source, dependency, compiler and input pins unchanged. See the
+[sanitized v5 checkpoint](gsc-residual-diagnostic-20261012.json). The next decision
+concerned a reviewed closure contract with sufficient positive ownership and identity
+evidence; the diagnostic itself did not add one or authorize another native attempt.
+
+## V6: native audit and qualified original-job closure passed
+
+The single explicitly authorized v6 attempt ran on 2026-10-12 from 07:34:52 to
+07:35:50 UTC, using tool source `eabe74ab65d8ce2a943b54d24b15a60749a0cf2a`, SDK
+revision `b85b6203a338834487ecc0ae9d69044bb6bd68d5` and Plan SHA256
+`5db9aee8505b0ef36a253ac6efa8e94f945cf4a5534ee1550a479e6d1d42d9a8`. The source
+tree `74143703049b4fbb9ba702d1ea74bc58be5607ac` belongs to the tool, not the SDK.
+Fresh full 4 GiB RAM / 6 GiB commit admission used zero RAM reserve and 20% commit
+reserve, an empty lease registry and no other builder. Main's identity was preserved.
+
+All seven build/test/binder steps and their wrappers exited zero; CTest passed
+1/1 and all 13 native test methods passed. The schema `/2` candidate receipt bound
+the exact run, root, Plan, lease, source, configured compiler, executable, ordered
+steps and 17 independently reread artifacts. Both input/assembly witnesses passed.
+The executable SHA256 is `99f72711793cc51403da802336a8fca510cc3865fd7cec8e41e7c0ca902fad45`;
+combined source SHA256 is `7c4517fed76c14bc4c4f95996cb8eed5b353f18ceeb1e6f17f41b6117fd180e6`.
+
+Two real original-job captures at 07:35:50.2682020 and 07:35:50.4724413 UTC each
+contained one matching pinned `vctip.exe` member, with the same PID, creation time,
+full image path and kernel parent PID, positive original-job membership and no
+query error. Its creation followed the root's creation. The file hash and size
+matched the reviewed pin. Parent-process identity and compiler ancestry remain
+unproven; the isolated identity predicate still grants no action or acceptance.
+
+The complete collector held read guards through the final capture and original-job
+Stop, then confirmed fresh root exit zero / active members zero. It read 2,546,462
+guarded bytes. Guard disposal preceded the supervisor's final fresh check; this is
+execution of the reviewed guard lifetime, not a separate runtime OS-lock probe.
+The first root exit was observed at 57,141 ms, fresh post-Stop zero at 57,406 ms,
+and the final check at 57,453 ms: **312 ms of the unchanged 2,000 ms drain**.
+Global `Success`, `TreeClosed` and `LeaseReleased` are true. A fresh 07:36:56 UTC
+inventory confirmed the registry empty, former run processes/builders absent and
+Main unchanged. Source, dependency, compiler, provider, tool and input pins were
+rehashed unchanged. No retry, game staging or Main/package promotion occurred.
+
+The variant again consumed 1480/1480 bytecode and 1808/1808 stack bytes, with zero
+observed far/pointer opcodes. The original consumed 1455/1455 and 1394/1394, with
+two far calls and zero pointer opcodes. These are bounded assembly observations;
+external dependency absence, full asset closure, runtime and owner gates remain
+false. **v4 and v5 remain immutable global failures.** See the
+[sanitized v6 checkpoint](gsc-qualified-closure-20261012.json) for separate native,
+identity, guard, closure, lease and remaining-gate evidence.
 
 The native audit must read the original container from binary stdin, verify exact
 container/zlib lengths, require the initial `OP_End`, respect each declared
@@ -76,5 +137,6 @@ closure remain separate consumer responsibilities.
 
 Before adapting existing gates, require real positive and negative controls,
 review the exact tool source/head, complete the coordinator's private build and
-publication workflow, and pin the resulting executable. No native success or
-successful build should be inferred from this source-only delivery.
+publication workflow, and pin the resulting executable. Distinguish the specific
+qualified v6 run above from historical failed runs and source/mock tests; this
+auditor build result does not itself promote any consumer package or runtime gate.

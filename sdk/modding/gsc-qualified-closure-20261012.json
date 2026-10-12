@@ -1,0 +1,299 @@
+{
+  "schema": "iw7.gsc-qualified-closure-validation/1",
+  "recorded_date": "2026-10-12",
+  "status": "NativeAuditAndQualifiedClosurePassed",
+  "qualification_scope": "auditor-build-and-original-job-closure",
+  "source_revision": "eabe74ab65d8ce2a943b54d24b15a60749a0cf2a",
+  "tool_source_tree_oid": "74143703049b4fbb9ba702d1ea74bc58be5607ac",
+  "sdk_revision_at_execution": "b85b6203a338834487ecc0ae9d69044bb6bd68d5",
+  "plan_sha256": "5db9aee8505b0ef36a253ac6efa8e94f945cf4a5534ee1550a479e6d1d42d9a8",
+  "tool_source_sha256": "e762caa7429679946ea5804a0fe3b678d1ab97db5ed3ff063d028327f554a9cf",
+  "source_sha256": "7c4517fed76c14bc4c4f95996cb8eed5b353f18ceeb1e6f17f41b6117fd180e6",
+  "tables_sha256": "757964caf826b02c423ab9cd8b2ef3a3758720f50aef1a2fb517869e93474ef6",
+  "tool_sha256": "99f72711793cc51403da802336a8fca510cc3865fd7cec8e41e7c0ca902fad45",
+  "build_receipt_schema": "iw7.gsc-audit-build-run/2",
+  "supervision_schema": "iw7.gsc-audit-build-supervision/1",
+  "build_candidate_success": true,
+  "supervision_success": true,
+  "root_exit_code": 0,
+  "job_active_at_close": 0,
+  "original_job_stop_requested": true,
+  "tree_closed": true,
+  "lease_released": true,
+  "resource_registration_attempts": 1,
+  "started_utc": "2026-10-12T07:34:52.9652541Z",
+  "finished_utc": "2026-10-12T07:35:50.7593578Z",
+  "retries": 0,
+  "admission": {
+    "physical_bytes": 4294967296,
+    "commit_bytes": 6442450944,
+    "physical_reserve_bytes": 0,
+    "commit_reserve_bytes": 9512923136,
+    "allowed": true,
+    "physical_available": 16651792384,
+    "committed": 24321363968,
+    "commit_limit": 47564615680,
+    "existing_leases": 0,
+    "other_builders": 0
+  },
+  "completion": {
+    "verified": true,
+    "receipt_sha256": "d3b4ae29d3df629c7910d69068c1492881f1aaff183a000df83a582e1497e156",
+    "declared_artifacts": 17,
+    "ordered_steps": [
+      {
+        "name": "cmake-version",
+        "exit": 0,
+        "wrapper_exit": 0
+      },
+      {
+        "name": "configure",
+        "exit": 0,
+        "wrapper_exit": 0
+      },
+      {
+        "name": "build",
+        "exit": 0,
+        "wrapper_exit": 0
+      },
+      {
+        "name": "reader-tests",
+        "exit": 0,
+        "wrapper_exit": 0
+      },
+      {
+        "name": "native-negative-tests",
+        "exit": 0,
+        "wrapper_exit": 0
+      },
+      {
+        "name": "witness-variant",
+        "exit": 0,
+        "wrapper_exit": 0
+      },
+      {
+        "name": "witness-original",
+        "exit": 0,
+        "wrapper_exit": 0
+      }
+    ],
+    "reader_ctest_passed": 1,
+    "native_methods_passed": 13
+  },
+  "residual": {
+    "image_description": "MSVC 14.44.35207 bin/Hostx64/x64/vctip.exe",
+    "image_file_sha256": "d591358c6aee4b673562ca3b3a15c250e612708394fe3b44a7a7eda2470570a5",
+    "image_file_bytes": 335288,
+    "identity_matches": true,
+    "same_pid_creation_image_and_parent_pid_in_both_captures": true,
+    "creation_after_root_creation": true,
+    "parent_pid_captured": true,
+    "parent_process_identity_captured": false,
+    "compiler_ancestry_proven": false,
+    "loaded_memory_attested": false,
+    "identity_predicate_acceptance_granted": false,
+    "captures": [
+      {
+        "phase": "first",
+        "captured_utc": "2026-10-12T07:35:50.2682020Z",
+        "capture_elapsed_ms": 16,
+        "assigned_count": 1,
+        "listed_count": 1,
+        "members": 1,
+        "in_original_job": true,
+        "identity_error": null,
+        "parent_error": null,
+        "sample_elapsed_ms": 57172,
+        "sample_root_exit_code": 0,
+        "sample_active": 1
+      },
+      {
+        "phase": "final",
+        "captured_utc": "2026-10-12T07:35:50.4724413Z",
+        "capture_elapsed_ms": 16,
+        "assigned_count": 1,
+        "listed_count": 1,
+        "members": 1,
+        "in_original_job": true,
+        "identity_error": null,
+        "parent_error": null,
+        "sample_elapsed_ms": 57375,
+        "sample_root_exit_code": 0,
+        "sample_active": 1
+      }
+    ]
+  },
+  "guards": {
+    "guarded_bytes": 2546462,
+    "hash_scope": "ImageFileBytesUnderReadGuard",
+    "lifetime_evidence": "Reviewed collector path completed; streams held through final capture and original-job Stop, disposed before final supervisor snapshot",
+    "separate_runtime_os_lock_probe": false
+  },
+  "closure": {
+    "qualified": true,
+    "collector_acceptance_granted": true,
+    "first_root_exit_observed_ms": 57141,
+    "post_stop_fresh_zero_ms": 57406,
+    "final_supervisor_check_ms": 57453,
+    "elapsed_from_first_exit_to_final_check_ms": 312,
+    "drain_deadline_ms": 2000,
+    "global_deadline_seconds": 3600
+  },
+  "post_close": {
+    "observed_utc": "2026-10-12T07:36:56.2596308Z",
+    "leases_empty": true,
+    "builders_absent": true,
+    "former_run_processes_absent": true,
+    "main_identity_unchanged": true,
+    "source_and_all_recorded_pins_unchanged": true
+  },
+  "source_bytes_excluding_build": 92175275,
+  "peak_observed_output_bytes": 37478630,
+  "measurements": {
+    "variant": {
+      "receipt_sha256": "f96100f2f60f978daaa4ed30914cfd4a31901209c5ff72d138aa718706a8a7d8",
+      "input_sha256": "db486793b92e7e3c0a30c70b565fb432a4940e172a3f97da7e9db377f0e46d42",
+      "bytecode": [
+        1480,
+        1480
+      ],
+      "stack": [
+        1808,
+        1808
+      ],
+      "functions": 8,
+      "assembly_bytes": 15850,
+      "assembly_sha256": "43e9b36a90cfe30ec713d52cdc63bbb7668cfc17acfae187de369079abeae1df",
+      "far_op_count": 0,
+      "pointer_op_count": 0,
+      "complete_consumption_verified": true,
+      "external_absence_verified": false,
+      "asset_closure_complete": false,
+      "runtime_ready": false,
+      "owner_accepted": false
+    },
+    "original": {
+      "receipt_sha256": "cd86deaac7e607953909128657c2bb7c5c52da02565fd6338678772a1b53773a",
+      "input_sha256": "31b55a5d58a90d6b980a91543c907d26b91a4f6767d5350e8a35ae0e19fa2cef",
+      "bytecode": [
+        1455,
+        1455
+      ],
+      "stack": [
+        1394,
+        1394
+      ],
+      "functions": 7,
+      "assembly_bytes": 15231,
+      "assembly_sha256": "b6efa60bb5c5cc30ad724363720d2249292a592a384557cbc509aaf24ddbe725",
+      "far_op_count": 2,
+      "pointer_op_count": 0,
+      "complete_consumption_verified": true,
+      "external_absence_verified": false,
+      "asset_closure_complete": false,
+      "runtime_ready": false,
+      "owner_accepted": false
+    }
+  },
+  "evidence_sha256": {
+    "supervision": "993d4f200248dceaa08517b1bfa9cf586fb12a8f2b15c320fc10b2ef9740ff1a",
+    "build_receipt": "d3b4ae29d3df629c7910d69068c1492881f1aaff183a000df83a582e1497e156",
+    "reader_ctest_stdout": "ca4d606e4f2a31ec77be087eeaf466b5d9e2f6234bf2f519474aaa25d7e10881",
+    "native_test_stderr": "2e67d0872603f0a9885b5b64b172ab7d2ce7402f2e14fd7746bf929c0b85e615"
+  },
+  "v4_v5_preserved_as_global_failures": true,
+  "game_files_staged": false,
+  "main_promoted": false,
+  "package_promoted": false,
+  "external_gsc_dependency_absence_verified": false,
+  "asset_closure_complete": false,
+  "runtime_ready": false,
+  "owner_accepted": false,
+  "completion_artifact_hashes": [
+    {
+      "role": "source-manifest",
+      "bytes": 69388,
+      "sha256": "a0263c8e656de0c9b309c2df8af025117ef8f69f6f44a36a938154d8b6f12a9a"
+    },
+    {
+      "role": "tool",
+      "bytes": 1246208,
+      "sha256": "99f72711793cc51403da802336a8fca510cc3865fd7cec8e41e7c0ca902fad45"
+    },
+    {
+      "role": "wrapper",
+      "bytes": 10323,
+      "sha256": "42dd0dcb01c014cfbfbabb18d404d4c6ccd1b6d04ed27a5b16e63dde54e72d07"
+    },
+    {
+      "role": "input-variant",
+      "bytes": 1992,
+      "sha256": "db486793b92e7e3c0a30c70b565fb432a4940e172a3f97da7e9db377f0e46d42"
+    },
+    {
+      "role": "witness-variant",
+      "bytes": 34680,
+      "sha256": "f96100f2f60f978daaa4ed30914cfd4a31901209c5ff72d138aa718706a8a7d8"
+    },
+    {
+      "role": "assembly-variant",
+      "bytes": 15850,
+      "sha256": "43e9b36a90cfe30ec713d52cdc63bbb7668cfc17acfae187de369079abeae1df"
+    },
+    {
+      "role": "input-original",
+      "bytes": 1951,
+      "sha256": "31b55a5d58a90d6b980a91543c907d26b91a4f6767d5350e8a35ae0e19fa2cef"
+    },
+    {
+      "role": "witness-original",
+      "bytes": 33280,
+      "sha256": "cd86deaac7e607953909128657c2bb7c5c52da02565fd6338678772a1b53773a"
+    },
+    {
+      "role": "assembly-original",
+      "bytes": 15231,
+      "sha256": "b6efa60bb5c5cc30ad724363720d2249292a592a384557cbc509aaf24ddbe725"
+    },
+    {
+      "role": "compiler-config-0",
+      "bytes": 6407,
+      "sha256": "1da43991d0fa17c1b38eface755f997e7ce258546919ef9a4f1b15b8e77869c8"
+    },
+    {
+      "role": "result-cmake-version",
+      "bytes": 399,
+      "sha256": "c13cc58b41acd8b4cfffcc377661b5364601d81f38ac7a5b339a480539cd494b"
+    },
+    {
+      "role": "result-configure",
+      "bytes": 797,
+      "sha256": "7543ba71ba2d7ce021bea3bc452b7989f8fdc445b7eecda319659434ab7455db"
+    },
+    {
+      "role": "result-build",
+      "bytes": 665,
+      "sha256": "fdcca0483da090ac2c0e52c8f86729f85890a34b796bc9eec6f684de1daea0a6"
+    },
+    {
+      "role": "result-reader-tests",
+      "bytes": 574,
+      "sha256": "0bb57c411a6e28c1b7a576ab72ae773076319e4a3318adbb4a30ec08f8befa5d"
+    },
+    {
+      "role": "result-native-negative-tests",
+      "bytes": 588,
+      "sha256": "7781cbe27ed331c9916767c8f5b38624e8727ff41f492cf35c12e2d5897cd264"
+    },
+    {
+      "role": "result-witness-variant",
+      "bytes": 1322,
+      "sha256": "8e5582acd23886c45431213a0a15cd6a270779043bf1867efde08ce69dc9d1d0"
+    },
+    {
+      "role": "result-witness-original",
+      "bytes": 1307,
+      "sha256": "934e9c84d9c7b6a6cc418c92ecc27af567e7212b83f209a79518fbfcc075b530"
+    }
+  ]
+}

@@ -76,6 +76,54 @@ failed on an unqualified residual descendant. See the reconstructed
 [v4 evidence](../../sdk/modding/gsc-consumption-audit.md) for that later measurement.
 The archived tool source remains exactly the revision in the manifest.
 
+The tenth patch adds the reviewed residual-member diagnostic to revision
+`f813f9758006e33857339c19ece48a642212ac5f`. The first nine patch files are preserved
+byte for byte. This append belongs to the tranche after the nine-patch/v4
+checkpoint; it does not revise that earlier history or turn v4 into a success.
+The diagnostic reuses the project's pinned read-only original-job observer,
+records bounded identity/image-file hash evidence and grants no new acceptance.
+The separately admitted v5 diagnostic subsequently identified a residual original-
+job `vctip.exe` by image-file hash, creation time, parent PID and membership in
+31 ms. All functional native steps passed, but its parent identity was not
+captured and global supervision remained failed. See the
+[v5 checkpoint](../../sdk/modding/gsc-residual-diagnostic-20261012.json).
+Another attempt still requires a fresh reviewed Plan and coordinator GO.
+
+The eleventh patch preserves independently reviewed source revision
+`41fdc19fd443bddafb90b9f6664266adb008c494`: an explicit closure contract and pure
+identity predicate with 96 additional source checks. The first ten patch files are
+unchanged. That revision grants no Stop or acceptance and does not import the
+predicate into its launcher. It requires positive original-job membership and
+pinned file identity without inventing a compiler ancestry. The subsequent concrete
+supervisor integration is preserved separately by patch twelve below.
+The existing source-only reconstruction was extended in place; its 22 changed blobs
+and tree `5f01dbcc65c7b5a399db0bbeed4074973f8d2b4a` match the archived source.
+No new clone, dependency initialization, Plan, native execution or cleanup occurred.
+
+The twelfth patch adds independently reviewed revision
+`eabe74ab65d8ce2a943b54d24b15a60749a0cf2a`, which connects the original-job supervisor
+to bounded guarded receipt/identity validation. Its 338 PowerShell checks and four
+Python preparation tests passed; this is source/mock evidence only. The earlier
+eleven patches are unchanged. Schema `/2` build receipts bind a fresh run identity,
+root PID, exact plan and lease, ordered successful steps, source/tool/compiler pins
+and both input/assembly witnesses. Qualified telemetry cleanup requires two fresh
+original-job member queries, retained compiler/vctip read guards, an original-job
+Stop and a fresh zero-members/root-zero result within the unchanged drain deadline.
+The existing source-only reconstruction was extended in place and all 26 changed
+blobs and tree `74143703049b4fbb9ba702d1ea74bc58be5607ac` match the archived revision.
+At the archive checkpoint, actual two-second drain timing remained unverified.
+No native execution is authorized by this archive itself. v4/v5 remain global failures
+and their historical `/1` receipts cannot qualify under the new closure contract.
+
+A subsequent explicit coordinator GO admitted one v6 run from the original source
+revision and SDK archive commit `b85b6203a338834487ecc0ae9d69044bb6bd68d5`. All native
+steps passed and qualified original-job closure completed in 312 ms of the unchanged
+2,000 ms drain. Global supervision passed, the job closed and its lease was released;
+the subsequent inventory confirmed Main unchanged and no remaining builder. See the
+[v6 evidence](../../sdk/modding/gsc-qualified-closure-20261012.json). This is evidence
+for that exact original-source build; no binary reproducibility claim is made for
+the different `git am` reconstructed revision, and no package/runtime gate is promoted.
+
 `reconstruction-validation.json` records only the local source reconstruction
 check. Passing it does not establish executable correctness, complete GSC import
 analysis, asset closure, runtime readiness or owner gameplay acceptance.
