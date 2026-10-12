@@ -111,9 +111,18 @@ original-job member queries, retained compiler/vctip read guards, an original-jo
 Stop and a fresh zero-members/root-zero result within the unchanged drain deadline.
 The existing source-only reconstruction was extended in place and all 26 changed
 blobs and tree `74143703049b4fbb9ba702d1ea74bc58be5607ac` match the archived revision.
-Actual two-second drain timing remains unverified. A fresh Plan may be reviewed,
-but no native execution is authorized by this archive. v4/v5 remain global failures
+At the archive checkpoint, actual two-second drain timing remained unverified.
+No native execution is authorized by this archive itself. v4/v5 remain global failures
 and their historical `/1` receipts cannot qualify under the new closure contract.
+
+A subsequent explicit coordinator GO admitted one v6 run from the original source
+revision and SDK archive commit `b85b6203a338834487ecc0ae9d69044bb6bd68d5`. All native
+steps passed and qualified original-job closure completed in 312 ms of the unchanged
+2,000 ms drain. Global supervision passed, the job closed and its lease was released;
+the subsequent inventory confirmed Main unchanged and no remaining builder. See the
+[v6 evidence](../../sdk/modding/gsc-qualified-closure-20261012.json). This is evidence
+for that exact original-source build; no binary reproducibility claim is made for
+the different `git am` reconstructed revision, and no package/runtime gate is promoted.
 
 `reconstruction-validation.json` records only the local source reconstruction
 check. Passing it does not establish executable correctness, complete GSC import
