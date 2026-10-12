@@ -465,10 +465,10 @@ and `asset_source_receipt_bound` are true, `variant_ff_built` is false. Package,
 closure, runtime and owner readiness remain false even with GSC and H evidence.
 No source/build history is relabeled, and no builder or ZIP writer is called.
 
-This tranche uses synthetic source/build/recipient fixtures and real Creator CLI
-tests only. No real composition, native execution, lease, stock read, distributable ZIP or
-deployment was performed. The previously corrected real Beacon candidate remains
-separate evidence for the original Materialize route.
+The initial source tranche used synthetic source/build/recipient fixtures and real
+Creator CLI tests only. At that checkpoint no real composition, native execution,
+lease, stock read, distributable ZIP or deployment had been performed. The later
+real composition below is separate from the original Beacon Materialize result.
 
 Validation: 105 Creator/consumer tests pass (61 CLI methods, 44 pure tests),
 including 16 composition tests and 11 new reference-linkage tests. The shared
@@ -498,7 +498,16 @@ A real CLI fixture also checks original Beacon input drift after its finalizer
 returns. All rejected candidates remain available; no real asset was mutated.
 Corrective validation: 109 Creator/consumer tests pass (62 CLI methods, 47 pure
 tests); the finalizer passes 34 with the same one Windows symlink skip. The
-prepared real composition output remains absent and its original pins unchanged.
+worker's prepared output remained absent and its original pins unchanged.
+
+The integrator subsequently ran the corrected route at `4c87376` on the retained
+real Beacon build and an explicit variant project, with GSC evidence left null.
+It created a separate ten-file candidate totaling 27,816 bytes, exit 0. Independent
+readback of every file agrees with the returned lengths and hashes. The FF and
+four dumps are byte-identical to their original asset build; the 5,535-byte variant
+script and new composition receipt remain separate. Four qualification questions
+stay pending, and no builder, lease, stock, ZIP writer or game was invoked.
+[Sanitized real composition result](creator-composition-validation-20261012.json).
 
 ## Explicit Build orchestration
 
