@@ -93,3 +93,9 @@ pure validators and verify no filesystem mutation for Plan/refused Build. Flow
 tests use explicitly synthetic builder/finalizer doubles and text payloads with
 the real compatibility validators and ZIP writer: they verify orchestration,
 failure retention and the package gate, not FF compilation or finalizer evidence.
+Two additional integration cases use the real finalizer and its asset-free
+synthetic receipt fixtures. Consistent source-bound receipts must materialize but
+keep the two recipient blockers and no ZIP; an altered FF must leave both candidate
+and archive absent. Only the native builder is replaced in these cases. Run these
+tests with a ToolsRoot containing the integrated Finalize-BeaconProject commit;
+they fail if that dependency is missing rather than silently skipping it.

@@ -1,10 +1,12 @@
 """Real Creator CLI tests using existing Python gates; no native adapter executes."""
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
@@ -280,6 +282,74 @@ class CreatorTests(unittest.TestCase):
                                    "-RecipientProof", str(self.root / "missing.json"), tools=tools)
         self.assertEqual(code, 1, report)
         self.assertIn("must be supplied together", " ".join(report["errors"]))
+
+    def real_finalizer_flow(self, *, tamper=False):
+        """Real Creator/finalizer; reuse asset-free receipt fixtures, no native work."""
+        spec = importlib.util.spec_from_file_location("creator_finalizer_fixture", TOOLS / "sdk/modding/tests/test_beacon_finalize.py")
+        fixture_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(fixture_module)
+        fixture = fixture_module.FinalizeTests()
+        self.addCleanup(fixture.doCleanups)
+        fixture.setUp()
+        self.root, self.project = fixture.root, fixture.project
+        tools, parameter_file = self.flow_fixture()
+        for relative in ("sdk/modding/Finalize-BeaconProject.py", "sdk/modding/examples/beacon/manifest.json",
+                         "sdk/modding/examples/beacon/zone.csv"):
+            (tools / relative).write_bytes((TOOLS / relative).read_bytes())
+        parameters = json.loads(parameter_file.read_text())
+        source_hash = hashlib.sha256((self.project / "source-receipt.local.json").read_bytes()).hexdigest()
+        parameters["SourceReceiptSHA256"] = source_hash
+        parameter_file.write_text(json.dumps(parameters))
+        fixture.state["Plan"]["SourceReceiptSHA256"] = source_hash
+        fixture.save_state()
+        if tamper:
+            (fixture.build / "mod.ff").write_bytes(b"tampered synthetic fixture")
+        copier = tools / "copy_fixture.py"
+        copier.write_text(textwrap.dedent('''\
+            import json, shutil, sys
+            from pathlib import Path
+            source, destination = map(Path, sys.argv[1:])
+            shutil.copytree(source, destination)
+            path = destination / 'state.local.json'
+            state = json.loads(path.read_text())
+            state['Work'] = str(destination / 'work')
+            path.write_text(json.dumps(state))
+            '''))
+        def quote(value):
+            return "'" + str(value).replace("'", "''") + "'"
+        builder = "param(" + ",".join("[string]$" + key for key in parameters) + ",[switch]$Run)\n"
+        builder += "$ErrorActionPreference='Stop'\n"
+        builder += "if(!$Run){@{Schema='iw7.beacon-ff-plan/1';Ready=$false;CandidatePending=$false}|ConvertTo-Json;return}\n"
+        builder += "& " + quote(sys.executable) + " -B " + quote(copier) + " " + quote(fixture.build) + " $RunRoot\n"
+        builder += "if($LASTEXITCODE -ne 0){throw 'Synthetic fixture copy failed'}\n"
+        (tools / "sdk/modding/Build-BeaconFF.ps1").write_text(builder)
+        return self.invoke("-Action", "Build", "-Adapter", "BeaconV1", "-BuildParameters", str(parameter_file),
+                           "-FinalizeRoot", str(self.root / "candidate"), "-Output", str(self.root / "result.zip"),
+                           tools=tools, mutates=True)
+
+    def test_real_finalizer_materializes_bound_receipts_and_keeps_package_blocked(self):
+        code, report = self.real_finalizer_flow()
+        self.assertEqual(code, 1, report)
+        self.assertTrue(report["build_executed"])
+        self.assertTrue(report["build_verified"])
+        self.assertTrue(report["materialized"])
+        self.assertTrue(report["finalization"]["source_receipt_bound"])
+        self.assertFalse(report["finalization"]["closure_complete"])
+        self.assertFalse(report["finalization"]["package_ready"])
+        self.assertEqual(len(report["finalization"]["blockers"]), 2)
+        self.assertFalse(report["packaged"])
+        self.assertFalse((self.root / "result.zip").exists())
+
+    def test_real_finalizer_rejects_altered_ff_without_candidate_or_archive(self):
+        code, report = self.real_finalizer_flow(tamper=True)
+        self.assertEqual(code, 1, report)
+        self.assertTrue(report["build_executed"])
+        self.assertFalse(report["build_verified"])
+        self.assertFalse(report["materialized"])
+        self.assertFalse(report["packaged"])
+        self.assertIn("FF differs from measured build", report["finalization"]["errors"])
+        self.assertFalse((self.root / "candidate").exists())
+        self.assertFalse((self.root / "result.zip").exists())
 
 
 if __name__ == "__main__":
