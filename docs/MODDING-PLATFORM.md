@@ -185,3 +185,37 @@ an accepted trigger updates rotation and HUD. The external fixture can listen
 without coupling production source to `paris_test_*` native methods.
 `player.sdk_beacon.rendered_total/rendered_uses` records settext intent only;
 there is no Lua HUD or client pixel acknowledgment in this GSC example.
+
+## Actual original-beacon preparation, 2026-10-12
+
+After explicit parent authorization for tiny asset preparation, `prepare_beacon.py`
+ran against the retained `modular-agent-platform` writer run
+`runtime/model-lod1m-source-20261007`. No new writer was needed. Rehashed writer,
+source/header/geometry, original XMB/XSB and historical visible FF match their
+retained provenance. The retained FF reader's inputs and stdout JSON also match
+its evidence. This is fresh integrity checking of historical proof, not a new
+native reader execution or game acceptance.
+
+The ignored SDK worktree output is `runtime/beacon-v1-source-20261012`:
+10 prepared files totaling14,427B, plus4,752B local receipt = **19,179B** new data.
+No executable, stock or retail material bytes were copied. The two original
+geometry inputs are978B XMB (`F4160133AB4D19DFD1868C4DF8A935505466BDEBCFBEEE5898DFC535E92CFB29`)
+and1231B XSB (`3D55171CB581DFA2EA249BEA1DE1A1F939F6AAEBBC8995E291C005540E388F27`).
+The4802B GSC is unchanged at
+`8BA85B3F5B3014D0C4D02B0E71F49BF617959B486502E4C63243B065ABC2A0B6`
+and passes the real parser. Prepared manifest validates as a plan only.
+
+`source-receipt.local.json` hashes every prepared file and records writer
+provenance, checked reader inputs, expected inventory and policy baseline. Its
+SHA256 is `B8229D50751FA990A925B4CB3C3E2C8110A373D645764D0580959D55D78277AA`.
+Use `-buildzone sdk_beacon` and expect `rawfile,sdk_beacon`; the retained
+`model-ff-plan.json` is original-model staging provenance, not the new build name.
+Do not relabel the old1040B model FF as the unbuilt beacon FF. All binary inputs
+and raw local evidence remain ignored and outside commits.
+
+Future runtime follows privacy baseline `24d5c4f`: random nonempty password,
+`sv_lanOnly=1` in final configuration and launch, loopback by default, reviewed
+native master-heartbeat suppression and fresh privacy telemetry before client
+join. The parent alone coordinates the next admitted build/test. This preparation
+acquired no lease and ran no native executable, ZoneTool, game or network service.
+Material variant2 remains a separate measured-model/closure preparation.
