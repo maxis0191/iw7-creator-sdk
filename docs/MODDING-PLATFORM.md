@@ -8,17 +8,28 @@ Run 5 retains two unresolved retail errors in issue 150; it is a targeted witnes
 not global engine integrity, human acceptance or actual second-player/WAN proof.
 Material C adds offline geometry/pixel-byte verification, not rendered material.
 
-The follow-up source tranche at `deb4169` recovers an original two-bone rig and
-guarded chain plan, prepares references-only Recipient B, adds recipient evidence
-analysis, a separate local-flag Beacon variant, a strict-consumption binder and
-passive ticket telemetry in draft PR151. Source Test-Platform at `deb4169` passes
-425 cases (422 pass, three skips) and four actual GSC syntax parses. B is authorized
-once; a Fatal Error window is observed after `global_mp`, with final result pending.
-Binder output/key fixes `960bd55`/`e8ca4f6` pass source/transport review, while the
-native reader corrections/review/build remain pending. Full compiled dependency absence
-is not established by observed disassembly. The rig has not been played, no real
-H1 donor is imported, and recipient/package closure remains open. This is beta
-progress toward creative freedom, not BO3 equivalence or weapon/AI qualification.
+The PR151 tranche adds original two-bone authoring, independent readers, original
+PCM/FLAC sound preparation, a bounded H1 trigger adapter, recipient evidence
+analysis, a local-flag Beacon variant, a strict-consumption binder and passive
+ticket telemetry. Source Test-Platform at `f99041f` passes 540 cases (537 pass,
+three skips), PowerShell checks and four actual GSC syntax parses. Later focused
+checks cover the diagnostic rig and four-PAK stock binding.
+
+Measured capabilities and remaining gaps are separate:
+
+| Area | Verified progress | Still open |
+| --- | --- | --- |
+| Original models/animation | Rig E FF builds/verifies/dumps; seven assets and CPU authoring evidence | Strict redump rejects two loader-modified pointer fields; rendered skinning and animation |
+| Original sound | Real FFmpeg decode reproduces the complete original WAV | SAB/FF construction, delivery and IW7 playback |
+| Compiled GSC | Two real complete-consumption witnesses, one CTest and 13 native methods pass | Build supervisor fails on a residual descendant; import-absence consumer and package closure |
+| Recipient dependencies | C identifies pak17; D's four-PAK overlay advances to global_cp and restores | Another fatal body remains unknown; no successful reference CSV |
+| Material C | Offline original pixels and reviewed runtime candidate | Full16/16 admission refused before any game invocation; no rendered witness |
+| World/map authoring | Strict trigger-record conversion and source-backed H1 route audit | Havok world collision, playable map, actual H1 donor import |
+
+The nine reviewed GSC tool patches and licenses are retained in the private
+source archive with a verified source tree; reconstruction does not reproduce the
+original commit ID or promise binary identity. No Main deployment, human/WAN
+acceptance, weapon/AI qualification or BO3 equivalence follows from this checkpoint.
 [Current evidence](STATE.md), [runtime limits](MODDING-ENGINE-RE.md).
 
 The original source-only SDK checkpoint was based on `21b91e3`; its contract and
