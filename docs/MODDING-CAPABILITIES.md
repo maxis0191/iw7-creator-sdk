@@ -18,7 +18,7 @@ A server GSC module catalogue alone does not deliver that target.
 | Original rigid geometry | [1040B model witness](deployments/2026-10-07-model-visible.json), plus five usable Plan B frames showing the original 24-vertex/12-triangle cube | Observed shape/HUD only; one rejoin frame is nearly black. Texture/UV/normal/lighting conformity, donor conversion and animated weights remain distinct. |
 | Beacon FF serialization and interaction | [1048B offline FF](../sdk/modding/beacon-ff-validation-2026-10-12.json) and later [Plan B runtime](SELF-CONTAINED-BEACON-RUNTIME.md): Use/HUD, same server entity/team state and reset personal state across controlled client restart | Recipient shoes-material appearance and overall pixels remain unqualified. This is one sequential client, not independent multiplayer or WAN; package readiness remains false. |
 | Client Lua/LUI in FF | [HUD delivery](deployments/2026-10-07-hud-delivery.json): visible Lua text, cold cache, corrected seeded update | Native loader/version required; per-frame gameplay data bridge, complex menus, independent two-client/WAN tests remain. GSC HudElem is not LUI. |
-| BO3/T7 asset import; retained H1 history | [Catalogue J](../tools-source/asset-bridge/t7-bridge/catalogue-runtime-j-20261012.json) names core_pre_gfx; [Core A qualification and collection K](../tools-source/asset-bridge/t7-bridge/catalogue-core-bootstrap-k-20261012.json) bind the two observed dependencies | Input identity is verified, but initialization-complete, real model export and content compatibility remain unproved. Evaluate the distinct K invocation before further action. H1 import is skipped; its converter notes remain historical. |
+| BO3/T7 asset import; retained H1 history | [Core A qualification](../tools-source/asset-bridge/t7-bridge/catalogue-core-bootstrap-k-20261012.json) binds the two pre_gfx inputs; [actual K](../tools-source/asset-bridge/t7-bridge/catalogue-runtime-k-20261012.json) now names en_core_patch | K remains Failed/NoCatalogue. Initialization-complete, model export and full compatibility remain unproved; qualify only the newly requested dependency. H1 import is skipped; its converter notes remain historical. |
 | Original resident image/material | ZoneTool reader supports resident DDS/TGA; source fix prepared by surfaces owner | Material resolution currently depends on zone-name prefix/early DB lookup. Prove generic-name FF and resident images without PAK before exposing easy imports. |
 | Skeletal animation | Animation owner's bounded H1/IW7 XAB envelope/bone/notetrack preflight | Compressed tracks not decoded; no imported motion. Two-bone original keyed clip, native writer/readback, two rendered poses and notetrack next. |
 | New weapons | Weapon JSON/reference paths exist in pinned ZoneTool | View/world model, hands/rig, fire/reload/PAP, sounds/FX, notetracks and peer replication. No playable custom weapon witnessed. |
@@ -44,8 +44,9 @@ The separately reviewed [FLAC build C](../tools-source/asset-bridge/surfaces/sou
 qualifies compilation and the bounded C++ probe. The subsequent actual
 [DumpOnly A checkpoint](../tools-source/asset-bridge/surfaces/sound/dump-only-checkpoint-2026-10-12.json)
 proves corrected 4096/4096 block metadata and unchanged seek/frame bytes on the
-preserved F banks. Strict external PCM comparison and audible playback remain
-unproved. The original F dump's strict decoder failure is retained unchanged.
+preserved F banks. [The subsequent strict codec run](../tools-source/asset-bridge/surfaces/sound/dump-only-codec-checkpoint-2026-10-12.json)
+recovers the exact original PCM and full WAV. Native alias lookup and audible
+playback remain unproved. The original F decoder failure is retained unchanged.
 
 ## Retained H1/model converter correction; import skipped
 
