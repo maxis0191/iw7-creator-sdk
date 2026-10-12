@@ -237,10 +237,10 @@ class DistributionTests(unittest.TestCase):
     def test_real_sdk_cli_validates_active_dependency_bytes(self):
         other = self.other()
         node = other["package"]["closure"]["nodes"][0]
-        node.update(id="scriptfile:scripts/support.gsc", kind="scriptfile", scope="server")
+        node.update(id="scriptfile:custom_scripts/cp/support.gsc", kind="scriptfile", scope="server")
         other["package"]["closure"]["roots"] = [node["id"]]
         other["package"]["files"][0].update(source="support.gsc", closure_roots=[node["id"]])
-        other["lifecycle"]["entrypoints"] = [{"side": "server", "path": "scripts/support.gsc", "symbol": "init"}]
+        other["lifecycle"]["entrypoints"] = [{"side": "server", "path": "custom_scripts/cp/support.gsc", "symbol": "init"}]
         (self.root / "support.gsc").write_bytes(self.payload)
         path = self.root / "support.json"
         path.write_bytes(mod.canonical_json(other))
