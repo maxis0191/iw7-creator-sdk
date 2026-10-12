@@ -1,0 +1,535 @@
+{
+  "Schema": "iw7.sdk-self-contained-use-rejoin-evidence/1",
+  "Date": "2026-10-12",
+  "SourceCommit": "b46579cffd13239f8ac128bf4f03deafefd8efec",
+  "ReviewedIntegrationCommit": "18df17ba0eeb78b050193c032231c9e2a9663253",
+  "Plan": "UseRejoin stopped-Main Plan B",
+  "CommandSHA256": "47CE677C420140A41FA96AD9DD3B10D0D27CB4146A645F987701D08549ADE189",
+  "WrapperSHA256": "C4B72EBD6A7DA78BE772D12EDDA39A17C23D8B601E0D56D55ACBDBC836AD0D55",
+  "ParameterSHA256": "59B3763A54FD6D18AB2BCF5A710FFA431D81D6E24EF6EAB10184040A42818DCE",
+  "SourcePlanSHA256": "655482388C907F1D4BF16ED0BCDA772B3E6D8E8C279E129749A9EA0EA8E3201A",
+  "RunRelativePath": "runtime/agent-lab/20261012-180643-901-5d7c9298",
+  "CaseRelativePath": "runtime/sdk-self-contained-use-rejoin-stopped-main-plan-b-20261012",
+  "Preflight": {
+    "Passed": true,
+    "CompletedUtc": "2026-10-12T18:06:39.2530922Z",
+    "PhysicalBytes": 12884901888,
+    "CommitBytes": 12884901888,
+    "ManifestSHA256": "7497191CB3612533333AD48AB4F4F4BB1F852039EE273179DF7BF6B5FE0E9B9C",
+    "NativeSHA256": "7862B2A5C21047A8FD4095C6DF2FA96A40B3766F92649FCFFE80ABB193517A97",
+    "ExecutableRehashed": true,
+    "ProviderInventoried": true,
+    "ProviderInventorySHA256": "2649231856356E5B5BEE4A6D043AA13E547CCC26E3D5F7B8A385E0F1A03F4F6A",
+    "ProviderBytes": 394436292,
+    "GraphicsProfile": "Reduced",
+    "Debugger": false
+  },
+  "Invocation": {
+    "Count": 1,
+    "FinishedUtc": "2026-10-12T18:10:30.8938165Z",
+    "ExitCode": 0,
+    "MainInitiallyStopped": true,
+    "MainStarted": false,
+    "PlannedConcurrentClients": 1,
+    "SequentialClientGenerations": 2,
+    "NewScenarioOrPatchDuringRun": false
+  },
+  "Stage": {
+    "ExactScriptCount": 3,
+    "Scripts": [
+      {
+        "Name": "agent_vertical_fixture.gsc",
+        "InputSHA256": "2186E99A6F95F91AE8E272F589DA0E69E9C16A524B558B9B4039F9ABDFA1441A",
+        "SHA256": "CCD0CED6F4DD69B29657F0CB23CCB95A4B9AB4E58652A736E8EFC148286A9A5E"
+      },
+      {
+        "Name": "sdk_beacon_self_contained.gsc",
+        "InputSHA256": "9DE9B76DC25293146999C71653BD407D8CB639E107293F6DE87084FED90EEE1C",
+        "SHA256": "9DE9B76DC25293146999C71653BD407D8CB639E107293F6DE87084FED90EEE1C"
+      },
+      {
+        "Name": "ticket_init_observer.gsc",
+        "InputSHA256": "4E5E662FEF7E84272775790FB1FB7E3DADC2443B10DAEA90180E2BFE33DE8D54",
+        "SHA256": "6D928E91E24469985EA47A17F71CF04635A731F084BDC2818F2EE746FE0E260D"
+      }
+    ],
+    "FFSHA256": "3FA49BCDFD08857BB37C198AF7A49AF78675B940B022E160343552D3F8B71DA8",
+    "SDKSourceSHA256": "9DE9B76DC25293146999C71653BD407D8CB639E107293F6DE87084FED90EEE1C",
+    "SDKVariant": "SelfContained",
+    "AssetVariant": "Original"
+  },
+  "Scenario": {
+    "Passed": true,
+    "Passes": [
+      {
+        "Connection": 1,
+        "Entity": 789,
+        "Instance": 55050,
+        "Team": 1,
+        "Personal": 1,
+        "UseEventTick": 157582390,
+        "EventObservedAfterMs": 16,
+        "ClientReleaseTick": 157582500,
+        "ServerReleasedTick": 157582640,
+        "AbortAcknowledged": true,
+        "FreshEngineProtection": true,
+        "Godmode": 1,
+        "Inactivity": 0,
+        "Cheats": 0,
+        "PreUseHeartbeatAgeMs": 203
+      },
+      {
+        "Connection": 2,
+        "Entity": 789,
+        "Instance": 55050,
+        "Team": 2,
+        "Personal": 1,
+        "UseEventTick": 157665359,
+        "EventObservedAfterMs": 31,
+        "ClientReleaseTick": 157665421,
+        "ServerReleasedTick": 157665609,
+        "AbortAcknowledged": true,
+        "FreshEngineProtection": true,
+        "Godmode": 1,
+        "Inactivity": 0,
+        "Cheats": 0,
+        "PreUseHeartbeatAgeMs": 156
+      }
+    ],
+    "ControlledClientRestart": true,
+    "InProcessReconnectProven": false,
+    "ExactCacheRetained": true,
+    "HttpClosedBeforeRejoin": true,
+    "SameEntityInstanceAndGenerationVerified": true,
+    "PersonalResetOnRejoinVerified": true,
+    "PrivacyBeforeEachConnectionVerified": true,
+    "RuntimeBytecodeEqualsOfflineWitness": false
+  },
+  "Ticket": {
+    "MeasurementsVerified": true,
+    "PairCount": 26,
+    "Stop": {
+      "Reason": "wall_done_window_complete",
+      "Snapshots": 26,
+      "Polls": 897,
+      "BeforeWallSeen": 1,
+      "TransitionSeen": 1,
+      "ElapsedMs": 44900
+    },
+    "FirstPlayerElapsedMs": 39900,
+    "FirstWallDoneElapsedMs": 39900,
+    "StopAfterWallDoneMs": 5000,
+    "LastSnapshotAfterWallDoneMs": 4000,
+    "Table": [
+      {
+        "Key": "cryo",
+        "BeforePlayer": {
+          "Line": 145,
+          "sequence": 22,
+          "game_ms": 39700,
+          "elapsed_ms": 39700,
+          "players": 0,
+          "wall_done": 0,
+          "interaction_done": 1,
+          "spawn_volumes_done": 1,
+          "before_wall_seen": 1,
+          "transition_seen": 0,
+          "key": "cryo",
+          "index_ready": 1,
+          "matches": 1,
+          "scanned": 1,
+          "defined_entries": 1,
+          "triggers": 0,
+          "items": 0,
+          "item_is_trigger": 0,
+          "disabled": 0,
+          "already_used": 0,
+          "parents": 0,
+          "parent_triggers": 0,
+          "current_noteworthy_matches": 1
+        },
+        "FirstPlayerAndWallDone": {
+          "Line": 149,
+          "sequence": 23,
+          "game_ms": 39900,
+          "elapsed_ms": 39900,
+          "players": 1,
+          "wall_done": 1,
+          "interaction_done": 1,
+          "spawn_volumes_done": 1,
+          "before_wall_seen": 1,
+          "transition_seen": 1,
+          "key": "cryo",
+          "index_ready": 1,
+          "matches": 1,
+          "scanned": 1,
+          "defined_entries": 1,
+          "triggers": 1,
+          "items": 0,
+          "item_is_trigger": 0,
+          "disabled": 0,
+          "already_used": 0,
+          "parents": 0,
+          "parent_triggers": 0,
+          "current_noteworthy_matches": 1
+        },
+        "LastEmittedSample": {
+          "Line": 155,
+          "sequence": 25,
+          "game_ms": 43900,
+          "elapsed_ms": 43900,
+          "players": 1,
+          "wall_done": 1,
+          "interaction_done": 1,
+          "spawn_volumes_done": 1,
+          "before_wall_seen": 1,
+          "transition_seen": 1,
+          "key": "cryo",
+          "index_ready": 1,
+          "matches": 1,
+          "scanned": 1,
+          "defined_entries": 1,
+          "triggers": 1,
+          "items": 0,
+          "item_is_trigger": 0,
+          "disabled": 0,
+          "already_used": 0,
+          "parents": 0,
+          "parent_triggers": 0,
+          "current_noteworthy_matches": 1
+        }
+      },
+      {
+        "Key": "forge",
+        "BeforePlayer": {
+          "Line": 146,
+          "sequence": 22,
+          "game_ms": 39700,
+          "elapsed_ms": 39700,
+          "players": 0,
+          "wall_done": 0,
+          "interaction_done": 1,
+          "spawn_volumes_done": 1,
+          "before_wall_seen": 1,
+          "transition_seen": 0,
+          "key": "forge",
+          "index_ready": 1,
+          "matches": 1,
+          "scanned": 1,
+          "defined_entries": 1,
+          "triggers": 0,
+          "items": 0,
+          "item_is_trigger": 0,
+          "disabled": 0,
+          "already_used": 0,
+          "parents": 0,
+          "parent_triggers": 0,
+          "current_noteworthy_matches": 1
+        },
+        "FirstPlayerAndWallDone": {
+          "Line": 150,
+          "sequence": 23,
+          "game_ms": 39900,
+          "elapsed_ms": 39900,
+          "players": 1,
+          "wall_done": 1,
+          "interaction_done": 1,
+          "spawn_volumes_done": 1,
+          "before_wall_seen": 1,
+          "transition_seen": 1,
+          "key": "forge",
+          "index_ready": 1,
+          "matches": 1,
+          "scanned": 1,
+          "defined_entries": 1,
+          "triggers": 1,
+          "items": 0,
+          "item_is_trigger": 0,
+          "disabled": 0,
+          "already_used": 0,
+          "parents": 0,
+          "parent_triggers": 0,
+          "current_noteworthy_matches": 0
+        },
+        "LastEmittedSample": {
+          "Line": 156,
+          "sequence": 25,
+          "game_ms": 43900,
+          "elapsed_ms": 43900,
+          "players": 1,
+          "wall_done": 1,
+          "interaction_done": 1,
+          "spawn_volumes_done": 1,
+          "before_wall_seen": 1,
+          "transition_seen": 1,
+          "key": "forge",
+          "index_ready": 1,
+          "matches": 1,
+          "scanned": 1,
+          "defined_entries": 1,
+          "triggers": 1,
+          "items": 0,
+          "item_is_trigger": 0,
+          "disabled": 0,
+          "already_used": 0,
+          "parents": 0,
+          "parent_triggers": 0,
+          "current_noteworthy_matches": 0
+        }
+      }
+    ],
+    "ExactFaultingFieldProven": false,
+    "Inference": "Unique structs exist before player arrival; triggers appear after arrival/setup while items remain absent through the final emitted samples. Supports delayed trigger initialization, not direct observation inside the failed callbacks. STOP proves the complete five-second observation window; final emitted snapshot precedes STOP.",
+    "RawReceiptsUnchanged": true,
+    "OriginalWrapperMeasurementsFlag": false
+  },
+  "RuntimeIntegrity": {
+    "Passed": false,
+    "TotalErrors": 2,
+    "KnownUnresolvedErrors": 2,
+    "NewUnresolvedErrors": 0,
+    "IncompleteErrors": 0,
+    "RemainingIssue": 150,
+    "ErrorAllowancesChanged": false,
+    "LogsSuppressed": false,
+    "ClosedLogs": [
+      {
+        "Role": "server.stdout.log",
+        "LogBytes": 103347,
+        "LogSHA256": "CD642150BBCA88D7462B4354BAEB9FE6C5D9C636002C5A311AEE9ECD24F13472",
+        "ErrorCount": 2,
+        "KnownUnresolvedCount": 2,
+        "NewUnresolvedCount": 0,
+        "IncompleteCount": 0
+      },
+      {
+        "Role": "server.stderr.log",
+        "LogBytes": 0,
+        "LogSHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+        "ErrorCount": 0,
+        "KnownUnresolvedCount": 0,
+        "NewUnresolvedCount": 0,
+        "IncompleteCount": 0
+      },
+      {
+        "Role": "base-client/client.stdout.log",
+        "LogBytes": 16996,
+        "LogSHA256": "A6FE9B166591F3A63420FCF75D7E14B97ACB7A01BC22D8B1ACBC630BED6A7BE2",
+        "ErrorCount": 0,
+        "KnownUnresolvedCount": 0,
+        "NewUnresolvedCount": 0,
+        "IncompleteCount": 0
+      },
+      {
+        "Role": "base-client/client.stderr.log",
+        "LogBytes": 0,
+        "LogSHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+        "ErrorCount": 0,
+        "KnownUnresolvedCount": 0,
+        "NewUnresolvedCount": 0,
+        "IncompleteCount": 0
+      },
+      {
+        "Role": "base-client-rejoin/client.stdout.log",
+        "LogBytes": 16968,
+        "LogSHA256": "890DB2187338937F00E9814947563C050A9F81A8AC99DD2231EAB17783EEDA57",
+        "ErrorCount": 0,
+        "KnownUnresolvedCount": 0,
+        "NewUnresolvedCount": 0,
+        "IncompleteCount": 0
+      },
+      {
+        "Role": "base-client-rejoin/client.stderr.log",
+        "LogBytes": 0,
+        "LogSHA256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+        "ErrorCount": 0,
+        "KnownUnresolvedCount": 0,
+        "NewUnresolvedCount": 0,
+        "IncompleteCount": 0
+      }
+    ],
+    "ServerBlocks": [
+      {
+        "KnownSignature": "init_cryobomb",
+        "StartLine": 92,
+        "EndLine": 96,
+        "Complete": true
+      },
+      {
+        "KnownSignature": "init_forgefreeze",
+        "StartLine": 97,
+        "EndLine": 101,
+        "Complete": true
+      }
+    ]
+  },
+  "Restoration": {
+    "Passed": true,
+    "ManagedFilesRestored": true,
+    "StaticMainUnchanged": true,
+    "MainBankDeltaObserved": false,
+    "Failure": null,
+    "CleanupError": null,
+    "LeaseHandoffOwner": "Released",
+    "CallerReleasedLease": false,
+    "IndependentAuditUtc": "2026-10-12T18:11:37.1755849Z",
+    "OwnedPIDsAbsent": true,
+    "BaseClientVacant": true,
+    "PortsVacant": [
+      27016,
+      27116,
+      27117
+    ],
+    "ManagedBaseBytesReverified": true,
+    "ManagedCandidateBytesReverified": true,
+    "LeaseCount": 0,
+    "HeavyProcessCount": 0,
+    "MainStopped": true,
+    "MainContinuousStateProven": false
+  },
+  "NativeFrames": [
+    {
+      "RelativePath": "base-client/vertical-before/pre-action.bmp",
+      "SHA256": "931DFE498DDA111CB27143136EFB74ADE4AE08A5881357A39E8B4CFBDE2D710F",
+      "Width": 1280,
+      "Height": 720,
+      "Picmip": 2,
+      "NativeCapture": true,
+      "RequestedUtc": "2026-10-12T18:08:06.8832979Z",
+      "VisuallyInspected": true,
+      "ReviewSource": "Coordinator and animation reviewer, reported after closure",
+      "GeometryViewUsable": true
+    },
+    {
+      "RelativePath": "base-client/vertical-before-use/pre-action.bmp",
+      "SHA256": "EC08BD81DA79C1FA1BF0B748E8635A835A49CA528F7A2D776317709E7E25A6FC",
+      "Width": 1280,
+      "Height": 720,
+      "Picmip": 2,
+      "NativeCapture": true,
+      "RequestedUtc": "2026-10-12T18:08:10.6858509Z",
+      "VisuallyInspected": true,
+      "ReviewSource": "Coordinator and animation reviewer, reported after closure",
+      "GeometryViewUsable": true
+    },
+    {
+      "RelativePath": "base-client/vertical-after/pre-action.bmp",
+      "SHA256": "BEA6E40FDAF4DCF993C833F8DD6EBAAE0E08E892A31BEBDEF46334A140FEB991",
+      "Width": 1280,
+      "Height": 720,
+      "Picmip": 2,
+      "NativeCapture": true,
+      "RequestedUtc": "2026-10-12T18:08:11.7891357Z",
+      "VisuallyInspected": true,
+      "ReviewSource": "Coordinator and animation reviewer, reported after closure",
+      "GeometryViewUsable": true
+    },
+    {
+      "RelativePath": "base-client-rejoin/vertical-before/pre-action.bmp",
+      "SHA256": "1CE9D80A15C92DC1FF27B087C7C705D5D96CC724749D9DC4C530813E99698AC7",
+      "Width": 1280,
+      "Height": 720,
+      "Picmip": 2,
+      "NativeCapture": true,
+      "RequestedUtc": "2026-10-12T18:09:29.5209862Z",
+      "VisuallyInspected": true,
+      "ReviewSource": "Coordinator and animation reviewer, reported after closure",
+      "GeometryViewUsable": false
+    },
+    {
+      "RelativePath": "base-client-rejoin/vertical-before-use/pre-action.bmp",
+      "SHA256": "419074D5018E6ACD642270B30D7C1946EE2FA9E9FC07E76194AF143EC1D28E9F",
+      "Width": 1280,
+      "Height": 720,
+      "Picmip": 2,
+      "NativeCapture": true,
+      "RequestedUtc": "2026-10-12T18:09:33.5216898Z",
+      "VisuallyInspected": true,
+      "ReviewSource": "Coordinator and animation reviewer, reported after closure",
+      "GeometryViewUsable": true
+    },
+    {
+      "RelativePath": "base-client-rejoin/vertical-after/pre-action.bmp",
+      "SHA256": "8F86791A04AA5C57B1CB181353255A1CD67649A6B8CD7CA0D481F4440D87B2D1",
+      "Width": 1280,
+      "Height": 720,
+      "Picmip": 2,
+      "NativeCapture": true,
+      "RequestedUtc": "2026-10-12T18:09:34.7870705Z",
+      "VisuallyInspected": true,
+      "ReviewSource": "Coordinator and animation reviewer, reported after closure",
+      "GeometryViewUsable": true
+    }
+  ],
+  "Evidence": [
+    {
+      "FileName": "result.json",
+      "SHA256": "504015297F77A46189FB83D97F93BD8EFA142DFE93DC36B020EA004D12EBD132",
+      "Bytes": 671
+    },
+    {
+      "FileName": "scenario.result.json",
+      "SHA256": "C1D4F1B441B04AAAC8D451D74FC24F52C9EF6D31ECF418D8FC8FF2A8832AB8C3",
+      "Bytes": 9908
+    },
+    {
+      "FileName": "vertical-scripts.local.json",
+      "SHA256": "D7815C137ED2E69FA280F7BE60D6D86C6F69557B3DF6BFF439C331116269083F",
+      "Bytes": 851
+    },
+    {
+      "FileName": "wrapper-result.local.json",
+      "SHA256": "5C5FA1EBA31B7A6EC8FDF2D22CFFC706FA3A1D7C7FA87E33B4494DF5649037D0",
+      "Bytes": 567
+    },
+    {
+      "FileName": "closure-confirmation.local.json",
+      "SHA256": "0FD82ED155BE33CE20723659713C59A263A67A4EF662BAB53EE5E439ADEFCCA8",
+      "Bytes": 1019
+    },
+    {
+      "FileName": "closed-runtime-errors.local.json",
+      "SHA256": "AB508E66570891618F0F360AE209427540E0AD2F81010BB4D6499869598E767F",
+      "Bytes": 8519
+    },
+    {
+      "FileName": "ticket-window-post-audit.local.json",
+      "SHA256": "72E5487C84D20C2500C37BECCF082BF1E80565C71B809D330560B6F930E522E3",
+      "Bytes": 6393
+    },
+    {
+      "FileName": "preflight-complete.local.json",
+      "SHA256": "7BA37C5CAB482BDC288A317AB0AB74054D3183232970B08E4D7C2423DF53C6A9",
+      "Bytes": 514
+    }
+  ],
+  "Ready": false,
+  "CommunityPackageValidated": false,
+  "PixelsVerified": false,
+  "OwnerAccepted": false,
+  "Next": "Review the closed ticket measurements for a narrowly scoped initializer correction candidate. No automatic callback patch, new run or rendering qualification follows from this targeted success.",
+  "VisualReview": {
+    "Source": "Coordinator inspected both after frames; animation reviewer inspected all six existing captures. Report received after the initial runtime evidence commit.",
+    "NewCaptureOrInvocation": false,
+    "GeometryObserved": true,
+    "HUDProgressionObserved": true,
+    "HUDDisplayedPersonalThenTeam": [
+      "0/0",
+      "1/1",
+      "0/1",
+      "1/2"
+    ],
+    "ActivateBeaconVisibleInAfterFrames": 2,
+    "UsableGeometryViews": 5,
+    "UnusableDarkView": "base-client-rejoin/vertical-before/pre-action.bmp",
+    "ObservedShape": "Small cuboid, consistent with the reviewed24-vertex/12-triangle fixture, bounds plus/minus8 at scale1.",
+    "MaterialSourceReference": "prepare_ff.py:8",
+    "ReusedMaterial": "mopw/character_park_clown_zombie_shoes",
+    "OriginalBeaconTextureProven": false,
+    "GreenLineInterpretation": "Appears to be the weapon laser; not evidence of beacon material.",
+    "NormalsWriterQualification": "Still an H1 candidate",
+    "TextureUVNormalLightingConformityProven": false,
+    "DarkFrameCauseProven": false,
+    "OverallPixelsQualified": false
+  }
+}
