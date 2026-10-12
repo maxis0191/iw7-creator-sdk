@@ -1,16 +1,29 @@
 # Community mod SDK: first executable contract
 
-2026-10-12 source tranche, based on project `21b91e3`. Ownership is
-`sdk/modding/` and these two MODDING documents. The parent coordinates integration,
-private PR/CI/merge and heavy admission. No runtime/native/operations changes or
-new runtime acceptance are part of this tranche.
+Current checkpoint, 2026-10-12: PR148 is merged as `178708b` under the recorded
+owner CI-admission exception; CI did not pass. The SDK now has real Beacon FF
+build/readback and Creator finalization evidence, plus protected run 5 Use/HUD and
+controlled base-client restart/rejoin with verified Aurora cdata and restoration.
+Run 5 retains two unresolved retail errors in issue 150; it is a targeted witness,
+not global engine integrity, human acceptance or actual second-player/WAN proof.
+Material C adds offline geometry/pixel-byte verification, not rendered material.
 
-The immediate vertical is **a shared imported beacon, authoritative Use,
-per-player/team HUD, and a second player's join/rejoin**. This joins asset and
-gameplay work; it is a small foundation for the requested creative freedom, not
-BO3 equivalence. Begin with the already witnessed original rigid model, replace
-it with H1 geometry/material, then add a controlled two-bone animation using the
-same manifest structure. Do not claim weapon/AI support from a static mesh.
+The follow-up source tranche at `deb4169` recovers an original two-bone rig and
+guarded chain plan, prepares references-only Recipient B, adds recipient evidence
+analysis, a separate local-flag Beacon variant, a strict-consumption binder and
+passive ticket telemetry in draft PR151. Source Test-Platform at `deb4169` passes
+425 cases (422 pass, three skips) and four actual GSC syntax parses. B is authorized
+once; a Fatal Error window is observed after `global_mp`, with final result pending.
+Binder output/key fixes `960bd55`/`e8ca4f6` pass source/transport review, while the
+native reader corrections/review/build remain pending. Full compiled dependency absence
+is not established by observed disassembly. The rig has not been played, no real
+H1 donor is imported, and recipient/package closure remains open. This is beta
+progress toward creative freedom, not BO3 equivalence or weapon/AI qualification.
+[Current evidence](STATE.md), [runtime limits](MODDING-ENGINE-RE.md).
+
+The original source-only SDK checkpoint was based on `21b91e3`; its contract and
+preparation behavior below remain applicable to fresh inputs. It must not be read
+as the current validation status of the whole platform.
 
 ## Files and commands
 
@@ -37,11 +50,13 @@ python -B sdk/modding/prepare_beacon.py --writer-run <existing-writer-run> --out
 
 The prepared directory contains an opt-in GSC, `manifest.json`, original XMB/XSB,
 NCS table, the existing recipient-material ignore recipe and `sdk_beacon.csv`.
-Only the server source hash is filled from real bytes. The new fastfile hash,
-inventory, rendering and acceptance remain unknown. Run the reviewed tool with
-`-buildzone sdk_beacon` only in an admitted existing tool environment. The old
-model wrapper's allowlisted name/route is not automatically a beacon launcher.
-Distribution/agent owners must adapt their reviewed route before runtime.
+For each freshly prepared directory, only the server source hash is initially
+filled. The admitted [Beacon builder](../sdk/modding/Build-BeaconFF.ps1) and
+[Creator](../sdk/modding/CREATOR.md) supply measured FF/inventory receipts; the
+already completed Beacon experiments do not fill facts for an arbitrary new build.
+Rendering and acceptance remain separately gated, and unresolved recipient
+dependencies still prevent distribution. The historical model-only wrapper is
+not a substitute for the now-reviewed named Beacon route.
 
 Preparation requires the existing original writer's exact source pin,
 24 vertices/12 triangles/one bone/LOD, measured material reference, LOD distance
