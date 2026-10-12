@@ -1,4 +1,4 @@
-# Creator command: plan, build, finalize and package gates
+# Creator command: plan, materialize, build and package gates
 
 `Creator.ps1` accepts a local project directory containing the existing SDK
 `manifest.json`; payload paths remain relative to that project. The explicitly
@@ -228,6 +228,83 @@ so the builder's own support for `Run` cannot authorize that key from JSON. Buil
 also obtains and verifies a fresh snapshot after adapter planning.
 `-ToolsRoot` is an explicit operator override for a complete reviewed checkout
 during isolated integration; it is never read from project content.
+
+## Materialize an existing build locally
+
+Use `Materialize` when a BeaconV1 build has finished and you want an inspectable
+local candidate without running another compiler or creating an archive:
+
+```powershell
+./sdk/modding/Creator.ps1 -Project C:/author/beacon-source -Adapter BeaconV1 `
+  -Action Materialize -BuildRoot C:/author/completed-beacon-build `
+  -FinalizeRoot C:/author/fresh-local-candidate `
+  -ClientSource 77e6d4d24e918ee363b3feee3735c3b889dff7d7 `
+  -ServerSource 77e6d4d24e918ee363b3feee3735c3b889dff7d7 -Protocol 2 -Json
+```
+
+`BuildRoot` is the retained completed build directory containing its original
+`state.local.json` and outputs. `FinalizeRoot` is a new directory under an existing
+parent, separate from the source project, every active project and the build.
+An existing destination is refused and preserved. `BuildRoot` belongs only to
+this action; it does not change the behavior of `Plan` or `Build`.
+
+Materialize accepts only the exact original `BeaconV1` source/preparation and
+keeps the usual source/protocol assertions and active-project compatibility
+checks. It refuses `BuildParameters`, `Output` and `GscAuditEvidence`; it cannot
+select a native build or ZIP destination. The self-contained source variant is
+not accepted by this finalizer. Optional `RecipientProof` and `RecipientRoot`
+must be supplied together and retain their existing snapshot-only semantics.
+
+Creator calls `Finalize-BeaconProject.py::finalize()` directly through
+`creator_materialize.py`. It does not call the builder, even for planning, or
+the package writer. The existing finalizer rechecks the source receipt, exact
+template/recipe/NCS, completed build phases, original closure/restoration records,
+FF/hash, retained inventories, geometry and dump bytes. It applies
+`Plan.SourceReceiptSHA256` when present; a missing historical binding remains an
+explicit blocker, while a present mismatching binding is a refusal. No source
+receipt, prior build state or evidence gate is amended.
+
+After finalization, Creator reopens the ten required candidate files through the
+bounded reader, checks the total written byte count, FF/GSC/manifest hashes,
+output paths, stored evidence and remaining blockers, then rechecks file identities
+and hashes. `materialized=true` therefore requires actual checked files, not a
+positive boolean returned by a finalizer. Changed post-write output is refused
+and retained for inspection; Creator does not delete external replacements.
+
+**Exit 0 means the local candidate was created and checked.** It can correctly
+report `materialized=true`, `build_verified=true`, `package_ready=false` and
+`runtime_ready=false`, with `build_executed=false` and `packaged=false`. Remaining
+blockers appear both in `finalization.blockers` and the materialize step's human
+readable details, as well as `pending`. The JSON also includes the candidate and
+manifest paths, exact hashes, `creator_output_verified` and the ten measured file
+records. Pending statements from the unchanged source manifest are retained as
+`source_project_pending`; they no longer misleadingly label the created candidate's
+FF as unestablished. Active-project pending statements remain in `pending`.
+This is an authoring checkpoint, not package, gameplay or connection
+acceptance. No ZIP, deployment, game launch, server connection or resource lease
+is implicit.
+
+Thirteen real CLI additions cover successful local output with blockers,
+historical binding limits, changed FF/source hashes, unclosed/unrestored builds,
+fresh/nonoverlapping destinations, missing inputs, refused build/ZIP/audit options,
+recipient proofs, active-project collisions, unchanged Plan/Build options, a
+builder that must never be called, a false success without files and post-write
+payload drift. They use the existing asset-free finalizer fixtures. An initial
+test-double indentation error was corrected; it did not execute a builder or
+change a production gate.
+
+On 2026-10-12, the new action was also exercised against the retained real
+source-bound build from the earlier Creator run. It returned exit 0 after
+creating and reading back ten files totaling 23036 bytes. The 1048-byte FF kept
+SHA256 `3fa49bcdfd08857bb37c198af7a49af78675b940b022e160343552d3f8b71da8`;
+the manifest kept SHA256
+`1b37643436183fe864f7057873f4c49039c8843ec78b2826b2c6bda1d8c5e861`.
+The original source/build receipt hashes were checked before and after and did
+not change. `source_receipt_bound` and `creator_output_verified` were true;
+`build_executed`, `packaged`, runtime and owner acceptance remained false.
+The two remaining blockers were recipient material/transitive image/technique
+resolution and the compiled utility script/imports. No compiler, extractor,
+retail read, lease, new native execution, ZIP or deployment was involved.
 
 ## Explicit Build orchestration
 

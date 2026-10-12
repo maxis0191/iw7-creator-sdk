@@ -676,6 +676,197 @@ class CreatorTests(unittest.TestCase):
             self.assertIn("requires explicit BeaconSelfContainedV1 Plan", " ".join(report["errors"]))
             self.assertNotIn("gsc_audit", report)
 
+    def materialize_fixture(self, bound=True):
+        spec = importlib.util.spec_from_file_location("creator_materialize_fixture", TOOLS / "sdk/modding/tests/test_beacon_finalize.py")
+        fixtures = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(fixtures)
+        fixture = fixtures.FinalizeTests()
+        self.addCleanup(fixture.doCleanups)
+        fixture.setUp()
+        self.root, self.project = fixture.root, fixture.project
+        if bound:
+            fixture.state["Plan"]["SourceReceiptSHA256"] = hashlib.sha256((self.project / "source-receipt.local.json").read_bytes()).hexdigest()
+            fixture.save_state()
+        return fixture
+
+    def invoke_materialize(self, fixture, *extra, mutates=False, tools=TOOLS, action="Materialize"):
+        return self.invoke("-Action", action, "-Adapter", "BeaconV1", "-BuildRoot", str(fixture.build),
+                           "-FinalizeRoot", str(fixture.output), *extra, mutates=mutates, tools=tools)
+
+    def test_materialize_creates_real_checked_candidate_and_succeeds_with_blockers(self):
+        fixture = self.materialize_fixture()
+        before = self.snapshot()
+        code, report = self.invoke_materialize(fixture, mutates=True, action="materialize")
+        self.assertEqual(code, 0, report)
+        self.assertEqual(report["action"], "Materialize")
+        self.assertTrue(report["plan_valid"])
+        self.assertTrue(report["build_verified"])
+        self.assertTrue(report["materialized"])
+        self.assertFalse(report["build_executed"])
+        self.assertFalse(report["packaged"])
+        self.assertNotIn("adapter_plan_requested", report)
+        final = report["finalization"]
+        self.assertTrue(final["creator_output_verified"])
+        self.assertTrue(final["source_receipt_bound"])
+        self.assertFalse(final["package_ready"])
+        self.assertFalse(final["closure_complete"])
+        self.assertEqual(len(final["blockers"]), 2)
+        self.assertEqual(report["pending"], final["blockers"])
+        self.assertIn("Payload not established", " ".join(report["source_project_pending"]))
+        self.assertEqual(len(final["candidate_files_verified"]), 10)
+        self.assertEqual(final["bytes_written"], sum(p.stat().st_size for p in fixture.output.rglob("*") if p.is_file()))
+        self.assertFalse(list(self.root.rglob("*.zip")))
+        for name, checksum in before.items():
+            self.assertEqual(self.snapshot()[name], checksum)
+        step = next(x for x in report["steps"] if x["name"] == "materialize")
+        self.assertTrue(all(x in step["details"] and x in report["pending"] for x in final["blockers"]))
+
+    def test_materialize_preserves_historical_source_binding_blocker(self):
+        fixture = self.materialize_fixture(bound=False)
+        code, report = self.invoke_materialize(fixture, mutates=True)
+        self.assertEqual(code, 0, report)
+        self.assertFalse(report["finalization"]["source_receipt_bound"])
+        self.assertEqual(len(report["finalization"]["blockers"]), 3)
+        self.assertIn("lacks Plan.SourceReceiptSHA256", " ".join(report["pending"]))
+
+    def test_materialize_rejects_changed_ff_and_source_receipt_before_writing(self):
+        fixture = self.materialize_fixture()
+        path = fixture.build / "mod.ff"
+        original = path.read_bytes()
+        path.write_bytes(b"changed")
+        code, report = self.invoke_materialize(fixture)
+        self.assertEqual(code, 1, report)
+        self.assertIn("FF differs from measured build", " ".join(report["errors"]))
+        self.assertFalse(fixture.output.exists())
+        path.write_bytes(original)
+        fixture.state["Plan"]["SourceReceiptSHA256"] = "0" * 64
+        fixture.save_state()
+        code, report = self.invoke_materialize(fixture)
+        self.assertEqual(code, 1, report)
+        self.assertIn("SourceReceiptSHA256 differs", " ".join(report["errors"]))
+        self.assertFalse(fixture.output.exists())
+
+    def test_materialize_rejects_unclosed_or_unrestored_build(self):
+        fixture = self.materialize_fixture()
+        fixture.state["Phases"][0]["JobActiveAtClose"] = 1
+        fixture.save_state()
+        code, report = self.invoke_materialize(fixture)
+        self.assertEqual(code, 1, report)
+        self.assertIn("job remains active", " ".join(report["errors"]))
+        fixture.state["Phases"][0]["JobActiveAtClose"] = 0
+        fixture.state["Restored"] = False
+        fixture.save_state()
+        code, report = self.invoke_materialize(fixture)
+        self.assertEqual(code, 1, report)
+        self.assertIn("Build gate not established: Restored", " ".join(report["errors"]))
+
+    def test_materialize_requires_existing_build_and_fresh_separate_destination(self):
+        fixture = self.materialize_fixture()
+        for output in (fixture.project / "nested", fixture.build / "nested", fixture.root, fixture.root / "missing-parent/candidate"):
+            fixture.output = output
+            code, report = self.invoke_materialize(fixture)
+            self.assertEqual(code, 1, report)
+        fixture.output = fixture.root / "candidate"
+        fixture.output.mkdir()
+        (fixture.output / "owner.txt").write_text("preserve")
+        code, report = self.invoke_materialize(fixture)
+        self.assertEqual(code, 1, report)
+        self.assertEqual((fixture.output / "owner.txt").read_text(), "preserve")
+
+    def test_materialize_refuses_missing_build_and_missing_explicit_action_inputs(self):
+        fixture = self.materialize_fixture()
+        fixture.build = fixture.root / "missing-build"
+        code, report = self.invoke_materialize(fixture)
+        self.assertEqual(code, 1, report)
+        for options in (("-Action", "Materialize"), ("-Action", "Materialize", "-Adapter", "BeaconV1"),
+                        ("-Action", "Materialize", "-Adapter", "BeaconSelfContainedV1")):
+            code, report = self.invoke(*options)
+            self.assertEqual(code, 1, report)
+            self.assertIn("Materialize requires BeaconV1", " ".join(report["errors"]))
+
+    def test_materialize_forbids_compilation_zip_and_gsc_audit_arguments(self):
+        fixture = self.materialize_fixture()
+        for field in ("-BuildParameters", "-Output", "-GscAuditEvidence"):
+            code, report = self.invoke_materialize(fixture, field, str(fixture.root / "unused"))
+            self.assertEqual(code, 1, report)
+            self.assertFalse(fixture.output.exists())
+
+    def test_materialize_preserves_recipient_pair_and_proof_validation(self):
+        fixture = self.materialize_fixture()
+        proof = fixture.root / "recipient.json"
+        proof.write_text('{}')
+        code, report = self.invoke_materialize(fixture, "-RecipientProof", str(proof))
+        self.assertEqual(code, 1, report)
+        self.assertIn("must be supplied together", " ".join(report["errors"]))
+        code, report = self.invoke_materialize(fixture, "-RecipientProof", str(proof), "-RecipientRoot", str(fixture.root))
+        self.assertEqual(code, 1, report)
+        self.assertIn("snapshot-only recipient evidence", " ".join(report["errors"]))
+        self.assertFalse(fixture.output.exists())
+
+    def test_materialize_preserves_active_project_compatibility_gate(self):
+        fixture = self.materialize_fixture()
+        code, report = self.invoke_materialize(fixture, "-ActiveProject", str(self.project))
+        self.assertEqual(code, 1, report)
+        self.assertIn("Namespace collision", " ".join(report["errors"]))
+        self.assertFalse(fixture.output.exists())
+
+    def test_build_root_cannot_change_plan_or_build_actions(self):
+        for action in ("Plan", "Build"):
+            code, report = self.invoke("-Action", action, "-Adapter", "BeaconV1", "-BuildRoot", str(self.root / "unused"))
+            self.assertEqual(code, 1, report)
+            self.assertIn("BuildRoot is reserved", " ".join(report["errors"]))
+
+    def materialize_tools(self):
+        tools, _ = self.flow_fixture()
+        for relative in ("sdk/modding/creator_materialize.py", "sdk/modding/Finalize-BeaconProject.py",
+                         "sdk/modding/examples/beacon/manifest.json", "sdk/modding/examples/beacon/zone.csv"):
+            (tools / relative).write_bytes((TOOLS / relative).read_bytes())
+        (tools / "sdk/modding/Build-BeaconFF.ps1").write_text("throw 'MATERIALIZE MUST NOT CALL BUILDER'\n")
+        return tools
+
+    def test_materialize_does_not_even_call_builder_planning(self):
+        fixture = self.materialize_fixture()
+        tools = self.materialize_tools()
+        code, report = self.invoke_materialize(fixture, tools=tools, mutates=True)
+        self.assertEqual(code, 0, report)
+        self.assertTrue(report["materialized"])
+        self.assertFalse(report["build_executed"])
+
+    def test_materialize_does_not_trust_positive_boolean_without_actual_candidate(self):
+        fixture = self.materialize_fixture()
+        tools = self.materialize_tools()
+        path = tools / "sdk/modding/Finalize-BeaconProject.py"
+        path.write_text(path.read_text() + "\n" + textwrap.dedent('''\
+            # Intentional broken finalizer double: reports success but writes nothing.
+            def finalize(*args, **kwargs):
+                return {'api':'beacon-finalize/1','materialized':True,'closure_complete':False,
+                        'package_ready':False,'runtime_ready':False}
+            '''))
+        code, report = self.invoke_materialize(fixture, tools=tools)
+        self.assertEqual(code, 1, report)
+        self.assertFalse(report["materialized"])
+        self.assertFalse(fixture.output.exists())
+
+    def test_materialize_rechecks_created_payload_hash_before_success(self):
+        fixture = self.materialize_fixture()
+        tools = self.materialize_tools()
+        path = tools / "sdk/modding/Finalize-BeaconProject.py"
+        path.write_text(path.read_text() + "\n" + textwrap.dedent('''\
+            # Intentional drift after the real finalizer wrote its candidate.
+            original_finalize = finalize
+            def finalize(*args, **kwargs):
+                result = original_finalize(*args, **kwargs)
+                file = Path(result['candidate_root']) / 'mod.ff'
+                data = file.read_bytes()
+                file.write_bytes(data[:-1] + bytes([data[-1] ^ 1]))
+                return result
+            '''))
+        code, report = self.invoke_materialize(fixture, tools=tools, mutates=True)
+        self.assertEqual(code, 1, report)
+        self.assertFalse(report["materialized"])
+        self.assertIn("candidate hash differs: ff", " ".join(report["errors"]))
+        self.assertTrue(fixture.output.exists(), "Preserve the changed candidate for inspection; never delete external replacements")
+
 
 if __name__ == "__main__":
     unittest.main()
