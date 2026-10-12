@@ -1,0 +1,153 @@
+{
+  "Schema": "iw7.sdk-self-contained-startup/1",
+  "Attempt": "A",
+  "Date": "2026-10-12",
+  "SourceCommit": "2c105cb78459dbc328f3ba2c601428ddeb3f3a75",
+  "ReviewedSourcePlanSHA256": "7D91D4918428140FD5203E8C141D78DF743D5D3199529D4FAA2BFFACD8C6697F",
+  "ReviewedParametersSHA256": "E0C7C0AE17DE21BFB05BE7799181DD3DA1603D02523EE947EB5B0571D762189D",
+  "Preflight": {
+    "Passed": true,
+    "CompletedUtc": "2026-10-12T10:20:19.0780665Z",
+    "DryRunSHA256": "BFEC2FD01484D678182C1F13849EFA1FB892E63E0C898D2C1F84FD4C34937F75",
+    "RuntimeReservationBeforePreflight": true,
+    "PhysicalBytes": 4294967296,
+    "CommitBytes": 4294967296,
+    "ExecutableRehashed": true,
+    "ProviderInventoried": true,
+    "PrivacyManifestSHA256": "7497191CB3612533333AD48AB4F4F4BB1F852039EE273179DF7BF6B5FE0E9B9C"
+  },
+  "Invocation": {
+    "Count": 1,
+    "Phase": "StartupOnly",
+    "Debugger": false,
+    "PlannedClients": 0,
+    "HTTPStarted": false,
+    "NativeGameStarted": false,
+    "UseRejoinInvoked": false,
+    "Passed": false,
+    "FailureKind": "prelaunch-configuration",
+    "Failure": "Cannot convert the \"False\" value of type \"System.Management.Automation.SwitchParameter\" to type \"System.Int32\".",
+    "SourceFile": "ops/Agent-Lab.ps1",
+    "SourceLine": 316
+  },
+  "Stage": {
+    "UpdaterFiles": 84,
+    "UpdaterBytes": 394436292,
+    "CopiedBytes": 394436292,
+    "ProviderUnchangedAtStage": true,
+    "IndependentFileIdentities": true,
+    "UpdaterInventorySHA256": "2649231856356E5B5BEE4A6D043AA13E547CCC26E3D5F7B8A385E0F1A03F4F6A",
+    "Scripts": [
+      {
+        "Name": "agent_vertical_fixture.gsc",
+        "InputSHA256": "2186E99A6F95F91AE8E272F589DA0E69E9C16A524B558B9B4039F9ABDFA1441A",
+        "SHA256": "CCD0CED6F4DD69B29657F0CB23CCB95A4B9AB4E58652A736E8EFC148286A9A5E"
+      },
+      {
+        "Name": "sdk_beacon_self_contained.gsc",
+        "InputSHA256": "9DE9B76DC25293146999C71653BD407D8CB639E107293F6DE87084FED90EEE1C",
+        "SHA256": "9DE9B76DC25293146999C71653BD407D8CB639E107293F6DE87084FED90EEE1C"
+      }
+    ],
+    "ExactScriptCount": 2,
+    "Verified": true
+  },
+  "Restoration": {
+    "Restored": true,
+    "ManagedFilesRestored": true,
+    "StaticMainUnchanged": true,
+    "MainBankDeltaObserved": false,
+    "CleanupError": null,
+    "FreshAuditUtc": "2026-10-12T10:22:23.7554708Z",
+    "CandidateManagedFilesFreshlyVerified": true,
+    "BaseManagedFilesFreshlyVerified": true,
+    "BaseMutableFiles": 0,
+    "BaseProfiles": 0,
+    "CandidateVacancyVerified": true,
+    "LeaseCount": 0,
+    "OnlyRetainedMainObserved": true,
+    "MainIdentityPreserved": true
+  },
+  "Runtime": {
+    "ServerLaunchReceiptAbsent": true,
+    "ServerIdentityAbsent": true,
+    "ServerLogAbsent": true,
+    "FreshSourceCompileLinkInitObserved": false,
+    "RuntimeBytecodeEqualsOfflineWitness": false,
+    "RuntimeErrorsAudited": false,
+    "Meaning": "No native game process was launched; no runtime transcript exists to audit."
+  },
+  "Evidence": [
+    {
+      "Role": "outer/dryrun.local.json",
+      "SHA256": "BFEC2FD01484D678182C1F13849EFA1FB892E63E0C898D2C1F84FD4C34937F75",
+      "Bytes": 17154
+    },
+    {
+      "Role": "outer/preflight-complete.local.json",
+      "SHA256": "3B0494750026A6EE2C431E94161BD475B517C1447364A836F47229260B1AF55A",
+      "Bytes": 472
+    },
+    {
+      "Role": "outer/preflight-lease.local.json",
+      "SHA256": "D2DD0ABCB3E83819B61E4B546888DACDB226928CF10D5565031B9254B98D6788",
+      "Bytes": 806
+    },
+    {
+      "Role": "outer/failure.local.json",
+      "SHA256": "BD5E064E9CE8BBE4DC23BB47D323C01DCA30A58E27477D3128619F7D0A5DC049",
+      "Bytes": 880
+    },
+    {
+      "Role": "outer/wrapper-result.local.json",
+      "SHA256": "FA2518BA3DD49BA4FA87ADC3DEB0EE68677FA455191B45432DDF47C6651CD117",
+      "Bytes": 514
+    },
+    {
+      "Role": "outer/closure-confirmation.local.json",
+      "SHA256": "5B91307418BF4D9F8BE8DEF778AEA7650D62195E6EFEEAB42A88E4C942AE40A3",
+      "Bytes": 708
+    },
+    {
+      "Role": "outer/invoke-once.local.ps1",
+      "SHA256": "376C353F181A83A7C94A1D759FF1907727156BEDA22EA9CE2EA900968E852785",
+      "Bytes": 7862
+    },
+    {
+      "Role": "agent/result.json",
+      "SHA256": "1BFD099C92ACEA6C71F0C1A8731F630C1EE4CD3F9CB21711AF319B0C96175A3C",
+      "Bytes": 753
+    },
+    {
+      "Role": "agent/plan.local.json",
+      "SHA256": "00225DC50971C54613392DD6AD821538F91083AFAB7C072139344BE4E3AA4E2F",
+      "Bytes": 17156
+    },
+    {
+      "Role": "agent/updater-data.local.json",
+      "SHA256": "BA8F0B2F48F1D3D1705D827B75D3FD0149F4084A426817C3CCA93D7F3C53415A",
+      "Bytes": 435
+    },
+    {
+      "Role": "agent/vertical-scripts.local.json",
+      "SHA256": "7FE825FAC16FAD7B14AB5B6EC48C5DF5840C3B93D0A3FF2914B05C8C1921092A",
+      "Bytes": 620
+    },
+    {
+      "Role": "agent/base-executable-backup/agent-main-audit.local.json",
+      "SHA256": "1171B7EED6346BECEB3885D91B6EC0772713BB52708AD1AB19EC929E2C659CB5",
+      "Bytes": 21481
+    },
+    {
+      "Role": "agent/dedicated-backup/recovery.local.json",
+      "SHA256": "DF2031C7652F678119DD1EC6DDD0866B2DCBF28DD9D445FD7DB841671C5F3E55",
+      "Bytes": 9806
+    }
+  ],
+  "Ready": false,
+  "CommunityPackageValidated": false,
+  "PixelsVerified": false,
+  "OwnerAccepted": false,
+  "RetryPerformed": false,
+  "Next": "Correct typed switch serialization, test the actual configuration branch, then obtain a new coordinator GO."
+}
