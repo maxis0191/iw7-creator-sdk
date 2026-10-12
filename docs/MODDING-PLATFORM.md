@@ -219,3 +219,9 @@ native master-heartbeat suppression and fresh privacy telemetry before client
 join. The parent alone coordinates the next admitted build/test. This preparation
 acquired no lease and ran no native executable, ZoneTool, game or network service.
 Material variant2 remains a separate measured-model/closure preparation.
+
+The subsequent [bounded FF runbook](../sdk/modding/BEACON-FF.md) supplies a
+default-plan-only SDK adapter for the actual `sdk_beacon` name. It reuses shared
+transaction/admission/NTFS helpers and the H1 owner's final job implementation.
+The real metadata plan passes without native loading; Run remains dependent on
+the new macro-qualified ZoneTool receipt, final job source hash and parent GO.
