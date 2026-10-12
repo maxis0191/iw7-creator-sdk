@@ -3,8 +3,8 @@
   "upstream_source": "https://github.com/xensik/gsc-tool",
   "base_revision": "3300e430d1efef00e54c66a8bd416e18a2a9882a",
   "base_tree_oid": "8af839d54cba3536954cfd1abd0e33c60112727d",
-  "source_revision": "f813f9758006e33857339c19ece48a642212ac5f",
-  "source_tree_oid": "3247af037caf3c7c99bd33bc760f83f3be649a40",
+  "source_revision": "41fdc19fd443bddafb90b9f6664266adb008c494",
+  "source_tree_oid": "5f01dbcc65c7b5a399db0bbeed4074973f8d2b4a",
   "patch_format": "git format-patch --full-index --no-signature --no-stat",
   "patches": [
     {
@@ -66,6 +66,12 @@
       "original_commit": "f813f9758006e33857339c19ece48a642212ac5f",
       "bytes": 24816,
       "sha256": "cf1edb77b4c3da27a6f96d51a86c8b7e911c44a957d26677e54447d5c6eb50d6"
+    },
+    {
+      "path": "patches/0011-Specify-pinned-original-job-residual-identity-without-closure.patch",
+      "original_commit": "41fdc19fd443bddafb90b9f6664266adb008c494",
+      "bytes": 22441,
+      "sha256": "38f9162c88a72c5fd5588b95554671d291c4ee76ad280e68f35e9391fb15e9c2"
     }
   ],
   "licenses": [
@@ -95,9 +101,9 @@
     {
       "path": "audit/README.md",
       "mode": "100644",
-      "blob_oid": "bde0f522e125ba26c96c99b4348dd08de03ea267",
-      "bytes": 21273,
-      "sha256": "191506b8b6e3532460565b78a8bc989987094b39fe96a39df3cda3cc3304ca13"
+      "blob_oid": "2be8b0e45b6835296aa9bef381be514fc94579da",
+      "bytes": 22392,
+      "sha256": "0b79c627544792865406de6cc2495981048276bfd553166b982f67884b48127d"
     },
     {
       "path": "audit/build.ps1",
@@ -142,6 +148,20 @@
       "sha256": "2a67879f7cbc17df14176886f715880ed68ef91ebb25b1f69493f08b3d1fb685"
     },
     {
+      "path": "audit/residual-closure-contract.md",
+      "mode": "100644",
+      "blob_oid": "554aef0d00ad4c7c33de6ab99ded2e6770141aee",
+      "bytes": 5397,
+      "sha256": "171ce754068bda92fc7238de4f2f6de1ea3ded296af2dc34983807c143f5e9d6"
+    },
+    {
+      "path": "audit/residual_policy.ps1",
+      "mode": "100644",
+      "blob_oid": "e784ad30ce10d0cda245699e371d90dbeb018cdd",
+      "bytes": 6009,
+      "sha256": "4f730ce0cbb2022c13af9c235322bb0dbc9db76ac3bc9ea43deda92cfed14fb6"
+    },
+    {
       "path": "audit/run_process.ps1",
       "mode": "100644",
       "blob_oid": "a1f8afed0aac84188c0c6d9fa6051ddc0a77c1d2",
@@ -182,6 +202,13 @@
       "blob_oid": "a7838016b1179b5fe0f6abbe4e6ecda370af64df",
       "bytes": 8689,
       "sha256": "31d2658bb0a8d7c8779a5dc8bc1528c12fc14e32fe79d1aab4f6937a8bbc89bf"
+    },
+    {
+      "path": "audit/test_residual_policy.ps1",
+      "mode": "100644",
+      "blob_oid": "9fdf101b63206a4fc44573ecc54e7a9635322873",
+      "bytes": 7949,
+      "sha256": "2f106795625bad4b53c8ce2a6092b992453abc99f3b0888bb9f3209cbd1ce00c"
     },
     {
       "path": "audit/test_supervision.ps1",

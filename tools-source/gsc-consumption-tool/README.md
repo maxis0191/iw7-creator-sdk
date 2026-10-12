@@ -89,6 +89,17 @@ captured and global supervision remained failed. See the
 [v5 checkpoint](../../sdk/modding/gsc-residual-diagnostic-20261012.json).
 Another attempt still requires a fresh reviewed Plan and coordinator GO.
 
+The eleventh patch preserves independently reviewed source revision
+`41fdc19fd443bddafb90b9f6664266adb008c494`: an explicit closure contract and pure
+identity predicate with 96 additional source checks. The first ten patch files are
+unchanged. That revision grants no Stop or acceptance and does not import the
+predicate into its launcher. It requires positive original-job membership and
+pinned file identity without inventing a compiler ancestry. The subsequent concrete
+supervisor integration is a separate candidate and is not part of this archive.
+The existing source-only reconstruction was extended in place; its 22 changed blobs
+and tree `5f01dbcc65c7b5a399db0bbeed4074973f8d2b4a` match the archived source.
+No new clone, dependency initialization, Plan, native execution or cleanup occurred.
+
 `reconstruction-validation.json` records only the local source reconstruction
 check. Passing it does not establish executable correctness, complete GSC import
 analysis, asset closure, runtime readiness or owner gameplay acceptance.

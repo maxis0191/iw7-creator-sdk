@@ -1,0 +1,327 @@
+From 41fdc19fd443bddafb90b9f6664266adb008c494 Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 09:03:36 +0200
+Subject: [PATCH] Specify pinned original-job residual identity without
+ granting closure
+
+
+diff --git a/audit/README.md b/audit/README.md
+index bde0f522e125ba26c96c99b4348dd08de03ea267..2be8b0e45b6835296aa9bef381be514fc94579da 100644
+--- a/audit/README.md
++++ b/audit/README.md
+@@ -305,6 +305,23 @@ capture failures, size/count/time policy, single observation, fresh closure and
+ callback time charged to the drain. They use mocks plus one small managed source
+ file hash; no observer native type, compiler, process, lease or game is launched.
+ 
++## Source-only closure proposal after v5
++
++The v5 native run also remains a global failure: all build/test/binder steps passed,
++but the two-second original-job drain expired. Its diagnostic captured one original
++job member at the pinned MSVC sibling `vctip.exe` path, SHA256
++`d591358c6aee4b673562ca3b3a15c250e612708394fe3b44a7a7eda2470570a5`, 335288 bytes.
++The parent PID was recorded; parent process identity and compiler ancestry were not.
++The original job was then stopped, closure confirmed and the lease released. The
++immutable supervision SHA256 is `2060bdc7c829ce458810e5de2ca36b3ab28e304e6df7a51e9d0d6ac9362cc36a`.
++
++See [the proposed closure contract](residual-closure-contract.md) for the Microsoft
++documentation findings, required positive completion/identity/guard/closure evidence
++and remaining implementation gate. `residual_policy.ps1` implements only the pure
++identity predicate with 96 synthetic checks. It authorizes no action and is not
++imported by the launcher. Existing 100 supervision/registration/diagnostic checks
++and four Python preparation tests still pass. No new Plan or native run was made.
++
+ ```text
+ python -B audit/prepare.py --output build/identity-reviewed
+ cmake -S audit -B build/audit-native -G "Visual Studio 17 2022" -A x64 -DAUDIT_IDENTITY_DIR=ABSOLUTE_IDENTITY_DIRECTORY
+diff --git a/audit/residual-closure-contract.md b/audit/residual-closure-contract.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..554aef0d00ad4c7c33de6ab99ded2e6770141aee
+--- /dev/null
++++ b/audit/residual-closure-contract.md
+@@ -0,0 +1,78 @@
++# Proposed original-job residual closure contract
++
++Status: source review only, 2026-10-12. Not enabled in `build.ps1`. No new Plan or
++execution was prepared. Both v4 and v5 remain **global FAIL**. This contract cannot
++be applied retrospectively to change their receipts.
++
++## Microsoft telemetry controls investigated
++
++The [documented CL option list](https://learn.microsoft.com/en-us/cpp/build/reference/compiler-options-listed-alphabetically?view=msvc-170)
++does not provide a vctip suppression option. This is a bounded documentation
++finding, not proof that no internal option exists. Do not add undocumented `/d2`
++switches or claim suppression without a separately authorized native observation.
++
++Microsoft documents [VSCEIP opt-out](https://learn.microsoft.com/en-us/visualstudio/ide/visual-studio-experience-improvement-program?view=visualstudio)
++through machine registry settings for Build Tools. It concerns diagnostic data
++collection, retains required diagnostic collection, and does not promise that
++`vctip.exe` will never start. No registry or installed tool was changed.
++
++The installed Microsoft `Common7/Tools/VsDevCmd.bat` (SHA256
++`c004278e64444bf3524360f960511b5ce7b1d0306910f08a4ebcf1c42ff9bd6d`), lines 249-255,
++checks `VSCMD_SKIP_SENDTELEMETRY` around `Send-VsDevShellTelemetry`. This is evidence
++for suppressing developer-shell telemetry only. It does not prove compiler-process
++suppression; adding that variable alone cannot repair the observed closure failure.
++
++## Positive evidence required before an owned cleanup can count as success
++
++1. Keep the existing original `BuildJob` owner and pinned read-only member observer.
++   Do not infer a process ancestry from the numeric parent PID. The CMake/MSBuild
++   chain does not satisfy the existing Rig direct-compiler-child classifier.
++2. The original process handle must report root exit zero. Validate a bounded
++   final candidate receipt from the fresh output directory of this admitted run:
++   exact reviewed plan, output, lease token/owner, source and dependency manifests,
++   configured compiler, executable and binder pins; every expected ordered step
++   completed exactly once with integer exit zero and no error/storage breach.
++   Include both successful input-bound witness receipts. A `success=true` field
++   alone, a historical receipt or the mere presence of an executable is insufficient.
++3. Take two fresh complete observations of the **same original job**, separated by
++   the pinned image-file verification. Each must contain exactly one member and
++   original-job accounting must agree. Require the same positive PID, UTC creation,
++   full image path and reported parent PID, no native identity error, and positive
++   `InOriginalJob`. Creation must be after the original root and before observation.
++4. Bind the configured compiler file to MSVC 14.44.35207 Hostx64/x64 `cl.exe`, SHA256
++   `fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619`. The sole member
++   must be its exact sibling `vctip.exe`, 335288 bytes, SHA256
++   `d591358c6aee4b673562ca3b3a15c250e612708394fe3b44a7a7eda2470570a5`. The configured
++   compiler file is **not** a captured parent-process identity.
++5. The collector must retain image-file read guards denying write/delete through
++   the final member recapture and original-job Stop. Hashes attest file bytes only,
++   not loaded memory. The v5 diagnostic closes each guard after hashing, so that
++   record cannot satisfy this future guard-lifetime requirement.
++6. Charge receipt validation, hashing, native queries, Stop and post-stop observation
++   to the unchanged two-second drain, global deadline and output stop threshold.
++   Require a fresh original-handle root-exit-zero / job-active-zero snapshot before
++   all deadlines. Qualification is not closure and Stop returning is not closure.
++   A missing, changed, ambiguous, late or unqueryable fact keeps overall failure.
++7. On refusal, use the existing failure cleanup on the original owner; unknown
++   closure retains that owner and lease. Never kill by PID/name, adopt another job,
++   change shared providers, reset the first-exit clock or extend admission budgets.
++
++The two observations are sequential samples, not an atomic freeze of membership.
++The proposed authority to stop comes from ownership of the original job and a
++completed build, not a claim that the listed process is harmless or that it cannot
++create a child between sampling and Stop. Any unproven build work remains a refusal.
++
++## Implemented source subset and remaining gate
++
++`residual_policy.ps1` is a pure identity predicate over supplied evidence. Its
++positive result explicitly leaves collector provenance, guard lifetime, build
++completion, closure and acceptance false, and authorizes no action. It does not
++import providers, read files, stop processes or release leases. It is not imported
++by the launcher. Pure tests exercise positive identity and refusal cases without
++loading native types or evaluating any previous run as a new successful build.
++
++Before enabling the policy, implement and review the bounded receipt validator and
++guarded collector, integrate deadline checks around every operation and test the
++original-owner Stop/fresh-zero sequence with mocks. A reviewed committed candidate,
++new Plan and explicit coordinator GO are then required for one native attempt.
++Neither source tests nor this proposal supply that runtime evidence.
+diff --git a/audit/residual_policy.ps1 b/audit/residual_policy.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..e784ad30ce10d0cda245699e371d90dbeb018cdd
+--- /dev/null
++++ b/audit/residual_policy.ps1
+@@ -0,0 +1,93 @@
++# Source-only identity predicate. No native load, I/O, process or lease action.
++# Deliberately not imported by build.ps1. Identity qualification is not closure.
++function ConvertTo-AuditResidualUtc($Value) {
++    $stamp=[datetimeoffset]::MinValue
++    if ($Value -isnot [string] -or
++        ![datetimeoffset]::TryParseExact($Value,'o',[Globalization.CultureInfo]::InvariantCulture,
++            [Globalization.DateTimeStyles]::None,[ref]$stamp) -or
++        $stamp.Offset -ne [timespan]::Zero -or $stamp.Year -lt 2000) {
++        throw 'Complete round-trip UTC timestamp required'
++    }
++    return $stamp
++}
++
++function Test-AuditResidualInteger($Value) {
++    ($Value -is [int] -or $Value -is [long] -or $Value -is [uint32]) -and
++        $Value -ge 0 -and $Value -le [uint32]::MaxValue
++}
++
++function Test-AuditResidualUInt32($Value) {
++    (Test-AuditResidualInteger $Value) -and $Value -gt 0
++}
++
++function Get-AuditPinnedResidualIdentity($OriginalIdentity, $Compiler, $First, $Final) {
++    # Compiler is a configured-tool file witness, NEVER a parent-process witness.
++    # Observations and hash witnesses must come from a future guarded collector.
++    # This pure function cannot attest the collector, lock lifetime or provenance.
++    $compilerHash='fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619'
++    $imageHash='d591358c6aee4b673562ca3b3a15c250e612708394fe3b44a7a7eda2470570a5'
++    if ($OriginalIdentity.Source -cne 'OriginalProcessHandle' -or
++        !(Test-AuditResidualUInt32 $OriginalIdentity.PID) -or
++        $OriginalIdentity.Image -isnot [string] -or
++        ![IO.Path]::IsPathFullyQualified($OriginalIdentity.Image) -or
++        !(Test-AuditResidualInteger $OriginalIdentity.Priority) -or
++        $OriginalIdentity.Priority -ne 0x4000) { throw 'Original root identity incomplete' }
++    $rootCreated=ConvertTo-AuditResidualUtc $OriginalIdentity.CreatedUtc
++    if ($Compiler.Image -isnot [string] -or ![IO.Path]::IsPathFullyQualified($Compiler.Image) -or
++        $Compiler.Image -notmatch '\\VC\\Tools\\MSVC\\14\.44\.35207\\bin\\Hostx64\\x64\\cl\.exe$' -or
++        $Compiler.SHA256 -cne $compilerHash -or $Compiler.Scope -cne 'ImageFileBytesUnderReadGuard') {
++        throw 'Pinned configured MSVC image witness required'
++    }
++    $compilerPath=[IO.Path]::GetFullPath($Compiler.Image)
++    $expectedImage=[IO.Path]::Combine([IO.Path]::GetDirectoryName($compilerPath),'vctip.exe')
++    $previous=$null
++    foreach ($capture in @($First,$Final)) {
++        if ($null -eq $capture -or $capture.Sample.RootExited -isnot [bool] -or
++            !$capture.Sample.RootExited -or !(Test-AuditResidualInteger $capture.Sample.RootExitCode) -or
++            $capture.Sample.RootExitCode -ne 0 -or !(Test-AuditResidualInteger $capture.Sample.Active) -or
++            $capture.Sample.Active -ne 1) { throw 'Fresh successful original root and single active member required' }
++        foreach ($value in @($capture.BeganMs,$capture.CompletedMs)) {
++            if (($value -isnot [int] -and $value -isnot [long]) -or $value -lt 0) {
++                throw 'Monotonic capture interval required'
++            }
++        }
++        if ($capture.CompletedMs -lt $capture.BeganMs) { throw 'Reversed capture interval' }
++        $observation=$capture.Observation
++        $members=@($observation.Members)
++        if (!(Test-AuditResidualInteger $observation.AssignedCount) -or
++            !(Test-AuditResidualInteger $observation.ListedCount) -or
++            $observation.AssignedCount -ne 1 -or $observation.ListedCount -ne 1 -or $members.Count -ne 1) {
++            throw 'Exactly one completely enumerated original-job member required'
++        }
++        $captured=ConvertTo-AuditResidualUtc $observation.CapturedUtc
++        $member=$members[0]
++        $created=ConvertTo-AuditResidualUtc $member.CreatedUtc
++        if (!(Test-AuditResidualUInt32 $member.PID) -or $member.PID -eq $OriginalIdentity.PID -or
++            $member.InOriginalJob -isnot [bool] -or !$member.InOriginalJob -or
++            $member.Error -or $member.ParentError -or !(Test-AuditResidualUInt32 $member.ParentPID) -or
++            $member.ParentPID -eq $member.PID -or $member.Image -isnot [string] -or
++            ![IO.Path]::IsPathFullyQualified($member.Image) -or
++            [IO.Path]::GetFullPath($member.Image) -ine $expectedImage -or
++            $created -le $rootCreated -or $created -gt $captured) {
++            throw 'Complete pinned original-job member generation required'
++        }
++        $witness=$capture.ImageFile
++        if ($witness.Image -isnot [string] -or ![IO.Path]::IsPathFullyQualified($witness.Image) -or
++            [IO.Path]::GetFullPath($witness.Image) -ine $expectedImage -or
++            $witness.Scope -cne 'ImageFileBytesUnderReadGuard' -or $witness.SHA256 -cne $imageHash -or
++            !(Test-AuditResidualInteger $witness.Bytes) -or $witness.Bytes -ne 335288) {
++            throw 'Exact pinned residual image file bytes required'
++        }
++        if ($previous -and ($member.PID -ne $previous.PID -or $member.CreatedUtc -cne $previous.CreatedUtc -or
++            $member.ParentPID -ne $previous.ParentPID -or $capture.BeganMs -lt $previous.CompletedMs -or
++            $captured -lt $previous.CapturedUtc)) { throw 'Residual generation or observation order changed' }
++        $previous=[pscustomobject]@{PID=$member.PID;CreatedUtc=$member.CreatedUtc;ParentPID=$member.ParentPID;
++            CompletedMs=$capture.CompletedMs;CapturedUtc=$captured}
++    }
++    [ordered]@{Schema='iw7.gsc-audit-pinned-residual-identity/1';IdentityMatches=$true;
++        Scope='OriginalJobMemberAndPinnedImageFile';PID=$previous.PID;CreatedUtc=$previous.CreatedUtc;
++        Image=$expectedImage;SHA256=$imageHash;Bytes=335288;ParentPID=$previous.ParentPID;
++        ParentIdentityCaptured=$false;CompilerAncestryProven=$false;LoadedMemoryAttested=$false;
++        CollectorProvenanceVerified=$false;FileGuardLifetimeVerified=$false;
++        BuildCompletionVerified=$false;ClosureVerified=$false;AcceptanceGranted=$false;AuthorizedAction='None'}
++}
+diff --git a/audit/test_residual_policy.ps1 b/audit/test_residual_policy.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..9fdf101b63206a4fc44573ecc54e7a9635322873
+--- /dev/null
++++ b/audit/test_residual_policy.ps1
+@@ -0,0 +1,103 @@
++# Pure synthetic evidence. No native types, file hashes, processes or leases.
++$ErrorActionPreference='Stop'
++. (Join-Path $PSScriptRoot 'residual_policy.ps1')
++$script:checks=0
++function Check([bool]$Value,[string]$Message) { if (!$Value) { throw $Message }; $script:checks++ }
++function Fixture {
++    $script:root=[ordered]@{Source='OriginalProcessHandle';PID=[uint32]50;Image='C:\mock\python.exe';
++        CreatedUtc='2026-10-12T08:00:00.0000000Z';Priority=[uint32]0x4000}
++    $script:compiler=[ordered]@{Image='C:\mock\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe';
++        SHA256='fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619';Scope='ImageFileBytesUnderReadGuard'}
++    $script:captures=@(0,1 | ForEach-Object {
++        [ordered]@{BeganMs=[long](100+$_*10);CompletedMs=[long](105+$_*10);
++            Sample=[ordered]@{RootExited=$true;RootExitCode=[uint32]0;Active=[uint32]1};
++            Observation=[ordered]@{CapturedUtc="2026-10-12T08:01:0$_.0000000Z";AssignedCount=[uint32]1;ListedCount=[uint32]1;
++                Members=@([ordered]@{PID=[uint32]70;CreatedUtc='2026-10-12T08:00:01.0000000Z';
++                    Image='C:\mock\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\vctip.exe';
++                    ParentPID=[uint32]60;InOriginalJob=$true;Error=$null;ParentError=$null})};
++            ImageFile=[ordered]@{Scope='ImageFileBytesUnderReadGuard';Bytes=[long]335288;
++                Image='C:\mock\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\vctip.exe';
++                SHA256='d591358c6aee4b673562ca3b3a15c250e612708394fe3b44a7a7eda2470570a5'}}
++    })
++}
++function Evaluate { Get-AuditPinnedResidualIdentity $script:root $script:compiler $script:captures[0] $script:captures[1] }
++function Refuse([scriptblock]$Mutation,[string]$Name) {
++    Fixture
++    & $Mutation
++    $caught=$null
++    try { Evaluate | Out-Null } catch { $caught=$_.Exception.Message }
++    Check (![string]::IsNullOrEmpty($caught)) "Must refuse: $Name"
++}
++Fixture
++$result=Evaluate
++Check ($result.IdentityMatches -and $result.PID -eq 70 -and $result.ParentPID -eq 60) 'Pinned original-job identity matches'
++foreach ($field in @('ParentIdentityCaptured','CompilerAncestryProven','LoadedMemoryAttested','CollectorProvenanceVerified',
++    'FileGuardLifetimeVerified','BuildCompletionVerified','ClosureVerified','AcceptanceGranted')) {
++    Check ($result.$field -is [bool] -and !$result.$field) "Identity cannot establish $field"
++}
++Check ($result.AuthorizedAction -ceq 'None') 'No action authorized from identity alone'
++# Parent PID is deliberately not required to equal root or any inferred cl PID.
++Fixture
++foreach ($capture in $script:captures) { $capture.Observation.Members[0].ParentPID=[uint32]444 }
++Check ((Evaluate).IdentityMatches) 'Consistent otherwise unknown parent PID does not fabricate ancestry'
++
++Refuse {$script:root.Source='CIM'} 'original handle required'
++Refuse {$script:root.PID='50'} 'string root PID'
++Refuse {$script:root.PID=0} 'zero root PID'
++Refuse {$script:root.Priority='16384'} 'string priority'
++Refuse {$script:root.Priority=32} 'normal priority'
++Refuse {$script:root.Image='python.exe'} 'relative root image'
++Refuse {$script:root.CreatedUtc='2026-10-12T09:00:00.0000000+01:00'} 'non-UTC root'
++Refuse {$script:compiler.SHA256='0'*64} 'compiler drift'
++Refuse {$script:compiler.Image=$script:compiler.Image.Replace('14.44.35207','14.43.34808')} 'other compiler version'
++Refuse {$script:compiler.Image=$script:compiler.Image.Replace('Hostx64','Hostx86')} 'other compiler architecture'
++Refuse {$script:compiler.Image='cl.exe'} 'relative compiler image'
++Refuse {$script:compiler.Scope='LoadedMemory'} 'unsupported compiler witness scope'
++
++foreach ($index in @(0,1)) {
++    $script:at=$index
++    Refuse {$script:captures[$script:at].Sample.RootExited=$false} 'root running'
++    Refuse {$script:captures[$script:at].Sample.RootExited='true'} 'string exited'
++    Refuse {$script:captures[$script:at].Sample.RootExitCode=1} 'failed root'
++    Refuse {$script:captures[$script:at].Sample.RootExitCode=$null} 'missing root exit'
++    Refuse {$script:captures[$script:at].Sample.RootExitCode='0'} 'string root exit'
++    Refuse {$script:captures[$script:at].Sample.Active=2} 'additional active member'
++    Refuse {$script:captures[$script:at].Sample.Active=0} 'zero uses normal closure path'
++    Refuse {$script:captures[$script:at].Sample.Active='1'} 'string active count'
++    Refuse {$script:captures[$script:at].Observation.AssignedCount=2} 'incomplete enumeration'
++    Refuse {$script:captures[$script:at].Observation.ListedCount='1'} 'string list count'
++    Refuse {$script:captures[$script:at].Observation.Members=@()} 'empty member list'
++    Refuse {$script:captures[$script:at].Observation.Members*=2} 'duplicate member list'
++    Refuse {$script:captures[$script:at].Observation.Members[0].PID=50} 'root PID reused'
++    Refuse {$script:captures[$script:at].Observation.Members[0].PID=4294967296L} 'PID outside uint32'
++    Refuse {$script:captures[$script:at].Observation.Members[0].InOriginalJob=$false} 'foreign job member'
++    Refuse {$script:captures[$script:at].Observation.Members[0].InOriginalJob='true'} 'string membership'
++    Refuse {$script:captures[$script:at].Observation.Members[0].Error='image unavailable'} 'native member error'
++    Refuse {$script:captures[$script:at].Observation.Members[0].ParentError='query failed'} 'parent field incomplete'
++    Refuse {$script:captures[$script:at].Observation.Members[0].ParentPID=$null} 'missing parent PID'
++    Refuse {$script:captures[$script:at].Observation.Members[0].ParentPID=70} 'self-parent'
++    Refuse {$script:captures[$script:at].Observation.Members[0].Image='C:\unrelated\vctip.exe'} 'same basename elsewhere'
++    Refuse {$script:captures[$script:at].Observation.Members[0].CreatedUtc='2026-10-12T07:59:59.0000000Z'} 'predates root creation'
++    Refuse {$script:captures[$script:at].Observation.Members[0].CreatedUtc=$script:root.CreatedUtc} 'equal root creation'
++    Refuse {$script:captures[$script:at].Observation.Members[0].CreatedUtc='2026-10-12T08:02:00.0000000Z'} 'future member creation'
++    Refuse {$script:captures[$script:at].Observation.CapturedUtc='unknown'} 'unknown observation UTC'
++    Refuse {$script:captures[$script:at].ImageFile.SHA256='0'*64} 'residual binary drift'
++    Refuse {$script:captures[$script:at].ImageFile.Image='C:\unrelated\vctip.exe'} 'hash witness bound to another image path'
++    Refuse {$script:captures[$script:at].ImageFile.Bytes=335287} 'residual byte count drift'
++    Refuse {$script:captures[$script:at].ImageFile.Bytes='335288'} 'string byte count'
++    Refuse {$script:captures[$script:at].ImageFile.Scope='ImageFileBytes'} 'unguarded hash scope'
++    Refuse {$script:captures[$script:at].BeganMs=-1} 'negative capture time'
++    Refuse {$script:captures[$script:at].BeganMs='100'} 'string capture time'
++    Refuse {$script:captures[$script:at].CompletedMs=0} 'reversed capture interval'
++}
++Refuse {$script:captures[1].Observation.Members[0].PID=71} 'member PID changed'
++Refuse {$script:captures[1].Observation.Members[0].CreatedUtc='2026-10-12T08:00:02.0000000Z'} 'same PID different generation'
++Refuse {$script:captures[1].Observation.Members[0].ParentPID=61} 'parent field changed'
++Refuse {$script:captures[1].BeganMs=104} 'overlapping or stale final capture'
++Refuse {$script:captures[1].Observation.CapturedUtc='2026-10-12T08:00:59.0000000Z'} 'backwards observation UTC'
++
++$launcher=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'build.ps1'))
++Check ($launcher -notmatch 'residual_policy|Get-AuditPinnedResidualIdentity') 'Source-only predicate is not wired to launcher'
++$source=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'residual_policy.ps1'))
++Check ($source -notmatch 'Add-Type|Start-Process|Stop-Process|\.Stop\(|\.Kill\(|Get-FileHash|Exit-IW7ResourceLease') 'Predicate has no native process/file/lease actions'
++Write-Output "Residual identity policy: $script:checks checks passed; source-only and no native execution."
