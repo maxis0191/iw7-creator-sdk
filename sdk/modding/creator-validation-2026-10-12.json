@@ -1,0 +1,108 @@
+{
+  "schema": "iw7.creator-validation/1",
+  "date": "2026-10-12",
+  "scope": "One authorized real Creator BeaconV1 build through finalization; packaging correctly blocked",
+  "started_utc": "2026-10-12T04:39:38.2302672Z",
+  "completed_utc": "2026-10-12T04:40:02.1294391Z",
+  "closure_confirmed_utc": "2026-10-12T04:41:03.0591538Z",
+  "attempts": 1,
+  "creator_exit_code": 1,
+  "exit_reason": "Incomplete recipient closure only",
+  "build_executed": true,
+  "build_verified": true,
+  "materialized": true,
+  "source_receipt_bound": true,
+  "closure_complete": false,
+  "package_ready": false,
+  "packaged": false,
+  "zip_writer_called": false,
+  "archive_created": false,
+  "runtime_ready": false,
+  "owner_accepted": false,
+  "phases": [
+    {"name": "build", "exit_code": 0, "job_members_at_close": 0, "stdout_bytes": 1212, "stderr_bytes": 0},
+    {"name": "verify", "exit_code": 0, "job_members_at_close": 0, "stdout_bytes": 1095, "stderr_bytes": 0},
+    {"name": "dump", "exit_code": 0, "job_members_at_close": 0, "stdout_bytes": 668, "stderr_bytes": 0},
+    {"name": "read", "exit_code": 0, "job_members_at_close": 0, "stdout_bytes": 436, "stderr_bytes": 0}
+  ],
+  "artifacts": {
+    "new_fastfile": {
+      "bytes": 1048,
+      "sha256": "3fa49bcdfd08857bb37c198af7a49af78675b940b022e160343552d3f8b71da8"
+    },
+    "historical_first_fastfile": {
+      "reference": "beacon-ff-validation-2026-10-12.json",
+      "bytes": 1048,
+      "sha256": "76ed0701dc1480c501604db04999f300394c65877aa24a70dfe7afc2cd662d4a",
+      "preserved": true
+    },
+    "build_receipt": {
+      "bytes": 100874,
+      "sha256": "b0b5f007a45c5605b64c33d5dae6ff5a49dd75edb736ba7c6679cf8649f5c5be"
+    },
+    "creator_result": {
+      "bytes": 43423,
+      "sha256": "730635756135be875c14ed61b4114cfa8212d16e7504383fc4de0ec47f061b13"
+    },
+    "candidate_manifest": {
+      "bytes": 5111,
+      "sha256": "1b37643436183fe864f7057873f4c49039c8843ec78b2826b2c6bda1d8c5e861"
+    },
+    "finalization_receipt": {
+      "bytes": 6880,
+      "sha256": "d5dcf6e1ec4be566822888e254a7cde5d975ee9cee3c60901fb49d00c5ed6471"
+    },
+    "candidate_total_bytes": 23036,
+    "source_receipt_sha256": "b8229d50751fa990a925b4cb3c3e2c8110a373d645764d0580959d55d78277aa",
+    "gsc_sha256": "8ba85b3f5b3014d0c4d02b0e71f49bf617959b486502e4c63243b065abc2a0b6",
+    "byte_determinism_proven": false,
+    "hash_difference_cause": "Not established"
+  },
+  "target_assertions": {
+    "client_source": "77e6d4d24e918ee363b3feee3735c3b889dff7d7",
+    "server_source": "77e6d4d24e918ee363b3feee3735c3b889dff7d7",
+    "network_protocol": 2,
+    "installed_binary_provenance_measured": false,
+    "recipient_proof_supplied": false
+  },
+  "admission_and_closure": {
+    "effective_physical_bytes": 8589934592,
+    "effective_commit_bytes": 11811160064,
+    "effective_admission_evidence": "Retained registry predecessor independently checked after completion",
+    "new_output_stop_bytes": 67108864,
+    "max_observed_build_bytes": 1220100,
+    "final_observed_build_bytes": 1218972,
+    "staged_inputs": 78,
+    "remaining_staged_inputs": 0,
+    "remaining_owned_processes": 0,
+    "restored": true,
+    "stock_preserved": true,
+    "restoration_status": "Confirmed",
+    "lease_released": true,
+    "active_leases_at_confirmation": 0,
+    "main_process_identity_unchanged": true,
+    "main_udp_27016_owner_unchanged": true,
+    "main_deployed": false,
+    "client_or_test_dedicated_launched": false
+  },
+  "source_hashes_unchanged_before_and_after": {
+    "sdk/modding/Creator.ps1": "515bb47870900dd23bb8c156b0d91d8af7bfb3ac14f0c8849db5045f42bfb57e",
+    "sdk/modding/Build-BeaconFF.ps1": "03d367882d57ce0dc1cf2e9487f6187e86f478843b54e305fd4e3fb9eff11e2b",
+    "sdk/modding/Finalize-BeaconProject.py": "d82e641a26977f00029aaa9f959ff3f002677155cf7e43c9ac236481c469aeaf",
+    "sdk/modding/BeaconFF.Core.ps1": "b80047875a39731ea54838459fb71e0dca580c5e42284bd2749dc4b39c3a08a8",
+    "sdk/modding/manifest.py": "c2e5b36fef34e75c1149ea04a11b17a4f4bdd14a7f8d669e3e3244dd420a0b12",
+    "ops/modding/Package-CommunityMod.py": "744fb8c242b027642860ed4eb5a585a372cdd796aaba60265fdca1567d2bb749",
+    "ops/modding/Distribution-Compat.py": "6d5556affcff7f550a2d54fee38de35e616d83fc32bd384e52257b9c052e399e",
+    "ops/Base-Client.Core.ps1": "e504a87334fae8f294458c72d7980c3e9b00d3c6549b969d1dfb41f26ca70605",
+    "tools-source/asset-bridge/common/StockBinding.Core.ps1": "5c07dfe9adff6527eef3478b153e38f3adf293c85aa732600818cc540ab2bde4"
+  },
+  "blockers": [
+    "Recipient material resolution and transitive image/technique closure remain unqualified.",
+    "Current compiled scripts/engine/utility (native lookup without .gsc) and its imports remain unqualified."
+  ],
+  "limits": [
+    "No packaging, recipient compatibility, installed-client provenance or gameplay acceptance is inferred.",
+    "The historical first build receipt was not rewritten to manufacture prospective source binding.",
+    "Raw logs, machine paths, process identities, stock assets and reservation tokens remain local and are not included."
+  ]
+}

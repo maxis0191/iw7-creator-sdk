@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-12",
+  "status": "source_budget_verified_execution_pending_parent_go",
+  "source_pin": "fab935826c898806855376662a8a03317b3ad8f1",
+  "sources": {
+    "src/zonetool/zonetool/iw7/zonetool.cpp": "f1c9fb861b81727dc7e3882f5116231e6dc0d1a0e6f5838953a62232171059bc",
+    "src/zonetool/zonetool/shared/assets/scriptfile.hpp": "5f6b30e5540563c41e8ce5d5d42d388f687e138ba7e5c2dbb30dc7eb720fc823"
+  },
+  "utility": {
+    "module": "scripts/engine/utility",
+    "pack": "paris_enemy_cp_zmb_sdk_beacon_recipient_scripts",
+    "requested_modules": 1,
+    "name_ascii_bytes": 22,
+    "name_terminator_bytes": 1,
+    "scalar_length_bytes": 12,
+    "compressed_buffer_max_bytes": 67108864,
+    "bytecode_buffer_max_bytes": 67108864,
+    "declared_uncompressed_len_max": 67108864,
+    "uncompressed_buffer_written": false,
+    "gscbin_max_bytes": 134217763,
+    "successful_manifest_max_bytes": 300,
+    "gscbin_plus_manifest_max_bytes": 134218063,
+    "duplicate_export_copy": false
+  },
+  "future_group": {
+    "phases": ["four exact recipient references", "one compiled utility export"],
+    "reserved_physical_bytes": 8589934592,
+    "reserved_commit_bytes": 11811160064,
+    "output_stop_threshold_bytes": 268435456,
+    "log_limit_bytes_per_stream": 2097152,
+    "native_timeout_seconds_per_phase": 240,
+    "outer_timeout_seconds_per_phase": 245,
+    "fresh_work_directory_required": true,
+    "stock_hardlinks_only_except_mutable_sentinel": true,
+    "no_texture_or_full_map_dump": true,
+    "restore_only_after_original_job_closed": true,
+    "release_only_after_source_preservation_checked": true
+  },
+  "source_preparation_limit_bytes": 2097152,
+  "native_executed": false,
+  "lease_acquired": false,
+  "closure_complete": false,
+  "package_ready": false,
+  "limits": [
+    "Exact gscbin bound follows the fixed request and native serializer; total filesystem monitoring is a polling stop threshold, not a hard disk quota.",
+    "Real source-zone loading remains a heavy workload. The byte bound does not establish actual peak RAM or commit usage.",
+    "No new native patch, launcher, framework or schema was added by this budget clarification."
+  ]
+}

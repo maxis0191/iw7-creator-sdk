@@ -238,3 +238,10 @@ entries were removed, stock preservation checks passed and the complete 8/11 GiB
 reservation was released. No game was launched. This establishes FF serialization
 and original-model readback, not rendering, interaction, recipient material
 binding, H1 donor import or map support. Ready and owner acceptance remain false.
+
+The [recipient closure audit](../sdk/modding/RECIPIENT-CLOSURE.md) recovers and
+freshly hashes the existing retail material snapshot and diffuse-image export,
+without copying their bytes or changing the schema. It supplies exact existing
+ZoneTool requests for the missing recipient checks and compiled utility export.
+Historical dump integrity, current DB resolution and transitive dependency proof
+remain separate; the package closure is still incomplete.

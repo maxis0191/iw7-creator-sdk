@@ -167,3 +167,48 @@ The actual FF is retained in ignored `runtime/beacon-v1-ff-build-20261012/mod.ff
 No client or dedicated was launched. Recipient material resolution, pixels,
 Use/HUD/rejoin, multiplayer and H1 map conversion remain unvalidated. `Ready`
 remains false; the next game test belongs to a separate coordinator allocation.
+
+At the 2026-10-12 03:36:51 UTC availability refresh, the old
+`doom-negative-textures` stock worktree/root was absent. The completed beacon
+`mod.ff` and `state.local.json` remain present with their final hashes unchanged.
+Do not replay the old stock parameters: a future build needs a verified suitable
+retained root and a fresh provenance plan. Historical receipts were not edited.
+
+## Durable stock binding and prospective source receipt
+
+The builder now optionally consumes all four arguments `StockBindingReceipt`,
+`StockBindingReceiptSHA256`, `ReviewedStockManifest` and
+`ReviewedStockManifestSHA256`. Supplying only part of this group is refused.
+The historical `StockReceipt` and its hash remain required. The common reviewed
+`tools-source/asset-bridge/common/StockBinding.Core.ps1` is loaded from the same
+reviewed checkout as OpsRoot; this adapter does not fork or edit that helper.
+
+The three bounded JSON documents bind the 72-entry baseline, reviewed retail
+content and new stock observation. An observation cannot claim a past restoration.
+Historical operations remain `BaselineMode` (63 links/9 copies); staging uses
+71 hardlinks and one 77-byte independent sentinel copy. A read-only source sentinel
+stays unchanged; only the owned copy becomes writable after its distinct file
+identity has been checked. Only proven hardlinks are exempt from output accounting.
+
+Default Plan checks the receipt contracts without scanning retail content or
+loading native identity helpers. After admission, Run holds read guards on the
+receipts, helper and every source, checks each actual NTFS identity against the
+observation before assigning SourceId, then rehashes stock content under all
+guards. Content hashes are deduplicated by verified identity. Shared ModelFF
+metadata/identity and restoration gates remain in force. The legacy path without
+an observation retains its original absolute-source check; it does not silently
+reinterpret the old location as the durable root.
+
+New plans and their build states preserve the measured lowercase
+`Plan.SourceReceiptSHA256`. Its source JSON is guarded and rehashed before staging.
+The finalizer can require equality with its independently remeasured project
+receipt. Historical state files remain unchanged and explicitly lack this binding.
+
+On 2026-10-12 the real read-only plan against the durable observation completed:
+72 stock inputs, 71 links, 77 bytes copied, final candidate verified, source receipt
+`b8229d50751fa990a925b4cb3c3e2c8110a373d645764d0580959d55d78277aa`,
+`StockContentAndIdentityRecheckPending=true`, `Ready=false`, no native type loaded
+and RunRoot still absent. This validates planning only; the revised Run path has
+not been executed. The existing job still resumes its verified suspended Python
+root before the bounded five-second CIM registration retry, preserving the
+sequence that passed the first native beacon build.

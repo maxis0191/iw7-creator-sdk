@@ -4,6 +4,10 @@ param(
     [Parameter(Mandatory)][string]$StockRoot,
     [Parameter(Mandatory)][string]$StockReceipt,
     [Parameter(Mandatory)][string]$StockReceiptSHA256,
+    [string]$StockBindingReceipt,
+    [string]$StockBindingReceiptSHA256,
+    [string]$ReviewedStockManifest,
+    [string]$ReviewedStockManifestSHA256,
     [Parameter(Mandatory)][string]$CandidateRoot,
     [string]$CandidateArtifactSHA256,
     [Parameter(Mandatory)][string]$ReaderRoot,
@@ -26,6 +30,8 @@ $CandidateRoot=[IO.Path]::GetFullPath($CandidateRoot)
 $ReaderRoot=(Resolve-Path -LiteralPath $ReaderRoot).Path
 $receiptPath=Resolve-IW7BasePath $SourceRoot 'source-receipt.local.json'
 Assert-BeaconHash $receiptPath $SourceReceiptSHA256
+$measuredSourceReceiptSHA256=(Get-FileHash -LiteralPath $receiptPath -Algorithm SHA256).Hash.ToLowerInvariant()
+if($measuredSourceReceiptSHA256 -ine $SourceReceiptSHA256){throw 'Source receipt changed during measurement.'}
 $receipt=Read-BeaconJson $receiptPath
 if($receipt.schema -cne 'iw7.beacon-source-receipt/1' -or $receipt.zone -cne 'sdk_beacon' -or $receipt.ff_built -or $receipt.output -ine $SourceRoot){throw 'Original unbuilt beacon receipt required.'}
 $names=@('xmodel/paris_model_probe.xmb','xsurface/paris_model_probe_lod0.xsb','zone_source/sdk_beacon.csv','zone_source/paris_model_probe_recipient.csv','netconststrings/ncs_mdl_paris_model_probe.json')
@@ -34,7 +40,27 @@ if(@($receipt.files).Count -ne 10 -or @($names|Where-Object {$_ -cnotin $receipt
 Assert-BeaconHash $StockReceipt $StockReceiptSHA256
 $stockState=Read-BeaconJson $StockReceipt
 if($stockState.Schema -cne 'iw7.model-ff-build/1' -or !$stockState.Restored -or !$stockState.StockPreserved -or $stockState.RetainedLeaseToken){throw 'Completed retained stock transaction required.'}
+$stockPins=@($StockBindingReceipt,$StockBindingReceiptSHA256,$ReviewedStockManifest,$ReviewedStockManifestSHA256)
+if(@($stockPins|Where-Object {$_}).Count -notin @(0,4)){throw 'Supply all four stock observation/manifest arguments together.'}
+$stockCore=$null;$stockCoreSHA256=$null
 $inputs=@();$seen=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+if($StockBindingReceipt){
+    # Reuse the reviewed pure contract. Plan reads only these bounded receipts,
+    # never identities or large retail content; those checks require admission.
+    $stockCore=Resolve-IW7BasePath (Split-Path $OpsRoot -Parent) 'tools-source/asset-bridge/common/StockBinding.Core.ps1'
+    $stockCoreSHA256=(Get-FileHash -LiteralPath $stockCore -Algorithm SHA256).Hash
+    . $stockCore
+    Assert-BeaconHash $StockBindingReceipt $StockBindingReceiptSHA256
+    Assert-BeaconHash $ReviewedStockManifest $ReviewedStockManifestSHA256
+    $observation=Read-BeaconJson $StockBindingReceipt
+    $reviewed=Read-BeaconJson $ReviewedStockManifest
+    $inputs=@(Get-FFStockBindingInputs $stockState $observation $reviewed $StockRoot $StockReceiptSHA256 $ReviewedStockManifestSHA256)
+    foreach($entry in $inputs){
+        $null=$seen.Add($entry.Relative)
+        $entry|Add-Member NoteProperty BaselineMode $entry.Mode
+        $entry.Mode=if($entry.Relative -ceq 'main/fileSysCheck.cfg'){'Copy'}else{'HardLink'}
+    }
+}else{
 foreach($entry in $stockState.Inputs){
     $source=Resolve-IW7BasePath $StockRoot $entry.Relative
     if($source -ine $entry.Source -or !$seen.Add($entry.Relative)){throw 'Stock source scope/duplicate differs.'}
@@ -43,6 +69,7 @@ foreach($entry in $stockState.Inputs){
     # All immutable stock is linked; only the mutable 77-byte sentinel is copied.
     $inputs+=[pscustomobject]@{Relative=$entry.Relative;Source=$source;Mode=$(if($entry.Relative -ceq 'main/fileSysCheck.cfg'){'Copy'}else{'HardLink'});
         Bytes=$file.Length;ModifiedUtc=$file.LastWriteTimeUtc.ToString('o');Attributes=[int]$file.Attributes}
+}
 }
 if(!$seen.Contains('main/code_pre_gfx.ff') -or !$seen.Contains('zone/assetfile1.pak') -or !$seen.Contains('iw7_ship.exe') -or $inputs.Count -gt 96){throw 'Exact bounded bootstrap stock required.'}
 $readerProvenance=Resolve-IW7BasePath $ReaderRoot 'writer-provenance.json'
@@ -61,6 +88,11 @@ if(Test-Path -LiteralPath $preparationPath){
 if($CandidateArtifactSHA256){$candidate=Assert-BeaconCandidate $CandidateRoot $CandidateArtifactSHA256}
 $work=Join-Path $RunRoot 'work'
 $plan=[ordered]@{Schema='iw7.beacon-ff-plan/1';Work=$work;SourceRoot=$SourceRoot;SourceFiles=$names;StockInputs=$inputs;
+    SourceReceiptSHA256=$measuredSourceReceiptSHA256;
+    StockBindingReceipt=$StockBindingReceipt;StockBindingReceiptSHA256=$StockBindingReceiptSHA256;
+    ReviewedStockManifest=$ReviewedStockManifest;ReviewedStockManifestSHA256=$ReviewedStockManifestSHA256;
+    StockBindingCoreSHA256=$stockCoreSHA256;StockContentAndIdentityRecheckPending=[bool]$StockBindingReceipt;
+    StagingCopyBytes=[long](($inputs|Where-Object Mode -CEQ Copy|Measure-Object Bytes -Sum).Sum);
     CandidatePending=($null -eq $candidate);Candidate=$candidate;CandidatePreparation=$preparationContract;Reader=$reader;JobSource=$JobSource;JobSourceSHA256=$JobSourceSHA256;
     Phases=@('buildzone sdk_beacon','verifyzone sdk_beacon','dumpzone sdk_beacon','reader --verify-existing roundtrip');
     PhysicalBytes=8GB;CommitBytes=11GB;TimeoutSeconds=240;ReaderTimeoutSeconds=30;LogBytesPerStream=2MB;NewOutputStopBytes=64MB;
@@ -79,7 +111,8 @@ $state=[ordered]@{Schema='iw7.beacon-ff-build/1';Work=$work;Inputs=$inputs;Plan=
 $statePath=Join-Path $RunRoot 'state.local.json'
 function Save-BeaconState {$state|ConvertTo-Json -Depth 14|Set-Content -LiteralPath $statePath -Encoding utf8}
 function Measure-BeaconOutput([switch]$Final) {
-    $bytes=Measure-BeaconOutputFiles @(Get-ChildItem -LiteralPath $RunRoot -File -Recurse -Force) $work $state.Inputs.Relative
+    $exempt=@($state.Inputs|Where-Object {$_.Mode -ceq 'HardLink' -and $_.TargetId -and $_.TargetId -ceq $_.SourceId}|ForEach-Object Relative)
+    $bytes=Measure-BeaconOutputFiles @(Get-ChildItem -LiteralPath $RunRoot -File -Recurse -Force) $work $exempt
     $state.MaxObservedBytes=[math]::Max($state.MaxObservedBytes,$bytes)
     if($Final){$state.FinalObservedBytes=$bytes}
     Assert-BeaconOutputBudget $bytes
@@ -117,6 +150,12 @@ function Invoke-BeaconPhase([string]$Phase,[string]$Exe,[string]$Hash) {
 try {
     $lease=Enter-IW7ResourceLease -Scope $work -Kind Extract -PhysicalBytes 8GB -CommitBytes 11GB -Owner 'Beacon FF build inventory dump reader'
     $state.RetainedLeaseToken=$lease.Token
+    $receiptPins=@{};$receiptPins[$receiptPath]=$measuredSourceReceiptSHA256;$receiptPins[$StockReceipt]=$StockReceiptSHA256
+    if($StockBindingReceipt){
+        $receiptPins[$StockBindingReceipt]=$StockBindingReceiptSHA256;$receiptPins[$ReviewedStockManifest]=$ReviewedStockManifestSHA256
+        $receiptPins[$stockCore]=$stockCoreSHA256
+    }
+    foreach($path in $receiptPins.Keys){$guards.Add([IO.File]::Open($path,'Open','Read','Read'));Assert-BeaconHash $path $receiptPins[$path]}
     $guards.Add([IO.File]::Open($JobSource,'Open','Read','Read'));Assert-BeaconHash $JobSource $JobSourceSHA256
     $adapter=Join-Path $PSScriptRoot 'beacon_tool_phase.py';$guards.Add([IO.File]::Open($adapter,'Open','Read','Read'));Assert-BeaconHash $adapter $plan.PhaseAdapterSHA256
     Add-Type -LiteralPath $JobSource
@@ -124,10 +163,20 @@ try {
     foreach($name in $names){$p=Resolve-IW7BasePath $SourceRoot $name;$f=Get-Item -LiteralPath $p;$state.Inputs+=,[pscustomobject]@{Relative=$name;Source=$p;Mode='HardLink';Bytes=$f.Length;ModifiedUtc=$f.LastWriteTimeUtc.ToString('o');Attributes=[int]$f.Attributes}}
     $f=Get-Item -LiteralPath $candidate.Path
     $state.Inputs+=,[pscustomobject]@{Relative='zonetool.exe';Source=$candidate.Path;Mode='HardLink';Bytes=$f.Length;ModifiedUtc=$f.LastWriteTimeUtc.ToString('o');Attributes=[int]$f.Attributes}
-    foreach($entry in $state.Inputs){$guards.Add([IO.File]::Open($entry.Source,'Open','Read','Read'));$entry|Add-Member NoteProperty SourceId ([IW7HudFileIdentity]::Read($entry.Source))}
+    foreach($entry in $state.Inputs){
+        $null=Resolve-IW7BasePath (Split-Path $entry.Source -Parent) (Split-Path $entry.Source -Leaf)
+        $guards.Add([IO.File]::Open($entry.Source,'Open','Read','Read'))
+        $sourceId=[IW7HudFileIdentity]::Read($entry.Source)
+        if($StockBindingReceipt){Assert-FFStockIdentity $entry $sourceId}
+        $entry|Add-Member NoteProperty SourceId $sourceId
+    }
+    if($StockBindingReceipt){Assert-FFStockContent $state.Inputs}
+    Assert-ModelFFInputs $state.Inputs $work -SourceOnly
     $guards.Add([IO.File]::Open($reader,'Open','Read','Read'))
     Assert-BeaconHash $candidate.Path $candidate.SHA256;Assert-BeaconHash $reader $rp.WriterSHA256
     foreach($name in $names){$entry=@($receipt.files|Where-Object path -CEQ $name)[0];Assert-BeaconHash (Join-Path $SourceRoot $name) $entry.sha256}
+    if(Test-Path -LiteralPath $RunRoot){throw 'Beacon run directory appeared during admission; preserve it.'}
+    New-Item -ItemType Directory -Path $RunRoot -ErrorAction Stop|Out-Null
     [IO.Directory]::CreateDirectory($work)|Out-Null
     $state.Transaction=Save-IW7BaseTransaction ([pscustomobject]@{GameRoot=$work;MutableFiles=@($state.Inputs.Relative)+@('zone/sdk_beacon.ff');ProfileDirectory='unused';ProfileDirectories=@()}) (Join-Path $RunRoot 'backup');$saved=$true;Save-BeaconState
     foreach($entry in $state.Inputs){
@@ -135,6 +184,11 @@ try {
         if($entry.Mode -ceq 'Copy'){Copy-Item -LiteralPath $entry.Source -Destination $target}else{New-Item -ItemType HardLink -Path $target -Target $entry.Source|Out-Null}
         $entry|Add-Member NoteProperty TargetId ([IW7HudFileIdentity]::Read($target))
         if($entry.Mode -ceq 'HardLink' -and $entry.TargetId -cne $entry.SourceId){throw 'Staged NTFS identity differs.'}
+        if($entry.Mode -ceq 'Copy'){
+            if($entry.TargetId -ceq $entry.SourceId){throw 'Sentinel copy aliases stock; do not alter its attributes.'}
+            $copy=Get-Item -LiteralPath $target
+            if($copy.IsReadOnly){$copy.IsReadOnly=$false}
+        }
     }
     Assert-ModelFFInputs $state.Inputs $work
     $state.Status='Building';Save-BeaconState
