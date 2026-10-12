@@ -1,4 +1,4 @@
-# Creator command: plan, build, finalize and package gates
+# Creator command: plan, materialize, build and package gates
 
 `Creator.ps1` accepts a local project directory containing the existing SDK
 `manifest.json`; payload paths remain relative to that project. The explicitly
@@ -96,8 +96,10 @@ contract hash and proposed contract. Only `source_bytes_verified` becomes true.
 Compiled input binding, complete bytecode/stack consumption, external-GSC absence,
 recipient closure, build qualification, package/runtime readiness and owner
 acceptance remain false. Local `validation.local.json` files and zero-Far summaries
-are not accepted as evidence by this selector. Existing audit/recipient binders
-are unchanged and are not invoked by this command.
+are not accepted as evidence by this selector. The optional explicit
+`GscAuditEvidence` consumer below reports compiled evidence separately, without
+changing the proposed package contract or these source-only selection flags.
+Existing native audit and recipient binders remain unchanged.
 
 `Build` is explicitly refused before any builder or finalizer call. This adapter
 also refuses `BuildParameters`, `RecipientProof`, `RecipientRoot`, `FinalizeRoot`
@@ -112,7 +114,7 @@ content closure. Native execution and distributable ZIP creation require a
 distinct coordinator GO. This tranche implements the selectable input and its
 contract; it intentionally supplies no native execution path.
 
-The 38 Creator tests include 12 new cases for this selector. They exercise the
+The source-selection tests include 12 cases for this selector. They exercise the
 real CLI and SDK/Distribution validators: exact source/contract selection,
 canonical option spelling, missing compatibility, original-variant collisions,
 unchanged BeaconV1 refusal, changed sources, forged closure claims, duplicate
@@ -120,6 +122,98 @@ manifest fields, forged zero-Far summaries and refusal before an instrumented
 builder could run. Plan/refused-Build snapshots must stay unchanged. Existing
 synthetic flow tests and real-finalizer fixture tests retain the original build,
 materialization and recipient gates; no native tools or distributable ZIPs run.
+
+### Attach retained GSC audit records
+
+An explicit `-GscAuditEvidence <expectations.json>` is accepted only with
+`-Adapter BeaconSelfContainedV1 -Action Plan`. It invokes the pure reader in
+`creator_gsc_audit.py`, never the native audit runner. Other adapters and Build
+reject this option before reading the evidence. The selected project still needs
+the exact variant source and normal compatibility checks.
+
+The expectation object has exactly these fields:
+
+| Field | Required value |
+| --- | --- |
+| `schema` | `iw7.creator-gsc-audit-input/1` |
+| `run_root` | Explicit absolute directory of the retained GSC audit Run |
+| `source_sha256` | Exact variant source SHA above |
+| `pins` | Independent `tool_sha256`, `source_revision`, `source_sha256`, `tables_sha256` accepted by the unchanged consumption validator |
+| `files` | Exactly seven roles below, each `{ "path": absolute_path, "sha256": expected_raw_digest }` |
+
+The roles are `compilation`, `plan`, `build`, `supervision`, `input`,
+`consumption` and `assembly`. Build and supervision must be the Run's
+`build-receipt.json` and `supervision.json`; consumption and assembly must be its
+`witness-variant/consumption.json` and `witness-variant/disassembly.gscasm`.
+The input must equal the reviewed plan's explicit variant container path/hash/size.
+No directory discovery, executable read, process query, native launch, stock
+inspection, resource admission or output write occurs in this command.
+
+Supply hashes from an independent review. Do not derive trust anchors from an
+untrusted final state. The reader can check consistency with the supplied pins;
+it cannot establish that the caller reviewed them. Changing both evidence and
+trusted pins remains outside that guarantee. Files use stable bounded snapshots
+of at most 2 MiB each and a 16 MiB group bound, with a second hash pass. The
+expectation file is limited to 1 MiB and checked again before returning. These
+reads are not a transactional snapshot against a hostile concurrent writer.
+
+The historical compilation record must be the corrected
+`iw7.beacon-self-contained-offline/2` form, with exact source bytes, successful
+parse/compile/disassembly phase records, container and assembly bindings. It must
+keep external-dependency absence, asset closure, runtime and owner claims false.
+The old local compilation record with a withdrawn absence claim is refused.
+This is a linkage to a historical record, not a fresh compilation or authenticated
+proof that a particular compiler produced the bytes.
+
+The consumer imports only the pinned `audit_gsc_consumption.py` validator and
+calls `validate_pins` and `validate_witness`. It remeasures container structure,
+compressed stack integrity, exact bytecode/stack hashes and terminal function
+cursors, then compares the witness's emitted assembly bytes with the separate
+assembly file. The recorded variant command must bind the same input, output,
+tool and source pins. Far/Pointer counts describe the emitted assembly only;
+zero does not certify semantic import absence or a complete dependency graph.
+
+The JSON `gsc_audit` has schema `iw7.creator-gsc-audit-observation/1` and keeps
+these different questions separate:
+
+- `artifact_records_bound`, `historical_compilation_record_bound` and
+  `native_witness_bytes_bound`: selected bytes and records agree with the pins.
+- `structural_consumption_measured`, bytecode/stack cursor values and observed
+  opcode counts: the pure validator has checked the retained witness bytes.
+- `supervision_success_reported`: the historical supervisor's boolean. A `/1`
+  build, including v5, can display structural measurements while its global
+  failure remains explicit. A `/1` success boolean never upgrades the protocol.
+- `global_completion_record_linked`: only the reviewed `/2` producer
+  `eabe74ab65d8ce2a943b54d24b15a60749a0cf2a`, with matching source digest, can
+  link the exact plan/build/supervision, nonce/root/lease, successful completion
+  fields, named steps/artifact roles and terminal closure within the recorded
+  two-second drain and global/output limits. Missing or contradictory records
+  fail. This consumer links the pinned supervisor report; it does not repeat
+  its guarded completion validation.
+
+`global_build_revalidated`, `native_execution_authenticated` and
+`compilation_provenance_authenticated` stay false. Creator does not reopen the
+compiler/tool, individual result files, original-control witnesses or historical
+job guards. It cannot authenticate their past execution or guard lifetime from
+unsigned local receipts. The full native build qualification belongs to the
+separately reviewed producer and its retained evidence.
+
+External GSC absence, recipient closure, finalization, package/runtime readiness
+and owner acceptance stay false. The proposed package contract is unchanged.
+`require_finalization(...)` re-reads the evidence and refuses with these remaining
+requirements; it is not a new variant finalizer and is not routed through the
+original Beacon builder. A valid observational Plan can exit zero with these
+blocking requirements still listed in `pending`.
+
+Validation: 42 real Creator CLI tests plus 19 pure consumer tests pass. They cover
+independent pins, changed source/container/assembly, incomplete cursors, false
+acceptance claims, wrong run/nonce, missing closure/release, deadlines, unknown
+producer/schema, changed artifacts between passes and finalization refusal.
+Native invocation is trapped as a test failure. The real v6 retained files also
+pass the consumer and CLI: 1480 bytecode and 1808 stack bytes consumed, zero
+observed Far/Pointer opcodes, and `/2` completion linkage true. No compiler,
+executable rehash, stock read, lease, native run or package was performed by this
+validation. V4/v5 retain their historical global failures.
 
 For an already prepared original-beacon project, optional `-BuildParameters`
 accepts the existing local `Build-BeaconFF.ps1` argument object. Creator rejects
@@ -134,6 +228,100 @@ so the builder's own support for `Run` cannot authorize that key from JSON. Buil
 also obtains and verifies a fresh snapshot after adapter planning.
 `-ToolsRoot` is an explicit operator override for a complete reviewed checkout
 during isolated integration; it is never read from project content.
+
+## Materialize an existing build locally
+
+Use `Materialize` when a BeaconV1 build has finished and you want an inspectable
+local candidate without running another compiler or creating an archive:
+
+```powershell
+./sdk/modding/Creator.ps1 -Project C:/author/beacon-source -Adapter BeaconV1 `
+  -Action Materialize -BuildRoot C:/author/completed-beacon-build `
+  -FinalizeRoot C:/author/fresh-local-candidate `
+  -ClientSource 77e6d4d24e918ee363b3feee3735c3b889dff7d7 `
+  -ServerSource 77e6d4d24e918ee363b3feee3735c3b889dff7d7 -Protocol 2 -Json
+```
+
+`BuildRoot` is the retained completed build directory containing its original
+`state.local.json` and outputs. `FinalizeRoot` is a new directory under an existing
+parent, separate from the source project, every active project and the build.
+An existing destination is refused and preserved. `BuildRoot` belongs only to
+this action; it does not change the behavior of `Plan` or `Build`.
+
+Materialize accepts only the exact original `BeaconV1` source/preparation and
+keeps the usual source/protocol assertions and active-project compatibility
+checks. It refuses `BuildParameters`, `Output` and `GscAuditEvidence`; it cannot
+select a native build or ZIP destination. The self-contained source variant is
+not accepted by this finalizer. Optional `RecipientProof` and `RecipientRoot`
+must be supplied together and retain their existing snapshot-only semantics.
+
+Creator calls `Finalize-BeaconProject.py::finalize()` directly through
+`creator_materialize.py`. It does not call the builder, even for planning, or
+the package writer. The existing finalizer rechecks the source receipt, exact
+template/recipe/NCS, completed build phases, original closure/restoration records,
+FF/hash, retained inventories, geometry and dump bytes. It applies
+`Plan.SourceReceiptSHA256` when present; a missing historical binding remains an
+explicit blocker, while a present mismatching binding is a refusal. No source
+receipt, prior build state or evidence gate is amended.
+
+After finalization, Creator reopens the ten required candidate files through the
+bounded reader, checks the total written byte count, FF/GSC/manifest hashes,
+output paths, stored evidence and remaining blockers. Each of the four serialized
+assets must match its exact ID/path/size/hash record and the manifest closure hash;
+missing, duplicate or redirected representation records are refused. The two
+validation reports must exactly match newly computed pure SDK reports for the
+measured manifest and candidate. Creator then rechecks file identities and hashes.
+`materialized=true` therefore requires actual checked files, not a positive boolean
+returned by a finalizer. Changed post-write output is refused and retained for
+inspection; Creator does not delete external replacements. These integrity checks
+do not authenticate historical execution statements in the local evidence.
+
+**Exit 0 means the local candidate was created and checked.** It can correctly
+report `materialized=true`, `build_verified=true`, `package_ready=false` and
+`runtime_ready=false`, with `build_executed=false` and `packaged=false`. Remaining
+blockers appear both in `finalization.blockers` and the materialize step's human
+readable details, as well as `pending`. The JSON also includes the candidate and
+manifest paths, exact hashes, `creator_output_verified` and the ten measured file
+records. Pending statements from the unchanged source manifest are retained as
+`source_project_pending`; they no longer misleadingly label the created candidate's
+FF as unestablished. Active-project pending statements remain in `pending`.
+This is an authoring checkpoint, not package, gameplay or connection
+acceptance. No ZIP, deployment, game launch, server connection or resource lease
+is implicit.
+
+Seventeen real CLI additions cover successful local output with blockers,
+historical binding limits, changed FF/source hashes, unclosed/unrestored builds,
+fresh/nonoverlapping destinations, missing inputs, refused build/ZIP/audit options,
+recipient proofs, active-project collisions, unchanged Plan/Build options, a
+builder that must never be called, a false success without files and post-write
+payload drift. They use the existing asset-free finalizer fixtures. An initial
+test-double indentation error was corrected; it did not execute a builder or
+change a production gate.
+
+Review of the first Materialize implementation found that merely rehashing the
+four serialized assets did not compare them with their expected receipt/manifest
+hashes. Flipping one byte in the XSurface after finalization, without changing its
+size, incorrectly returned success. The corrective checks above reject that case
+for all four assets, changed representation mappings/metadata, a corrupted asset
+whose receipt hash was also updated, and altered plan/package reports. These
+eleven post-write fault cases use only synthetic fixtures and preserve the rejected
+candidate. The previously created real candidate was not modified for this review.
+Correction validation: 78 Creator/consumer tests pass, including 59 real Creator
+CLI test methods. The finalizer suite passes 34 tests; its one symlink-creation
+case is skipped because Windows does not grant that operation in this session.
+
+On 2026-10-12, the new action was also exercised against the retained real
+source-bound build from the earlier Creator run. It returned exit 0 after
+creating and reading back ten files totaling 23036 bytes. The 1048-byte FF kept
+SHA256 `3fa49bcdfd08857bb37c198af7a49af78675b940b022e160343552d3f8b71da8`;
+the manifest kept SHA256
+`1b37643436183fe864f7057873f4c49039c8843ec78b2826b2c6bda1d8c5e861`.
+The original source/build receipt hashes were checked before and after and did
+not change. `source_receipt_bound` and `creator_output_verified` were true;
+`build_executed`, `packaged`, runtime and owner acceptance remained false.
+The two remaining blockers were recipient material/transitive image/technique
+resolution and the compiled utility script/imports. No compiler, extractor,
+retail read, lease, new native execution, ZIP or deployment was involved.
 
 ## Explicit Build orchestration
 

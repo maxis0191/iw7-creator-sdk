@@ -162,6 +162,66 @@ receipt hashes, descriptors and recomputed budget remain included. The outer
 plan, Run and binding schemas stay `/1`; an unchanged outer schema does not
 authorize arbitrary new inner fields.
 
+### Complete 33-asset PAK profile
+
+The separately reviewed source contract `9f9b56f` adds only the explicit profile
+`doom-reviewed-all-asset-paks-20261012`, observation schema
+`iw7.recipient-stock-observation/3`. It adds 32 ordered `zone/assetfile*.pak`
+descriptors to the existing baseline `zone/assetfile1.pak`. The 33 fixed names,
+sizes and historical expected hashes come from inventory proposal `f57b530`
+and are pinned as `BASE_PAK`/`COMPLETE_PAKS` in the adapter. No directory scan,
+missing-file retry or automatic profile growth is accepted. The 49 `imagefile`
+entries recorded by the inventory are excluded from staging and the byte budget.
+
+This profile requires both of these independent evidence references:
+
+- `AdditionalDependencyEvidenceSHA256` must be F's fatal digest
+  `67995123ab95d54de3ddb9ffb0f52015daa0978f3c782c977a7c9a3a3c9f58f3`.
+  It explains the expansion and does not make F successful.
+- `CompleteInventoryEvidenceSHA256` must be
+  `683c8a39b6bd289a2acc0a27129a038361d5a217d6ef129d07da739feb6f76bf`.
+  The original spec must additionally supply `RecipientCompleteInventoryReceipt`
+  and `RecipientCompleteInventoryReceiptSHA256`; that exact file is mandatory
+  in the independent source pins and the reviewed plan's `SourceHashes`.
+
+The complete inventory is a fifth stock JSON receipt. It is limited to **128 KiB
+on every read**, including the initial source-pin pass and final hash recheck.
+The reader hashes and parses the same bounded byte snapshot, checks handle/file
+identity around each read, rejects changes across reads and retains each file's
+strictest read limit. It does not use a separate unbounded JSON open after hashing.
+BOM bytes are included in the digest and removed only for JSON decoding. The
+producer snapshot fix `e0654a74` also holds its Windows read guard through hashing
+and parsing. This adapter does not re-attest that historical guard or claim that
+its own repeated reads are an atomic hostile-writer snapshot.
+
+`iw7.recipient-pak-inventory-proposal/1` must bind the same stock root and reviewed
+manifest, contain exactly 82 unique file descriptors (33 `assetfile`, 49
+`imagefile`), and retain zero retail bytes read, no missing reviewed entries and
+no unsafe attributes. Each descriptor remains metadata with `ContentVerified=false`.
+The 33 asset entries require distinct recorded IDs, exactly 4705977508 logical
+bytes, and the fixed reviewed names/sizes/hashes. For baseline pak1 and every
+supplemental entry, ID, size, seven-digit timestamp, attributes and expected hash
+must match that independent inventory. These are recorded IDs, not current NTFS
+measurements. A changed inventory cannot self-authorize itself by changing its
+spec/source pin: the fixed inventory digest must still match.
+
+The named budget must use exactly 4695508096 supplemental bytes and ceiling,
+4115416048 additional bytes beyond the original four PAKs, zero PAK copies,
+103 stock hardlinks and the unchanged 77-byte sentinel copy. With the actual
+baseline, the descriptors account for 73 distinct stock IDs and 5148447113
+declared hash-read bytes. There are 104 stock inputs and 107 managed paths;
+every managed path remains part of the exact restoration/absence gate. The
+budget calculator also checks the ordered profile scope itself.
+
+Legacy, named four-PAK and five-PAK contracts reject the complete-inventory fields
+and source role. The complete profile requires both fields, `/3`, its own fatal
+and inventory pins, all 32 named input IDs, and its exact budget. No old ceiling,
+partial source role, imagefile substitution or mixed contract is accepted.
+The report adds `complete_inventory_metadata_bound=true` and
+`complete_inventory_sha256` only for this profile; older profiles receive false
+and null. All stock-content, dependency/closure, package/runtime and owner claims
+remain false. This source support does not approve a Plan or authorize a Run.
+
 **No retail source is opened or hashed by these semantic checks.** Stock source
 paths are compared lexically and attributes/identities are checked as recorded
 metadata. Actual current retail ancestry or identities are not inspected here.
@@ -250,7 +310,7 @@ closure, package, runtime and owner-acceptance booleans remain false.
 python -B -m unittest discover -s sdk/modding/tests -p test_recipient_run_binding.py -v
 ```
 
-The 49 adapter tests pass alongside the existing 26 recipient tests. The 35
+The 63 adapter tests pass alongside the existing 26 recipient tests. The 35
 Finalizer tests remain unchanged: 34 pass and one platform symlink-privilege
 test is skipped on this Windows host. The adapter's reparse-attribute test runs.
 
@@ -288,3 +348,20 @@ status gate even though its tree and restoration were reported closed. This
 negative check read only the plan and state and supplied no fabricated source,
 output or observation pins. It proves the rejection gate, not a complete positive
 Run integration. E2 and F remain failures; stock sufficiency remains unresolved.
+
+Fourteen complete-profile additions cover 107-path linkage without a retail
+open, both phase selections, exact inventory/fatal/source roles, old-profile
+exclusion, fixed inventory pin versus caller repinning, full descriptor matching,
+pak1 binding, inventory name/ID/content failures, exact larger budget, failed F,
+original-job closure, last-PAK recovery/absence and the persistent 128 KiB cap.
+Fixture baseline IDs and non-PAK sizes remain synthetic; they are not reported
+as the actual stock totals.
+
+A separate bounded read of seven existing JSON files checked only the stock
+metadata linkage in the original G plan/spec and its five stock receipts. It
+read 918724 bytes including rechecks, no retail files, and recomputed 32 additions,
+4695508096 supplemental bytes, 73 distinct IDs, 5148447113 declared hash-read
+bytes and 107 managed paths. **This did not qualify Plan G, its source freshness
+or a native Run.** G was prepared before the separate producer snapshot correction;
+its old Core pin cannot establish that correction. New source/plan review and
+an independently authorized Run remain separate coordinator decisions.

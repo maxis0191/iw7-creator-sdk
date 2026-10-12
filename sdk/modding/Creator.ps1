@@ -1,8 +1,9 @@
 param(
     [Parameter(Mandatory)][string]$Project,
-    [ValidateSet('Plan','Build')][string]$Action='Plan',
+    [ValidateSet('Plan','Build','Materialize')][string]$Action='Plan',
     [ValidateSet('None','BeaconV1','BeaconSelfContainedV1','AnimationProbe','MaterialV2')][string]$Adapter='None',
     [string]$BuildParameters,
+    [string]$BuildRoot,
     [string[]]$ActiveProject=@(),
     [string]$ClientSource,
     [string]$ServerSource,
@@ -12,20 +13,21 @@ param(
     [string]$Output,
     [string]$RecipientProof,
     [string]$RecipientRoot,
+    [string]$GscAuditEvidence,
     [string]$ToolsRoot=(Split-Path (Split-Path $PSScriptRoot -Parent) -Parent),
     [switch]$Json
 )
 # Local orchestration only. Project manifests never supply executable commands.
 # Plan imports the reviewed Python validators and never writes files or loads native code.
 $ErrorActionPreference='Stop'
-$Action=@('Plan','Build')|Where-Object {$_ -ieq $Action}
+$Action=@('Plan','Build','Materialize')|Where-Object {$_ -ieq $Action}
 $Adapter=@('None','BeaconV1','BeaconSelfContainedV1','AnimationProbe','MaterialV2')|Where-Object {$_ -ieq $Adapter}
 $Target=$Target.ToLowerInvariant()
 $python=(Get-Command python -ErrorAction Stop).Source
-$inputData=[ordered]@{project=$Project;action=$Action;adapter=$Adapter;build_parameters=$BuildParameters;
+$inputData=[ordered]@{project=$Project;action=$Action;adapter=$Adapter;build_parameters=$BuildParameters;build_root=$BuildRoot;
     active_projects=@($ActiveProject);client_source=$ClientSource;server_source=$ServerSource;protocol=$Protocol;
     target=$Target;tools_root=$ToolsRoot;finalize_root=$FinalizeRoot;output=$Output;
-    recipient_proof=$RecipientProof;recipient_root=$RecipientRoot}
+    recipient_proof=$RecipientProof;recipient_root=$RecipientRoot;gsc_audit_evidence=$GscAuditEvidence}
 function Assert-CreatorBuildParameters($Parameters) {
     # This is a caller-side allowlist, not the builder's broader parameter set.
     # In particular, Run is never allowed in a JSON-provided splat.
@@ -92,6 +94,15 @@ def unique_parameters(pairs):
     return result
 
 try:
+    if args["build_root"] and args["action"] != "Materialize":
+        raise ValueError("BuildRoot is reserved for explicit Materialize; Plan and Build are unchanged")
+    if args["action"] == "Materialize":
+        if args["adapter"] != "BeaconV1" or not args["build_root"] or not args["finalize_root"]:
+            raise ValueError("Materialize requires BeaconV1, an existing BuildRoot and a fresh FinalizeRoot")
+        if args["build_parameters"] or args["output"]:
+            raise ValueError("Materialize does not accept BuildParameters or Output; it creates a local candidate only")
+    if args["gsc_audit_evidence"] and (args["adapter"] != "BeaconSelfContainedV1" or args["action"] != "Plan"):
+        raise ValueError("GscAuditEvidence requires explicit BeaconSelfContainedV1 Plan; it never authorizes Build")
     root = Path(args["tools_root"]).resolve(strict=True)
     sdk = module(root / "sdk/modding/manifest.py", "creator_sdk")
     packager = module(root / "ops/modding/Package-CommunityMod.py", "creator_packager")
@@ -141,7 +152,9 @@ try:
             raise ValueError("BeaconV1 requires the exact reviewed template GSC; it is not a universal compiler")
         report["beacon_gsc_sha256"] = hashlib.sha256(template).hexdigest()
         step("adapter-identity", "passed", ["Fixed BeaconV1 template GSC, namespace and map match"])
-        if args["build_parameters"]:
+        if args["action"] == "Materialize":
+            step("adapter-plan", "not-run", ["Existing build selected; no builder or native planning command is invoked"])
+        elif args["build_parameters"]:
             with Path(args["build_parameters"]).open("rb") as stream:
                 parameter_bytes = stream.read(1024 * 1024 + 1)
             if len(parameter_bytes) > 1024 * 1024:
@@ -177,6 +190,17 @@ try:
             raise ValueError("BeaconSelfContainedV1 accepts source-only Plan selection; build/output/recipient inputs cannot qualify this adapter")
         if args["action"] != "Plan":
             raise ValueError("BeaconSelfContainedV1 Build is not connected or qualified; no builder, compiler, finalizer or package writer was invoked")
+        if args["gsc_audit_evidence"]:
+            evidence_path = packager.no_redirects(args["gsc_audit_evidence"])
+            evidence_bytes = selector.snapshot(evidence_path, packager, 1024 * 1024)
+            audit = module(root / "sdk/modding/creator_gsc_audit.py", "creator_gsc_audit")
+            report["gsc_audit"] = audit.inspect(project, root, selector.json_snapshot(evidence_bytes), packager)
+            if selector.snapshot(evidence_path, packager, 1024 * 1024) != evidence_bytes:
+                raise ValueError("GscAuditEvidence changed during inspection")
+            report["gsc_audit_evidence_sha256"] = hashlib.sha256(evidence_bytes).hexdigest()
+            report["pending"].extend(report["gsc_audit"]["unresolved_qualifications"])
+            step("gsc-audit-records", "passed", ["Pinned source/container/witness bytes linked; historical completion status reported separately",
+                 "Import absence, variant finalization and recipient closure remain unqualified"])
         step("adapter-plan", "pending", ["Source-only planning contract selected; native adapter and complete evidence remain required"])
     elif args["adapter"] != "None":
         message = args["adapter"] + " adapter is named but not connected or qualified in Creator"
@@ -213,6 +237,33 @@ try:
             raise ValueError("Reviewed Finalize-BeaconProject.py is missing from ToolsRoot")
         report.update(build_root=str(fresh[0]), finalize_root=str(fresh[1]), output=str(fresh[2]))
         step("build-preflight", "passed", ["Explicit build pins and separate fresh output paths supplied; no build attempted yet"])
+    if args["action"] == "Materialize":
+        build_root = packager.no_redirects(args["build_root"])
+        if not build_root.is_dir():
+            raise ValueError("Materialize BuildRoot must be an existing directory")
+        destination = Path(os.path.abspath(args["finalize_root"]))
+        packager.no_redirects(destination.parent)
+        if os.path.lexists(destination):
+            raise ValueError("Materialize requires a fresh destination; existing output is preserved")
+        for directory in [*projects, build_root]:
+            if destination == directory or destination in directory.parents or directory in destination.parents:
+                raise ValueError("Materialize destination must be separate from all projects and the retained build")
+        if bool(args["recipient_proof"]) != bool(args["recipient_root"]):
+            raise ValueError("RecipientProof and RecipientRoot must be supplied together")
+        if args["recipient_proof"]:
+            if not packager.no_redirects(args["recipient_proof"]).is_file() or not packager.no_redirects(args["recipient_root"]).is_dir():
+                raise ValueError("Recipient proof file and root must exist without redirects")
+        report.update(build_root=str(build_root), finalize_root=str(destination))
+        if not report["errors"]:
+            local = module(root / "sdk/modding/creator_materialize.py", "creator_materialize")
+            final = local.materialize(project, build_root, destination, root, client_source=args["client_source"],
+                server_source=args["server_source"], recipient_proof=Path(args["recipient_proof"]) if args["recipient_proof"] else None,
+                recipient_root=Path(args["recipient_root"]) if args["recipient_root"] else None)
+            report["finalization"] = final
+            report.update(build_verified=True, materialized=True)
+            report["source_project_pending"] = [item for item in report["pending"] if item.startswith("project-contract:")]
+            report["pending"] = [item for item in report["pending"] if not item.startswith("project-contract:")] + final["blockers"]
+            step("materialize", "passed", ["Local candidate created: " + final["candidate_root"], *final["blockers"]])
     step("payload-and-closure", "pending" if report["pending"] else "not-run",
          report["pending"] or ["Package file hashes and closure will be checked by the finalizer and package gate"])
     report["plan_valid"] = not report["errors"]
@@ -292,7 +343,8 @@ if($Action -ceq 'Build'){
         $report.steps+=@{name='build';status='blocked';details=@('Preflight failed; no native builder invoked')}
     }
 } else {
-    $report.steps+=@{name='build';status='not-run';details=@('Plan does not compile, finalize or package')}
+    $detail=if($Action -ceq 'Materialize'){'Retained build only; no new build was invoked'}else{'Plan does not compile, finalize or package'}
+    $report.steps+=@{name='build';status='not-run';details=@($detail)}
 }
 if(!@($report.steps|Where-Object name -EQ 'package').Count){$report.steps+=@{name='package';status='not-run';details=@('No ZIP created; static plan validity is not build or runtime acceptance')}}
 if($Json){$report|ConvertTo-Json -Depth 20}
@@ -300,4 +352,4 @@ else {
     foreach($step in $report.steps){Write-Output ('[{0}] {1}' -f $step.status,$step.name);foreach($detail in $step.details){Write-Output ('  '+$detail)}}
     Write-Output ('Plan valid: {0}; build executed: {1}; build verified: {2}; materialized: {3}; packaged: {4}; runtime accepted: false' -f $report.plan_valid,$report.build_executed,$report.build_verified,$report.materialized,$report.packaged)
 }
-if(!$report.plan_valid -or $report.errors.Count -or ($Action -ceq 'Build' -and !$report.packaged)){exit 1}
+if(!$report.plan_valid -or $report.errors.Count -or ($Action -ceq 'Build' -and !$report.packaged) -or ($Action -ceq 'Materialize' -and !$report.materialized)){exit 1}

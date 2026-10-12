@@ -1,0 +1,86 @@
+{
+  "schema": "iw7.creator-materialize-validation/1",
+  "observed_utc": "2026-10-12T08:45:28.4109031Z",
+  "source_checkpoint": "df11e4f8033cad0e09b347092dea97f27403a695",
+  "reviewed_commits": [
+    "25702b24bd0b0c09af24d5890ac9520c585d48ad",
+    "5ca063bb31d2b40668514524b607f2f32630cf8e"
+  ],
+  "action": "Materialize",
+  "adapter": "BeaconV1",
+  "exit_code": 0,
+  "plan_valid": true,
+  "build_executed": false,
+  "build_verified": true,
+  "materialized": true,
+  "packaged": false,
+  "runtime_ready": false,
+  "owner_accepted": false,
+  "source_receipt_bound": true,
+  "creator_output_verified": true,
+  "closure_complete": false,
+  "package_ready": false,
+  "blockers": [
+    "Recipient material resolution and transitive image/technique closure remain unqualified.",
+    "Current compiled scripts/engine/utility (native lookup without .gsc) and its imports remain unqualified."
+  ],
+  "files_verified": 10,
+  "bytes_written": 23036,
+  "exact_hashes": {
+    "ff": "3fa49bcdfd08857bb37c198af7a49af78675b940b022e160343552d3f8b71da8",
+    "gsc": "8ba85b3f5b3014d0c4d02b0e71f49bf617959b486502e4c63243b065abc2a0b6",
+    "manifest": "1b37643436183fe864f7057873f4c49039c8843ec78b2826b2c6bda1d8c5e861",
+    "source_receipt": "b8229d50751fa990a925b4cb3c3e2c8110a373d645764d0580959d55d78277aa",
+    "build_receipt": "b0b5f007a45c5605b64c33d5dae6ff5a49dd75edb736ba7c6679cf8649f5c5be"
+  },
+  "candidate_files_verified": {
+    "evidence/serialized-nodes/netconststrings/ncs_mdl_paris_model_probe.json": {
+      "bytes": 99,
+      "sha256": "27487218f55deeec517407acbbb78fe4fe74ad6b8cdb50e773b4573945d9e1a4"
+    },
+    "evidence/serialized-nodes/sdk_beacon": {
+      "bytes": 28,
+      "sha256": "5134b43e15050642b55c451012b42b1d9821364f92a55e7dab679e5edb9b8e8c"
+    },
+    "evidence/serialized-nodes/xmodel/paris_model_probe.xmb": {
+      "bytes": 978,
+      "sha256": "cb7e4824cebcc201e97925c4d603e1b5645c8f6efa012aa5bfe30d85ccf1bf13"
+    },
+    "evidence/serialized-nodes/xsurface/paris_model_probe_lod0.xsb": {
+      "bytes": 1231,
+      "sha256": "d1bcc267099b758506c965add1564fdaecc8814b2a60954c95e79500f9d57b83"
+    },
+    "finalization.json": {
+      "bytes": 6880,
+      "sha256": "d5dcf6e1ec4be566822888e254a7cde5d975ee9cee3c60901fb49d00c5ed6471"
+    },
+    "manifest.json": {
+      "bytes": 5111,
+      "sha256": "1b37643436183fe864f7057873f4c49039c8843ec78b2826b2c6bda1d8c5e861"
+    },
+    "mod.ff": {
+      "bytes": 1048,
+      "sha256": "3fa49bcdfd08857bb37c198af7a49af78675b940b022e160343552d3f8b71da8"
+    },
+    "sdk_beacon.gsc": {
+      "bytes": 4802,
+      "sha256": "8ba85b3f5b3014d0c4d02b0e71f49bf617959b486502e4c63243b065abc2a0b6"
+    },
+    "validation-package.json": {
+      "bytes": 1299,
+      "sha256": "1b12c8db3fc48ff627569fcd2cad1d72741455c5d9fa8cc51c3e145a261dc0d4"
+    },
+    "validation-plan.json": {
+      "bytes": 1560,
+      "sha256": "790953889edbb8da038eea62d6bd465633974387c51ca8480bf52bcb36d67385"
+    }
+  },
+  "local_report_sha256": "b39963ed666e3c7fede30f5642e2eff7e619e99998079d65d68d2cfc071b2bc2",
+  "limits": [
+    "Reuses the retained real BeaconV1 build; no compiler, ZoneTool, game, stock staging or ZIP writer was invoked by Materialize.",
+    "Caller source pins are compatibility assertions, not measurements of installed binaries.",
+    "All ten candidate files were reread and hashes compared by the integration coordinator.",
+    "Four serialized nodes are compared to their evidence and manifest closure; the two validation reports are independently recomputed by the consumer.",
+    "The two recipient and script blockers remain; no package, runtime, owner or BO3-equivalence acceptance is implied."
+  ]
+}
