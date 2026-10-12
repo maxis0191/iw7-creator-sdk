@@ -27,7 +27,7 @@ def fixture():
                'bytecode_bytes': len(code), 'bytecode_sha256': audit.sha(code),
                'stack_bytes': len(stack), 'stack_sha256': audit.sha(stack),
                'bytecode_consumed': len(code), 'stack_consumed': len(stack),
-               'initial_op_end_verified': True, 'complete_consumption_verified': True,
+               'initial_op_end_verified': True, 'branch_targets_verified': True, 'complete_consumption_verified': True,
                'functions': [{'bytecode_begin': 1, 'declared_bytes': 1, 'bytecode_end': 2,
                               'stack_begin': 0, 'stack_end': len(stack)}],
                'assembly_bytes': len(assembly), 'assembly_sha256': audit.sha(assembly), 'assembly_hex': assembly.hex()}
@@ -44,7 +44,7 @@ class ConsumptionWitnessTests(unittest.TestCase):
         raw, _, pins, witness = fixture()
         for key in ('schema', 'engine', 'input_sha256', 'input_bytes', 'bytecode_sha256', 'stack_sha256',
                     'bytecode_consumed', 'stack_consumed', 'source_revision', 'source_sha256',
-                    'tables_sha256', 'initial_op_end_verified', 'complete_consumption_verified'):
+                    'tables_sha256', 'initial_op_end_verified', 'branch_targets_verified', 'complete_consumption_verified'):
             altered = copy.deepcopy(witness)
             altered.pop(key)
             with self.subTest(key=key), self.assertRaises(ValueError):

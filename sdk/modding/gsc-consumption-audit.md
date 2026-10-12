@@ -20,7 +20,8 @@ The native audit must read the original container from binary stdin, verify exac
 container/zlib lengths, require the initial `OP_End`, respect each declared
 function size including the final one, reject unbounded strings/seeks and unknown
 instructions, and attest exact consumption of **both** buffers. No speculative
-padding is accepted. The emitted assembly bytes must belong to that same run.
+padding is accepted. Jump/switch destinations must resolve to an instruction
+boundary inside their function. The emitted assembly bytes must belong to that same run.
 
 The wrapper requires explicit executable, source revision, source digest and table
 digest pins. It verifies input/buffer/assembly hashes, lengths, both cursor values

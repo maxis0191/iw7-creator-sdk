@@ -60,7 +60,7 @@ def validate_witness(raw, witness, pins):
                 'bytecode_bytes': len(code), 'bytecode_sha256': sha(code),
                 'stack_bytes': len(stack), 'stack_sha256': sha(stack),
                 'bytecode_consumed': len(code), 'stack_consumed': len(stack),
-                'initial_op_end_verified': True, 'complete_consumption_verified': True}
+                'initial_op_end_verified': True, 'branch_targets_verified': True, 'complete_consumption_verified': True}
     expected.update({key: value for key, value in pins.items() if key != 'tool_sha256'})
     for key, value in expected.items():
         if type(witness.get(key)) is not type(value) or witness[key] != value:
