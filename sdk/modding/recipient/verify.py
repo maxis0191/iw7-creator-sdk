@@ -183,13 +183,23 @@ def verify_phase(work, receipt_path):
     receipt_path = no_redirects(receipt_path)
     receipt_bytes = Files(receipt_path.parent).read(receipt_path.name, 65536)
     receipt = json_bytes(receipt_bytes)
-    require(isinstance(receipt, dict) and set(receipt) == {"schema", "phase", "pid", "exit_code", "failure",
-            "executable_sha256", "ownership", "log_limit_each", "observation"}, "Unexpected phase receipt fields")
+    fields = {"schema", "phase", "pid", "exit_code", "failure", "executable_sha256", "ownership", "log_limit_each", "observation"}
+    require(isinstance(receipt, dict) and set(receipt) in (fields, fields | {"capture"}), "Unexpected phase receipt fields")
     require(receipt["schema"] == "iw7.recipient-phase-result/1" and receipt["phase"] in ("references", "script"), "Unknown recipient phase")
     require(type(receipt["pid"]) is int and receipt["pid"] > 0 and type(receipt["exit_code"]) is int
             and receipt["exit_code"] == 0 and receipt["failure"] is None, "Phase failed or native process identity missing")
     require(receipt["executable_sha256"] == EXE_SHA and receipt["ownership"] == "outer original Windows job"
             and type(receipt["log_limit_each"]) is int and receipt["log_limit_each"] == LIMIT, "Phase tool/ownership/bounds differ")
+    if "capture" in receipt:
+        # Producer 4867081 adds diagnostics, not an original-job closure proof.
+        capture = receipt["capture"]
+        require(isinstance(capture, dict) and set(capture) == {"pipe_buffer_size", "drain_threads_closed",
+                "stdout_bytes_at_receipt", "stderr_bytes_at_receipt", "tree_closure_verified"}, "Unexpected capture fields")
+        require(type(capture["pipe_buffer_size"]) is int and capture["pipe_buffer_size"] == 0
+                and capture["drain_threads_closed"] is True and capture["tree_closure_verified"] is False,
+                "Capture declaration does not match the successful raw-pipe producer contract")
+        require(all(type(capture[key]) is int and 0 <= capture[key] <= LIMIT
+                    for key in ("stdout_bytes_at_receipt", "stderr_bytes_at_receipt")), "Capture byte counts exceed declared bounds")
     files = Files(work)
     if receipt["phase"] == "references":
         manifest_path = "enemy-catalog/sdk_beacon_recipient_a.csv"

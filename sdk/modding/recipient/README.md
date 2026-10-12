@@ -11,6 +11,16 @@ The producer contract was coordinated with the H1 recipient runner at
 `iw7.recipient-phase-result/1` receipts retain their existing meanings. This
 consumer adds no replacement public receipt/package schema.
 
+Producer `4867081fff69dcecf382a50b4a4208525b7a9690` additionally declares
+optional `capture` metadata. The consumer accepts the exact five diagnostic
+fields with strict types/bounds: raw pipe size 0, closed drain threads for a
+successful phase, bounded byte counts, and `tree_closure_verified: false`.
+These are producer declarations, not newly measured log or process facts; they
+are not promoted into the analysis result. Older receipts without this object
+remain supported. The separate `native-start.json` is only a locator: its observed
+spawn time is not a verified process creation time. It cannot replace a phase
+receipt, the original-job identity or outer closure/restoration evidence.
+
 ## Available analyses
 
 ```powershell
@@ -175,7 +185,7 @@ BeaconV1, its live session, current template and hashes are unchanged by this wo
 
 ## Verification performed on 2026-10-12
 
-Twenty asset-free tests cover the CLI's lack of writes, the agreed phase fields,
+Twenty-three asset-free tests cover the CLI's lack of writes, the agreed phase fields,
 real byte hashes, malformed/truncated/oversize script envelopes, bounded zlib
 expansion, false readiness claims, omitted/tampered image components, material
 references, graph cycles/missing nodes/unknown edges, and path/reparse guards.
@@ -183,4 +193,6 @@ The producer's actual `check_output` loaded from commit `cb3d9ac` was also run o
 the two tiny synthetic phase fixtures; both resulting observations were accepted
 unchanged by this consumer. This verifies the producer/consumer interface only.
 No retained retail export, new native execution, stock load, lease or network
-operation was used to establish these results.
+operation was used to establish these results. The additional capture/locator
+tests verify metadata compatibility without converting diagnostic declarations
+into process identity or tree-closure proof.

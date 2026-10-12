@@ -182,6 +182,40 @@ class EvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Exact successful"):
             v.verify_phase(self.work, self.receipt_path)
 
+    def test_new_capture_metadata_does_not_qualify_outer_tree_or_identity(self):
+        receipt = self.phase("script")
+        receipt["capture"] = {"pipe_buffer_size": 0, "drain_threads_closed": True,
+            "stdout_bytes_at_receipt": 187, "stderr_bytes_at_receipt": 0, "tree_closure_verified": False}
+        self.save_receipt(receipt)
+        report = v.verify_phase(self.work, self.receipt_path)
+        self.assertTrue(report["phase_bytes_verified"])
+        self.assertFalse(report["observation"]["closure_complete"])
+        self.assertFalse(report["analysis"]["imports_analyzed"])
+        self.assertNotIn("tree_closure_verified", report)
+        self.assertNotIn("native_creation_utc", report)
+        self.assertNotIn("capture", report, "Capture declarations must not become measured facts")
+
+    def test_capture_types_limits_and_false_closure_claim_are_rejected(self):
+        original = self.phase("script")
+        original["capture"] = {"pipe_buffer_size": 0, "drain_threads_closed": True,
+            "stdout_bytes_at_receipt": 0, "stderr_bytes_at_receipt": 0, "tree_closure_verified": False}
+        for key, value in (("pipe_buffer_size", False), ("pipe_buffer_size", 4096), ("drain_threads_closed", False),
+                           ("tree_closure_verified", True), ("tree_closure_verified", 0), ("stdout_bytes_at_receipt", True),
+                           ("stdout_bytes_at_receipt", -1), ("stderr_bytes_at_receipt", v.LIMIT + 1), ("extra", "unexpected")):
+            with self.subTest(key=key, value=value):
+                receipt = copy.deepcopy(original)
+                receipt["capture"][key] = value
+                self.save_receipt(receipt)
+                with self.assertRaisesRegex(ValueError, "[Cc]apture"):
+                    v.verify_phase(self.work, self.receipt_path)
+
+    def test_native_start_locator_cannot_replace_phase_receipt(self):
+        self.save_receipt({"phase": "script", "pid": 123, "parent_pid": 456, "image": "zonetool.exe",
+            "executable_sha256": v.EXE_SHA, "creation_time_verified": False, "native_creation_utc": None,
+            "spawn_observed_utc": "2026-10-12T00:00:00Z", "ownership": "outer original Windows job"})
+        with self.assertRaisesRegex(ValueError, "Unexpected phase receipt fields"):
+            v.verify_phase(self.work, self.receipt_path)
+
     def test_streamed_image_requires_header_and_all_pixels(self):
         name, header, components, _, manifest = self.image_fixture()
         result = v.image_manifest(v.Files(self.work), manifest, name)
