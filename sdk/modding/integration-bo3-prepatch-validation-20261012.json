@@ -182,5 +182,17 @@
   "t7_prepatch_wiring_tests": 5,
   "t7_prepatch_helper_source_tests": 10,
   "t7_build_profile_controls": 11,
-  "t7_prepatch_launcher_controls": 47
+  "t7_prepatch_launcher_controls": 47,
+  "followup_targeted_validation": {
+    "source_commit": "56fd565",
+    "scope": "T7 Python group after the offline comparison addition; full platform suite above was not rerun",
+    "command": "python -B -m unittest discover -s tools-source/asset-bridge/t7-iw7 -v",
+    "python_reported_total": 90,
+    "new_comparison_cases": 14,
+    "exit_code": 0,
+    "log": "runtime/t7-prepatch-comparison-integration.local.log",
+    "log_bytes": 14030,
+    "log_sha256": "6a57bb6bf309bb144120a3d72c416e0b4b2bbedb068af34843f5f89a149c8e41",
+    "native_invoked": false
+  }
 }
