@@ -1,0 +1,97 @@
+From 03d3956d648b7aa4637fe1007f9d69ea463631e9 Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 11:13:54 +0200
+Subject: [PATCH] Fix reference receipt collection for JSON-loaded Plans
+
+
+diff --git a/audit/completion.ps1 b/audit/completion.ps1
+index a2aa0104f75f00956473cffb26a6ea62b1f3170d..2acaa79c6622f73f931727bd3a13093c2d8dcbb6 100644
+--- a/audit/completion.ps1
++++ b/audit/completion.ps1
+@@ -152,8 +152,8 @@ function Assert-AuditCompletionReceipt($Receipt,$Plan,$Context,[scriptblock]$Rea
+     $expected=[ordered]@{'source-manifest'=(Join-Path $Plan.output 'identity/source-manifest.json');
+         'tool'=(Join-Path $native 'Release/iw7-gsc-audit.exe');'wrapper'=$Plan.wrapper;'compiler-config-0'=$config}
+     foreach ($key in @('reference_reader','reference_profile','reference_tests')) {
+-        Assert-AuditDigest $Plan[$key+'_sha256']
+-        $expected[$key.Replace('_','-')]=$Plan[$key]
++        Assert-AuditDigest $Plan.($key+'_sha256')
++        $expected[$key.Replace('_','-')]=$Plan.$key
+     }
+     $expected['reference-pins']=Join-Path $Plan.output 'reference-pins.json'
+     $expected['reference-controls']=Join-Path $Plan.output 'references/controls.json'
+@@ -248,7 +248,7 @@ function Assert-AuditCompletionReceipt($Receipt,$Plan,$Context,[scriptblock]$Rea
+         source_sha256=$source.source_sha256;tables_sha256=$source.tables_sha256};profile_sha256=$Plan.reference_profile_sha256;
+         reference_validator_sha256=$Plan.reference_reader_sha256;consumption_validator_sha256=$Plan.wrapper_sha256}
+     foreach ($key in @('reference_reader','reference_profile','reference_tests')) {
+-        if ($files[$key.Replace('_','-')].SHA256 -cne $Plan[$key+'_sha256']) { throw 'Reference source pin drift' }
++        if ($files[$key.Replace('_','-')].SHA256 -cne $Plan.($key+'_sha256')) { throw 'Reference source pin drift' }
+     }
+     Assert-AuditSameJson $Receipt.reference_pins $referencePins 'receipt reference pins'
+     Assert-AuditSameJson $files['reference-pins'].Json $referencePins 'written reference pins'
+diff --git a/audit/reference-contract.md b/audit/reference-contract.md
+index 99b7a7c23db1d7bd2a1d44d2174acd9f8fb1b55f..8eb3081a7fbd3c24b0f3cb7c92dfe762af29cbf9 100644
+--- a/audit/reference-contract.md
++++ b/audit/reference-contract.md
+@@ -195,3 +195,28 @@ Beacon inputs. The original source observation JSON keeps its initial reader
+ hash as historical evidence; the corrected reader reproduces the same Beacon
+ references, counts and qualification observations. No native run or archive
+ finalization is implied by this diagnostic correction.
++
++## V7 failure and JSON-loaded Plan correction
++
++The single authorized V7 attempt at source `42e6c403` passed all eight native
++phases, including all 159 reference invocations, but global supervision failed.
++The completion collector used dictionary indexers for three reference Plan fields.
++The real launcher loads JSON as `PSCustomObject`, whose indexer returned null;
++hashtable-only fixtures had hidden this error. The failure checkpoint was archived
++before applying the correction. V7 remains a global failure despite successful
++owned-job failure cleanup and lease release.
++
++The collector now uses dynamic property access, compatible with both supported
++Plan representations. A regression serializes the fixture and loads it through
++`ConvertFrom-Json`, verifies its actual `PSCustomObject` type, then exercises the
++complete 27-artifact receipt path. It reproduced the V7 digest rejection before
++the fix and passes afterward. The receipt suite has 88 checks; owned closure
++retains 69 checks and counts the imported receipt suite only once.
++
++A separate read-only diagnostic applied the corrected receipt collector to the
++retained V7 Plan and artifacts. Content and reference-contract checks passed with
++28 real guarded files (receipt plus artifacts), totaling 1,900,800 bytes; all guards
++were released and the retained evidence stayed unchanged. No native code, job
++observation, lease, deadline qualification or closure qualification was attempted.
++This diagnostic cannot upgrade V7 or authenticate a new build. A new exact Plan,
++review and explicit GO are still required for a new supervised native attempt.
+diff --git a/audit/residual-closure-contract.md b/audit/residual-closure-contract.md
+index 9dd8b9803c5ba1bf85ffcae7e7976aac35f6f11c..8a6629078132b3dd4c1350a84588393aaa7e6a60 100644
+--- a/audit/residual-closure-contract.md
++++ b/audit/residual-closure-contract.md
+@@ -121,3 +121,12 @@ post-Stop closure (29 for natural closure); the unchanged hard limit is 32.
+ The 29 additional receipt controls reject missing/failed reference phases,
+ source/pin drift, incomplete/skipped native controls, mismatched bytes/counts,
+ reversed qualifications, removed utility blockers and premature package claims.
++
++The V7 attempt passed its eight native phases but failed global collection because
++JSON-loaded `PSCustomObject` Plans do not support the new dictionary indexers.
++Three accesses now use dynamic properties. Two regression checks round-trip the
++Plan through JSON and exercise all receipt artifacts with the real object type,
++raising the receipt suite to 88 checks. Content-only replay on retained V7 files
++passed with real read guards; it never reobserved the original job, attempted a
++deadline/closure qualification or changed V7's global failure. See the reference
++contract for the diagnostic's exact scope. All existing closure limits remain.
+diff --git a/audit/test_completion.ps1 b/audit/test_completion.ps1
+index 7d7d1e2d78e99ec93edb825f713ea7780a6cfb11..da426218f29b3802c34367ed42b8338e9850f319 100644
+--- a/audit/test_completion.ps1
++++ b/audit/test_completion.ps1
+@@ -115,6 +115,12 @@ function Refuse([scriptblock]$Change,[string]$Name) {
+ Fixture
+ $verified=Validate
+ Check ($verified.Verified -and $verified.ReferenceContractVerified -and $script:reads -eq 27) 'Complete exact-run evidence validates every artifact'
++Fixture
++# Match build.ps1's real loading path; hashtable-only mocks missed V7's bug.
++$script:plan=$script:plan|ConvertTo-Json -Depth 64|ConvertFrom-Json -DateKind String
++Check ($script:plan -is [pscustomobject] -and $script:plan -isnot [Collections.IDictionary]) 'Plan fixture is the real JSON-loaded object type'
++$verified=Validate
++Check ($verified.Verified -and $verified.ReferenceContractVerified -and $script:reads -eq 27) 'Complete collector accepts real serialized PSCustomObject Plan'
+ foreach ($field in @('plan_sha256','run_id','lease_token','root_pid','lease_owner_pid')) {
+     $script:field=$field
+     Refuse {$script:receipt[$script:field]='stale'} "wrong $field"

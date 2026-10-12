@@ -3,8 +3,8 @@
   "upstream_source": "https://github.com/xensik/gsc-tool",
   "base_revision": "3300e430d1efef00e54c66a8bd416e18a2a9882a",
   "base_tree_oid": "8af839d54cba3536954cfd1abd0e33c60112727d",
-  "source_revision": "42e6c403a789b38ede39fd58ff0cb5f77da7d002",
-  "source_tree_oid": "92a8a96529f8ee5acaa72363c261b97a56b9ebfb",
+  "source_revision": "03d3956d648b7aa4637fe1007f9d69ea463631e9",
+  "source_tree_oid": "b1a980682dc057376e327d57416cf2bc0de01f13",
   "patch_format": "git format-patch --full-index --no-signature --no-stat",
   "patches": [
     {
@@ -96,6 +96,12 @@
       "original_commit": "42e6c403a789b38ede39fd58ff0cb5f77da7d002",
       "bytes": 43948,
       "sha256": "d3b1f93bbcf6f1e6d80f31ac46790fcbd0264ecf13e415526b890f0dd26ff3c9"
+    },
+    {
+      "path": "patches/0016-Fix-reference-receipt-collection-for-JSON-loaded-Plans.patch",
+      "original_commit": "03d3956d648b7aa4637fe1007f9d69ea463631e9",
+      "bytes": 6694,
+      "sha256": "6c90b5dacf3bae36f0fabb2569f41583e274d8ff8f530d0b5a24c19e44dd187b"
     }
   ],
   "licenses": [
@@ -146,9 +152,9 @@
     {
       "path": "audit/completion.ps1",
       "mode": "100644",
-      "blob_oid": "a2aa0104f75f00956473cffb26a6ea62b1f3170d",
-      "bytes": 25240,
-      "sha256": "ffa1feeaf8f712eb33ba38daaea95e56585b29c24a48721ac0dee82b46678330"
+      "blob_oid": "2acaa79c6622f73f931727bd3a13093c2d8dcbb6",
+      "bytes": 25241,
+      "sha256": "212fe9cf360d78a030baa60baaa6aeda56dc351c39a29f0e108d78bca86a69e5"
     },
     {
       "path": "audit/diagnostics.ps1",
@@ -188,9 +194,9 @@
     {
       "path": "audit/reference-contract.md",
       "mode": "100644",
-      "blob_oid": "99b7a7c23db1d7bd2a1d44d2174acd9f8fb1b55f",
-      "bytes": 12303,
-      "sha256": "6d47a2454bbca266d98b025b4f3d9fc02e9b30c12c0f4a29b4705132d449def2"
+      "blob_oid": "8eb3081a7fbd3c24b0f3cb7c92dfe762af29cbf9",
+      "bytes": 13911,
+      "sha256": "4e05186aa710a227fb47dfd2fa4934d45dbe48834f3b46fcfacbc146ee641dba"
     },
     {
       "path": "audit/reference-observation-20261012.json",
@@ -216,9 +222,9 @@
     {
       "path": "audit/residual-closure-contract.md",
       "mode": "100644",
-      "blob_oid": "9dd8b9803c5ba1bf85ffcae7e7976aac35f6f11c",
-      "bytes": 8628,
-      "sha256": "a698513bb58d2c4c705ac98d480d430e46f8c548a5454e005529b506cffde054"
+      "blob_oid": "8a6629078132b3dd4c1350a84588393aaa7e6a60",
+      "bytes": 9272,
+      "sha256": "5803d389c07b14fb9a5fc698c7ebef0251009585f30b983300da9c81dd4bd889"
     },
     {
       "path": "audit/residual_policy.ps1",
@@ -251,9 +257,9 @@
     {
       "path": "audit/test_completion.ps1",
       "mode": "100644",
-      "blob_oid": "7d7d1e2d78e99ec93edb825f713ea7780a6cfb11",
-      "bytes": 16224,
-      "sha256": "389bfe557a33931961fbc9081a50d08f4ae80895d7ce68018b0bc28e2e6c3ba2"
+      "blob_oid": "da426218f29b3802c34367ed42b8338e9850f319",
+      "bytes": 16716,
+      "sha256": "7d22d5e48fe6960469ac13ee1bde61d6dfafa0c9145f7cb1c8d7cf443fa79c26"
     },
     {
       "path": "audit/test_completion_files.ps1",

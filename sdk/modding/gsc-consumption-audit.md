@@ -207,3 +207,27 @@ for separate phase results, witness hashes, flags and cleanup evidence. The next
 step is a separate source correction with the real JSON-loaded Plan type and a
 read-only collector diagnostic on retained artifacts, followed by a new reviewed
 Plan. None of those steps can retroactively promote this failed Run.
+
+## V7 collector correction and retained-content diagnostic
+
+The failure checkpoint was committed first as `aedd53528ff624bbc2fd4ad41002d5de684441ee`.
+The separate source correction is `03d3956d648b7aa4637fe1007f9d69ea463631e9`,
+archived as patch sixteen. It replaces the three invalid dictionary-style Plan
+accesses with dynamic properties. A regression round-trips the Plan through JSON,
+asserts the actual `PSCustomObject` type and validates all 27 receipt artifacts.
+The new regression failed before the fix; all 369 PowerShell checks pass afterward.
+
+The corrected collector also passed a read-only content diagnostic using the
+actual retained V7 Plan, receipt and artifacts: 28 guarded files including the
+receipt, 1,900,800 bytes, all guards released and original evidence unchanged.
+The 509 ms diagnostic duration is not a qualified drain measurement. It performed
+no job observation, closure/deadline qualification, native execution or resource
+lease acquisition. **V7's global failure remains authoritative.** Neither Creator
+nor a consumer may promote these results without a successful new supervised Run.
+
+The [correction checkpoint](gsc-reference-collector-correction-20261012.json)
+records source, archive and diagnostic pins. The existing source reconstruction
+matches all 35 changed blobs, the exact tree and physical table pins; prior patches
+and native evidence remain unchanged. The next step is review of a fresh Plan
+pinned to this correction and the completed SDK archive, followed only by an
+explicit execution GO.

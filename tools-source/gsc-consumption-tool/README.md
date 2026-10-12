@@ -179,3 +179,22 @@ Run. The archived source remains `42e6c403` at this checkpoint. See the
 [V7 failure record](../../sdk/modding/gsc-reference-v7-failure-20261012.json).
 An eventual source correction must be appended separately and cannot rewrite
 V7's supervision, previous patch bytes or older native evidence.
+
+## V7 collector correction, source only
+
+Patch sixteen preserves `03d3956d648b7aa4637fe1007f9d69ea463631e9` separately from
+the archived V7 failure. Three reference Plan accesses now use dynamic properties;
+the regression serializes and reloads the Plan as the launcher's `PSCustomObject`
+before exercising the entire receipt collector. All 369 PowerShell checks and
+13 PowerShell AST checks pass. The retained reconstruction was extended in place;
+its tree `b1a980682dc057376e327d57416cf2bc0de01f13`, all 35 changed blobs and eight
+physical table pins match. It uses 30,591,774 bytes under the existing 64 MiB bound.
+The first fifteen patches and licenses are unchanged. No clone or cleanup occurred.
+
+Read-only replay against retained V7 evidence passed receipt and reference content
+validation under 28 real file guards totaling 1,900,800 bytes. Guards were released
+and evidence stayed unchanged. This diagnostic did not observe the original job,
+qualify a deadline or closure, obtain a lease, or execute native code. **V7 remains
+globally failed.** See the [correction checkpoint](../../sdk/modding/gsc-reference-collector-correction-20261012.json).
+A fresh reviewed Plan and explicit GO remain required for native qualification;
+the archive itself does not authorize another Run.
