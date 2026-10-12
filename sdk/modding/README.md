@@ -2,6 +2,8 @@
 
 Start with [platform contract and beacon walkthrough](../../docs/MODDING-PLATFORM.md)
 and [capability evidence / importer milestones](../../docs/MODDING-CAPABILITIES.md).
+The [BO3/T7 import profiles](BO3-IMPORT-PROFILES.md) distinguish the first static
+pilot from the SDK's broader, versioned import and content-extension objective.
 
 ```powershell
 python -B sdk/modding/manifest.py sdk/modding/examples/beacon/manifest.json
