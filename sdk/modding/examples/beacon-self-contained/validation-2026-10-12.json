@@ -1,5 +1,5 @@
 {
-  "schema": "iw7.beacon-self-contained-offline/1",
+  "schema": "iw7.beacon-self-contained-offline/2",
   "source_bytes": 5535,
   "source_sha256": "9de9b76dc25293146999c71653bd407d8cb639e107293f6de87084fed90eee1c",
   "compiler_sha256": "1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb",
@@ -24,10 +24,12 @@
     "compressed_stack_bytes": 496,
     "stack_bytes": 1808,
     "bytecode_bytes": 1480,
-    "literal_external_namespace_strings": 0
+    "literal_external_namespace_strings": 0,
+    "container_length_verified": true,
+    "symbol_stack_decompression_complete": true
   },
   "assembly": {
-    "functions": [
+    "observed_functions": [
       "init",
       "connections",
       "joined",
@@ -37,19 +39,18 @@
       "departed",
       "shutdown"
     ],
-    "instructions": 570,
-    "script_calls": 8,
-    "script_call_opcodes": [
+    "observed_instructions": 570,
+    "observed_script_calls": 8,
+    "observed_script_call_opcodes": [
       "OP_ScriptLocalFunctionCall2",
       "OP_ScriptLocalMethodCall",
       "OP_ScriptLocalMethodThreadCall"
     ],
-    "external_script_calls": 0,
-    "dynamic_script_references": 0,
+    "observed_external_script_calls": 0,
+    "observed_dynamic_script_references": 0,
     "bytes": 15850,
     "sha256": "43e9b36a90cfe30ec713d52cdc63bbb7668cfc17acfae187de369079abeae1df"
   },
-  "external_gsc_dependency_absent_in_this_compilation": true,
   "current_retail_scriptfile_binding_measured": false,
   "creator_adapter_supported": false,
   "asset_closure_complete": false,
@@ -81,28 +82,48 @@
       "compressed_stack_bytes": 480,
       "stack_bytes": 1394,
       "bytecode_bytes": 1455,
-      "literal_external_namespace_strings": 0
+      "literal_external_namespace_strings": 0,
+      "container_length_verified": true,
+      "symbol_stack_decompression_complete": true
     },
-    "external_script_calls": 2,
-    "targets": [
-      "scripts/engine/utility::flag_exist",
-      "scripts/engine/utility::flag"
-    ],
     "assembly_sha256": "b6efa60bb5c5cc30ad724363720d2249292a592a384557cbc509aaf24ddbe725",
     "audit_rejection": "External or dynamic call/reference opcode: OP_ScriptFarFunctionCall",
-    "literal_string_scan_is_not_import_proof": true
+    "literal_string_scan_is_not_import_proof": true,
+    "observed_external_script_calls": 2,
+    "observed_targets": [
+      "scripts/engine/utility::flag_exist",
+      "scripts/engine/utility::flag"
+    ]
   },
   "tests": {
-    "cases_passed": 5,
+    "cases_passed": 6,
     "cases_skipped": 0,
     "guard_host_model_combinations": 70,
     "host_model_is_iw7_vm": false
   },
   "limits": [
+    "No tool-level attestation of complete bytecode AND stack consumption; zero observed external calls is not complete dependency-absence proof.",
     "Only the separately compiled original variant is covered; the unchanged Beacon still has two utility calls.",
     "Engine builtins and model/NCS/material/techset/image dependencies remain.",
     "No current Creator or finalizer adapter accepts this variant.",
     "No game, ZoneTool, resource lease, package, deployment or owner gameplay acceptance occurred.",
     "No claim is made for malformed non-array level.flag values."
-  ]
+  ],
+  "evidence_scope": "observed_disassembly_only",
+  "disassembly_consumption": {
+    "attestation_available": false,
+    "bytecode_consumed_bytes": null,
+    "stack_consumed_bytes": null,
+    "bytecode_fully_consumed_verified": false,
+    "stack_fully_consumed_verified": false
+  },
+  "external_gsc_dependency_absence_verified": false,
+  "review_correction": {
+    "supersedes_schema": "iw7.beacon-self-contained-offline/1",
+    "prior_complete_dependency_absence_claim_withdrawn": true,
+    "reason": "The disassembler stops when either bytecode or stack is exhausted; neither final cursor was attested.",
+    "artifact_hashes_preserved": true,
+    "compiler_rerun_for_correction": false,
+    "existing_binary_and_assembly_reaudited": true
+  }
 }

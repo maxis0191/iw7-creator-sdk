@@ -1,4 +1,4 @@
-"""Offline source/bytecode witness only; never a Creator adapter or package gate."""
+"""Offline source/observed-disassembly audit; no full-buffer or package proof."""
 import argparse
 import hashlib
 import json
@@ -50,10 +50,13 @@ def inspect_binary(raw):
     if any(value in stack.lower() for value in (b"scripts/", b"scripts\\", b"utility", b"::")):
         raise ValueError("External script namespace present in compiled symbol stack")
     return {"bytes": len(raw), "sha256": sha(raw), "compressed_stack_bytes": compressed_len,
-            "stack_bytes": stack_len, "bytecode_bytes": code_len, "literal_external_namespace_strings": 0}
+            "stack_bytes": stack_len, "bytecode_bytes": code_len, "literal_external_namespace_strings": 0,
+            "container_length_verified": True, "symbol_stack_decompression_complete": True}
 
 
 def inspect_assembly(text):
+    # Closed text and local targets do not attest how much binary input the
+    # disassembler consumed. Its bytecode and symbol-stack cursors are unknown.
     functions, calls, opcodes = [], [], []
     opened = None
     for line in text.splitlines():
@@ -89,12 +92,26 @@ def inspect_assembly(text):
                 raise ValueError("Unqualified script opcode: " + opcode)
             calls.append((opcode, (operand or "").split(" ")[0]))
     if opened or not opcodes or "intro_flag_ready" not in functions:
-        raise ValueError("Incomplete assembly witness")
+        raise ValueError("Unclosed or insufficient assembly text")
     if any(target not in functions for _, target in calls):
         raise ValueError("Local script call has no local definition")
-    return {"functions": functions, "instructions": len(opcodes), "script_calls": len(calls),
-            "script_call_opcodes": sorted({op for op, _ in calls}), "external_script_calls": 0,
-            "dynamic_script_references": 0}
+    return {"observed_functions": functions, "observed_instructions": len(opcodes),
+            "observed_script_calls": len(calls), "observed_script_call_opcodes": sorted({op for op, _ in calls}),
+            "observed_external_script_calls": 0, "observed_dynamic_script_references": 0}
+
+
+def inspect_artifacts(binary, assembly):
+    """Keep binary framing and observed text separate from absent cursor proof."""
+    binary_result = inspect_binary(binary)
+    assembly_result = inspect_assembly(assembly.decode())
+    return {"binary": binary_result,
+            "assembly": dict(assembly_result, bytes=len(assembly), sha256=sha(assembly)),
+            "evidence_scope": "observed_disassembly_only",
+            "disassembly_consumption": {
+                "attestation_available": False,
+                "bytecode_consumed_bytes": None, "stack_consumed_bytes": None,
+                "bytecode_fully_consumed_verified": False, "stack_fully_consumed_verified": False},
+            "external_gsc_dependency_absence_verified": False}
 
 
 def run(compiler, retail_reference, output):
@@ -128,13 +145,12 @@ def run(compiler, retail_reference, output):
         phases.append({"name": mode, "exit_code": result.returncode})
     binary = (output / "compiled/iw7/sdk_beacon_self_contained.gscbin").read_bytes()
     assembly = (output / "disassembled/iw7/sdk_beacon_self_contained.gscasm").read_bytes()
-    binary_result, assembly_result = inspect_binary(binary), inspect_assembly(assembly.decode())
+    artifact_result = inspect_artifacts(binary, assembly)
     if sha(SOURCE.read_bytes()) != sha(source) or sha(compiler.read_bytes()) != compiler_hash or sha(retail_reference.read_bytes()) != RETAIL_SHA256:
         raise ValueError("Source, compiler or inspected reference changed during validation")
-    result = {"schema": "iw7.beacon-self-contained-offline/1", "source_bytes": len(source), "source_sha256": sha(source),
+    result = {"schema": "iw7.beacon-self-contained-offline/2", "source_bytes": len(source), "source_sha256": sha(source),
               "compiler_sha256": compiler_hash, "retail_reference_sha256": RETAIL_SHA256, "phases": phases,
-              "binary": binary_result, "assembly": dict(assembly_result, bytes=len(assembly), sha256=sha(assembly)),
-              "external_gsc_dependency_absent_in_this_compilation": True,
+              **artifact_result,
               "current_retail_scriptfile_binding_measured": False, "creator_adapter_supported": False,
               "asset_closure_complete": False, "runtime_ready": False, "owner_accepted": False}
     (output / "validation.local.json").write_text(json.dumps(result, indent=2) + "\n")

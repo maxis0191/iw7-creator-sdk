@@ -78,10 +78,10 @@ console.log(JSON.stringify({ cases, host_model_only: true }));
             with self.subTest(opcode=opcode), self.assertRaisesRegex(ValueError, "External or dynamic"):
                 verify.inspect_assembly("sub:intro_flag_ready\n" + opcode + " utility flag\nend:intro_flag_ready\n")
 
-    def test_assembly_requires_local_definitions_and_complete_functions(self):
+    def test_assembly_requires_local_definitions_and_closed_text_functions(self):
         with self.assertRaisesRegex(ValueError, "no local definition"):
             verify.inspect_assembly("sub:intro_flag_ready\nOP_ScriptLocalFunctionCall2 absent\nend:intro_flag_ready\n")
-        with self.assertRaisesRegex(ValueError, "Incomplete"):
+        with self.assertRaisesRegex(ValueError, "Unclosed"):
             verify.inspect_assembly("sub:intro_flag_ready\nOP_GetZero\n")
         with self.assertRaisesRegex(ValueError, "outside"):
             verify.inspect_assembly("OP_GetZero\n")
@@ -99,6 +99,32 @@ console.log(JSON.stringify({ cases, host_model_only: true }));
         raw = b"GSC\0" + struct.pack("<III", len(compressed), len(external), 1) + compressed + b"\0"
         with self.assertRaisesRegex(ValueError, "External script namespace"):
             verify.inspect_binary(raw)
+
+    def test_closed_local_assembly_cannot_prove_full_binary_consumption(self):
+        # These are framing fixtures, not valid IW7 bytecode. Both buffers can
+        # contain arbitrary suffixes while the supplied text stays well formed.
+        assembly = (b"sub:intro_flag_ready\nOP_ScriptLocalFunctionCall2 local\nend:intro_flag_ready\n"
+                    b"sub:local\nOP_GetZero\nOP_Return\nend:local\n")
+        for stack_suffix, code_suffix in ((b"", b""), (b"unread_symbols\0", b""),
+                                           (b"", b"\xff\xfe"), (b"unread_symbols\0", b"\xff\xfe")):
+            with self.subTest(stack_suffix=stack_suffix, code_suffix=code_suffix):
+                stack = b"intro_flag_ready\0local\0" + stack_suffix
+                compressed = zlib.compress(stack)
+                code = b"\0" + code_suffix
+                binary = b"GSC\0" + struct.pack("<III", len(compressed), len(stack), len(code)) + compressed + code
+                result = verify.inspect_artifacts(binary, assembly)
+                self.assertTrue(result["binary"]["container_length_verified"])
+                self.assertTrue(result["binary"]["symbol_stack_decompression_complete"])
+                self.assertEqual(result["assembly"]["observed_script_calls"], 1)
+                self.assertEqual(result["assembly"]["observed_external_script_calls"], 0)
+                self.assertEqual(result["evidence_scope"], "observed_disassembly_only")
+                self.assertFalse(result["external_gsc_dependency_absence_verified"])
+                consumption = result["disassembly_consumption"]
+                self.assertFalse(consumption["attestation_available"])
+                for buffer in ("bytecode", "stack"):
+                    self.assertIsNone(consumption[buffer + "_consumed_bytes"])
+                    self.assertFalse(consumption[buffer + "_fully_consumed_verified"])
+                self.assertNotIn("external_gsc_dependency_absent_in_this_compilation", result)
 
 
 if __name__ == "__main__":

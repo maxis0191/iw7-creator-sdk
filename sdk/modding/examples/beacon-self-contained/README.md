@@ -1,4 +1,4 @@
-# Beacon with no external GSC module dependency
+# Beacon variant with local intro flag guards
 
 This separate original source variant replaces Beacon's two utility calls with
 a local `intro_flag_ready()` helper. It keeps the polling interval, frozen-control
@@ -7,10 +7,12 @@ and event name use `sdk_beacon_self_contained`, keeping the current Beacon sourc
 unchanged. It is not supported by Creator's existing BeaconV1 adapter or finalizer.
 No package manifest is supplied and no current runtime input is replaced.
 
-“Self-contained” describes this script's module references only. The model still
-uses `paris_model_probe` and its NCS, with recipient material, technique-set and
-image dependencies. This variant and the original must not be loaded together:
-their asset names still collide even though their script state is distinct.
+The retained folder name “self-contained” describes the source-level replacement
+of the utility calls; complete compiled GSC dependency absence is **not yet
+proved**. The model still uses `paris_model_probe` and its NCS, with recipient
+material, technique-set and image dependencies. This variant and the original
+must not be loaded together: their asset names still collide even though their
+script state is distinct.
 
 ## Inspected reference and undefined semantics
 
@@ -45,40 +47,53 @@ disconnect or game end, exactly as the original guarded polling intends.
 
 The existing pinned gsc-tool **1.5.1.359**, executable SHA256
 `1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb`, parsed,
-compiled and disassembled the complete variant successfully. The real `.gscbin`
+compiled the variant and returned a successful disassembly result. The real `.gscbin`
 is 1,992 bytes, SHA256
 `db486793b92e7e3c0a30c70b565fb432a4940e172a3f97da7e9db377f0e46d42`.
-The 15,850-byte disassembly contains 570 instructions, eight defined functions
-and eight script calls; all script calls target local definitions. It contains
-no far-call/far-function-reference or dynamic pointer opcode. Engine builtin calls
-remain necessary and are not external GSC module imports.
+The 15,850-byte emitted disassembly shows 570 instructions, eight defined functions
+and eight script calls; all observed script calls target local definitions. No
+far-call/far-function-reference or dynamic pointer opcode was observed. Engine
+builtin calls remain necessary and are not external GSC module imports.
 
 The binary container lengths and compressed symbol stack were independently
 checked. A literal string scan alone is **insufficient**: compiling the unchanged
 original as a negative control yields two `OP_ScriptFarFunctionCall` instructions
 to `scripts/engine/utility`, although its symbol stack contains no literal module
-name (the retail namespace is encoded as a token). The complete fresh disassembly
-is therefore the decisive no-external-GSC witness, not a string search.
+name (the retail namespace is encoded as a token). This negative control proves
+that the audit detects the external calls emitted in that disassembly.
+
+The retained disassembler loops while **both** bytecode and symbol-stack buffers
+have data. A successful exit and syntactically closed assembly can therefore
+leave a suffix of either buffer unread. Neither cursor was attested in the actual
+run. Container framing and full zlib decompression do not establish disassembler
+consumption. The audit reports **zero observed external calls**, while full
+bytecode consumption, full stack consumption and complete external-GSC dependency
+absence remain unverified. The earlier complete-absence claim is withdrawn;
+the source and recorded compilation artifacts are unchanged.
 
 The [sanitized record](validation-2026-10-12.json) retains exact source/compiler/
-binary/disassembly hashes and the control result. Generated binaries and logs
-remain ignored local diagnostics, not package payloads. No retail dump, SDK copy,
+binary/disassembly hashes and the control result, with the corrected interpretation
+in schema version 2. Generated binaries and logs remain ignored local diagnostics,
+not package payloads. No retail dump, SDK copy,
 game, ZoneTool process or resource reservation was needed.
 
-`verify.py` reproduces the bounded offline check with the existing compiler and
-the already available reference file, writing only to a fresh output directory:
+`verify.py` reproduces the bounded, observed-only offline audit with the existing
+compiler and already available reference file, writing only to a fresh output directory:
 
 ```text
 python -B sdk/modding/examples/beacon-self-contained/verify.py --compiler EXISTING_GSC_TOOL --retail-reference EXISTING_UTILITY_GSC --output FRESH_IGNORED_DIRECTORY
 python -B -m unittest discover -s sdk/modding/tests -p test_beacon_self_contained.py -v
 ```
 
-The five source/audit tests pass. One executes the actual helper body and waiting
+The six source/audit tests pass. One executes the actual helper body and waiting
 expression as JavaScript-compatible snippets in a host model for 70 combinations
 of undefined/false/nonzero flags and frozen-control values. Getter counters prove
 that the guards prevent premature reads; frozen objects reject writes. This is
 not IW7 VM execution. The other cases check external/dynamic calls, missing local
 definitions, container boundaries and preservation of the original template.
+A regression case also supplies closed local assembly beside framing fixtures
+with possible suffixes in either buffer: none can promote dependency absence or
+full disassembler consumption to verified. These fixtures are not IW7 bytecode.
 
 ## Future integration, without changing current gates
 
@@ -88,12 +103,15 @@ definitions, container boundaries and preservation of the original template.
    GSC into BeaconV1, its completed builds or the current runtime experiment.
 2. Build and measure the new FF/GSC candidate with a source-bound receipt. Extend
    a separate finalization path to accept this exact variant and require its own
-   offline compilation evidence. The existing finalizer's exact-template and
-   utility gates remain unchanged; this folder supplies no bypass.
+   offline compilation evidence plus tool-level attestation that both bytecode
+   and stack buffers were fully consumed before accepting a complete import audit.
+   The existing finalizer's exact-template and utility gates remain unchanged;
+   this folder supplies no bypass.
 3. Close the material, technique-set and image dependencies with independent
-   recipient evidence. The absence of external GSC calls removes only this
-   variant's proposed utility dependency; it does not complete asset closure or
-   qualify recipient availability, client compatibility, distribution or a ZIP.
+   recipient evidence. Removal of this variant's proposed utility dependency
+   remains conditional on a complete compiled import audit. It cannot complete
+   asset closure or qualify recipient availability, client compatibility,
+   distribution or a ZIP.
 4. Under separate coordinator approval, test the variant on a protected private
    dedicated: missing/false intro flag, frozen controls, first usable spawn,
    activation/HUD updates, disconnect/rejoin and map cleanup. Use the new opt-in
