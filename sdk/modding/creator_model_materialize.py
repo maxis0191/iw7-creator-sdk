@@ -12,6 +12,11 @@ import sys
 
 API = "creator-model-materialize/1"
 PROFILE = "t7-iw7-resident-static-v2"
+ARENA_PROFILE = "iw7-original-arena-rigid-v1"
+ARENA_COUNTS = {"bones": 1, "roots": 1, "surfaces": 1, "vertices": 168, "triangles": 84}
+ARENA_WRITER = "evidence/arena-writer-source.json"
+ARENA_GEOMETRY = "evidence/geometry.source.json"
+MATERIAL = "mopw/character_park_clown_zombie_shoes"
 METADATA = 1024 * 1024
 INPUT_LIMIT = 96 * METADATA
 OUTPUT_LIMIT = 36 * METADATA
@@ -24,7 +29,82 @@ def module(path, name):
     return value
 
 
-def bind(project, source_root, build_root, tools_root, *, manifest, review_reference):
+def source_profile(plan, adapter, manifest, require):
+    require(adapter in ("ModelLabV2", "OriginalArenaV1"), "Explicit supported model adapter required")
+    arena = adapter == "OriginalArenaV1"
+    require(plan["schema"] == ("iw7.model-ff-plan/1" if arena else "iw7.model-ff-plan/2") and
+            plan["geometry_profile"] == (ARENA_PROFILE if arena else PROFILE),
+            "Explicit " + ("original arena" if arena else "resident v2") + " source plan required")
+    if arena:
+        require(plan["origin"] == "authored-arena" and plan["zone"] == "paris_model_probe" and
+                plan["model_name"] == "paris_original_arena" and plan["mesh_name"] == "paris_original_arena_lod0" and
+                plan["material_reference"] == MATERIAL and plan["selected_counts"] == ARENA_COUNTS and
+                all(type(n) is int for n in plan["selected_counts"].values()), "Explicit original arena identity/counts required")
+        require("original-arena-display/1" in manifest["requires"]["client"] and
+                not {"xmodel-rigid/1", "skeletal-animation-import/1"}.intersection(manifest["requires"]["client"]) and
+                "model-netconststrings/1" in manifest["requires"]["engine"],
+                "Original arena requires its blocked capability and NCS; no historical cube or rig qualification")
+        require(all(plan[key] is False for key in ("material_payload_copied", "native_provenance_verified",
+                "physics_serialized", "ff_built", "pixels_verified", "ready")), "Source plan cannot promote arena qualification")
+        require(plan["lod0_dist"] == 1000000 and plan["has_lods"] is True and
+                plan["shadow_cutoff_lod"] == 6 and plan["collision_lod"] == 255, "Explicit arena LOD policy required")
+        model, mesh = "xmodel:" + plan["model_name"], "xsurface:" + plan["mesh_name"]
+        nodes = {n["id"]: n for n in manifest["package"]["closure"]["nodes"]}
+        require({n["id"] for n in nodes.values() if n["scope"] == "client"} ==
+                {model, mesh, "netconststrings:ncs_mdl_paris_model_probe", "rawfile:paris_model_probe"} and
+                set(nodes[model]["requires"]) == {mesh, "netconststrings:ncs_mdl_paris_model_probe",
+                    "rawfile:paris_model_probe", "material:" + MATERIAL} and
+                nodes["material:" + MATERIAL]["scope"] == "recipient", "Author closure must bind the real original arena names")
+    return arena
+
+
+def arena_inputs(source, plan, read, require):
+    """Retain the first snapshot of every file the World reader can consult."""
+    sources = {"xmodel/paris_original_arena.xmb", "xsurface/paris_original_arena_lod0.xsb",
+               "netconststrings/ncs_mdl_paris_model_probe.json", "zone_source/paris_model_probe.csv",
+               "zone_source/paris_model_probe_recipient.csv"}
+    names = [*sources, ARENA_GEOMETRY, ARENA_WRITER, "model-ff-plan.json"]
+    require(set(plan["source_files"]) == sources and isinstance(plan["validation_files"], list) and
+            len(plan["validation_files"]) == len(names) and set(plan["validation_files"]) == set(names),
+            "Exact eight original arena validation inputs required")
+    # The plan and writer already have their first snapshots under fixed labels.
+    snapshots = {}
+    for name in sorted(set(names) - {"model-ff-plan.json", ARENA_WRITER}):
+        limit = 128 * 1024 if name == ARENA_GEOMETRY else 8192
+        snapshots[name] = read(source, name, "source/" + name, limit)
+    return snapshots
+
+
+def arena_reader(tools_root):
+    return module(Path(tools_root) / "tools-source/asset-bridge/world/original-arena/model_lab.py",
+                  "creator_original_arena_verifier")
+
+
+def select_arena(source_root, tools_root, *, manifest):
+    """Read only the staged original geometry, never stock, a tool or a FF."""
+    f = module(Path(tools_root) / "sdk/modding/Finalize-BeaconProject.py", "model_shared_checks")
+    source = f.safe_existing(source_root).resolve(strict=True)
+    f.require(source.is_dir(), "Original arena ModelSourceRoot must be a directory")
+    inputs = f.Inputs()
+    raw = inputs.read(source, "model-ff-plan.json", "source/plan", 65536)
+    plan = f.decoded(raw)
+    source_profile(plan, "OriginalArenaV1", manifest, f.require)
+    inputs.read(source, ARENA_WRITER, "source/derivation", 65536)
+    arena_inputs(source, plan, inputs.read, f.require)
+    reader = arena_reader(tools_root)
+    checked = reader.verify_stage(source)[0]
+    f.require(f.encoded(plan) == f.encoded(checked), "Original arena source verification differs")
+    inputs.recheck()
+    return {"geometry_profile": ARENA_PROFILE, "origin": "authored-arena", "source_root": str(source),
+            "source_plan_sha256": f.sha(raw), "model_name": plan["model_name"], "mesh_name": plan["mesh_name"],
+            "selected_counts": plan["selected_counts"], "material_reference": plan["material_reference"],
+            "inputs": inputs.records, "build_executed": False, "package_ready": False,
+            "runtime_ready": False, "owner_accepted": False,
+            "pending": ["Original arena runtime linking and visible pixels remain unqualified.",
+                        "No solid collision, physics or gameplay qualification is supplied."]}
+
+
+def bind(project, source_root, build_root, tools_root, *, manifest, review_reference, adapter="ModelLabV2"):
     """Write the existing composition descriptor from stable authored inputs.
 
     This binds bytes and declarations only. Materialize remains responsible for
@@ -52,13 +132,16 @@ def bind(project, source_root, build_root, tools_root, *, manifest, review_refer
     gsc = inputs.read(project, gsc_name, "project/gsc", 65536)
     plan_raw = inputs.read(source, "model-ff-plan.json", "source/plan", METADATA)
     plan = f.decoded(plan_raw)
-    require(plan["schema"] == "iw7.model-ff-plan/2" and plan["geometry_profile"] == PROFILE,
-            "Bind requires the explicit resident v2 source plan")
+    arena = source_profile(plan, adapter, original, require)
     model_id, mesh_id = "xmodel:" + plan["model_name"], "xsurface:" + plan["mesh_name"]
     declared = {node["id"] for node in original["package"]["closure"]["nodes"]}
     require({model_id, mesh_id}.issubset(declared),
             "Author closure must use the source plan's model and mesh names: " + model_id + ", " + mesh_id)
-    derived = inputs.read(source, "derived-export.json", "source/derivation", METADATA)
+    derived = inputs.read(source, ARENA_WRITER if arena else "derived-export.json", "source/derivation", METADATA)
+    if arena:
+        arena_inputs(source, plan, inputs.read, require)
+        require(f.encoded(arena_reader(tools_root).verify_stage(source)[0]) == f.encoded(plan),
+                "Original arena source verification differs")
     state_raw = inputs.read(build, "state.local.json", "build/state", METADATA)
     state = f.decoded(state_raw)
     roundtrip = inputs.read(build, "geometry-roundtrip.json", "build/roundtrip", METADATA)
@@ -96,7 +179,7 @@ def bind(project, source_root, build_root, tools_root, *, manifest, review_refer
                         "The GSC/closure review reference is an author declaration, not authenticated qualification."]}
 
 
-def materialize(project, build_root, output_root, tools_root, *, manifest, client_source, server_source):
+def materialize(project, build_root, output_root, tools_root, *, manifest, client_source, server_source, adapter="ModelLabV2"):
     f = module(Path(tools_root) / "sdk/modding/Finalize-BeaconProject.py", "model_shared_checks")
     require = f.require
     project, build = f.safe_existing(project), f.safe_existing(build_root)
@@ -173,9 +256,8 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
 
     plan_raw = pinned(source, "model-ff-plan.json", "source/plan", assets["source_plan_sha256"])
     plan = f.decoded(plan_raw)
-    require(plan["schema"] == "iw7.model-ff-plan/2" and plan["geometry_profile"] == PROFILE,
-            "ModelLab requires the explicit resident v2 source plan")
-    pinned(source, "derived-export.json", "source/derivation", assets["derived_receipt_sha256"])
+    arena = source_profile(plan, adapter, original, require)
+    pinned(source, ARENA_WRITER if arena else "derived-export.json", "source/derivation", assets["derived_receipt_sha256"])
     state = f.decoded(pinned(build, "state.local.json", "build/state", assets["build_receipt_sha256"]))
     proof_raw = pinned(build, "geometry-roundtrip.json", "build/roundtrip", assets["roundtrip_sha256"])
     proof = f.decoded(proof_raw)
@@ -197,9 +279,12 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
 
     # Enroll every input read by the existing resident verifier in our final
     # identity/hash recheck. Never inspect the state machine's stock/tool paths.
-    for name, limit in (("evidence/request.json", 4096), ("evidence/manifest.json", 256 * 1024),
-                        ("evidence/source.xmb", METADATA), ("evidence/source.xsb", 16 * METADATA)):
-        read(source, name, "source/" + name, limit)
+    if arena:
+        arena_files = arena_inputs(source, plan, read, require)
+    else:
+        for name, limit in (("evidence/request.json", 4096), ("evidence/manifest.json", 256 * 1024),
+                            ("evidence/source.xmb", METADATA), ("evidence/source.xsb", 16 * METADATA)):
+            read(source, name, "source/" + name, limit)
     model_path, mesh_path = "xmodel/" + plan["model_name"] + ".xmb", "xsurface/" + plan["mesh_name"] + ".xsb"
     ncs_path = "netconststrings/ncs_mdl_paris_model_probe.json"
     expected_sources = {model_path, mesh_path, ncs_path, "zone_source/paris_model_probe.csv",
@@ -207,9 +292,10 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
     require(set(plan["source_files"]) == expected_sources, "Exact five ModelLab source inputs required")
     # Retain this first snapshot; rereading after verify_dump would replace the
     # Inputs baseline and could bless a subsequently modified NCS as verified.
-    ncs = read(source, ncs_path, "source/" + ncs_path)
-    for name in expected_sources - {ncs_path}:
-        read(source, name, "source/" + name, 16 * METADATA if name == mesh_path else METADATA)
+    ncs = arena_files[ncs_path] if arena else read(source, ncs_path, "source/" + ncs_path)
+    if not arena:
+        for name in expected_sources - {ncs_path}:
+            read(source, name, "source/" + name, 16 * METADATA if name == mesh_path else METADATA)
     model = read(build, "roundtrip/" + model_path, "build/model", METADATA)
     mesh = read(build, "roundtrip/" + mesh_path, "build/mesh", 16 * METADATA)
     for key in ("GeometryReader", "Offline"):
@@ -234,21 +320,26 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
     require('Loading zone "paris_model_probe"' in log and
             not re.search(r'could not be found|Could not find referenced|\[ ERROR \]|\[ FATAL \]', log, re.I) and
             len(rows) == len(expected_rows) and set(rows) == expected_rows, "Retained bootstrap inventory not established")
-    sys.path.insert(0, str(Path(tools_root) / "ops/model-lab"))
-    try:
-        rigid = module(Path(tools_root) / "ops/model-lab/rigid_export.py", "creator_resident_verifier")
-        measured = rigid.verify_dump(source, build / "roundtrip", build / "mod.ff")
-    finally:
-        sys.path.pop(0)
+    if arena:
+        verifier = arena_reader(tools_root)
+        measured = verifier.verify_dump(source, build / "roundtrip", build / "mod.ff")
+    else:
+        sys.path.insert(0, str(Path(tools_root) / "ops/model-lab"))
+        try:
+            verifier = module(Path(tools_root) / "ops/model-lab/rigid_export.py", "creator_resident_verifier")
+            measured = verifier.verify_dump(source, build / "roundtrip", build / "mod.ff")
+        finally:
+            sys.path.pop(0)
     require(f.encoded(proof) == f.encoded(measured), "Retained roundtrip differs from independent resident revalidation")
-    require(proof["derived_receipt_sha256"] == assets["derived_receipt_sha256"].lower(), "Derived receipt binding differs")
+    if not arena:
+        require(proof["derived_receipt_sha256"] == assets["derived_receipt_sha256"].lower(), "Derived receipt binding differs")
 
     result_manifest = copy.deepcopy(original)
     closure = result_manifest["package"]["closure"]
     nodes = {node["id"]: node for node in closure["nodes"]}
     model_id, mesh_id = "xmodel:" + plan["model_name"], "xsurface:" + plan["mesh_name"]
     ncs_id, raw_id = "netconststrings:ncs_mdl_paris_model_probe", "rawfile:paris_model_probe"
-    material_id = "material:" + rigid.MATERIAL
+    material_id = "material:" + verifier.MATERIAL
     require({n["id"] for n in nodes.values() if n["scope"] == "client"} == {model_id, mesh_id, ncs_id, raw_id} and
             {n["id"] for n in nodes.values() if n["scope"] == "server"} == {script_id} and
             material_id in nodes and nodes[material_id]["scope"] == "recipient" and
@@ -281,12 +372,17 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
     blockers = ["Recipient material/technique/image closure remains unqualified; every slot uses the same IW7 placeholder.",
                 "Generated zone rawfile has inventory evidence only; no retained serialized representation was verified.",
                 "GSC source/closure review is declared and hash-bound, not compiled-import or runtime qualification.",
-                "Native T7 provenance, donor appearance, runtime linking, pixels and owner gameplay remain unverified."]
-    evidence = {"api": API, "adapter": "ModelLabV2", "inputs": inputs.records, "composition": descriptor,
+                ("Original arena runtime linking, pixels, solid collision and owner gameplay remain unverified." if arena else
+                 "Native T7 provenance, donor appearance, runtime linking, pixels and owner gameplay remain unverified.")]
+    geometry_details = ({"geometry_profile": ARENA_PROFILE, "origin": "authored-arena", "selected_counts": plan["selected_counts"],
+                         "physics_serialized": False} if arena else
+                        {"surface_records": plan["surface_records"], "material_references": plan["material_references"],
+                         "geometry_work_bytes_upper_bound": plan["geometry_work_bytes_upper_bound"]})
+    evidence = {"api": API, "adapter": adapter, "inputs": inputs.records, "composition": descriptor,
         "node_representations": representations, "model_name": plan["model_name"], "mesh_name": plan["mesh_name"],
-        "surface_records": plan["surface_records"], "material_references": plan["material_references"],
-        "geometry_work_bytes_upper_bound": plan["geometry_work_bytes_upper_bound"],
-        "material_policy": "IW7 recipient placeholder per slot; no T7 material or texture payload ported",
+        **geometry_details,
+        "material_policy": ("Existing IW7 recipient material reference; original authored arena geometry" if arena else
+                            "IW7 recipient placeholder per slot; no T7 material or texture payload ported"),
         "reviewed_gsc_declaration_bound": True, "gsc_imports_verified": False,
         "asset_source_receipt_bound": True, "geometry_roundtrip_rechecked": True,
         "native_provenance_verified": False, "recipient_closure_complete": False, "build_executed": False,

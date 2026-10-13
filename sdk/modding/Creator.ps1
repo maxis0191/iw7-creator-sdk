@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory)][string]$Project,
     [ValidateSet('Plan','Build','Bind','Materialize','Package')][string]$Action='Plan',
-    [ValidateSet('None','BeaconV1','BeaconSelfContainedV1','ModelLabV2','AnimationProbe','MaterialV2')][string]$Adapter='None',
+    [ValidateSet('None','BeaconV1','BeaconSelfContainedV1','ModelLabV2','OriginalArenaV1','AnimationProbe','MaterialV2')][string]$Adapter='None',
     [string]$BuildParameters,
     [string]$BuildRoot,
     [string]$ModelSourceRoot,
@@ -23,7 +23,7 @@ param(
 # Plan imports the reviewed Python validators and never writes files or loads native code.
 $ErrorActionPreference='Stop'
 $Action=@('Plan','Build','Bind','Materialize','Package')|Where-Object {$_ -ieq $Action}
-$Adapter=@('None','BeaconV1','BeaconSelfContainedV1','ModelLabV2','AnimationProbe','MaterialV2')|Where-Object {$_ -ieq $Adapter}
+$Adapter=@('None','BeaconV1','BeaconSelfContainedV1','ModelLabV2','OriginalArenaV1','AnimationProbe','MaterialV2')|Where-Object {$_ -ieq $Adapter}
 $Target=$Target.ToLowerInvariant()
 $python=(Get-Command python -ErrorAction Stop).Source
 $inputData=[ordered]@{project=$Project;action=$Action;adapter=$Adapter;build_parameters=$BuildParameters;build_root=$BuildRoot;
@@ -113,17 +113,22 @@ def unique_parameters(pairs):
     return result
 
 try:
-    if args["adapter"] == "ModelLabV2":
-        if args["action"] not in ("Materialize", "Bind"):
-            raise ValueError("ModelLabV2 supports only Materialize or Bind of retained inputs; no Plan or Build adapter is invoked")
+    if args["adapter"] in ("ModelLabV2", "OriginalArenaV1"):
+        supported = ("Plan", "Materialize", "Bind") if args["adapter"] == "OriginalArenaV1" else ("Materialize", "Bind")
+        if args["action"] not in supported:
+            raise ValueError(args["adapter"] + " supports only " + ", ".join(supported) + "; no Build adapter is invoked")
         if args["recipient_proof"] or args["recipient_root"] or args["gsc_audit_evidence"]:
             raise ValueError("ModelLabV2 uses explicit composition.json source/GSC review bindings; recipient/audit adapters are not supported")
         if not args["client_source"] or not args["server_source"] or args["protocol"] != 2 or args["target"] != "stock":
             raise ValueError("ModelLabV2 requires explicit ClientSource/ServerSource assertions, Protocol 2 and Target stock")
     if args["action"] == "Bind":
-        if (args["adapter"] != "ModelLabV2" or not args["model_source_root"] or not args["review_reference"] or
+        if (args["adapter"] not in ("ModelLabV2", "OriginalArenaV1") or not args["model_source_root"] or not args["review_reference"] or
                 not args["build_root"] or args["build_parameters"] or args["output"] or args["finalize_root"]):
             raise ValueError("Bind requires ModelLabV2, ModelSourceRoot, BuildRoot and ReviewReference; no output/build command is accepted")
+    elif args["adapter"] == "OriginalArenaV1" and args["action"] == "Plan":
+        if not args["model_source_root"] or any(args[key] for key in (
+                "review_reference", "build_parameters", "build_root", "output", "finalize_root")):
+            raise ValueError("OriginalArenaV1 Plan requires only explicit ModelSourceRoot; build and output inputs are refused")
     elif args["model_source_root"] or args["review_reference"]:
         raise ValueError("ModelSourceRoot and ReviewReference are reserved for ModelLabV2 Bind")
     if args["action"] == "Package":
@@ -135,7 +140,7 @@ try:
     if args["build_root"] and args["action"] not in ("Materialize", "Bind"):
         raise ValueError("BuildRoot is reserved for explicit Materialize or Bind; Plan and Build are unchanged")
     if args["action"] == "Materialize":
-        if args["adapter"] not in ("BeaconV1", "BeaconSelfContainedV1", "ModelLabV2") or not args["build_root"] or not args["finalize_root"]:
+        if args["adapter"] not in ("BeaconV1", "BeaconSelfContainedV1", "ModelLabV2", "OriginalArenaV1") or not args["build_root"] or not args["finalize_root"]:
             raise ValueError("Materialize requires BeaconV1, BeaconSelfContainedV1 or ModelLabV2, an existing BuildRoot and a fresh FinalizeRoot")
         if args["build_parameters"] or args["output"]:
             raise ValueError("Materialize does not accept BuildParameters or Output; it creates a local candidate only")
@@ -261,6 +266,14 @@ try:
             step("adapter-plan", "pending", ["Source-only planning contract selected; native adapter and complete evidence remain required"])
     elif args["adapter"] == "ModelLabV2":
         step("adapter-plan", "not-run", ["Retained ModelLab v2 source/build and reviewed GSC declarations only; no builder invoked"])
+    elif args["adapter"] == "OriginalArenaV1":
+        if args["action"] == "Plan":
+            local = module(root / "sdk/modding/creator_model_materialize.py", "creator_model_materialize")
+            report["source_selection"] = local.select_arena(args["model_source_root"], root, manifest=data)
+            report["pending"].extend(report["source_selection"]["pending"])
+            step("source-selection", "passed", ["Exact authored arena source rechecked; no build, FF or stock input read"])
+        else:
+            step("adapter-plan", "not-run", ["Retained original arena source/build and reviewed GSC declarations only; no builder invoked"])
     elif args["adapter"] != "None":
         message = args["adapter"] + " adapter is named but not connected or qualified in Creator"
         step("adapter-plan", "blocked", [message])
@@ -272,7 +285,7 @@ try:
     if args["action"] == "Bind" and not report["errors"]:
         local = module(root / "sdk/modding/creator_model_materialize.py", "creator_model_materialize")
         bound = local.bind(project, args["model_source_root"], args["build_root"], root,
-                           manifest=data, review_reference=args["review_reference"])
+                           manifest=data, review_reference=args["review_reference"], adapter=args["adapter"])
         report.update(bindings_written=True, composition_binding=bound)
         report["pending"].extend(bound["pending"])
         step("bind", "passed", ["Stable authored inputs bound in " + bound["composition_path"], *bound["pending"]])
@@ -322,10 +335,10 @@ try:
                 raise ValueError("Recipient proof file and root must exist without redirects")
         report.update(build_root=str(build_root), finalize_root=str(destination))
         if not report["errors"]:
-            if args["adapter"] == "ModelLabV2":
+            if args["adapter"] in ("ModelLabV2", "OriginalArenaV1"):
                 local = module(root / "sdk/modding/creator_model_materialize.py", "creator_model_materialize")
                 final = local.materialize(project, build_root, destination, root, manifest=data,
-                    client_source=args["client_source"], server_source=args["server_source"])
+                    client_source=args["client_source"], server_source=args["server_source"], adapter=args["adapter"])
             elif args["adapter"] == "BeaconSelfContainedV1":
                 final = composition.materialize(project, build_root, destination, root,
                     client_source=args["client_source"], server_source=args["server_source"])

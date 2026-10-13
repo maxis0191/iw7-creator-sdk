@@ -160,10 +160,13 @@ def validate(data, root=None, stage="plan", target="stock", client_source=None, 
                     (result["pending"] if stage == "plan" else errors).append("Capability not qualified: " + name)
         required = data["requires"]
         skeletal_plan = "skeletal-animation-import/1" in required["client"]
+        arena_plan = "original-arena-display/1" in required["client"]
         def need(side, name):
             if name not in required[side]:
                 errors.append("Missing capability: " + side + "/" + name)
         need("engine", "iw7-cp/1")
+        if arena_plan:
+            need("engine", "model-netconststrings/1")
         if package["delivery"] == "mod":
             need("client", "mod-fastfile-download/1")
             need("server", "mod-fastfile-host/1")
@@ -179,7 +182,8 @@ def validate(data, root=None, stage="plan", target="stock", client_source=None, 
                 # Plan may describe it, while package/delivery remain refused.
                 # Do not mislabel an experimental rig as the tested rigid cube.
                 if not skeletal_plan:
-                    need("client", "xmodel-rigid/1")
+                    if not arena_plan:
+                        need("client", "xmodel-rigid/1")
                     need("engine", "model-netconststrings/1")
             if node["scope"] == "client" and node["kind"] == "anim":
                 need("client", "skeletal-animation-import/1")
