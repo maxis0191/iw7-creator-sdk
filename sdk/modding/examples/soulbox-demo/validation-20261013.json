@@ -1,7 +1,7 @@
 {
   "date": "2026-10-13",
-  "source_sha256": "3d9099e554197e779d7aa94be63c86f57d27dd3b6fda82975f54c27277aaa85d",
-  "source_bytes": 10555,
+  "source_sha256": "d7ab6c14298e1777b5a8c46a323b9221faf59a45b0faec85e7de759a2c48411e",
+  "source_bytes": 10894,
   "compiler_version": "gsc-tool 1.5.1.359",
   "compiler_sha256": "1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb",
   "phases": [
@@ -18,7 +18,7 @@
       "exit_code": 0
     }
   ],
-  "compiled_sha256": "d904f5cb2e0e0847dd9e2231e8f0db86f140934ac3af09201339c17cac3557c3",
+  "compiled_sha256": "6669220abfa80ee9bec1e78f13fb802ba694f8afe9fc79f4ae254a9babcfa885",
   "script_imports_declared": 0,
   "binary_consumption_audited": false,
   "asset_origin": "IW7 retail zmb_coin_alien",
@@ -28,5 +28,6 @@
   "pixels_verified": false,
   "owner_acceptance": false,
   "fixture_offline_compile_limit": "gsc-tool has no paris_test_protect native extension; fixture parsed, Aurora linkage pending",
-  "prior_failure": "Native-input runs D/E killed six natural nearby zombies. Raw player zombie_killed received weapon/mod/origin, but actor classification fields were undefined; the listener credited zero. Callback snapshot correction awaits a fresh real-input run."
+  "prior_failure": "Native-input runs D/E killed six natural nearby zombies. Raw player zombie_killed received weapon/mod/origin, but actor classification fields were undefined; the listener credited zero. Callback snapshot correction awaits a fresh real-input run.",
+  "callback_correction_partial_result": "Source 3d9099e554197e779d7aa94be63c86f57d27dd3b6fda82975f54c27277aaa85d linked and credited six natural bullet kills in F, with actual rendered 6/6. First Use ended the gameplay session before a reward receipt. The empty owned frontend was recovered with 30 seconds of valid zero-client UDP; files/profiles/Main audit restored, lease released. The scenario remains failed."
 }

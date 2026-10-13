@@ -154,6 +154,7 @@ interact(state)
     for (;;)
     {
         self waittill("trigger", player);
+        if (state.phase == "ready") print("[SDK Soul Box] USE_EVENT; player_defined=" + isdefined(player) + ".");
         if (state.stopped || !isdefined(player) || !isplayer(player) || !isalive(player) ||
             (isdefined(player.inlaststand) && player.inlaststand) ||
             !isdefined(player.sdk_soulbox_demo) || distancesquared(player.origin, self.origin) > 14400) continue;
@@ -182,12 +183,15 @@ interact(state)
         // Lock the shared one-time claim before any possible yield/notification.
         state.phase = "claimed";
         state.rewards++;
+        print("[SDK Soul Box] CLAIM_BEGIN; count=" + state.rewards + "; weapon=" + weapon + ".");
         before_clip = player getweaponammoclip(weapon);
         before_stock = player getweaponammostock(weapon);
         state.reward_before_clip = before_clip;
         state.reward_before_stock = before_stock;
         player givemaxammo(weapon);
+        print("[SDK Soul Box] AMMO_STAGE; reserve_refilled=1.");
         player setweaponammoclip(weapon, weaponclipsize(weapon));
+        print("[SDK Soul Box] AMMO_STAGE; clip_refilled=1.");
         if (issubstr(weapon, "akimbo")) player setweaponammoclip(weapon, weaponclipsize(weapon), "left");
         state.reward_weapon = weapon;
         state.reward_clip = player getweaponammoclip(weapon);
