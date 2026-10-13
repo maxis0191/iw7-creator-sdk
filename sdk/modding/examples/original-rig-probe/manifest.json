@@ -34,8 +34,9 @@
        "destination": "mods/sdk_original_rig_probe/mod.ff", "bytes": 1064,
        "sha256": "ea7ba4be1d5e6f0878431b51e7b9b1ba9d2b10bf74b1ad21da14d55c414e145d",
        "closure_roots": ["xmodel:paris_doom_skin_two_bone_first_a", "xmodel:paris_doom_skin_two_bone_second_a", "xanim:paris_original_probe_bend", "rawfile:sdk_original_rig_probe"]},
-      {"id": "server_probe", "role": "server", "source": null,
-       "destination": "iw7-mod/custom_scripts/cp/sdk_original_rig_probe.gsc", "bytes": null, "sha256": null,
+      {"id": "server_probe", "role": "server", "source": "sdk_original_rig_probe.gsc",
+       "destination": "iw7-mod/custom_scripts/cp/sdk_original_rig_probe.gsc", "bytes": 4866,
+       "sha256": "49f7e1aa336bb2fdb73e5c36be03c213311ead4555fc9bca0d7b4e69ccdc219b",
        "closure_roots": ["scriptfile:custom_scripts/cp/sdk_original_rig_probe.gsc"]}
     ],
     "closure": {
@@ -43,7 +44,8 @@
       "evidence_ref": null,
       "roots": ["xmodel:paris_doom_skin_two_bone_first_a", "xmodel:paris_doom_skin_two_bone_second_a", "xanim:paris_original_probe_bend", "rawfile:sdk_original_rig_probe", "scriptfile:custom_scripts/cp/sdk_original_rig_probe.gsc"],
       "nodes": [
-        {"id": "scriptfile:custom_scripts/cp/sdk_original_rig_probe.gsc", "kind": "scriptfile", "scope": "server", "sha256": null,
+        {"id": "scriptfile:custom_scripts/cp/sdk_original_rig_probe.gsc", "kind": "scriptfile", "scope": "server",
+         "sha256": "49f7e1aa336bb2fdb73e5c36be03c213311ead4555fc9bca0d7b4e69ccdc219b",
          "requires": ["xmodel:paris_doom_skin_two_bone_first_a", "xmodel:paris_doom_skin_two_bone_second_a", "xanim:paris_original_probe_bend"]},
         {"id": "xmodel:paris_doom_skin_two_bone_first_a", "kind": "xmodel", "scope": "client", "sha256": null,
          "requires": ["xsurface:paris_doom_skin_two_bone_first_a_lod0", "material:mopw/character_park_clown_zombie_shoes"]},

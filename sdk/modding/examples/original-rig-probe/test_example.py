@@ -1,5 +1,6 @@
 """Existing SDK/Creator gates for an observed original rig plan; no game inputs."""
 import importlib.util
+import hashlib
 from pathlib import Path
 import shutil
 import subprocess
@@ -29,13 +30,23 @@ class OriginalRigPlanTests(unittest.TestCase):
 
     def test_asset_observation_is_not_mislabeled_as_rigid_or_bo3(self):
         nodes = {n["id"]: n for n in self.manifest["package"]["closure"]["nodes"]}
-        self.assertEqual(len(nodes), 8)  # Seven inventoried assets plus the proposed server source.
+        self.assertEqual(len(nodes), 8)  # Seven inventoried assets plus the supplied server source.
         self.assertFalse(any(n.startswith("netconststrings:") for n in nodes))
         self.assertEqual(nodes["xanim:paris_original_probe_bend"]["kind"], "anim")
         self.assertEqual(nodes["material:mopw/character_park_clown_zombie_shoes"]["scope"], "recipient")
         self.assertEqual(self.manifest["requires"]["client"], ["mod-fastfile-download/1", "skeletal-animation-import/1"])
         self.assertNotIn("model-netconststrings/1", self.manifest["requires"]["engine"])
-        self.assertIsNone(self.manifest["package"]["files"][1]["source"])
+        self.assertEqual(self.manifest["package"]["files"][1]["source"], "sdk_original_rig_probe.gsc")
+
+    def test_supplied_gsc_binding_is_exact_without_promoting_package_evidence(self):
+        entry = self.manifest["package"]["files"][1]
+        raw = (HERE / entry["source"]).read_bytes()
+        self.assertEqual(entry["bytes"], len(raw))
+        self.assertEqual(entry["sha256"], hashlib.sha256(raw).hexdigest())
+        node = next(n for n in self.manifest["package"]["closure"]["nodes"] if n["kind"] == "scriptfile")
+        self.assertEqual(node["sha256"], entry["sha256"])
+        self.assertIsNone(self.manifest["package"]["files"][0]["source"])
+        self.assertTrue(all(e["status"] == "pending" for e in self.manifest["package"]["evidence"]))
 
     def test_package_refuses_missing_lifecycle_and_incomplete_closure(self):
         result = sdk.validate(self.manifest, root=HERE, stage="package", client_source=PIN, server_source=PIN)
