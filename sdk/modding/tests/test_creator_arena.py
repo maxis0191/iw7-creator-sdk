@@ -225,6 +225,18 @@ class ArenaCreatorTests(unittest.TestCase):
             self.invoke()
         self.assertFalse(self.output.exists())
 
+    def test_model_lod_root_mask_mutation_refused_by_actual_world_reader(self):
+        self.bind_build_fixture()
+        path = self.build / "roundtrip" / self.reader.PAIR[0]
+        raw = bytearray(path.read_bytes())
+        # Typed model header starts after the six-byte array record. The root
+        # mask is separate from the group/surface masks and must be checked.
+        raw[6 + 240] ^= 1
+        path.write_bytes(raw)
+        with self.assertRaisesRegex(ValueError, "partBits|root.*mask"):
+            self.invoke()
+        self.assertFalse(self.output.exists())
+
     @unittest.skipUnless(shutil.which("pwsh"), "PowerShell required")
     def test_real_creator_plan_reports_selection_and_honest_compatibility_refusal(self):
         before = {p: p.read_bytes() for p in self.root.rglob("*") if p.is_file()}

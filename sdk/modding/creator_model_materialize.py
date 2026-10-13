@@ -277,7 +277,7 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
     require(len(ff) == assets["ff_bytes"] and state["FF"]["Path"] == "mod.ff" and
             state["FF"]["Bytes"] == len(ff) and state["FF"]["SHA256"].lower() == f.sha(ff), "Retained FF tuple differs")
 
-    # Enroll every input read by the existing resident verifier in our final
+    # Enroll every input read by the explicit geometry verifier in our final
     # identity/hash recheck. Never inspect the state machine's stock/tool paths.
     if arena:
         arena_files = arena_inputs(source, plan, read, require)
@@ -330,7 +330,8 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
             measured = verifier.verify_dump(source, build / "roundtrip", build / "mod.ff")
         finally:
             sys.path.pop(0)
-    require(f.encoded(proof) == f.encoded(measured), "Retained roundtrip differs from independent resident revalidation")
+    require(f.encoded(proof) == f.encoded(measured), "Retained roundtrip differs from independent " +
+            ("original arena" if arena else "resident") + " revalidation")
     if not arena:
         require(proof["derived_receipt_sha256"] == assets["derived_receipt_sha256"].lower(), "Derived receipt binding differs")
 
