@@ -24,6 +24,35 @@ and `composition.json`. Project, retained Model Lab source, BuildRoot and the
 fresh FinalizeRoot must be separate nonnested roots. No author script is generated,
 renamed, substituted from Beacon or declared reviewed by this adapter.
 
+### Bind the inputs without copying hashes by hand
+
+From a prepared source workspace, use `Bind` once the author project has its
+manifest and reviewed `<namespace>.gsc`. The manifest must already declare the
+actual model and mesh names from the Model Lab source plan.
+
+```powershell
+./sdk/modding/Creator.ps1 -Action Bind -Adapter ModelLabV2 `
+  -Project $authorProject -ModelSourceRoot $preparedModelSource `
+  -BuildRoot $restoredModelBuild -ReviewReference $sourceReviewReference `
+  -ToolsRoot $reviewedToolsRoot -ClientSource $clientRevision `
+  -ServerSource $serverRevision -Protocol 2 -Json
+```
+
+This command computes the existing `composition.json` fields from stable file
+snapshots, checks the source/build/FF tuples and rechecks inputs after writing.
+It refuses an existing descriptor, different model names, changed inputs or
+unrelated build/output parameters. The supplied review reference binds an author
+declaration; it does not authenticate a reviewer or turn pending evidence into
+acceptance. No other project file is changed. A failed partial descriptor stays
+available for diagnosis and is never silently replaced.
+
+`bindings_written=true` means only that those inputs were bound. Run
+`Materialize` below to independently validate the retained geometry and build.
+An existing manually prepared descriptor remains supported. `ModelSourceRoot`
+and `ReviewReference` are reserved for `Bind`; they are not required by
+`Materialize`. Packaging still requires the real static closure, and runtime
+rendering and owner gameplay remain separate qualifications.
+
 The command uses the existing parameters; all paths/pins below refer to a future
 separately authorized materialization, not a new execution instruction:
 

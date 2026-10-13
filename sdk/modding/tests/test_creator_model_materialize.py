@@ -146,6 +146,87 @@ class ModelMaterializeTests(unittest.TestCase):
             self.invoke()
         self.assertFalse(self.output.exists())
 
+    def bind(self, review="Explicit synthetic source/closure review declaration"):
+        return m.bind(self.project, self.source, self.build, ROOT,
+                      manifest=self.manifest, review_reference=review)
+
+    def test_bind_existing_inputs_then_materialize_without_manual_hashes(self):
+        (self.project/'composition.json').unlink()
+        before = {p:sha(p.read_bytes()) for p in self.root.rglob('*') if p.is_file()}
+        result = self.bind()
+        self.assertTrue(result['bindings_written'])
+        for field in ('build_verified', 'materialized', 'package_ready', 'runtime_ready', 'owner_accepted'):
+            self.assertFalse(result[field])
+        bound = json.loads((self.project/'composition.json').read_bytes())
+        self.assertEqual(bound['assets'], self.descriptor['assets'])
+        self.assertEqual(bound['script']['sha256'], self.descriptor['script']['sha256'])
+        self.assertEqual(bound['script']['closure_sha256'], self.descriptor['script']['closure_sha256'])
+        self.assertEqual(before, {p:sha(p.read_bytes()) for p in before})
+        self.assertTrue(self.invoke()['materialized'])
+
+    def test_bind_preserves_existing_descriptor_and_requires_review(self):
+        original = (self.project/'composition.json').read_bytes()
+        with self.assertRaisesRegex(ValueError, 'absent composition'):
+            self.bind()
+        self.assertEqual((self.project/'composition.json').read_bytes(), original)
+        (self.project/'composition.json').unlink()
+        with self.assertRaisesRegex(ValueError, 'review reference'):
+            self.bind('   ')
+        self.assertFalse((self.project/'composition.json').exists())
+
+    def test_bind_rejects_wrong_model_names_and_build_ff_tuple(self):
+        (self.project/'composition.json').unlink()
+        mesh = next(n for n in self.manifest['package']['closure']['nodes'] if n['id']=='xsurface:mesh/unrelated')
+        mesh['id'] = 'xsurface:wrong'
+        (self.project/'manifest.json').write_bytes(encode(self.manifest))
+        with self.assertRaisesRegex(ValueError, 'model and mesh names'):
+            self.bind()
+        mesh['id'] = 'xsurface:mesh/unrelated'
+        (self.project/'manifest.json').write_bytes(encode(self.manifest))
+        self.state['FF']['SHA256'] = 'f'*64
+        (self.build/'state.local.json').write_bytes(encode(self.state))
+        with self.assertRaisesRegex(ValueError, 'FF tuple differs'):
+            self.bind()
+        self.assertFalse((self.project/'composition.json').exists())
+
+    def test_bind_snapshot_mutation_refused_before_descriptor_write(self):
+        (self.project/'composition.json').unlink()
+        original_load = m.module
+        def altered(path, name):
+            mod = original_load(path, name)
+            if name == 'model_shared_checks':
+                recheck = mod.Inputs.recheck
+                def changed(inputs):
+                    (self.project/self.gsc_name).write_bytes(b'changed after binding snapshot')
+                    return recheck(inputs)
+                mod.Inputs.recheck = changed
+            return mod
+        with patch.object(m, 'module', altered), self.assertRaisesRegex(ValueError, 'Input changed'):
+            self.bind()
+        self.assertFalse((self.project/'composition.json').exists())
+
+    @unittest.skipUnless(shutil.which('pwsh'), 'PowerShell required')
+    def test_creator_bind_dispatch_and_refuses_unrelated_outputs(self):
+        (self.project/'composition.json').unlink()
+        base = [shutil.which('pwsh'), '-NoProfile', '-File', str(SDK/'Creator.ps1'),
+                '-Adapter', 'ModelLabV2', '-Action', 'Bind', '-Project', str(self.project),
+                '-BuildRoot', str(self.build), '-ModelSourceRoot', str(self.source),
+                '-ReviewReference', 'Explicit synthetic declaration', '-ToolsRoot', str(ROOT),
+                '-ClientSource', PIN, '-ServerSource', PIN, '-Protocol', '2', '-Json']
+        for extra in (['-Output', str(self.root/'never.zip')], ['-FinalizeRoot', str(self.output)]):
+            run = subprocess.run(base+extra, capture_output=True, text=True, timeout=20)
+            self.assertEqual(run.returncode, 1, run.stdout+run.stderr)
+            report = json.loads(run.stdout)
+            self.assertFalse(report['bindings_written'])
+            self.assertFalse((self.project/'composition.json').exists())
+        run = subprocess.run(base, capture_output=True, text=True, timeout=20)
+        self.assertEqual(run.returncode, 0, run.stdout+run.stderr)
+        report = json.loads(run.stdout)
+        self.assertTrue(report['bindings_written'])
+        for field in ('build_executed', 'build_verified', 'materialized', 'packaged', 'runtime_ready', 'owner_accepted'):
+            self.assertFalse(report[field])
+        self.assertFalse(self.output.exists())
+
     def test_real_verifier_materializes_five_slots_with_false_acceptance(self):
         original = {p:sha(p.read_bytes()) for p in self.root.rglob('*') if p.is_file()}
         result = self.invoke()
