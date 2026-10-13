@@ -5,6 +5,11 @@ native builds, asset extraction, leases and publication. This work adds an offli
 packager and compatibility preflight. It does not deploy or qualify a public
 server. Main27016, the owner's client, bank, configuration and network are untouched.
 
+Player projection added on 2026-10-13 under the owner's resumed feature work.
+The dated source-only checkpoint above describes its original authorization.
+The same ZIP writer now supports an explicit `--layout player`; default staging,
+the common manifest, compatibility gates and package qualification are preserved.
+
 ## One contract, two delivery routes
 
 The author supplies the architecture SDK's `iw7.community-mod/1` manifest from
@@ -110,7 +115,7 @@ server/iw7-mod/custom_scripts/cp/... declared server scripts, if any
 server/zone/...                      declared server fastfiles, if any
 ```
 
-The ZIP is a staging layout, **not an archive to extract over the game root**.
+The default ZIP is a staging layout, **not an archive to extract over the game root**.
 The authoring `source` paths inside the manifest are unchanged. The operator maps
 archive entries by declared `destination`; the packager provides no extractor or
 automatic installer. Never expose the `server/` subtree through fast download.
@@ -134,6 +139,70 @@ race fails without replacing the other file. A failed write removes only the new
 temporary output. Filesystems without hardlink support fail rather than silently
 falling back to an unsafe overwrite. This is a bounded trusted-staging workflow,
 not an atomic installer resistant to hostile concurrent directory replacement.
+
+## Copyable player archive
+
+After the complete author package passes the existing SDK package and compatibility
+checks, run the same command with `--layout player` and a separate fresh output:
+
+```powershell
+python ops/modding/Package-CommunityMod.py <community-manifest.json> `
+  --root <private-build-root> --output <fresh-player-path.zip> --layout player `
+  --client-source <reviewed-upstream-client-commit> --server-source <reviewed-upstream-server-commit> `
+  --protocol 2 --mode cp --target native
+```
+
+The exact archive layout is:
+
+```text
+PLAY.txt
+mods/<id>/mod.ff
+mods/<id>/mod.sabl    only if declared
+mods/<id>/mod.sabs    only if declared
+```
+
+This projects the manifest's client files without changing their destinations or
+bytes. Server GSC, `server/`, `fastdl/`, author manifests, PS1, source trees and
+unlisted files are absent. The client executable and its release notices are
+supplied separately by the native release owner; no executable is inferred from
+the mod or copied from the build root. `PLAY.txt` tells the player to close the
+game, back up an existing `mods/<id>`, copy the `mods` directory into the legitimate
+game installation, start the compatible community client and join the intended
+server. It also describes restoring that backup or removing only a newly added
+`mods/<id>` after the game is closed.
+
+Server-only packages have no player assets and are refused in this layout. The
+existing operator ZIP remains the input for `Install-CommunityMod.Package.py`
+and the backed-up server/FastDL installer; the player archive is a manual copy
+route and is not accepted as operator staging. Do not feed it to that installer.
+Source and creator tooling remain separate downloads.
+
+The complete author package, including server files omitted from the player ZIP,
+still passes the real SDK and compatibility gates before projection. An incomplete
+closure, changed server script or wrong protocol still blocks output. No additional
+manifest or qualification gate is introduced. The writer reports
+`archive_layout: "player"`, exact delivered hashes/CRC32, archive size and SHA-256;
+`ready_to_deploy` remains false. It reuses deterministic entry metadata, streaming
+integrity checks and no-replace publication. The output budget charges only the
+copies actually delivered in the chosen layout.
+
+Compatibility SourcePin values retain their upstream Aurora meaning, including
+`77e6d4d24e918ee363b3feee3735c3b889dff7d7`. A private product commit must not replace
+that value in the old reviewed source table. Correlate the exact executable hash
+separately with its build manifest's upstream revision, product/project commit,
+profile/modules, overlays and source-identity receipt where present. A migrated
+source checkout or an older binary does not automatically acquire the other's
+qualification. Actual client/server handshake, mod load and rejoin remain runtime
+checks on the intended private releases and real FF output.
+
+Targeted source validation on 2026-10-13: 23 distribution tests, 22 passed and one
+Windows symlink case skipped because this token cannot create symlinks. New cases
+cover a copyable FF/SABL/SABS layout, omission of scripts/tools/local files,
+determinism, overwrite/tamper refusal, server-only/invalid layouts, layout-aware
+byte accounting and real SDK rejection of changed server files, incomplete closure
+and protocol mismatch. Fixtures use synthetic CRC vectors, never engine-loadable
+content. No genuine BO3 player archive or installation/rejoin is claimed by these
+source tests; those await the qualified demo outputs and native release.
 
 JSON stdout records the final archive SHA-256/size and derived payload transport
 hashes. It always says `ready_to_deploy: false`. The SDK/closure/evidence records

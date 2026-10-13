@@ -1,7 +1,8 @@
 """Build an inert, deterministic ZIP from an SDK-validated community mod.
 
 No network, extraction, installation, game launch or executable download. The
-archive is staging material; a successful package is never gameplay acceptance.
+Default archive is operator staging; --layout player projects only client mod
+files into a copyable game-root layout. Packaging is never gameplay acceptance.
 """
 import argparse
 import hashlib
@@ -135,21 +136,41 @@ def stream_payload(archive, name, root, entry):
             "aurora_crc32": struct.pack("<I", crc & 0xffffffff).hex().upper()}
 
 
-def write_archive(manifest, root, output, *, max_bytes=DEFAULT_BUDGET):
+def write_archive(manifest, root, output, *, max_bytes=DEFAULT_BUDGET, layout="staging"):
     """Write already-validated data with a second integrity check while streaming."""
     if type(max_bytes) is not int or max_bytes <= 0:
         raise ValueError("A positive byte budget is required")
+    if layout not in ("staging", "player"):
+        raise ValueError("Archive layout must be staging or player")
     root = no_redirects(root)
     output = Path(os.path.abspath(output))
     no_redirects(output.parent)
     if output.exists() or output.is_symlink():
         raise ValueError("Output exists; use a fresh output path")
-    metadata = canonical_json(manifest)
+    package = manifest["package"]
+    metadata_name, metadata = "manifest.json", canonical_json(manifest)
     entries = []
-    for entry in manifest["package"]["files"]:
-        entries.append(("server/" + entry["destination"], entry))
-        if entry["role"] == "client":
-            entries.append(("fastdl/" + entry["destination"], entry))
+    if layout == "player":
+        if package["delivery"] != "mod":
+            raise ValueError("Player archive requires client mod assets; server-only packages have nothing to install")
+        entries = [(entry["destination"], entry) for entry in package["files"] if entry["role"] == "client"]
+        if not any(name == "mods/" + package["id"] + "/mod.ff" for name, _ in entries):
+            raise ValueError("Player archive requires the declared mod.ff")
+        metadata_name = "PLAY.txt"
+        metadata = (
+            package["id"] + " " + package["version"] + "\n\n"
+            "1. Close the game. Back up mods/" + package["id"] + " if it already exists.\n"
+            "2. Copy the mods folder from this archive into your Infinite Warfare game folder.\n"
+            "3. Start the compatible community client supplied for this mod and join its server.\n\n"
+            "The client is supplied separately. Server scripts and creator tools are not needed here.\n"
+            "To undo: close the game and restore your backup of mods/" + package["id"] + ".\n"
+            "For a fresh installation, remove only mods/" + package["id"] + ".\n"
+        ).encode("utf-8")
+    else:
+        for entry in package["files"]:
+            entries.append(("server/" + entry["destination"], entry))
+            if entry["role"] == "client":
+                entries.append(("fastdl/" + entry["destination"], entry))
     if len(entries) > 4096:
         raise ValueError("Too many archive entries")
     if len({name.casefold() for name, _ in entries}) != len(entries):
@@ -165,7 +186,7 @@ def write_archive(manifest, root, output, *, max_bytes=DEFAULT_BUDGET):
         reports = {}
         with os.fdopen(fd, "w+b") as stream:
             with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as archive:
-                for name, entry in sorted(entries + [("manifest.json", None)], key=lambda item: item[0]):
+                for name, entry in sorted(entries + [(metadata_name, None)], key=lambda item: item[0]):
                     if entry is None:
                         archive.writestr(zip_info(name), metadata)
                     else:
@@ -181,7 +202,7 @@ def write_archive(manifest, root, output, *, max_bytes=DEFAULT_BUDGET):
         # Same-directory hardlink publication is no-replace, unlike os.replace.
         # It leaves the final name absent after any earlier validation failure.
         os.link(temporary, output)
-        return {"archive": str(output), "archive_sha256": digest, "archive_bytes": size,
+        return {"archive": str(output), "archive_sha256": digest, "archive_bytes": size, "archive_layout": layout,
                 "files": [reports[key] for key in sorted(reports)]}
     finally:
         Path(temporary).unlink(missing_ok=True)
@@ -192,6 +213,8 @@ def main():
     parser.add_argument("manifest")
     parser.add_argument("--root", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--layout", choices=("staging", "player"), default="staging",
+                        help="Operator server/FastDL staging, or player-only mods folder and short instructions")
     parser.add_argument("--sdk-root", type=Path, default=ROOT / "sdk/modding",
                         help="Reviewed local SDK source directory; never read from a manifest")
     parser.add_argument("--active", action="append", nargs=2, default=[], metavar=("MANIFEST", "ROOT"),
@@ -228,7 +251,7 @@ def main():
                                          server_source=args.server_source, protocol=args.protocol, mode=args.mode)
         if errors:
             raise ValueError("Compatibility gate: " + "; ".join(errors))
-        result = write_archive(manifest, Path(args.root), Path(args.output), max_bytes=args.max_bytes)
+        result = write_archive(manifest, Path(args.root), Path(args.output), max_bytes=args.max_bytes, layout=args.layout)
         result.update(valid=True, packaged=True, ready_to_deploy=False, validation_limit=LIMIT,
                       active_dependencies="Payloads checked at supplied roots; running-server state is not inspected.")
     except (OSError, ValueError, TypeError, KeyError, AttributeError, RecursionError) as error:
