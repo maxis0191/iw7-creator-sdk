@@ -75,6 +75,79 @@ class DistributionTests(unittest.TestCase):
                 self.assertEqual(info.create_system, 3)
         self.assertEqual(first["files"][0]["aurora_crc32"], "2639F4CB")
 
+    def add_server_script(self):
+        raw = b"init() { return; }\n"
+        (self.root / "server.gsc").write_bytes(raw)
+        node_id = "scriptfile:custom_scripts/cp/paris_hud_probe.gsc"
+        self.manifest["package"]["files"].append(
+            dict(id="server_script", role="server", source="server.gsc",
+                 destination="iw7-mod/custom_scripts/cp/paris_hud_probe.gsc",
+                 bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest(), closure_roots=[node_id]))
+        self.manifest["package"]["closure"]["roots"].append(node_id)
+        self.manifest["package"]["closure"]["nodes"].append(
+            dict(id=node_id, kind="scriptfile", scope="server", sha256=hashlib.sha256(raw).hexdigest(), requires=[]))
+        self.manifest["requires"]["server"].append("gsc-custom-scripts/1")
+        self.manifest["lifecycle"]["entrypoints"].append(
+            dict(side="server", path="custom_scripts/cp/paris_hud_probe.gsc", symbol="init"))
+
+    def test_player_archive_is_copyable_and_excludes_operator_and_developer_files(self):
+        self.add_server_script()
+        (self.root / "launcher.ps1").write_text("never include creator tooling")
+        (self.root / "private.json").write_text("never include local configuration")
+        for suffix in ("sabl", "sabs"):
+            (self.root / ("fixture." + suffix)).write_bytes(self.payload)
+            entry = copy.deepcopy(self.manifest["package"]["files"][0])
+            entry.update(id=suffix, source="fixture." + suffix, destination="mods/paris_hud_probe/mod." + suffix)
+            self.manifest["package"]["files"].append(entry)
+        result = mod.write_archive(self.manifest, self.root, self.root / "player.zip", layout="player")
+        with zipfile.ZipFile(self.root / "player.zip") as archive:
+            self.assertEqual(archive.namelist(), ["PLAY.txt", "mods/paris_hud_probe/mod.ff",
+                                                "mods/paris_hud_probe/mod.sabl", "mods/paris_hud_probe/mod.sabs"])
+            for suffix in ("ff", "sabl", "sabs"):
+                self.assertEqual(archive.read("mods/paris_hud_probe/mod." + suffix), self.payload)
+            text = archive.read("PLAY.txt").decode()
+            self.assertIn("Move an existing mods/paris_hud_probe outside the game folder", text)
+            self.assertIn("client is supplied separately", text)
+            self.assertIn("remove only the installed mods/paris_hud_probe", text)
+            self.assertIn("Do not merge folders", text)
+        self.assertEqual(result["archive_layout"], "player")
+        self.assertEqual(len(result["files"]), 3)
+        self.assertTrue(all(entry["destination"].startswith("mods/") for entry in result["files"]))
+
+    def test_player_archive_determinism_tamper_and_existing_output(self):
+        first = mod.write_archive(self.manifest, self.root, self.root / "one.zip", layout="player")
+        os.utime(self.root / "fixture.ff", (1_000_000, 1_000_000))
+        second = mod.write_archive(self.manifest, self.root, self.root / "two.zip", layout="player")
+        self.assertEqual(first["archive_sha256"], second["archive_sha256"])
+        before = (self.root / "one.zip").read_bytes()
+        with self.assertRaisesRegex(ValueError, "Output exists"):
+            mod.write_archive(self.manifest, self.root, self.root / "one.zip", layout="player")
+        self.assertEqual((self.root / "one.zip").read_bytes(), before)
+        (self.root / "fixture.ff").write_bytes(b"123456780")
+        with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+            mod.write_archive(self.manifest, self.root, self.root / "bad.zip", layout="player")
+        self.assertFalse((self.root / "bad.zip").exists())
+        self.assertEqual(list(self.root.glob(".iw7-package-*")), [])
+
+    def test_player_layout_server_only_missing_ff_and_unknown_route_refused(self):
+        for manifest, layout in ((self.other(), "player"), (self.manifest, "other")):
+            with self.subTest(layout=layout), self.assertRaises(ValueError):
+                mod.write_archive(manifest, self.root, self.root / "bad.zip", layout=layout)
+        manifest = copy.deepcopy(self.manifest); manifest["package"]["files"][0]["destination"] = "mods/paris_hud_probe/mod.sabs"
+        with self.assertRaisesRegex(ValueError, "mod.ff"):
+            mod.write_archive(manifest, self.root, self.root / "bad.zip", layout="player")
+        self.assertFalse((self.root / "bad.zip").exists())
+
+    def test_player_budget_charges_only_delivered_payloads(self):
+        # A player receives one FF, while operator staging intentionally duplicates it.
+        self.payload = b"x" * 4096; (self.root / "fixture.ff").write_bytes(self.payload)
+        self.manifest["package"]["files"][0].update(bytes=len(self.payload), sha256=hashlib.sha256(self.payload).hexdigest())
+        player = mod.write_archive(self.manifest, self.root, self.root / "player.zip", layout="player", max_bytes=8192)
+        self.assertLess(player["archive_bytes"], 8192)
+        with self.assertRaisesRegex(ValueError, "budget"):
+            mod.write_archive(self.manifest, self.root, self.root / "operator.zip", max_bytes=8192)
+        self.assertFalse((self.root / "operator.zip").exists())
+
     def test_tamper_refuses_and_leaves_no_archive_or_temp(self):
         for data in (b"123456780", b"1", b"1234567890"):
             (self.root / "fixture.ff").write_bytes(data)
@@ -210,6 +283,31 @@ class DistributionTests(unittest.TestCase):
         self.assertTrue(result["packaged"])
         self.assertFalse(result["ready_to_deploy"])
         self.assertFalse(self.manifest["package"]["evidence"][0]["status"] == "pass")
+
+    def test_player_cli_keeps_real_sdk_server_payload_and_compatibility_gates(self):
+        self.add_server_script()
+        code, result = self.cli(self.manifest, "--layout", "player")
+        self.assertEqual(code, 0, result)
+        self.assertEqual(result["archive_layout"], "player")
+        self.assertTrue(result["packaged"])
+        self.assertFalse(result["ready_to_deploy"])
+        with zipfile.ZipFile(self.root / "cli.zip") as archive:
+            self.assertEqual(archive.namelist(), ["PLAY.txt", "mods/paris_hud_probe/mod.ff"])
+        (self.root / "cli.zip").unlink()
+        # Projection does not bypass qualification of the complete author package.
+        (self.root / "server.gsc").write_bytes(b"changed server script")
+        code, result = self.cli(self.manifest, "--layout", "player")
+        self.assertEqual(code, 1, result)
+        self.assertFalse((self.root / "cli.zip").exists())
+
+    def test_player_cli_incomplete_closure_and_wrong_protocol_still_refused(self):
+        candidate = copy.deepcopy(self.manifest); candidate["package"]["closure"]["status"] = "incomplete"
+        code, result = self.cli(candidate, "--layout", "player")
+        self.assertEqual(code, 1, result)
+        self.assertFalse((self.root / "cli.zip").exists())
+        code, result = self.cli(self.manifest, "--layout", "player", "--protocol", "3")
+        self.assertEqual(code, 1, result)
+        self.assertFalse((self.root / "cli.zip").exists())
 
     def test_real_sdk_cli_rejects_bad_contract_missing_native_and_dependency(self):
         for mutate in (lambda m: m.update(unexpected=True),
