@@ -59,9 +59,12 @@ A real native frame shows 6/6 and "Completed | Ammunition reward claimed".
 The original host closed/restored managed files and Main audit, preserved bank
 state and released ownership. No post-refill depletion test was added.
 
-The retained "Collect ammunition reward" hint remains visible after claiming;
-that is a known UX limitation of this mitigation. The HUD supplies the completed
-state. This refills the equipped firearm only, not the complete retail Max Ammo
+J retained "Collect ammunition reward" after claiming. A subsequent copy-only
+change makes that ready-phase hint "Interact with Soul Box", which stays valid
+after completion; the initial filling hint remains unchanged. No late hint
+setter is reintroduced. The runtime proof records the original J hash, and this
+new wording is source checked without another gameplay claim. The HUD supplies
+the completed state. This refills the equipped firearm only, not the complete retail Max Ammo
 powerup callback. Multiplayer, recipient closure and owner acceptance remain
 pending.
 

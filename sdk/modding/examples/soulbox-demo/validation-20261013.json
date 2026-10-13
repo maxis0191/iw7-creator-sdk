@@ -1,7 +1,7 @@
 {
   "date": "2026-10-13",
-  "source_sha256": "e0dd3f35ca61e8f7956a55b3acf75baa3714d1ea21ef8c515900f2788a8ee4b9",
-  "source_bytes": 12342,
+  "source_sha256": "9c25aaeeca5d7ec070dbca57e4fa7c9ebeb487dd60554b29dc0de0e08b83626d",
+  "source_bytes": 12339,
   "compiler_version": "gsc-tool 1.5.1.359",
   "compiler_sha256": "1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb",
   "phases": [
@@ -18,7 +18,7 @@
       "exit_code": 0
     }
   ],
-  "compiled_sha256": "b2c3f2f439c3a10b0b81657707dbad867d98c4a37d31a93b722f7fd0b00e93ec",
+  "compiled_sha256": "c4e972c4bd1ac00a3f821591564611f9ecc9b7df09dd5f208ffc4fd1a0df3bb4",
   "script_imports_declared": 0,
   "binary_consumption_audited": false,
   "asset_origin": "IW7 retail zmb_coin_alien",
@@ -26,11 +26,15 @@
   "recipient_asset_closure_verified": false,
   "runtime_link_verified": true,
   "pixels_verified": true,
+  "current_source_runtime_executed": false,
+  "post_runtime_change": "Copy only: ready-phase retained hint now Interact with Soul Box; gameplay logic and absence of late hint mutation unchanged. Actual J used source e0dd3f35, not this new hash.",
   "owner_acceptance": false,
   "fixture_offline_compile_limit": "gsc-tool has no paris_test_protect native extension; fixture parsed offline and linked in the actual protected Aurora J run",
   "runtime_j": {
     "run": "20261013-225658-145-de8a4896",
     "source_commit": "0a5b8674b1c761e9a0729942f58d879fef8ccded",
+    "source_sha256": "e0dd3f35ca61e8f7956a55b3acf75baa3714d1ea21ef8c515900f2788a8ee4b9",
+    "source_bytes": 12342,
     "server_source_commit": "c728f32f66eaa6817f78bf6f72922893dc2fb1e3",
     "native_sha256": "958613f3ade0347f991071a0a8a8502cfb66c816c5c084c5214f05078f7b0296",
     "protocol": 2,

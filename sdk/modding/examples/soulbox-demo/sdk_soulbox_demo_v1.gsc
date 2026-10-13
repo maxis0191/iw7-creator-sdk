@@ -144,7 +144,7 @@ ordinary_killed(a0, attacker, damage, means, weapon, direction, hitloc, a7, a8)
         {
             state.phase = "ready";
             state.model setscriptablepartstate("fx", "green");
-            state.model sethintstring("Collect ammunition reward");
+            state.model sethintstring("Interact with Soul Box");
         }
         render_all(state);
         level notify("sdk_soulbox_demo_progress", state.souls, state.phase);
