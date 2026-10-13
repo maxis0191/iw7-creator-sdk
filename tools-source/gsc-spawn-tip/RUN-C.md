@@ -83,9 +83,23 @@ the expected normal-exit marker. Neither an exit request nor process absence
 was substituted for this actual terminal completion. No recovery incident or
 second host was used.
 
-The coordinator's separate absence audit is a distinct check and is not claimed
-by this producer checkpoint. No opaque binary or asset was reread/hashed after
+The independent absence witness passed at `2026-10-13T08:46:54.0430224Z`.
+Four pinned receipts and the actual completed terminal command agreed. The
+three recorded host/parent/root-child identities and observable descendants
+were absent, with no lease, heavy/game process or UDP 27016/27116/27117 listener.
+Main remained stopped and the original unrelated Python identity was preserved.
+The compiler/auditor process names were absent; their individual historical
+identity tuples were **not recorded**, so no separate exact-tuple absence is
+claimed for them. The witness relied on the original lifecycle/host receipts;
+it did not inspect old in-memory contexts/handles or treat the child-only report
+as sufficient closure proof. No opaque binary or asset was reread/hashed after
 release; subsequent work used bounded JSON receipts and file metadata only.
+
+The inventory worktree retains
+`runtime/spawn-tip-offline-c-independent-absence.local.json`, 6,261 bytes,
+SHA256 `33f39fab1d6a5f9ef5f65f533a6673b000db3d2939c1c97768e49d26b77e32b0`.
+Adding that witness to the producer's 66,355-byte accounting gives **72,616
+bytes arithmetically**; it is not an independent complete-scope disk recount.
 
 ## Retained evidence pins
 
@@ -107,7 +121,6 @@ digest; the correct 64-character digest above is the structured receipt value.
 | `spawn-tip-offline-c/phase/references.bound.json` | 3977 | `5f292a8917c22f414572948c180949caa356f9bfbdea2f9963ffbf42411f408c` |
 | `spawn-tip-offline-c/phase/disassembly.gscasm` | 1645 | `4dcaedfe5a10051fc1f5a840c53ddfdbcd03369f131771fe2537b87e5cb31d5a` |
 
-Next action: complete the coordinator's independent closure/absence review and
-review how Creator can consume this exact evidence without asserting runtime
+Next action: review how Creator can consume this exact evidence without asserting runtime
 or package readiness. Changing the source or tools requires fresh qualification;
 the existing output root and obsolete Plans A/B are preserved, not reused.
