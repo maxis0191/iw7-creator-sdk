@@ -22,6 +22,7 @@ init()
     level.sdk_original_rig_probe = state;
     level thread connections(state);
     level thread shutdown(state);
+    level thread stop_requested(state);
     print("[SDK original rig] PRECACHE_RETURNED; mode=" + mode + "; registry_pending=1.");
 }
 
@@ -82,7 +83,7 @@ playback(state)
 {
     level endon("game_ended");
     level endon("sdk_original_rig_probe_stopped");
-    while (!getdvarint("sdk_original_rig_probe_stop"))
+    for (;;)
     {
         if (state.mode == "ANIMATE" && getdvarint("sdk_original_rig_probe_play"))
         {
@@ -97,6 +98,13 @@ playback(state)
         }
         wait 0.1;
     }
+}
+
+stop_requested(state)
+{
+    level endon("game_ended");
+    level endon("sdk_original_rig_probe_stopped");
+    while (!getdvarint("sdk_original_rig_probe_stop")) wait 0.1;
     stop(state);
 }
 
@@ -116,6 +124,7 @@ stop(state)
 
 shutdown(state)
 {
+    level endon("sdk_original_rig_probe_stopped");
     level waittill("game_ended");
     stop(state);
 }

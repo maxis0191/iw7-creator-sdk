@@ -104,7 +104,8 @@ or binding fails, retain the exact failing name/phase and coordinate only the
 demonstrated missing primitive with the native owner; do not invent NCS assets.
 
 Set `sdk_original_rig_probe_stop 1` to delete the actors and stop scene threads;
-native game end also cleans up. The external runner restores changed files,
+the stop watcher is active from init, including while awaiting a join or intro.
+Native game end also cleans up. The external runner restores changed files,
 profile/config and dvars, checks hashes and closes only its own exact processes.
 This source changes no player weapons, perks, health, origin or camera.
 
