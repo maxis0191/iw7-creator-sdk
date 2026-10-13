@@ -60,7 +60,7 @@
   "runtime_qualified": false,
   "owner_gameplay_acceptance": "not requested; unchanged",
   "main_runtime": "untouched",
-  "ci": "Blocked: SDK issue #2. Hosted sdk-modding-tests failed at 9edc839; diagnostic-forwarding correction 899a3cd has not executed because of billing admission. Do not apply the quota exception over this unresolved executed failure.",
+  "ci": "Resolved existing SDK failure: PR3 fixes Windows 8.3 path identity; full Windows source CI passed twice at fa266ca. Later owner-GO/portable-job changes encountered billing admission before runner; portable Linux job has not executed.",
   "ci_executed_failure": {
     "head": "9edc8398fdc34d9f22c66fc67fbf172f11f34d73",
     "run": 38401111947,
@@ -77,5 +77,29 @@
     "steps": [],
     "ui_reason": "Account payment/spending-limit admission blocker"
   },
-  "issue": "https://github.com/maxis0191/iw7-creator-sdk/issues/2"
+  "issue": "https://github.com/maxis0191/iw7-creator-sdk/issues/2",
+  "resolved_failure": {
+    "issue": "https://github.com/maxis0191/iw7-creator-sdk/issues/2",
+    "fix_pr": "https://github.com/maxis0191/iw7-creator-sdk/pull/3",
+    "fix_head": "01ce65f59f6b102af57b895d135abcb265d2bb89",
+    "reviewed_merge": "fa266ca6694700b34d34d86f51692d0db37a782c",
+    "cause": "PowerShell Windows short temporary path vs Python canonical long path rejected identical project/output identities. Redirect checks now precede resolution.",
+    "windows_ci_runs": [
+      38420917880,
+      38420910893
+    ],
+    "windows_ci_success": true,
+    "creator_local": {
+      "tests": 73,
+      "passed": 73,
+      "windows_alias_regressions": 2,
+      "alias_tests_skipped": false
+    },
+    "portable_linux": {
+      "declared": true,
+      "executed": false,
+      "reason": "Billing admission refused before runner; optional added coverage, no failed Linux test."
+    }
+  },
+  "merge_state": "Existing executed failure resolved; final exact-head source/CI and admission evidence is recorded in PR1."
 }
