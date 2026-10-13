@@ -106,9 +106,10 @@ class DistributionTests(unittest.TestCase):
             for suffix in ("ff", "sabl", "sabs"):
                 self.assertEqual(archive.read("mods/paris_hud_probe/mod." + suffix), self.payload)
             text = archive.read("PLAY.txt").decode()
-            self.assertIn("Back up mods/paris_hud_probe", text)
+            self.assertIn("Move an existing mods/paris_hud_probe outside the game folder", text)
             self.assertIn("client is supplied separately", text)
-            self.assertIn("remove only mods/paris_hud_probe", text)
+            self.assertIn("remove only the installed mods/paris_hud_probe", text)
+            self.assertIn("Do not merge folders", text)
         self.assertEqual(result["archive_layout"], "player")
         self.assertEqual(len(result["files"]), 3)
         self.assertTrue(all(entry["destination"].startswith("mods/") for entry in result["files"]))

@@ -159,12 +159,12 @@ def write_archive(manifest, root, output, *, max_bytes=DEFAULT_BUDGET, layout="s
         metadata_name = "PLAY.txt"
         metadata = (
             package["id"] + " " + package["version"] + "\n\n"
-            "1. Close the game. Back up mods/" + package["id"] + " if it already exists.\n"
+            "1. Close the game. Move an existing mods/" + package["id"] + " outside the game folder as a backup.\n"
             "2. Copy the mods folder from this archive into your Infinite Warfare game folder.\n"
             "3. Start the compatible community client supplied for this mod and join its server.\n\n"
             "The client is supplied separately. Server scripts and creator tools are not needed here.\n"
-            "To undo: close the game and restore your backup of mods/" + package["id"] + ".\n"
-            "For a fresh installation, remove only mods/" + package["id"] + ".\n"
+            "To undo: close the game, remove only the installed mods/" + package["id"] + ",\n"
+            "then move your original backup folder back if you had one. Do not merge folders.\n"
         ).encode("utf-8")
     else:
         for entry in package["files"]:

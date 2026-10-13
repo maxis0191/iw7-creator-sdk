@@ -168,8 +168,11 @@ supplied separately by the native release owner; no executable is inferred from
 the mod or copied from the build root. `PLAY.txt` tells the player to close the
 game, back up an existing `mods/<id>`, copy the `mods` directory into the legitimate
 game installation, start the compatible community client and join the intended
-server. It also describes restoring that backup or removing only a newly added
-`mods/<id>` after the game is closed.
+server. An existing `mods/<id>` must first be moved outside the game installation
+as a backup, leaving an absent destination. To roll back, close the game, remove
+only the newly installed `mods/<id>` and move the original folder back. Do not
+merge either folder: this prevents old optional SABL/SABS files surviving a release
+that omits them, or newly added files surviving restoration.
 
 Server-only packages have no player assets and are refused in this layout. The
 existing operator ZIP remains the input for `Install-CommunityMod.Package.py`
