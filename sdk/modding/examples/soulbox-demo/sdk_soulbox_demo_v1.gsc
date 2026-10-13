@@ -96,6 +96,12 @@ place(state)
     model setmodel("zmb_coin_alien");
     model setscriptablepartstate("fx", "red");
     model makeusable();
+    // Retail CP interaction models declare these explicitly. The placement is
+    // about 102.5 units from the player; unspecified native defaults are not a
+    // guarantee that a visible hint can actually be used at this distance.
+    model setuserange(120);
+    model setusefov(360);
+    model usetriggerrequirelookat(0);
     model sethintstring("Fill the Soul Box with nearby zombie kills");
     model thread interact(state);
     print("[SDK Soul Box] READY; entity=" + model getentitynumber() + "; origin=" + origin + "; souls=0; rewards=0; pixels_pending=1.");
@@ -151,6 +157,7 @@ interact(state)
 {
     level endon("game_ended");
     self endon("death");
+    print("[SDK Soul Box] USE_WATCH; armed=1; range=120; fov=360.");
     for (;;)
     {
         self waittill("trigger", player);

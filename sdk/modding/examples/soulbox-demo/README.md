@@ -31,6 +31,13 @@ native firing/Use inputs. It does not deal scripted damage or fabricate kills.
 That fixture is excluded from the creator payload. Protection, snapshots,
 captures and restoration belong to the test harness, not this gameplay script.
 
+Protected native-input runs F/G credited six natural nearby bullet kills and
+rendered the 6/6 HUD. G's two 350 ms Use inputs did not reach the token listener;
+its visible stock ammo pickup was not a Soul Box reward. The next source
+candidate declares the retail Use range/FOV explicitly (120/360) and permits
+nearby Use without a look-at requirement. The private driver will stabilize and
+hold Use for one second. This interaction correction is not runtime-verified.
+
 The template manifest records stock-model closure as pending. Parse/compile
 success does not prove runtime linking, rendering, multiplayer, recipient
 closure or owner acceptance. Current results are in the dated validation file;
