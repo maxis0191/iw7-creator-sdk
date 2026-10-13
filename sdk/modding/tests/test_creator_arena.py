@@ -247,7 +247,7 @@ class ArenaCreatorTests(unittest.TestCase):
         descriptor = json.loads(descriptor_path.read_bytes())
         descriptor["assets"].update(roundtrip_sha256=sha(proof_raw), build_receipt_sha256=sha(state_raw))
         descriptor_path.write_bytes(encoded(descriptor))
-        with self.assertRaisesRegex(ValueError, "partBits|root.*mask"):
+        with self.assertRaisesRegex(ValueError, "root part bits|partBits|root.*mask"):
             self.invoke()
         self.assertFalse(self.output.exists())
 

@@ -199,7 +199,7 @@
     {
       "id": "x64-zt-extensions",
       "repository": "https://github.com/maxis0191/x64-zt-extensions.git",
-      "revision": "af35f8d3a05c85a56ce6131a553016740b021c8b",
+      "revision": "a6478c67ea59e85fa5dc7c373d47f94ed12d22ad",
       "files": [
         "ops/doom-source/half_uv.hpp",
         "ops/doom-source/prepare_ff.py",
