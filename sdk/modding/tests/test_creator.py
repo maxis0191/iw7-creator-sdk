@@ -95,6 +95,194 @@ class CreatorTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("Namespace collision", " ".join(report["errors"]))
 
+    def package_fixture(self):
+        """Statically ready synthetic assertions, never a runtime-qualified mod."""
+        self.manifest = json.loads((SDK / 'examples/server-spawn-tip/manifest.json').read_text())
+        payload = b'// SYNTHETIC PACKAGE FIXTURE ONLY - not linked or run in IW7\n'
+        (self.project / 'sdk_spawn_tip.gsc').write_bytes(payload)
+        digest = hashlib.sha256(payload).hexdigest()
+        package = self.manifest['package']
+        package['files'][0].update(bytes=len(payload), sha256=digest)
+        package['closure'].update(status='complete', evidence_ref='SYNTHETIC TEST ASSERTION ONLY')
+        package['closure']['nodes'][0]['sha256'] = digest
+        self.save_manifest()
+        return payload
+
+    def invoke_package(self, *extra, **options):
+        return self.invoke('-Action', 'Package', '-Output', str(self.root / 'package.zip'), *extra, **options)
+
+    def test_package_generic_server_only_uses_real_writer_and_no_beacon_tools(self):
+        payload = self.package_fixture()
+        tools = self.root / 'package-tools'
+        for relative in ('sdk/modding/manifest.py', 'sdk/modding/manifest.schema.json', 'sdk/modding/capabilities.json',
+                         'ops/Validate-ModPackage.py', 'ops/modding/Distribution-Compat.py', 'ops/modding/Package-CommunityMod.py'):
+            target = tools / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes((TOOLS / relative).read_bytes())
+        # No Beacon template, compiler, builder or finalizer exists in this root.
+        code, report = self.invoke_package(mutates=True, tools=tools)
+        self.assertEqual(code, 0, report)
+        self.assertTrue(report['packaged'])
+        for key in ('build_executed', 'build_verified', 'materialized', 'runtime_ready', 'owner_accepted'):
+            self.assertFalse(report[key], key)
+        self.assertNotIn('adapter_plan_requested', report)
+        self.assertNotIn('finalization', report)
+        self.assertFalse(report['package_result']['ready_to_deploy'])
+        with zipfile.ZipFile(self.root / 'package.zip') as archive:
+            self.assertEqual(set(archive.namelist()), {'manifest.json', 'server/iw7-mod/custom_scripts/cp/sdk_spawn_tip.gsc'})
+            self.assertEqual(archive.read('server/iw7-mod/custom_scripts/cp/sdk_spawn_tip.gsc'), payload)
+        self.assertEqual(report['package_result']['archive_sha256'], hashlib.sha256((self.root / 'package.zip').read_bytes()).hexdigest())
+        self.assertEqual(report['package_result']['archive_bytes'], (self.root / 'package.zip').stat().st_size)
+
+    def test_package_case_insensitive_action_and_missing_explicit_environment(self):
+        self.package_fixture()
+        code, report = self.invoke('-Action', 'package', '-Output', str(self.root / 'package.zip'), environment=False)
+        self.assertEqual(code, 1, report)
+        self.assertEqual(report['action'], 'Package')
+        self.assertIn('operator assertions', ' '.join(report['errors']))
+        code, report = self.invoke('-Action', 'Package')
+        self.assertEqual(code, 1, report)
+        self.assertIn('Output', ' '.join(report['errors']))
+
+    def test_package_generic_client_files_do_not_require_a_beacon_adapter(self):
+        self.package_fixture()
+        payload = b'SYNTHETIC PACKAGE TRANSPORT ONLY - NOT A FASTFILE'
+        (self.project / 'fixture.ff').write_bytes(payload)
+        digest = hashlib.sha256(payload).hexdigest()
+        self.manifest['requires']['client'].append('mod-fastfile-download/1')
+        self.manifest['requires']['server'].append('mod-fastfile-host/1')
+        self.manifest['compatibility']['coexistence'] = 'exclusive-fs-game'
+        package = self.manifest['package']
+        package['delivery'] = 'mod'
+        package['files'].append({'id': 'client_file', 'role': 'client', 'source': 'fixture.ff',
+                                 'destination': 'mods/sdk_spawn_tip/mod.ff', 'bytes': len(payload), 'sha256': digest,
+                                 'closure_roots': ['rawfile:sdk_spawn_tip']})
+        package['closure']['roots'].append('rawfile:sdk_spawn_tip')
+        package['closure']['nodes'].append({'id': 'rawfile:sdk_spawn_tip', 'kind': 'other', 'scope': 'client', 'sha256': digest, 'requires': []})
+        self.save_manifest()
+        code, report = self.invoke_package(mutates=True)
+        self.assertEqual(code, 0, report)
+        self.assertFalse(report['build_executed'])
+        self.assertTrue(report['packaged'])
+        with zipfile.ZipFile(self.root / 'package.zip') as archive:
+            for prefix in ('server', 'fastdl'):
+                self.assertEqual(archive.read(prefix + '/mods/sdk_spawn_tip/mod.ff'), payload)
+
+    def test_package_invalid_manifest_is_refused_without_zip(self):
+        self.package_fixture()
+        self.manifest['namespace'] = 'not_the_package_id'
+        self.save_manifest()
+        code, report = self.invoke_package()
+        self.assertEqual(code, 1, report)
+        self.assertIn('namespace', ' '.join(report['errors']))
+        self.assertFalse((self.root / 'package.zip').exists())
+
+    def test_package_missing_dependency_and_active_collision_refuse(self):
+        self.package_fixture()
+        self.manifest['dependencies'] = [{'id': 'missing_support', 'version': '1.0.0'}]
+        self.save_manifest()
+        code, report = self.invoke_package()
+        self.assertEqual(code, 1, report)
+        self.assertIn('Missing exact dependency', ' '.join(report['errors']))
+        self.manifest['dependencies'] = []
+        self.save_manifest()
+        code, report = self.invoke_package('-ActiveProject', str(self.project))
+        self.assertEqual(code, 1, report)
+        self.assertIn('Namespace collision', ' '.join(report['errors']))
+
+    def test_package_checks_active_dependency_bytes_with_existing_validator(self):
+        self.package_fixture()
+        active = self.root / 'active'
+        active.mkdir()
+        data = json.loads(json.dumps(self.manifest).replace('sdk_spawn_tip', 'sdk_support'))
+        (active / 'manifest.json').write_text(json.dumps(data))
+        (active / 'sdk_support.gsc').write_bytes((self.project / 'sdk_spawn_tip.gsc').read_bytes())
+        self.manifest['dependencies'] = [{'id': 'sdk_support', 'version': '0.1.0'}]
+        self.save_manifest()
+        code, report = self.invoke_package('-ActiveProject', str(active), mutates=True)
+        self.assertEqual(code, 0, report)
+        self.assertTrue(report['packaged'])
+        (self.root / 'package.zip').unlink()
+        (active / 'sdk_support.gsc').write_bytes(b'changed synthetic dependency')
+        code, report = self.invoke_package('-ActiveProject', str(active))
+        self.assertEqual(code, 1, report)
+        self.assertIn('Payload size mismatch', ' '.join(report['errors']))
+
+    def test_package_missing_unmeasured_and_changed_payload_refuse(self):
+        self.package_fixture()
+        path = self.project / 'sdk_spawn_tip.gsc'
+        original = path.read_bytes()
+        for mutation in ('missing', 'unmeasured', 'hash'):
+            with self.subTest(mutation=mutation):
+                self.package_fixture()
+                if mutation == 'missing':
+                    path.unlink()
+                elif mutation == 'unmeasured':
+                    self.manifest['package']['files'][0].update(bytes=None, sha256=None)
+                    self.save_manifest()
+                else:
+                    path.write_bytes(b'X' * len(original))
+                code, report = self.invoke_package()
+                self.assertEqual(code, 1, report)
+                self.assertFalse((self.root / 'package.zip').exists())
+                self.assertIn('Package gate refused', ' '.join(report['errors']))
+
+    def test_package_does_not_invent_missing_closure_proof_or_ignore_failed_evidence(self):
+        for mutation in ('closure', 'reference', 'failed-evidence'):
+            with self.subTest(mutation=mutation):
+                self.package_fixture()
+                package = self.manifest['package']
+                if mutation == 'closure':
+                    package['closure'].update(status='incomplete', evidence_ref=None)
+                elif mutation == 'reference':
+                    package['closure']['evidence_ref'] = None
+                else:
+                    package['evidence'][1].update(status='fail', reference='SYNTHETIC FAILED TEST', maps=['cp_zmb'])
+                self.save_manifest()
+                code, report = self.invoke_package()
+                self.assertEqual(code, 1, report)
+                self.assertTrue(report['errors'])
+                self.assertFalse((self.root / 'package.zip').exists())
+
+    def test_package_preserves_existing_output_and_refuses_project_overlap(self):
+        self.package_fixture()
+        (self.root / 'package.zip').write_bytes(b'keep this existing user file')
+        code, report = self.invoke_package()
+        self.assertEqual(code, 1, report)
+        self.assertIn('existing output is preserved', ' '.join(report['errors']))
+        code, report = self.invoke('-Action', 'Package', '-Output', str(self.project / 'inside.zip'))
+        self.assertEqual(code, 1, report)
+        self.assertIn('outside all input projects', ' '.join(report['errors']))
+
+    def test_package_refuses_adapter_and_build_options_before_execution(self):
+        self.package_fixture()
+        for option, value in (('-Adapter', 'BeaconV1'), ('-BuildParameters', 'unused.json'),
+                              ('-BuildRoot', 'unused'), ('-FinalizeRoot', 'unused'),
+                              ('-RecipientProof', 'unused.json'), ('-RecipientRoot', 'unused'),
+                              ('-GscAuditEvidence', 'unused.json')):
+            with self.subTest(option=option):
+                code, report = self.invoke_package(option, value)
+                self.assertEqual(code, 1, report)
+                self.assertIn('Package requires Adapter None', ' '.join(report['errors']))
+                self.assertNotIn('adapter_plan_requested', report)
+
+    def test_editable_server_example_is_plan_only_and_has_no_beacon_identity(self):
+        example = SDK / 'examples/server-spawn-tip'
+        self.manifest = json.loads((example / 'manifest.json').read_text())
+        self.save_manifest()
+        source = (example / 'sdk_spawn_tip.gsc').read_bytes()
+        (self.project / 'sdk_spawn_tip.gsc').write_bytes(source)
+        self.assertIn(b'getdvarint("dedicated")', source)
+        self.assertIn(b'getdvarint("sdk_spawn_tip_enable")', source)
+        self.assertNotIn(b'beacon', source.lower())
+        self.assertNotIn(b'scripts\\engine', source)
+        code, report = self.invoke()
+        self.assertEqual(code, 0, report)
+        self.assertTrue(report['pending'])
+        code, report = self.invoke_package()
+        self.assertEqual(code, 1, report)
+        self.assertFalse((self.root / 'package.zip').exists())
+
     def test_edited_gsc_is_not_accepted_as_fixed_beacon(self):
         with (self.project / "sdk_beacon.gsc").open("ab") as output:
             output.write(b"\n// changed project\n")
