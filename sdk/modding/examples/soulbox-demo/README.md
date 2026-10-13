@@ -34,13 +34,16 @@ captures and restoration belong to the test harness, not this gameplay script.
 Protected native-input runs F/G/H credited six natural nearby bullet kills and
 rendered the 6/6 HUD. G's two 350 ms Use inputs did not reach the token listener;
 its visible stock ammo pickup was not a Soul Box reward. H's explicit retail
-Use range/FOV (120/360, nearby Use without a look-at requirement) reached an
+Use range/FOV (120/360) reached an
 actual token trigger after two engine button edges. Reserve and magazine refill
 operations returned, then gameplay ended before the final reward receipt.
 The run remains failed; its owned empty frontend was recovered and all files,
 Main audit and resource ownership restored.
 
-The next source keeps the ready token's observed green state and adds ammunition
+H also reported a script error: usetriggerrequirelookat refuses script_model;
+retail applies that method to interaction_trigger. I removes the invalid call
+and retains the range/FOV. The next source keeps the ready token's observed
+green state and adds ammunition
 readback evidence. It removes the unqualified cosmetic `fx/blue` transition;
 retail selects blue for `zmb_coin_space`, while this example uses
 `zmb_coin_alien`. That transition is a suspect, not a proven cause of the ended

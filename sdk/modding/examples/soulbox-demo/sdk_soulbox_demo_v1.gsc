@@ -101,7 +101,6 @@ place(state)
     // guarantee that a visible hint can actually be used at this distance.
     model setuserange(120);
     model setusefov(360);
-    model usetriggerrequirelookat(0);
     model sethintstring("Fill the Soul Box with nearby zombie kills");
     model thread interact(state);
     print("[SDK Soul Box] READY; entity=" + model getentitynumber() + "; origin=" + origin + "; souls=0; rewards=0; pixels_pending=1.");
@@ -209,9 +208,12 @@ interact(state)
         // Retain the ready token's observed green state. Retail uses fx/blue
         // for coin_space; that state is not qualified on this coin_alien.
         state.model sethintstring("Soul Box complete");
+        print("[SDK Soul Box] CLAIM_STAGE; hint_set=1.");
         player iprintln("Soul Box complete! Equipped firearm ammunition refilled.");
         render_all(state);
+        print("[SDK Soul Box] CLAIM_STAGE; hud_rendered=1.");
         level notify("sdk_soulbox_demo_claimed", player, weapon);
+        print("[SDK Soul Box] CLAIM_STAGE; notify_sent=1.");
         print("[SDK Soul Box] REWARD; count=" + state.rewards + "; weapon=" + weapon + "; clip_before=" + before_clip + "; clip_after=" + state.reward_clip + "; stock_before=" + before_stock + "; stock_after=" + state.reward_stock + ".");
     }
 }
