@@ -26,11 +26,85 @@ dependency versions, namespace/destination/asset collisions, explicit conflicts,
 one fs_game, capabilities and source/protocol assertions are checked by the
 existing Distribution checker. Planning does not certify active payload bytes.
 
-`-Adapter None` supports generic contract planning. `BeaconV1` is deliberately
+`-Adapter None` supports generic contract planning and packaging of an already
+prepared project. `BeaconV1` is deliberately
 limited to `sdk_beacon` on `cp_zmb` and the exact reviewed original-template GSC.
 It does not accept an arbitrary edited game project as a working compiler input.
 `AnimationProbe` and `MaterialV2` are named extension points with explicit blocked
 status until their actual adapters and evidence paths are connected.
+
+## Package an existing project
+
+`-Action Package` accepts a generic, statically ready `manifest.json` and its
+existing files, including server-only projects. It requires `-Adapter None`
+(the default), a fresh `-Output` outside all input projects, and explicit
+`-ClientSource`, `-ServerSource` and `-Protocol` assertions. It invokes no adapter,
+compiler, builder, finalizer, game or resource reservation.
+
+```powershell
+./sdk/modding/Creator.ps1 -Project C:/author/ready-project -Action Package `
+  -Output C:/author/releases/my-mod.zip `
+  -ClientSource $ClientSource -ServerSource $ServerSource -Protocol $Protocol -Json
+```
+
+Use the source revisions and protocol established for the intended environment;
+these arguments do not measure installed binaries. The output parent must exist.
+Pass every other intended active project with `-ActiveProject`, as for Plan.
+Their declared compatibility and measured payloads are checked, but their files
+are not bundled into the primary project's ZIP.
+
+Creator calls the existing `Package-CommunityMod.py`, which remains the only ZIP
+writer. Its existing `manifest.py` and `Distribution-Compat.py` gates check the
+contract, capabilities/source/protocol, exact dependency versions, conflicts,
+collisions, bounded file sizes/hashes and complete declared dependency closure.
+Missing bytes, stale hashes, incomplete closure or missing closure evidence,
+failed evidence, and existing outputs remain refusals. Build/materialization
+parameters, recipient proof adapters and `GscAuditEvidence` are not accepted by
+Package; qualify the project before invoking it.
+
+Exit 0 means the existing packager succeeded and Creator checked the resulting
+archive's path, length and SHA256 against its receipt. `packaged=true` does not
+set `build_executed`, `build_verified`, `materialized`, `runtime_ready` or
+`owner_accepted`. `package_result.ready_to_deploy` stays false. On refusal,
+Creator exits 1 and reports the existing validator's error. It never fills in
+missing hashes, manufactures a proof, edits the manifest or overwrites an output.
+
+Package retains the existing **package versus delivery** distinction: runtime
+evidence may still be pending in a statically ready archive. Delivery validation
+requires passed source-check/runtime-link evidence for every declared map (and
+offline-load for client files). Package does not run or bypass that later gate.
+Closure references and evidence records remain declarations, not authenticated
+runtime observations. Plan, Build and Materialize keep their existing behavior;
+Build shares the same package dispatch and final archive receipt check.
+
+### Editable server example
+
+[server-spawn-tip](examples/server-spawn-tip/manifest.json) contains the original
+[sdk_spawn_tip.gsc](examples/server-spawn-tip/sdk_spawn_tip.gsc). It proposes one
+English team tip after a player's first spawn, with dedicated/opt-in/map guards,
+duplicate-init protection and thread termination on disconnect/game end. It uses
+no Beacon model, HUD, fastfile, external script import or player-state mutation.
+In a separately authorized test deployment it requires `sdk_spawn_tip_enable=1`
+on `cp_zmb`. Visibility, builtin semantics and runtime linking remain untested.
+
+Copy the example to a separate author project, edit the message, and run Plan
+with the explicit environment arguments. Its manifest intentionally leaves file
+hashes and closure evidence unqualified, so Package refuses it as shipped. Record
+actual hashes and the reviewed dependency inventory for the final edited source;
+do not turn pending evidence into passing evidence to obtain a ZIP. Later runtime
+testing and acceptance remain separate. No shared validator or manifest schema
+is changed by this example.
+
+The Package CLI tests use temporary, explicitly labeled synthetic ready fixtures
+and the real validators/ZIP writer. Synthetic proof references test the gate's
+orchestration only; they are not game evidence or distributable example releases.
+
+Source checkpoint, 2026-10-13: the SDK suite completed 288 tests, with 287 passed
+and one existing Windows symlink-permission skip. Eleven new CLI tests cover
+Package and the editable example; existing Plan/Build/Materialize cases remain
+green. PowerShell syntax passed. No native build, real package distribution,
+stock access, admission or game run was performed. The example's GSC runtime
+compilation/linking and message visibility remain pending.
 
 ## Explicit self-contained source selection
 
