@@ -24,6 +24,78 @@ def module(path, name):
     return value
 
 
+def bind(project, source_root, build_root, tools_root, *, manifest, review_reference):
+    """Write the existing composition descriptor from stable authored inputs.
+
+    This binds bytes and declarations only. Materialize remains responsible for
+    independent geometry/build validation; no qualification is added here.
+    """
+    f = module(Path(tools_root) / "sdk/modding/Finalize-BeaconProject.py", "model_shared_checks")
+    require = f.require
+    roots = [f.safe_existing(p).resolve(strict=True) for p in (project, source_root, build_root)]
+    project, source, build = roots
+    require(all(p.is_dir() for p in roots), "Project/source/build roots must be directories")
+    root_id = f.identity(project.stat())[:2]
+    require(all(not a.is_relative_to(b) and not b.is_relative_to(a)
+                for i, a in enumerate(roots) for b in roots[i + 1:]),
+            "Project/source/build roots must be separate")
+    destination = project / "composition.json"
+    require(not os.path.lexists(destination), "Bind requires absent composition.json; existing author input is preserved")
+    require(isinstance(review_reference, str) and 0 < len(review_reference.strip()) <= 1024,
+            "Bind requires an explicit GSC/closure review reference")
+    inputs = f.Inputs()
+    original = f.decoded(inputs.read(project, "manifest.json", "project/manifest", METADATA))
+    require(f.encoded(original) == f.encoded(manifest), "Project manifest changed after Creator compatibility checks")
+    ident = original["namespace"]
+    gsc_name = ident + ".gsc"
+    require(f.sdk.transport.safe_path(gsc_name), "Existing <namespace>.gsc source required")
+    gsc = inputs.read(project, gsc_name, "project/gsc", 65536)
+    plan_raw = inputs.read(source, "model-ff-plan.json", "source/plan", METADATA)
+    plan = f.decoded(plan_raw)
+    require(plan["schema"] == "iw7.model-ff-plan/2" and plan["geometry_profile"] == PROFILE,
+            "Bind requires the explicit resident v2 source plan")
+    model_id, mesh_id = "xmodel:" + plan["model_name"], "xsurface:" + plan["mesh_name"]
+    declared = {node["id"] for node in original["package"]["closure"]["nodes"]}
+    require({model_id, mesh_id}.issubset(declared),
+            "Author closure must use the source plan's model and mesh names: " + model_id + ", " + mesh_id)
+    derived = inputs.read(source, "derived-export.json", "source/derivation", METADATA)
+    state_raw = inputs.read(build, "state.local.json", "build/state", METADATA)
+    state = f.decoded(state_raw)
+    roundtrip = inputs.read(build, "geometry-roundtrip.json", "build/roundtrip", METADATA)
+    ff = inputs.read(build, "mod.ff", "build/ff", 32 * METADATA)
+    require(state["SourcePlanSHA256"].lower() == f.sha(plan_raw) and
+            f.encoded(state["SourcePlan"]) == f.encoded(plan), "Retained build/source plan differs")
+    require(state["FF"]["Path"] == "mod.ff" and type(state["FF"]["Bytes"]) is int and
+            state["FF"]["Bytes"] == len(ff) and state["FF"]["SHA256"].lower() == f.sha(ff),
+            "Retained build FF tuple differs")
+    require(state["GeometryEvidenceSHA256"].lower() == f.sha(roundtrip),
+            "Retained build/roundtrip differs")
+    descriptor = {"schema": "iw7.creator-model-composition/1", "assets": {
+        "source_root": str(source), "source_plan_sha256": f.sha(plan_raw),
+        "derived_receipt_sha256": f.sha(derived), "build_receipt_sha256": f.sha(state_raw),
+        "roundtrip_sha256": f.sha(roundtrip), "ff_bytes": len(ff), "ff_sha256": f.sha(ff)}, "script": {
+        "path": gsc_name, "bytes": len(gsc), "sha256": f.sha(gsc),
+        "review_reference": review_reference, "closure_sha256": f.sha(f.encoded(original["package"]["closure"]))}}
+    raw = f.encoded(descriptor)
+    require(len(raw) <= 65536, "Composition descriptor exceeds existing input bound")
+    inputs.recheck()
+    require(f.identity(f.safe_existing(project).stat())[:2] == root_id, "Author directory identity changed")
+    with destination.open("xb") as stream:
+        stream.write(raw)
+    # Retain a failed/partial descriptor for diagnosis; never replace author data.
+    verified = f.Inputs()
+    require(verified.read(project, "composition.json", "composition", len(raw)) == raw,
+            "Written composition changed")
+    inputs.recheck()
+    verified.recheck()
+    require(f.identity(f.safe_existing(project).stat())[:2] == root_id, "Author directory identity changed")
+    return {"bindings_written": True, "composition_path": str(destination), "composition": descriptor,
+            "build_verified": False, "materialized": False, "package_ready": False,
+            "runtime_ready": False, "owner_accepted": False,
+            "pending": ["Run Materialize to independently validate the retained geometry and build.",
+                        "The GSC/closure review reference is an author declaration, not authenticated qualification."]}
+
+
 def materialize(project, build_root, output_root, tools_root, *, manifest, client_source, server_source):
     f = module(Path(tools_root) / "sdk/modding/Finalize-BeaconProject.py", "model_shared_checks")
     require = f.require

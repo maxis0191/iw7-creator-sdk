@@ -1,9 +1,11 @@
 param(
     [Parameter(Mandatory)][string]$Project,
-    [ValidateSet('Plan','Build','Materialize','Package')][string]$Action='Plan',
+    [ValidateSet('Plan','Build','Bind','Materialize','Package')][string]$Action='Plan',
     [ValidateSet('None','BeaconV1','BeaconSelfContainedV1','ModelLabV2','AnimationProbe','MaterialV2')][string]$Adapter='None',
     [string]$BuildParameters,
     [string]$BuildRoot,
+    [string]$ModelSourceRoot,
+    [string]$ReviewReference,
     [string[]]$ActiveProject=@(),
     [string]$ClientSource,
     [string]$ServerSource,
@@ -20,11 +22,12 @@ param(
 # Local orchestration only. Project manifests never supply executable commands.
 # Plan imports the reviewed Python validators and never writes files or loads native code.
 $ErrorActionPreference='Stop'
-$Action=@('Plan','Build','Materialize','Package')|Where-Object {$_ -ieq $Action}
+$Action=@('Plan','Build','Bind','Materialize','Package')|Where-Object {$_ -ieq $Action}
 $Adapter=@('None','BeaconV1','BeaconSelfContainedV1','ModelLabV2','AnimationProbe','MaterialV2')|Where-Object {$_ -ieq $Adapter}
 $Target=$Target.ToLowerInvariant()
 $python=(Get-Command python -ErrorAction Stop).Source
 $inputData=[ordered]@{project=$Project;action=$Action;adapter=$Adapter;build_parameters=$BuildParameters;build_root=$BuildRoot;
+    model_source_root=$ModelSourceRoot;review_reference=$ReviewReference;
     active_projects=@($ActiveProject);client_source=$ClientSource;server_source=$ServerSource;protocol=$Protocol;
     target=$Target;tools_root=$ToolsRoot;finalize_root=$FinalizeRoot;output=$Output;
     recipient_proof=$RecipientProof;recipient_root=$RecipientRoot;gsc_audit_evidence=$GscAuditEvidence}
@@ -89,7 +92,7 @@ from pathlib import Path
 args = json.loads(sys.argv[1])
 report = {"action": args["action"], "adapter": args["adapter"], "steps": [],
           "plan_valid": False, "build_executed": False, "build_verified": False, "materialized": False,
-          "packaged": False, "runtime_ready": False, "owner_accepted": False,
+          "bindings_written": False, "packaged": False, "runtime_ready": False, "owner_accepted": False,
           "errors": [], "pending": []}
 
 def step(name, status, details):
@@ -111,20 +114,26 @@ def unique_parameters(pairs):
 
 try:
     if args["adapter"] == "ModelLabV2":
-        if args["action"] != "Materialize":
-            raise ValueError("ModelLabV2 supports only Materialize of a retained build; no Plan or Build adapter is invoked")
+        if args["action"] not in ("Materialize", "Bind"):
+            raise ValueError("ModelLabV2 supports only Materialize or Bind of retained inputs; no Plan or Build adapter is invoked")
         if args["recipient_proof"] or args["recipient_root"] or args["gsc_audit_evidence"]:
             raise ValueError("ModelLabV2 uses explicit composition.json source/GSC review bindings; recipient/audit adapters are not supported")
         if not args["client_source"] or not args["server_source"] or args["protocol"] != 2 or args["target"] != "stock":
             raise ValueError("ModelLabV2 requires explicit ClientSource/ServerSource assertions, Protocol 2 and Target stock")
+    if args["action"] == "Bind":
+        if (args["adapter"] != "ModelLabV2" or not args["model_source_root"] or not args["review_reference"] or
+                not args["build_root"] or args["build_parameters"] or args["output"] or args["finalize_root"]):
+            raise ValueError("Bind requires ModelLabV2, ModelSourceRoot, BuildRoot and ReviewReference; no output/build command is accepted")
+    elif args["model_source_root"] or args["review_reference"]:
+        raise ValueError("ModelSourceRoot and ReviewReference are reserved for ModelLabV2 Bind")
     if args["action"] == "Package":
         if args["adapter"] != "None" or any(args[key] for key in (
                 "build_parameters", "build_root", "finalize_root", "recipient_proof", "recipient_root", "gsc_audit_evidence")):
             raise ValueError("Package requires Adapter None and an existing project; build/materialization/evidence-adapter inputs are not accepted")
         if not args["output"] or not args["client_source"] or not args["server_source"] or args["protocol"] is None:
             raise ValueError("Package requires Output, ClientSource, ServerSource and Protocol explicitly; these are operator assertions")
-    if args["build_root"] and args["action"] != "Materialize":
-        raise ValueError("BuildRoot is reserved for explicit Materialize; Plan and Build are unchanged")
+    if args["build_root"] and args["action"] not in ("Materialize", "Bind"):
+        raise ValueError("BuildRoot is reserved for explicit Materialize or Bind; Plan and Build are unchanged")
     if args["action"] == "Materialize":
         if args["adapter"] not in ("BeaconV1", "BeaconSelfContainedV1", "ModelLabV2") or not args["build_root"] or not args["finalize_root"]:
             raise ValueError("Materialize requires BeaconV1, BeaconSelfContainedV1 or ModelLabV2, an existing BuildRoot and a fresh FinalizeRoot")
@@ -260,6 +269,13 @@ try:
         raise ValueError("BuildParameters requires an explicit supported adapter")
     else:
         step("adapter-plan", "not-requested", ["Contract planning only; no build adapter selected"])
+    if args["action"] == "Bind" and not report["errors"]:
+        local = module(root / "sdk/modding/creator_model_materialize.py", "creator_model_materialize")
+        bound = local.bind(project, args["model_source_root"], args["build_root"], root,
+                           manifest=data, review_reference=args["review_reference"])
+        report.update(bindings_written=True, composition_binding=bound)
+        report["pending"].extend(bound["pending"])
+        step("bind", "passed", ["Stable authored inputs bound in " + bound["composition_path"], *bound["pending"]])
     if args["action"] == "Build":
         if args["adapter"] != "BeaconV1" or not args["build_parameters"]:
             raise ValueError("Build requires BeaconV1 and complete BuildParameters; no build attempted")
@@ -391,7 +407,7 @@ if($Action -ceq 'Build'){
         $report.steps+=@{name='build';status='blocked';details=@('Preflight failed; no native builder invoked')}
     }
 } else {
-    $detail=if($Action -ceq 'Materialize'){'Retained build only; no new build was invoked'}elseif($Action -ceq 'Package'){'Existing project only; no build or materialization was invoked'}else{'Plan does not compile, finalize or package'}
+    $detail=if($Action -ceq 'Materialize'){'Retained build only; no new build was invoked'}elseif($Action -ceq 'Bind'){'Composition inputs bound only; no build or materialization was invoked'}elseif($Action -ceq 'Package'){'Existing project only; no build or materialization was invoked'}else{'Plan does not compile, finalize or package'}
     $report.steps+=@{name='build';status='not-run';details=@($detail)}
 }
 if($Action -ceq 'Package'){
@@ -406,4 +422,4 @@ else {
     foreach($step in $report.steps){Write-Output ('[{0}] {1}' -f $step.status,$step.name);foreach($detail in $step.details){Write-Output ('  '+$detail)}}
     Write-Output ('Plan valid: {0}; build executed: {1}; build verified: {2}; materialized: {3}; packaged: {4}; runtime accepted: false' -f $report.plan_valid,$report.build_executed,$report.build_verified,$report.materialized,$report.packaged)
 }
-if(!$report.plan_valid -or $report.errors.Count -or ($Action -cin @('Build','Package') -and !$report.packaged) -or ($Action -ceq 'Materialize' -and !$report.materialized)){exit 1}
+if(!$report.plan_valid -or $report.errors.Count -or ($Action -cin @('Build','Package') -and !$report.packaged) -or ($Action -ceq 'Materialize' -and !$report.materialized) -or ($Action -ceq 'Bind' -and !$report.bindings_written)){exit 1}
