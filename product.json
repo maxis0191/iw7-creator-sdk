@@ -60,6 +60,8 @@
     "sdk/modding/examples/beacon/zone.csv",
     "sdk/modding/examples/original-rig-probe/manifest.json",
     "sdk/modding/examples/original-rig-probe/README.md",
+    "sdk/modding/examples/original-rig-probe/SCENARIO.md",
+    "sdk/modding/examples/original-rig-probe/sdk_original_rig_probe.gsc",
     "sdk/modding/examples/original-rig-probe/test_example.py",
     "sdk/modding/examples/original-sound/Complete-StaticClosure.py",
     "sdk/modding/examples/original-sound/manifest.json",
