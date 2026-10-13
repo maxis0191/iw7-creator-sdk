@@ -57,8 +57,8 @@
         "role": "server",
         "source": "sdk_soulbox_demo_v1.gsc",
         "destination": "iw7-mod/custom_scripts/cp/sdk_soulbox_demo_v1.gsc",
-        "bytes": 11744,
-        "sha256": "50863b55e820816f59973045ed66eedd47970bcada8878354b41c641639fed46",
+        "bytes": 12235,
+        "sha256": "d338b0cd424f77233133566c3153f616d4441f8f717e5d341deda544532c4f57",
         "closure_roots": [
           "scriptfile:custom_scripts/cp/sdk_soulbox_demo_v1.gsc"
         ]
@@ -75,7 +75,7 @@
           "id": "scriptfile:custom_scripts/cp/sdk_soulbox_demo_v1.gsc",
           "kind": "scriptfile",
           "scope": "server",
-          "sha256": "50863b55e820816f59973045ed66eedd47970bcada8878354b41c641639fed46",
+          "sha256": "d338b0cd424f77233133566c3153f616d4441f8f717e5d341deda544532c4f57",
           "requires": [
             "xmodel:zmb_coin_alien"
           ]

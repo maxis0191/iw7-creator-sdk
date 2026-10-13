@@ -201,15 +201,20 @@ interact(state)
         if (issubstr(weapon, "akimbo")) player setweaponammoclip(weapon, weaponclipsize(weapon), "left");
         state.reward_weapon = weapon;
         state.reward_clip = player getweaponammoclip(weapon);
+        print("[SDK Soul Box] CLAIM_STAGE; clip_read=1.");
         state.reward_stock = player getweaponammostock(weapon);
+        print("[SDK Soul Box] CLAIM_STAGE; stock_read=1.");
         state.reward_clip_capacity = weaponclipsize(weapon);
+        print("[SDK Soul Box] CLAIM_STAGE; capacity_read=1.");
         state.reward_max_ammo = weaponmaxammo(weapon);
+        print("[SDK Soul Box] CLAIM_STAGE; maximum_read=1.");
         print("[SDK Soul Box] AMMO_STAGE; readback_complete=1; clip=" + state.reward_clip + "; stock=" + state.reward_stock + "; capacity=" + state.reward_clip_capacity + "; maximum=" + state.reward_max_ammo + ".");
         // Retain the ready token's observed green state. Retail uses fx/blue
         // for coin_space; that state is not qualified on this coin_alien.
         state.model sethintstring("Soul Box complete");
         print("[SDK Soul Box] CLAIM_STAGE; hint_set=1.");
         player iprintln("Soul Box complete! Equipped firearm ammunition refilled.");
+        print("[SDK Soul Box] CLAIM_STAGE; completion_printed=1.");
         render_all(state);
         print("[SDK Soul Box] CLAIM_STAGE; hud_rendered=1.");
         level notify("sdk_soulbox_demo_claimed", player, weapon);
@@ -230,10 +235,12 @@ render(state)
     personal = self.sdk_soulbox_demo;
     if (personal.hud.size != 2 || !isdefined(personal.hud[0]) || !isdefined(personal.hud[1])) return;
     personal.hud[0] settext("SOUL BOX  |  " + state.souls + " / " + state.goal);
+    if (state.phase == "claimed") print("[SDK Soul Box] CLAIM_STAGE; hud_souls_set=1.");
     text = "Kill ordinary zombies near the glowing token";
     if (state.phase == "ready") text = "Box filled. Use the token to claim ammunition";
     if (state.phase == "claimed") text = "Completed  |  Ammunition reward claimed";
     personal.hud[1] settext(text);
+    if (state.phase == "claimed") print("[SDK Soul Box] CLAIM_STAGE; hud_status_set=1.");
     personal.rendered_souls = state.souls;
     personal.rendered_phase = state.phase;
 }

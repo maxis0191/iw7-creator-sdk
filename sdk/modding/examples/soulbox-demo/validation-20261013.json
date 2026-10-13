@@ -1,7 +1,7 @@
 {
   "date": "2026-10-13",
-  "source_sha256": "50863b55e820816f59973045ed66eedd47970bcada8878354b41c641639fed46",
-  "source_bytes": 11744,
+  "source_sha256": "d338b0cd424f77233133566c3153f616d4441f8f717e5d341deda544532c4f57",
+  "source_bytes": 12235,
   "compiler_version": "gsc-tool 1.5.1.359",
   "compiler_sha256": "1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb",
   "phases": [
@@ -18,7 +18,7 @@
       "exit_code": 0
     }
   ],
-  "compiled_sha256": "cb5631ab822d015f5b942ae008f3eb8470b0bdd8686051a81a727e1f9d9c1bc6",
+  "compiled_sha256": "c41bf493bb9959afc8d7c8d20f3fc66240babaaac0bc8c764e873812a70649b2",
   "script_imports_declared": 0,
   "binary_consumption_audited": false,
   "asset_origin": "IW7 retail zmb_coin_alien",
@@ -30,5 +30,5 @@
   "fixture_offline_compile_limit": "gsc-tool has no paris_test_protect native extension; fixture parsed, Aurora linkage pending",
   "prior_failure": "Native-input runs D/E killed six natural nearby zombies. Raw player zombie_killed received weapon/mod/origin, but actor classification fields were undefined; the listener credited zero. Callback snapshot correction awaits a fresh real-input run.",
   "callback_correction_partial_result": "Source 3d9099e554197e779d7aa94be63c86f57d27dd3b6fda82975f54c27277aaa85d linked and credited six natural bullet kills in F, with actual rendered 6/6. First Use ended the gameplay session before a reward receipt. The empty owned frontend was recovered with 30 seconds of valid zero-client UDP; files/profiles/Main audit restored, lease released. The scenario remains failed.",
-  "interaction_candidate": "H source456f949f linked under native958, protocol2, private1, fresh godmode1/inactivity0/cheats0; six actual bullet kills credited/rendered6/6. Engine Use edges1/2 and SDK USE_EVENT/CLAIM_BEGIN were observed. Reserve and clip refill operations returned, then gameplay ended before readback/REWARD/COMPLETE. Original failed/quarantined result retained; separate exact frontend recovery restored all transactions/Main, bank deltafalse, lease released. I removes only the unqualified cosmetic fx/blue transition on coin_alien, keeps its observed green state, and adds ammunition readback evidence. Blue remains a suspect without ScriptableDef proof. I parse/compile/disassembly pass; no I runtime or repeated reward qualification yet. H also records a script runtime error at place line104: usetriggerrequirelookat refuses script_model; retail applies this method to interaction_trigger. I removes that invalid call, retains model setuserange120/setusefov360 and adds hint/HUD/notify completion markers. No I runtime result yet."
+  "interaction_candidate": "H source456f949f linked under native958, protocol2, private1, fresh godmode1/inactivity0/cheats0; six actual bullet kills credited/rendered6/6. Engine Use edges1/2 and SDK USE_EVENT/CLAIM_BEGIN were observed. Reserve and clip refill operations returned, then gameplay ended before readback/REWARD/COMPLETE. Original failed/quarantined result retained; separate exact frontend recovery restored all transactions/Main, bank deltafalse, lease released. I removes only the unqualified cosmetic fx/blue transition on coin_alien, keeps its observed green state, and adds ammunition readback evidence. Blue remains a suspect without ScriptableDef proof. I parse/compile/disassembly pass; no I runtime or repeated reward qualification yet. H also records a script runtime error at place line104: usetriggerrequirelookat refuses script_model; retail applies this method to interaction_trigger. I removes that invalid call, retains model setuserange120/setusefov360 and adds hint/HUD/notify completion markers. No I runtime result yet. I final adds constant markers after each clip/stock/capacity/maximum getter, completion print and each of the two claimed-only HUD updates, so an ended session is localized without synthetic input or reward."
 }
