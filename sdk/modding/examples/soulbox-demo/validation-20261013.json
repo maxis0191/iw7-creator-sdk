@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-13",
+  "source_sha256": "3799600ee7e266b0e273c38060c06fe88a418649d49dba7d7751d71237f13fab",
+  "source_bytes": 9477,
+  "compiler_version": "gsc-tool 1.5.1.359",
+  "compiler_sha256": "1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb",
+  "phases": [
+    {
+      "mode": "parse",
+      "exit_code": 0
+    },
+    {
+      "mode": "comp",
+      "exit_code": 0
+    },
+    {
+      "mode": "disasm",
+      "exit_code": 0
+    }
+  ],
+  "compiled_sha256": "b14ab944dac8aa37a6e8fc38de3e91bb372e746c0a44da47448be52d5fa255d9",
+  "script_imports_declared": 0,
+  "binary_consumption_audited": false,
+  "asset_origin": "IW7 retail zmb_coin_alien",
+  "mechanic": "BO3-inspired",
+  "recipient_asset_closure_verified": false,
+  "runtime_link_verified": false,
+  "pixels_verified": false,
+  "owner_acceptance": false,
+  "fixture_offline_compile_limit": "gsc-tool has no paris_test_protect native extension; fixture parsed, Aurora linkage pending"
+}
