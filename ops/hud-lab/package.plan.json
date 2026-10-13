@@ -1,0 +1,91 @@
+{
+  "schema": "iw7.mod-package/1",
+  "id": "paris_lab_hud",
+  "version": "0.1.1",
+  "maps": [
+    "cp_zmb"
+  ],
+  "delivery": "mod",
+  "native_requirements": {
+    "server_source": null,
+    "client_source": null,
+    "client_capabilities": [
+      "lua-fastfile"
+    ],
+    "compatible_client_sources": [
+      "77e6d4d24e918ee363b3feee3735c3b889dff7d7",
+      "c0a1c6dacd33c86320b308656d9ba895291c2198"
+    ]
+  },
+  "files": [
+    {
+      "id": "client_fastfile",
+      "role": "client",
+      "source": null,
+      "destination": "mods/paris_lab_hud/mod.ff",
+      "bytes": null,
+      "sha256": null,
+      "closure_roots": [
+        "luafile:ui_scripts/paris_lab_hud/__init__.lua"
+      ]
+    }
+  ],
+  "closure": {
+    "status": "incomplete",
+    "roots": [
+      "luafile:ui_scripts/paris_lab_hud/__init__.lua"
+    ],
+    "nodes": [
+      {
+        "id": "luafile:ui_scripts/paris_lab_hud/__init__.lua",
+        "kind": "luafile",
+        "scope": "client",
+        "sha256": "3834479321cd0f170a452f9877510d85759eac5622b8ce126ca8d87e794f5992",
+        "requires": [
+          "other:retail-CoD-ButtonHelperFont"
+        ]
+      }
+    ],
+    "unresolved": [
+      "other:retail-CoD-ButtonHelperFont"
+    ],
+    "evidence_ref": null
+  },
+  "evidence": [
+    {
+      "kind": "source-check",
+      "status": "pending",
+      "reference": null,
+      "authority": "agent",
+      "maps": []
+    },
+    {
+      "kind": "offline-load",
+      "status": "pending",
+      "reference": null,
+      "authority": "agent",
+      "maps": []
+    },
+    {
+      "kind": "runtime-link",
+      "status": "pending",
+      "reference": null,
+      "authority": "agent",
+      "maps": []
+    },
+    {
+      "kind": "render",
+      "status": "pending",
+      "reference": null,
+      "authority": "agent",
+      "maps": []
+    },
+    {
+      "kind": "gameplay",
+      "status": "pending",
+      "reference": null,
+      "authority": "owner",
+      "maps": []
+    }
+  ]
+}

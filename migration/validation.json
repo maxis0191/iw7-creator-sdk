@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-13",
+  "scope": "Product extraction and private source bootstrap only",
+  "source_runs": [
+    {
+      "revisions": {
+        "iw7-mod-components": "93fd16b1b7e9da0b46b0348973baa55cd363b1ca",
+        "x64-zt-extensions": "8da20837e790cdabcdadd7b227768977db752c4f",
+        "iw7-paris-server": "5e47dc2299fde638f31af6c026c0e17ee9ddb8ef",
+        "iw7-creator-sdk": "161253632c866c69a20c58edc52afb20250dcdfb"
+      },
+      "checks": [
+        {
+          "id": "sdk-modding-tests",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-gsc-spawn-tip",
+          "exit_code": 0
+        },
+        {
+          "id": "community_distribution_test",
+          "exit_code": 0
+        },
+        {
+          "id": "hud_lab_test",
+          "exit_code": 0
+        },
+        {
+          "id": "mod_package_test",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-SpawnTip",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-SpawnTipHost",
+          "exit_code": 0
+        },
+        {
+          "id": "beacon_ff_test",
+          "exit_code": 0
+        },
+        {
+          "id": "sdk-modding-examples-original-sound-test_example",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-gsc-consumption-tool-verify_archive",
+          "exit_code": 0
+        }
+      ]
+    }
+  ],
+  "source_check_groups": 10,
+  "offline_bootstrap": "passed with spaces",
+  "private_release_download": "passed; pinned SHA256 and member checks",
+  "source_workspace_regressions": null,
+  "runtime_qualified": false,
+  "owner_gameplay_acceptance": "not requested; unchanged",
+  "main_runtime": "untouched",
+  "ci": "Resolved existing SDK failure: PR3 fixes Windows 8.3 path identity; full Windows source CI passed twice at fa266ca. Later owner-GO/portable-job changes encountered billing admission before runner; portable Linux job has not executed.",
+  "ci_executed_failure": {
+    "head": "9edc8398fdc34d9f22c66fc67fbf172f11f34d73",
+    "run": 38401111947,
+    "failed_group": "sdk-modding-tests",
+    "other_groups_passed": 9,
+    "inner_traceback": "Unavailable in the original ephemeral runner; wrapper now forwards it."
+  },
+  "diagnostic_admission": {
+    "head": "899a3cdf9317fd7af9013f7b94eab0872054ab23",
+    "run": 38401722062,
+    "attempt": 2,
+    "job": 115312373189,
+    "runner_id": 0,
+    "steps": [],
+    "ui_reason": "Account payment/spending-limit admission blocker"
+  },
+  "issue": "https://github.com/maxis0191/iw7-creator-sdk/issues/2",
+  "resolved_failure": {
+    "issue": "https://github.com/maxis0191/iw7-creator-sdk/issues/2",
+    "fix_pr": "https://github.com/maxis0191/iw7-creator-sdk/pull/3",
+    "fix_head": "01ce65f59f6b102af57b895d135abcb265d2bb89",
+    "reviewed_merge": "fa266ca6694700b34d34d86f51692d0db37a782c",
+    "cause": "PowerShell Windows short temporary path vs Python canonical long path rejected identical project/output identities. Redirect checks now precede resolution.",
+    "windows_ci_runs": [
+      38420917880,
+      38420910893
+    ],
+    "windows_ci_success": true,
+    "creator_local": {
+      "tests": 73,
+      "passed": 73,
+      "windows_alias_regressions": 2,
+      "alias_tests_skipped": false
+    },
+    "portable_linux": {
+      "declared": true,
+      "executed": false,
+      "reason": "Billing admission refused before runner; optional added coverage, no failed Linux test."
+    }
+  },
+  "merge_state": "Existing executed failure resolved; final exact-head source/CI and admission evidence is recorded in PR1."
+}

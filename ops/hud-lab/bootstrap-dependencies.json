@@ -1,0 +1,93 @@
+{
+  "schema": "iw7.hud-bootstrap/1",
+  "tool_source": "fab935826c898806855376662a8a03317b3ad8f1",
+  "dependencies": [
+    {
+      "relative": "zone/assetfile1.pak",
+      "phase": "bootstrap",
+      "observed_run": "hud-build-sentinel-only-20261006-222200",
+      "fatal_message": "Could not find asset file assetfile1.pak"
+    },
+    {
+      "relative": "zone/assetfile17.pak",
+      "phase": "cp_zmb",
+      "observed_run": "hud-build-generic-inventory-20261006-224500",
+      "fatal_message": "Could not find asset file assetfile17.pak"
+    },
+    {
+      "relative": "zone/assetfile19.pak",
+      "phase": "cp_zmb",
+      "observed_run": "hud-build-pak17-only-20261006-224750",
+      "fatal_message": "Could not find asset file assetfile19.pak"
+    },
+    {
+      "relative": "zone/assetfile37.pak",
+      "phase": "cp_zmb",
+      "observed_run": "hud-dependency-retry1-20261006-225100",
+      "fatal_message": "Could not find asset file assetfile37.pak"
+    },
+    {
+      "relative": "zone/assetfile53.pak",
+      "phase": "cp_zmb",
+      "observed_run": "hud-dependency-retry2-20261006-225200",
+      "fatal_message": "Could not find asset file assetfile53.pak"
+    }
+  ],
+  "successes": [
+    {
+      "run": "hud-dependency-retry3-bootstrap-20261006-225500",
+      "verification_context": "Bootstrap",
+      "recipient_offline_linked": false,
+      "inventory_verified": true,
+      "roundtrip_identical": true,
+      "ff_bytes": 1356,
+      "ff_sha256": "C6290FDF225C6207B0E6B8BE598FC683603DDF2DA9A114020399224244B096AF",
+      "restored": true,
+      "ready": false
+    }
+  ],
+  "failures": [
+    {
+      "run": "hud-build-20261006-220630-memory-include",
+      "kind": "bootstrap-timeout",
+      "restored": true,
+      "inventory_verified": false
+    },
+    {
+      "run": "hud-build-sentinel-only-20261006-222200",
+      "kind": "missing-assetfile1",
+      "restored": true,
+      "inventory_verified": false
+    },
+    {
+      "run": "hud-build-pak1-only-20261006-223200",
+      "kind": "wrapper-required-enemy-only-inventory",
+      "restored": true,
+      "inventory_verified": false
+    },
+    {
+      "run": "hud-build-generic-inventory-20261006-224500",
+      "kind": "missing-assetfile17",
+      "restored": true,
+      "inventory_verified": false
+    },
+    {
+      "run": "hud-build-pak17-only-20261006-224750",
+      "kind": "missing-assetfile19",
+      "restored": true,
+      "inventory_verified": false
+    },
+    {
+      "run": "hud-dependency-retry1-20261006-225100",
+      "kind": "missing-assetfile37.pak",
+      "restored": true,
+      "inventory_verified": false
+    },
+    {
+      "run": "hud-dependency-retry2-20261006-225200",
+      "kind": "missing-assetfile53.pak",
+      "restored": true,
+      "inventory_verified": false
+    }
+  ]
+}

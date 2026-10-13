@@ -1,0 +1,121 @@
+{
+  "schema": "iw7.gsc-residual-diagnostic-validation/1",
+  "recorded_date": "2026-10-12",
+  "status": "NativeStepsPassedResidualIdentifiedSupervisionFailed",
+  "source_revision": "f813f9758006e33857339c19ece48a642212ac5f",
+  "source_sha256": "4293c6a582aa33c9a5b4bffcd31c6975ec0b47887bcdf0ed05e372b975747291",
+  "tables_sha256": "757964caf826b02c423ab9cd8b2ef3a3758720f50aef1a2fb517869e93474ef6",
+  "tool_sha256": "9cb1d946403e9e49812ed3db8bb59d7fefc0607078f65b963fc610eac04a564a",
+  "plan_sha256": "eacc311315e2d80d0fbaae6bbb319fcbad0d939f7398c5874aea23e955ddfd1c",
+  "observer_sha256": "5a02254764277b62f752792f1ec4f5b93b85237b171a3381a78d58f6af190e91",
+  "build_candidate_success": true,
+  "supervision_success": false,
+  "supervision_failure": "Unqualified residual compiler/telemetry descendants; drain deadline reached",
+  "original_root_exit_code": 0,
+  "job_active_at_confirmed_close": 0,
+  "original_job_stop_requested": true,
+  "tree_closed": true,
+  "lease_released": true,
+  "main_process_identity_unchanged": true,
+  "game_files_staged": false,
+  "retries": 0,
+  "residual": {
+    "count": 1,
+    "image_description": "MSVC 14.44.35207 bin/Hostx64/x64/vctip.exe",
+    "image_file_sha256": "d591358c6aee4b673562ca3b3a15c250e612708394fe3b44a7a7eda2470570a5",
+    "image_file_bytes": 335288,
+    "hash_scope": "ImageFileBytesUnderReadGuard",
+    "in_original_job": true,
+    "creation_timestamp_captured": true,
+    "kernel_parent_pid_captured": true,
+    "parent_process_identity_captured": false,
+    "identity_errors": false,
+    "mode": "ObservationOnly",
+    "capture_complete": true,
+    "elapsed_ms": 31,
+    "acceptance_granted": false,
+    "classifier_applicable": false
+  },
+  "native_reader_ctest": {
+    "passed": 1,
+    "failed": 0
+  },
+  "native_test_methods": {
+    "passed": 13,
+    "failed": 0
+  },
+  "steps": [
+    {
+      "name": "cmake-version",
+      "exit_code": 0
+    },
+    {
+      "name": "configure",
+      "exit_code": 0
+    },
+    {
+      "name": "build",
+      "exit_code": 0
+    },
+    {
+      "name": "reader-tests",
+      "exit_code": 0
+    },
+    {
+      "name": "native-negative-tests",
+      "exit_code": 0
+    },
+    {
+      "name": "witness-variant",
+      "exit_code": 0
+    },
+    {
+      "name": "witness-original",
+      "exit_code": 0
+    }
+  ],
+  "peak_observed_output_bytes": 37475193,
+  "evidence_sha256": {
+    "supervision": "2060bdc7c829ce458810e5de2ca36b3ab28e304e6df7a51e9d0d6ac9362cc36a",
+    "build_receipt": "f1882cb1ec6b8973f3a4531d4676a5badfe5a3f054b429505e3735433724d1da",
+    "reader_ctest_stdout": "221ecae3b28db74c9db2c3bc0dc25419acc62b313d721c150c1683390508fd01",
+    "native_test_stderr": "f379444ada97242540e1a0a092ac9948548c2301c69091e7d646b4387688f0f8"
+  },
+  "measurements": [
+    {
+      "role": "variant",
+      "receipt_sha256": "f0654718e7cfe6c8814827ca1d469512a7df3180dde46b1a007e42f7394f2b35",
+      "input_sha256": "db486793b92e7e3c0a30c70b565fb432a4940e172a3f97da7e9db377f0e46d42",
+      "input_bytes": 1992,
+      "bytecode_bytes": 1480,
+      "bytecode_consumed": 1480,
+      "stack_bytes": 1808,
+      "stack_consumed": 1808,
+      "assembly_sha256": "43e9b36a90cfe30ec713d52cdc63bbb7668cfc17acfae187de369079abeae1df",
+      "branch_targets_verified": true,
+      "complete_consumption_measured": true,
+      "external_dependency_absence_verified": false
+    },
+    {
+      "role": "original",
+      "receipt_sha256": "14227573bc6b0f731bde55a6a276ed3b7492693a13c6be27f8798428ff2cee24",
+      "input_sha256": "31b55a5d58a90d6b980a91543c907d26b91a4f6767d5350e8a35ae0e19fa2cef",
+      "input_bytes": 1951,
+      "bytecode_bytes": 1455,
+      "bytecode_consumed": 1455,
+      "stack_bytes": 1394,
+      "stack_consumed": 1394,
+      "assembly_sha256": "b6efa60bb5c5cc30ad724363720d2249292a592a384557cbc509aaf24ddbe725",
+      "branch_targets_verified": true,
+      "complete_consumption_measured": true,
+      "external_dependency_absence_verified": false
+    }
+  ],
+  "gates": {
+    "overall_build_accepted": false,
+    "external_dependency_absence_verified": false,
+    "asset_closure_complete": false,
+    "runtime_ready": false,
+    "owner_accepted": false
+  }
+}

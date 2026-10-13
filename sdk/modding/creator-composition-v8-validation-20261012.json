@@ -1,0 +1,87 @@
+{
+  "schema": "iw7.creator-composition-validation/1",
+  "observed_utc": "2026-10-12T09:45:24.7591949Z",
+  "source_revision": "974c05863a5e586d066c62f725e322b71c7ea0f2",
+  "tested_source_revision": "d0188404bfb310d4ae5b420ecb1a48583e5dd10b",
+  "action": "Materialize",
+  "adapter": "BeaconSelfContainedV1",
+  "exit_code": 0,
+  "report_sha256": "b7fb9339aa4294f1e982a3d09c6764787bbe8f89bac7bc447fe126b6007991ff",
+  "file_count": 10,
+  "total_bytes": 66860,
+  "independent_readback_verified": true,
+  "materialized": true,
+  "build_verified": true,
+  "asset_build_reused": true,
+  "variant_ff_built": false,
+  "build_executed": false,
+  "gsc_reference_audit_bound": true,
+  "encoded_external_script_reference_absence": true,
+  "gsc_input_sha256": "24f9273f9d23d766a0091995a66403a2ab964ee6ac9b46911ab67218f5cd6e15",
+  "gsc_supervision_sha256": "f1a1f3e42d3b3c10efca4cab804df91a756f8dac11bbb97f95289e8b29538575",
+  "gsc_offline_compiled_payload_shipped": false,
+  "runtime_recompilation_observed": false,
+  "recipient_phase_csv_verified": true,
+  "recipient_outer_run_revalidated": false,
+  "closure_complete": false,
+  "package_ready": false,
+  "packaged": false,
+  "runtime_ready": false,
+  "owner_accepted": false,
+  "blockers": [
+    "Recipient serialized material, technique-set, image contents and transitive dependencies remain unqualified.",
+    "Native builtin/loader semantics and runtime behavior of this composition remain unqualified.",
+    "Recipient phase bytes agree, but the outer Run and stock identity are not revalidated by this composition."
+  ],
+  "exact_hashes": {
+    "ff": "3fa49bcdfd08857bb37c198af7a49af78675b940b022e160343552d3f8b71da8",
+    "gsc": "9de9b76dc25293146999c71653bd407d8cb639e107293f6de87084fed90eee1c",
+    "manifest": "2c0f49da7e7bd6989a80dd77b03cb8241d50811497702602ca35c88cc3a03136",
+    "finalization": "15e422d6efec55829dc1d263a2537b32e32fda215dc5dc9a37ca274cf26ec567",
+    "composition": "e3773ee73c4aab44ac587f690cacbd3511f36a09932c88836737bf7d22d841f7",
+    "source_receipt": "b8229d50751fa990a925b4cb3c3e2c8110a373d645764d0580959d55d78277aa",
+    "build_receipt": "b0b5f007a45c5605b64c33d5dae6ff5a49dd75edb736ba7c6679cf8649f5c5be"
+  },
+  "files": {
+    "evidence/serialized-nodes/netconststrings/ncs_mdl_paris_model_probe.json": {
+      "bytes": 99,
+      "sha256": "27487218f55deeec517407acbbb78fe4fe74ad6b8cdb50e773b4573945d9e1a4"
+    },
+    "evidence/serialized-nodes/sdk_beacon": {
+      "bytes": 28,
+      "sha256": "5134b43e15050642b55c451012b42b1d9821364f92a55e7dab679e5edb9b8e8c"
+    },
+    "evidence/serialized-nodes/xmodel/paris_model_probe.xmb": {
+      "bytes": 978,
+      "sha256": "cb7e4824cebcc201e97925c4d603e1b5645c8f6efa012aa5bfe30d85ccf1bf13"
+    },
+    "evidence/serialized-nodes/xsurface/paris_model_probe_lod0.xsb": {
+      "bytes": 1231,
+      "sha256": "d1bcc267099b758506c965add1564fdaecc8814b2a60954c95e79500f9d57b83"
+    },
+    "finalization.json": {
+      "bytes": 49529,
+      "sha256": "15e422d6efec55829dc1d263a2537b32e32fda215dc5dc9a37ca274cf26ec567"
+    },
+    "manifest.json": {
+      "bytes": 5553,
+      "sha256": "2c0f49da7e7bd6989a80dd77b03cb8241d50811497702602ca35c88cc3a03136"
+    },
+    "mod.ff": {
+      "bytes": 1048,
+      "sha256": "3fa49bcdfd08857bb37c198af7a49af78675b940b022e160343552d3f8b71da8"
+    },
+    "sdk_beacon_self_contained.gsc": {
+      "bytes": 5535,
+      "sha256": "9de9b76dc25293146999c71653bd407d8cb639e107293f6de87084fed90eee1c"
+    },
+    "validation-package.json": {
+      "bytes": 1299,
+      "sha256": "1b12c8db3fc48ff627569fcd2cad1d72741455c5d9fa8cc51c3e145a261dc0d4"
+    },
+    "validation-plan.json": {
+      "bytes": 1560,
+      "sha256": "790953889edbb8da038eea62d6bd465633974387c51ca8480bf52bcb36d67385"
+    }
+  }
+}

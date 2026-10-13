@@ -1,0 +1,253 @@
+From f01bb43337c16779af6a5e216d70cd28157daa0a Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 07:51:25 +0200
+Subject: [PATCH 6/9] fix(build): supervise original job and retain uncertain
+ leases
+
+
+diff --git a/audit/README.md b/audit/README.md
+index a22d86e0b0e4d47eab57994635ba9c0ed1e67aec..0b72a434d2d58ccb1a196193cc8a7f9141ae0163 100644
+--- a/audit/README.md
++++ b/audit/README.md
+@@ -107,8 +107,10 @@ path. PowerShell scripts have passed syntax parsing only.
+ 
+ 1. Coordinator releases the active MaterialC workload, fetches the private
+    project origin and rereads current `origin/main:docs/RESOURCE-WORKFLOW.md`.
+-   Use its reviewed `Invoke-IW7ResourceJob`, `Kind Build`, **4 GiB physical /
+-   6 GiB commit**, one MSBuild node, `/MP` disabled and BelowNormal priority.
++   Use its reviewed explicit `Enter-IW7ResourceLease` / `Exit-IW7ResourceLease`
++   lifecycle, `Kind Build`, **4 GiB physical / 6 GiB commit**, one MSBuild node,
++   `/MP` disabled and BelowNormal priority. The coordinator approved this explicit
++   lifecycle so an uncertain job closure cannot trigger an unconditional release.
+    Keep configuration, compilation and native tests in that admitted synchronous
+    job; preserve diagnostics on failure and release only after children exit.
+ 2. Verify this source commit and cleanliness. Initialize only the pinned zlib
+@@ -141,15 +143,26 @@ Illustrative commands, to execute only inside the admitted job after step 2:
+ 
+ The reproducible entry point is `audit/build.ps1 -Plan PLAN_JSON -PlanSha256 HASH`.
+ Its default only displays the plan. `-Execute` is the explicit coordinator action:
+-it acquires `Invoke-IW7ResourceJob` before initializing zlib or starting any build.
++it acquires the existing account-wide lease before initializing zlib or starting any build.
+ `audit/build.py` generates the plan from exact source/SDK revisions, input hashes,
+ tool/wrapper/scheduler hashes and absolute output roots. Its execution mode requires
+-the parent scheduler's lease token and owner PID. The child runner retains a .NET
+-Process object and closes only its own process tree on timeout/storage failure;
+-stdout/stderr stream to files instead of accumulating in memory. Commands, process
++the parent scheduler's lease token and owner PID. The top-level supervisor reuses
++the unchanged original `IW7.CommunityBuild.BuildJob`, pinned to SHA256
++`f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387`.
++The builder starts suspended, is assigned to that original Windows job, is
++registered with the lease, and only then resumes. All descendants, including
++MSBuild/CL/telemetry, remain in that job. Root exit plus `Active=0` is required;
++unqualified residual children after a two-second drain cause failure and an exact
++owned-job stop. No process-name kill is used. If closure cannot be confirmed,
++the lease is retained. Deadline and storage checks run throughout the job.
++Per-step stdout/stderr stream to files instead of accumulating in memory. Commands, process
+ identities, exit codes, compiler identity, source/dependency manifests, tool hash,
+ storage observations and both Beacon consumption receipts remain in the ignored
+ output directory. Source and dependency bytes are checked again after all steps.
++`build-receipt.json` is only a candidate result; acceptance also requires a
++successful `supervision.json` with root exit zero, zero active members, confirmed
++tree closure and lease release. A forced residual cleanup never converts failure
++to success.
+ 
+ ```text
+ python -B audit/prepare.py --output build/identity-reviewed
+diff --git a/audit/build.ps1 b/audit/build.ps1
+index 36c04675cf62bebbad52ce8f308eb33f058af33c..3dfce12a4222d48cbab1ec53ff7d29096960d247 100644
+--- a/audit/build.ps1
++++ b/audit/build.ps1
+@@ -21,24 +21,143 @@ if (-not $Execute) {
+     $planData | ConvertTo-Json -Depth 12
+     return
+ }
+-# The coordinator must explicitly admit this execution; no initialization occurs
+-# before the reviewed account-wide scheduler acquires the heavy-workload slot.
+-$scheduler = (Resolve-Path -LiteralPath $planData.scheduler).Path
+-if ((Get-FileHash -LiteralPath $scheduler -Algorithm SHA256).Hash.ToLowerInvariant() -ne $planData.scheduler_sha256) {
+-    throw 'Reviewed scheduler changed'
+-}
+-. $scheduler
+-Invoke-IW7ResourceJob -Scope $repo -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner 'strict IW7 GSC audit build' -Body {
+-    if (-not $lease.Token) { throw 'Scheduler did not expose the acquired lease token' }
+-    $previousOwner = $env:IW7_GSC_AUDIT_LEASE_OWNER
+-    $previousToken = $env:IW7_GSC_AUDIT_LEASE_TOKEN
+-    try {
+-        $env:IW7_GSC_AUDIT_LEASE_OWNER = [string]$PID
+-        $env:IW7_GSC_AUDIT_LEASE_TOKEN = [string]$lease.Token
+-        & $planData.python -B (Join-Path $PSScriptRoot 'build.py') --plan $planPath --plan-sha256 $PlanSha256 --execute
+-        if ($LASTEXITCODE -ne 0) { throw "GSC audit build/test failed with exit $LASTEXITCODE; retain receipt and logs" }
+-    } finally {
+-        $env:IW7_GSC_AUDIT_LEASE_OWNER = $previousOwner
+-        $env:IW7_GSC_AUDIT_LEASE_TOKEN = $previousToken
++# The explicit Enter/Exit lifecycle is coordinator-approved: an unresolved
++# original job retains its lease. No new scheduler or shared-provider mutation.
++foreach ($entry in @('scheduler','job_source','python')) {
++    $path = [string]$planData.$entry
++    $expected = [string]$planData.($entry + '_sha256')
++    if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) {
++        throw "Reviewed $entry changed"
+     }
+ }
++if ($planData.job_source_sha256 -ne 'f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387') {
++    throw 'Original job owner pin differs'
++}
++. $planData.scheduler
++function Quote-BuildArgument([string]$Value) {
++    if ($Value.IndexOf([char]0) -ge 0) { throw 'NUL argument' }
++    $text = [Text.StringBuilder]::new()
++    [void]$text.Append([char]34)
++    $slashes = 0
++    foreach ($character in $Value.ToCharArray()) {
++        if ($character -eq [char]92) { $slashes++; continue }
++        $count = if ($character -eq [char]34) { $slashes * 2 + 1 } else { $slashes }
++        [void]$text.Append([char]92, $count)
++        [void]$text.Append($character)
++        $slashes = 0
++    }
++    [void]$text.Append([char]92, $slashes * 2)
++    [void]$text.Append([char]34)
++    $text.ToString()
++}
++$outputRoot = [IO.Path]::GetFullPath($planData.output)
++$buildRoot = [IO.Path]::GetFullPath((Join-Path $repo 'build')) + [IO.Path]::DirectorySeparatorChar
++if (!$outputRoot.StartsWith($buildRoot, [StringComparison]::OrdinalIgnoreCase) -or (Test-Path -LiteralPath $outputRoot)) {
++    throw 'Fresh scoped build output required'
++}
++function Measure-OwnedOutput {
++    if (!(Test-Path -LiteralPath $outputRoot)) { return [long]0 }
++    $sum = (Get-ChildItem -LiteralPath $outputRoot -Recurse -File -Force | Measure-Object Length -Sum).Sum
++    if ($null -eq $sum) { return [long]0 }
++    [long]$sum
++}
++$lease = Enter-IW7ResourceLease -Scope $repo -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner 'strict IW7 GSC audit build'
++$owner = $null
++$closed = $false
++$failure = $null
++$launcher = Get-Process -Id $PID
++$oldPriority = $launcher.PriorityClass
++$previousOwner = $env:IW7_GSC_AUDIT_LEASE_OWNER
++$previousToken = $env:IW7_GSC_AUDIT_LEASE_TOKEN
++$record = [ordered]@{ Schema='iw7.gsc-audit-build-supervision/1'; PlanSHA256=$PlanSha256; LeaseToken=$lease.Token;
++    OriginalJobSourceSHA256=$planData.job_source_sha256; StartedUtc=[datetime]::UtcNow.ToString('o');
++    RootPID=$null; RootCreatedUtc=$null; RootImage=$null; RootExitCode=$null; JobActiveAtClose=$null;
++    PeakObservedOutputBytes=[long]0; StopThresholdBytes=1800MB; OutputLimitBytes=2GB;
++    DeadlineSeconds=3600; DrainDeadlineMilliseconds=2000; TreeClosed=$false; LeaseReleased=$false; Success=$false }
++try {
++    $launcher.PriorityClass = 'BelowNormal'
++    if ('IW7.CommunityBuild.BuildJob' -as [type]) { throw 'Fresh PowerShell process required for reviewed BuildJob' }
++    Add-Type -Path $planData.job_source -ErrorAction Stop
++    $env:IW7_GSC_AUDIT_LEASE_OWNER = [string]$PID
++    $env:IW7_GSC_AUDIT_LEASE_TOKEN = [string]$lease.Token
++    $arguments = @('-B',(Join-Path $PSScriptRoot 'build.py'),'--plan',$planPath,'--plan-sha256',$PlanSha256,'--execute')
++    $commandLine = ($arguments | ForEach-Object { Quote-BuildArgument $_ }) -join ' '
++    $owner = [IW7.CommunityBuild.BuildJob]::Prepare($planData.python, $commandLine, $repo)
++    $record.RootPID = $owner.PID
++    $record.RootCreatedUtc = $owner.CreatedUtc
++    $record.RootImage = $owner.Image
++    if ($record.RootImage -ine $planData.python) { throw 'Original root image differs' }
++    Add-IW7ResourceProcess -Token $lease.Token -ProcessId $owner.PID
++    $watch = [Diagnostics.Stopwatch]::StartNew()
++    $rootExitedAt = $null
++    $owner.Resume()
++    while ($true) {
++        $exited = $owner.Exited
++        $active = $owner.Active
++        $record.LastObservation = [ordered]@{ ElapsedMs=$watch.ElapsedMilliseconds; RootExited=$exited; Active=$active }
++        $record.PeakObservedOutputBytes = [math]::Max($record.PeakObservedOutputBytes, (Measure-OwnedOutput))
++        if ($record.PeakObservedOutputBytes -ge 1800MB -or $watch.Elapsed.TotalSeconds -ge 3600) {
++            throw 'Owned build exceeded storage stop threshold or deadline'
++        }
++        if ($exited -and $null -eq $rootExitedAt) { $rootExitedAt = $watch.ElapsedMilliseconds }
++        if ($exited -and $active -eq 0) {
++            $record.RootExitCode = $owner.ExitCode
++            $record.JobActiveAtClose = 0
++            $closed = $true
++            break
++        }
++        if ($null -ne $rootExitedAt -and $watch.ElapsedMilliseconds - $rootExitedAt -ge 2000) {
++            throw 'Unqualified residual compiler/telemetry descendants; refuse and close only original job'
++        }
++        Start-Sleep -Milliseconds 250
++    }
++    if ($record.RootExitCode -ne 0) { throw "Build root failed: $($record.RootExitCode)" }
++    $candidate = Get-Content -LiteralPath (Join-Path $outputRoot 'build-receipt.json') -Raw | ConvertFrom-Json
++    if (!$candidate.success) { throw 'Build candidate receipt is not successful' }
++    $record.Success = $true
++} catch {
++    $failure = $_
++    $record.Failure = $_.Exception.Message
++} finally {
++    if ($owner -and !$closed) {
++        try {
++            $record.StopOriginalJobRequested = $true
++            $owner.Stop()
++            $closing = [Diagnostics.Stopwatch]::StartNew()
++            do {
++                $exited = $owner.Exited
++                $active = $owner.Active
++                $record.ClosureObservation = [ordered]@{ RootExited=$exited; Active=$active; ElapsedMs=$closing.ElapsedMilliseconds }
++                if ($exited -and $active -eq 0) {
++                    $closed = $true
++                    $record.RootExitCode = $owner.ExitCode
++                    $record.JobActiveAtClose = 0
++                    break
++                }
++                Start-Sleep -Milliseconds 100
++            } while ($closing.ElapsedMilliseconds -lt 10000)
++        } catch { $record.ClosureError = $_.Exception.Message }
++    }
++    $record.TreeClosed = $closed -or $null -eq $owner
++    if ($record.TreeClosed) {
++        if ($owner) { $owner.Dispose() }
++        try { Exit-IW7ResourceLease -Token $lease.Token; $record.LeaseReleased=$true }
++        catch { $record.LeaseError=$_.Exception.Message; $record.Success=$false; if (!$failure) { $failure=$_ } }
++    } else {
++        # Retain both original owner and registry lease. Never release on an
++        # unavailable accounting query or a still-active child tree.
++        $script:GscAuditUnclosedOwner = $owner
++        $record.LeaseRetainedReason = 'Original root/job closure unconfirmed'
++        $record.Success = $false
++    }
++    $launcher.PriorityClass = $oldPriority
++    $env:IW7_GSC_AUDIT_LEASE_OWNER = $previousOwner
++    $env:IW7_GSC_AUDIT_LEASE_TOKEN = $previousToken
++    [IO.Directory]::CreateDirectory($outputRoot) | Out-Null
++    $record.PeakObservedOutputBytes = [math]::Max($record.PeakObservedOutputBytes, (Measure-OwnedOutput))
++    if ($record.PeakObservedOutputBytes -gt 2GB) { $record.Success=$false; $record.StorageLimitExceeded=$true }
++    $record.FinishedUtc = [datetime]::UtcNow.ToString('o')
++    $record | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $outputRoot 'supervision.json') -Encoding utf8
++}
++if (!$record.Success -or !$record.LeaseReleased) { throw 'GSC audit build failed or lease retained; inspect supervision.json and build-receipt.json' }
++$record | ConvertTo-Json -Depth 12
+diff --git a/audit/build.py b/audit/build.py
+index a3d94beebda47d6a052ffd71729606a2f129c9e5..8860d140e696e65edc53e4562558a719e54b8850 100644
+--- a/audit/build.py
++++ b/audit/build.py
+@@ -41,6 +41,9 @@ def plan(args):
+         path = path.resolve(strict=True)
+         inputs.append({'role': role, 'path': str(path), 'sha256': sha_file(path), 'bytes': path.stat().st_size})
+     scheduler = args.scheduler.resolve(strict=True)
++    job_source = (scheduler.parent.parent / 'tools-source/asset-bridge/model/BuildJob.cs').resolve(strict=True)
++    if sha_file(job_source) != 'f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387':
++        raise ValueError('Reviewed original BuildJob source pin changed')
+     cmake = args.cmake.resolve(strict=True)
+     ctest = cmake.with_name('ctest.exe')
+     pwsh = Path(shutil.which('pwsh')).resolve(strict=True)
+@@ -50,6 +53,7 @@ def plan(args):
+             'zlib_local': str(zlib), 'sdk_root': str(sdk), 'sdk_revision': prepare.git('rev-parse', 'HEAD', root=sdk),
+             'wrapper': str(wrapper), 'wrapper_sha256': sha_file(wrapper),
+             'scheduler': str(scheduler), 'scheduler_sha256': sha_file(scheduler),
++            'job_source': str(job_source), 'job_source_sha256': sha_file(job_source),
+             'python': sys.executable, 'python_sha256': sha_file(sys.executable),
+             'pwsh': str(pwsh), 'pwsh_sha256': sha_file(pwsh),
+             'cmake': str(cmake), 'cmake_sha256': sha_file(cmake), 'ctest': str(ctest), 'ctest_sha256': sha_file(ctest),
+@@ -68,7 +72,7 @@ def validate_plan(plan):
+         raise ValueError('Plan scope or admission budget differs')
+     if prepare.git('rev-parse', 'HEAD', root=Path(plan['sdk_root'])) != plan['sdk_revision']:
+         raise ValueError('Reviewed SDK revision changed')
+-    for key in ('python', 'pwsh', 'cmake', 'ctest', 'scheduler', 'wrapper'):
++    for key in ('python', 'pwsh', 'cmake', 'ctest', 'scheduler', 'job_source', 'wrapper'):
+         if sha_file(plan[key]) != plan[key + '_sha256']:
+             raise ValueError('Reviewed executable/source changed: ' + key)
+     for item in plan['inputs']:

@@ -1,0 +1,416 @@
+From 5a891beec470f17da19dba530ab47bd111e77ae0 Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 08:12:26 +0200
+Subject: [PATCH 8/9] Resume original audit job before bounded CIM registration
+
+
+diff --git a/audit/README.md b/audit/README.md
+index 6cbe82c21b5a16714733acb20c86dd7ce6f561d5..ba1cef129c856458b9ac6f11d96b01aaef49573f 100644
+--- a/audit/README.md
++++ b/audit/README.md
+@@ -98,13 +98,18 @@ token-encoded external calls, truncation, added bytes in both buffers, zlib
+ suffixes, unknown/initial opcodes, last-function sizes and missing NULs.
+ Additional cases cover valid forward/backward/switch branches, nonempty integer
+ and default switch tables, and invalid out-of-function/inside-operand destinations.
+-These native tests have **not run**. No game or native tool was started.
++These native tests have **not run**. No game or C++ audit executable was started.
+ Four pure preparation tests pass: missing/dirty/wrong zlib is refused, dependency
+ bytes affect the combined source hash, and build identity needs a fresh ignored
+ path. PowerShell scripts pass syntax parsing; `test_supervision.ps1` additionally
+ passes 37 checks with mocked clocks/getters/measurements and no native execution.
+ Those checks cover late zero-active observations, costly output measurement and
+ owner getters, exact boundaries and time spent stopping the original job.
++`test_registration.ps1` passes another 38 pure mock checks: unavailable CIM while
++suspended, registration after Resume, bounded retries, other scheduler errors,
++late returns, short root exit, residual descendants, original handle identity,
++failed closure and unknown factory quarantine. The same drain start survives the
++registration-to-wait transition. No scheduler/native code runs in these tests.
+ 
+ ## Admission and build plan
+ 
+@@ -152,8 +157,18 @@ tool/wrapper/scheduler hashes and absolute output roots. Its execution mode requ
+ the parent scheduler's lease token and owner PID. The top-level supervisor reuses
+ the unchanged original `IW7.CommunityBuild.BuildJob`, pinned to SHA256
+ `f6be2a4cafddb78b5e07a6802354575ada418cb7643d96a3abd0a4c063bc6387`.
+-The builder starts suspended, is assigned to that original Windows job, is
+-registered with the lease, and only then resumes. All descendants, including
++The builder starts suspended and is assigned to that original Windows job. Its
++PID, image, creation timestamp and BelowNormal priority are captured from the
++original process handle before Resume. It then resumes in that job and attempts
++CIM registration under the existing lease, following AnimationFF's reviewed
++Resume-before-CIM protocol. Only the exact unavailable-identity error is retried,
++every 100 ms for less than five seconds on a monotonic clock. Budget/closure
++observations continue during registration. Synchronous scheduler calls are not
++preempted; a return at or after the deadline is refused, not accepted as timely.
++Closed-before-registration, root-exited-with-descendants and unavailable identity
++are distinct outcomes; none substitutes a PID-only identity or proves a successful
++build. Failed original factory creation without a returned owner retains the lease
++because closure is unknown. All descendants, including
+ MSBuild/CL/telemetry, remain in that job. Root exit plus `Active=0` is required;
+ unqualified residual children after a two-second drain cause failure and an exact
+ owned-job stop. No process-name kill is used. If closure cannot be confirmed,
+@@ -172,6 +187,32 @@ is checked again after all getters and disk measurement, before accepting closur
+ At or beyond 2,000 ms of drain, 10,000 ms of cleanup, or the global deadline, even
+ a zero-active snapshot is too late. Cleanup timing begins before `Stop` itself.
+ 
++## First admitted attempt and registration correction
++
++The single attempt on 2026-10-12 at 06:02:05 UTC used source `2dfbbf37` and Plan
++SHA256 `d878d3423ed1c8b1ac8452a25eb06d943fd6b28b106b1a37d09f266b8f59bc55`.
++It failed with `Child identity unavailable; reservation retained.` while Python
++was still suspended. The original process handle provided identity, but the CIM
++error did not identify which inventory field was absent. Python never resumed;
++zlib initialization, configure, compilation and native tests did not run.
++Original owned stop completed with exit 122 and zero active members; the lease
++was released. The immutable ignored `build/native-reviewed-20261012/supervision.json`
++has SHA256 `9b134d6628256d72ed17f6afd8e20dcd1f97f673848e019525fe1ee5648a77bc`.
++Do not reuse this failed run root or overwrite its receipt.
++
++The local orchestration correction follows project commit
++`54a897bbf08e92ddc9ab064eb59f47c7538f89fe` and the current rig's same call ordering.
++Read-only reference SHA256 pins are:
++
++- `AnimationFF.Core.ps1`: `2cc1cf0536af0885fceec8de536c2d44402371c0bd889ed3110865225bd7db97`
++- `Build-AnimationFF.ps1`: `52f582ce66a6df645eae4062432ad342da9698eeaaad0ae178ad2bd931c09485`
++- `rig/Build-RigChain.ps1`: `9c4ae55334f0c2401759c160e7affe20bdbbd921aea2621fbb8e076b8a5e73fa`
++- `BeaconFF.Core.ps1` (original-handle identity): `b80047875a39731ea54838459fb71e0dca580c5e42284bd2749dc4b39c3a08a8`
++
++Shared providers, original BuildJob source, decoder and SDK binder are unchanged.
++A new committed source pin, fresh Plan and separate run root require coordinator
++review and another explicit GO. The previous GO authorized only the failed attempt.
++
+ ```text
+ python -B audit/prepare.py --output build/identity-reviewed
+ cmake -S audit -B build/audit-native -G "Visual Studio 17 2022" -A x64 -DAUDIT_IDENTITY_DIR=ABSOLUTE_IDENTITY_DIRECTORY
+diff --git a/audit/build.ps1 b/audit/build.ps1
+index e11cc889c510269009bcbda5d681406082fa87c3..8c2b94164b0aafdf9bf5f7f0427904d8de8bc315 100644
+--- a/audit/build.ps1
++++ b/audit/build.ps1
+@@ -64,7 +64,7 @@ function Measure-OwnedOutput {
+ }
+ $lease = Enter-IW7ResourceLease -Scope $repo -Kind Build -PhysicalBytes 4GB -CommitBytes 6GB -Owner 'strict IW7 GSC audit build'
+ $owner = $null
+-$closed = $false
++$closed = $true # No factory invoked yet; set false BEFORE Prepare.
+ $failure = $null
+ $launcher = Get-Process -Id $PID
+ $oldPriority = $launcher.PriorityClass
+@@ -83,14 +83,15 @@ try {
+     $env:IW7_GSC_AUDIT_LEASE_TOKEN = [string]$lease.Token
+     $arguments = @('-B',(Join-Path $PSScriptRoot 'build.py'),'--plan',$planPath,'--plan-sha256',$PlanSha256,'--execute')
+     $commandLine = ($arguments | ForEach-Object { Quote-BuildArgument $_ }) -join ' '
++    $closed = $false
+     $owner = [IW7.CommunityBuild.BuildJob]::Prepare($planData.python, $commandLine, $repo)
+-    $record.RootPID = $owner.PID
+-    $record.RootCreatedUtc = $owner.CreatedUtc
+-    $record.RootImage = $owner.Image
+-    if ($record.RootImage -ine $planData.python) { throw 'Original root image differs' }
+-    Add-IW7ResourceProcess -Token $lease.Token -ProcessId $owner.PID
++    $record.OriginalIdentity = Get-AuditOriginalIdentity $owner $planData.python
++    $record.RootPID = $record.OriginalIdentity.PID
++    $record.RootCreatedUtc = $record.OriginalIdentity.CreatedUtc
++    $record.RootImage = $record.OriginalIdentity.Image
+     $startedMs = Get-AuditMonotonicMs
+     $owner.Resume()
++    Register-AuditOwnedBuild $owner $lease.Token $record $startedMs { Measure-OwnedOutput }
+     Wait-AuditOwnedBuild $owner $record $startedMs { Measure-OwnedOutput }
+     $closed = $true
+     if ($record.RootExitCode -ne 0) { throw "Build root failed: $($record.RootExitCode)" }
+@@ -101,24 +102,7 @@ try {
+     $failure = $_
+     $record.Failure = $_.Exception.Message
+ } finally {
+-    if ($owner -and !$closed) {
+-        try {
+-            Stop-AuditOwnedBuild $owner $record { Measure-OwnedOutput }
+-            $closed = $true
+-        } catch { $record.ClosureError = $_.Exception.Message }
+-    }
+-    $record.TreeClosed = $closed -or $null -eq $owner
+-    if ($record.TreeClosed) {
+-        if ($owner) { $owner.Dispose() }
+-        try { Exit-IW7ResourceLease -Token $lease.Token; $record.LeaseReleased=$true }
+-        catch { $record.LeaseError=$_.Exception.Message; $record.Success=$false; if (!$failure) { $failure=$_ } }
+-    } else {
+-        # Retain both original owner and registry lease. Never release on an
+-        # unavailable accounting query or a still-active child tree.
+-        $script:GscAuditUnclosedOwner = $owner
+-        $record.LeaseRetainedReason = 'Original root/job closure unconfirmed'
+-        $record.Success = $false
+-    }
++    Complete-AuditOwnedCleanup $owner $record $closed { Measure-OwnedOutput } { Exit-IW7ResourceLease -Token $lease.Token }
+     $launcher.PriorityClass = $oldPriority
+     $env:IW7_GSC_AUDIT_LEASE_OWNER = $previousOwner
+     $env:IW7_GSC_AUDIT_LEASE_TOKEN = $previousToken
+diff --git a/audit/supervision.ps1 b/audit/supervision.ps1
+index b4cec15ce5b11114561c71a03619858598f44424..378c0ab660ed34aa970e445847f53c64eb69830c 100644
+--- a/audit/supervision.ps1
++++ b/audit/supervision.ps1
+@@ -2,6 +2,22 @@
+ function Get-AuditMonotonicMs { [Environment]::TickCount64 }
+ function Wait-AuditPoll([int]$Milliseconds) { Start-Sleep -Milliseconds $Milliseconds }
+ 
++function Get-AuditOriginalIdentity($Owner, [string]$ExpectedImage) {
++    # Equivalent to the pinned Beacon/Animation identity contract: every field
++    # comes from the retained original process handle, before Resume or CIM.
++    $id=$Owner.PID; $image=$Owner.Image; $created=$Owner.CreatedUtc; $priority=$Owner.Priority
++    $timestamp=[datetimeoffset]::MinValue
++    if (($id -isnot [uint32] -and $id -isnot [int] -and $id -isnot [long]) -or $id -lt 1 -or $id -gt [uint32]::MaxValue -or
++        $image -isnot [string] -or !$image -or ![IO.Path]::IsPathFullyQualified($image) -or
++        [IO.Path]::GetFullPath($image) -ine [IO.Path]::GetFullPath($ExpectedImage) -or
++        $created -isnot [string] -or !$created -or
++        ![datetimeoffset]::TryParseExact($created,'o',[Globalization.CultureInfo]::InvariantCulture,[Globalization.DateTimeStyles]::None,[ref]$timestamp) -or
++        $timestamp.Offset -ne [timespan]::Zero -or $timestamp.Year -lt 2000 -or $priority -ne 0x4000) {
++        throw 'Complete original-handle Python identity and BelowNormal priority required before Resume'
++    }
++    [ordered]@{PID=$id;Image=$image;CreatedUtc=$created;Priority=$priority;Source='OriginalProcessHandle'}
++}
++
+ function Get-AuditOwnedSnapshot($Owner, [long]$StartedMs) {
+     # Take the timestamp BEFORE getters. Slow getters belong to this observation,
+     # rather than moving the first root-exit time forward and granting more time.
+@@ -13,26 +29,75 @@ function Get-AuditOwnedSnapshot($Owner, [long]$StartedMs) {
+         RootExited=$exited; Active=$active; RootExitCode=$exitCode }
+ }
+ 
+-function Wait-AuditOwnedBuild($Owner, $Record, [long]$StartedMs, [scriptblock]$MeasureOutput) {
+-    $rootExitedAt = $null
++function Assert-AuditOwnedBudget($Sample, $Record, [long]$StartedMs, [scriptblock]$MeasureOutput) {
++    $Record.LastObservation = $Sample
++    if ($Sample.RootExited -and $null -eq $Record.RootExitObservedMs) {
++        $Record.RootExitObservedMs = $Sample.ElapsedMs
++    }
++    $Record.PeakObservedOutputBytes = [math]::Max($Record.PeakObservedOutputBytes, (& $MeasureOutput))
++    $now = (Get-AuditMonotonicMs) - $StartedMs
++    $Record.ObservationCheckedMs = $now
++    # Check after getters/measurement and before accepting any closed snapshot.
++    if ($Record.PeakObservedOutputBytes -ge 1800MB -or $now -ge 3600000) {
++        throw 'Owned build exceeded storage stop threshold or deadline'
++    }
++    if ($null -ne $Record.RootExitObservedMs -and $now - $Record.RootExitObservedMs -ge 2000) {
++        throw 'Unqualified residual compiler/telemetry descendants; drain deadline reached'
++    }
++}
++
++function Register-AuditOwnedBuild($Owner, [string]$LeaseToken, $Record, [long]$StartedMs, [scriptblock]$MeasureOutput) {
++    # Resume-before-CIM is the reviewed AnimationFF 54a897b protocol. Keep the
++    # original job and identity; never replace missing CIM identity with a PID.
++    $registration = [ordered]@{Registered=$false;SchedulerReturnedSuccess=$false;Outcome='IdentityUnavailable';Attempts=0;DeadlineMs=5000;LastError=$null}
++    $Record.ResourceRegistration = $registration
++    if (!$Record.OriginalIdentity -or $Record.OriginalIdentity.Source -cne 'OriginalProcessHandle' -or
++        $Record.OriginalIdentity.PID -ne $Owner.PID) { throw 'Original handle identity required for registration' }
++    $began = Get-AuditMonotonicMs
+     while ($true) {
+         $sample = Get-AuditOwnedSnapshot $Owner $StartedMs
+-        $Record.LastObservation = $sample
+-        if ($sample.RootExited -and $null -eq $rootExitedAt) {
+-            $rootExitedAt = $sample.ElapsedMs
+-            $Record.RootExitObservedMs = $rootExitedAt
++        Assert-AuditOwnedBudget $sample $Record $StartedMs $MeasureOutput
++        if ((Get-AuditMonotonicMs) - $began -ge 5000) { throw 'CIM registration deadline exceeded; stop original job' }
++        if ($sample.RootExited) {
++            $registration.Outcome = if ($sample.Active -eq 0) {'ClosedBeforeRegistration'} else {'RootExitedBeforeRegistration'}
++            return
+         }
+-        $Record.PeakObservedOutputBytes = [math]::Max($Record.PeakObservedOutputBytes, (& $MeasureOutput))
+-        $now = (Get-AuditMonotonicMs) - $StartedMs
+-        $Record.ObservationCheckedMs = $now
+-        # Every deadline is checked AFTER all observation/measurement work and
+-        # BEFORE accepting a closed snapshot. Equality is already too late.
+-        if ($Record.PeakObservedOutputBytes -ge 1800MB -or $now -ge 3600000) {
+-            throw 'Owned build exceeded storage stop threshold or deadline'
++        $registration.Attempts++
++        $registered = $false
++        try {
++            Add-IW7ResourceProcess -Token $LeaseToken -ProcessId $Record.OriginalIdentity.PID
++            $registered = $true
++            $registration.SchedulerReturnedSuccess = $true
++            $registration.Outcome = 'RegisteredPendingBudgetCheck'
++        } catch {
++            $registration.LastError = $_.Exception.Message
++            if ($_.Exception.Message -cne 'Child identity unavailable; reservation retained.') {
++                $registration.Outcome = 'RegistrationFailed'
++                throw
++            }
++        }
++        # CIM and scheduler calls can take time: late registration/closure must
++        # not become a success. Keep the first observed exit for the drain loop.
++        $sample = Get-AuditOwnedSnapshot $Owner $StartedMs
++        Assert-AuditOwnedBudget $sample $Record $StartedMs $MeasureOutput
++        if ((Get-AuditMonotonicMs) - $began -ge 5000) { throw 'CIM registration deadline exceeded; stop original job' }
++        if ($registered) {
++            $registration.Registered = $true
++            $registration.Outcome = 'Registered'
++            return
+         }
+-        if ($null -ne $rootExitedAt -and $now - $rootExitedAt -ge 2000) {
+-            throw 'Unqualified residual compiler/telemetry descendants; drain deadline reached'
++        if ($sample.RootExited) {
++            $registration.Outcome = if ($sample.Active -eq 0) {'ClosedBeforeRegistration'} else {'RootExitedBeforeRegistration'}
++            return
+         }
++        Wait-AuditPoll 100
++    }
++}
++
++function Wait-AuditOwnedBuild($Owner, $Record, [long]$StartedMs, [scriptblock]$MeasureOutput) {
++    while ($true) {
++        $sample = Get-AuditOwnedSnapshot $Owner $StartedMs
++        Assert-AuditOwnedBudget $sample $Record $StartedMs $MeasureOutput
+         if ($sample.RootExited -and $sample.Active -eq 0) {
+             $Record.RootExitCode = $sample.RootExitCode
+             $Record.JobActiveAtClose = 0
+@@ -42,6 +107,26 @@ function Wait-AuditOwnedBuild($Owner, $Record, [long]$StartedMs, [scriptblock]$M
+     }
+ }
+ 
++function Complete-AuditOwnedCleanup($Owner, $Record, [bool]$Closed, [scriptblock]$MeasureOutput, [scriptblock]$ReleaseLease) {
++    if ($Owner -and !$Closed) {
++        try { Stop-AuditOwnedBuild $Owner $Record $MeasureOutput; $Closed=$true }
++        catch { $Record.ClosureError=$_.Exception.Message }
++    }
++    # A failed factory with no returned handle is unknown, not closed.
++    $Record.TreeClosed=$Closed
++    if ($Closed) {
++        try {
++            if ($Owner) { $Owner.Dispose() }
++            & $ReleaseLease
++            $Record.LeaseReleased=$true
++        } catch { $Record.LeaseError=$_.Exception.Message; $Record.Success=$false }
++    } else {
++        $script:GscAuditUnclosedOwner=$Owner
++        $Record.LeaseRetainedReason='Original root/job closure unconfirmed'
++        $Record.Success=$false
++    }
++}
++
+ function Stop-AuditOwnedBuild($Owner, $Record, [scriptblock]$MeasureOutput) {
+     # Include the time spent by Stop itself in the cleanup deadline.
+     $started = Get-AuditMonotonicMs
+diff --git a/audit/test_registration.ps1 b/audit/test_registration.ps1
+new file mode 100644
+index 0000000000000000000000000000000000000000..a7838016b1179b5fe0f6abbe4e6ecda370af64df
+--- /dev/null
++++ b/audit/test_registration.ps1
+@@ -0,0 +1,121 @@
++# Pure mocks: no processes, native types, scheduler, lease, filesystem mutation or sleep.
++$ErrorActionPreference='Stop'
++. (Join-Path $PSScriptRoot 'supervision.ps1')
++$script:checks=0
++function Assert-Check([bool]$Value,[string]$Message) {
++    if (!$Value) { throw $Message }
++    $script:checks++
++}
++function Refuse([scriptblock]$Action,[string]$Pattern) {
++    $message=$null
++    try { & $Action } catch { $message=$_.Exception.Message }
++    Assert-Check ($message -match $Pattern) "Expected '$Pattern', got '$message'"
++}
++function Get-AuditMonotonicMs { $script:fixture.Now }
++function Wait-AuditPoll([int]$Milliseconds) { $script:fixture.Now+=$Milliseconds }
++function New-Fixture {
++    $script:fixture=[pscustomobject]@{Now=0L;Calls=0;Unavailable=0;Error=$null;RegisterCost=0L;
++        ExitDuringCall=$false;StopFailure=$false;Stops=0;Disposes=0;Releases=0;MeasureCost=0L}
++    $owner=[pscustomobject]@{PID=77;Image='C:\audit\python.exe';CreatedUtc='2026-10-12T06:00:00.0000000Z';
++        Priority=0x4000;Resumed=$false;Exited=$false;Active=1;ExitCode=0}
++    $owner | Add-Member ScriptMethod Resume { $this.Resumed=$true }
++    $owner | Add-Member ScriptMethod Stop {
++        $script:fixture.Stops++
++        if ($script:fixture.StopFailure) { throw 'Mock closure unavailable' }
++        $this.Exited=$true; $this.Active=0
++    }
++    $owner | Add-Member ScriptMethod Dispose { $script:fixture.Disposes++ }
++    $script:mockOwner=$owner
++    $record=[ordered]@{OriginalIdentity=(Get-AuditOriginalIdentity $owner $owner.Image);
++        PeakObservedOutputBytes=0L;RootExitCode=$null;JobActiveAtClose=$null;TreeClosed=$false;LeaseReleased=$false;Success=$false}
++    [pscustomobject]@{Owner=$owner;Record=$record}
++}
++function Add-IW7ResourceProcess($Token,$ProcessId) {
++    $script:fixture.Calls++
++    if ($Token -cne 'mock-token' -or $ProcessId -ne $script:mockOwner.PID) { throw 'Wrong mock registration arguments' }
++    $script:fixture.Now+=$script:fixture.RegisterCost
++    if ($script:fixture.ExitDuringCall) { $script:mockOwner.Exited=$true; $script:mockOwner.Active=0 }
++    if ($script:fixture.Error) { throw $script:fixture.Error }
++    if (!$script:mockOwner.Resumed -or $script:fixture.Calls -le $script:fixture.Unavailable -or $script:fixture.ExitDuringCall) {
++        throw 'Child identity unavailable; reservation retained.'
++    }
++}
++$measure={ $script:fixture.Now+=$script:fixture.MeasureCost; 0L }
++$release={ $script:fixture.Releases++ }
++
++$f=New-Fixture
++Refuse { Add-IW7ResourceProcess 'mock-token' $f.Owner.PID } 'Child identity unavailable'
++$script:fixture.Calls=0
++$f.Owner.Resume()
++Register-AuditOwnedBuild $f.Owner 'mock-token' $f.Record 0 $measure
++Assert-Check ($f.Record.ResourceRegistration.Registered -and $script:fixture.Calls -eq 1) 'Resume makes mock CIM registration available'
++Assert-Check ($f.Record.OriginalIdentity.Source -ceq 'OriginalProcessHandle') 'Identity retains original handle provenance'
++
++$f=New-Fixture; $script:fixture.Unavailable=1; $f.Owner.Resume()
++Register-AuditOwnedBuild $f.Owner 'mock-token' $f.Record 0 $measure
++Assert-Check ($f.Record.ResourceRegistration.Registered -and $script:fixture.Calls -eq 2 -and $script:fixture.Now -eq 100) 'Unavailable identity retries after Resume'
++
++$f=New-Fixture; $script:fixture.Error='Resource lease not found.'; $f.Owner.Resume()
++Refuse { Register-AuditOwnedBuild $f.Owner 'mock-token' $f.Record 0 $measure } 'Resource lease not found'
++Assert-Check ($script:fixture.Calls -eq 1 -and $f.Record.ResourceRegistration.Outcome -ceq 'RegistrationFailed') 'Other scheduler errors never retry'
++
++$f=New-Fixture; $script:fixture.Unavailable=999; $f.Owner.Resume()
++Refuse { Register-AuditOwnedBuild $f.Owner 'mock-token' $f.Record 0 $measure } 'registration deadline'
++Assert-Check ($script:fixture.Now -eq 5000 -and $script:fixture.Calls -eq 50 -and !$f.Record.ResourceRegistration.Registered -and $f.Record.ResourceRegistration.Outcome -ceq 'IdentityUnavailable') 'Unknown CIM identity remains distinct from closed root'
++
++foreach ($cost in @(5000,5001)) {
++    $f=New-Fixture; $script:fixture.RegisterCost=$cost; $f.Owner.Resume()
++    Refuse { Register-AuditOwnedBuild $f.Owner 'mock-token' $f.Record 0 $measure } 'registration deadline'
++    Assert-Check (!$f.Record.ResourceRegistration.Registered -and $f.Record.ResourceRegistration.SchedulerReturnedSuccess) 'A late scheduler return is recorded but never accepted'
++}
++$f=New-Fixture; $script:fixture.RegisterCost=4999; $f.Owner.Resume()
++Register-AuditOwnedBuild $f.Owner 'mock-token' $f.Record 0 $measure
++Assert-Check ($f.Record.ResourceRegistration.Registered) 'Registration at 4999 ms passes'
++
++$f=New-Fixture; $script:fixture.MeasureCost=2500; $f.Owner.Resume()
++Refuse { Register-AuditOwnedBuild $f.Owner 'mock-token' $f.Record 0 $measure } 'registration deadline'
++Assert-Check (!$f.Record.ResourceRegistration.Registered) 'Output checks are included in registration deadline'
++
++$f=New-Fixture; $f.Owner.Exited=$true; $f.Owner.Active=0; $f.Owner.Resume()
++Register-AuditOwnedBuild $f.Owner 'mock-token' $f.Record 0 $measure
++Assert-Check (!$f.Record.ResourceRegistration.Registered -and $f.Record.ResourceRegistration.Outcome -ceq 'ClosedBeforeRegistration' -and $script:fixture.Calls -eq 0) 'Exited original root is never registered using its old PID'
++Wait-AuditOwnedBuild $f.Owner $f.Record 0 $measure
++Assert-Check ($f.Record.JobActiveAtClose -eq 0) 'Short root still requires owned closure check'
++
++$f=New-Fixture; $script:fixture.ExitDuringCall=$true; $f.Owner.Resume()
++Register-AuditOwnedBuild $f.Owner 'mock-token' $f.Record 0 $measure
++Assert-Check ($f.Record.ResourceRegistration.Outcome -ceq 'ClosedBeforeRegistration' -and !$f.Record.ResourceRegistration.Registered) 'Exit during unavailable CIM is explicit closed-before-registration'
++
++$f=New-Fixture; $f.Owner.Exited=$true; $f.Owner.Active=1; $f.Owner.Resume()
++Register-AuditOwnedBuild $f.Owner 'mock-token' $f.Record 0 $measure
++Assert-Check ($f.Record.ResourceRegistration.Outcome -ceq 'RootExitedBeforeRegistration' -and $f.Record.RootExitObservedMs -eq 0) 'Residual descendants are not classified closed'
++$script:fixture.Now=2000; $f.Owner.Active=0
++Refuse { Wait-AuditOwnedBuild $f.Owner $f.Record 0 $measure } 'drain deadline'
++Assert-Check ($null -eq $f.Record.JobActiveAtClose) 'Registration to wait transition preserves original drain start'
++
++foreach ($property in @('PID','Image','CreatedUtc','Priority')) {
++    $f=New-Fixture; $f.Owner.$property=$null
++    Refuse { Get-AuditOriginalIdentity $f.Owner 'C:\audit\python.exe' } 'original-handle'
++    Assert-Check ($script:fixture.Calls -eq 0 -and !$f.Owner.Resumed) 'Incomplete handle identity never falls back to CIM/PID'
++}
++
++$f=New-Fixture; $script:fixture.StopFailure=$true
++Complete-AuditOwnedCleanup $f.Owner $f.Record $false $measure $release
++Assert-Check (!$f.Record.TreeClosed -and !$f.Record.LeaseReleased -and $script:fixture.Releases -eq 0 -and $script:fixture.Disposes -eq 0) 'Failed closure retains owner and lease'
++Assert-Check ([object]::ReferenceEquals($script:GscAuditUnclosedOwner,$f.Owner)) 'Quarantine retains exact original owner'
++$f=New-Fixture; $script:fixture.MeasureCost=10000
++Complete-AuditOwnedCleanup $f.Owner $f.Record $false $measure $release
++Assert-Check (!$f.Record.TreeClosed -and !$f.Record.LeaseReleased -and $script:fixture.Releases -eq 0 -and $script:fixture.Disposes -eq 0) 'Late zero-active closure preserves quarantine and lease'
++$f=New-Fixture
++Complete-AuditOwnedCleanup $null $f.Record $false $measure $release
++Assert-Check (!$f.Record.TreeClosed -and !$f.Record.LeaseReleased -and $script:fixture.Releases -eq 0) 'Failed factory is not inferred closed from null owner'
++$f=New-Fixture
++Complete-AuditOwnedCleanup $f.Owner $f.Record $false $measure $release
++Assert-Check ($f.Record.TreeClosed -and $f.Record.LeaseReleased -and $script:fixture.Stops -eq 1 -and $script:fixture.Disposes -eq 1 -and $script:fixture.Releases -eq 1) 'Confirmed original job closure permits release'
++
++$source=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'build.ps1'))
++Assert-Check ($source.IndexOf('$closed = $false') -lt $source.IndexOf('[IW7.CommunityBuild.BuildJob]::Prepare')) 'Factory starts with unknown closure'
++Assert-Check ($source.IndexOf('Get-AuditOriginalIdentity $owner') -lt $source.IndexOf('$owner.Resume()')) 'Capture identity before Resume'
++Assert-Check ($source.IndexOf('$owner.Resume()') -lt $source.IndexOf('Register-AuditOwnedBuild $owner')) 'Resume before bounded registration'
++Assert-Check ($source -notmatch 'Stop-Process|taskkill|WaitForExit|Start-Process|Add-IW7ResourceProcess') 'Launcher has no PID-only identity/closure path'
++Write-Output "Registration and quarantine: $script:checks checks passed; no native execution."

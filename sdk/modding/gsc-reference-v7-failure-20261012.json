@@ -1,0 +1,369 @@
+{
+  "schema": "iw7.gsc-reference-v7-attempt/1",
+  "date": "2026-10-12",
+  "status": "Failed",
+  "executions": 1,
+  "retries": 0,
+  "source_revision": "42e6c403a789b38ede39fd58ff0cb5f77da7d002",
+  "sdk_revision_at_execution": "7008cce6ed2706f72ffa9cfd6c38ffffce9cc824",
+  "plan_sha256": "7165cb082416644ce5b69e797ef3a2e223494eeb33326b6126bd75970226e5f3",
+  "tool_sha256": "e7f922a78c9a8a83b1d4837206f89b09314f04fe12989283dba0fa9034405b98",
+  "tool_source_sha256": "68ba75b9ee7a6b3cb6e5812c55581291ed8344dd37ee90ba6a56d0dbd58eede6",
+  "source_sha256": "60467f82912762a76f95a541169b60995e6973989975050a8c6914aef66327c3",
+  "tables_sha256": "6e3ed82737908b5c7be76290a178a66b5c63456a12097e964139154f4b46de4b",
+  "build_receipt_sha256": "6cfd9fafca83ec21a170b3498475f74edb8866a7f7b6d15dad1ef5e946abde2b",
+  "supervision_sha256": "2087d1859983ec28858986f466f9d9dea9bb67e96fa4ec593e811d0beeccb002",
+  "reference_pins_sha256": "561bbed6531267893bcf78c377e2238aebeac7d15c9ab0714fe7482769eb4a47",
+  "reference_controls_sha256": "405f1b809cb28d942ff2328fd7118d7575a7ad76394bd8716504c2ecb4eaea35",
+  "closure_confirmation_sha256": "d1cd0a70eb03dc0944604f908c130ab8a8273db4fe11eca27b60e31ff620d71d",
+  "post_run_hash_confirmation_sha256": "051ee221f5f447f9c0ab80fcde0d974af9e6d7a27f8c24972d761bf2d30d38f1",
+  "started_utc": "2026-10-12T08:56:45.4743630Z",
+  "finished_utc": "2026-10-12T08:57:54.0580092Z",
+  "phases": [
+    {
+      "name": "cmake-version",
+      "exit_code": 0,
+      "wrapper_exit_code": 0,
+      "elapsed_seconds": 0.0785916
+    },
+    {
+      "name": "configure",
+      "exit_code": 0,
+      "wrapper_exit_code": 0,
+      "elapsed_seconds": 2.8641358
+    },
+    {
+      "name": "build",
+      "exit_code": 0,
+      "wrapper_exit_code": 0,
+      "elapsed_seconds": 49.3275792
+    },
+    {
+      "name": "reader-tests",
+      "exit_code": 0,
+      "wrapper_exit_code": 0,
+      "elapsed_seconds": 0.0880486
+    },
+    {
+      "name": "native-negative-tests",
+      "exit_code": 0,
+      "wrapper_exit_code": 0,
+      "elapsed_seconds": 0.527497
+    },
+    {
+      "name": "witness-variant",
+      "exit_code": 0,
+      "wrapper_exit_code": 0,
+      "elapsed_seconds": 0.1615871
+    },
+    {
+      "name": "witness-original",
+      "exit_code": 0,
+      "wrapper_exit_code": 0,
+      "elapsed_seconds": 0.1587433
+    },
+    {
+      "name": "native-reference-tests",
+      "exit_code": 0,
+      "wrapper_exit_code": 0,
+      "elapsed_seconds": 11.3287783
+    }
+  ],
+  "ctest_passed": 1,
+  "existing_native_test_methods_passed": 13,
+  "reference_controls": {
+    "schema": "iw7.gsc-reference-controls/1",
+    "opcode_cases": 153,
+    "unsupported_refusals": 2,
+    "unresolved_controls": 4,
+    "native_invocations": 159,
+    "beacon_roles": [
+      "variant",
+      "original"
+    ],
+    "tests_run": 3,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true
+  },
+  "roles": [
+    {
+      "role": "variant",
+      "input_sha256": "db486793b92e7e3c0a30c70b565fb432a4940e172a3f97da7e9db377f0e46d42",
+      "native_sha256": "62d9a0264279780990c8c11eae1b2d8c37284244d8223baea899f8592c5ce15f",
+      "bound_sha256": "c9a488b9863bceef4653b8f7bcf5e1453ab9532433682e08c18f12f5750c00ef",
+      "consumption_sha256": "1c466d3db210ac2037346d1e96de1c0041c1350bcae32c4553c77f32cc0c73c7",
+      "assembly_sha256": "43e9b36a90cfe30ec713d52cdc63bbb7668cfc17acfae187de369079abeae1df",
+      "instruction_count": 570,
+      "category_counts": {
+        "plain": 223,
+        "string": 39,
+        "builtin_function": 43,
+        "branch_i16": 32,
+        "field": 98,
+        "slot": 90,
+        "local_call": 8,
+        "branch_back_u16": 5,
+        "scalar": 18,
+        "builtin_method": 11,
+        "branch_i32": 3
+      },
+      "blockers": [],
+      "encoded_external_script_reference_absence": true,
+      "complete_instruction_coverage_verified": true,
+      "bytecode_consumed": 1480,
+      "stack_consumed": 1808,
+      "linked_consumption_bytes_verified": true,
+      "flags": {
+        "native_execution_authenticated": false,
+        "native_builtin_semantics_verified": false,
+        "asset_dependency_closure_verified": false,
+        "retail_runtime_compatibility_verified": false,
+        "runtime_validation_passed": false,
+        "owner_acceptance": false,
+        "package_ready": false
+      }
+    },
+    {
+      "role": "original",
+      "input_sha256": "31b55a5d58a90d6b980a91543c907d26b91a4f6767d5350e8a35ae0e19fa2cef",
+      "native_sha256": "07a3326783fe9967a8faddfd3e17942aa29cd405201201f933ac22a1f3cc016f",
+      "bound_sha256": "7159e1a87f273d005c36eb96d613c2311244291f59f218d75ba365cbb92d220f",
+      "consumption_sha256": "9681fb6155126e1ec16498bdbfd1d00bd082c062fcdab2c10f8ad77da5831dd1",
+      "assembly_sha256": "b6efa60bb5c5cc30ad724363720d2249292a592a384557cbc509aaf24ddbe725",
+      "instruction_count": 560,
+      "category_counts": {
+        "plain": 218,
+        "string": 39,
+        "builtin_function": 41,
+        "branch_i16": 31,
+        "field": 95,
+        "slot": 90,
+        "local_call": 7,
+        "branch_back_u16": 5,
+        "external_call": 2,
+        "scalar": 18,
+        "builtin_method": 11,
+        "branch_i32": 3
+      },
+      "blockers": [
+        {
+          "cause": "external_script_reference",
+          "bytecode_offset": 212,
+          "stack_offset": 318,
+          "detail": {
+            "namespace": "scripts/engine/utility",
+            "target": "flag_exist"
+          }
+        },
+        {
+          "cause": "external_script_reference",
+          "bytecode_offset": 226,
+          "stack_offset": 345,
+          "detail": {
+            "namespace": "scripts/engine/utility",
+            "target": "flag"
+          }
+        }
+      ],
+      "encoded_external_script_reference_absence": false,
+      "complete_instruction_coverage_verified": true,
+      "bytecode_consumed": 1455,
+      "stack_consumed": 1394,
+      "linked_consumption_bytes_verified": true,
+      "flags": {
+        "native_execution_authenticated": false,
+        "native_builtin_semantics_verified": false,
+        "asset_dependency_closure_verified": false,
+        "retail_runtime_compatibility_verified": false,
+        "runtime_validation_passed": false,
+        "owner_acceptance": false,
+        "package_ready": false
+      }
+    }
+  ],
+  "all_27_completion_artifacts_rehashed_unchanged": true,
+  "completion_artifacts": [
+    {
+      "role": "source-manifest",
+      "bytes": 70526,
+      "sha256": "66bd64dc2cf9c29d4336e7f5c2308f6e37be55015bdda36548bcbad74baf6d1b"
+    },
+    {
+      "role": "tool",
+      "bytes": 1248768,
+      "sha256": "e7f922a78c9a8a83b1d4837206f89b09314f04fe12989283dba0fa9034405b98"
+    },
+    {
+      "role": "wrapper",
+      "bytes": 10323,
+      "sha256": "42dd0dcb01c014cfbfbabb18d404d4c6ccd1b6d04ed27a5b16e63dde54e72d07"
+    },
+    {
+      "role": "reference-reader",
+      "bytes": 18396,
+      "sha256": "fdb52f27225c61b563a09cd710cfeca769a9d01a8c971b882edeb277efe98a7c"
+    },
+    {
+      "role": "reference-profile",
+      "bytes": 19533,
+      "sha256": "e87230812b01059ece4327d9d465b8b20e5e1162d3cd698492aed70405bbf360"
+    },
+    {
+      "role": "reference-tests",
+      "bytes": 5650,
+      "sha256": "ea8a9ee474cc5f8425004620aa83b59d1de97f1ff45fe6406638a2a62e6a7141"
+    },
+    {
+      "role": "reference-pins",
+      "bytes": 655,
+      "sha256": "561bbed6531267893bcf78c377e2238aebeac7d15c9ab0714fe7482769eb4a47"
+    },
+    {
+      "role": "reference-controls",
+      "bytes": 1001,
+      "sha256": "405f1b809cb28d942ff2328fd7118d7575a7ad76394bd8716504c2ecb4eaea35"
+    },
+    {
+      "role": "reference-variant-native",
+      "bytes": 134706,
+      "sha256": "62d9a0264279780990c8c11eae1b2d8c37284244d8223baea899f8592c5ce15f"
+    },
+    {
+      "role": "reference-variant-bound",
+      "bytes": 21416,
+      "sha256": "c9a488b9863bceef4653b8f7bcf5e1453ab9532433682e08c18f12f5750c00ef"
+    },
+    {
+      "role": "reference-original-native",
+      "bytes": 131234,
+      "sha256": "07a3326783fe9967a8faddfd3e17942aa29cd405201201f933ac22a1f3cc016f"
+    },
+    {
+      "role": "reference-original-bound",
+      "bytes": 22053,
+      "sha256": "7159e1a87f273d005c36eb96d613c2311244291f59f218d75ba365cbb92d220f"
+    },
+    {
+      "role": "input-variant",
+      "bytes": 1992,
+      "sha256": "db486793b92e7e3c0a30c70b565fb432a4940e172a3f97da7e9db377f0e46d42"
+    },
+    {
+      "role": "witness-variant",
+      "bytes": 34680,
+      "sha256": "1c466d3db210ac2037346d1e96de1c0041c1350bcae32c4553c77f32cc0c73c7"
+    },
+    {
+      "role": "assembly-variant",
+      "bytes": 15850,
+      "sha256": "43e9b36a90cfe30ec713d52cdc63bbb7668cfc17acfae187de369079abeae1df"
+    },
+    {
+      "role": "input-original",
+      "bytes": 1951,
+      "sha256": "31b55a5d58a90d6b980a91543c907d26b91a4f6767d5350e8a35ae0e19fa2cef"
+    },
+    {
+      "role": "witness-original",
+      "bytes": 33280,
+      "sha256": "9681fb6155126e1ec16498bdbfd1d00bd082c062fcdab2c10f8ad77da5831dd1"
+    },
+    {
+      "role": "assembly-original",
+      "bytes": 15231,
+      "sha256": "b6efa60bb5c5cc30ad724363720d2249292a592a384557cbc509aaf24ddbe725"
+    },
+    {
+      "role": "compiler-config-0",
+      "bytes": 6407,
+      "sha256": "1da43991d0fa17c1b38eface755f997e7ce258546919ef9a4f1b15b8e77869c8"
+    },
+    {
+      "role": "result-cmake-version",
+      "bytes": 399,
+      "sha256": "8ff1771e52e613561147e98c5e9b42bcb498ca4d0e419600fab589f33a2f99c3"
+    },
+    {
+      "role": "result-configure",
+      "bytes": 809,
+      "sha256": "495a00549d92dfa15d29ee907ed745bb8de9c27e41dc47751dd9b3f668d81ea1"
+    },
+    {
+      "role": "result-build",
+      "bytes": 670,
+      "sha256": "cd87c347c50858ed543c0a14f2dcb11898971335e9951dddd1eca1833812cf59"
+    },
+    {
+      "role": "result-reader-tests",
+      "bytes": 580,
+      "sha256": "b271146fb98697a28d6c6fef01d0a7e1d2477defe166028fcfb5086a043dad54"
+    },
+    {
+      "role": "result-native-negative-tests",
+      "bytes": 592,
+      "sha256": "fcf8933348130691f4c648fbc94ccb2efcf07754d24779e56397209c6bd9ec11"
+    },
+    {
+      "role": "result-witness-variant",
+      "bytes": 1334,
+      "sha256": "5096200d6feb3c65362237b1582d5aa1d8c23d02f6dca38e19b88e1645dc4959"
+    },
+    {
+      "role": "result-witness-original",
+      "bytes": 1319,
+      "sha256": "f21fa44c2f4e9387b2889910fa16a887c72c35097d3f9b04931b6e487fc05200"
+    },
+    {
+      "role": "result-native-reference-tests",
+      "bytes": 1521,
+      "sha256": "8459707124c48f1d7264fa69668639170a29653876e6ffe24650a21e2ea77dfb"
+    }
+  ],
+  "supervision": {
+    "success": false,
+    "failure": "Complete lowercase SHA256 required",
+    "root_exit_code": 0,
+    "active_at_close": 0,
+    "tree_closed": true,
+    "lease_released": true,
+    "quarantined": false,
+    "registration_attempts": 1,
+    "root_exit_observed_ms": 68078,
+    "qualified_completion_verified": false,
+    "qualified_closure_verified": false,
+    "qualified_acceptance_granted": false,
+    "first_capture_original_job_members": 1,
+    "first_capture_member_kind": "vctip.exe",
+    "first_capture_image_file_guard_present": false,
+    "final_qualification_capture_present": false,
+    "qualified_stop_requested": false,
+    "owned_failure_cleanup_stop_requested": true,
+    "guarded_bytes_before_rejection": 99924
+  },
+  "fresh_close_confirmation": {
+    "utc": "2026-10-12T08:59:31.2571027Z",
+    "lease_count": 0,
+    "builder_count": 0,
+    "former_run_process_count": 0,
+    "main_matches_preflight": true,
+    "closed": true
+  },
+  "observed_output_peak_bytes": {
+    "build_receipt": 37507215,
+    "supervisor": 37130507
+  },
+  "failure_diagnosis": {
+    "confirmed": "The live launcher passes a PSCustomObject Plan; the new dictionary-style $Plan[$key+'_sha256'] access returns null. The corresponding dynamic property returns the correct pinned SHA256. Existing fixtures passed an ordered hashtable.",
+    "source_fix_applied_at_checkpoint": false,
+    "next_action": "Separate source correction and JSON-round-trip PSCustomObject regression, read-only complete collector diagnostic on retained artifacts, then a new Plan for review; no retry without new GO."
+  },
+  "global_reference_qualification_granted": false,
+  "package_ready": false,
+  "runtime_validation_passed": false,
+  "owner_acceptance": false,
+  "historical_v4_v5_failures_unchanged": true,
+  "historical_v6_success_unchanged": true,
+  "native_reexecuted_during_post_run_validation": false
+}

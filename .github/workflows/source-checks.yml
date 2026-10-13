@@ -1,0 +1,69 @@
+name: Source checks
+on:
+  push:
+    branches: [main, "codex/**"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare exact private source inputs
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./bootstrap.ps1 -Output "$PWD/runtime/ci sources"
+      - name: Product ownership and source regressions
+        shell: pwsh
+        run: |
+          git diff --check HEAD^ HEAD
+          if ($LASTEXITCODE) { throw 'Committed whitespace errors' }
+          ./checks.ps1 -Workspace "$PWD/runtime/ci sources" -Output "$PWD/runtime/ci checks"
+  portable-linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare the same pinned source inputs on Linux
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./bootstrap.ps1 -Output "$PWD/runtime/linux sources"
+      - name: Portable SDK, package and redirect contracts
+        shell: pwsh
+        run: |
+          $lock=Get-Content dependency-package.json -Raw | ConvertFrom-Json
+          $gate=Join-Path $PWD ('runtime/bootstrap/'+$lock.sha256+'/check_boundaries.py')
+          python -B $gate $PWD
+          if ($LASTEXITCODE) { throw 'Product boundary check failed' }
+          Push-Location './runtime/linux sources'
+          try {
+            python -B -m unittest discover -s sdk/modding/tests -v
+            if ($LASTEXITCODE) { throw 'Portable SDK core failed' }
+            python -B tests/ops/community_distribution_test.py
+            if ($LASTEXITCODE) { throw 'Portable distribution contracts failed' }
+            python -B tests/ops/mod_package_test.py
+            if ($LASTEXITCODE) { throw 'Portable package contracts failed' }
+            python -B -m unittest discover -s tools-source/gsc-spawn-tip -v
+            if ($LASTEXITCODE) { throw 'Portable spawn-tip source contracts failed' }
+          } finally { Pop-Location }

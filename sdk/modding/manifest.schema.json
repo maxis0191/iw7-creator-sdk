@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IW7 community mod v1 (transport object validated separately)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "namespace", "package", "requires", "dependencies", "conflicts", "lifecycle", "compatibility"],
+  "properties": {
+    "schema": {"const": "iw7.community-mod/1"},
+    "namespace": {"type": "string", "pattern": "[a-z][a-z0-9_-]{0,63}"},
+    "package": {"type": "object", "description": "Exact iw7.mod-package/1 object. ops/Validate-ModPackage.py is authoritative for strict transport shape and semantics."},
+    "requires": {
+      "type": "object", "additionalProperties": false,
+      "required": ["engine", "client", "server"],
+      "properties": {
+        "engine": {"type": "array", "uniqueItems": true, "maxItems": 32, "items": {"type": "string", "pattern": "[a-z][a-z0-9-]*/[1-9][0-9]*"}},
+        "client": {"type": "array", "uniqueItems": true, "maxItems": 32, "items": {"type": "string", "pattern": "[a-z][a-z0-9-]*/[1-9][0-9]*"}},
+        "server": {"type": "array", "uniqueItems": true, "maxItems": 32, "items": {"type": "string", "pattern": "[a-z][a-z0-9-]*/[1-9][0-9]*"}}
+      }
+    },
+    "dependencies": {
+      "type": "array", "maxItems": 64,
+      "items": {"type": "object", "additionalProperties": false, "required": ["id", "version"], "properties": {
+        "id": {"type": "string", "pattern": "[a-z][a-z0-9_-]{0,63}"},
+        "version": {"type": "string", "pattern": "(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)"}
+      }}
+    },
+    "conflicts": {
+      "type": "array", "maxItems": 64,
+      "items": {"type": "object", "additionalProperties": false, "required": ["id", "reason"], "properties": {
+        "id": {"type": "string", "pattern": "[a-z][a-z0-9_-]{0,63}"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 256}
+      }}
+    },
+    "lifecycle": {
+      "type": "object", "additionalProperties": false,
+      "required": ["activation", "deactivation", "hot_reload", "entrypoints", "cleanup"],
+      "properties": {
+        "activation": {"const": "map-load"}, "deactivation": {"const": "map-unload"},
+        "hot_reload": {"const": false},
+        "entrypoints": {"type": "array", "minItems": 1, "maxItems": 2, "items": {
+          "type": "object", "additionalProperties": false, "required": ["side", "path", "symbol"],
+          "properties": {
+            "side": {"type": "string", "enum": ["server", "client"]},
+            "path": {"type": "string", "minLength": 1, "maxLength": 240},
+            "symbol": {"type": "string", "enum": ["init", "module"]}
+          }
+        }},
+        "cleanup": {"type": "array", "uniqueItems": true, "maxItems": 4, "items": {"type": "string", "enum": ["entities", "hud", "threads", "player-state"]}}
+      }
+    },
+    "compatibility": {
+      "type": "object", "additionalProperties": false,
+      "required": ["engine", "mode", "network_protocol", "client_match", "coexistence"],
+      "properties": {
+        "engine": {"const": "iw7"}, "mode": {"const": "cp"},
+        "network_protocol": {"anyOf": [{"type": "null"}, {"type": "integer", "minimum": 1, "maximum": 65535}]},
+        "client_match": {"const": "exact-content"},
+        "coexistence": {"type": "string", "enum": ["server-only", "exclusive-fs-game"]}
+      }
+    }
+  }
+}

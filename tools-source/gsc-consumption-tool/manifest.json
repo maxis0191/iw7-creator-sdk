@@ -1,0 +1,388 @@
+{
+  "schema": "iw7.gsc-tool-source-archive/1",
+  "upstream_source": "https://github.com/xensik/gsc-tool",
+  "base_revision": "3300e430d1efef00e54c66a8bd416e18a2a9882a",
+  "base_tree_oid": "8af839d54cba3536954cfd1abd0e33c60112727d",
+  "source_revision": "03d3956d648b7aa4637fe1007f9d69ea463631e9",
+  "source_tree_oid": "b1a980682dc057376e327d57416cf2bc0de01f13",
+  "patch_format": "git format-patch --full-index --no-signature --no-stat",
+  "patches": [
+    {
+      "path": "patches/0001-feat-audit-prepare-strict-IW7-buffer-consumption-wit.patch",
+      "original_commit": "38bf8fd345572cc6232acdbafed2594c35b88ea5",
+      "bytes": 35377,
+      "sha256": "c693b8a7e83c8b97ed1fbfd4671a45dc81e7bd2f177b2d440b91dafb69da89f2"
+    },
+    {
+      "path": "patches/0002-fix-audit-reject-out-of-function-and-operand-branch-.patch",
+      "original_commit": "531079edabb476ef4214a19bb6dc12c5f6e1983b",
+      "bytes": 5196,
+      "sha256": "e177e6bad746cdac47424d41aee57e176259495b529b5d51ea33792e9d49ec13"
+    },
+    {
+      "path": "patches/0003-fix-audit-read-scalars-without-alignment-or-aliasing.patch",
+      "original_commit": "a2d5f4d4ba642bd0200ae5f921860acfd8110dd1",
+      "bytes": 10505,
+      "sha256": "57d638dfd7cf64ed4c9f32636acae4abdde32b2723eb76faf7ab7b9009943a1b"
+    },
+    {
+      "path": "patches/0004-fix-audit-widen-branch-arithmetic-before-checking-ta.patch",
+      "original_commit": "f2726164c7233d011d67e9b28ebe4b06f1417e70",
+      "bytes": 4996,
+      "sha256": "59d8a74c1e951ce834d6f4d22ab2cb5bfc257eb12a48121e7b24977bdbdfb878"
+    },
+    {
+      "path": "patches/0005-build-audit-prepare-admitted-reproducible-build-with.patch",
+      "original_commit": "e1b052f4f5469b4633fc0a1ad11390da80df63c3",
+      "bytes": 34135,
+      "sha256": "eecd25bd52c547bfd80e626b645862fadfa79c6a71c05f1ea4dca50766b051e8"
+    },
+    {
+      "path": "patches/0006-fix-build-supervise-original-job-and-retain-uncertai.patch",
+      "original_commit": "f01bb43337c16779af6a5e216d70cd28157daa0a",
+      "bytes": 14850,
+      "sha256": "4ec22fc62fa364a6966624eba165d267c9cc301c002b01f457b3e561ae7c09cd"
+    },
+    {
+      "path": "patches/0007-fix-build-enforce-monotonic-deadlines-before-accepti.patch",
+      "original_commit": "2dfbbf37d9fa329dd64599c11c806afe1ac2515c",
+      "bytes": 14051,
+      "sha256": "41278b4e9ef6f67d273f4a2976bbe169b1d24f29c05c08dd1c02c050123afd03"
+    },
+    {
+      "path": "patches/0008-Resume-original-audit-job-before-bounded-CIM-registr.patch",
+      "original_commit": "5a891beec470f17da19dba530ab47bd111e77ae0",
+      "bytes": 25951,
+      "sha256": "9406ff5e800458618fcf16bd027e3006312fd9e50811cef25e9af2ea7d277bee"
+    },
+    {
+      "path": "patches/0009-Fix-Windows-zlib-header-order-in-the-audit-entry-poi.patch",
+      "original_commit": "6f650cb9c981317b970dad0abae6846165f80166",
+      "bytes": 5827,
+      "sha256": "e6128a3bfab937a23499b8b166a6bc5c647c338e9b3a6f2841ff19a654456426"
+    },
+    {
+      "path": "patches/0010-Capture-bounded-original-job-residual-identities-bef.patch",
+      "original_commit": "f813f9758006e33857339c19ece48a642212ac5f",
+      "bytes": 24816,
+      "sha256": "cf1edb77b4c3da27a6f96d51a86c8b7e911c44a957d26677e54447d5c6eb50d6"
+    },
+    {
+      "path": "patches/0011-Specify-pinned-original-job-residual-identity-without-closure.patch",
+      "original_commit": "41fdc19fd443bddafb90b9f6664266adb008c494",
+      "bytes": 22441,
+      "sha256": "38f9162c88a72c5fd5588b95554671d291c4ee76ad280e68f35e9391fb15e9c2"
+    },
+    {
+      "path": "patches/0012-Qualify-owned-residual-closure-with-guarded-exact-run-evidence.patch",
+      "original_commit": "eabe74ab65d8ce2a943b54d24b15a60749a0cf2a",
+      "bytes": 63719,
+      "sha256": "2d08c8d5249f65deb62d403fa0d4fdd8d8da400534cf5ce482b0b0da8df3b4ee"
+    },
+    {
+      "path": "patches/0013-Classify-exact-IW7-encoded-references-with-independent-byte-coverage.patch",
+      "original_commit": "bfa2d4af5e9687bcf30b6a45ad04db403f63538a",
+      "bytes": 96813,
+      "sha256": "3e8946e3728608d6000a16ddd4e260f058d53cd3248ca8a93e36876ef3196b10"
+    },
+    {
+      "path": "patches/0014-Report-reference-diagnostics-at-each-literal-operand-start.patch",
+      "original_commit": "805f07676bb1bdad9effee5d907a5fe9f4bcfa01",
+      "bytes": 7533,
+      "sha256": "69a3398bb1e8b0677a9a2821914315611d574702137e2e5ea69b133f01ae77f2"
+    },
+    {
+      "path": "patches/0015-Require-native-reference-controls-in-the-supervised-build-recipe.patch",
+      "original_commit": "42e6c403a789b38ede39fd58ff0cb5f77da7d002",
+      "bytes": 43948,
+      "sha256": "d3b1f93bbcf6f1e6d80f31ac46790fcbd0264ecf13e415526b890f0dd26ff3c9"
+    },
+    {
+      "path": "patches/0016-Fix-reference-receipt-collection-for-JSON-loaded-Plans.patch",
+      "original_commit": "03d3956d648b7aa4637fe1007f9d69ea463631e9",
+      "bytes": 6694,
+      "sha256": "6c90b5dacf3bae36f0fabb2569f41583e274d8ff8f530d0b5a24c19e44dd187b"
+    }
+  ],
+  "licenses": [
+    {
+      "path": "licenses/gsc-tool-LICENSE.txt",
+      "source_revision": "6f650cb9c981317b970dad0abae6846165f80166",
+      "source_path": "LICENSE",
+      "bytes": 35149,
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "path": "licenses/zlib-LICENSE.txt",
+      "source_revision": "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf",
+      "source_path": "LICENSE",
+      "bytes": 1002,
+      "sha256": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243"
+    }
+  ],
+  "changed_source_blobs": [
+    {
+      "path": "audit/CMakeLists.txt",
+      "mode": "100644",
+      "blob_oid": "56234555cd1eadad3d89595e60fe49a29639cc34",
+      "bytes": 1811,
+      "sha256": "3cb56966be0be1aafccc2f97fb712e658c453446443fcade581b66404e2790d9"
+    },
+    {
+      "path": "audit/README.md",
+      "mode": "100644",
+      "blob_oid": "34b544a631a242ec9a6cca1c96ed93cb795929e4",
+      "bytes": 23888,
+      "sha256": "fb124a02eb11be4b37748f5323d24f7e1012f0ebd642c1565120a1a6e331f37c"
+    },
+    {
+      "path": "audit/build.ps1",
+      "mode": "100644",
+      "blob_oid": "fe37f9e46e55d5a74688888e44c53011eed8ed73",
+      "bytes": 7805,
+      "sha256": "3e743e002f18e688271fdb5351071818996d3ba760b897510a488a1dc700ffcd"
+    },
+    {
+      "path": "audit/build.py",
+      "mode": "100644",
+      "blob_oid": "d4e654500dcc119eb1cb384214a82ce4cdf43880",
+      "bytes": 16504,
+      "sha256": "de6aacdaf934f38279330d2603e7a74004c2807ef55e01e01511f218284e6477"
+    },
+    {
+      "path": "audit/completion.ps1",
+      "mode": "100644",
+      "blob_oid": "2acaa79c6622f73f931727bd3a13093c2d8dcbb6",
+      "bytes": 25241,
+      "sha256": "212fe9cf360d78a030baa60baaa6aeda56dc351c39a29f0e108d78bca86a69e5"
+    },
+    {
+      "path": "audit/diagnostics.ps1",
+      "mode": "100644",
+      "blob_oid": "5e1e18573bf0cb2d8fabac0f943cc3441e744e4b",
+      "bytes": 4183,
+      "sha256": "971284b7643182a351a0294c8df52e74794ecc57a7fb870749ccd141f5222379"
+    },
+    {
+      "path": "audit/main.cpp",
+      "mode": "100644",
+      "blob_oid": "4ab20561c51e78cec56c13bb4eb1f347bbeea89c",
+      "bytes": 7844,
+      "sha256": "9a8357b3b2363b97c27176c722aa4e9cd254a5420edef57121b738c8ae538480"
+    },
+    {
+      "path": "audit/make_reference_profile.py",
+      "mode": "100644",
+      "blob_oid": "235df4ad37d88b0433fecc4636751bccb11d1285",
+      "bytes": 6660,
+      "sha256": "20320a4fe12c953fb164dbbdb41531723f7edc146f955393d5946a6c4c8e389d"
+    },
+    {
+      "path": "audit/prepare.py",
+      "mode": "100644",
+      "blob_oid": "d9d2738c3291652527fa74508ae875b4c5a87731",
+      "bytes": 4396,
+      "sha256": "8c7aa044afe32b962ff1095ab15e6ef6f6c5502b3d60894494a7be4ff00c4e7e"
+    },
+    {
+      "path": "audit/reader_tests.cpp",
+      "mode": "100644",
+      "blob_oid": "b8dc5e0cc5c4b7415f1fad779099a3e2d49cd9d5",
+      "bytes": 3680,
+      "sha256": "2a67879f7cbc17df14176886f715880ed68ef91ebb25b1f69493f08b3d1fb685"
+    },
+    {
+      "path": "audit/reference-contract.md",
+      "mode": "100644",
+      "blob_oid": "8eb3081a7fbd3c24b0f3cb7c92dfe762af29cbf9",
+      "bytes": 13911,
+      "sha256": "4e05186aa710a227fb47dfd2fa4934d45dbe48834f3b46fcfacbc146ee641dba"
+    },
+    {
+      "path": "audit/reference-observation-20261012.json",
+      "mode": "100644",
+      "blob_oid": "1b9da30959863dabcb8d20493f7c3f1d0249d4e7",
+      "bytes": 7700,
+      "sha256": "b2c9caf27f8daf0bd006c0af4e3b72e010da26236f8bbea076fa540c3f18fe68"
+    },
+    {
+      "path": "audit/reference-profile.json",
+      "mode": "100644",
+      "blob_oid": "7b2bbecb0febfc16b9af082aa67c180746121f16",
+      "bytes": 19533,
+      "sha256": "e87230812b01059ece4327d9d465b8b20e5e1162d3cd698492aed70405bbf360"
+    },
+    {
+      "path": "audit/references.py",
+      "mode": "100644",
+      "blob_oid": "be209894eb320736d2936f261622c69849204c79",
+      "bytes": 18396,
+      "sha256": "fdb52f27225c61b563a09cd710cfeca769a9d01a8c971b882edeb277efe98a7c"
+    },
+    {
+      "path": "audit/residual-closure-contract.md",
+      "mode": "100644",
+      "blob_oid": "8a6629078132b3dd4c1350a84588393aaa7e6a60",
+      "bytes": 9272,
+      "sha256": "5803d389c07b14fb9a5fc698c7ebef0251009585f30b983300da9c81dd4bd889"
+    },
+    {
+      "path": "audit/residual_policy.ps1",
+      "mode": "100644",
+      "blob_oid": "dd877a33d8fe83fd55eec42363f9537144563a59",
+      "bytes": 6084,
+      "sha256": "86c2d8f3f6c79e5dd644f11741521f74b3ccd6960f45189ba41da38f17ef3888"
+    },
+    {
+      "path": "audit/run_process.ps1",
+      "mode": "100644",
+      "blob_oid": "a1f8afed0aac84188c0c6d9fa6051ddc0a77c1d2",
+      "bytes": 3078,
+      "sha256": "9d2468c700b33e1e6b882be8441733b1ab358af165d27ec51a0f647781bc2458"
+    },
+    {
+      "path": "audit/supervision.ps1",
+      "mode": "100644",
+      "blob_oid": "ffbcfa4bb9ed7007bfcbd31e06492b9f6264d633",
+      "bytes": 8634,
+      "sha256": "b6125dfaa4c6b16e4ebc6f54f160369788cfe5290f4c734edb925101af4f3471"
+    },
+    {
+      "path": "audit/test_build_recipe.py",
+      "mode": "100644",
+      "blob_oid": "80b8b3eb2033a9873414e7cf90cb24698eb62a2b",
+      "bytes": 4119,
+      "sha256": "f1c3399c253b0279ab6a3b364d71ecb91565455ca7eeda17646738215fd6db60"
+    },
+    {
+      "path": "audit/test_completion.ps1",
+      "mode": "100644",
+      "blob_oid": "da426218f29b3802c34367ed42b8338e9850f319",
+      "bytes": 16716,
+      "sha256": "7d22d5e48fe6960469ac13ee1bde61d6dfafa0c9145f7cb1c8d7cf443fa79c26"
+    },
+    {
+      "path": "audit/test_completion_files.ps1",
+      "mode": "100644",
+      "blob_oid": "00a717387d2b376e908ba829083c17fbb0add50f",
+      "bytes": 2936,
+      "sha256": "4309d27120e23dafad22e104971521bf08bc102b18f06753ca481f9193052c6c"
+    },
+    {
+      "path": "audit/test_diagnostics.ps1",
+      "mode": "100644",
+      "blob_oid": "a119fa149931e310ce4195d0ba6dfedc36c344ec",
+      "bytes": 6968,
+      "sha256": "74bbe2abb232bebccbc13b1b29073202e373b6e8450754a924bdd3003b9bcb92"
+    },
+    {
+      "path": "audit/test_native.py",
+      "mode": "100644",
+      "blob_oid": "e6033d4062f6a3fd2c66358ba81910ac192174fa",
+      "bytes": 6322,
+      "sha256": "2b6f9ad25a356942ff1b7413cb0690516a4420ade9db984cb4457301ee917eb5"
+    },
+    {
+      "path": "audit/test_owned_closure.ps1",
+      "mode": "100644",
+      "blob_oid": "d8b1d70e68e4e9689ff2f14cb814a8d3f2af1d48",
+      "bytes": 9218,
+      "sha256": "6c603f87f3cce850c402da44efc044c9c257f6137649ea0c2958e99782a99a28"
+    },
+    {
+      "path": "audit/test_plan.py",
+      "mode": "100644",
+      "blob_oid": "0972a85c2091d208c7c34610800a3825413c89df",
+      "bytes": 4661,
+      "sha256": "6ba5783e7233b3885f17b685217b2cc4e9042b26e4b79d982201a82d6c190f2d"
+    },
+    {
+      "path": "audit/test_reference_native.py",
+      "mode": "100644",
+      "blob_oid": "8245010aadaad0ac7c700698601a5a79b493feb0",
+      "bytes": 5650,
+      "sha256": "ea8a9ee474cc5f8425004620aa83b59d1de97f1ff45fe6406638a2a62e6a7141"
+    },
+    {
+      "path": "audit/test_references.py",
+      "mode": "100644",
+      "blob_oid": "175561f19fa308bbab65b8dcc7be90358bfdf373",
+      "bytes": 17588,
+      "sha256": "79eade6b38af3ff29fd5b0c8ff4c670aaeede8929b64b18077e4f89f07716038"
+    },
+    {
+      "path": "audit/test_registration.ps1",
+      "mode": "100644",
+      "blob_oid": "a7838016b1179b5fe0f6abbe4e6ecda370af64df",
+      "bytes": 8689,
+      "sha256": "31d2658bb0a8d7c8779a5dc8bc1528c12fc14e32fe79d1aab4f6937a8bbc89bf"
+    },
+    {
+      "path": "audit/test_residual_policy.ps1",
+      "mode": "100644",
+      "blob_oid": "4db5453458c6c23a6bd7214306a7cc46bfb2aa6f",
+      "bytes": 7936,
+      "sha256": "d4aec293287c3e6c5adf6731c78f1ae18f9a219b5c9a11525a022ab00d319668"
+    },
+    {
+      "path": "audit/test_supervision.ps1",
+      "mode": "100644",
+      "blob_oid": "e20f3b7a8f7feb72f5cc61897d2d7e0997f9a106",
+      "bytes": 5057,
+      "sha256": "03775036b467157ea1f01b3267fe9da47d71df59c8ec0b4c0e0916745c9d51a4"
+    },
+    {
+      "path": "include/xsk/gsc/common/assembly.hpp",
+      "mode": "100644",
+      "blob_oid": "5080024b3e270123788c5474b839c0a2e4a6e5a1",
+      "bytes": 6559,
+      "sha256": "c458a23c14ffff4b347523c951fd3dbbd4d1448b552ad5f2dd0542a72456952e"
+    },
+    {
+      "path": "include/xsk/gsc/disassembler.hpp",
+      "mode": "100644",
+      "blob_oid": "331613a7f6a012133168062539895a07dcf069c3",
+      "bytes": 2530,
+      "sha256": "1ee7188736a3dded98f759e4f5203b3687c298ea9658899c3c310d72ef16da0f"
+    },
+    {
+      "path": "include/xsk/utils/reader.hpp",
+      "mode": "100644",
+      "blob_oid": "acd3d380576ad824f86755ce91070b675ecbb3e9",
+      "bytes": 1074,
+      "sha256": "bcd1df5ee44d0b39443fce19431f1452821b72f709f3a04d5fc9573d1f4690b7"
+    },
+    {
+      "path": "src/gsc/disassembler.cpp",
+      "mode": "100644",
+      "blob_oid": "f6c5c7bdbbb5bd8becf5fad2e4cd206d79e8391e",
+      "bytes": 25360,
+      "sha256": "0bb538fdfb2e1449250d5184f9af9507028951184d4c93185251691e71c82c67"
+    },
+    {
+      "path": "src/utils/reader.cpp",
+      "mode": "100644",
+      "blob_oid": "6b154c4b1795ee248a9e76bde5276b4861c4ba1b",
+      "bytes": 4735,
+      "sha256": "e97a6502b6c49644533b50adf128fbad5aaf4a01eaf8dade6805afb883c7945b"
+    }
+  ],
+  "dependency_gitlinks": [
+    {
+      "path": "deps/cxxopts",
+      "revision": "eb787304d67ec22f7c3a184ee8b4c481d04357fd"
+    },
+    {
+      "path": "deps/zlib",
+      "revision": "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf"
+    }
+  ],
+  "scope": {
+    "text_source_only": true,
+    "dependency_sources_included": false,
+    "native_executables_included": false,
+    "retail_inputs_included": false,
+    "commit_id_reproduction_promised": false,
+    "binary_reproducibility_verified": false
+  }
+}

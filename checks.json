@@ -1,0 +1,104 @@
+{
+  "product": "iw7-creator-sdk",
+  "checks": [
+    {
+      "id": "sdk-modding-tests",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "sdk/modding/tests",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-gsc-spawn-tip",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/gsc-spawn-tip",
+        "-v"
+      ]
+    },
+    {
+      "id": "community_distribution_test",
+      "command": [
+        "python",
+        "-B",
+        "tests/ops/community_distribution_test.py"
+      ]
+    },
+    {
+      "id": "hud_lab_test",
+      "command": [
+        "python",
+        "-B",
+        "tests/ops/hud_lab_test.py"
+      ]
+    },
+    {
+      "id": "mod_package_test",
+      "command": [
+        "python",
+        "-B",
+        "tests/ops/mod_package_test.py"
+      ]
+    },
+    {
+      "id": "Test-SpawnTip",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/gsc-spawn-tip/Test-SpawnTip.ps1"
+      ]
+    },
+    {
+      "id": "Test-SpawnTipHost",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "tools-source/gsc-spawn-tip/Test-SpawnTipHost.ps1"
+      ]
+    },
+    {
+      "id": "beacon_ff_test",
+      "command": [
+        "pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "sdk/modding/tests/beacon_ff_test.ps1"
+      ]
+    },
+    {
+      "id": "sdk-modding-examples-original-sound-test_example",
+      "command": [
+        "python",
+        "-B",
+        "sdk/modding/examples/original-sound/test_example.py"
+      ]
+    },
+    {
+      "id": "tools-source-gsc-consumption-tool-verify_archive",
+      "command": [
+        "python",
+        "-B",
+        "tools-source/gsc-consumption-tool/verify_archive.py"
+      ]
+    }
+  ]
+}

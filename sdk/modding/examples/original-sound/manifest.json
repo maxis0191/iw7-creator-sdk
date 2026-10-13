@@ -1,0 +1,63 @@
+{
+  "schema": "iw7.community-mod/1",
+  "namespace": "sdk_original_sound_v1",
+  "requires": {
+    "engine": ["iw7-cp/1"],
+    "client": ["mod-fastfile-download/1"],
+    "server": ["mod-fastfile-host/1", "gsc-custom-scripts/1"]
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "lifecycle": {
+    "activation": "map-load",
+    "deactivation": "map-unload",
+    "hot_reload": false,
+    "entrypoints": [
+      {"side": "server", "path": "custom_scripts/cp/sdk_original_sound_v1.gsc", "symbol": "init"}
+    ],
+    "cleanup": ["threads", "player-state"]
+  },
+  "compatibility": {
+    "engine": "iw7", "mode": "cp", "network_protocol": null,
+    "client_match": "exact-content", "coexistence": "exclusive-fs-game"
+  },
+  "package": {
+    "schema": "iw7.mod-package/1",
+    "id": "sdk_original_sound_v1", "version": "0.1.0", "maps": ["cp_zmb"], "delivery": "mod",
+    "native_requirements": {
+      "server_source": null, "client_source": null,
+      "client_capabilities": [], "compatible_client_sources": []
+    },
+    "files": [
+      {"id": "fastfile", "role": "client", "source": "client/mod.ff",
+       "destination": "mods/sdk_original_sound_v1/mod.ff", "bytes": null, "sha256": null,
+       "closure_roots": ["soundbank:community_original_sound_v1.all", "rawfile:mod"]},
+      {"id": "loaded_bank", "role": "client", "source": "client/mod.sabl",
+       "destination": "mods/sdk_original_sound_v1/mod.sabl", "bytes": null, "sha256": null,
+       "closure_roots": ["soundbank:community_original_sound_v1.all"]},
+      {"id": "streamed_bank", "role": "client", "source": "client/mod.sabs",
+       "destination": "mods/sdk_original_sound_v1/mod.sabs", "bytes": null, "sha256": null,
+       "closure_roots": ["soundbank:community_original_sound_v1.all"]},
+      {"id": "neutral_fixture", "role": "server", "source": "server/sdk_original_sound_v1.gsc",
+       "destination": "iw7-mod/custom_scripts/cp/sdk_original_sound_v1.gsc", "bytes": null, "sha256": null,
+       "closure_roots": ["scriptfile:custom_scripts/cp/sdk_original_sound_v1.gsc"]}
+    ],
+    "closure": {
+      "status": "incomplete", "evidence_ref": null,
+      "roots": ["soundbank:community_original_sound_v1.all", "rawfile:mod", "scriptfile:custom_scripts/cp/sdk_original_sound_v1.gsc"],
+      "nodes": [
+        {"id": "soundbank:community_original_sound_v1.all", "kind": "sound", "scope": "client", "sha256": null, "requires": []},
+        {"id": "rawfile:mod", "kind": "other", "scope": "client", "sha256": null, "requires": []},
+        {"id": "scriptfile:custom_scripts/cp/sdk_original_sound_v1.gsc", "kind": "scriptfile", "scope": "server", "sha256": null, "requires": []}
+      ],
+      "unresolved": []
+    },
+    "evidence": [
+      {"kind": "source-check", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "offline-load", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "runtime-link", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "render", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "gameplay", "status": "pending", "reference": null, "authority": "owner", "maps": []}
+    ]
+  }
+}

@@ -1,0 +1,217 @@
+{
+  "schema": "iw7.platform-source-validation/2",
+  "source_commit": "ff8abf02595d29d95854fe4ef0d0f69fdea7f581",
+  "completed_head_observed": "ff8abf02595d29d95854fe4ef0d0f69fdea7f581",
+  "started_utc": "2026-10-12T13:20:48.7219827Z",
+  "finished_utc": "2026-10-12T13:23:48.3418040Z",
+  "exit_code": 0,
+  "full_suite_invocations": 1,
+  "python_reported_total": 1025,
+  "python_passed_test_cases": 1019,
+  "python_run_groups": 19,
+  "python_skipped_test_cases": 6,
+  "python_skipped_setup_classes": 2,
+  "skips": [
+    {
+      "suite": "sdk/modding/tests",
+      "test": "test_beacon_finalize.FinalizeTests.test_actual_symlink_input_rejected_when_supported",
+      "kind": "test-case",
+      "reason": "WinError 1314: symlink creation privilege unavailable"
+    },
+    {
+      "suite": "tools-source/asset-bridge/h1-fixture",
+      "test": "test_dump.PreparationTests.setUpClass",
+      "kind": "setup-class",
+      "reason": "Exact dump source preparation requires explicit --source-repo"
+    },
+    {
+      "suite": "tools-source/asset-bridge/h1-fixture",
+      "test": "test_native_preparation.NativePreparationTests.setUpClass",
+      "kind": "setup-class",
+      "reason": "Pinned source preparation requires explicit --source-repo"
+    },
+    {
+      "suite": "tools-source/asset-bridge/recipient/script-names",
+      "test": "test_prepare_observer.RetainedSourceTests.test_old_index_and_dump_logic_remain_exact",
+      "kind": "test-case",
+      "reason": "Optional retained native source not supplied"
+    },
+    {
+      "suite": "tools-source/asset-bridge/recipient/script-names",
+      "test": "test_prepare_observer.RetainedSourceTests.test_only_three_additions_are_present",
+      "kind": "test-case",
+      "reason": "Optional retained native source not supplied"
+    },
+    {
+      "suite": "tools-source/asset-bridge/recipient/script-names",
+      "test": "test_prepare_observer.RetainedSourceTests.test_recorded_patch_equals_source_render",
+      "kind": "test-case",
+      "reason": "Optional retained native source not supplied"
+    },
+    {
+      "suite": "tests/ops/community_distribution_test.py",
+      "test": "test_traversal_and_symlink_boundary",
+      "kind": "test-case",
+      "reason": "Host does not grant symlink creation; summary skipped=1, skip site identified from unchanged source"
+    },
+    {
+      "suite": "tests/ops/mod_package_test.py",
+      "test": "test_symlink_payload_and_root_rejected",
+      "kind": "test-case",
+      "reason": "Symlink permission unavailable; summary skipped=1, skip site identified from unchanged source"
+    }
+  ],
+  "powershell_suites_completed": 48,
+  "powershell_aggregate_checks": null,
+  "powershell_count_note": "Mixed checks/cases/assertions and unnumbered fixtures are not summed into a misleading aggregate.",
+  "stage_controls": 157,
+  "vertical_controls": 145,
+  "explicit_gsc_parses": 4,
+  "generated_gsc_parses_within_stage": 3,
+  "retained_t7_source_comparisons_passed": 3,
+  "retained_t7_command_comparisons_passed": 3,
+  "optional_suites_not_invoked": [
+    {
+      "suite": "sound/native-checksum/test_build_entry_guards.ps1",
+      "reason": "SoundBuildPlanPath not supplied"
+    },
+    {
+      "suite": "sound/native-checksum/test_build_lifecycle.ps1",
+      "reason": "GscAuditProviderRoot not supplied"
+    },
+    {
+      "suite": "sound/native-checksum/test_build_receipt.ps1",
+      "reason": "GscAuditProviderRoot not supplied"
+    }
+  ],
+  "additional_local_plan_suites_not_registered_in_platform": [
+    {
+      "suite": "sound/native-checksum/test_response_plan.ps1",
+      "required_input": "PlanPath"
+    },
+    {
+      "suite": "world/test_observer_plan.ps1",
+      "required_inputs": [
+        "VCToolsRoot",
+        "WindowsSdkRoot",
+        "PythonExe",
+        "StageProviderRoot",
+        "LinkProfilePath",
+        "NativeJobAssembly"
+      ]
+    }
+  ],
+  "log": "runtime/platform-native-followups-integration.local.log",
+  "log_bytes": 154285,
+  "log_sha256": "89aec35d67eef33051f01de4e6b360255b4430883e6bb2b46ca00593a74d9b7f",
+  "native_build_invoked": false,
+  "game_invoked": false,
+  "download_invoked": false,
+  "real_lease_acquired": false,
+  "gameplay_accepted": false,
+  "ci_passed": false,
+  "sound_candidate_binary_hashed": false,
+  "gsc_parser_executed": true,
+  "command": "pwsh -NoLogo -NoProfile -NonInteractive -File ops/modding/Test-Platform.ps1 -GscToolPath tools/gsc-tool/gsc-tool.exe -SoundCandidateRoot <retained-content-surfaces>/runtime/zt-sound-md5-d",
+  "retained_t7_source_env_set": true,
+  "retained_e7_build_env_set": true,
+  "python_reported_run_counts": [
+    {
+      "suite": "sdk/modding/tests",
+      "reported_tests": 277
+    },
+    {
+      "suite": "tools-source/asset-bridge/model",
+      "reported_tests": 17
+    },
+    {
+      "suite": "tools-source/asset-bridge/h1-fixture",
+      "reported_tests": 21
+    },
+    {
+      "suite": "tools-source/asset-bridge/t7-bridge",
+      "reported_tests": 12
+    },
+    {
+      "suite": "tools-source/asset-bridge/t7-iw7",
+      "reported_tests": 90
+    },
+    {
+      "suite": "tools-source/asset-bridge/weapon",
+      "reported_tests": 11
+    },
+    {
+      "suite": "tools-source/asset-bridge/world",
+      "reported_tests": 34
+    },
+    {
+      "suite": "tools-source/asset-bridge/animation",
+      "reported_tests": 49
+    },
+    {
+      "suite": "tools-source/asset-bridge/animation/rig",
+      "reported_tests": 114
+    },
+    {
+      "suite": "tools-source/asset-bridge/animation/rig/locator",
+      "reported_tests": 41
+    },
+    {
+      "suite": "tools-source/asset-bridge/rig-abi",
+      "reported_tests": 69
+    },
+    {
+      "suite": "tools-source/asset-bridge/surfaces",
+      "reported_tests": 55
+    },
+    {
+      "suite": "tools-source/asset-bridge/surfaces/sound",
+      "reported_tests": 78
+    },
+    {
+      "suite": "tools-source/asset-bridge/surfaces/sound/native-checksum",
+      "reported_tests": 15
+    },
+    {
+      "suite": "tools-source/asset-bridge/recipient",
+      "reported_tests": 47
+    },
+    {
+      "suite": "tools-source/asset-bridge/recipient/script-names",
+      "reported_tests": 27
+    },
+    {
+      "suite": "tests/ops/community_distribution_test.py",
+      "reported_tests": 17
+    },
+    {
+      "suite": "tests/ops/mod_package_test.py",
+      "reported_tests": 26
+    },
+    {
+      "suite": "tools-source/asset-bridge/recipient/check_recipient_streams.py",
+      "reported_tests": 25
+    }
+  ],
+  "followup_scope": "Documentation and sanitized native receipts may follow this exact source run; no runtime/source delta is covered implicitly.",
+  "targeted_followups": [
+    {
+      "source_commit": "5edd9a40b9fe0d66214adeb515ef25681a1de94f",
+      "scope": "Test-T7Catalogue.ps1: observed startup output correction",
+      "checks": 112,
+      "passed": true,
+      "native_process_started": false,
+      "real_lease_acquired": false,
+      "log": "runtime/t7-catalogue-b-integration.local.log",
+      "log_sha256": "939a488453dc0ec60ed6478bfa777de08b147a847b38d701e9b94514ee4f6d75"
+    },
+    {
+      "source_commit": "8abb885e134342f0778c293746613b95e52fde7e",
+      "scope": "World/T7 raw source pin integration, exact LF checkout, retained patch attributes, and 55 World stage source checks",
+      "checks": 55,
+      "passed": true,
+      "link_profile_sha256": "6a512862b3f6b8c2d3fe2b77404122820527a43617df9f50881cd83f10db5747",
+      "independent_review": "P2 closed; checked blob and working file bytes; no full suite rerun"
+    }
+  ]
+}

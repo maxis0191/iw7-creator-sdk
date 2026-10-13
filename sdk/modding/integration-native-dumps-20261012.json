@@ -1,0 +1,60 @@
+{
+  "schema": "iw7.modding-integration-validation/1",
+  "date": "2026-10-12",
+  "source_commit": "c1836ddc805434f764388b323e19f52f212c1461",
+  "command": "pwsh -NoLogo -NoProfile -NonInteractive -File ops/modding/Test-Platform.ps1 -GscToolPath tools/gsc-tool/gsc-tool.exe",
+  "exit_code": 0,
+  "passed": true,
+  "log_sha256": "eed3b4b9e03784fb08400dbafe9ba8fe37fc37b485a9324075cb2fa858f2ba20",
+  "log_bytes": 135609,
+  "python_suite_reported_counts": [
+    277,
+    17,
+    21,
+    11,
+    31,
+    49,
+    114,
+    41,
+    69,
+    55,
+    76,
+    11,
+    47,
+    27,
+    17,
+    26,
+    25
+  ],
+  "python_total_reported": 914,
+  "powershell_suites_passed": true,
+  "stage_controls_with_parser": 139,
+  "gsc_syntax_files": 4,
+  "skips": [
+    "Three Windows symlink cases require unavailable privilege.",
+    "Two H1 native-source preparation classes require explicit local source checkout.",
+    "Three script-name native source comparison cases require explicit local source checkout."
+  ],
+  "local_only_checks_not_in_portable_run": [
+    "Sound Plan entry guards",
+    "Sound lifecycle and receipt providers",
+    "Sound Plan E response contract"
+  ],
+  "separate_reviewed_sound_plan_e_checks": {
+    "source_commit": "e42d3ed480efc409fdcc1f950b1ac39e00014935",
+    "plan_sha256": "65e4ddc10524e6f6d2e3a596c8a480ca95be7be336555c30a41404597350f2e4",
+    "response_python_cases": 11,
+    "response_powershell_cases": 7,
+    "entry_guard_mutation_refusals": 15,
+    "scope": "Independent component reviewer reran the exact local Plan E source tests; not part of portable integration output."
+  },
+  "prior_failed_integration": {
+    "source_commit": "a3c177194638a9828a71a2ddd73348dd7c2b2aac",
+    "log_sha256": "51563d4c93ac93e695b98ff4ed41078ca3e17b63d0f2dda86f74548e37eae8f4",
+    "cause": "Harness invoked local sound tests without mandatory Plan/provider arguments.",
+    "preserved": true
+  },
+  "native_build": false,
+  "gameplay_acceptance": false,
+  "ci_passed": false
+}

@@ -1,0 +1,322 @@
+From a2d5f4d4ba642bd0200ae5f921860acfd8110dd1 Mon Sep 17 00:00:00 2001
+From: bigmangeekf <255175347+bigmangeekf@users.noreply.github.com>
+Date: Mon, 12 Oct 2026 07:40:12 +0200
+Subject: [PATCH 3/9] fix(audit): read scalars without alignment or aliasing UB
+
+
+diff --git a/audit/reader_tests.cpp b/audit/reader_tests.cpp
+index 8fcf3d58d2cbe26d2b42913681e99e35121ee254..b8dc5e0cc5c4b7415f1fad779099a3e2d49cd9d5 100644
+--- a/audit/reader_tests.cpp
++++ b/audit/reader_tests.cpp
+@@ -2,6 +2,7 @@
+ #include "xsk/stdinc.hpp"
+ #include "xsk/utils/reader.hpp"
+ #include <limits>
++#include <cmath>
+ 
+ using namespace xsk;
+ template<class F> auto refuses(F operation) -> void
+@@ -11,6 +12,23 @@ template<class F> auto refuses(F operation) -> void
+     throw std::runtime_error("expected a bounded-reader refusal");
+ }
+ 
++template<typename T> auto unaligned_scalar(T expected) -> void
++{
++    for (bool strict : { false, true }) for (bool swap : { false, true })
++    {
++        std::array<u8, sizeof(T) + 2> bytes{};
++        std::memcpy(bytes.data() + 1, &expected, sizeof(T));
++        if (swap) std::reverse(bytes.begin() + 1, bytes.end() - 1);
++        utils::reader reader{ bytes.data(), bytes.size(), swap, strict };
++        reader.seek(1);
++        auto value = reader.read<T>();
++        // Compare representations, preserving negative zero and NaN payloads.
++        if (std::memcmp(&value, &expected, sizeof(T)) || reader.pos() != sizeof(T) + 1)
++            throw std::runtime_error("unaligned scalar value or cursor");
++        refuses([&] { reader.read<u16>(); });
++    }
++}
++
+ int main()
+ {
+     try
+@@ -19,6 +37,11 @@ int main()
+         utils::reader r{ bytes.data(), bytes.size(), false, true };
+         if (r.read_cstr() != "a" || r.pos() != 2) throw std::runtime_error("valid string");
+         refuses([&] { r.read_cstr(); });
++        if (r.read_bytes(4, 0) != "" || r.read_bytes(0, 2) != "61 00")
++            throw std::runtime_error("strict byte range formatting");
++        refuses([&] { r.read_bytes(5, 0); });
++        refuses([&] { r.read_bytes(3, 2); });
++        refuses([&] { r.read_bytes(0, std::numeric_limits<usize>::max()); });
+         if (r.pos() != 2) throw std::runtime_error("failed string moved cursor");
+         refuses([&] { r.seek(3); });
+         refuses([&] { r.seek(std::numeric_limits<usize>::max()); });
+@@ -39,6 +62,20 @@ int main()
+         utils::reader old{ bytes.data(), bytes.size() };
+         old.seek(5);
+         if (old.pos() != 0) throw std::runtime_error("historical seek changed");
++        if (old.read_bytes(0, 2) != "61 00" || old.read_bytes(0, 0) != "")
++            throw std::runtime_error("historical valid/empty byte ranges");
++        unaligned_scalar<i8>(std::numeric_limits<i8>::min());
++        unaligned_scalar<u8>(std::numeric_limits<u8>::max());
++        unaligned_scalar<i16>(std::numeric_limits<i16>::min());
++        unaligned_scalar<u16>(std::numeric_limits<u16>::max());
++        unaligned_scalar<i32>(std::numeric_limits<i32>::min());
++        unaligned_scalar<u32>(std::numeric_limits<u32>::max());
++        unaligned_scalar<i64>(std::numeric_limits<i64>::min());
++        unaligned_scalar<u64>(std::numeric_limits<u64>::max());
++        unaligned_scalar<f32>(1.25f);
++        unaligned_scalar<f32>(-0.0f);
++        unaligned_scalar<f32>(std::numeric_limits<f32>::infinity());
++        unaligned_scalar<f32>(std::numeric_limits<f32>::quiet_NaN());
+         return 0;
+     }
+     catch (std::exception const& e) { std::cerr << e.what() << '\n'; return 1; }
+diff --git a/src/utils/reader.cpp b/src/utils/reader.cpp
+index 6d5a6cac850739aa0ba18f150ed31a3c70817b9c..6b154c4b1795ee248a9e76bde5276b4861c4ba1b 100644
+--- a/src/utils/reader.cpp
++++ b/src/utils/reader.cpp
+@@ -21,198 +21,80 @@ reader::reader(u8 const* data, usize size, bool swap, bool strict) : data_{ data
+ {
+ }
+ 
++namespace
++{
++template <typename T>
++auto read_scalar(u8 const* data, usize size, usize& pos, bool swap) -> T
++{
++    if (pos > size || sizeof(T) > size - pos)
++        throw reader::error("reader: out of bounds");
++    std::array<u8, sizeof(T)> bytes{};
++    std::memcpy(bytes.data(), data + pos, sizeof(T));
++    if (swap) std::reverse(bytes.begin(), bytes.end());
++    T value;
++    std::memcpy(&value, bytes.data(), sizeof(T));
++    pos += sizeof(T);
++    return value;
++}
++}
++
+ template<> auto reader::read() -> i8
+ {
+-    if (pos_ + 1 > size_)
+-        throw error("reader: out of bounds");
+-
+-    auto value = *reinterpret_cast<i8 const*>(data_ + pos_);
+-    pos_ += 1;
+-    return value;
++    return read_scalar<i8>(data_, size_, pos_, swap_);
+ }
+ 
+ template<> auto reader::read() -> u8
+ {
+-    if (pos_ + 1 > size_)
+-        throw error("reader: out of bounds");
+-
+-    auto value = *reinterpret_cast<u8 const*>(data_ + pos_);
+-    pos_ += 1;
+-    return value;
++    return read_scalar<u8>(data_, size_, pos_, swap_);
+ }
+ 
+ template<> auto reader::read() -> i16
+ {
+-    if (pos_ + 2 > size_)
+-        throw error("reader: out of bounds");
+-
+-    if (!swap_)
+-    {
+-        auto value = *reinterpret_cast<i16 const*>(data_ + pos_);
+-        pos_ += 2;
+-        return value;
+-    }
+-
+-    auto bytes = std::array<u8, 2>{};
+-    bytes[0] = (data_ + pos_)[1];
+-    bytes[1] = (data_ + pos_)[0];
+-    pos_ += 2;
+-    return *reinterpret_cast<i16*>(bytes.data());
++    return read_scalar<i16>(data_, size_, pos_, swap_);
+ }
+ 
+ template<> auto reader::read() -> u16
+ {
+-    if (pos_ + 2 > size_)
+-        throw error("reader: out of bounds");
+-
+-    if (!swap_)
+-    {
+-        auto value = *reinterpret_cast<u16 const*>(data_ + pos_);
+-        pos_ += 2;
+-        return value;
+-    }
+-
+-    auto bytes = std::array<u8, 2>{};
+-    bytes[0] = (data_ + pos_)[1];
+-    bytes[1] = (data_ + pos_)[0];
+-    pos_ += 2;
+-    return *reinterpret_cast<u16*>(bytes.data());
++    return read_scalar<u16>(data_, size_, pos_, swap_);
+ }
+ 
+ template<> auto reader::read() -> i32
+ {
+-    if (pos_ + 4 > size_)
+-        throw error("reader: out of bounds");
+-
+-    if (!swap_)
+-    {
+-        auto value = *reinterpret_cast<i32 const*>(data_ + pos_);
+-        pos_ += 4;
+-        return value;
+-    }
+-
+-    auto bytes = std::array<u8, 4>{};
+-    bytes[0] = (data_ + pos_)[3];
+-    bytes[1] = (data_ + pos_)[2];
+-    bytes[2] = (data_ + pos_)[1];
+-    bytes[3] = (data_ + pos_)[0];
+-    pos_ += 4;
+-    return *reinterpret_cast<i32*>(bytes.data());
++    return read_scalar<i32>(data_, size_, pos_, swap_);
+ }
+ 
+ template<> auto reader::read() -> u32
+ {
+-    if (pos_ + 4 > size_)
+-        throw error("reader: out of bounds");
+-
+-    if (!swap_)
+-    {
+-        auto value = *reinterpret_cast<u32 const*>(data_ + pos_);
+-        pos_ += 4;
+-        return value;
+-    }
+-
+-    auto bytes = std::array<u8, 4>{};
+-    bytes[0] = (data_ + pos_)[3];
+-    bytes[1] = (data_ + pos_)[2];
+-    bytes[2] = (data_ + pos_)[1];
+-    bytes[3] = (data_ + pos_)[0];
+-    pos_ += 4;
+-    return *reinterpret_cast<u32*>(bytes.data());
++    return read_scalar<u32>(data_, size_, pos_, swap_);
+ }
+ 
+ template<> auto reader::read() -> i64
+ {
+-    if (pos_ + 8 > size_)
+-        throw error("reader: out of bounds");
+-
+-    if (!swap_)
+-    {
+-        auto value = *reinterpret_cast<i64 const*>(data_ + pos_);
+-        pos_ += 8;
+-        return value;
+-    }
+-
+-    auto bytes = std::array<u8, 8>{};
+-    bytes[0] = (data_ + pos_)[7];
+-    bytes[1] = (data_ + pos_)[6];
+-    bytes[2] = (data_ + pos_)[5];
+-    bytes[3] = (data_ + pos_)[4];
+-    bytes[4] = (data_ + pos_)[3];
+-    bytes[5] = (data_ + pos_)[2];
+-    bytes[6] = (data_ + pos_)[1];
+-    bytes[7] = (data_ + pos_)[0];
+-    pos_ += 8;
+-    return *reinterpret_cast<i64*>(bytes.data());
++    return read_scalar<i64>(data_, size_, pos_, swap_);
+ }
+ 
+ template<> auto reader::read() -> u64
+ {
+-    if (pos_ + 8 > size_)
+-        throw error("reader: out of bounds");
+-
+-    if (!swap_)
+-    {
+-        auto value = *reinterpret_cast<u64 const*>(data_ + pos_);
+-        pos_ += 8;
+-        return value;
+-    }
+-
+-    auto bytes = std::array<u8, 8>{};
+-    bytes[0] = (data_ + pos_)[7];
+-    bytes[1] = (data_ + pos_)[6];
+-    bytes[2] = (data_ + pos_)[5];
+-    bytes[3] = (data_ + pos_)[4];
+-    bytes[4] = (data_ + pos_)[3];
+-    bytes[5] = (data_ + pos_)[2];
+-    bytes[6] = (data_ + pos_)[1];
+-    bytes[7] = (data_ + pos_)[0];
+-    pos_ += 8;
+-    return *reinterpret_cast<u64*>(bytes.data());
++    return read_scalar<u64>(data_, size_, pos_, swap_);
+ }
+ 
+ template<> auto reader::read() -> f32
+ {
+-    if (pos_ + 4 > size_)
+-        throw error("reader: out of bounds");
+-
+-    if (!swap_)
+-    {
+-        auto value = *reinterpret_cast<f32 const*>(data_ + pos_);
+-        pos_ += 4;
+-        return value;
+-    }
+-
+-    auto bytes = std::array<u8, 4>{};
+-    bytes[0] = (data_ + pos_)[3];
+-    bytes[1] = (data_ + pos_)[2];
+-    bytes[2] = (data_ + pos_)[1];
+-    bytes[3] = (data_ + pos_)[0];
+-    pos_ += 4;
+-    return *reinterpret_cast<f32*>(bytes.data());
++    return read_scalar<f32>(data_, size_, pos_, swap_);
+ }
+ 
+ auto reader::read_i24() -> i32
+ {
+-    if (pos_ + 3 > size_)
++    if (pos_ > size_ || 3 > size_ - pos_)
+         throw error("reader: out of bounds");
+-
+-    if (!swap_)
+-    {
+-        // Exactly three bytes; a four-byte load can cross the buffer boundary.
+-        auto value = static_cast<i32>(data_[pos_]) |
+-            (static_cast<i32>(data_[pos_ + 1]) << 8) |
+-            (static_cast<i32>(data_[pos_ + 2]) << 16);
+-        pos_ += 3;
+-        return value;
+-    }
+-
+-    auto bytes = std::array<u8, 4>{};
+-    bytes[0] = (data_ + pos_)[2];
+-    bytes[1] = (data_ + pos_)[1];
+-    bytes[2] = (data_ + pos_)[0];
++    // Exactly three byte loads, independent of alignment and aliasing.
++    auto first = static_cast<i32>(data_[pos_]);
++    auto middle = static_cast<i32>(data_[pos_ + 1]);
++    auto last = static_cast<i32>(data_[pos_ + 2]);
++    auto value = swap_ ? (first << 16) | (middle << 8) | last
++                       : first | (middle << 8) | (last << 16);
+     pos_ += 3;
+-    return *reinterpret_cast<i32*>(bytes.data());
++    return value;
+ }
+ 
+ auto reader::read_cstr() -> std::string
+@@ -234,6 +116,9 @@ auto reader::read_cstr() -> std::string
+ 
+ auto reader::read_bytes(usize pos, usize count) const -> std::string
+ {
++    if (strict_ && (pos > size_ || count > size_ - pos))
++        throw error("reader: byte range out of bounds");
++    if (!count) return {}; // Defined empty range, including historical mode.
+     auto data = std::string{};
+ 
+     data.reserve(count * 3);

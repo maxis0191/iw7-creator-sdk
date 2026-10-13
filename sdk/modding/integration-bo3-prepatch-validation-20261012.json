@@ -1,0 +1,198 @@
+{
+  "schema": "iw7.platform-source-validation/1",
+  "source_commit": "edb619c863748f7c87d39c0b7d165ecafd64d85b",
+  "completed_head_observed": "fc901b869e994e2bcbe0e5c6fe2d37e9b2a82156",
+  "concurrent_delta": {
+    "files": [
+      "tools-source/asset-bridge/t7-iw7/BUILD-PLAN.md"
+    ],
+    "scope": "Documentation only; test/runtime sources unchanged"
+  },
+  "exit_code": 0,
+  "command": "pwsh -NoLogo -NoProfile -NonInteractive -File ops/modding/Test-Platform.ps1 -GscToolPath tools/gsc-tool/gsc-tool.exe -SoundCandidateRoot <retained-content-surfaces>/runtime/zt-sound-md5-d",
+  "retained_t7_source_env_set": true,
+  "retained_e7_build_env_set": true,
+  "retained_t7_source_comparisons_passed": 3,
+  "retained_t7_command_comparisons_passed": 3,
+  "python_reported_run_counts": [
+    277,
+    17,
+    21,
+    12,
+    76,
+    11,
+    32,
+    49,
+    114,
+    41,
+    69,
+    55,
+    78,
+    15,
+    47,
+    27,
+    17,
+    26,
+    25
+  ],
+  "python_reported_total": 1009,
+  "python_run_groups": 19,
+  "python_skipped_test_cases": 6,
+  "python_skipped_setup_classes": 2,
+  "powershell_suites_completed": 45,
+  "stage_controls": 157,
+  "vertical_controls": 145,
+  "explicit_gsc_parses": 4,
+  "generated_gsc_parses_within_stage": 3,
+  "t7_inspector_cases_in_python_total": 20,
+  "t7_deadline_regressions": 3,
+  "sound_candidate_evidence_cases": 13,
+  "sound_changed_pins_refused": 2,
+  "sound_candidate_binary_hashed": false,
+  "skips": [
+    "FinalizeTests.test_actual_symlink_input_rejected_when_supported: WinError 1314",
+    "community_distribution_test.test_traversal_and_symlink_boundary: host symlink privilege unavailable",
+    "mod_package_test.test_symlink_payload_and_root_rejected: host symlink privilege unavailable",
+    "test_dump.PreparationTests setUpClass: explicit --source-repo absent",
+    "test_native_preparation.NativePreparationTests setUpClass: explicit --source-repo absent",
+    "test_prepare_observer.RetainedSourceTests.test_old_index_and_dump_logic_remain_exact: optional retained source absent",
+    "test_prepare_observer.RetainedSourceTests.test_only_three_additions_are_present: optional retained source absent",
+    "test_prepare_observer.RetainedSourceTests.test_recorded_patch_equals_source_render: optional retained source absent"
+  ],
+  "local_sound_suites_not_invoked": [
+    "test_build_entry_guards.ps1: no SoundBuildPlanPath",
+    "test_build_lifecycle.ps1: no GscAuditProviderRoot",
+    "test_build_receipt.ps1: no GscAuditProviderRoot"
+  ],
+  "log": "runtime/platform-bo3-prepatch-integration.local.log",
+  "log_bytes": 151260,
+  "log_sha256": "6873221a0a0525ffce61956e6ec5c4eaf64af37596c697705b40204a6a917f5a",
+  "native_build_invoked": false,
+  "native_helper_imported": false,
+  "game_invoked": false,
+  "download_invoked": false,
+  "real_lease_acquired": false,
+  "gameplay_accepted": false,
+  "ci_passed": false,
+  "receipt_head_observed": "fc901b869e994e2bcbe0e5c6fe2d37e9b2a82156",
+  "started_utc": "2026-10-12T12:37:50.001Z",
+  "log_completed_utc": "2026-10-12T14:40:47.047715+02:00",
+  "environment": {
+    "IW7_T7_SOURCE": "<retained-native-source>",
+    "IW7_T7_E7_BUILD": "<retained-E7-build>",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "t7_reuse_regressions": 9,
+  "t7_link_telemetry_cases": 10,
+  "world_adapter_checks": 56,
+  "world_finalization_checks": 45,
+  "world_console_policy_checks": 76,
+  "additional_local_plan_suites_not_registered_in_platform": [
+    {
+      "suite": "sound/native-checksum/test_response_plan.ps1",
+      "required_input": "PlanPath"
+    },
+    {
+      "suite": "world/test_observer_plan.ps1",
+      "required_inputs": [
+        "VCToolsRoot",
+        "WindowsSdkRoot",
+        "PythonExe"
+      ]
+    }
+  ],
+  "python_groups": [
+    {
+      "suite": "sdk/modding/tests",
+      "reported_tests": 277
+    },
+    {
+      "suite": "tools-source/asset-bridge/model",
+      "reported_tests": 17
+    },
+    {
+      "suite": "tools-source/asset-bridge/h1-fixture",
+      "reported_tests": 21
+    },
+    {
+      "suite": "tools-source/asset-bridge/t7-bridge",
+      "reported_tests": 12
+    },
+    {
+      "suite": "tools-source/asset-bridge/t7-iw7",
+      "reported_tests": 76
+    },
+    {
+      "suite": "tools-source/asset-bridge/weapon",
+      "reported_tests": 11
+    },
+    {
+      "suite": "tools-source/asset-bridge/world",
+      "reported_tests": 32
+    },
+    {
+      "suite": "tools-source/asset-bridge/animation",
+      "reported_tests": 49
+    },
+    {
+      "suite": "tools-source/asset-bridge/animation/rig",
+      "reported_tests": 114
+    },
+    {
+      "suite": "tools-source/asset-bridge/animation/rig/locator",
+      "reported_tests": 41
+    },
+    {
+      "suite": "tools-source/asset-bridge/rig-abi",
+      "reported_tests": 69
+    },
+    {
+      "suite": "tools-source/asset-bridge/surfaces",
+      "reported_tests": 55
+    },
+    {
+      "suite": "tools-source/asset-bridge/surfaces/sound",
+      "reported_tests": 78
+    },
+    {
+      "suite": "tools-source/asset-bridge/surfaces/sound/native-checksum",
+      "reported_tests": 15
+    },
+    {
+      "suite": "tools-source/asset-bridge/recipient",
+      "reported_tests": 47
+    },
+    {
+      "suite": "tools-source/asset-bridge/recipient/script-names",
+      "reported_tests": 27
+    },
+    {
+      "suite": "tests/ops/community_distribution_test.py",
+      "reported_tests": 17
+    },
+    {
+      "suite": "tests/ops/mod_package_test.py",
+      "reported_tests": 26
+    },
+    {
+      "suite": "tools-source/asset-bridge/recipient/check_recipient_streams.py",
+      "reported_tests": 25
+    }
+  ],
+  "t7_prepatch_wiring_tests": 5,
+  "t7_prepatch_helper_source_tests": 10,
+  "t7_build_profile_controls": 11,
+  "t7_prepatch_launcher_controls": 47,
+  "followup_targeted_validation": {
+    "source_commit": "56fd565",
+    "scope": "T7 Python group after the offline comparison addition; full platform suite above was not rerun",
+    "command": "python -B -m unittest discover -s tools-source/asset-bridge/t7-iw7 -v",
+    "python_reported_total": 90,
+    "new_comparison_cases": 14,
+    "exit_code": 0,
+    "log": "runtime/t7-prepatch-comparison-integration.local.log",
+    "log_bytes": 14030,
+    "log_sha256": "6a57bb6bf309bb144120a3d72c416e0b4b2bbedb068af34843f5f89a149c8e41",
+    "native_invoked": false
+  }
+}
