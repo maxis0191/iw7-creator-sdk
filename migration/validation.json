@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-13",
+  "scope": "Product extraction and private source bootstrap only",
+  "source_runs": [
+    {
+      "revisions": {
+        "iw7-mod-components": "93fd16b1b7e9da0b46b0348973baa55cd363b1ca",
+        "x64-zt-extensions": "8da20837e790cdabcdadd7b227768977db752c4f",
+        "iw7-paris-server": "5e47dc2299fde638f31af6c026c0e17ee9ddb8ef",
+        "iw7-creator-sdk": "161253632c866c69a20c58edc52afb20250dcdfb"
+      },
+      "checks": [
+        {
+          "id": "sdk-modding-tests",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-gsc-spawn-tip",
+          "exit_code": 0
+        },
+        {
+          "id": "community_distribution_test",
+          "exit_code": 0
+        },
+        {
+          "id": "hud_lab_test",
+          "exit_code": 0
+        },
+        {
+          "id": "mod_package_test",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-SpawnTip",
+          "exit_code": 0
+        },
+        {
+          "id": "Test-SpawnTipHost",
+          "exit_code": 0
+        },
+        {
+          "id": "beacon_ff_test",
+          "exit_code": 0
+        },
+        {
+          "id": "sdk-modding-examples-original-sound-test_example",
+          "exit_code": 0
+        },
+        {
+          "id": "tools-source-gsc-consumption-tool-verify_archive",
+          "exit_code": 0
+        }
+      ]
+    }
+  ],
+  "source_check_groups": 10,
+  "offline_bootstrap": "passed with spaces",
+  "private_release_download": "passed; pinned SHA256 and member checks",
+  "source_workspace_regressions": null,
+  "runtime_qualified": false,
+  "owner_gameplay_acceptance": "not requested; unchanged",
+  "main_runtime": "untouched",
+  "ci": "Exact-head Actions admission evidence recorded in the PR before merge."
+}
