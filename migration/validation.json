@@ -60,5 +60,22 @@
   "runtime_qualified": false,
   "owner_gameplay_acceptance": "not requested; unchanged",
   "main_runtime": "untouched",
-  "ci": "Exact-head Actions admission evidence recorded in the PR before merge."
+  "ci": "Blocked: SDK issue #2. Hosted sdk-modding-tests failed at 9edc839; diagnostic-forwarding correction 899a3cd has not executed because of billing admission. Do not apply the quota exception over this unresolved executed failure.",
+  "ci_executed_failure": {
+    "head": "9edc8398fdc34d9f22c66fc67fbf172f11f34d73",
+    "run": 38401111947,
+    "failed_group": "sdk-modding-tests",
+    "other_groups_passed": 9,
+    "inner_traceback": "Unavailable in the original ephemeral runner; wrapper now forwards it."
+  },
+  "diagnostic_admission": {
+    "head": "899a3cdf9317fd7af9013f7b94eab0872054ab23",
+    "run": 38401722062,
+    "attempt": 2,
+    "job": 115312373189,
+    "runner_id": 0,
+    "steps": [],
+    "ui_reason": "Account payment/spending-limit admission blocker"
+  },
+  "issue": "https://github.com/maxis0191/iw7-creator-sdk/issues/2"
 }
