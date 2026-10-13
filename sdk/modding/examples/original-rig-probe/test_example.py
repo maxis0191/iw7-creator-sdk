@@ -50,9 +50,11 @@ class OriginalRigPlanTests(unittest.TestCase):
                 "-Project", str(HERE), "-Action", "Plan", "-ClientSource", PIN,
                 "-ServerSource", PIN, "-Protocol", "2", "-Json"]
         result = subprocess.run(base + ["-Adapter", "None"], capture_output=True, text=True, timeout=20)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         report = json.loads(result.stdout)
-        self.assertTrue(report["plan_valid"])
+        self.assertEqual(next(s["status"] for s in report["steps"] if s["name"] == "project-contract"), "passed")
+        self.assertFalse(report["plan_valid"])
+        self.assertIn("Capability source proof missing: client/skeletal-animation-import/1", " ".join(report["errors"]))
         for flag in ("bindings_written", "build_executed", "build_verified", "materialized", "packaged", "runtime_ready", "owner_accepted"):
             self.assertFalse(report[flag])
         blocked = subprocess.run(base + ["-Adapter", "AnimationProbe"], capture_output=True, text=True, timeout=20)

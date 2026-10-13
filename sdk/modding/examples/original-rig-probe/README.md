@@ -21,6 +21,10 @@ source pins above are operator assertions, not an installed binary measurement.
 The existing `skeletal-animation-import/1` capability is explicitly **blocked**:
 it permits an honest experimental Plan, and refuses package/delivery stages.
 The tested rigid-cube/NCS capabilities are not substituted for this rig.
+The SDK contract step passes, but the complete Creator command currently exits
+1 because Distribution has no qualified client-source proof for that blocked
+capability. The report states this exact environmental blocker. No source-proof
+entry is invented to obtain exit 0, and `AnimationProbe` remains unconnected.
 The proposed `sdk_original_rig_probe.gsc::init` lifecycle has no supplied source
 yet; its file path, bytes and hash remain explicitly unknown. Package is refused.
 
@@ -80,3 +84,7 @@ The SDK now accepts the existing blocked skeletal capability for an experimental
 Plan, and requires it for client animation nodes. Ordinary rigid plans keep their
 previous requirements. The blocked capability still refuses package/delivery;
 this correction does not qualify skeletal runtime support.
+
+A second check exposed the separate Distribution source-proof blocker above.
+That check remains enforced; the example's tests assert the precise blocked CLI
+result and its unchanged files, rather than disguising it as an executable plan.
