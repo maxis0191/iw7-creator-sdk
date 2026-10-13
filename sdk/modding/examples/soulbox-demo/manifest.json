@@ -104,13 +104,6 @@
       },
       {
         "kind": "gameplay",
-        "status": "pass",
-        "reference": "validation-20261013.json",
-        "authority": "agent",
-        "maps": ["cp_zmb"]
-      },
-      {
-        "kind": "gameplay",
         "status": "pending",
         "reference": null,
         "authority": "owner",
