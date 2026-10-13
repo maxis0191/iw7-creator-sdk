@@ -137,11 +137,13 @@ try:
     packager = module(root / "ops/modding/Package-CommunityMod.py", "creator_packager")
     if len(args["active_projects"]) > 64:
         raise ValueError("At most 64 active projects can be inspected")
-    project = packager.no_redirects(args["project"])
+    # Reject redirects before canonicalizing Windows 8.3 aliases. Otherwise an
+    # existing path can compare unequal to itself across Python/PowerShell.
+    project = packager.no_redirects(args["project"]).resolve(strict=True)
     if not project.is_dir():
         raise ValueError("Project must be a directory; generic planning requires manifest.json")
     report["project"] = str(project)
-    projects = [project, *(packager.no_redirects(p) for p in args["active_projects"])]
+    projects = [project, *(packager.no_redirects(p).resolve(strict=True) for p in args["active_projects"])]
     manifests = []
     for index, directory in enumerate(projects):
         if index == 0 and args["adapter"] == "BeaconSelfContainedV1":
@@ -176,7 +178,7 @@ try:
     data = manifests[0]
     if args["action"] == "Package":
         destination = Path(os.path.abspath(args["output"]))
-        packager.no_redirects(destination.parent)
+        destination = packager.no_redirects(destination.parent).resolve(strict=True) / destination.name
         if os.path.lexists(destination):
             raise ValueError("Package requires a fresh Output; existing output is preserved")
         if any(destination == directory or destination in directory.parents or directory in destination.parents for directory in projects):
@@ -269,6 +271,7 @@ try:
             if not packager.no_redirects(args["recipient_proof"]).is_file() or not packager.no_redirects(args["recipient_root"]).is_dir():
                 raise ValueError("Recipient proof file and root must exist without redirects")
         fresh = [Path(os.path.abspath(value)) for value in (parameters["RunRoot"], args["finalize_root"], args["output"])]
+        fresh = [packager.no_redirects(path.parent).resolve(strict=True) / path.name for path in fresh]
         for path in fresh:
             packager.no_redirects(path.parent)
             if path.exists() or path.is_symlink():

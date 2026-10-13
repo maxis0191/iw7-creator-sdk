@@ -596,6 +596,40 @@ class CreatorTests(unittest.TestCase):
             self.assertEqual(archive.read("fastdl/mods/sdk_beacon/mod.ff"), b"SYNTHETIC TEXT - NOT A FASTFILE")
         self.assertEqual(report["package_result"]["archive_sha256"], hashlib.sha256((self.root / "result.zip").read_bytes()).hexdigest())
 
+    def short_root(self):
+        if os.name != "nt":
+            self.skipTest("Windows 8.3 filesystem identity regression")
+        import ctypes
+        buffer = ctypes.create_unicode_buffer(32768)
+        size = ctypes.windll.kernel32.GetShortPathNameW(str(self.root), buffer, len(buffer))
+        if not size or size >= len(buffer):
+            self.fail("Cannot query existing temporary directory short path")
+        short = Path(buffer.value)
+        if str(short).casefold() == str(self.root.resolve()).casefold():
+            self.skipTest("8.3 aliases disabled on the temporary volume")
+        self.assertEqual(short.resolve(strict=True), self.root.resolve(strict=True))
+        return short
+
+    def test_windows_short_project_and_fresh_build_outputs(self):
+        tools, parameters = self.flow_fixture("complete")
+        short = self.short_root()
+        self.project = short / "project"
+        code, report = self.invoke("-Action", "Build", "-Adapter", "BeaconV1", "-BuildParameters", str(parameters),
+            "-FinalizeRoot", str(short / "candidate"), "-Output", str(short / "result.zip"), tools=tools, mutates=True)
+        self.assertEqual(code, 0, report)
+        self.assertTrue(report["packaged"])
+        self.assertEqual(Path(report["project"]), self.project.resolve())
+        self.assertEqual(Path(report["output"]), (self.root / "result.zip").resolve())
+
+    def test_windows_short_package_output_matches_receipt(self):
+        self.package_fixture()
+        short = self.short_root()
+        self.project = short / "project"
+        code, report = self.invoke("-Action", "Package", "-Output", str(short / "package.zip"), mutates=True)
+        self.assertEqual(code, 0, report)
+        self.assertTrue(report["packaged"])
+        self.assertEqual(Path(report["output"]), (self.root / "package.zip").resolve())
+
     def test_flow_unexpected_finalizer_contract_is_refused(self):
         code, report = self.invoke_flow("bad-contract")
         self.assertEqual(code, 1, report)
