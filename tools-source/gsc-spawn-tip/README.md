@@ -1,10 +1,13 @@
-# Spawn-tip offline profile (source candidate)
+# Spawn-tip offline audit profile
 
 This profile qualifies one question about the exact 894-byte original
 `sdk/modding/examples/server-spawn-tip/sdk_spawn_tip.gsc`: whether its complete
 offline compilation has encoded external or unresolved/dynamic script references
-under the retained V8 community IW7 profile. **No native run has qualified this
-profile.** Source tests and Plan verification do not establish import absence.
+under the retained V8 community IW7 profile. [Run C](RUN-C.md) on 2026-10-13
+qualified complete consumption and encoded-reference absence for that exact
+source/compiler/container, with original-job closure and actual host exit.
+Source tests and Plan verification alone do not establish import absence;
+runtime, package and owner-acceptance gates remain false.
 
 Ownership is limited to this directory. Creator, manifests, common runners and
 server files are unchanged. The coordinator owns integration and native GO.
@@ -72,6 +75,9 @@ Only after a separate coordinator GO, from an original interactive host:
 The `child` Python verb is internal to the admitted runner. A child report alone
 never proves supervision, resource release or whole-job closure.
 
+Plans A/B remain preserved obsolete source preparations. Run C is immutable
+historical evidence, not authorization to reuse its output root or repeat it.
+
 The host guard uses the shared T7 host helper's exact argument-array policy with
 this profile's command tail: `-NoProfile -NoExit -File SCRIPT -PlanPath PLAN
 -PlanSHA256 HASH -Run`. It obtains actual tokens from `GetCommandLineArgs` and
@@ -108,6 +114,10 @@ had this P2 hole; preserve that candidate and use the separate correction.
   performed under input guards and admission; publication is bounded separately.
   The actual host/session exit must be observed by the coordinator afterward;
   it is not inferred from the native run receipt or process absence.
+  During Run C, `exit 0` in a dot-sourced close helper returned to the same
+  `-NoExit` prompt. A fresh guard in that original interactive host followed by
+  direct `exit 0` produced the observed PTY exit. A written exit request alone
+  must never be treated as session closure.
 
 On success, `receipt.json` may report only `OfflineReferencesQualified` and bind
 the child/run/plan identities, original-job closure and lease release. Its
