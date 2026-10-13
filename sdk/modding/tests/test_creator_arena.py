@@ -233,6 +233,20 @@ class ArenaCreatorTests(unittest.TestCase):
         # mask is separate from the group/surface masks and must be checked.
         raw[6 + 240] ^= 1
         path.write_bytes(raw)
+        # Rehash the mutated dump and receipts. Byte integrity alone must not
+        # replace validation of this structural field by the actual reader.
+        proof_path = self.build / "geometry-roundtrip.json"
+        proof = json.loads(proof_path.read_bytes())
+        entry = next(v for v in proof["inputs"] if v["relative_path"] == "roundtrip/" + self.reader.PAIR[0])
+        entry.update(bytes=len(raw), sha256=sha(raw))
+        proof_raw = encoded(proof)
+        proof_path.write_bytes(proof_raw); (self.build / "reader.stdout.json").write_bytes(proof_raw)
+        self.state["GeometryEvidenceSHA256"] = sha(proof_raw)
+        state_raw = encoded(self.state); (self.build / "state.local.json").write_bytes(state_raw)
+        descriptor_path = self.project / "composition.json"
+        descriptor = json.loads(descriptor_path.read_bytes())
+        descriptor["assets"].update(roundtrip_sha256=sha(proof_raw), build_receipt_sha256=sha(state_raw))
+        descriptor_path.write_bytes(encoded(descriptor))
         with self.assertRaisesRegex(ValueError, "partBits|root.*mask"):
             self.invoke()
         self.assertFalse(self.output.exists())
