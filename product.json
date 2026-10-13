@@ -58,6 +58,8 @@
     "sdk/modding/examples/beacon/manifest.json",
     "sdk/modding/examples/beacon/sdk_beacon.gsc",
     "sdk/modding/examples/beacon/zone.csv",
+    "sdk/modding/examples/original-arena/README.md",
+    "sdk/modding/examples/original-arena/manifest.json",
     "sdk/modding/examples/original-rig-probe/manifest.json",
     "sdk/modding/examples/original-rig-probe/README.md",
     "sdk/modding/examples/original-rig-probe/SCENARIO.md",
@@ -114,6 +116,7 @@
     "sdk/modding/tests/test_beacon_finalize.py",
     "sdk/modding/tests/test_beacon_phase.py",
     "sdk/modding/tests/test_beacon_self_contained.py",
+    "sdk/modding/tests/test_creator_arena.py",
     "sdk/modding/tests/test_creator_composition.py",
     "sdk/modding/tests/test_creator_gsc_audit.py",
     "sdk/modding/tests/test_creator_gsc_references.py",
@@ -196,12 +199,13 @@
     {
       "id": "x64-zt-extensions",
       "repository": "https://github.com/maxis0191/x64-zt-extensions.git",
-      "revision": "8da20837e790cdabcdadd7b227768977db752c4f",
+      "revision": "a6478c67ea59e85fa5dc7c373d47f94ed12d22ad",
       "files": [
         "ops/doom-source/half_uv.hpp",
         "ops/doom-source/prepare_ff.py",
         "ops/doom-source/prepare_writer.py",
         "ops/doom-source/writer_rigid.cpp",
+        "ops/model-lab/Build-ModelFF.ps1",
         "ops/model-lab/ModelFF.Core.ps1",
         "ops/model-lab/geometry.py",
         "ops/model-lab/prepare_ff.py",
@@ -251,7 +255,13 @@
         "tools-source/asset-bridge/t7-iw7/boot_contract.py",
         "tools-source/asset-bridge/t7-iw7/export_contract.py",
         "tools-source/asset-bridge/t7-iw7/readback.py",
-        "tools-source/asset-bridge/t7-iw7/test_readback.py"
+        "tools-source/asset-bridge/t7-iw7/test_readback.py",
+        "tools-source/asset-bridge/world/original-arena/arena.py",
+        "tools-source/asset-bridge/world/original-arena/model_lab.py",
+        "tools-source/asset-bridge/world/original-arena/prepare.py",
+        "tools-source/asset-bridge/world/original-arena/readback.py",
+        "tools-source/asset-bridge/world/original-arena/test_arena.py",
+        "tools-source/asset-bridge/world/trigger_bridge.py"
       ],
       "purpose": "Explicit source, test and integration contracts; no runtime artifacts."
     },
