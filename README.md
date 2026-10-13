@@ -27,7 +27,13 @@ Then run `checks.ps1 -Workspace <output>` from this canonical checkout.
 The command does not install a game, copy retail assets, build native code,
 launch a process fixture, deploy, publish, or change Main. Build/run entrypoints
 inside the package retain their own input, identity, resource and authorization
-gates. Feature experiments remain paused until the owner's explicit GO.
+gates. The owner's explicit GO on 2026-10-13 resumes assigned product work under
+the new orchestration, with separate ownership for migration and feature work.
+
+Windows CI runs all declared product checks. Linux CI runs the portable SDK core,
+distribution, packaging and spawn-tip source contracts in the same pinned source
+layout. The two Windows 8.3 regressions are platform-specific; Linux exercises
+real symlink/redirect rejection. Windows HUD process fixtures stay in Windows CI.
 
 ## Evidence and rollback
 
