@@ -6,13 +6,16 @@ Kill six ordinary zombies within 384 engine units of the token, then use it to
 refill the equipped firearm's magazine and reserve ammunition. The team can
 claim exactly one reward per map. The HUD and token change with progress.
 
-The actual credited killer's retail `zombie_killed` notification supplies the
-actor, death origin, weapon and means of death. Only unreserved axis
-`generic_zombie` deaths count; suicides and poor-death cleanup do not. The script
-does not replace callbacks or alter stock waves, death counters, loot or banks.
+The real `generic_zombie` killed callback supplies the credited player, weapon
+and means of death. The observer snapshots actor classification and death origin
+before forwarding all nine arguments to the original callback exactly once;
+only then does it credit progress. The player notification arrives after actor
+fields are unavailable and cannot safely classify the dead actor. Only
+unreserved axis `generic_zombie` deaths count; suicides and poor-death cleanup do
+not. The script preserves stock waves, death counters, loot and banks.
 Players joining later receive current team progress. Respawns rebuild their HUD
-without another kill listener. Disconnect and game end remove HUDs; map end
-deletes the token and ends listeners.
+without another death observer. Disconnect and game end remove HUDs; map end
+deletes the token and restores the callback if this observer still owns it.
 
 For an existing **private test dedicated**, install the editable script at
 `iw7-mod/custom_scripts/cp/sdk_soulbox_demo_v1.gsc`. Enable

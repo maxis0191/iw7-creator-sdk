@@ -17,6 +17,7 @@ init()
     state.repeat_uses = 0;
     state.stopped = false;
     level.sdk_soulbox_demo = state;
+    level thread install_kill_observer(state);
     level thread connections(state);
     level thread shutdown(state);
     print("[SDK Soul Box] ARMED; map=cp_zmb; goal=6; radius=384; model=zmb_coin_alien; asset_origin=IW7; mechanic=BO3-inspired.");
@@ -34,7 +35,6 @@ connections(state)
         personal.last_use = -1000;
         personal.contributed = 0;
         player.sdk_soulbox_demo = personal;
-        player thread kills(state);
         player thread spawns(state, personal);
         player thread departed(personal);
     }
@@ -101,25 +101,38 @@ place(state)
     print("[SDK Soul Box] READY; entity=" + model getentitynumber() + "; origin=" + origin + "; souls=0; rewards=0; pixels_pending=1.");
 }
 
-kills(state)
+install_kill_observer(state)
 {
-    self endon("disconnect");
     level endon("game_ended");
-    for (;;)
+    while (!isdefined(level.agent_funcs) || !isdefined(level.agent_funcs["generic_zombie"]) ||
+        !isdefined(level.agent_funcs["generic_zombie"]["on_killed"])) wait 0.05;
+    state.original_killed = level.agent_funcs["generic_zombie"]["on_killed"];
+    level.agent_funcs["generic_zombie"]["on_killed"] = ::ordinary_killed;
+    print("[SDK Soul Box] KILL_OBSERVER; generic_zombie=1; original_callback_preserved=1.");
+}
+
+ordinary_killed(a0, attacker, damage, means, weapon, direction, hitloc, a7, a8)
+{
+    state = level.sdk_soulbox_demo;
+    // The player notify resumes after the actor's script fields disappear.
+    // Capture only immutable classification/origin here, in the real engine
+    // killed callback, before forwarding every retail argument exactly once.
+    death_origin = self.origin;
+    eligible = !state.stopped && state.phase == "collecting" && isdefined(state.model) &&
+        isdefined(attacker) && isplayer(attacker) && isdefined(attacker.sdk_soulbox_demo) &&
+        isdefined(self.agent_type) && self.agent_type == "generic_zombie" &&
+        isdefined(self.team) && self.team == "axis" &&
+        (!isdefined(self.is_reserved) || !self.is_reserved) &&
+        (!isdefined(self.died_poorly) || !self.died_poorly) && means != "MOD_SUICIDE" &&
+        distancesquared(death_origin, state.model.origin) <= state.radius * state.radius;
+    self [[ state.original_killed ]](a0, attacker, damage, means, weapon, direction, hitloc, a7, a8);
+    if (eligible && !state.stopped && state.phase == "collecting" && isdefined(state.model) &&
+        isdefined(attacker) && isdefined(attacker.sdk_soulbox_demo))
     {
-        // Retail gametype_zombie notifies the actual player credited with this
-        // kill. Its level event lacks the actor and killer and is not used here.
-        self waittill("zombie_killed", zombie, death_origin, weapon, means);
-        if (state.stopped || state.phase != "collecting" || !isdefined(state.model) ||
-            !isdefined(zombie) || !isdefined(zombie.agent_type) || zombie.agent_type != "generic_zombie" ||
-            !isdefined(zombie.team) || zombie.team != "axis" ||
-            (isdefined(zombie.is_reserved) && zombie.is_reserved) ||
-            (isdefined(zombie.died_poorly) && zombie.died_poorly) || means == "MOD_SUICIDE" ||
-            !isdefined(death_origin) || distancesquared(death_origin, state.model.origin) > state.radius * state.radius) continue;
         // No waits and no permanent field on recycled agents. Retail owns the
         // death, quota, loot and respawn ledger; this listener only counts.
         state.souls++;
-        self.sdk_soulbox_demo.contributed++;
+        attacker.sdk_soulbox_demo.contributed++;
         state.last_death_origin = death_origin;
         state.model.angles = (0, (state.souls * 60) % 360, 0);
         if (state.souls >= state.goal)
@@ -227,6 +240,9 @@ shutdown(state)
 {
     level waittill("game_ended");
     state.stopped = true;
+    if (isdefined(state.original_killed) && isdefined(level.agent_funcs["generic_zombie"]) &&
+        level.agent_funcs["generic_zombie"]["on_killed"] == ::ordinary_killed)
+        level.agent_funcs["generic_zombie"]["on_killed"] = state.original_killed;
     if (isdefined(state.model)) state.model delete();
     state.model = undefined;
     if (isdefined(level.players)) foreach (player in level.players)
