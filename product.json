@@ -7,6 +7,7 @@
     "docs/MODDING-CAPABILITIES.md",
     "docs/MODDING-PLATFORM.md",
     "docs/SOUND-SDK-CONTRACT.md",
+    "docs/WINDOWS-PATH-IDENTITY.md",
     "ops/Validate-ModPackage.py",
     "ops/hud-lab/Build-Hud.ps1",
     "ops/hud-lab/Hud-Process.ps1",
