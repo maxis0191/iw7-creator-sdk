@@ -196,3 +196,19 @@ representation, leaving the original baseline intact for the final recheck.
 The new adversarial test failed before the fix and now requires refusal before
 any candidate directory is created. All 20 adapter tests pass after correction;
 this remains synthetic source validation, with no real operation replay.
+
+## Separate original arena profile, 2026-10-13
+
+The explicit `OriginalArenaV1` adapter reuses composition schema 1, input
+snapshots, restored-build/inventory/phase checks and candidate writing above.
+Its source is `iw7.model-ff-plan/1` / `iw7-original-arena-rigid-v1`, never the
+resident v2 contract. The existing `derived_receipt_sha256` field binds
+`evidence/arena-writer-source.json`. World owns its eight-file source check and
+independent original geometry/packed-attribute readback. Candidate evidence uses
+`origin=authored-arena`, scalar selected counts and no T7 provenance claims.
+
+The [original arena author plan](examples/original-arena/README.md) is incomplete
+and requires blocked `original-arena-display/1`; Creator refuses absent client
+source proof before Bind/Materialize writes. Direct library fixtures exercise
+local byte binding only. Every readiness flag remains false, including solid
+collision/physics and gameplay. No script or FF is supplied by this example.

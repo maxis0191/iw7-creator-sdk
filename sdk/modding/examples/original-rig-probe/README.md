@@ -1,8 +1,8 @@
 # Original two-bone animation: author plan
 
 This example describes a retained original animation fixture through the ordinary
-Creator contract. It includes only source planning files, not the fastfile,
-retail material, an implemented GSC lifecycle or an animation launcher.
+Creator contract. It includes planning files and the opt-in DISPLAY/ANIMATE GSC
+experiment, not the fastfile, retail material or a qualified animation launcher.
 `AnimationProbe` remains an unconnected named adapter. `ModelLabV2` accepts
 resident rigid geometry and must not be used for this two-bone fixture.
 
@@ -25,8 +25,17 @@ The SDK contract step passes, but the complete Creator command currently exits
 1 because Distribution has no qualified client-source proof for that blocked
 capability. The report states this exact environmental blocker. No source-proof
 entry is invented to obtain exit 0, and `AnimationProbe` remains unconnected.
-The proposed `sdk_original_rig_probe.gsc::init` lifecycle has no supplied source
-yet; its file path, bytes and hash remain explicitly unknown. Package is refused.
+The supplied `sdk_original_rig_probe.gsc::init` source is bound to its actual
+4,866 bytes and SHA-256
+`49f7e1aa336bb2fdb73e5c36be03c213311ead4555fc9bca0d7b4e69ccdc219b`.
+[SDK PR9](https://github.com/maxis0191/iw7-creator-sdk/pull/9) supplied and reviewed
+it, including the early stop watcher and teardown marker ordering. Parse and dry
+IW7/PC compilation passed with gsc-tool 1.5.1.359 (tool SHA-256
+`1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb`),
+with no GSC import. This binds the source only; whole-package source evidence,
+static asset closure and engine behavior remain pending. Package is refused.
+See [the private scenario](SCENARIO.md) for protection, DISPLAY/ANIMATE phases
+and restoration. The SDK does not implement or run that native supervisor.
 
 ## Observed assets and representations
 
@@ -66,12 +75,12 @@ closed. These observations do not promote its run status to successful.
 ## Next private runtime step
 
 The demo worker owns the protected GSC scenario, installation and rollback.
-Observe the actual CP precache and script-model animation route with this exact
-FF before supplying the proposed author lifecycle. Do not invent a NCS or
+Observe the supplied experiment's actual CP precache and script-model animation
+route with this exact FF. Do not invent a NCS or
 animation tree to make a plan appear complete. Add either only if the observed
 loading/registration behavior establishes that dependency.
 
-Then bind the actual authored GSC and FF sources, representation inventory and
+Then bind the retained FF source, representation inventory and
 static closure in the same contract. Runtime linking, GPU resources, material
 resolution, skinning, cadence, notetrack delivery and owner acceptance need their
 own observations. The existing original CPU reader remains the asset consumer;
