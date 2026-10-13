@@ -17,3 +17,13 @@ Its fastfile and runtime evidence are intentionally unmeasured.
 The GSC, zone recipe and preparation adapter are candidate sources. Nothing here
 automatically installs, starts a game, resolves dependencies or changes Main.
 Integration, builds and protected multiplayer tests are coordinated by the parent.
+
+Use [Creator](CREATOR.md) to plan a project or package an existing statically
+ready project with `-Action Package -Output <fresh-zip>`. Packaging reuses the
+existing distribution gates and ZIP writer, requires explicit source/protocol
+assertions, and does not build a fastfile or qualify runtime acceptance.
+
+The [editable server-only spawn-tip example](examples/server-spawn-tip/sdk_spawn_tip.gsc)
+has a valid planning [manifest](examples/server-spawn-tip/manifest.json), with
+payload/closure qualifications and runtime evidence still pending. Package
+therefore refuses the example as shipped; it is a source starting point.

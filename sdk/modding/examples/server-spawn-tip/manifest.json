@@ -1,0 +1,44 @@
+{
+  "schema": "iw7.community-mod/1",
+  "namespace": "sdk_spawn_tip",
+  "requires": {
+    "engine": ["iw7-cp/1"], "client": [], "server": ["gsc-custom-scripts/1"]
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "lifecycle": {
+    "activation": "map-load", "deactivation": "map-unload", "hot_reload": false,
+    "entrypoints": [{"side": "server", "path": "custom_scripts/cp/sdk_spawn_tip.gsc", "symbol": "init"}],
+    "cleanup": ["threads", "player-state"]
+  },
+  "compatibility": {
+    "engine": "iw7", "mode": "cp", "network_protocol": 2,
+    "client_match": "exact-content", "coexistence": "server-only"
+  },
+  "package": {
+    "schema": "iw7.mod-package/1", "id": "sdk_spawn_tip", "version": "0.1.0",
+    "maps": ["cp_zmb"], "delivery": "server-only",
+    "native_requirements": {
+      "server_source": null, "client_source": null,
+      "client_capabilities": [], "compatible_client_sources": []
+    },
+    "files": [{
+      "id": "spawn_tip", "role": "server", "source": "sdk_spawn_tip.gsc",
+      "destination": "iw7-mod/custom_scripts/cp/sdk_spawn_tip.gsc",
+      "bytes": null, "sha256": null,
+      "closure_roots": ["scriptfile:custom_scripts/cp/sdk_spawn_tip.gsc"]
+    }],
+    "closure": {
+      "status": "incomplete", "evidence_ref": null,
+      "roots": ["scriptfile:custom_scripts/cp/sdk_spawn_tip.gsc"],
+      "nodes": [{"id": "scriptfile:custom_scripts/cp/sdk_spawn_tip.gsc", "kind": "scriptfile",
+                 "scope": "server", "sha256": null, "requires": []}],
+      "unresolved": []
+    },
+    "evidence": [
+      {"kind": "source-check", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "runtime-link", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "gameplay", "status": "pending", "reference": null, "authority": "owner", "maps": []}
+    ]
+  }
+}

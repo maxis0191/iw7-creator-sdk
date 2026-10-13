@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory)][string]$Project,
-    [ValidateSet('Plan','Build','Materialize')][string]$Action='Plan',
+    [ValidateSet('Plan','Build','Materialize','Package')][string]$Action='Plan',
     [ValidateSet('None','BeaconV1','BeaconSelfContainedV1','AnimationProbe','MaterialV2')][string]$Adapter='None',
     [string]$BuildParameters,
     [string]$BuildRoot,
@@ -20,7 +20,7 @@ param(
 # Local orchestration only. Project manifests never supply executable commands.
 # Plan imports the reviewed Python validators and never writes files or loads native code.
 $ErrorActionPreference='Stop'
-$Action=@('Plan','Build','Materialize')|Where-Object {$_ -ieq $Action}
+$Action=@('Plan','Build','Materialize','Package')|Where-Object {$_ -ieq $Action}
 $Adapter=@('None','BeaconV1','BeaconSelfContainedV1','AnimationProbe','MaterialV2')|Where-Object {$_ -ieq $Adapter}
 $Target=$Target.ToLowerInvariant()
 $python=(Get-Command python -ErrorAction Stop).Source
@@ -66,6 +66,22 @@ function Read-CreatorBuildParameters([string]$Path,[string]$ExpectedSHA256) {
     Assert-CreatorBuildParameters $parameters
     return $parameters
 }
+function Invoke-CreatorPackage([string]$ManifestPath,[string]$CandidateRoot,[Collections.IDictionary]$Report) {
+    # Shared with Build: the existing distribution command is the sole ZIP writer.
+    $packager=Join-Path $ToolsRoot 'ops/modding/Package-CommunityMod.py'
+    $packageArgs=@('-B',$packager,$ManifestPath,'--root',$CandidateRoot,'--output',$Report.output,
+        '--sdk-root',(Join-Path $ToolsRoot 'sdk/modding'),'--client-source',$ClientSource,'--server-source',$ServerSource,
+        '--protocol',[string]$Protocol,'--target',$Target)
+    foreach($active in $ActiveProject){$packageArgs+=@('--active',(Join-Path $active 'manifest.json'),$active)}
+    $packageText=& $python @packageArgs
+    $packageExit=$LASTEXITCODE
+    $package=($packageText -join "`n")|ConvertFrom-Json -AsHashtable
+    $Report.package_result=$package
+    if($packageExit -ne 0 -or $package.valid -cne $true -or $package.packaged -cne $true){throw ('Package gate refused: '+($package.errors -join '; '))}
+    if([IO.Path]::GetFullPath($package.archive) -ine $Report.output -or (Get-FileHash -LiteralPath $Report.output).Hash -ine $package.archive_sha256 -or (Get-Item -LiteralPath $Report.output).Length -ne $package.archive_bytes){throw 'Published archive does not match package receipt.'}
+    $Report.packaged=$true
+    $Report.steps+=@{name='package';status='passed';details=@('Existing ZIP writer rechecked payloads and compatibility; archive hash measured')}
+}
 $driver=@'
 import hashlib, importlib.util, json, os, sys
 from pathlib import Path
@@ -94,6 +110,12 @@ def unique_parameters(pairs):
     return result
 
 try:
+    if args["action"] == "Package":
+        if args["adapter"] != "None" or any(args[key] for key in (
+                "build_parameters", "build_root", "finalize_root", "recipient_proof", "recipient_root", "gsc_audit_evidence")):
+            raise ValueError("Package requires Adapter None and an existing project; build/materialization/evidence-adapter inputs are not accepted")
+        if not args["output"] or not args["client_source"] or not args["server_source"] or args["protocol"] is None:
+            raise ValueError("Package requires Output, ClientSource, ServerSource and Protocol explicitly; these are operator assertions")
     if args["build_root"] and args["action"] != "Materialize":
         raise ValueError("BuildRoot is reserved for explicit Materialize; Plan and Build are unchanged")
     if args["action"] == "Materialize":
@@ -145,6 +167,15 @@ try:
     if not args["client_source"] or not args["server_source"] or args["protocol"] is None:
         report["pending"].append("Supply ClientSource, ServerSource and Protocol for a complete compatibility plan")
     data = manifests[0]
+    if args["action"] == "Package":
+        destination = Path(os.path.abspath(args["output"]))
+        packager.no_redirects(destination.parent)
+        if os.path.lexists(destination):
+            raise ValueError("Package requires a fresh Output; existing output is preserved")
+        if any(destination == directory or destination in directory.parents or directory in destination.parents for directory in projects):
+            raise ValueError("Package Output must be outside all input projects")
+        report["output"] = str(destination)
+        step("package-preflight", "passed", ["Existing project and fresh archive path selected; package gate must still check bytes and closure"])
     if args["adapter"] == "BeaconV1":
         package = data["package"]
         if data["namespace"] != "sdk_beacon" or package["id"] != "sdk_beacon" or package["maps"] != ["cp_zmb"]:
@@ -335,19 +366,7 @@ if($Action -ceq 'Build'){
                 $report.pending+=@($final.blockers)
                 throw ('Candidate materialized; package blocked by incomplete closure or static qualification: '+($final.blockers -join '; '))
             }
-            $packager=Join-Path $ToolsRoot 'ops/modding/Package-CommunityMod.py'
-            $packageArgs=@('-B',$packager,$final.manifest_path,'--root',$final.candidate_root,'--output',$report.output,
-                '--sdk-root',(Join-Path $ToolsRoot 'sdk/modding'),'--client-source',$ClientSource,'--server-source',$ServerSource,
-                '--protocol',[string]$Protocol,'--target',$Target)
-            foreach($active in $ActiveProject){$packageArgs+=@('--active',(Join-Path $active 'manifest.json'),$active)}
-            $packageText=& $python @packageArgs
-            $packageExit=$LASTEXITCODE
-            $package=($packageText -join "`n")|ConvertFrom-Json -AsHashtable
-            $report.package_result=$package
-            if($packageExit -ne 0 -or $package.valid -cne $true -or $package.packaged -cne $true){throw ('Package gate refused: '+($package.errors -join '; '))}
-            if([IO.Path]::GetFullPath($package.archive) -ine $report.output -or (Get-FileHash -LiteralPath $report.output).Hash -ine $package.archive_sha256 -or (Get-Item -LiteralPath $report.output).Length -ne $package.archive_bytes){throw 'Published archive does not match package receipt.'}
-            $report.packaged=$true
-            $report.steps+=@{name='package';status='passed';details=@('Existing ZIP writer rechecked payloads and compatibility; archive hash measured')}
+            Invoke-CreatorPackage $final.manifest_path $final.candidate_root $report
         } catch {
             $report.errors+=@($_.Exception.Message)
             $report.steps+=@{name=$phase;status='blocked';details=@($_.Exception.Message)}
@@ -356,8 +375,14 @@ if($Action -ceq 'Build'){
         $report.steps+=@{name='build';status='blocked';details=@('Preflight failed; no native builder invoked')}
     }
 } else {
-    $detail=if($Action -ceq 'Materialize'){'Retained build only; no new build was invoked'}else{'Plan does not compile, finalize or package'}
+    $detail=if($Action -ceq 'Materialize'){'Retained build only; no new build was invoked'}elseif($Action -ceq 'Package'){'Existing project only; no build or materialization was invoked'}else{'Plan does not compile, finalize or package'}
     $report.steps+=@{name='build';status='not-run';details=@($detail)}
+}
+if($Action -ceq 'Package'){
+    if($report.plan_valid){
+        try{Invoke-CreatorPackage (Join-Path $report.project 'manifest.json') $report.project $report}
+        catch{$report.errors+=@($_.Exception.Message);$report.steps+=@{name='package';status='blocked';details=@($_.Exception.Message)}}
+    }else{$report.steps+=@{name='package';status='blocked';details=@('Project preflight failed; ZIP writer not invoked')}}
 }
 if(!@($report.steps|Where-Object name -EQ 'package').Count){$report.steps+=@{name='package';status='not-run';details=@('No ZIP created; static plan validity is not build or runtime acceptance')}}
 if($Json){$report|ConvertTo-Json -Depth 20}
@@ -365,4 +390,4 @@ else {
     foreach($step in $report.steps){Write-Output ('[{0}] {1}' -f $step.status,$step.name);foreach($detail in $step.details){Write-Output ('  '+$detail)}}
     Write-Output ('Plan valid: {0}; build executed: {1}; build verified: {2}; materialized: {3}; packaged: {4}; runtime accepted: false' -f $report.plan_valid,$report.build_executed,$report.build_verified,$report.materialized,$report.packaged)
 }
-if(!$report.plan_valid -or $report.errors.Count -or ($Action -ceq 'Build' -and !$report.packaged) -or ($Action -ceq 'Materialize' -and !$report.materialized)){exit 1}
+if(!$report.plan_valid -or $report.errors.Count -or ($Action -cin @('Build','Package') -and !$report.packaged) -or ($Action -ceq 'Materialize' -and !$report.materialized)){exit 1}
