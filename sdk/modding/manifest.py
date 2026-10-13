@@ -159,6 +159,7 @@ def validate(data, root=None, stage="plan", target="stock", client_source=None, 
                 if entry["evidence_level"] == "blocked":
                     (result["pending"] if stage == "plan" else errors).append("Capability not qualified: " + name)
         required = data["requires"]
+        skeletal_plan = "skeletal-animation-import/1" in required["client"]
         def need(side, name):
             if name not in required[side]:
                 errors.append("Missing capability: " + side + "/" + name)
@@ -174,8 +175,14 @@ def validate(data, root=None, stage="plan", target="stock", client_source=None, 
                 if "lua-fastfile" not in package["native_requirements"]["client_capabilities"]:
                     errors.append("Lua asset requires legacy transport lua-fastfile source gate")
             if node["scope"] == "client" and node["kind"] == "xmodel":
-                need("client", "xmodel-rigid/1")
-                need("engine", "model-netconststrings/1")
+                # The explicit skeletal capability is already blocked above:
+                # Plan may describe it, while package/delivery remain refused.
+                # Do not mislabel an experimental rig as the tested rigid cube.
+                if not skeletal_plan:
+                    need("client", "xmodel-rigid/1")
+                    need("engine", "model-netconststrings/1")
+            if node["scope"] == "client" and node["kind"] == "anim":
+                need("client", "skeletal-animation-import/1")
         nodes = {n["id"]: n for n in package["closure"]["nodes"]}
         endpoints = set()
         for entry in data["lifecycle"]["entrypoints"]:

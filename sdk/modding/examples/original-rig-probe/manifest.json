@@ -3,7 +3,7 @@
   "namespace": "sdk_original_rig_probe",
   "requires": {
     "engine": ["iw7-cp/1"],
-    "client": ["mod-fastfile-download/1"],
+    "client": ["mod-fastfile-download/1", "skeletal-animation-import/1"],
     "server": ["mod-fastfile-host/1", "gsc-custom-scripts/1", "script-model/1"]
   },
   "dependencies": [],

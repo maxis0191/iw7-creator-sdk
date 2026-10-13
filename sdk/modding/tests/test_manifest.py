@@ -83,6 +83,18 @@ class ContractTests(unittest.TestCase):
         self.assertTrue(report["valid"])
         self.assertIn("Capability not qualified", " ".join(report["pending"]))
 
+    def test_explicit_skeletal_plan_does_not_borrow_rigid_cube_capabilities(self):
+        data = manifest.load_manifest(manifest.HERE / "examples/original-rig-probe/manifest.json")
+        report = manifest.validate(data)
+        self.assertTrue(report["valid"], report)
+        self.assertIn("Capability not qualified: skeletal-animation-import/1", report["pending"])
+        self.assertEqual(report["capability_evidence"]["skeletal-animation-import/1"], "blocked")
+        self.assertNotIn("xmodel-rigid/1", data["requires"]["client"])
+        self.assertNotIn("model-netconststrings/1", data["requires"]["engine"])
+        self.assertFalse(report["runtime_ready"])
+        data["requires"]["client"].remove("skeletal-animation-import/1")
+        self.invalid(data, "Missing capability: client/skeletal-animation-import/1")
+
     def test_protocol_type_and_modality(self):
         for value in [True, 0, -1, 65536, "2", [], {}]:
             data = copy.deepcopy(self.plan)
@@ -216,6 +228,13 @@ class ContractTests(unittest.TestCase):
             data = self.source_package(root)
             data["requires"]["client"].append("h1-rigid-import/1")
             self.invalid(data, "Capability not qualified", root=root, stage="package")
+
+    def test_skeletal_capability_cannot_promote_an_otherwise_complete_package(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data = self.source_package(root)
+            data["requires"]["client"].append("skeletal-animation-import/1")
+            self.invalid(data, "Capability not qualified: skeletal-animation-import/1", root=root, stage="package")
 
     def test_delivery_does_not_inherit_package_success(self):
         with tempfile.TemporaryDirectory() as tmp:

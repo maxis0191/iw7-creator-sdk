@@ -18,6 +18,9 @@ From an exact prepared SDK source workspace:
 Plan checks names, roles, graph structure and declared compatibility. It writes
 nothing and retains all package/runtime/owner readiness flags as false. The
 source pins above are operator assertions, not an installed binary measurement.
+The existing `skeletal-animation-import/1` capability is explicitly **blocked**:
+it permits an honest experimental Plan, and refuses package/delivery stages.
+The tested rigid-cube/NCS capabilities are not substituted for this rig.
 The proposed `sdk_original_rig_probe.gsc::init` lifecycle has no supplied source
 yet; its file path, bytes and hash remain explicitly unknown. Package is refused.
 
@@ -69,3 +72,11 @@ static closure in the same contract. Runtime linking, GPU resources, material
 resolution, skinning, cadence, notetrack delivery and owner acceptance need their
 own observations. The existing original CPU reader remains the asset consumer;
 this example adds no validator, runner, receipt schema or resource supervisor.
+
+The first author-plan candidate exposed an existing SDK limitation: every client
+XModel required the tested rigid-cube and NCS capabilities, including this
+explicit skeletal experiment. That failed candidate is retained in history.
+The SDK now accepts the existing blocked skeletal capability for an experimental
+Plan, and requires it for client animation nodes. Ordinary rigid plans keep their
+previous requirements. The blocked capability still refuses package/delivery;
+this correction does not qualify skeletal runtime support.

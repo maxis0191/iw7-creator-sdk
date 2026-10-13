@@ -33,7 +33,8 @@ class OriginalRigPlanTests(unittest.TestCase):
         self.assertFalse(any(n.startswith("netconststrings:") for n in nodes))
         self.assertEqual(nodes["xanim:paris_original_probe_bend"]["kind"], "anim")
         self.assertEqual(nodes["material:mopw/character_park_clown_zombie_shoes"]["scope"], "recipient")
-        self.assertEqual(self.manifest["requires"]["client"], ["mod-fastfile-download/1"])
+        self.assertEqual(self.manifest["requires"]["client"], ["mod-fastfile-download/1", "skeletal-animation-import/1"])
+        self.assertNotIn("model-netconststrings/1", self.manifest["requires"]["engine"])
         self.assertIsNone(self.manifest["package"]["files"][1]["source"])
 
     def test_package_refuses_missing_lifecycle_and_incomplete_closure(self):
