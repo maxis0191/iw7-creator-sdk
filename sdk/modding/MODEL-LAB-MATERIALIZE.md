@@ -150,3 +150,12 @@ PowerShell syntax, relative documentation links and `git diff --check` passed.
 The largest observed new-test preparation tree was 57,031 bytes against the
 8 MiB preparation limit. This was source/fixture validation only; the complete
 SDK suite and real-export materialization were not run for this checkpoint.
+
+Independent review then reproduced a P2 input-binding bug in `bc7c0f04`: the
+NCS was read again after `verify_dump`, replacing its original input baseline.
+A replacement with 46 invalid bytes could therefore be labeled a verified NCS
+source. The corrective change reuses the first NCS byte snapshot for the node
+representation, leaving the original baseline intact for the final recheck.
+The new adversarial test failed before the fix and now requires refusal before
+any candidate directory is created. All 20 adapter tests pass after correction;
+this remains synthetic source validation, with no real operation replay.

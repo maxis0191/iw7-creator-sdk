@@ -133,7 +133,10 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
     expected_sources = {model_path, mesh_path, ncs_path, "zone_source/paris_model_probe.csv",
                         "zone_source/paris_model_probe_recipient.csv"}
     require(set(plan["source_files"]) == expected_sources, "Exact five ModelLab source inputs required")
-    for name in expected_sources:
+    # Retain this first snapshot; rereading after verify_dump would replace the
+    # Inputs baseline and could bless a subsequently modified NCS as verified.
+    ncs = read(source, ncs_path, "source/" + ncs_path)
+    for name in expected_sources - {ncs_path}:
         read(source, name, "source/" + name, 16 * METADATA if name == mesh_path else METADATA)
     model = read(build, "roundtrip/" + model_path, "build/model", METADATA)
     mesh = read(build, "roundtrip/" + mesh_path, "build/mesh", 16 * METADATA)
@@ -183,7 +186,7 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
     representations = []
     for node_id, raw, representation in ((model_id, model, "Retained FF model dump"),
                                         (mesh_id, mesh, "Retained FF surface dump"),
-                                        (ncs_id, read(source, ncs_path, "source/" + ncs_path), "Verified NCS source input; not a retained dump"),
+                                        (ncs_id, ncs, "Verified NCS source input; not a retained dump"),
                                         (script_id, gsc, "Explicit separately reviewed GSC source; not a build input")):
         require(nodes[node_id]["sha256"] in (None, f.sha(raw)), "Declared node hash differs: " + node_id)
         nodes[node_id]["sha256"] = f.sha(raw)

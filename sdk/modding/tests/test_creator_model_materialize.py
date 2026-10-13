@@ -280,6 +280,22 @@ class ModelMaterializeTests(unittest.TestCase):
             self.invoke()
         self.assertTrue(self.output.exists(),'Rejected candidate retained for diagnosis')
 
+    def test_ncs_changed_after_verify_dump_cannot_replace_initial_snapshot(self):
+        original_load=m.module
+        def altered(path,name):
+            mod=original_load(path,name)
+            if name=='creator_resident_verifier':
+                original=mod.verify_dump
+                def verify(*args):
+                    result=original(*args)
+                    # Reproduce the independent review: the validated source
+                    # becomes invalid after readback but before representation.
+                    (self.source/'netconststrings/ncs_mdl_paris_model_probe.json').write_bytes(b'!'*46)
+                    return result
+                mod.verify_dump=verify
+            return mod
+        with patch.object(m,'module',altered): self.refused('Input changed')
+
     @unittest.skipUnless(shutil.which('pwsh'),'PowerShell required')
     def test_creator_dispatch_and_invalid_modes_do_not_run_builder_or_package(self):
         base=[shutil.which('pwsh'),'-NoProfile','-File',str(SDK/'Creator.ps1'),'-Adapter','ModelLabV2',
