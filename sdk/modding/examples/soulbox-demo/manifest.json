@@ -1,0 +1,114 @@
+{
+  "schema": "iw7.community-mod/1",
+  "namespace": "sdk_soulbox_demo_v1",
+  "requires": {
+    "engine": [
+      "iw7-cp/1"
+    ],
+    "client": [],
+    "server": [
+      "gsc-custom-scripts/1"
+    ]
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "lifecycle": {
+    "activation": "map-load",
+    "deactivation": "map-unload",
+    "hot_reload": false,
+    "entrypoints": [
+      {
+        "side": "server",
+        "path": "custom_scripts/cp/sdk_soulbox_demo_v1.gsc",
+        "symbol": "init"
+      }
+    ],
+    "cleanup": [
+      "threads",
+      "player-state",
+      "hud",
+      "entities"
+    ]
+  },
+  "compatibility": {
+    "engine": "iw7",
+    "mode": "cp",
+    "network_protocol": 2,
+    "client_match": "exact-content",
+    "coexistence": "server-only"
+  },
+  "package": {
+    "schema": "iw7.mod-package/1",
+    "id": "sdk_soulbox_demo_v1",
+    "version": "0.1.0",
+    "maps": [
+      "cp_zmb"
+    ],
+    "delivery": "server-only",
+    "native_requirements": {
+      "server_source": null,
+      "client_source": null,
+      "client_capabilities": [],
+      "compatible_client_sources": []
+    },
+    "files": [
+      {
+        "id": "soulbox",
+        "role": "server",
+        "source": "sdk_soulbox_demo_v1.gsc",
+        "destination": "iw7-mod/custom_scripts/cp/sdk_soulbox_demo_v1.gsc",
+        "bytes": 9477,
+        "sha256": "3799600ee7e266b0e273c38060c06fe88a418649d49dba7d7751d71237f13fab",
+        "closure_roots": [
+          "scriptfile:custom_scripts/cp/sdk_soulbox_demo_v1.gsc"
+        ]
+      }
+    ],
+    "closure": {
+      "status": "incomplete",
+      "evidence_ref": null,
+      "roots": [
+        "scriptfile:custom_scripts/cp/sdk_soulbox_demo_v1.gsc"
+      ],
+      "nodes": [
+        {
+          "id": "scriptfile:custom_scripts/cp/sdk_soulbox_demo_v1.gsc",
+          "kind": "scriptfile",
+          "scope": "server",
+          "sha256": "3799600ee7e266b0e273c38060c06fe88a418649d49dba7d7751d71237f13fab",
+          "requires": [
+            "xmodel:zmb_coin_alien"
+          ]
+        }
+      ],
+      "unresolved": [
+        "xmodel:zmb_coin_alien"
+      ]
+    },
+    "evidence": [
+      {
+        "kind": "source-check",
+        "status": "pass",
+        "reference": "validation-20261013.json",
+        "authority": "agent",
+        "maps": [
+          "cp_zmb"
+        ]
+      },
+      {
+        "kind": "runtime-link",
+        "status": "pending",
+        "reference": null,
+        "authority": "agent",
+        "maps": []
+      },
+      {
+        "kind": "gameplay",
+        "status": "pending",
+        "reference": null,
+        "authority": "owner",
+        "maps": []
+      }
+    ]
+  }
+}
