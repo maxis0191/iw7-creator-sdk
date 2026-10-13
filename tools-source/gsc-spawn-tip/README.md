@@ -72,6 +72,14 @@ Only after a separate coordinator GO, from an original interactive host:
 The `child` Python verb is internal to the admitted runner. A child report alone
 never proves supervision, resource release or whole-job closure.
 
+The host guard uses the shared T7 host helper's exact argument-array policy with
+this profile's command tail: `-NoProfile -NoExit -File SCRIPT -PlanPath PLAN
+-PlanSHA256 HASH -Run`. It obtains actual tokens from `GetCommandLineArgs` and
+checks executable identity separately via `MainModule`. Managed `argv[0]` may
+name `pwsh.dll`. Text inside a quoted path, or `-NoExit` after the script, cannot
+satisfy the host switch. The original raw command-line regex in commit `3de35aa`
+had this P2 hole; preserve that candidate and use the separate correction.
+
 ## Budget, stop and closure
 
 - Admission retains the historical conservative **4 GiB physical / 6 GiB commit**
@@ -116,6 +124,7 @@ updated and no claim is made that the offline compiler matches runtime linking.
 ```powershell
 & $Python -I -B "$Repo/tools-source/gsc-spawn-tip/test_spawn_tip.py"
 & $HostImage -NoProfile -File "$Repo/tools-source/gsc-spawn-tip/Test-SpawnTip.ps1"
+& $HostImage -NoProfile -File "$Repo/tools-source/gsc-spawn-tip/Test-SpawnTipHost.ps1"
 & $HostImage -NoProfile -File "$Repo/tools-source/asset-bridge/h1-fixture/Test-H1Native.ps1"
 ```
 

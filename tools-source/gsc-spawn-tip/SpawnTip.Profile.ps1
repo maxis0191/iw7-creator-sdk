@@ -1,5 +1,19 @@
 # Dedicated policy only. Native ownership/registration/cleanup remains H1Native.
 Set-StrictMode -Version Latest
+function Assert-SpawnTipHostArguments([string[]]$ActualArguments,[string]$ActualImage,
+    [string]$ExpectedImage,[string]$EntryPath,[string]$PlanPath,[string]$PlanSHA256) {
+    # Reuse Assert-T7CatalogueHostArguments' exact argv policy, with this
+    # profile's smaller argument tail. Do not parse/reconstruct quoted strings.
+    $expected=@($ExpectedImage,'-NoProfile','-NoExit','-File',$EntryPath,
+        '-PlanPath',$PlanPath,'-PlanSHA256',$PlanSHA256,'-Run')
+    if($ActualImage -cne $ExpectedImage -or $ActualArguments.Count -ne $expected.Count){throw 'Exact NoProfile/NoExit/File host arguments and executable required.'}
+    # Managed pwsh reports pwsh.dll at argv[0]. MainModule supplies the separate
+    # executable identity; argv[0] cannot establish that identity or any switch.
+    for($index=1;$index -lt $expected.Count;$index++) {
+        if($ActualArguments[$index] -cne $expected[$index]){throw 'Exact NoProfile/NoExit/File host arguments and executable required.'}
+    }
+    [ordered]@{Image=$ActualImage;NoProfile=$true;NoExit=$true;DirectFileLaunch=$true;ExactArgumentsVerified=$true}
+}
 function Assert-SpawnTipPlan($Plan,[string]$Repo,[string]$Entry) {
     $keys='AuditLogBytes,AuditSeconds,AuditSource,BinaryInputsVerified,BinaryLimitBytes,Bindings,CommitBytes,CompilerLogBytes,CompileSeconds,DeadlineSeconds,EstimatesAreMeasured,MetadataReserveBytes,OutputLimitBytes,Payload,PhysicalBytes,ReferencePins,Repo,RunRoot,Schema,StackLimitBytes'
     if((@($Plan.PSObject.Properties.Name|Sort-Object)-join ',') -cne $keys -or

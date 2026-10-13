@@ -42,8 +42,8 @@ try {
     foreach($pin in $plan.Bindings|Where-Object IsText){$guards.Add((Open-H1Pin $pin))}
     if(!$Run){[ordered]@{Status='PlanCheckedPendingGO';TextBindings=23;BinaryInputsRead=$false;LeaseAcquired=$false;FilesCreated=$false;RuntimeReady=$false}|ConvertTo-Json;return}
     # Keep the original host and in-memory H1 quarantine reachable on uncertainty.
-    if([Environment]::CommandLine -notmatch '(?i)(?:^|\s)-NoExit(?:\s|$)'){throw 'Run requires an original interactive -NoExit host; preserve it on quarantine.'}
-    if([Diagnostics.Process]::GetCurrentProcess().MainModule.FileName -cne $script:SpawnTipPins.Host.Path){throw 'Exact reviewed PowerShell host required.'}
+    $hostContract=Assert-SpawnTipHostArguments ([Environment]::GetCommandLineArgs()) `
+        ([Diagnostics.Process]::GetCurrentProcess().MainModule.FileName) $script:SpawnTipPins.Host.Path $PSCommandPath $PlanPath $PlanSHA256
     if(('IW7.AnimationProbe.NativeJob' -as [type]) -or ('IW7ResourceMemoryV1' -as [type])){throw 'Fresh host required.'}
     . $script:SpawnTipPins.Scheduler.Path
     $script:SpawnTipPlanPath=$PlanPath
