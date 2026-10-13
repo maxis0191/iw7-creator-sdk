@@ -109,8 +109,9 @@ stop(state)
         if (isdefined(actor)) actor delete();
     }
     state.actors = [];
-    level notify("sdk_original_rig_probe_stopped");
     print("[SDK original rig] STOPPED; entities_deleted=1; player_state_changed=0.");
+    // This notification can end the calling playback thread too.
+    level notify("sdk_original_rig_probe_stopped");
 }
 
 shutdown(state)
