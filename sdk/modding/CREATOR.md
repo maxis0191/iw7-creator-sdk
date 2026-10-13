@@ -712,3 +712,17 @@ identity and UDP 27016 owner were unchanged. Maximum observed build output was
 1,220,100 bytes, below the unchanged 64 MiB threshold; every stderr was empty.
 The nine reviewed source files retained their before/after hashes. No client or
 test dedicated was launched, no Main deployment occurred, and there was no retry.
+
+## Original arena source adapter, 2026-10-13
+
+`OriginalArenaV1` provides an explicit source-only `Plan -ModelSourceRoot` for
+the authored seven-box arena. The [author plan](examples/original-arena/README.md)
+defines its names, counts, eight source snapshots and remaining qualification.
+It also reuses the existing `Bind`/`Materialize` composition workflow for retained
+inputs; no new builder or package writer is introduced. ModelLabV2 keeps its
+resident v2 contract. A blocked `original-arena-display/1` capability keeps the
+new geometry distinct from the historic rigid cube. NCS remains mandatory.
+
+Creator retains the missing client capability source proof refusal. A successful
+World source selection or direct library materialization does not qualify the
+client, rendering, solid collision or gameplay, and does not enable packaging.

@@ -200,13 +200,28 @@ class ArenaCreatorTests(unittest.TestCase):
                 self.assertFalse(self.output.exists())
             finally: path.write_bytes(original)
 
-    def test_unrestored_build_or_wrong_reader_result_refused(self):
+    def test_unrestored_build_refused(self):
         self.bind_build_fixture()
         self.state["Restored"] = False
         raw = encoded(self.state); (self.build / "state.local.json").write_bytes(raw)
         path = self.project / "composition.json"; descriptor = json.loads(path.read_bytes())
         descriptor["assets"]["build_receipt_sha256"] = sha(raw); path.write_bytes(encoded(descriptor))
         with self.assertRaisesRegex(ValueError, "Restored successful"):
+            self.invoke()
+        self.assertFalse(self.output.exists())
+
+    def test_rehashed_reader_claim_cannot_replace_independent_arena_readback(self):
+        self.bind_build_fixture()
+        proof_path = self.build / "geometry-roundtrip.json"
+        proof = json.loads(proof_path.read_bytes()); proof["origin"] = "unverified-donor"
+        raw = encoded(proof)
+        proof_path.write_bytes(raw); (self.build / "reader.stdout.json").write_bytes(raw)
+        self.state["GeometryEvidenceSHA256"] = sha(raw)
+        state_raw = encoded(self.state); (self.build / "state.local.json").write_bytes(state_raw)
+        path = self.project / "composition.json"; descriptor = json.loads(path.read_bytes())
+        descriptor["assets"].update(roundtrip_sha256=sha(raw), build_receipt_sha256=sha(state_raw))
+        path.write_bytes(encoded(descriptor))
+        with self.assertRaisesRegex(ValueError, "independent.*revalidation"):
             self.invoke()
         self.assertFalse(self.output.exists())
 
@@ -227,6 +242,17 @@ class ArenaCreatorTests(unittest.TestCase):
         result = subprocess.run(base + ["-Action", "Build"], capture_output=True, text=True, timeout=20)
         self.assertEqual(result.returncode, 1)
         self.assertIn("no Build adapter", " ".join(json.loads(result.stdout)["errors"]))
+        result = subprocess.run(base + ["-Action", "Plan", "-ModelSourceRoot", str(self.source),
+                                "-BuildRoot", str(self.build)], capture_output=True, text=True, timeout=20)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("build and output inputs are refused", " ".join(json.loads(result.stdout)["errors"]))
+        result = subprocess.run(base + ["-Action", "Materialize", "-BuildRoot", str(self.build),
+                                "-FinalizeRoot", str(self.output)], capture_output=True, text=True, timeout=20)
+        self.assertEqual(result.returncode, 1)
+        report = json.loads(result.stdout)
+        self.assertIn("Capability source proof missing: client/original-arena-display/1", " ".join(report["errors"]))
+        self.assertFalse(report["materialized"])
+        self.assertFalse(self.output.exists())
         self.assertEqual(before, {p: p.read_bytes() for p in before})
 
 

@@ -1,6 +1,6 @@
-"""Materialize an existing ModelLab v2 build; no compiler, runner or ZIP writer.
+"""Select/bind/materialize explicit ModelLab inputs; no compiler/runner/ZIP writer.
 
-Reuse the resident derivation/readback and SDK contracts. Review references are
+Reuse resident or original-arena readback and SDK contracts. Review references are
 explicit operator declarations, not authenticated GSC or native execution proof.
 """
 import copy

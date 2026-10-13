@@ -118,19 +118,19 @@ try:
         if args["action"] not in supported:
             raise ValueError(args["adapter"] + " supports only " + ", ".join(supported) + "; no Build adapter is invoked")
         if args["recipient_proof"] or args["recipient_root"] or args["gsc_audit_evidence"]:
-            raise ValueError("ModelLabV2 uses explicit composition.json source/GSC review bindings; recipient/audit adapters are not supported")
+            raise ValueError(args["adapter"] + " uses explicit composition.json source/GSC review bindings; recipient/audit adapters are not supported")
         if not args["client_source"] or not args["server_source"] or args["protocol"] != 2 or args["target"] != "stock":
-            raise ValueError("ModelLabV2 requires explicit ClientSource/ServerSource assertions, Protocol 2 and Target stock")
+            raise ValueError(args["adapter"] + " requires explicit ClientSource/ServerSource assertions, Protocol 2 and Target stock")
     if args["action"] == "Bind":
         if (args["adapter"] not in ("ModelLabV2", "OriginalArenaV1") or not args["model_source_root"] or not args["review_reference"] or
                 not args["build_root"] or args["build_parameters"] or args["output"] or args["finalize_root"]):
-            raise ValueError("Bind requires ModelLabV2, ModelSourceRoot, BuildRoot and ReviewReference; no output/build command is accepted")
+            raise ValueError("Bind requires ModelLabV2 or OriginalArenaV1, ModelSourceRoot, BuildRoot and ReviewReference; no output/build command is accepted")
     elif args["adapter"] == "OriginalArenaV1" and args["action"] == "Plan":
         if not args["model_source_root"] or any(args[key] for key in (
                 "review_reference", "build_parameters", "build_root", "output", "finalize_root")):
             raise ValueError("OriginalArenaV1 Plan requires only explicit ModelSourceRoot; build and output inputs are refused")
     elif args["model_source_root"] or args["review_reference"]:
-        raise ValueError("ModelSourceRoot and ReviewReference are reserved for ModelLabV2 Bind")
+        raise ValueError("ModelSourceRoot and ReviewReference require model Bind, or OriginalArenaV1 Plan with ModelSourceRoot only")
     if args["action"] == "Package":
         if args["adapter"] != "None" or any(args[key] for key in (
                 "build_parameters", "build_root", "finalize_root", "recipient_proof", "recipient_root", "gsc_audit_evidence")):
@@ -141,7 +141,7 @@ try:
         raise ValueError("BuildRoot is reserved for explicit Materialize or Bind; Plan and Build are unchanged")
     if args["action"] == "Materialize":
         if args["adapter"] not in ("BeaconV1", "BeaconSelfContainedV1", "ModelLabV2", "OriginalArenaV1") or not args["build_root"] or not args["finalize_root"]:
-            raise ValueError("Materialize requires BeaconV1, BeaconSelfContainedV1 or ModelLabV2, an existing BuildRoot and a fresh FinalizeRoot")
+            raise ValueError("Materialize requires BeaconV1, BeaconSelfContainedV1, ModelLabV2 or OriginalArenaV1, an existing BuildRoot and a fresh FinalizeRoot")
         if args["build_parameters"] or args["output"]:
             raise ValueError("Materialize does not accept BuildParameters or Output; it creates a local candidate only")
     if args["gsc_audit_evidence"] and (args["adapter"] != "BeaconSelfContainedV1" or args["action"] != "Plan"):
