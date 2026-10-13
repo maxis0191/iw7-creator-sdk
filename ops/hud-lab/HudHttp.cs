@@ -39,6 +39,13 @@ public sealed class IW7HudHttp : IDisposable
     public IW7HudHttp(byte[] bytes, string expectedHash, string logPath, string route)
         : this(LegacyAsset(bytes, expectedHash, route), logPath) { }
 
+    // Only the independently reviewed resident-model caller uses this bound.
+    // The legacy ModelRoute constructor remains limited to the measured cube.
+    public static IW7HudHttp CreateRigidModel(byte[] bytes, string expectedHash, string logPath)
+    {
+        return new IW7HudHttp(new[] { new Asset(bytes, expectedHash, ModelRoute, 32 * 1024 * 1024) }, logPath);
+    }
+
     public IW7HudHttp(byte[] ff, string ffHash, byte[] sabl, string sablHash,
         byte[] sabs, string sabsHash, string logPath)
         : this(new[] {
