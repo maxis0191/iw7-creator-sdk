@@ -53,6 +53,14 @@ and `ReviewReference` are reserved for `Bind`; they are not required by
 `Materialize`. Packaging still requires the real static closure, and runtime
 rendering and owner gameplay remain separate qualifications.
 
+Source checkpoint, 2026-10-13: the exact candidate source workspace passed
+25 ModelLab materialization tests and 73 Creator CLI regressions. Five new cases
+cover automatic binding followed by materialization, preserved descriptors,
+wrong model/FF bindings, changed snapshots and the real Bind CLI dispatch.
+These tests use small original synthetic geometry and an explicit text FF
+stand-in. They establish author-tool behavior only; the real BO3 FF, native
+execution, rendering and owner gameplay still require their own observations.
+
 The command uses the existing parameters; all paths/pins below refer to a future
 separately authorized materialization, not a new execution instruction:
 
