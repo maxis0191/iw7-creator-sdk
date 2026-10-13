@@ -57,8 +57,8 @@
         "role": "server",
         "source": "sdk_soulbox_demo_v1.gsc",
         "destination": "iw7-mod/custom_scripts/cp/sdk_soulbox_demo_v1.gsc",
-        "bytes": 9477,
-        "sha256": "3799600ee7e266b0e273c38060c06fe88a418649d49dba7d7751d71237f13fab",
+        "bytes": 12339,
+        "sha256": "9c25aaeeca5d7ec070dbca57e4fa7c9ebeb487dd60554b29dc0de0e08b83626d",
         "closure_roots": [
           "scriptfile:custom_scripts/cp/sdk_soulbox_demo_v1.gsc"
         ]
@@ -75,7 +75,7 @@
           "id": "scriptfile:custom_scripts/cp/sdk_soulbox_demo_v1.gsc",
           "kind": "scriptfile",
           "scope": "server",
-          "sha256": "3799600ee7e266b0e273c38060c06fe88a418649d49dba7d7751d71237f13fab",
+          "sha256": "9c25aaeeca5d7ec070dbca57e4fa7c9ebeb487dd60554b29dc0de0e08b83626d",
           "requires": [
             "xmodel:zmb_coin_alien"
           ]
@@ -97,10 +97,10 @@
       },
       {
         "kind": "runtime-link",
-        "status": "pending",
-        "reference": null,
+        "status": "pass",
+        "reference": "validation-20261013.json",
         "authority": "agent",
-        "maps": []
+        "maps": ["cp_zmb"]
       },
       {
         "kind": "gameplay",
