@@ -33,6 +33,13 @@ It does not accept an arbitrary edited game project as a working compiler input.
 `AnimationProbe` and `MaterialV2` are named extension points with explicit blocked
 status until their actual adapters and evidence paths are connected.
 
+`ModelLabV2` supports only the existing `Materialize` action for a retained
+resident multisurface Model Lab build and an explicitly reviewed GSC/closure
+declaration. It reuses the resident reader and SDK gates, preserves actual asset
+names and ordered slots, and leaves package/runtime qualification pending.
+See [Model Lab materialization](MODEL-LAB-MATERIALIZE.md) for the explicit input
+contract and the distinction between an IW7 placeholder and imported textures.
+
 ## Package an existing project
 
 `-Action Package` accepts a generic, statically ready `manifest.json` and its
