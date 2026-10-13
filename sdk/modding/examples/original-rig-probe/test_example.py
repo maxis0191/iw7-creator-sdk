@@ -4,6 +4,7 @@ import hashlib
 from pathlib import Path
 import shutil
 import subprocess
+import tempfile
 import json
 import unittest
 
@@ -48,11 +49,23 @@ class OriginalRigPlanTests(unittest.TestCase):
         self.assertIsNone(self.manifest["package"]["files"][0]["source"])
         self.assertTrue(all(e["status"] == "pending" for e in self.manifest["package"]["evidence"]))
 
-    def test_package_refuses_missing_lifecycle_and_incomplete_closure(self):
+    def test_package_measures_supplied_source_but_refuses_incomplete_assets(self):
         result = sdk.validate(self.manifest, root=HERE, stage="package", client_source=PIN, server_source=PIN)
         self.assertFalse(result["valid"])
         self.assertFalse(result["ready"])
         self.assertIn("package: Dependency closure incomplete", result["errors"])
+        self.assertIn("server_probe", result["checked"])
+
+    def test_changed_source_cannot_reuse_supplied_binding(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            name = self.manifest["package"]["files"][1]["source"]
+            raw = bytearray((HERE / name).read_bytes())
+            raw[0] ^= 1
+            (root / name).write_bytes(raw)
+            result = sdk.validate(self.manifest, root=root, stage="package", client_source=PIN, server_source=PIN)
+            self.assertFalse(result["ready"])
+            self.assertIn("hash mismatch", " ".join(result["errors"]))
 
     @unittest.skipUnless(shutil.which("pwsh"), "PowerShell required")
     def test_real_creator_plan_is_read_only_and_animation_adapter_stays_explicit(self):
