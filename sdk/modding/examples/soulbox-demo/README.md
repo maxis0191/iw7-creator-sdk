@@ -31,12 +31,21 @@ native firing/Use inputs. It does not deal scripted damage or fabricate kills.
 That fixture is excluded from the creator payload. Protection, snapshots,
 captures and restoration belong to the test harness, not this gameplay script.
 
-Protected native-input runs F/G credited six natural nearby bullet kills and
+Protected native-input runs F/G/H credited six natural nearby bullet kills and
 rendered the 6/6 HUD. G's two 350 ms Use inputs did not reach the token listener;
-its visible stock ammo pickup was not a Soul Box reward. The next source
-candidate declares the retail Use range/FOV explicitly (120/360) and permits
-nearby Use without a look-at requirement. The private driver will stabilize and
-hold Use for one second. This interaction correction is not runtime-verified.
+its visible stock ammo pickup was not a Soul Box reward. H's explicit retail
+Use range/FOV (120/360, nearby Use without a look-at requirement) reached an
+actual token trigger after two engine button edges. Reserve and magazine refill
+operations returned, then gameplay ended before the final reward receipt.
+The run remains failed; its owned empty frontend was recovered and all files,
+Main audit and resource ownership restored.
+
+The next source keeps the ready token's observed green state and adds ammunition
+readback evidence. It removes the unqualified cosmetic `fx/blue` transition;
+retail selects blue for `zmb_coin_space`, while this example uses
+`zmb_coin_alien`. That transition is a suspect, not a proven cause of the ended
+session. The completion HUD and hint distinguish a claimed reward. Actual
+ammunition increase, repeat Use and owner acceptance remain pending.
 
 The template manifest records stock-model closure as pending. Parse/compile
 success does not prove runtime linking, rendering, multiplayer, recipient

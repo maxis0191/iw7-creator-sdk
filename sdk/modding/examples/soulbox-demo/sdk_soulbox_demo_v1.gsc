@@ -205,7 +205,9 @@ interact(state)
         state.reward_stock = player getweaponammostock(weapon);
         state.reward_clip_capacity = weaponclipsize(weapon);
         state.reward_max_ammo = weaponmaxammo(weapon);
-        state.model setscriptablepartstate("fx", "blue");
+        print("[SDK Soul Box] AMMO_STAGE; readback_complete=1; clip=" + state.reward_clip + "; stock=" + state.reward_stock + "; capacity=" + state.reward_clip_capacity + "; maximum=" + state.reward_max_ammo + ".");
+        // Retain the ready token's observed green state. Retail uses fx/blue
+        // for coin_space; that state is not qualified on this coin_alien.
         state.model sethintstring("Soul Box complete");
         player iprintln("Soul Box complete! Equipped firearm ammunition refilled.");
         render_all(state);

@@ -1,7 +1,7 @@
 {
   "date": "2026-10-13",
-  "source_sha256": "456f949fad46752306d92f83ab5a59ba2f9353c339d7aa0de6bae2fa613c383c",
-  "source_bytes": 11290,
+  "source_sha256": "0fe9b5a95f421c5652feb3575739054945dc52388a69e52b1d825a46b0c043f5",
+  "source_bytes": 11601,
   "compiler_version": "gsc-tool 1.5.1.359",
   "compiler_sha256": "1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb",
   "phases": [
@@ -18,7 +18,7 @@
       "exit_code": 0
     }
   ],
-  "compiled_sha256": "2a79b1adf47124c05ecdd68d3f0b8f2a5f2bf7114192cc89545c6ee923e3714f",
+  "compiled_sha256": "f50d1c69a7ec6b08e12f0d6f488647f6b1a5b696db0ed97ac16c42d57246df1d",
   "script_imports_declared": 0,
   "binary_consumption_audited": false,
   "asset_origin": "IW7 retail zmb_coin_alien",
@@ -30,5 +30,5 @@
   "fixture_offline_compile_limit": "gsc-tool has no paris_test_protect native extension; fixture parsed, Aurora linkage pending",
   "prior_failure": "Native-input runs D/E killed six natural nearby zombies. Raw player zombie_killed received weapon/mod/origin, but actor classification fields were undefined; the listener credited zero. Callback snapshot correction awaits a fresh real-input run.",
   "callback_correction_partial_result": "Source 3d9099e554197e779d7aa94be63c86f57d27dd3b6fda82975f54c27277aaa85d linked and credited six natural bullet kills in F, with actual rendered 6/6. First Use ended the gameplay session before a reward receipt. The empty owned frontend was recovered with 30 seconds of valid zero-client UDP; files/profiles/Main audit restored, lease released. The scenario remains failed.",
-  "interaction_candidate": "H declares retail setuserange(120), setusefov(360), usetriggerrequirelookat(0); parse/compile/disassembly pass. Runtime remains pending. G source d7ab6c14298e1777b5a8c46a323b9221faf59a45b0faec85e7de759a2c48411e again credited six natural bullet kills with rendered 6/6. Two native Use350ms inputs reached neither USE_EVENT nor any ammo operation, and G restored normally. Native dispatch acknowledgements and stock Found Ammo Clip are not Soul Box reward evidence."
+  "interaction_candidate": "H source456f949f linked under native958, protocol2, private1, fresh godmode1/inactivity0/cheats0; six actual bullet kills credited/rendered6/6. Engine Use edges1/2 and SDK USE_EVENT/CLAIM_BEGIN were observed. Reserve and clip refill operations returned, then gameplay ended before readback/REWARD/COMPLETE. Original failed/quarantined result retained; separate exact frontend recovery restored all transactions/Main, bank deltafalse, lease released. I removes only the unqualified cosmetic fx/blue transition on coin_alien, keeps its observed green state, and adds ammunition readback evidence. Blue remains a suspect without ScriptableDef proof. I parse/compile/disassembly pass; no I runtime or repeated reward qualification yet."
 }
