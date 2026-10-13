@@ -106,6 +106,17 @@ green. PowerShell syntax passed. No native build, real package distribution,
 stock access, admission or game run was performed. The example's GSC runtime
 compilation/linking and message visibility remain pending.
 
+Subsequent real package checkpoint, 2026-10-13: one authorized
+`Package -Adapter None` invocation on clean source `7f23ae5c` returned exit 0
+and produced the [server spawn-tip Package A](PACKAGE-SERVER-TIP-A.md). Its
+3,561-byte ZIP contains exactly the manifest and unchanged 894-byte original
+GSC. The separate author manifest records reviewed source/encoded-reference
+declarations backed by [Run C](../../tools-source/gsc-spawn-tip/RUN-C.md) and
+its independent closure witness; Creator does not re-audit those references.
+The client/server source and protocol remain operator assertions. The shipped
+example is unchanged; runtime-link/gameplay remain pending, and
+`runtime_ready`, `owner_accepted` and `ready_to_deploy` remain false.
+
 ## Explicit self-contained source selection
 
 The original Beacon remains blocked for concrete, separate reasons:
