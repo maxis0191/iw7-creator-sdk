@@ -48,7 +48,11 @@ readback evidence. It removes the unqualified cosmetic `fx/blue` transition;
 retail selects blue for `zmb_coin_space`, while this example uses
 `zmb_coin_alien`. That transition is a suspect, not a proven cause of the ended
 session. The completion HUD and hint distinguish a claimed reward. Actual
-ammunition increase, repeat Use and owner acceptance remain pending.
+I confirmed clip12/12 and reserve120/120 after genuine Use, then ended before
+the final completion hint change returned. J removes only that late hint update
+and retains the earlier hint plus completion HUD/message/notify. The exact hint
+constraint remains unproven; J runtime, repeat Use and owner acceptance remain
+pending.
 
 The template manifest records stock-model closure as pending. Parse/compile
 success does not prove runtime linking, rendering, multiplayer, recipient

@@ -211,8 +211,9 @@ interact(state)
         print("[SDK Soul Box] AMMO_STAGE; readback_complete=1; clip=" + state.reward_clip + "; stock=" + state.reward_stock + "; capacity=" + state.reward_clip_capacity + "; maximum=" + state.reward_max_ammo + ".");
         // Retain the ready token's observed green state. Retail uses fx/blue
         // for coin_space; that state is not qualified on this coin_alien.
-        state.model sethintstring("Soul Box complete");
-        print("[SDK Soul Box] CLAIM_STAGE; hint_set=1.");
+        // Keep the existing usable-token hint. I ended before this late hint
+        // change returned; the completion HUD/message carry the claimed state.
+        print("[SDK Soul Box] CLAIM_STAGE; hint_retained=1.");
         player iprintln("Soul Box complete! Equipped firearm ammunition refilled.");
         print("[SDK Soul Box] CLAIM_STAGE; completion_printed=1.");
         render_all(state);
