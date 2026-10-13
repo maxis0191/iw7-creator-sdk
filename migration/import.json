@@ -1,0 +1,1026 @@
+{
+  "schema": 1,
+  "source_repository": "maxis0191/iw7-paris-server",
+  "source_commit": "5e47dc2299fde638f31af6c026c0e17ee9ddb8ef",
+  "imported_tip": "dc53c24fb5485fa428c948e3fc8202be0672d798",
+  "tool": "git-filter-repo 2.47.0",
+  "tool_distribution_sha256": "2cd04929b9024e83e65db571cbe36aec65ead0cb5f9ec5abe42158654af5ad83",
+  "files": [
+    {
+      "path": "docs/COMMUNITY-MOD-DISTRIBUTION.md",
+      "blob": "b448a55432bdc40cb74e8beaad50922df4c8f7ee",
+      "bytes": 16626,
+      "mode": "100644",
+      "destination": "docs/COMMUNITY-MOD-DISTRIBUTION.md"
+    },
+    {
+      "path": "docs/MOD-PACKAGES.md",
+      "blob": "e489b0dc1710b8d6e34a67e88233360995758e5f",
+      "bytes": 9735,
+      "mode": "100644",
+      "destination": "docs/MOD-PACKAGES.md"
+    },
+    {
+      "path": "docs/MODDING-CAPABILITIES.md",
+      "blob": "d55a551a07a35504e3eb3f47750d4b1af8be9298",
+      "bytes": 11753,
+      "mode": "100644",
+      "destination": "docs/MODDING-CAPABILITIES.md"
+    },
+    {
+      "path": "docs/MODDING-PLATFORM.md",
+      "blob": "9ecf2c5d0107e266adbfceb8a13e5e0ce3a0bbcf",
+      "bytes": 18691,
+      "mode": "100644",
+      "destination": "docs/MODDING-PLATFORM.md"
+    },
+    {
+      "path": "docs/SOUND-SDK-CONTRACT.md",
+      "blob": "8f8ec7cfcd2032731d144d0fd6fc636c0586b573",
+      "bytes": 4864,
+      "mode": "100644",
+      "destination": "docs/SOUND-SDK-CONTRACT.md"
+    },
+    {
+      "path": "ops/Validate-ModPackage.py",
+      "blob": "9ce2967071de141913a29ffb5d5add5961dc4c88",
+      "bytes": 21346,
+      "mode": "100644",
+      "destination": "ops/Validate-ModPackage.py"
+    },
+    {
+      "path": "ops/hud-lab/Build-Hud.ps1",
+      "blob": "47b44e63189ba77da5661d3187720c624412d299",
+      "bytes": 18145,
+      "mode": "100644",
+      "destination": "ops/hud-lab/Build-Hud.ps1"
+    },
+    {
+      "path": "ops/hud-lab/Hud-Process.ps1",
+      "blob": "5227dd551b5df75ef2638afa00b603e4c19cc403",
+      "bytes": 5433,
+      "mode": "100644",
+      "destination": "ops/hud-lab/Hud-Process.ps1"
+    },
+    {
+      "path": "ops/hud-lab/Hud-Runtime.Core.ps1",
+      "blob": "1ffe6c4ba6d4ea396c0b5e1aeaf4555f32033fb2",
+      "bytes": 11466,
+      "mode": "100644",
+      "destination": "ops/hud-lab/Hud-Runtime.Core.ps1"
+    },
+    {
+      "path": "ops/hud-lab/HudFileIdentity.cs",
+      "blob": "87a89fe9d9ae09d8c9197a7c47d7d82635d139e1",
+      "bytes": 1319,
+      "mode": "100644",
+      "destination": "ops/hud-lab/HudFileIdentity.cs"
+    },
+    {
+      "path": "ops/hud-lab/HudHttp.cs",
+      "blob": "69a3912fa10ad3e27c1cded0d3a46c8623650ebc",
+      "bytes": 7974,
+      "mode": "100644",
+      "destination": "ops/hud-lab/HudHttp.cs"
+    },
+    {
+      "path": "ops/hud-lab/artifact.011.measured.json",
+      "blob": "e270c03a9bb02e4e6bf99cc88254f8a3630ec3c3",
+      "bytes": 1646,
+      "mode": "100644",
+      "destination": "ops/hud-lab/artifact.011.measured.json"
+    },
+    {
+      "path": "ops/hud-lab/artifact.measured.json",
+      "blob": "19aaaf2d06b3dbbf6b7c39d83c83d4719c913dc5",
+      "bytes": 1652,
+      "mode": "100644",
+      "destination": "ops/hud-lab/artifact.measured.json"
+    },
+    {
+      "path": "ops/hud-lab/bootstrap-dependencies.json",
+      "blob": "aa0fa40337f194cc058767455a7cc2c4df5a2003",
+      "bytes": 2773,
+      "mode": "100644",
+      "destination": "ops/hud-lab/bootstrap-dependencies.json"
+    },
+    {
+      "path": "ops/hud-lab/package.plan.json",
+      "blob": "0a389cf2934fa7a7f030382a5afe1da537b9c6ab",
+      "bytes": 1953,
+      "mode": "100644",
+      "destination": "ops/hud-lab/package.plan.json"
+    },
+    {
+      "path": "ops/hud-lab/paris_lab_hud.csv",
+      "blob": "69f14951403582546ea9a9f2a9e06dbf738a0619",
+      "bytes": 46,
+      "mode": "100644",
+      "destination": "ops/hud-lab/paris_lab_hud.csv"
+    },
+    {
+      "path": "ops/hud-lab/prepare.py",
+      "blob": "e6f05af853615a4c48e4dc4efbbcff4f7f04def2",
+      "bytes": 2256,
+      "mode": "100644",
+      "destination": "ops/hud-lab/prepare.py"
+    },
+    {
+      "path": "ops/hud-lab/record_dependency.py",
+      "blob": "04e7859718b9fc4833c585c3503f86dc929a5526",
+      "bytes": 2321,
+      "mode": "100644",
+      "destination": "ops/hud-lab/record_dependency.py"
+    },
+    {
+      "path": "ops/hud-lab/scenario.json",
+      "blob": "d6c0e062634af7c2cb943ca4dc3de04d751e7370",
+      "bytes": 187,
+      "mode": "100644",
+      "destination": "ops/hud-lab/scenario.json"
+    },
+    {
+      "path": "ops/hud-lab/serve.py",
+      "blob": "e8560aef95c9cc92e1f0d18ce5f9ec4eff7aae82",
+      "bytes": 3030,
+      "mode": "100644",
+      "destination": "ops/hud-lab/serve.py"
+    },
+    {
+      "path": "ops/hud-lab/ui_scripts/paris_lab_hud/__init__.lua",
+      "blob": "d8394fee047f8dbd7dbf756fce7b5d1f140f81c5",
+      "bytes": 1575,
+      "mode": "100644",
+      "destination": "ops/hud-lab/ui_scripts/paris_lab_hud/__init__.lua"
+    },
+    {
+      "path": "ops/mod-packages/hud-lua-plan.json",
+      "blob": "d42c4d113da7f4c3f54e492a69b8c23a0af32782",
+      "bytes": 1505,
+      "mode": "100644",
+      "destination": "ops/mod-packages/hud-lua-plan.json"
+    },
+    {
+      "path": "ops/mod-packages/hud-lua-source/ui_scripts/paris_hud_probe/__init__.lua",
+      "blob": "ae654da170db0e30e0f334d1dc13b766843e0a4f",
+      "bytes": 209,
+      "mode": "100644",
+      "destination": "ops/mod-packages/hud-lua-source/ui_scripts/paris_hud_probe/__init__.lua"
+    },
+    {
+      "path": "ops/mod-packages/hud-lua-source/zone.csv",
+      "blob": "db232f876c21388452dea585a9d77e59e27b9f62",
+      "bytes": 48,
+      "mode": "100644",
+      "destination": "ops/mod-packages/hud-lua-source/zone.csv"
+    },
+    {
+      "path": "ops/modding/Distribution-Compat.py",
+      "blob": "99dcd716c7cbbd0b6524fa19fb9256699862b314",
+      "bytes": 6926,
+      "mode": "100644",
+      "destination": "ops/modding/Distribution-Compat.py"
+    },
+    {
+      "path": "ops/modding/Install-CommunityMod.Package.py",
+      "blob": "6bd1e44e9a302e3ebb88ad0532fd723595072835",
+      "bytes": 8198,
+      "mode": "100644",
+      "destination": "ops/modding/Install-CommunityMod.Package.py"
+    },
+    {
+      "path": "ops/modding/Package-CommunityMod.py",
+      "blob": "d3a5af4dfa69a32fc23e67c9bb15c01201634407",
+      "bytes": 12031,
+      "mode": "100644",
+      "destination": "ops/modding/Package-CommunityMod.py"
+    },
+    {
+      "path": "sdk/modding/BEACON-FF.md",
+      "blob": "c7e33daf1948945e91e769256890ca4d3905e941",
+      "bytes": 12406,
+      "mode": "100644",
+      "destination": "sdk/modding/BEACON-FF.md"
+    },
+    {
+      "path": "sdk/modding/BEACON-FINALIZE.md",
+      "blob": "787e4b424c7b0e445f9971a14038a8f75bc1d49e",
+      "bytes": 9190,
+      "mode": "100644",
+      "destination": "sdk/modding/BEACON-FINALIZE.md"
+    },
+    {
+      "path": "sdk/modding/BO3-IMPORT-PROFILES.md",
+      "blob": "61335e55e4ea6f333585ce9c28f7957703eb0765",
+      "bytes": 6269,
+      "mode": "100644",
+      "destination": "sdk/modding/BO3-IMPORT-PROFILES.md"
+    },
+    {
+      "path": "sdk/modding/BeaconFF.Core.ps1",
+      "blob": "57fb9d570b8c2a081de6ebb0b91cbda525530887",
+      "bytes": 7836,
+      "mode": "100644",
+      "destination": "sdk/modding/BeaconFF.Core.ps1"
+    },
+    {
+      "path": "sdk/modding/Build-BeaconFF.ps1",
+      "blob": "6ecf2383a9fa88552ba72bd90bba39755661d70e",
+      "bytes": 18029,
+      "mode": "100644",
+      "destination": "sdk/modding/Build-BeaconFF.ps1"
+    },
+    {
+      "path": "sdk/modding/CREATOR.md",
+      "blob": "3d9310289d324bf0ab569cafe5d96711964f6167",
+      "bytes": 45014,
+      "mode": "100644",
+      "destination": "sdk/modding/CREATOR.md"
+    },
+    {
+      "path": "sdk/modding/Creator.ps1",
+      "blob": "b6fb0ff17f58f796eeb07e553f5c9ce3a8c6a113",
+      "bytes": 30283,
+      "mode": "100644",
+      "destination": "sdk/modding/Creator.ps1"
+    },
+    {
+      "path": "sdk/modding/Finalize-BeaconProject.py",
+      "blob": "0c79b57fd6a4dcc6ce12b306dc6ec77e9ca7903f",
+      "bytes": 24005,
+      "mode": "100644",
+      "destination": "sdk/modding/Finalize-BeaconProject.py"
+    },
+    {
+      "path": "sdk/modding/MODEL-LAB-MATERIALIZE.md",
+      "blob": "094b246f80e653dccb3634ecf4fecf2c32dfba60",
+      "bytes": 10136,
+      "mode": "100644",
+      "destination": "sdk/modding/MODEL-LAB-MATERIALIZE.md"
+    },
+    {
+      "path": "sdk/modding/PACKAGE-SERVER-TIP-A.md",
+      "blob": "668960ad089bce6c662ddc66cdbd424365c246cb",
+      "bytes": 7156,
+      "mode": "100644",
+      "destination": "sdk/modding/PACKAGE-SERVER-TIP-A.md"
+    },
+    {
+      "path": "sdk/modding/README.md",
+      "blob": "2da49057f8c68b3889d38f731ee233aa1aaadc33",
+      "bytes": 1603,
+      "mode": "100644",
+      "destination": "sdk/modding/README.md"
+    },
+    {
+      "path": "sdk/modding/RECIPIENT-CLOSURE.md",
+      "blob": "c576effce51d9b08d6b0cfab58af4f5203063b56",
+      "bytes": 10684,
+      "mode": "100644",
+      "destination": "sdk/modding/RECIPIENT-CLOSURE.md"
+    },
+    {
+      "path": "sdk/modding/audit_gsc_consumption.py",
+      "blob": "304af17a48116233874342a5ed09f3e43257d2d1",
+      "bytes": 10323,
+      "mode": "100644",
+      "destination": "sdk/modding/audit_gsc_consumption.py"
+    },
+    {
+      "path": "sdk/modding/beacon-ff-validation-2026-10-12.json",
+      "blob": "94ad8632e3840dd397e9c260ad8a1c34d012d30d",
+      "bytes": 3660,
+      "mode": "100644",
+      "destination": "sdk/modding/beacon-ff-validation-2026-10-12.json"
+    },
+    {
+      "path": "sdk/modding/beacon_tool_phase.py",
+      "blob": "18cfbdb3ffe2c972cb7b5c6fd09be4a8b18c48c0",
+      "bytes": 4034,
+      "mode": "100644",
+      "destination": "sdk/modding/beacon_tool_phase.py"
+    },
+    {
+      "path": "sdk/modding/capabilities.json",
+      "blob": "080f58154541dd8bb108deafce2f1e1bf5c58b27",
+      "bytes": 3730,
+      "mode": "100644",
+      "destination": "sdk/modding/capabilities.json"
+    },
+    {
+      "path": "sdk/modding/creator-composition-v8-validation-20261012.json",
+      "blob": "58a4b2acf33318169ed89c014650f4e13370a77f",
+      "bytes": 3737,
+      "mode": "100644",
+      "destination": "sdk/modding/creator-composition-v8-validation-20261012.json"
+    },
+    {
+      "path": "sdk/modding/creator-composition-validation-20261012.json",
+      "blob": "16341678b7a59190f15ea1aecd8427cac4545cd7",
+      "bytes": 3490,
+      "mode": "100644",
+      "destination": "sdk/modding/creator-composition-validation-20261012.json"
+    },
+    {
+      "path": "sdk/modding/creator-materialize-validation-20261012.json",
+      "blob": "2c850b1dd7e6b205d11e89b8627e13dd308049a5",
+      "bytes": 3652,
+      "mode": "100644",
+      "destination": "sdk/modding/creator-materialize-validation-20261012.json"
+    },
+    {
+      "path": "sdk/modding/creator-validation-2026-10-12.json",
+      "blob": "07892902ffc8f51b649f75e5c76788390a03ffad",
+      "bytes": 5061,
+      "mode": "100644",
+      "destination": "sdk/modding/creator-validation-2026-10-12.json"
+    },
+    {
+      "path": "sdk/modding/creator_beacon_self_contained.manifest.json",
+      "blob": "4979a813b4ee814072c6443c4be7bb4f21533cf2",
+      "bytes": 3970,
+      "mode": "100644",
+      "destination": "sdk/modding/creator_beacon_self_contained.manifest.json"
+    },
+    {
+      "path": "sdk/modding/creator_composition.py",
+      "blob": "8dbc5057fa92fa47400013a5378344cae0f38cc4",
+      "bytes": 12638,
+      "mode": "100644",
+      "destination": "sdk/modding/creator_composition.py"
+    },
+    {
+      "path": "sdk/modding/creator_gsc_audit.py",
+      "blob": "b56636aa07aef469c2684ce2261070ba50cbefd4",
+      "bytes": 30107,
+      "mode": "100644",
+      "destination": "sdk/modding/creator_gsc_audit.py"
+    },
+    {
+      "path": "sdk/modding/creator_materialize.py",
+      "blob": "fd7259af7e182a2cb29ea6189c9c83685e44a1cb",
+      "bytes": 5385,
+      "mode": "100644",
+      "destination": "sdk/modding/creator_materialize.py"
+    },
+    {
+      "path": "sdk/modding/creator_model_materialize.py",
+      "blob": "999f81007d4ef35e20481f54c829f6f6af5b24fa",
+      "bytes": 18218,
+      "mode": "100644",
+      "destination": "sdk/modding/creator_model_materialize.py"
+    },
+    {
+      "path": "sdk/modding/creator_self_contained.py",
+      "blob": "57120cce3b267977a913d5bbe6b8254101fe6d8d",
+      "bytes": 5080,
+      "mode": "100644",
+      "destination": "sdk/modding/creator_self_contained.py"
+    },
+    {
+      "path": "sdk/modding/examples/beacon-self-contained/README.md",
+      "blob": "1dd23e5643b64688c8f58068daee2ec452fe8874",
+      "bytes": 7855,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/beacon-self-contained/README.md"
+    },
+    {
+      "path": "sdk/modding/examples/beacon-self-contained/sdk_beacon_self_contained.gsc",
+      "blob": "58d7ec607568102828daad83237bff9946dc4151",
+      "bytes": 5535,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/beacon-self-contained/sdk_beacon_self_contained.gsc"
+    },
+    {
+      "path": "sdk/modding/examples/beacon-self-contained/validation-2026-10-12.json",
+      "blob": "2d61419bde2548b4d9d0640e5feda5b6e1098f1c",
+      "bytes": 4590,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/beacon-self-contained/validation-2026-10-12.json"
+    },
+    {
+      "path": "sdk/modding/examples/beacon-self-contained/verify.py",
+      "blob": "293cbfe2b15939bdafd8ffd0ca71a58db542c288",
+      "bytes": 8645,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/beacon-self-contained/verify.py"
+    },
+    {
+      "path": "sdk/modding/examples/beacon/manifest.json",
+      "blob": "ee4d1c2df00047593433eeaa70b17d28a4358ba3",
+      "bytes": 3324,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/beacon/manifest.json"
+    },
+    {
+      "path": "sdk/modding/examples/beacon/sdk_beacon.gsc",
+      "blob": "36bb19a3bea6ee6229e36994561cf887fd30e566",
+      "bytes": 4802,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/beacon/sdk_beacon.gsc"
+    },
+    {
+      "path": "sdk/modding/examples/beacon/zone.csv",
+      "blob": "2136af9518c7a3cd892217a5942e26fe05e87603",
+      "bytes": 102,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/beacon/zone.csv"
+    },
+    {
+      "path": "sdk/modding/examples/original-sound/Complete-StaticClosure.py",
+      "blob": "2ec1921f1977e20b08c893c4d34f889d703f529c",
+      "bytes": 5983,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/original-sound/Complete-StaticClosure.py"
+    },
+    {
+      "path": "sdk/modding/examples/original-sound/Materialize-Plan.ps1",
+      "blob": "24ae78cb62d1ab868467957795d8b60a6a3ed9e9",
+      "bytes": 5746,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/original-sound/Materialize-Plan.ps1"
+    },
+    {
+      "path": "sdk/modding/examples/original-sound/README.md",
+      "blob": "48a8b7522e7aa84f2e51bc1dfb503795f91c4565",
+      "bytes": 10634,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/original-sound/README.md"
+    },
+    {
+      "path": "sdk/modding/examples/original-sound/manifest.json",
+      "blob": "2444227f54ce621c8c1cb9dcc9f60f16bb49b02b",
+      "bytes": 3228,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/original-sound/manifest.json"
+    },
+    {
+      "path": "sdk/modding/examples/original-sound/server/sdk_original_sound_v1.gsc",
+      "blob": "cc2fa17b319cde60b68995922bcc93f1e9902ac9",
+      "bytes": 1266,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/original-sound/server/sdk_original_sound_v1.gsc"
+    },
+    {
+      "path": "sdk/modding/examples/original-sound/test_example.py",
+      "blob": "84df487449e2292d97709fc801d1d34b1f2c01ba",
+      "bytes": 24208,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/original-sound/test_example.py"
+    },
+    {
+      "path": "sdk/modding/examples/server-spawn-tip/manifest.json",
+      "blob": "b4434b30429a82918974204a584525065b552512",
+      "bytes": 1858,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/server-spawn-tip/manifest.json"
+    },
+    {
+      "path": "sdk/modding/examples/server-spawn-tip/sdk_spawn_tip.gsc",
+      "blob": "f47ad9016490b19d4f4f2a0b5d3188ac197c6bf5",
+      "bytes": 894,
+      "mode": "100644",
+      "destination": "sdk/modding/examples/server-spawn-tip/sdk_spawn_tip.gsc"
+    },
+    {
+      "path": "sdk/modding/gsc-consumption-audit.md",
+      "blob": "10d18de4a93f2e42031c473442231eca473f3b34",
+      "bytes": 17948,
+      "mode": "100644",
+      "destination": "sdk/modding/gsc-consumption-audit.md"
+    },
+    {
+      "path": "sdk/modding/gsc-consumption-native-20261012.json",
+      "blob": "d93792daea0429809e0bbad8d80c295587c24a21",
+      "bytes": 3886,
+      "mode": "100644",
+      "destination": "sdk/modding/gsc-consumption-native-20261012.json"
+    },
+    {
+      "path": "sdk/modding/gsc-qualified-closure-20261012.json",
+      "blob": "9cf15a1608699301cfbbd21b8fae243ca13d6b57",
+      "bytes": 9663,
+      "mode": "100644",
+      "destination": "sdk/modding/gsc-qualified-closure-20261012.json"
+    },
+    {
+      "path": "sdk/modding/gsc-reference-collector-correction-20261012.json",
+      "blob": "a1d96dd8632802b6611de5cd935cfdb51ddc2c9a",
+      "bytes": 3718,
+      "mode": "100644",
+      "destination": "sdk/modding/gsc-reference-collector-correction-20261012.json"
+    },
+    {
+      "path": "sdk/modding/gsc-reference-qualified-v8-20261012.json",
+      "blob": "b2cee113758264fa57d060f37b48185e58f3545a",
+      "bytes": 17880,
+      "mode": "100644",
+      "destination": "sdk/modding/gsc-reference-qualified-v8-20261012.json"
+    },
+    {
+      "path": "sdk/modding/gsc-reference-source-20261012.json",
+      "blob": "8e9f16c8547fcca2cfef43e14150d096f21a810b",
+      "bytes": 2435,
+      "mode": "100644",
+      "destination": "sdk/modding/gsc-reference-source-20261012.json"
+    },
+    {
+      "path": "sdk/modding/gsc-reference-v7-failure-20261012.json",
+      "blob": "b777202ca0902f1bca5c760b97771b038d4aea61",
+      "bytes": 12424,
+      "mode": "100644",
+      "destination": "sdk/modding/gsc-reference-v7-failure-20261012.json"
+    },
+    {
+      "path": "sdk/modding/gsc-residual-diagnostic-20261012.json",
+      "blob": "9842e6fcf981a05c757e1fe49e8262462dc65546",
+      "bytes": 4150,
+      "mode": "100644",
+      "destination": "sdk/modding/gsc-residual-diagnostic-20261012.json"
+    },
+    {
+      "path": "sdk/modding/integration-bo3-bootstrap-validation-20261012.json",
+      "blob": "65eb0eb401ab787ea78dff425152e13b5380ef80",
+      "bytes": 3900,
+      "mode": "100644",
+      "destination": "sdk/modding/integration-bo3-bootstrap-validation-20261012.json"
+    },
+    {
+      "path": "sdk/modding/integration-bo3-native-validation-20261012.json",
+      "blob": "b4c75fb5d414949f5945d947c7998f2b68aa6f15",
+      "bytes": 2407,
+      "mode": "100644",
+      "destination": "sdk/modding/integration-bo3-native-validation-20261012.json"
+    },
+    {
+      "path": "sdk/modding/integration-bo3-prepatch-validation-20261012.json",
+      "blob": "4033c53f85ae21d2f6048dd4b1c731ca93d03181",
+      "bytes": 6268,
+      "mode": "100644",
+      "destination": "sdk/modding/integration-bo3-prepatch-validation-20261012.json"
+    },
+    {
+      "path": "sdk/modding/integration-bo3-tooling-validation-20261012.json",
+      "blob": "9c9677bebcb7ec3d6dc652136edcfa2babd63c1d",
+      "bytes": 3766,
+      "mode": "100644",
+      "destination": "sdk/modding/integration-bo3-tooling-validation-20261012.json"
+    },
+    {
+      "path": "sdk/modding/integration-native-dumps-20261012.json",
+      "blob": "f4e372c16abaf6495118fda5c6debbe335c6dd22",
+      "bytes": 1980,
+      "mode": "100644",
+      "destination": "sdk/modding/integration-native-dumps-20261012.json"
+    },
+    {
+      "path": "sdk/modding/integration-native-followups-validation-20261012.json",
+      "blob": "d89b60024583acbf3487f22bfd187426d14471e7",
+      "bytes": 7480,
+      "mode": "100644",
+      "destination": "sdk/modding/integration-native-followups-validation-20261012.json"
+    },
+    {
+      "path": "sdk/modding/manifest.py",
+      "blob": "e7e34987f4619de94a83dc53024a1360993ad069",
+      "bytes": 12468,
+      "mode": "100644",
+      "destination": "sdk/modding/manifest.py"
+    },
+    {
+      "path": "sdk/modding/manifest.schema.json",
+      "blob": "780305ebbd634cb160ede3412401aa30884da062",
+      "bytes": 3356,
+      "mode": "100644",
+      "destination": "sdk/modding/manifest.schema.json"
+    },
+    {
+      "path": "sdk/modding/prepare_beacon.py",
+      "blob": "6be23d802c1c304259971eb75fda4a114c442645",
+      "bytes": 2581,
+      "mode": "100644",
+      "destination": "sdk/modding/prepare_beacon.py"
+    },
+    {
+      "path": "sdk/modding/recipient-export-budget-2026-10-12.json",
+      "blob": "8f5970c13e93ec4099542c21ca079ce28b42c1fb",
+      "bytes": 2166,
+      "mode": "100644",
+      "destination": "sdk/modding/recipient-export-budget-2026-10-12.json"
+    },
+    {
+      "path": "sdk/modding/recipient-material-requests.csv",
+      "blob": "4f1e3a6d4d9dcdc2d8029a6b31663d1d345769e7",
+      "bytes": 212,
+      "mode": "100644",
+      "destination": "sdk/modding/recipient-material-requests.csv"
+    },
+    {
+      "path": "sdk/modding/recipient-recovery-2026-10-12.json",
+      "blob": "cfcf7111c2126e32056748ad7f65b752555361eb",
+      "bytes": 2952,
+      "mode": "100644",
+      "destination": "sdk/modding/recipient-recovery-2026-10-12.json"
+    },
+    {
+      "path": "sdk/modding/recipient-script-requests.txt",
+      "blob": "aa1097a8383f16a70788bc31d9d2bc5d47d0abce",
+      "bytes": 23,
+      "mode": "100644",
+      "destination": "sdk/modding/recipient-script-requests.txt"
+    },
+    {
+      "path": "sdk/modding/recipient/README.md",
+      "blob": "0585e77b93f6cce96d7230749a0e11f6ec5d7251",
+      "bytes": 13616,
+      "mode": "100644",
+      "destination": "sdk/modding/recipient/README.md"
+    },
+    {
+      "path": "sdk/modding/recipient/RUN-BINDING.md",
+      "blob": "b8fa44360a514d51ad8d5130d47005cf2f082c24",
+      "bytes": 23063,
+      "mode": "100644",
+      "destination": "sdk/modding/recipient/RUN-BINDING.md"
+    },
+    {
+      "path": "sdk/modding/recipient/bind_run.py",
+      "blob": "64e012bbc3876876229d62c633c1ec48979380d6",
+      "bytes": 50229,
+      "mode": "100644",
+      "destination": "sdk/modding/recipient/bind_run.py"
+    },
+    {
+      "path": "sdk/modding/recipient/verify.py",
+      "blob": "bfa6a83358477629567cb1d40b88ac54fd21860c",
+      "bytes": 18464,
+      "mode": "100644",
+      "destination": "sdk/modding/recipient/verify.py"
+    },
+    {
+      "path": "sdk/modding/self-contained-runtime-plan-20261012.json",
+      "blob": "1cab2090ee1468828da6488837ef810ff93843c9",
+      "bytes": 4199,
+      "mode": "100644",
+      "destination": "sdk/modding/self-contained-runtime-plan-20261012.json"
+    },
+    {
+      "path": "sdk/modding/self-contained-runtime-plan-b-20261012.json",
+      "blob": "78079e741cae16a6e73ff57e0a981f51b63e5e3c",
+      "bytes": 4829,
+      "mode": "100644",
+      "destination": "sdk/modding/self-contained-runtime-plan-b-20261012.json"
+    },
+    {
+      "path": "sdk/modding/self-contained-startup-a-20261012.json",
+      "blob": "7ffce4b8081179935552c98ae215bd721fbbf78e",
+      "bytes": 5390,
+      "mode": "100644",
+      "destination": "sdk/modding/self-contained-startup-a-20261012.json"
+    },
+    {
+      "path": "sdk/modding/self-contained-startup-b-20261012.json",
+      "blob": "652f812fb028ad4b5f7ad42a96a04292269fdec0",
+      "bytes": 8107,
+      "mode": "100644",
+      "destination": "sdk/modding/self-contained-startup-b-20261012.json"
+    },
+    {
+      "path": "sdk/modding/self-contained-use-rejoin-b-20261012.json",
+      "blob": "683184f8f3a149f050a6ec04d6e8a4256eff0cc4",
+      "bytes": 17773,
+      "mode": "100644",
+      "destination": "sdk/modding/self-contained-use-rejoin-b-20261012.json"
+    },
+    {
+      "path": "sdk/modding/tests/beacon_ff_test.ps1",
+      "blob": "eccea7aa3e4292b34c29e414de7e1de42452c336",
+      "bytes": 5084,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/beacon_ff_test.ps1"
+    },
+    {
+      "path": "sdk/modding/tests/test_beacon_finalize.py",
+      "blob": "3f349c96098594cb8a24bc96087d98b9d1118f37",
+      "bytes": 25532,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/test_beacon_finalize.py"
+    },
+    {
+      "path": "sdk/modding/tests/test_beacon_phase.py",
+      "blob": "5671f58d92894c495107c394a0cc584c47f05502",
+      "bytes": 1614,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/test_beacon_phase.py"
+    },
+    {
+      "path": "sdk/modding/tests/test_beacon_self_contained.py",
+      "blob": "709c34cb70dd367616ec044e5a49f55a40c196a7",
+      "bytes": 7715,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/test_beacon_self_contained.py"
+    },
+    {
+      "path": "sdk/modding/tests/test_creator.py",
+      "blob": "e3f3e5f2dba1cebeb489f6b093838c6f5f1c7ae4",
+      "bytes": 67863,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/test_creator.py"
+    },
+    {
+      "path": "sdk/modding/tests/test_creator_composition.py",
+      "blob": "ab4e1c22b18a6b036bc34c8deebdd061f540813a",
+      "bytes": 17366,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/test_creator_composition.py"
+    },
+    {
+      "path": "sdk/modding/tests/test_creator_gsc_audit.py",
+      "blob": "6b944713fe1c89ed40fdc3f32c703a547b85013c",
+      "bytes": 20342,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/test_creator_gsc_audit.py"
+    },
+    {
+      "path": "sdk/modding/tests/test_creator_gsc_references.py",
+      "blob": "5e6c21ec10ab2d648ac4ab7204093ce771c51c6d",
+      "bytes": 15038,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/test_creator_gsc_references.py"
+    },
+    {
+      "path": "sdk/modding/tests/test_creator_model_materialize.py",
+      "blob": "3b3089fdd63558c368ad86051575ee6b3f2b5e5b",
+      "bytes": 19772,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/test_creator_model_materialize.py"
+    },
+    {
+      "path": "sdk/modding/tests/test_gsc_consumption_audit.py",
+      "blob": "17f2d39d3485b3c3808c2c2b8e4025aa42cf4d6f",
+      "bytes": 8790,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/test_gsc_consumption_audit.py"
+    },
+    {
+      "path": "sdk/modding/tests/test_manifest.py",
+      "blob": "9498bd4965023cdf35ce1ff28689d035009a24e1",
+      "bytes": 12872,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/test_manifest.py"
+    },
+    {
+      "path": "sdk/modding/tests/test_recipient_evidence.py",
+      "blob": "3091dd1126306539af61cd9db1ec2268655d71ba",
+      "bytes": 21104,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/test_recipient_evidence.py"
+    },
+    {
+      "path": "sdk/modding/tests/test_recipient_run_binding.py",
+      "blob": "2b31623f519e3143d7d2063fc25976c4b3ef7a60",
+      "bytes": 65480,
+      "mode": "100644",
+      "destination": "sdk/modding/tests/test_recipient_run_binding.py"
+    },
+    {
+      "path": "tests/ops/community_distribution_test.py",
+      "blob": "e649f4f620bfe070cece7ba958683c3ea0affd47",
+      "bytes": 15040,
+      "mode": "100644",
+      "destination": "tests/ops/community_distribution_test.py"
+    },
+    {
+      "path": "tests/ops/hud_lab_test.py",
+      "blob": "09b63521204c4feddbde1a972ba35413e222341f",
+      "bytes": 49893,
+      "mode": "100644",
+      "destination": "tests/ops/hud_lab_test.py"
+    },
+    {
+      "path": "tests/ops/mod_package_test.py",
+      "blob": "d3704e20a3b5ef264035df97bb0e58099f45c679",
+      "bytes": 18531,
+      "mode": "100644",
+      "destination": "tests/ops/mod_package_test.py"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/.gitattributes",
+      "blob": "6f76cc1c4b947eb073928a2aca79be52782c11b6",
+      "bytes": 181,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/.gitattributes"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/README.md",
+      "blob": "51804d1f6453ad4fbf332dbbee1382e6c79b5daf",
+      "bytes": 13899,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/README.md"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/licenses/gsc-tool-LICENSE.txt",
+      "blob": "f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+      "bytes": 35149,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/licenses/gsc-tool-LICENSE.txt"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/licenses/zlib-LICENSE.txt",
+      "blob": "ab8ee6f71428c3e4646b12b64ad387cde33462e5",
+      "bytes": 1002,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/licenses/zlib-LICENSE.txt"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/manifest.json",
+      "blob": "a4cb1d2e7f94c6437e0f50a68c3c394a383b07de",
+      "bytes": 14597,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/manifest.json"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0001-feat-audit-prepare-strict-IW7-buffer-consumption-wit.patch",
+      "blob": "c035e514931dc1186c3c80808633a9184ee9a059",
+      "bytes": 35377,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0001-feat-audit-prepare-strict-IW7-buffer-consumption-wit.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0002-fix-audit-reject-out-of-function-and-operand-branch-.patch",
+      "blob": "38557ccdd920e27858d9c0fda07f2358f91b85cd",
+      "bytes": 5196,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0002-fix-audit-reject-out-of-function-and-operand-branch-.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0003-fix-audit-read-scalars-without-alignment-or-aliasing.patch",
+      "blob": "c540313b541d99ff3d241eca0259174a6417a19d",
+      "bytes": 10505,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0003-fix-audit-read-scalars-without-alignment-or-aliasing.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0004-fix-audit-widen-branch-arithmetic-before-checking-ta.patch",
+      "blob": "04150de11c90b4082f5a6761510353fbdb5af399",
+      "bytes": 4996,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0004-fix-audit-widen-branch-arithmetic-before-checking-ta.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0005-build-audit-prepare-admitted-reproducible-build-with.patch",
+      "blob": "867d7074955bd930ff8913407e8e7af22d635b5c",
+      "bytes": 34135,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0005-build-audit-prepare-admitted-reproducible-build-with.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0006-fix-build-supervise-original-job-and-retain-uncertai.patch",
+      "blob": "31148f489215a0113804c29124363fcc60b05160",
+      "bytes": 14850,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0006-fix-build-supervise-original-job-and-retain-uncertai.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0007-fix-build-enforce-monotonic-deadlines-before-accepti.patch",
+      "blob": "ea36e45e92b3a326019e85d9ae026eb39ea68edd",
+      "bytes": 14051,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0007-fix-build-enforce-monotonic-deadlines-before-accepti.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0008-Resume-original-audit-job-before-bounded-CIM-registr.patch",
+      "blob": "f34ac8430e59cc4409dde46c01241edbf5e13d33",
+      "bytes": 25951,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0008-Resume-original-audit-job-before-bounded-CIM-registr.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0009-Fix-Windows-zlib-header-order-in-the-audit-entry-poi.patch",
+      "blob": "9e379fc5527b73568140ed75118572134efc96ac",
+      "bytes": 5827,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0009-Fix-Windows-zlib-header-order-in-the-audit-entry-poi.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0010-Capture-bounded-original-job-residual-identities-bef.patch",
+      "blob": "f75e9ebb8a3103ff59767f7c52c38ca8dac83ade",
+      "bytes": 24816,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0010-Capture-bounded-original-job-residual-identities-bef.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0011-Specify-pinned-original-job-residual-identity-without-closure.patch",
+      "blob": "309ffc454ee1f43f562363a6e466dcbc5f15935f",
+      "bytes": 22441,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0011-Specify-pinned-original-job-residual-identity-without-closure.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0012-Qualify-owned-residual-closure-with-guarded-exact-run-evidence.patch",
+      "blob": "ab65e7fa6396368b85216d287df33e598de0265e",
+      "bytes": 63719,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0012-Qualify-owned-residual-closure-with-guarded-exact-run-evidence.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0013-Classify-exact-IW7-encoded-references-with-independent-byte-coverage.patch",
+      "blob": "7b1d79ec4a18c7da52761ec1ee5a5ac08bddba82",
+      "bytes": 96813,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0013-Classify-exact-IW7-encoded-references-with-independent-byte-coverage.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0014-Report-reference-diagnostics-at-each-literal-operand-start.patch",
+      "blob": "069d7ce651c4d4b8373255e89bec122f5bbe6c79",
+      "bytes": 7533,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0014-Report-reference-diagnostics-at-each-literal-operand-start.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0015-Require-native-reference-controls-in-the-supervised-build-recipe.patch",
+      "blob": "dae4c6b1c45f1ca023225b477d2b437466e30b0b",
+      "bytes": 43948,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0015-Require-native-reference-controls-in-the-supervised-build-recipe.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/patches/0016-Fix-reference-receipt-collection-for-JSON-loaded-Plans.patch",
+      "blob": "642cd5feb68ec14a539e3d6528b21abad5655d32",
+      "bytes": 6694,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/patches/0016-Fix-reference-receipt-collection-for-JSON-loaded-Plans.patch"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/reconstruction-validation.json",
+      "blob": "bed92ee07a1721a23a33aa362319944e07c917b2",
+      "bytes": 1556,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/reconstruction-validation.json"
+    },
+    {
+      "path": "tools-source/gsc-consumption-tool/verify_archive.py",
+      "blob": "79de984f59efc2c81c403d62bcf7341baaf203c7",
+      "bytes": 2923,
+      "mode": "100644",
+      "destination": "tools-source/gsc-consumption-tool/verify_archive.py"
+    },
+    {
+      "path": "tools-source/gsc-spawn-tip/README.md",
+      "blob": "a3c2089b02a35842a82ff6aaf8db111144de05d1",
+      "bytes": 8517,
+      "mode": "100644",
+      "destination": "tools-source/gsc-spawn-tip/README.md"
+    },
+    {
+      "path": "tools-source/gsc-spawn-tip/RUN-C.md",
+      "blob": "94a8e8019d72d740552fe03e2540005ff0ee80ba",
+      "bytes": 7913,
+      "mode": "100644",
+      "destination": "tools-source/gsc-spawn-tip/RUN-C.md"
+    },
+    {
+      "path": "tools-source/gsc-spawn-tip/Run-SpawnTip.ps1",
+      "blob": "6993c04a7532499cb2551de7381e302db5cf9d8e",
+      "bytes": 4342,
+      "mode": "100644",
+      "destination": "tools-source/gsc-spawn-tip/Run-SpawnTip.ps1"
+    },
+    {
+      "path": "tools-source/gsc-spawn-tip/SpawnTip.Profile.ps1",
+      "blob": "91330ee1a7dd98c11ea51c1a25b0e75583ca8391",
+      "bytes": 14203,
+      "mode": "100644",
+      "destination": "tools-source/gsc-spawn-tip/SpawnTip.Profile.ps1"
+    },
+    {
+      "path": "tools-source/gsc-spawn-tip/Test-SpawnTip.ps1",
+      "blob": "eba55645cfdab43827f5ec805408a40d19e89f46",
+      "bytes": 6801,
+      "mode": "100644",
+      "destination": "tools-source/gsc-spawn-tip/Test-SpawnTip.ps1"
+    },
+    {
+      "path": "tools-source/gsc-spawn-tip/Test-SpawnTipHost.ps1",
+      "blob": "5295a06acb487e26235b94dd1725bbea06cfe6b9",
+      "bytes": 3936,
+      "mode": "100644",
+      "destination": "tools-source/gsc-spawn-tip/Test-SpawnTipHost.ps1"
+    },
+    {
+      "path": "tools-source/gsc-spawn-tip/spawn_tip.py",
+      "blob": "cc2870450dfe3e4eb779aab1f2066510e5e00644",
+      "bytes": 13121,
+      "mode": "100644",
+      "destination": "tools-source/gsc-spawn-tip/spawn_tip.py"
+    },
+    {
+      "path": "tools-source/gsc-spawn-tip/test_spawn_tip.py",
+      "blob": "a1b387446fa8078ce3d792bce853096a593ee935",
+      "bytes": 8853,
+      "mode": "100644",
+      "destination": "tools-source/gsc-spawn-tip/test_spawn_tip.py"
+    }
+  ],
+  "policy": "Source remains published unchanged; destination history extraction preserves authors and messages. Runtime evidence remains tied to its original input identities."
+}
