@@ -47,11 +47,22 @@ green state and adds ammunition
 readback evidence. It removes the unqualified cosmetic `fx/blue` transition;
 retail selects blue for `zmb_coin_space`, while this example uses
 `zmb_coin_alien`. That transition is a suspect, not a proven cause of the ended
-session. The completion HUD and hint distinguish a claimed reward. Actual
+session. The completion HUD distinguishes a claimed reward. Actual
 I confirmed clip12/12 and reserve120/120 after genuine Use, then ended before
 the final completion hint change returned. J removes only that late hint update
 and retains the earlier hint plus completion HUD/message/notify. The exact hint
-constraint remains unproven; J runtime, repeat Use and owner acceptance remain
+constraint remains unproven. J passed a fresh protected private run: six natural
+bullet kills filled the token; actual Use refilled the equipped Kendall reserve
+from 20 to 120 with magazine 12/12. All completion operations returned, one
+REWARD was recorded, and a newly accepted Use after release kept rewards at one.
+A real native frame shows 6/6 and "Completed | Ammunition reward claimed".
+The original host closed/restored managed files and Main audit, preserved bank
+state and released ownership. No post-refill depletion test was added.
+
+The retained "Collect ammunition reward" hint remains visible after claiming;
+that is a known UX limitation of this mitigation. The HUD supplies the completed
+state. This refills the equipped firearm only, not the complete retail Max Ammo
+powerup callback. Multiplayer, recipient closure and owner acceptance remain
 pending.
 
 The template manifest records stock-model closure as pending. Parse/compile

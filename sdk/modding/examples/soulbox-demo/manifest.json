@@ -97,10 +97,17 @@
       },
       {
         "kind": "runtime-link",
-        "status": "pending",
-        "reference": null,
+        "status": "pass",
+        "reference": "validation-20261013.json",
         "authority": "agent",
-        "maps": []
+        "maps": ["cp_zmb"]
+      },
+      {
+        "kind": "gameplay",
+        "status": "pass",
+        "reference": "validation-20261013.json",
+        "authority": "agent",
+        "maps": ["cp_zmb"]
       },
       {
         "kind": "gameplay",
