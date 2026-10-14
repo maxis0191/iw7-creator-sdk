@@ -1,0 +1,111 @@
+{
+  "schema": "iw7.stock-option-primary-source-evidence/1",
+  "native_pin": "36f7afedb9e4c8c665b6e29227e3f5c660ed63d6",
+  "gsc_tool_source_pin": "0be361a4b22be0d0997b92ad94506ee5a5f99fc9",
+  "retail_reference_pin": "1dd48a78e55ef9c99519fc5221a206168ce2e98a",
+  "sources": [
+    {
+      "kind": "native",
+      "path": "iw7-mod-native/deps/gsc-tool/src/gsc/engine/iw7_meth.cpp",
+      "bytes": 76861,
+      "sha256": "06ea21ebca70c588727cb639a44001dd4ba3339661be445200b9b44f4aa5cf2c",
+      "lines": [
+        292,
+        380,
+        381,
+        388,
+        399,
+        425,
+        453,
+        463,
+        897,
+        898
+      ]
+    },
+    {
+      "kind": "native",
+      "path": "iw7-mod-native/deps/gsc-tool/src/gsc/engine/iw7_func.cpp",
+      "bytes": 40550,
+      "sha256": "a5637127f600900079a47cd686d3f20805000e7d99ad97106c3ad65b00d12575",
+      "lines": [
+        281,
+        586
+      ]
+    },
+    {
+      "kind": "native",
+      "path": "iw7-mod-native/src/client/component/scripting.cpp",
+      "bytes": 8017,
+      "sha256": "6cfa6abd6460626e2cf65eea5ad39737978bacf0e34370ddf7c958231db37121",
+      "lines": [
+        47,
+        63
+      ]
+    },
+    {
+      "kind": "retail",
+      "path": "iw7-gsc-dump/decompiled/scripts/cp/cp_persistence.gsc",
+      "bytes": 35118,
+      "sha256": "0dc21153fe53217d2f6cd82142400799a3a53f593c32c2c8181cf9e7f132c69d",
+      "lines": [
+        606
+      ]
+    },
+    {
+      "kind": "retail",
+      "path": "iw7-gsc-dump/decompiled/scripts/cp/cp_weapon.gsc",
+      "bytes": 155432,
+      "sha256": "22ae1836c02c5a6f7fc761302aadb8e21876726435a8653ea21eb7a6c18ee6e8",
+      "lines": [
+        5180
+      ]
+    },
+    {
+      "kind": "retail",
+      "path": "iw7-gsc-dump/decompiled/scripts/cp/maps/cp_rave/cp_rave_interactions.gsc",
+      "bytes": 90294,
+      "sha256": "534e5221c32ad2b7a48b398743b8f6c60ab8dfef3aa91cf0ac8d64e018b120cd",
+      "lines": [
+        361,
+        363,
+        368,
+        369
+      ]
+    },
+    {
+      "kind": "retail",
+      "path": "iw7-gsc-dump/decompiled/scripts/cp/cp_laststand.gsc",
+      "bytes": 41833,
+      "sha256": "2f5150da67b72db25c5d324f21cc3157118af0c56351f0d3e2f84a188e7b4b2b",
+      "lines": [
+        70,
+        80
+      ]
+    }
+  ],
+  "method_ids": {
+    "getcurrentweapon": "0x8117",
+    "getweaponammoclip": "0x816f",
+    "getweaponammostock": "0x8170",
+    "getweaponslistprimaries": "0x8177",
+    "hasweapon": "0x8182",
+    "isdualwielding": "0x819c",
+    "isreloading": "0x81b8",
+    "isswitchingweapon": "0x81c2",
+    "setweaponammoclip": "0x8374",
+    "setweaponammostock": "0x8375"
+  },
+  "function_ids": {
+    "isplayer": "0x10d",
+    "weaponclipsize": "0x23e"
+  },
+  "proven_source_scope": "Builtin names/IDs and existing CP use of notification plus ammunition reads; not engine ordering or atomicity",
+  "unknowns": [
+    "clip debit versus weapon_fired notification order",
+    "compound ammo-operation atomicity",
+    "shared reserve/other ammo modifiers",
+    "actual runtime/client replication"
+  ],
+  "retail_assets_copied": false,
+  "native_or_game_executed_for_research": false
+}

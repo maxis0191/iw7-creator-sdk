@@ -1,0 +1,52 @@
+{
+  "schema": "iw7.stock-option-source-validation/1",
+  "date": "2026-10-14",
+  "source_bytes": 8155,
+  "source_sha256": "76ffe158e0acb4b10f933d24256ae63fc18bd33e4d3e9b244932b0caf269f0e2",
+  "compiler": "gsc-tool1.5.1.359",
+  "compiler_sha256": "1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb",
+  "offline_phases": [
+    {
+      "mode": "parse",
+      "exit_code": 0,
+      "dry_run": true
+    },
+    {
+      "mode": "comp",
+      "exit_code": 0,
+      "dry_run": true
+    },
+    {
+      "mode": "comp",
+      "exit_code": 0,
+      "dry_run": false,
+      "output_bytes": 2834,
+      "output_sha256": "37fafa6f7307bb4100c5678de1238217388debf7b23c84a097f2206907bd49ee"
+    },
+    {
+      "mode": "disasm",
+      "exit_code": 0,
+      "dry_run": false,
+      "input_sha256": "37fafa6f7307bb4100c5678de1238217388debf7b23c84a097f2206907bd49ee",
+      "output_bytes": 25884,
+      "output_sha256": "1d402dde3bb1a375dbc2c5e75073f8577eae5d2296d05fc3f9969b63897ee618"
+    }
+  ],
+  "source_tests": {
+    "command": "python -B sdk/modding/examples/stock-option/test_source.py -v",
+    "tests": 7,
+    "passed": 7,
+    "production_arithmetic_executed": true,
+    "engine_emulated": false,
+    "exhaustive_valid_clip_reserve_pairs": 8064
+  },
+  "runtime_executed": false,
+  "real_weapon_fired_observed": false,
+  "engine_ammo_timing_verified": false,
+  "runtime_ready": false,
+  "owner_accepted": false,
+  "closure_complete": false,
+  "next_test": "Protected private actual Fire with paired clip/reserve observations before, during, after expiry and depletion; reload/switch cancellation and normal fallback",
+  "external_script_calls_declared_by_disassembler": 0,
+  "binary_consumption_audited": false
+}
