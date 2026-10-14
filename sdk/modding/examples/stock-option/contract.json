@@ -44,6 +44,21 @@
     "reload_or_switch_supported": false,
     "stock_insufficient_policy": "Refuse activation or end before another transfer; subsequent firing remains normal"
   },
+  "telemetry": {
+    "trace_version": 1,
+    "success_marker": "SHOT",
+    "rejection_marker": "TRACE",
+    "raw_phases": ["entry_clip/reserve", "after_debit_clip/reserve", "after_restore_clip/reserve"],
+    "captured_from": "Existing actual engine getter observations, retaining eligible/reserve/clip short-circuit order",
+    "records_per_transfer_path": 1,
+    "emitted_after_last_path_write": true,
+    "logging_between_paired_success_writes": false,
+    "missing_sample": "unobserved",
+    "correlation": ["activation", "attempt", "n", "fired_weapon", "weapon", "outcome", "trace_ms"],
+    "trace_ms": "Record emission time after writes; not a separate timestamp for each phase",
+    "claim": "observed_handler_order_only",
+    "engine_atomicity": "unknown"
+  },
   "future_private_test": {
     "fixture_owner": "Agent-Lab integration; not this feature",
     "fresh_engine_godmode_required_before_enemy_exposure": true,

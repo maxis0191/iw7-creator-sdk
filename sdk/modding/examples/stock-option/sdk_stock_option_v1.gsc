@@ -6,6 +6,7 @@ init()
     shared = spawnstruct();
     shared.owner = undefined;
     shared.stopped = false;
+    shared.activation_sequence = 0;
     level.sdk_stock_option_v1 = shared;
     foreach (player in getentarray("player", "classname")) player listen(shared);
     level thread connections(shared);
@@ -78,6 +79,8 @@ activate(shared)
     state.clip = clip;
     state.stock = stock;
     state.shots = 0;
+    shared.activation_sequence++;
+    state.activation_sequence = shared.activation_sequence;
     state.deadline = gettime() + seconds * 1000;
     state.stopped = false;
     self.sdk_stock_option_active = state;
@@ -91,7 +94,8 @@ activate(shared)
     self thread life_end(shared, state, "reload_start");
     self thread life_end(shared, state, "faux_spawn");
     self iprintln("Stock Option active: shots use reserve ammo.");
-    print("[SDK Stock Option] ARMED; weapon=" + weapon + "; clip=" + clip + "; stock=" + stock + "; seconds=" + seconds + ".");
+    print("[SDK Stock Option] ARMED; weapon=" + weapon + "; clip=" + clip + "; stock=" + stock + "; seconds=" + seconds +
+        "; activation=" + state.activation_sequence + "; deadline_ms=" + state.deadline);
 }
 
 // Pure production decision, exercised directly by the source accounting tests.
@@ -121,9 +125,17 @@ shots(shared, state)
 transfer(shared, state, fired_weapon)
 {
     if (state.stopped) return;
+    attempt = state.shots + 1;
+    clip = undefined;
+    stock = undefined;
+    debit_clip = undefined;
+    debit_stock = undefined;
+    restored_clip = undefined;
+    restored_stock = undefined;
     if (!isdefined(fired_weapon) || fired_weapon != state.weapon || gettime() >= state.deadline ||
         !self eligible(state.weapon))
     {
+        transfer_trace(state, fired_weapon, attempt, clip, stock, debit_clip, debit_stock, restored_clip, restored_stock, "context_or_expiry");
         self stop(shared, state, "context_or_expiry");
         return;
     }
@@ -132,38 +144,69 @@ transfer(shared, state, fired_weapon)
     transaction = one_round_transfer(state.clip, state.stock, clip, stock);
     if (!isdefined(transaction))
     {
+        transfer_trace(state, fired_weapon, attempt, clip, stock, debit_clip, debit_stock, restored_clip, restored_stock, "ambiguous_ammo_delta");
         self stop(shared, state, "ambiguous_ammo_delta");
         return;
     }
     if (!self eligible(state.weapon) || gettime() >= state.deadline ||
         self getweaponammoclip(state.weapon) != clip || self getweaponammostock(state.weapon) != stock)
     {
+        transfer_trace(state, fired_weapon, attempt, clip, stock, debit_clip, debit_stock, restored_clip, restored_stock, "prewrite_changed");
         self stop(shared, state, "prewrite_changed");
         return;
     }
     // Pay first. A failed readback never grants a free clip round or rolls back
     // an unknown engine change. A partial write may cost a round and ends the effect.
     self setweaponammostock(state.weapon, transaction[1]);
-    if (!self eligible(state.weapon) || self getweaponammostock(state.weapon) != transaction[1] ||
-        self getweaponammoclip(state.weapon) != clip)
+    debit_eligible = self eligible(state.weapon);
+    if (debit_eligible) debit_stock = self getweaponammostock(state.weapon);
+    if (debit_eligible && debit_stock == transaction[1]) debit_clip = self getweaponammoclip(state.weapon);
+    if (!debit_eligible || debit_stock != transaction[1] || debit_clip != clip)
     {
+        // This failed branch returns without a clip write; logging is after its last write.
+        transfer_trace(state, fired_weapon, attempt, clip, stock, debit_clip, debit_stock, restored_clip, restored_stock, "reserve_write_unconfirmed");
         self stop(shared, state, "reserve_write_unconfirmed");
         return;
     }
     self setweaponammoclip(state.weapon, transaction[0]);
-    if (!self eligible(state.weapon) || self getweaponammostock(state.weapon) != transaction[1] ||
-        self getweaponammoclip(state.weapon) != transaction[0])
+    restored_eligible = self eligible(state.weapon);
+    if (restored_eligible) restored_stock = self getweaponammostock(state.weapon);
+    if (restored_eligible && restored_stock == transaction[1]) restored_clip = self getweaponammoclip(state.weapon);
+    if (!restored_eligible || restored_stock != transaction[1] || restored_clip != transaction[0])
     {
+        transfer_trace(state, fired_weapon, attempt, clip, stock, debit_clip, debit_stock, restored_clip, restored_stock, "clip_write_unconfirmed");
         self stop(shared, state, "clip_write_unconfirmed");
         return;
     }
     state.clip = transaction[0];
     state.stock = transaction[1];
     state.shots++;
-    print("[SDK Stock Option] SHOT; weapon=" + state.weapon + "; n=" + state.shots +
-        "; clip=" + state.clip + "; stock=" + state.stock + "; total=" + (state.clip + state.stock) + ".");
+    transfer_trace(state, fired_weapon, attempt, clip, stock, debit_clip, debit_stock, restored_clip, restored_stock, "confirmed");
     if (state.stock == 0) self stop(shared, state, "reserve_empty");
     else if (state.shots >= 64) self stop(shared, state, "shot_budget");
+}
+
+trace_value(value)
+{
+    if (!isdefined(value)) return "unobserved";
+    return value;
+}
+
+// One record after the path's final write. Samples are actual getter values,
+// with original short-circuit read order; no logging occurs between paired writes.
+// This is observed handler order only. Engine compound atomicity remains unknown.
+transfer_trace(state, fired_weapon, attempt, entry_clip, entry_stock, debit_clip, debit_stock, restored_clip, restored_stock, outcome)
+{
+    marker = "TRACE";
+    if (outcome == "confirmed") marker = "SHOT";
+    print("[SDK Stock Option] " + marker + "; trace_version=1; activation=" + state.activation_sequence +
+        "; weapon=" + state.weapon + "; n=" + state.shots + "; clip=" + state.clip + "; stock=" + state.stock +
+        "; total=" + (state.clip + state.stock) + "; attempt=" + attempt + "; trace_ms=" + gettime() +
+        "; fired_weapon=" + trace_value(fired_weapon) + "; entry_clip=" + trace_value(entry_clip) +
+        "; entry_reserve=" + trace_value(entry_stock) + "; after_debit_clip=" + trace_value(debit_clip) +
+        "; after_debit_reserve=" + trace_value(debit_stock) + "; after_restore_clip=" + trace_value(restored_clip) +
+        "; after_restore_reserve=" + trace_value(restored_stock) + "; outcome=" + outcome +
+        "; observed_handler_order_only=1; engine_atomicity=unknown");
 }
 
 expires(shared, state, seconds)
