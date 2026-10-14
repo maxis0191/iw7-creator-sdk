@@ -6,7 +6,7 @@
   "implementation_owner": "Agent-Lab integration",
   "source_checkpoint": {
     "repository": "maxis0191/iw7-creator-sdk",
-    "pull_request": 15,
+    "pull_request": 16,
     "path": "sdk/modding/examples/stock-option/sdk_stock_option_v1.gsc",
     "bytes": 11035,
     "sha256": "5a28e5a220aedfaed4481bdbd5440aec8c14bf90b5840ae62122d05a86575fba",
