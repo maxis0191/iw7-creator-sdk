@@ -107,6 +107,8 @@ class PrivateBo3Tests(unittest.TestCase):
                          self.references, self.output)
 
     def test_production_template_plan_is_valid_and_never_runtime_ready(self):
+        self.assertEqual(self.production_manifest["dependencies"], [])
+        self.assertEqual(self.production_manifest["conflicts"], [])
         result = m.f.sdk.validate(self.production_manifest, stage="plan", target="native",
                                  client_source=m.UPSTREAM, server_source=m.UPSTREAM)
         self.assertTrue(result["valid"], result)
@@ -182,6 +184,46 @@ class PrivateBo3Tests(unittest.TestCase):
         self.assertFalse(validation["runtime_ready"])
         self.assertFalse(validation["owner_accepted"])
         self.assertEqual(set(validation["checked"]), {"client_fastfile", "server_display"})
+
+    def test_standalone_synthetic_archive_stages_with_real_inspector_and_delivery_pending(self):
+        installer = m.f.module(SDK.parents[1] / "ops/modding/Install-CommunityMod.Package.py", "private_bo3_install_test")
+        stage = self.root / "installer-stage"
+        with self.synthetic_context(), patch.object(installer.sdk, "HERE", self.test_sdk):
+            prepared = self.prepare()
+            self.assertTrue(prepared["package_ready"])
+            manifest = installer.pack.read_manifest(self.output / "manifest.json")
+            self.assertEqual(manifest["dependencies"], [])
+            self.assertEqual(manifest["conflicts"], [])
+            # Preparation already used the actual SDK package gate. The same
+            # existing writer streams those measured synthetic files; no ZIP
+            # implementation or validation result is substituted by this test.
+            archive = installer.pack.write_archive(manifest, self.output, self.root / "synthetic-staging.zip")
+            result = installer.inspect(SimpleNamespace(
+                archive=archive["archive"], sha256=archive["archive_sha256"],
+                client_source=m.UPSTREAM, server_source=m.UPSTREAM, protocol=2,
+                target="native", max_bytes=64 * 1024 * 1024, stage_root=str(stage)))
+        self.assertFalse(result["PackageGatePending"])
+        self.assertEqual({path.name for path in stage.iterdir()}, {"mod.ff", m.GSC})
+        for name, label in (("mod.ff", "fastfile"), (m.GSC, "server-script")):
+            raw = (stage / name).read_bytes()
+            self.assertEqual(raw, self.paths[label].read_bytes())
+            self.assertEqual(self.binding(raw), self.bindings[label])
+        self.assertEqual({row["Entry"] for row in result["Rows"]}, {
+            "server/mods/paris_bo3_static_probe/mod.ff", "fastdl/mods/paris_bo3_static_probe/mod.ff",
+            "server/iw7-mod/custom_scripts/cp/" + m.GSC})
+        for row in result["Rows"]:
+            label = "fastfile" if row["Relative"].endswith(".ff") else "server-script"
+            self.assertEqual(row["Bytes"], self.bindings[label]["bytes"])
+            self.assertEqual(row["SHA256"], self.bindings[label]["sha256"])
+        delivery = result["DeliveryGate"]
+        self.assertFalse(delivery["valid"])
+        self.assertFalse(delivery["ready"])
+        for kind in ("source-check", "offline-load", "runtime-link"):
+            self.assertIn("package: Delivery requires passed " + kind + " evidence for every declared map", delivery["errors"])
+        for report in (result, delivery):
+            self.assertFalse(report["runtime_ready"])
+            self.assertFalse(report["owner_accepted"])
+        self.assertFalse(result["public_deployment"])
 
     def test_each_pinned_input_tamper_refuses_before_output(self):
         paths = [*self.paths.values(), *(self.references / value["path"] for value in self.reference_bindings.values())]

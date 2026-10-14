@@ -7,7 +7,7 @@
     "server": ["mod-fastfile-host/1", "gsc-custom-scripts/1", "script-model/1"]
   },
   "dependencies": [],
-  "conflicts": [{"id": "paris_model_probe", "reason": "Shared zone/NCS probe names; only one private fs_game at a time."}],
+  "conflicts": [],
   "lifecycle": {
     "activation": "map-load", "deactivation": "map-unload", "hot_reload": false,
     "entrypoints": [{"side": "server", "path": "custom_scripts/cp/paris_bo3_static_probe.gsc", "symbol": "init"}],
