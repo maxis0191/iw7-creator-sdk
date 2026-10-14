@@ -7,10 +7,12 @@ import json
 import os
 from pathlib import Path
 import stat
+import struct
 import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
+import zipfile
 
 SDK = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("private_bo3_tested", SDK / "prepare_private_bo3.py")
@@ -224,6 +226,202 @@ class PrivateBo3Tests(unittest.TestCase):
             self.assertFalse(report["runtime_ready"])
             self.assertFalse(report["owner_accepted"])
         self.assertFalse(result["public_deployment"])
+
+    def player_fixture(self):
+        installer = m.f.module(SDK.parents[1] / "ops/modding/Install-CommunityMod.Package.py", "private_bo3_player_test")
+        owner = self.root / "owned-stage-root"
+        owner.mkdir()
+        with self.synthetic_context(), patch.object(installer.sdk, "HERE", self.test_sdk):
+            self.prepare()
+            manifest = installer.pack.read_manifest(self.output / "manifest.json")
+            result = installer.pack.write_archive(manifest, self.output, self.root / "synthetic-player.zip",
+                                                  layout="player", player_language="fr")
+        archive = Path(result["archive"])
+        with zipfile.ZipFile(archive) as opened:
+            entries = {name: opened.read(name) for name in opened.namelist()}
+        validation = json.loads((SDK / "examples/private-bo3-prop/physical-validation.json").read_text())
+        # Patch only this test-local source witness, never production policy or
+        # a runtime option. All payloads were produced by the real sole writer.
+        validation["physical"]["player_archive"] = dict(bytes=archive.stat().st_size,
+            sha256=self.binding(archive.read_bytes())["sha256"],
+            members={name: self.binding(raw) for name, raw in entries.items()})
+        validation["physical"]["ff"] = self.bindings["fastfile"]
+        witness = self.test_sdk / "examples/private-bo3-prop/physical-validation.json"
+        witness.write_bytes(m.f.encoded(validation))
+        args = SimpleNamespace(archive=str(archive), sha256=result["archive_sha256"], client_source=m.UPSTREAM,
+            server_source=m.UPSTREAM, protocol=2, target="native", max_bytes=64 * 1024 * 1024,
+            stage_root=None, stage_owner_root=None, layout="player")
+        return installer, owner, entries, validation, witness, args
+
+    def test_player_causal_operator_refusal_and_closed_source_inspection(self):
+        installer, owner, entries, validation, witness, args = self.player_fixture()
+        with patch.object(installer.sdk, "HERE", self.test_sdk):
+            args.layout = "staging"
+            with self.assertRaises(KeyError):
+                installer.inspect(args)  # Old operator contract requires manifest.json.
+            args.layout = "player"
+            result = installer.inspect(args)
+        self.assertTrue(result["PlayerPayloadVerified"])
+        self.assertFalse(result["PlayerStageVerified"])
+        self.assertEqual(result["Schema"], "iw7.private-bo3-player-stage/1")
+        self.assertEqual(result["Rows"], [{"Area": "client", "Relative": "mods/paris_bo3_static_probe/mod.ff",
+            "Entry": "mods/paris_bo3_static_probe/mod.ff", "Bytes": self.bindings["fastfile"]["bytes"],
+            "SHA256": self.bindings["fastfile"]["sha256"]}])
+        self.assertEqual(result["SnapshotMode"], "single-bounded-bytesio")
+        self.assertTrue(result["PackageGatePending"])
+        self.assertIsNone(result["DeliveryGate"])
+        for flag in ("installed", "runtime_ready", "owner_accepted", "public_deployment", "NativePrerequisiteMeasured"):
+            self.assertFalse(result[flag])
+        self.assertEqual(list(owner.iterdir()), [])
+
+    def test_player_stages_only_client_mod_under_fresh_owned_root(self):
+        installer, owner, entries, validation, witness, args = self.player_fixture()
+        args.stage_root, args.stage_owner_root = str(owner / "stage"), str(owner)
+        with patch.object(installer.sdk, "HERE", self.test_sdk):
+            result = installer.inspect(args)
+            self.assertTrue(result["PlayerStageVerified"])
+            with self.assertRaisesRegex(ValueError, "Fresh player staging root"):
+                installer.inspect(args)
+        staged = Path(args.stage_root)
+        files = {p.relative_to(staged).as_posix() for p in staged.rglob("*") if p.is_file()}
+        self.assertEqual(files, {"mods/paris_bo3_static_probe/mod.ff"})
+        self.assertEqual((staged / "mods/paris_bo3_static_probe/mod.ff").read_bytes(), self.paths["fastfile"].read_bytes())
+        self.assertEqual(result["StageIdentity"]["bytes"], self.bindings["fastfile"]["bytes"])
+        self.assertEqual(result["StageModRoot"], str(staged / "mods/paris_bo3_static_probe"))
+        self.assertEqual(result["StageModIdentity"]["inode"], str((staged / "mods/paris_bo3_static_probe").stat().st_ino))
+        self.assertEqual(result["StageModIdentity"]["kind"], "python-os-stat/1")
+        self.assertEqual(result["SourceReferences"]["physical_validation"], self.binding(witness.read_bytes()))
+        self.assertTrue(result["PackageGatePending"])
+
+    def test_player_refuses_wrong_pins_types_scope_and_source_contract(self):
+        installer, owner, entries, validation, witness, original = self.player_fixture()
+        cases = [("protocol", 1), ("protocol", True), ("protocol", "2"), ("target", "stock"),
+                 ("client_source", "0" * 40), ("server_source", "0" * 40), ("sha256", "0" * 64),
+                 ("max_bytes", True), ("max_bytes", 1), ("max_bytes", 64 * 1024 * 1024 + 1),
+                 ("layout", "unknown")]
+        with patch.object(installer.sdk, "HERE", self.test_sdk):
+            for key, value in cases:
+                with self.subTest(field=key, value=value):
+                    args = copy.copy(original)
+                    setattr(args, key, value)
+                    with self.assertRaises(ValueError):
+                        installer.inspect(args)
+            for root, stage_owner in ((self.root / "outside", owner), (owner, owner),
+                                      (Path("relative"), owner), (owner / "fresh", None)):
+                with self.subTest(stage=str(root)):
+                    args = copy.copy(original)
+                    args.stage_root, args.stage_owner_root = str(root), str(stage_owner) if stage_owner else None
+                    with self.assertRaises(ValueError):
+                        installer.inspect(args)
+            altered = copy.deepcopy(validation)
+            altered["physical"]["ff"]["sha256"] = "0" * 64
+            witness.write_bytes(m.f.encoded(altered))
+            with self.assertRaisesRegex(ValueError, "Exact private player"):
+                installer.inspect(original)
+        self.assertEqual(list(owner.iterdir()), [])
+
+    def test_player_rejects_unsafe_or_changed_zip_before_any_stage(self):
+        installer, owner, entries, original_validation, witness, original = self.player_fixture()
+        ff_name = "mods/paris_bo3_static_probe/mod.ff"
+        for case in ("extra", "missing", "traversal", "duplicate", "directory", "symlink", "compressed",
+                     "changed-play", "changed-ff", "member-size", "expanded-bomb", "wrong-global"):
+            with self.subTest(case=case):
+                archive = self.root / (case + ".zip")
+                with zipfile.ZipFile(archive, "w") as opened:
+                    for name, payload in entries.items():
+                        if case == "missing" and name == "PLAY.txt":
+                            continue
+                        info = installer.pack.zip_info(name)
+                        if case == "symlink" and name == ff_name:
+                            info.external_attr = (stat.S_IFLNK | 0o777) << 16
+                        if case == "compressed":
+                            info.compress_type = zipfile.ZIP_DEFLATED
+                        if (case == "changed-play" and name == "PLAY.txt") or (case == "changed-ff" and name == ff_name):
+                            payload = b"X" + payload[1:]
+                        if case == "member-size" and name == ff_name:
+                            payload += b"X"
+                        opened.writestr(info, payload)
+                    if case in ("extra", "traversal", "duplicate", "directory"):
+                        extra = {"extra": "extra.txt", "traversal": "../escape.ff", "duplicate": "play.TXT",
+                                 "directory": "extra/"}[case]
+                        opened.writestr(installer.pack.zip_info(extra), b"X")
+                raw = archive.read_bytes()
+                if case == "expanded-bomb":
+                    raw = bytearray(raw)
+                    offset = raw.index(b"PK\x01\x02")
+                    struct.pack_into("<I", raw, offset + 24, 64 * 1024 * 1024 + 1)
+                    archive.write_bytes(raw)
+                validation = copy.deepcopy(original_validation)
+                binding = self.binding(archive.read_bytes())
+                validation["physical"]["player_archive"].update(binding)
+                witness.write_bytes(m.f.encoded(validation))
+                args = copy.copy(original)
+                args.archive, args.sha256 = str(archive), binding["sha256"]
+                args.stage_root, args.stage_owner_root = str(owner / "stage"), str(owner)
+                if case == "wrong-global":
+                    archive.write_bytes(b"X" + archive.read_bytes()[1:])
+                with patch.object(installer.sdk, "HERE", self.test_sdk), self.assertRaises(ValueError):
+                    installer.inspect(args)
+                self.assertFalse(Path(args.stage_root).exists())
+                self.assertFalse((self.root / "escape.ff").exists())
+
+    def test_player_refuses_filesystem_redirected_stage_owner(self):
+        installer, owner, entries, validation, witness, args = self.player_fixture()
+        redirected = self.root / "redirected-owner"
+        try:
+            redirected.symlink_to(owner, target_is_directory=True)
+        except OSError:
+            self.skipTest("Token cannot create directory symlinks")
+        args.stage_root, args.stage_owner_root = str(redirected / "stage"), str(redirected)
+        with patch.object(installer.sdk, "HERE", self.test_sdk), self.assertRaisesRegex(ValueError, "Redirected"):
+            installer.inspect(args)
+        self.assertFalse((owner / "stage").exists())
+
+    def test_player_hash_and_members_use_one_snapshot_even_if_path_changes_later(self):
+        installer, owner, entries, validation, witness, args = self.player_fixture()
+        args.stage_root, args.stage_owner_root = str(owner / "stage"), str(owner)
+        checked = installer.checked_entries
+
+        def after_snapshot(archive, maximum):
+            self.assertIsInstance(archive.fp, io.BytesIO)
+            Path(args.archive).write_bytes(b"SYNTHETIC CONCURRENT REPLACEMENT AFTER SNAPSHOT")
+            return checked(archive, maximum)
+
+        with patch.object(installer.sdk, "HERE", self.test_sdk), patch.object(installer, "checked_entries", after_snapshot):
+            result = installer.inspect(args)
+        self.assertTrue(result["PlayerStageVerified"])
+        self.assertEqual(result["ArchiveSHA256"], validation["physical"]["player_archive"]["sha256"])
+        self.assertEqual((Path(args.stage_root) / "mods/paris_bo3_static_probe/mod.ff").read_bytes(), self.paths["fastfile"].read_bytes())
+
+    def test_player_reparse_metadata_is_refused_before_archive_bytes(self):
+        installer, owner, entries, validation, witness, args = self.player_fixture()
+        original_lstat = Path.lstat
+        original_open = Path.open
+
+        def reparse_lstat(path, *values, **keywords):
+            meta = original_lstat(path, *values, **keywords)
+            if str(path) == args.archive:
+                return SimpleNamespace(st_mode=meta.st_mode, st_file_attributes=0x400)
+            return meta
+
+        def refuse_archive_read(path, *values, **keywords):
+            if str(path) == args.archive:
+                raise AssertionError("Redirected archive must not be opened")
+            return original_open(path, *values, **keywords)
+
+        with patch.object(installer.sdk, "HERE", self.test_sdk), patch.object(Path, "lstat", reparse_lstat), \
+                patch.object(Path, "open", refuse_archive_read), self.assertRaisesRegex(ValueError, "Redirected"):
+            installer.inspect(args)
+
+    def test_player_portable_identity_preserves_128_bit_values_through_json(self):
+        installer = m.f.module(SDK.parents[1] / "ops/modding/Install-CommunityMod.Package.py", "private_bo3_identity_test")
+        value = (1 << 127) + 42
+        result = installer.file_identity(SimpleNamespace(st_dev=value, st_ino=value + 1, st_size=9904, st_mtime_ns=12345))
+        decoded = json.loads(json.dumps(result))
+        self.assertEqual(decoded["kind"], "python-os-stat/1")
+        self.assertEqual(decoded["device"], str(value))
+        self.assertEqual(decoded["inode"], str(value + 1))
+        self.assertEqual(decoded["bytes"], 9904)
 
     def test_each_pinned_input_tamper_refuses_before_output(self):
         paths = [*self.paths.values(), *(self.references / value["path"] for value in self.reference_bindings.values())]

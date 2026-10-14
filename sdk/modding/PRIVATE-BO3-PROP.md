@@ -147,3 +147,65 @@ originales et zéro réservation. Aucun build natif/FF, accès au Native958,
 changement de Main ou installation dans le jeu n'a eu lieu. La prochaine
 validation reste l'installation et la reconnexion depuis ces nouveaux ZIP
 dans une session privée coordonnée, puis l'acceptation du propriétaire.
+
+## Staging client fermé dans le reader existant
+
+`Install-CommunityMod.Package.py --layout player` et sa fonction
+`stage_player(args)` acceptent uniquement le ZIP joueur B retenu ci-dessus.
+Les pins viennent des sources canoniques `manifest.json` et
+`physical-validation.json` du profil ; aucune option ne substitue un manifeste
+ou une autre archive. Le writer reste inchangé. Le mode par défaut continue à
+lire le ZIP créateur pour le serveur et FastDL.
+
+La commande ci-dessous est un exemple pour un futur créneau autorisé. Même sans
+`--stage-root`, elle lit le ZIP : ne pas l'exécuter pendant une phase SOURCE ONLY.
+Le caller doit vérifier son workspace source composé, la réservation et les
+identités avant cette opération.
+
+```powershell
+python -B ./ops/modding/Install-CommunityMod.Package.py $PlayerZipB `
+  --sha256 0cea6ad05751dc14fc4b02b91f293c2e906317734291f7ebc0446261af7e254d `
+  --client-source 77e6d4d24e918ee363b3feee3735c3b889dff7d7 `
+  --server-source 77e6d4d24e918ee363b3feee3735c3b889dff7d7 `
+  --protocol 2 --target native --layout player `
+  --stage-owner-root $OwnedOperationRoot --stage-root $FreshPlayerStage
+```
+
+Le staging doit être un enfant strictement neuf de la racine d'opération
+existante. Les chemins redirigés et les sorties hors de cette racine sont refusés.
+Cette racine reste extérieure au jeu et aux sources ; le caller opérateur possède
+et protège cette séparation. Le reader crée seulement
+`mods/paris_bo3_static_probe/mod.ff` sous le staging, après avoir contrôlé le
+hash global et les deux membres depuis un seul snapshot borné `BytesIO`.
+`PLAY.txt` est contrôlé mais n'est pas installé dans le staging.
+
+Le receipt `iw7.private-bo3-player-stage/1` fournit `ArchiveBytes`,
+`ArchiveSHA256`, `ArchiveIdentity`, les hashes de `SourceReferences` et une seule
+`Rows` d'`Area: client`. `StageRoot`, `StageOwnerRoot`, `StageIdentity`,
+`StageModRoot` et `StageModIdentity` sont renseignés après staging ; ils sont
+`null` en inspection seule. Le dossier complet désigné par `StageModRoot` peut
+ensuite être consommé par un adaptateur opérateur revu. Le receipt initial reste
+historique après ce déplacement.
+
+Les identités portent `kind: python-os-stat/1`, `device` et `inode` en chaînes
+décimales, `bytes` et `mtime_ns` en entiers. Python 3.12 peut exposer un inode
+Windows sur 128 bits ; ces champs ne sont pas une promesse d'équivalence avec
+un index NTFS 64 bits d'une autre API. Voir la
+[documentation Python](https://docs.python.org/3.12/library/os.html#os.stat_result).
+La fonction `file_identity(meta)` ne fait que formater un `os.stat_result` :
+aucun nouveau helper d'installation ou de revalidation n'est introduit. Un
+opérateur peut comparer un nouveau `stat` à l'identité Python initiale et garder
+séparément ses propres identités natives pendant le déplacement du dossier.
+
+`PlayerPayloadVerified` et `PlayerStageVerified` décrivent uniquement ces bytes
+et ce staging. `PackageGatePending` reste `true` et `DeliveryGate` reste `null` :
+le ZIP joueur ne contient pas le GSC et ne repasse pas la validation du paquet
+complet. `installed`, `runtime_ready`, `owner_accepted`, `public_deployment` et
+`NativePrerequisiteMeasured` restent `false`. Aucune API d'installation client,
+sauvegarde, restauration ou connexion n'est ajoutée au SDK.
+
+Les nouveaux tests utilisent exclusivement des payloads synthétiques produits
+par le writer existant. Ils montrent le refus de l'ancien reader opérateur,
+l'acceptation du staging fermé, le snapshot unique et les refus de pins, types,
+protocoles, sorties hors scope et ZIP dangereux. Ce nouveau point d'entrée n'a
+pas relu ni extrait les archives réelles B ; leur installation reste à valider.

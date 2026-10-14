@@ -180,6 +180,13 @@ and the backed-up server/FastDL installer; the player archive is a manual copy
 route and is not accepted as operator staging. Do not feed it to that installer.
 Source and creator tooling remain separate downloads.
 
+The same reader now has an explicit `--layout player` branch only for the exact
+retained [private BO3 player packet](../sdk/modding/PRIVATE-BO3-PROP.md).
+Its source-pinned, bounded snapshot can stage the client mod beneath a fresh
+owned operation root. This branch is not the server/FastDL installer and adds no
+client installation or rollback API. Full package and runtime gates remain
+pending; its new tests use only synthetic payloads.
+
 The complete author package, including server files omitted from the player ZIP,
 still passes the real SDK and compatibility gates before projection. An incomplete
 closure, changed server script or wrong protocol still blocks output. No additional
