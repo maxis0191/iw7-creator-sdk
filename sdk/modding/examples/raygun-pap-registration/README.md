@@ -73,13 +73,18 @@ pickup alias until that transaction finishes. Game end and owner disconnect
 also request cleanup. The state is published before the first write, with no
 yield during registration. Each written key is recorded.
 
-Before reverting any key, cleanup verifies all remaining owned bindings. A
-changed binding produces `RESTORE_PENDING`, preserves the keys and module state,
-and requires operator diagnosis/level teardown; no restoration is claimed.
+Before reverting any key, cleanup verifies the exact root state identity and
+all remaining owned bindings. An absent/replaced root or changed binding produces
+`RESTORE_PENDING`, preserves the dictionaries and current root, and requires
+operator diagnosis/level teardown; no restoration is claimed. This refusal does
+not send the global stop event, so it cannot stop replacement-state listeners.
+The old watchdog exits through its own `state.stopped` flag.
 Successful cleanup removes added keys and restores the prior base-record
 pointer, retaining any real retail increment in that prior record. It never
 rolls back a paid transaction or changes inventory. It clears its own level
-state before the stop notification, since `endon` can terminate the caller.
+state before the stop notification, since `endon` can terminate the caller. No
+yield occurs from ownership verification through restoration, clear and notify.
+Only this confirmed owned cleanup sends the global notification.
 Level unload discards the VM. Disconnected entities require runtime validation.
 
 Markers `BINDINGS_REGISTERED`, `RESTORE_DEFERRED`, `RESTORE_PENDING` and

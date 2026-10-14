@@ -95,7 +95,9 @@ watch_context(state)
     level endon("sdk_raygun_pap_stopped");
     for (;;)
     {
-        if (!private_context(state.fs_game) || isdefined(level.max_pap_func) ||
+        if (state.stopped) return;
+        if (!isdefined(level.sdk_raygun_pap_registration) || level.sdk_raygun_pap_registration != state ||
+            !private_context(state.fs_game) || isdefined(level.max_pap_func) ||
             !isdefined(level.pap_max) || level.pap_max != 2 ||
             isdefined(level.pap[state.upgraded]) || isdefined(level.pap[state.upgraded_fallback]) ||
             !isdefined(level.players) || level.players.size != 1 ||
@@ -123,6 +125,7 @@ departed(state)
 
 owned_bindings(state)
 {
+    if (!isdefined(level.sdk_raygun_pap_registration) || level.sdk_raygun_pap_registration != state) return false;
     if (state.level_pap_written && (!isdefined(level.pap[state.base]) || level.pap[state.base] != state.base)) return false;
     if (state.base_map_written && (!isdefined(level.attachmentmap_basetounique[state.base]) ||
         level.attachmentmap_basetounique[state.base] != state.map)) return false;
@@ -155,7 +158,6 @@ stop(state, reason)
     if (!owned_bindings(state))
     {
         print("[SDK raygun PAP] RESTORE_PENDING; reason=external_binding_change; private_keys_preserved=1; runtime_ready=0.");
-        level notify("sdk_raygun_pap_stopped");
         return true;
     }
     if (state.level_pap_written) level.pap[state.base] = undefined;
@@ -168,9 +170,11 @@ stop(state, reason)
     }
     state.restoration_confirmed = true;
     print("[SDK raygun PAP] BINDINGS_RESTORED; reason=" + reason + "; callbacks_changed=0; currency_ammo_weapons_changed=0; transaction_pending=1; runtime_ready=0.");
-    if (isdefined(level.sdk_raygun_pap_registration) && level.sdk_raygun_pap_registration == state)
-        level.sdk_raygun_pap_registration = undefined;
-    // Endon may terminate this caller: clear owned state before the notification.
+    // Exact root ownership was checked above; no yield permits a replacement
+    // between that check, the dictionary restoration and this root clear.
+    level.sdk_raygun_pap_registration = undefined;
+    // Endon may terminate this caller. Only this owned cleanup notifies globally;
+    // a lost/replaced root preserves all keys and never stops foreign listeners.
     level notify("sdk_raygun_pap_stopped");
     return true;
 }

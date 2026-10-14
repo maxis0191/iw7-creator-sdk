@@ -85,6 +85,15 @@ def require_cleanup_order(text):
     pending = cleanup[ownership:first_revert]
     if 'RESTORE_PENDING' not in pending or 'return true;' not in pending:
         raise ValueError("External ownership loss must preserve bindings")
+    if 'notify(' in pending or cleanup.count('level notify("sdk_raygun_pap_stopped");') != 1:
+        raise ValueError("Ownership loss must not stop foreign listeners")
+    owned = body(text, "owned_bindings")
+    root_guard = owned.split('if (state.level_pap_written', 1)[0]
+    if ('!isdefined(level.sdk_raygun_pap_registration)' not in root_guard or
+            'level.sdk_raygun_pap_registration != state) return false;' not in root_guard):
+        raise ValueError("Exact root identity must refuse before dictionary checks")
+    if re.search(r'\b(?:wait|waittill|thread)\b', cleanup[ownership:notification]):
+        raise ValueError("Root check through clear/notification must not yield")
 
 
 class RayGunPapSourceTests(unittest.TestCase):
@@ -173,11 +182,32 @@ class RayGunPapSourceTests(unittest.TestCase):
 
     def test_notification_before_clear_is_causal_negative_control(self):
         require_cleanup_order(self.text)
-        clear = '        level.sdk_raygun_pap_registration = undefined;'
-        changed = self.text.replace(clear, '        level notify("sdk_raygun_pap_stopped");\n' + clear, 1)
+        clear = '    level.sdk_raygun_pap_registration = undefined;'
+        changed = self.text.replace(clear, '    level notify("sdk_raygun_pap_stopped");\n' + clear, 1)
         changed = changed.rsplit('    level notify("sdk_raygun_pap_stopped");', 1)[0] + '\n    return true;\n}\n'
         with self.assertRaises(ValueError):
             require_cleanup_order(changed)
+
+    def test_absent_root_refuses_restore_and_foreign_notification(self):
+        require_cleanup_order(self.text)
+        owned = body(self.text, "owned_bindings")
+        mutated = owned.replace('!isdefined(level.sdk_raygun_pap_registration)', 'false', 1)
+        with self.assertRaises(ValueError):
+            require_cleanup_order(self.text.replace(owned, mutated, 1))
+        watcher = body(self.text, "watch_context")
+        self.assertIn('!isdefined(level.sdk_raygun_pap_registration)', watcher)
+        self.assertIn('if (state.stopped) return;', watcher)
+
+    def test_replaced_root_refuses_restore_and_foreign_notification(self):
+        require_cleanup_order(self.text)
+        owned = body(self.text, "owned_bindings")
+        mutated = owned.replace('level.sdk_raygun_pap_registration != state', 'false', 1)
+        with self.assertRaises(ValueError):
+            require_cleanup_order(self.text.replace(owned, mutated, 1))
+        with self.assertRaises(ValueError):
+            require_cleanup_order(self.text.replace('private_keys_preserved=1; runtime_ready=0.");',
+                'private_keys_preserved=1; runtime_ready=0.");\n        level notify("sdk_raygun_pap_stopped");', 1))
+        self.assertIn('level.sdk_raygun_pap_registration != state', body(self.text, "watch_context"))
 
     def test_inflight_machine_defers_context_cleanup_and_watchdog_retries(self):
         cleanup = body(self.text, "stop")
