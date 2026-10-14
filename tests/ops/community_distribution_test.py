@@ -129,6 +129,57 @@ class DistributionTests(unittest.TestCase):
         self.assertFalse((self.root / "bad.zip").exists())
         self.assertEqual(list(self.root.glob(".iw7-package-*")), [])
 
+    def test_player_language_defaults_preserve_english_and_staging_bytes(self):
+        for layout in ("staging", "player"):
+            with self.subTest(layout=layout):
+                default = self.root / (layout + "-default.zip")
+                explicit = self.root / (layout + "-en.zip")
+                mod.write_archive(self.manifest, self.root, default, layout=layout)
+                mod.write_archive(self.manifest, self.root, explicit, layout=layout, player_language="en")
+                self.assertEqual(default.read_bytes(), explicit.read_bytes())
+        expected = (
+            "paris_hud_probe 0.1.0\n\n"
+            "1. Close the game. Move an existing mods/paris_hud_probe outside the game folder as a backup.\n"
+            "2. Copy the mods folder from this archive into your Infinite Warfare game folder.\n"
+            "3. Start the compatible community client supplied for this mod and join its server.\n\n"
+            "The client is supplied separately. Server scripts and creator tools are not needed here.\n"
+            "To undo: close the game, remove only the installed mods/paris_hud_probe,\n"
+            "then move your original backup folder back if you had one. Do not merge folders.\n"
+        ).encode("utf-8")
+        with zipfile.ZipFile(self.root / "player-default.zip") as archive:
+            self.assertEqual(archive.read("PLAY.txt"), expected)
+
+    def test_french_player_guide_is_utf8_deterministic_and_client_only(self):
+        self.add_server_script()
+        (self.root / "creator.ps1").write_text("developer tool excluded")
+        (self.root / "private.json").write_text("local configuration excluded")
+        first = mod.write_archive(self.manifest, self.root, self.root / "fr-one.zip",
+                                  layout="player", player_language="fr")
+        second = mod.write_archive(self.manifest, self.root, self.root / "fr-two.zip",
+                                   layout="player", player_language="fr")
+        self.assertEqual(first["archive_sha256"], second["archive_sha256"])
+        with zipfile.ZipFile(self.root / "fr-one.zip") as archive:
+            self.assertEqual(archive.namelist(), ["PLAY.txt", "mods/paris_hud_probe/mod.ff"])
+            self.assertEqual(archive.read("mods/paris_hud_probe/mod.ff"), self.payload)
+            raw = archive.read("PLAY.txt")
+            self.assertFalse(raw.startswith(b"\xef\xbb\xbf"))
+            text = raw.decode("utf-8")
+            self.assertIn("Déplacez le dossier mods/paris_hud_probe existant hors du dossier du jeu", text)
+            self.assertIn("Copiez le dossier mods de cette archive", text)
+            self.assertIn("client natif compatible fourni séparément", text)
+            self.assertIn("retirez uniquement le dossier mods/paris_hud_probe installé", text)
+            self.assertIn("Ne fusionnez pas les dossiers", text)
+        self.assertEqual(len(first["files"]), 1)
+
+    def test_invalid_player_options_refuse_before_filesystem_access(self):
+        for layout, language in (("other", "en"), ("player", "de"), ("staging", "fr")):
+            with self.subTest(layout=layout, language=language):
+                with patch.object(mod, "no_redirects", side_effect=AssertionError("Options must refuse before path reads")):
+                    with self.assertRaises(ValueError):
+                        mod.write_archive(self.manifest, self.root, self.root / "bad.zip",
+                                          layout=layout, player_language=language)
+                self.assertFalse((self.root / "bad.zip").exists())
+
     def test_player_layout_server_only_missing_ff_and_unknown_route_refused(self):
         for manifest, layout in ((self.other(), "player"), (self.manifest, "other")):
             with self.subTest(layout=layout), self.assertRaises(ValueError):
@@ -299,6 +350,37 @@ class DistributionTests(unittest.TestCase):
         code, result = self.cli(self.manifest, "--layout", "player")
         self.assertEqual(code, 1, result)
         self.assertFalse((self.root / "cli.zip").exists())
+
+    def test_french_player_cli_uses_real_sdk_and_never_promotes_readiness(self):
+        self.add_server_script()
+        code, result = self.cli(self.manifest, "--layout", "player", "--player-language", "fr")
+        self.assertEqual(code, 0, result)
+        self.assertTrue(result["packaged"])
+        self.assertFalse(result["ready_to_deploy"])
+        with zipfile.ZipFile(self.root / "cli.zip") as archive:
+            self.assertEqual(archive.namelist(), ["PLAY.txt", "mods/paris_hud_probe/mod.ff"])
+            self.assertIn("fourni séparément", archive.read("PLAY.txt").decode("utf-8"))
+
+    def test_invalid_player_cli_options_refuse_before_sdk_or_payload_reads(self):
+        for extra, expected_code in ((("--layout", "other"), 2),
+                                     (("--layout", "player", "--player-language", "de"), 2),
+                                     (("--player-language", "fr"), 1)):
+            with self.subTest(options=extra):
+                run = subprocess.run([sys.executable, str(ROOT / "ops/modding/Package-CommunityMod.py"),
+                                      str(self.root / "missing-manifest.json"), "--root", str(self.root),
+                                      "--output", str(self.root / "invalid.zip"),
+                                      "--sdk-root", str(self.root / "missing-sdk"),
+                                      "--client-source", PIN, "--server-source", PIN, "--protocol", "2", *extra],
+                                     capture_output=True, text=True, timeout=15)
+                self.assertEqual(run.returncode, expected_code, run.stdout + run.stderr)
+                if expected_code == 2:
+                    self.assertIn("invalid choice", run.stderr)
+                else:
+                    result = json.loads(run.stdout)
+                    self.assertFalse(result["packaged"])
+                    self.assertIn("require player layout", " ".join(result["errors"]))
+                self.assertFalse((self.root / "invalid.zip").exists())
+                self.assertFalse(list(self.root.glob(".iw7-package-*")))
 
     def test_player_cli_incomplete_closure_and_wrong_protocol_still_refused(self):
         candidate = copy.deepcopy(self.manifest); candidate["package"]["closure"]["status"] = "incomplete"

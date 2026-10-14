@@ -17,7 +17,10 @@ PROJECT_SOURCE = {"77e6d4d24e918ee363b3feee3735c3b889dff7d7"}
 CAPABILITY_SOURCE_PINS = {
     "engine": {"iw7-cp/1": MOD_TRANSPORT_SOURCES, "model-netconststrings/1": PROJECT_SOURCE},
     "client": {"mod-fastfile-download/1": MOD_TRANSPORT_SOURCES,
-               "lua-fastfile/1": PROJECT_SOURCE, "xmodel-rigid/1": PROJECT_SOURCE},
+               "lua-fastfile/1": PROJECT_SOURCE, "xmodel-rigid/1": PROJECT_SOURCE,
+               # Fixture upstream only; Native958 private overlay/binary remains
+               # a separate prerequisite recorded by the private prop recipe.
+               "bo3-mp-static-prop-display/1": PROJECT_SOURCE},
     "server": {"mod-fastfile-host/1": MOD_TRANSPORT_SOURCES,
                "gsc-custom-scripts/1": MOD_TRANSPORT_SOURCES,
                "gsc-private-hud/1": MOD_TRANSPORT_SOURCES, "script-model/1": PROJECT_SOURCE},

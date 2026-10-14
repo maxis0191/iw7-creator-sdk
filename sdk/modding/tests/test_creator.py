@@ -144,7 +144,7 @@ class CreatorTests(unittest.TestCase):
         self.assertEqual(code, 1, report)
         self.assertIn('Output', ' '.join(report['errors']))
 
-    def test_package_generic_client_files_do_not_require_a_beacon_adapter(self):
+    def client_package_fixture(self):
         self.package_fixture()
         payload = b'SYNTHETIC PACKAGE TRANSPORT ONLY - NOT A FASTFILE'
         (self.project / 'fixture.ff').write_bytes(payload)
@@ -160,6 +160,10 @@ class CreatorTests(unittest.TestCase):
         package['closure']['roots'].append('rawfile:sdk_spawn_tip')
         package['closure']['nodes'].append({'id': 'rawfile:sdk_spawn_tip', 'kind': 'other', 'scope': 'client', 'sha256': digest, 'requires': []})
         self.save_manifest()
+        return payload
+
+    def test_package_generic_client_files_do_not_require_a_beacon_adapter(self):
+        payload = self.client_package_fixture()
         code, report = self.invoke_package(mutates=True)
         self.assertEqual(code, 0, report)
         self.assertFalse(report['build_executed'])
@@ -167,6 +171,72 @@ class CreatorTests(unittest.TestCase):
         with zipfile.ZipFile(self.root / 'package.zip') as archive:
             for prefix in ('server', 'fastdl'):
                 self.assertEqual(archive.read(prefix + '/mods/sdk_spawn_tip/mod.ff'), payload)
+
+    def test_package_player_french_projects_client_files_through_real_writer(self):
+        payload = self.client_package_fixture()
+        (self.project / 'creator.ps1').write_text('developer tool excluded')
+        (self.project / 'private.json').write_text('local configuration excluded')
+        code, report = self.invoke_package('-PackageLayout', 'PLAYER', '-PlayerLanguage', 'FR', mutates=True)
+        self.assertEqual(code, 0, report)
+        self.assertTrue(report['packaged'])
+        self.assertEqual(report['package_result']['archive_layout'], 'player')
+        self.assertFalse(report['package_result']['ready_to_deploy'])
+        self.assertFalse(report['build_executed'])
+        self.assertFalse(report['build_verified'])
+        self.assertFalse(report['materialized'])
+        with zipfile.ZipFile(self.root / 'package.zip') as archive:
+            self.assertEqual(archive.namelist(), ['PLAY.txt', 'mods/sdk_spawn_tip/mod.ff'])
+            self.assertEqual(archive.read('mods/sdk_spawn_tip/mod.ff'), payload)
+            raw = archive.read('PLAY.txt')
+            self.assertFalse(raw.startswith(b'\xef\xbb\xbf'))
+            text = raw.decode('utf-8')
+            self.assertIn('Déplacez le dossier mods/sdk_spawn_tip existant hors du dossier du jeu', text)
+            self.assertIn('client natif compatible fourni séparément', text)
+            self.assertIn('retirez uniquement le dossier mods/sdk_spawn_tip installé', text)
+            self.assertIn('Ne fusionnez pas les dossiers', text)
+        self.assertEqual([entry['destination'] for entry in report['package_result']['files']],
+                         ['mods/sdk_spawn_tip/mod.ff'])
+
+    def test_package_player_english_keeps_server_payload_integrity_gate(self):
+        self.client_package_fixture()
+        code, report = self.invoke_package('-PackageLayout', 'player', mutates=True)
+        self.assertEqual(code, 0, report)
+        with zipfile.ZipFile(self.root / 'package.zip') as archive:
+            self.assertIn(b'Close the game.', archive.read('PLAY.txt'))
+        (self.root / 'package.zip').unlink()
+        server = self.project / 'sdk_spawn_tip.gsc'
+        server.write_bytes(b'X' * server.stat().st_size)
+        code, report = self.invoke_package('-PackageLayout', 'player')
+        self.assertEqual(code, 1, report)
+        self.assertIn('Payload size/hash mismatch: sdk_spawn_tip.gsc', ' '.join(report['errors']))
+        self.assertFalse((self.root / 'package.zip').exists())
+
+    def test_package_layout_and_language_are_refused_on_other_actions(self):
+        for action in ('Plan', 'Build', 'Bind', 'Materialize'):
+            for option, value in (('-PackageLayout', 'staging'), ('-PlayerLanguage', 'en')):
+                with self.subTest(action=action, option=option):
+                    code, report = self.invoke('-Action', action, option, value)
+                    self.assertEqual(code, 1, report)
+                    self.assertIn('require Action Package', ' '.join(report['errors']))
+
+    def test_package_french_staging_refuses_before_project_read(self):
+        (self.project / 'manifest.json').write_bytes(b'not JSON')
+        code, report = self.invoke_package('-PlayerLanguage', 'fr')
+        self.assertEqual(code, 1, report)
+        self.assertIn('PlayerLanguage fr requires PackageLayout player', ' '.join(report['errors']))
+        self.assertFalse((self.root / 'package.zip').exists())
+
+    def test_package_invalid_layout_and_language_refuse_parameter_binding(self):
+        before = self.snapshot()
+        for option, value in (('-PackageLayout', 'other'), ('-PlayerLanguage', 'de')):
+            with self.subTest(option=option):
+                run = subprocess.run([PWSH, '-NoProfile', '-File', str(CREATOR), '-Project', str(self.project),
+                                      '-Action', 'Package', '-Output', str(self.root / 'package.zip'),
+                                      option, value, '-Json'], text=True, capture_output=True, timeout=20)
+                self.assertNotEqual(run.returncode, 0, run.stdout + run.stderr)
+                self.assertIn(option.lstrip('-'), run.stderr)
+                self.assertEqual(before, self.snapshot())
+                self.assertFalse((self.root / 'package.zip').exists())
 
     def test_package_invalid_manifest_is_refused_without_zip(self):
         self.package_fixture()

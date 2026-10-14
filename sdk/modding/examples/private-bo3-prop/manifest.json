@@ -1,0 +1,66 @@
+{
+  "schema": "iw7.community-mod/1",
+  "namespace": "paris_bo3_static_probe",
+  "requires": {
+    "engine": ["iw7-cp/1", "model-netconststrings/1"],
+    "client": ["mod-fastfile-download/1", "bo3-mp-static-prop-display/1"],
+    "server": ["mod-fastfile-host/1", "gsc-custom-scripts/1", "script-model/1"]
+  },
+  "dependencies": [],
+  "conflicts": [{"id": "paris_model_probe", "reason": "Shared zone/NCS probe names; only one private fs_game at a time."}],
+  "lifecycle": {
+    "activation": "map-load", "deactivation": "map-unload", "hot_reload": false,
+    "entrypoints": [{"side": "server", "path": "custom_scripts/cp/paris_bo3_static_probe.gsc", "symbol": "init"}],
+    "cleanup": ["entities", "threads", "player-state"]
+  },
+  "compatibility": {
+    "engine": "iw7", "mode": "cp", "network_protocol": 2,
+    "client_match": "exact-content", "coexistence": "exclusive-fs-game"
+  },
+  "package": {
+    "schema": "iw7.mod-package/1", "id": "paris_bo3_static_probe", "version": "0.1.0",
+    "maps": ["cp_zmb"], "delivery": "mod",
+    "native_requirements": {
+      "server_source": "77e6d4d24e918ee363b3feee3735c3b889dff7d7",
+      "client_source": "77e6d4d24e918ee363b3feee3735c3b889dff7d7",
+      "client_capabilities": [], "compatible_client_sources": []
+    },
+    "files": [
+      {"id": "client_fastfile", "role": "client", "source": "mod.ff",
+       "destination": "mods/paris_bo3_static_probe/mod.ff", "bytes": 9904,
+       "sha256": "50ca9124d35f4ea5e9f017adafcf012df01b9991d1fcde2597c8f0f58aabcd0c",
+       "closure_roots": ["xmodel:p7_fre_platform_cap_02"]},
+      {"id": "server_display", "role": "server", "source": "paris_bo3_static_probe.gsc",
+       "destination": "iw7-mod/custom_scripts/cp/paris_bo3_static_probe.gsc", "bytes": 8607,
+       "sha256": "a8b8d07e7d3bad415b1bb69d09954b21342ba54c9d4b4d7137321f9e3f8e637a",
+       "closure_roots": ["scriptfile:custom_scripts/cp/paris_bo3_static_probe.gsc"]}
+    ],
+    "closure": {
+      "status": "complete", "evidence_ref": "project-evidence.json#node_representations",
+      "roots": ["xmodel:p7_fre_platform_cap_02", "scriptfile:custom_scripts/cp/paris_bo3_static_probe.gsc"],
+      "nodes": [
+        {"id": "scriptfile:custom_scripts/cp/paris_bo3_static_probe.gsc", "kind": "scriptfile", "scope": "server",
+         "sha256": "a8b8d07e7d3bad415b1bb69d09954b21342ba54c9d4b4d7137321f9e3f8e637a", "requires": ["xmodel:p7_fre_platform_cap_02"]},
+        {"id": "xmodel:p7_fre_platform_cap_02", "kind": "xmodel", "scope": "client",
+         "sha256": "af4cb78463b466fe9cb92f1d24b1dfb706664d255d3aa1d939af0e1e6a68b583",
+         "requires": ["xsurface:p7_fre_platform_cap_02_lod0ca80354f", "material:mopw/character_park_clown_zombie_shoes", "netconststrings:ncs_mdl_paris_model_probe", "rawfile:paris_model_probe"]},
+        {"id": "xsurface:p7_fre_platform_cap_02_lod0ca80354f", "kind": "other", "scope": "client",
+         "sha256": "5c93d1769b4fcf500729fbba49474e97dff471962797741a4bceae50a755fd4d", "requires": []},
+        {"id": "material:mopw/character_park_clown_zombie_shoes", "kind": "material", "scope": "recipient",
+         "sha256": "e230b6beb069ba65654f919f9b2a75f907b8956c08b557244604918c5a78e2f2", "requires": []},
+        {"id": "netconststrings:ncs_mdl_paris_model_probe", "kind": "other", "scope": "client",
+         "sha256": "c10fc3b61cc0cc6df433a08eb0c2ae8a7a83145e7f47573681bab9b97c9be7c4", "requires": []},
+        {"id": "rawfile:paris_model_probe", "kind": "other", "scope": "client",
+         "sha256": "085ef65ab49a576c7332e29509d0a85417f3fb5e1fe31419e5d1865880f5eef3", "requires": []}
+      ],
+      "unresolved": []
+    },
+    "evidence": [
+      {"kind": "source-check", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "offline-load", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "runtime-link", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "render", "status": "pending", "reference": null, "authority": "agent", "maps": []},
+      {"kind": "gameplay", "status": "pending", "reference": null, "authority": "owner", "maps": []}
+    ]
+  }
+}

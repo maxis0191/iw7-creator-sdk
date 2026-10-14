@@ -136,12 +136,20 @@ def stream_payload(archive, name, root, entry):
             "aurora_crc32": struct.pack("<I", crc & 0xffffffff).hex().upper()}
 
 
-def write_archive(manifest, root, output, *, max_bytes=DEFAULT_BUDGET, layout="staging"):
+def validate_archive_options(layout, player_language):
+    if layout not in ("staging", "player"):
+        raise ValueError("Archive layout must be staging or player")
+    if player_language not in ("en", "fr"):
+        raise ValueError("Player language must be en or fr")
+    if layout != "player" and player_language != "en":
+        raise ValueError("French player instructions require player layout")
+
+
+def write_archive(manifest, root, output, *, max_bytes=DEFAULT_BUDGET, layout="staging", player_language="en"):
     """Write already-validated data with a second integrity check while streaming."""
     if type(max_bytes) is not int or max_bytes <= 0:
         raise ValueError("A positive byte budget is required")
-    if layout not in ("staging", "player"):
-        raise ValueError("Archive layout must be staging or player")
+    validate_archive_options(layout, player_language)
     root = no_redirects(root)
     output = Path(os.path.abspath(output))
     no_redirects(output.parent)
@@ -166,6 +174,16 @@ def write_archive(manifest, root, output, *, max_bytes=DEFAULT_BUDGET, layout="s
             "To undo: close the game, remove only the installed mods/" + package["id"] + ",\n"
             "then move your original backup folder back if you had one. Do not merge folders.\n"
         ).encode("utf-8")
+        if player_language == "fr":
+            metadata = (
+                package["id"] + " " + package["version"] + "\n\n"
+                "1. Fermez le jeu. Déplacez le dossier mods/" + package["id"] + " existant hors du dossier du jeu pour le sauvegarder.\n"
+                "2. Copiez le dossier mods de cette archive dans le dossier de votre jeu Infinite Warfare.\n"
+                "3. Lancez le client natif compatible fourni séparément pour ce mod.\n\n"
+                "Les scripts serveur et les outils créateur ne sont pas nécessaires ici.\n"
+                "Pour annuler : fermez le jeu, retirez uniquement le dossier mods/" + package["id"] + " installé,\n"
+                "puis remettez votre sauvegarde d'origine si vous en aviez une. Ne fusionnez pas les dossiers.\n"
+            ).encode("utf-8")
     else:
         for entry in package["files"]:
             entries.append(("server/" + entry["destination"], entry))
@@ -215,6 +233,8 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--layout", choices=("staging", "player"), default="staging",
                         help="Operator server/FastDL staging, or player-only mods folder and short instructions")
+    parser.add_argument("--player-language", choices=("en", "fr"), default="en",
+                        help="Language of player instructions; French requires player layout")
     parser.add_argument("--sdk-root", type=Path, default=ROOT / "sdk/modding",
                         help="Reviewed local SDK source directory; never read from a manifest")
     parser.add_argument("--active", action="append", nargs=2, default=[], metavar=("MANIFEST", "ROOT"),
@@ -227,6 +247,7 @@ def main():
     parser.add_argument("--max-bytes", type=int, default=DEFAULT_BUDGET)
     args = parser.parse_args()
     try:
+        validate_archive_options(args.layout, args.player_language)
         if len(args.active) > 64:
             raise ValueError("At most 64 other active manifests can be inspected per package")
         sdk = load_module(args.sdk_root / "manifest.py", "community_sdk")
@@ -251,7 +272,8 @@ def main():
                                          server_source=args.server_source, protocol=args.protocol, mode=args.mode)
         if errors:
             raise ValueError("Compatibility gate: " + "; ".join(errors))
-        result = write_archive(manifest, Path(args.root), Path(args.output), max_bytes=args.max_bytes, layout=args.layout)
+        result = write_archive(manifest, Path(args.root), Path(args.output), max_bytes=args.max_bytes,
+                               layout=args.layout, player_language=args.player_language)
         result.update(valid=True, packaged=True, ready_to_deploy=False, validation_limit=LIMIT,
                       active_dependencies="Payloads checked at supplied roots; running-server state is not inspected.")
     except (OSError, ValueError, TypeError, KeyError, AttributeError, RecursionError) as error:
