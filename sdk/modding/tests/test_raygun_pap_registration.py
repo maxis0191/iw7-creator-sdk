@@ -93,7 +93,15 @@ class RayGunPapSourceTests(unittest.TestCase):
         cls.text = (ROOT / EXAMPLE / "sdk_raygun_pap_registration.gsc").read_text()
 
     def test_exported_source_doc_and_fixtures_only(self):
-        exports = json.loads((ROOT / "product.json").read_text())["exports"]
+        product = ROOT / "product.json"
+        if product.is_file():
+            exports = json.loads(product.read_text())["exports"]
+        else:
+            # CI executes the exact composed source package, which intentionally
+            # has a composition receipt rather than canonical product metadata.
+            receipt = json.loads((ROOT / "source-workspace.json").read_text())
+            exports = [entry["path"] for entry in receipt["files"]
+                       if entry["owner"] == "iw7-creator-sdk"]
         self.assertIn(EXAMPLE + "sdk_raygun_pap_registration.gsc", exports)
         self.assertIn(EXAMPLE + "README.md", exports)
         self.assertIn("sdk/modding/tests/test_raygun_pap_registration.py", exports)
