@@ -113,3 +113,37 @@ recette. Les messages dans le jeu restent en anglais.
 
 `packaged` ou un résultat statique `ready` indique l'intégrité et le contrat du
 paquet. `ready_to_deploy`, `runtime_ready` et `owner_accepted` restent faux.
+
+## Deux archives physiques vérifiées le 14 octobre 2026
+
+Le Creator générique et son writer existant ont produit les deux ZIP privés
+depuis la source SDK `d0822dadd54b168c700a7fa16f28b28057815bbf`, fusionnée par
+la PR21 dans `9171aa142cdfc0c458f02529995e4dd9b2081dda`. Les archives restent
+locales ; seules leurs mesures et leurs limites sont conservées dans
+[physical-validation.json](examples/private-bo3-prop/physical-validation.json).
+
+| Archive | Octets | SHA-256 |
+| --- | ---: | --- |
+| `BO3-MP-Prop-createur-prive.zip` | 32 590 | `1dcf4d74fcb25954a0adfd99a7af236cd8979527830281a3bfd15feb39234945` |
+| `BO3-MP-Prop-joueur-prive.zip` | 10 760 | `0cea6ad05751dc14fc4b02b91f293c2e906317734291f7ebc0446261af7e254d` |
+
+Les quatre membres créateur et les deux membres joueur ont été contrôlés sur
+le même snapshot que leur hash d'archive : noms, tailles, CRC et SHA-256.
+Le manifeste compact du ZIP est sémantiquement égal au manifeste du projet.
+Le vrai stager a créé un dossier neuf avec les hashes FF/GSC attendus. Une
+copie, une sauvegarde et un retour arrière dans un dossier temporaire ont
+restauré l'identité de fichier originale ; ce dossier a ensuite été nettoyé.
+
+Le premier lancement a refusé la date du parent avant toute lecture du payload :
+PowerShell relisait la date ISO du registre JSON comme un `DateTime`, puis la
+comparait directement au texte ISO. Le driver local corrigé compare les ticks
+UTC exacts et conserve les contrôles de PID, d'image et de parent. Les 15 cas
+de régression comprennent les trois types de date et le refus d'un écart d'un
+seul tick. Les sources et les preuves du premier échec restent conservées.
+
+Le second processus PTY et son enfant ont terminé avec code 0 ; l'arbre complet
+du Job a été fermé. Le contrôle indépendant a constaté l'absence des identités
+originales et zéro réservation. Aucun build natif/FF, accès au Native958,
+changement de Main ou installation dans le jeu n'a eu lieu. La prochaine
+validation reste l'installation et la reconnexion depuis ces nouveaux ZIP
+dans une session privée coordonnée, puis l'acceptation du propriétaire.

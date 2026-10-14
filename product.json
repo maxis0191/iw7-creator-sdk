@@ -54,6 +54,7 @@
     "sdk/modding/PRIVATE-BO3-PROP.md",
     "sdk/modding/prepare_private_bo3.py",
     "sdk/modding/examples/private-bo3-prop/manifest.json",
+    "sdk/modding/examples/private-bo3-prop/physical-validation.json",
     "sdk/modding/examples/beacon-self-contained/README.md",
     "sdk/modding/examples/beacon-self-contained/sdk_beacon_self_contained.gsc",
     "sdk/modding/examples/beacon-self-contained/validation-2026-10-12.json",
