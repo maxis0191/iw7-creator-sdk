@@ -13,6 +13,8 @@ param(
     [ValidateSet('stock','native')][string]$Target='stock',
     [string]$FinalizeRoot,
     [string]$Output,
+    [ValidateSet('staging','player')][string]$PackageLayout='staging',
+    [ValidateSet('en','fr')][string]$PlayerLanguage='en',
     [string]$RecipientProof,
     [string]$RecipientRoot,
     [string]$GscAuditEvidence,
@@ -25,11 +27,15 @@ $ErrorActionPreference='Stop'
 $Action=@('Plan','Build','Bind','Materialize','Package')|Where-Object {$_ -ieq $Action}
 $Adapter=@('None','BeaconV1','BeaconSelfContainedV1','ModelLabV2','OriginalArenaV1','AnimationProbe','MaterialV2')|Where-Object {$_ -ieq $Adapter}
 $Target=$Target.ToLowerInvariant()
+$PackageLayout=$PackageLayout.ToLowerInvariant()
+$PlayerLanguage=$PlayerLanguage.ToLowerInvariant()
 $python=(Get-Command python -ErrorAction Stop).Source
 $inputData=[ordered]@{project=$Project;action=$Action;adapter=$Adapter;build_parameters=$BuildParameters;build_root=$BuildRoot;
     model_source_root=$ModelSourceRoot;review_reference=$ReviewReference;
     active_projects=@($ActiveProject);client_source=$ClientSource;server_source=$ServerSource;protocol=$Protocol;
     target=$Target;tools_root=$ToolsRoot;finalize_root=$FinalizeRoot;output=$Output;
+    package_layout=$PackageLayout;player_language=$PlayerLanguage;
+    package_options_supplied=($PSBoundParameters.ContainsKey('PackageLayout') -or $PSBoundParameters.ContainsKey('PlayerLanguage'));
     recipient_proof=$RecipientProof;recipient_root=$RecipientRoot;gsc_audit_evidence=$GscAuditEvidence}
 function Assert-CreatorBuildParameters($Parameters) {
     # This is a caller-side allowlist, not the builder's broader parameter set.
@@ -75,6 +81,7 @@ function Invoke-CreatorPackage([string]$ManifestPath,[string]$CandidateRoot,[Col
     $packageArgs=@('-B',$packager,$ManifestPath,'--root',$CandidateRoot,'--output',$Report.output,
         '--sdk-root',(Join-Path $ToolsRoot 'sdk/modding'),'--client-source',$ClientSource,'--server-source',$ServerSource,
         '--protocol',[string]$Protocol,'--target',$Target)
+    if($Action -ceq 'Package'){$packageArgs+=@('--layout',$PackageLayout,'--player-language',$PlayerLanguage)}
     foreach($active in $ActiveProject){$packageArgs+=@('--active',(Join-Path $active 'manifest.json'),$active)}
     $packageText=& $python @packageArgs
     $packageExit=$LASTEXITCODE
@@ -113,6 +120,12 @@ def unique_parameters(pairs):
     return result
 
 try:
+    if args["package_layout"] not in ("staging", "player") or args["player_language"] not in ("en", "fr"):
+        raise ValueError("PackageLayout must be staging or player and PlayerLanguage must be en or fr")
+    if args["action"] != "Package" and args["package_options_supplied"]:
+        raise ValueError("PackageLayout and PlayerLanguage require Action Package")
+    if args["package_layout"] != "player" and args["player_language"] != "en":
+        raise ValueError("PlayerLanguage fr requires PackageLayout player")
     if args["adapter"] in ("ModelLabV2", "OriginalArenaV1"):
         supported = ("Plan", "Materialize", "Bind") if args["adapter"] == "OriginalArenaV1" else ("Materialize", "Bind")
         if args["action"] not in supported:

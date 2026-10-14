@@ -60,6 +60,13 @@ Pass every other intended active project with `-ActiveProject`, as for Plan.
 Their declared compatibility and measured payloads are checked, but their files
 are not bundled into the primary project's ZIP.
 
+`-PackageLayout player` selects the existing client-only archive layout;
+`-PlayerLanguage fr` supplies short French installation/rollback instructions.
+The default remains staging with unchanged English instructions. These options
+are accepted only by Package; French requires player layout. For the exact
+private BO3 FF-B witness and separately supplied native prerequisite, use
+[the retained prop recipe](PRIVATE-BO3-PROP.md).
+
 Creator calls the existing `Package-CommunityMod.py`, which remains the only ZIP
 writer. Its existing `manifest.py` and `Distribution-Compat.py` gates check the
 contract, capabilities/source/protocol, exact dependency versions, conflicts,
