@@ -1,0 +1,79 @@
+{
+  "schema": "iw7.stock-option-hud-source-contract/1",
+  "namespace": "sdk_stock_option_hud_v1",
+  "shared_runtime_state": "sdk_stock_option_v1",
+  "frozen_checkpoint": {
+    "revision": "50e08a45b001bb73d744d8d739c149511f9189ef",
+    "source": "sdk_stock_option_v1.gsc",
+    "bytes": 11035,
+    "sha256": "5a28e5a220aedfaed4481bdbd5440aec8c14bf90b5840ae62122d05a86575fba"
+  },
+  "source": {
+    "path": "sdk_stock_option_hud_v1.gsc",
+    "bytes": 12700,
+    "sha256": "6f4b298c28f61029038f5ec850d24a1dec895b6aa442abf420f0091b134a9251"
+  },
+  "activation": {
+    "enable_dvar": "sdk_stock_option_demo_enable",
+    "default_enabled": false,
+    "player_event": "sdk_stock_option_activate",
+    "duration_dvar": "sdk_stock_option_seconds",
+    "default_seconds": 10,
+    "minimum_seconds": 1,
+    "maximum_seconds": 30,
+    "maximum_shots": 64,
+    "maximum_active_players": 1,
+    "maximum_active_weapons": 1
+  },
+  "scope": {
+    "map": "cp_zmb",
+    "delivery": "server-only",
+    "dedicated": true,
+    "private_password_required": true,
+    "lan_only_required": true,
+    "main_port_excluded": 27016,
+    "sv_cheats": 0,
+    "fs_game": "",
+    "new_client_files": [],
+    "new_native_methods": []
+  },
+  "accounting": {
+    "entire_transfer_and_trace_functions_byte_unchanged": true,
+    "hud_wait_or_print_between_ammo_writes": false,
+    "compound_engine_atomicity": "unknown"
+  },
+  "hud": {
+    "entities_per_activation": 1,
+    "owner_local": true,
+    "property": "state.hud",
+    "label": "Stock Option active | <remaining>s",
+    "language": "English",
+    "horzalign": "center",
+    "vertalign": "top",
+    "x": 0,
+    "y": 70,
+    "fontscale": 1.2,
+    "clock": "gettime engine milliseconds",
+    "seconds": "ceil(max(deadline-now,0)/1000)",
+    "poll_ms": 50,
+    "updates": "Only on changed displayed second",
+    "cleanup": "Idempotent destroy before ownership release and stopped notification, plus deadline removal",
+    "allocation_failure": "Stop without ammo write",
+    "new_assets": [],
+    "new_imports": [],
+    "soulbox_state_accessed": false
+  },
+  "installation": {
+    "maximum_stock_option_providers": 1,
+    "conflicts_with": "sdk_stock_option_v1",
+    "ops_profile": "New explicit source pin and HUD-specific run plan required; never reinterpret Timer B"
+  },
+  "qualification": {
+    "runtime_verified": false,
+    "hud_pixels_verified": false,
+    "hud_countdown_execution_verified": false,
+    "hud_cleanup_execution_verified": false,
+    "client_replication_verified": false,
+    "owner_accepted": false
+  }
+}

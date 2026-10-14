@@ -1,5 +1,9 @@
 # Stock Option source prototype
 
+A separate [persistent HUD variant](HUD.md) uses
+`sdk_stock_option_hud_v1.gsc` and its own source/validation pin. This original
+SDK50 file and the E2E plan below remain frozen. Load only one provider.
+
 An original, opt-in server script inspired by classic
 [BO3 Stock Option](https://www.callofduty.com/ca/en/blog/archives/call-of-duty-black-ops-3-zombies--gobblegum-101):
 reserve ammo pays for shots while the magazine remains at its captured level.

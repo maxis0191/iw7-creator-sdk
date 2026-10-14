@@ -1,0 +1,113 @@
+{
+  "schema": "iw7.stock-option-hud-source-validation/1",
+  "date": "2026-10-14",
+  "source_bytes": 12700,
+  "source_sha256": "6f4b298c28f61029038f5ec850d24a1dec895b6aa442abf420f0091b134a9251",
+  "frozen_checkpoint": {
+    "revision": "50e08a45b001bb73d744d8d739c149511f9189ef",
+    "source": "sdk_stock_option_v1.gsc",
+    "bytes": 11035,
+    "sha256": "5a28e5a220aedfaed4481bdbd5440aec8c14bf90b5840ae62122d05a86575fba"
+  },
+  "compiler": "gsc-tool1.5.1.359",
+  "compiler_sha256": "1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb",
+  "offline_phases": [
+    {
+      "mode": "parse",
+      "exit_code": 0,
+      "dry_run": true
+    },
+    {
+      "mode": "comp",
+      "exit_code": 0,
+      "dry_run": false,
+      "output_bytes": 4034,
+      "output_sha256": "27d78b7bdb5fa699594b640c33705b7afd4f229eedba413bc8e2f4d4144acb17"
+    },
+    {
+      "mode": "disasm",
+      "exit_code": 0,
+      "dry_run": false,
+      "input_sha256": "27d78b7bdb5fa699594b640c33705b7afd4f229eedba413bc8e2f4d4144acb17",
+      "output_bytes": 37693,
+      "output_sha256": "5af1b23120fc7329d92c4224047e292152b0c0b4b0380c00debfb62c3672d768"
+    }
+  ],
+  "primary_sources": [
+    {
+      "kind": "retail-reference",
+      "revision": "1dd48a78e55ef9c99519fc5221a206168ce2e98a",
+      "path": "iw7-gsc-dump/decompiled/scripts/cp/utility.gsc",
+      "sha256": "eca64f614fe685af96fb0153b6faa1d88131100485c098746ff46e28e105b918",
+      "lines": [
+        271,
+        1323,
+        1337,
+        1343,
+        2083,
+        2093,
+        2097,
+        2101
+      ],
+      "scope": "Client HUD creation/text fields, local engine time/int conversion, death/disconnect destruction examples; no source copied"
+    },
+    {
+      "kind": "compiler-builtin-table",
+      "revision": "0be361a4b22be0d0997b92ad94506ee5a5f99fc9",
+      "path": "gsc-tool/src/gsc/engine/iw7_func.cpp",
+      "bytes": 40550,
+      "sha256": "a5637127f600900079a47cd686d3f20805000e7d99ad97106c3ad65b00d12575",
+      "lines": [
+        228,
+        259,
+        339
+      ],
+      "bindings": {
+        "gettime": "0x0D8",
+        "int": "0x0F7",
+        "newclienthudelem": "0x147"
+      }
+    },
+    {
+      "kind": "compiler-builtin-table",
+      "revision": "0be361a4b22be0d0997b92ad94506ee5a5f99fc9",
+      "path": "gsc-tool/src/gsc/engine/iw7_meth.cpp",
+      "bytes": 76861,
+      "sha256": "06ea21ebca70c588727cb639a44001dd4ba3339661be445200b9b44f4aa5cf2c",
+      "lines": [
+        162,
+        858
+      ],
+      "bindings": {
+        "destroy": "0x8095",
+        "settext": "0x834D"
+      }
+    }
+  ],
+  "tests": {
+    "status": "pass",
+    "command": "python -B sdk/modding/examples/stock-option/test_hud.py --disassembly runtime/stock-option-hud-a/disassembled/iw7/sdk_stock_option_hud_v1.gscasm -v",
+    "engine_emulated": false,
+    "tests": 6,
+    "passed": 6,
+    "skipped": 0,
+    "actual_compiler_disassembly_checked": true,
+    "pure_clock_helper": "Bounded translation of the actual production helper executed on deadline/second boundaries; not GSC VM execution",
+    "scope": "Frozen source/function byte identity, local-clock rounding, source lifetime/cleanup routes, one HUD handle, exact manifest and compiled HUD call/cleanup order; no executed engine/HUD lifecycle"
+  },
+  "historical_source_tests_rerun": false,
+  "runtime_executed": false,
+  "hud_pixels_verified": false,
+  "hud_countdown_execution_verified": false,
+  "hud_cleanup_execution_verified": false,
+  "owner_accepted": false,
+  "closure_complete": false,
+  "binary_consumption_audited": false,
+  "next_test": "New protected private HUD plan at this source pin; authentic neutral/active/after frames and cleanup at expiry/death/disconnect/level end; keep original SDK50 and Timer B identities.",
+  "source_review": {
+    "source_sha256": "6f4b298c28f61029038f5ec850d24a1dec895b6aa442abf420f0091b134a9251",
+    "independent": true,
+    "blockers": 0,
+    "scope": "Activation-scoped handle, cleanup before ownership release/notify, unchanged entire ammo/lifetime functions and builtin evidence; no tests/compiler/Game executed by reviewer"
+  }
+}
