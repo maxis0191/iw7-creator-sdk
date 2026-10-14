@@ -52,6 +52,7 @@
     "sdk/modding/CREATOR.md",
     "sdk/modding/Creator.ps1",
     "sdk/modding/PRIVATE-BO3-PROP.md",
+    "sdk/modding/IW7-PLAYER-PROJECTILE-REFERENCES.md",
     "sdk/modding/prepare_private_bo3.py",
     "sdk/modding/examples/private-bo3-prop/manifest.json",
     "sdk/modding/examples/private-bo3-prop/physical-validation.json",
