@@ -1,0 +1,64 @@
+{
+  "schema": "iw7.stock-option-source-contract/1",
+  "namespace": "sdk_stock_option_v1",
+  "origin": "Original server script inspired by classic BO3 Stock Option; no BO3 asset",
+  "activation": {
+    "enable_dvar": "sdk_stock_option_demo_enable",
+    "default_enabled": false,
+    "player_event": "sdk_stock_option_activate",
+    "duration_dvar": "sdk_stock_option_seconds",
+    "default_seconds": 10,
+    "minimum_seconds": 1,
+    "maximum_seconds": 30,
+    "maximum_shots": 64,
+    "maximum_active_players": 1,
+    "maximum_active_weapons": 1
+  },
+  "scope": {
+    "map": "cp_zmb",
+    "delivery": "server-only",
+    "dedicated": true,
+    "private_password_required": true,
+    "lan_only_required": true,
+    "main_port_excluded": 27016,
+    "sv_cheats": 0,
+    "fs_game": "",
+    "new_client_files": [],
+    "new_native_methods": []
+  },
+  "accounting": {
+    "activation_full_primary_clip": true,
+    "minimum_clip_capacity": 2,
+    "maximum_clip_capacity": 512,
+    "minimum_reserve": 1,
+    "maximum_reserve": 65535,
+    "accepted_observed_clip_debit": 1,
+    "accepted_external_reserve_change": 0,
+    "reserve_debit_before_clip_restore": true,
+    "yield_between_paired_writes": false,
+    "readback_required": true,
+    "ambiguous_delta_policy": "Stop with no planned write; no delayed refill or guessed shot",
+    "partial_write_policy": "Stop conservatively; may cost an extra round; never guess a rollback or grant an unpaid round",
+    "stop_restores_old_ammo": false,
+    "dual_wield_supported": false,
+    "reload_or_switch_supported": false,
+    "stock_insufficient_policy": "Refuse activation or end before another transfer; subsequent firing remains normal"
+  },
+  "future_private_test": {
+    "fixture_owner": "Agent-Lab integration; not this feature",
+    "fresh_engine_godmode_required_before_enemy_exposure": true,
+    "inactivity": 0,
+    "sv_cheats": 0,
+    "real_fire_required": true,
+    "ammo_before_during_after_required": true,
+    "post_expiry_normal_clip_debit_required": true,
+    "reserve_depletion_and_reload_switch_cancellation_required": true
+  },
+  "qualification": {
+    "weapon_fired_clip_debit_order_verified": false,
+    "compound_engine_atomicity_verified": false,
+    "runtime_verified": false,
+    "client_replication_verified": false,
+    "owner_accepted": false
+  }
+}
