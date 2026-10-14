@@ -88,6 +88,10 @@ reste à côté pour la revue des représentations. Le ZIP joueur contient seule
 `PLAY.txt` et `mods/paris_bo3_static_probe/mod.ff`. Il exclut scripts serveur,
 PowerShell, code source, outils, executable natif et PDB.
 
+La recette reste autonome : aucune dépendance ni déclaration de conflit à
+résoudre par le stager. Les contrôles Distribution d'un seul `fs_game` et des
+collisions de noms d'assets restent applicables à tout autre projet actif.
+
 ## Installation joueur et retour arrière
 
 1. Fermer le jeu. Si `mods/paris_bo3_static_probe` existe déjà, déplacer ce dossier
