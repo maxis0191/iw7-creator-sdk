@@ -13,3 +13,8 @@ trace_spec = importlib.util.spec_from_file_location("stock_option_feature_trace_
 trace_feature = importlib.util.module_from_spec(trace_spec)
 trace_spec.loader.exec_module(trace_feature)
 StockOptionTraceTests = trace_feature.StockOptionTraceTests
+
+hud_spec = importlib.util.spec_from_file_location("stock_option_feature_hud_tests", path.with_name("test_hud.py"))
+hud_feature = importlib.util.module_from_spec(hud_spec)
+hud_spec.loader.exec_module(hud_feature)
+StockOptionHudTests = hud_feature.StockOptionHudTests
