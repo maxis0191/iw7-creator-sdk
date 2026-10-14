@@ -56,3 +56,20 @@ during and after expiry; reserve depletion; refusal at zero reserve; actual
 reload/switch cancellation. Prove normal magazine consumption after stopping.
 No fabricated `weapon_fired`, scripted damage, ammo reset at expiry or claimed
 client/WAN/owner acceptance is part of that evidence.
+
+The machine-readable private test protocol is [e2e-plan.json](e2e-plan.json).
+It retains the original source/compiler checkpoint and pins this separate
+instrumented source. `SHOT` now adds the actual entry, reserve-readback and
+clip-readback samples, while failed paths use `TRACE`. Values not reached by the
+original short-circuit reads remain `unobserved`. One line emits after the path's
+last write; no logging occurs between successful paired writes. `trace_ms` is
+emission time, not a timestamp for every phase. The fields explicitly say
+`observed_handler_order_only=1` and `engine_atomicity=unknown`.
+
+The pure accounting helper is byte unchanged; its earlier 8,064-pair evidence
+remains historical and was not rerun for telemetry. Targeted source/actual
+disassembly checks cover the capture/read/write/emit order. This plan has not
+run and modifies no harness. The phase trace still needs an actual private run;
+offline compiled ordering is not engine timing, atomicity or rendered-client
+proof. The plan identifies full-clip Reload no-ops, genuine-death protection
+constraints and the need for a real second player without automatic cloning.

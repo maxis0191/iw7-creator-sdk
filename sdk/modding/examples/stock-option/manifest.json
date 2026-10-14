@@ -55,8 +55,8 @@
         "role": "server",
         "source": "sdk_stock_option_v1.gsc",
         "destination": "iw7-mod/custom_scripts/cp/sdk_stock_option_v1.gsc",
-        "bytes": 8155,
-        "sha256": "76ffe158e0acb4b10f933d24256ae63fc18bd33e4d3e9b244932b0caf269f0e2",
+        "bytes": 11035,
+        "sha256": "5a28e5a220aedfaed4481bdbd5440aec8c14bf90b5840ae62122d05a86575fba",
         "closure_roots": [
           "scriptfile:custom_scripts/cp/sdk_stock_option_v1.gsc"
         ]
@@ -73,7 +73,7 @@
           "id": "scriptfile:custom_scripts/cp/sdk_stock_option_v1.gsc",
           "kind": "scriptfile",
           "scope": "server",
-          "sha256": "76ffe158e0acb4b10f933d24256ae63fc18bd33e4d3e9b244932b0caf269f0e2",
+          "sha256": "5a28e5a220aedfaed4481bdbd5440aec8c14bf90b5840ae62122d05a86575fba",
           "requires": []
         }
       ],

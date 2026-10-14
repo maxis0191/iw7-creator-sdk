@@ -1,0 +1,498 @@
+{
+  "schema": "iw7.stock-option-e2e-plan/1",
+  "date": "2026-10-14",
+  "status": "unexecuted-plan",
+  "scope": "Protected private actual-input test; not a launch command or runtime receipt",
+  "implementation_owner": "Agent-Lab integration",
+  "source_checkpoint": {
+    "repository": "maxis0191/iw7-creator-sdk",
+    "pull_request": 16,
+    "path": "sdk/modding/examples/stock-option/sdk_stock_option_v1.gsc",
+    "bytes": 11035,
+    "sha256": "5a28e5a220aedfaed4481bdbd5440aec8c14bf90b5840ae62122d05a86575fba",
+    "compiler": {
+      "version": "gsc-tool 1.5.1.359",
+      "bytes": 23029248,
+      "sha256": "1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb",
+      "offline_phases_passed": [
+        "parse-dry",
+        "comp",
+        "disasm"
+      ],
+      "binary_bytes": 3509,
+      "binary_sha256": "2b907170f96e9edef1339bbaf4c3d7f29c263338524e4b22af5b14f5620be52f",
+      "disassembly_bytes": 32760,
+      "disassembly_sha256": "99f294074a95eef304252ae247ae7ef63253365df8e8c7972c6d332659cdc1ae",
+      "binary_consumption_audited": false,
+      "engine_link_verified": false
+    },
+    "source_accounting": {
+      "tests": 7,
+      "valid_pairs": 8064,
+      "passed": true,
+      "rerun_required_for_this_plan": false,
+      "evidence_revision": "d7d4272c752cf1036bffa2c11d289a8537970773",
+      "source_sha256": "76ffe158e0acb4b10f933d24256ae63fc18bd33e4d3e9b244932b0caf269f0e2",
+      "pure_helper_byte_unchanged": true,
+      "pure_helper_sha256": "3d684d59138c0955c345ee777630b7c17e113d1338f0506117fbc7432b821d45"
+    },
+    "parent_merge_revision": "5cc96aadb5c4a6ed0ebfd240649b629f4af2dafd",
+    "revision_binding": "Record exact containing SDK revision in the future run receipt; source and compiler content hashes are pinned here",
+    "telemetry_tests": {
+      "command": "python -B sdk/modding/examples/stock-option/test_trace.py --disassembly runtime/stock-option-telemetry-b/disassembled/iw7/sdk_stock_option_v1.gscasm -v",
+      "tests": 4,
+      "passed": 4,
+      "actual_compiler_disassembly_checked": true,
+      "engine_emulated": false,
+      "production_arithmetic_rerun": false,
+      "scope": "Exact unchanged accounting helper; getter/short-circuit mapping; source path emit order; pinned compiler disassembly setter/readback/failure branch order. Not engine execution or binary-consumption audit."
+    }
+  },
+  "admission": {
+    "root_runtime_go_required": true,
+    "shared_heavy_lease_required_at_execution": true,
+    "reuse_existing_suitable_test_dedicated": true,
+    "ordinary_client": "Existing base client; preserve any occupied owner client",
+    "new_client_or_stock_clone": false,
+    "map": "cp_zmb",
+    "dedicated": true,
+    "excluded_port": 27016,
+    "lan_only": true,
+    "password_nonempty": true,
+    "sv_cheats": 0,
+    "fs_game": "",
+    "fresh_engine_godmode_before_enemy_exposure": true,
+    "inactivity": 0,
+    "protection_failure_policy": "Abort before input/exposure; recover only through reviewed ownership rules",
+    "identity_backup_restore_bank_main_audit": "Required reviewed Agent-Lab preflight and final receipts; no SDK operations added"
+  },
+  "activation": {
+    "enable_dvar": "sdk_stock_option_demo_enable",
+    "enable_value": 1,
+    "seconds_dvar": "sdk_stock_option_seconds",
+    "seconds_value": 10,
+    "player_event": "sdk_stock_option_activate",
+    "maximum_shots": 64,
+    "maximum_active_players": 1,
+    "maximum_active_weapons": 1,
+    "minimum_clip_capacity": 2,
+    "full_primary_clip_required": true,
+    "minimum_initial_reserve": 2,
+    "input": "Real separated Fire events from actual client; actual Reload and weapon selection",
+    "input_spacing": "Allow each observed shot and ammo snapshot to settle before the next input; do not infer event count from key presses",
+    "forbidden": [
+      "synthetic weapon_fired",
+      "fabricated ammo deltas",
+      "scripted damage as firing evidence",
+      "ammo reset during effect or at stop",
+      "other ammo modifier",
+      "BO3 assets/client additions"
+    ]
+  },
+  "observability": {
+    "current_source_logs": [
+      {
+        "marker": "READY",
+        "proves": "Opt-in init reached; not engine-link/gameplay qualification"
+      },
+      {
+        "marker": "ARMED",
+        "fields": [
+          "weapon",
+          "clip",
+          "stock",
+          "seconds",
+          "activation",
+          "deadline_ms"
+        ],
+        "proves": "Activation snapshot accepted"
+      },
+      {
+        "marker": "SHOT",
+        "fields": [
+          "weapon",
+          "n",
+          "clip",
+          "stock",
+          "total",
+          "activation",
+          "attempt",
+          "trace_ms",
+          "fired_weapon",
+          "entry_clip",
+          "entry_reserve",
+          "after_debit_clip",
+          "after_debit_reserve",
+          "after_restore_clip",
+          "after_restore_reserve",
+          "outcome",
+          "observed_handler_order_only",
+          "engine_atomicity"
+        ],
+        "proves": "Confirmed handler state and captured actual getter samples for three phases; engine atomicity/notify ordering still need actual-run evidence"
+      },
+      {
+        "marker": "STOP",
+        "fields": [
+          "reason",
+          "shots",
+          "ammo_restored"
+        ],
+        "proves": "Idempotent stop reached; actual post-stop ammo still requires measurement"
+      },
+      {
+        "marker": "TRACE",
+        "fields": [
+          "activation",
+          "attempt",
+          "n",
+          "trace_ms",
+          "fired_weapon",
+          "weapon",
+          "entry_clip",
+          "entry_reserve",
+          "after_debit_clip",
+          "after_debit_reserve",
+          "after_restore_clip",
+          "after_restore_reserve",
+          "outcome",
+          "observed_handler_order_only",
+          "engine_atomicity"
+        ],
+        "proves": "Rejected path sample/outcome; unobserved values were not read; not a successful transfer"
+      }
+    ],
+    "full_phase_qualification_with_current_trace": "unexecuted; requires real engine run, not offline order",
+    "previous_source_phase_gap": "No raw fired_weapon/entry sample, reserve-written sample or clip-restored sample is emitted. A separate weapon_fired thread may run after transfer() and cannot prove its intra-handler ordering.",
+    "phase_capture_source_available": true,
+    "phase_trace_runtime_observed": false,
+    "record_format": "Single semicolon-separated key=value line per transfer path after its last write; SHOT only confirmed, TRACE otherwise; unobserved is a missing value, not zero",
+    "phase_capture": {
+      "status": "implemented source-only in this separately pinned checkpoint; runtime unexecuted",
+      "scope": "transfer() captures at existing observations, retains original short-circuit reads, then emits one SHOT/TRACE record after the final write of that path; failure paths stop/return without a later write",
+      "phases": [
+        "event_entry",
+        "reserve_write_verified",
+        "clip_restore_verified"
+      ],
+      "fields": [
+        "activation",
+        "attempt",
+        "n",
+        "trace_ms",
+        "fired_weapon",
+        "weapon",
+        "entry_clip",
+        "entry_reserve",
+        "after_debit_clip",
+        "after_debit_reserve",
+        "after_restore_clip",
+        "after_restore_reserve",
+        "outcome",
+        "observed_handler_order_only",
+        "engine_atomicity"
+      ],
+      "constraints": [
+        "No wait/thread/notify or logging between reserve debit and clip restore",
+        "No new setter or rollback",
+        "No guessed weapon or debit",
+        "Preserve stop paths and old snapshots",
+        "This GSC delta has its own source/compiler pins and independent source review; older evidence is explicitly historical"
+      ],
+      "claim_limit": "Callback-visible getter samples after initial context guard; no timestamp of notification delivery, no global debit/notify ordering or engine compound atomicity claim",
+      "time_scope": "trace_ms is post-write emission time, not per-phase timing"
+    },
+    "historical_gap_source_sha256": "76ffe158e0acb4b10f933d24256ae63fc18bd33e4d3e9b244932b0caf269f0e2"
+  },
+  "minimum_evidence": {
+    "input_receipt": [
+      "actual client/dedicated process identity",
+      "source/deployed hashes",
+      "actual Fire/Reload/switch timestamps and event counts",
+      "fresh protection and inactivity receipts"
+    ],
+    "engine_ammo_sample_fields": [
+      "case_id",
+      "sample_sequence",
+      "server_time_ms",
+      "player_role",
+      "current_weapon",
+      "clip",
+      "reserve",
+      "total",
+      "isreloading",
+      "isswitchingweapon",
+      "alive",
+      "active_state_defined",
+      "shared_owner_matches_role"
+    ],
+    "phase_trace_fields": [
+      "activation",
+      "attempt",
+      "n",
+      "trace_ms",
+      "fired_weapon",
+      "weapon",
+      "entry_clip",
+      "entry_reserve",
+      "after_debit_clip",
+      "after_debit_reserve",
+      "after_restore_clip",
+      "after_restore_reserve",
+      "outcome",
+      "observed_handler_order_only",
+      "engine_atomicity"
+    ],
+    "sample_authority": "Actual engine getters; state/log-derived values must remain separately labelled",
+    "images": [
+      {
+        "id": "baseline",
+        "content": "Unmodified client weapon/ammo HUD before normal Fire"
+      },
+      {
+        "id": "active",
+        "content": "Actual Stock Option activation message and same weapon/ammo HUD during effect after at least two observed shots"
+      },
+      {
+        "id": "after",
+        "content": "Same weapon/ammo HUD after effect ended and at least two normal shots"
+      }
+    ],
+    "image_binding": "Native frames, actual capture times, local file hash/bytes and nearest telemetry sequence; preserve differing client/server clocks. Do not annotate synthetic counters into screenshots. Images corroborate rendering, not intra-handler ordering.",
+    "restoration": [
+      "managed files restored",
+      "Main identity/hash audit passed",
+      "bank delta absent",
+      "test processes closed/restored",
+      "shared lease released"
+    ],
+    "retention": "Private ignored run evidence and hash-bound receipt; no binaries, screenshots, player IDs, credentials or logs committed to SDK"
+  },
+  "cases": [
+    {
+      "id": "normal_before",
+      "status": "unexecuted",
+      "steps": [
+        "Measure full equipped primary clip C and reserve R",
+        "Real Fire twice, separately; measure after each actual event",
+        "Perform actual retail reload and measure completed full clip before activation"
+      ],
+      "expected": {
+        "shots_observed_minimum": 2,
+        "clip_debit_per_normal_shot": 1,
+        "reserve_delta_per_normal_shot": 0,
+        "total_debit_per_shot": 1
+      },
+      "limits": "No reload/other ammo change between normal shot samples; retail reload has its own recorded reserve debit"
+    },
+    {
+      "id": "active_transfer",
+      "status": "unexecuted",
+      "steps": [
+        "Activate for 10 seconds on P1 with full clip C and reserve R>=2",
+        "Record ARMING time and actual state.deadline without mutating state",
+        "Real Fire at least twice before deadline, separately; record each actual weapon_fired and paired engine ammo samples"
+      ],
+      "expected_phase_order": [
+        "event_entry: clip=C-1,reserve=prior_R",
+        "reserve_write_verified: clip=C-1,reserve=prior_R-1",
+        "clip_restore_verified: clip=C,reserve=prior_R-1"
+      ],
+      "expected": {
+        "shots_observed_minimum": 2,
+        "confirmed_final_clip": "C",
+        "reserve_debit_per_accepted_shot": 1,
+        "total_debit_per_accepted_shot": 1,
+        "writes_before_deadline_only": true
+      },
+      "failure": "Pre-debit, missing/mismatched weapon or ambiguous delta must stop; never fake a debit to qualify the feature"
+    },
+    {
+      "id": "expiry_and_normal_after",
+      "status": "unexecuted",
+      "steps": [
+        "Keep reserve positive after active shots",
+        "Observe STOP expired at the 10-second boundary and cleared active owner/state",
+        "Real Fire twice after expiry, separately; measure after each actual event"
+      ],
+      "expected": {
+        "shots_after_stop_minimum": 2,
+        "clip_debit_per_normal_shot": 1,
+        "reserve_delta_per_normal_shot": 0,
+        "total_debit_per_shot": 1,
+        "post_stop_stock_restoration": false,
+        "later_SHOT_for_this_activation": 0
+      },
+      "timing_limit": "Use actual engine time/deadline and observer sampling uncertainty; claim neither exact wall-clock scheduling nor a late accepted write from screenshots"
+    },
+    {
+      "id": "depletion_zero_reserve",
+      "status": "unexecuted",
+      "steps": [
+        "Separate private case: full primary clip and independently measured reserve=2 before activation; declare any bounded harness setup",
+        "Real Fire twice before expiry",
+        "Observe reserve=0, STOP reserve_empty and cleared owner/state",
+        "Request explicit activation at reserve=0; then real Fire normally"
+      ],
+      "expected": {
+        "paid_transfers": 2,
+        "reserve_after_second": 0,
+        "zero_reserve_activation_accepted": false,
+        "normal_followup_clip_debit": 1,
+        "negative_reserve": false,
+        "unpaid_clip_refill": false
+      },
+      "limits": "Finite initial setup is not consumption evidence; no ammo reset between shots, at zero reserve or at stop"
+    },
+    {
+      "id": "switch_and_reactivate",
+      "status": "unexecuted",
+      "steps": [
+        "Activate and confirm a real paid shot",
+        "Select another actual primary weapon; record current weapon/switching state and stop",
+        "Confirm no old-weapon refill or owner/state retention",
+        "Return to a full eligible primary and request a new activation"
+      ],
+      "expected": {
+        "old_activation_later_SHOT": 0,
+        "owner_released": true,
+        "active_state_cleared": true,
+        "new_eligible_activation_possible": true
+      },
+      "limits": "A switch input alone is not a switch event; record actual engine weapon/state"
+    },
+    {
+      "id": "reload_refusal_and_cancellation",
+      "status": "unexecuted; cancellation may be unexercisable with full restored clip",
+      "steps": [
+        "Outside effect, spend a normal round and start actual Reload",
+        "Request activation while actual isreloading is true; confirm refusal",
+        "Attempt normal Reload during effect and record actual engine behavior"
+      ],
+      "expected": {
+        "activation_during_real_reload": false,
+        "if_actual_reload_begins_during_effect_then_owner_released": true,
+        "if_actual_reload_begins_then_later_SHOT": 0
+      },
+      "limits": "Full restored clip can make Reload a no-op. If no actual reload state/notification occurs, record cancellation not exercised; do not lower ammo, fabricate reload_start or relabel key input as cancellation proof"
+    },
+    {
+      "id": "duplicate_and_second_owner",
+      "status": "unexecuted; real P2 admission required for second-owner case",
+      "steps": [
+        "P1 active: request duplicate activation and observe unchanged deadline/state",
+        "Only if a separately available real P2 exists, request P2 activation while P1 owns effect",
+        "Measure P2 normal firing and verify P1 remains sole owner",
+        "After P1 stops, permit eligible P2 activation and observe ownership transfer"
+      ],
+      "expected": {
+        "duplicate_refresh": false,
+        "simultaneous_owners": 1,
+        "P2_while_P1_active": "normal ammo consumption; no P2 active state",
+        "ownership_after_P1_stop": "released then independently activatable"
+      },
+      "limits": "No fake player entity, sequential single-client claim of concurrency or automatic client clone. Without real P2, second-owner runtime qualification remains not exercised"
+    },
+    {
+      "id": "death_disconnect_respawn_map_end",
+      "status": "unexecuted; genuine death requires a separate safe harness decision",
+      "steps": [
+        "Exercise an authorized actual disconnect while active; verify owner released and no orphan state",
+        "Reconnect/respawn under fresh engine protection before exposure; verify normal ammo and eligible activation",
+        "Observe actual map end cleanup only in the private candidate",
+        "Death case only with a separately approved genuine engine death in an enemy-free controlled condition and protection re-established before the next exposure"
+      ],
+      "expected": {
+        "owner_released": true,
+        "stopped_activation_later_SHOT": 0,
+        "fresh_player_stale_active_state": false,
+        "map_end_listener_state_cleared": true
+      },
+      "limits": "Maintain godmode for normal tests. Synthetic death/disconnect/faux_spawn/game_ended or scripted damage proves no engine lifecycle; if actual death is unavailable, keep that case unexercised"
+    },
+    {
+      "id": "shot_budget",
+      "status": "unexecuted; conditional actual-input case",
+      "steps": [
+        "Only if a suitable actual primary can deliver at least 65 observed single-round events within 10 seconds and reserve>=65, use real Fire with preserved privacy/protection",
+        "Observe STOP shot_budget after accepted shot 64 and normal shot 65"
+      ],
+      "expected": {
+        "maximum_accepted_shots": 64,
+        "accepted_65th_transfer": false,
+        "normal_followup_clip_debit": 1
+      },
+      "limits": "Do not extend the 10-second scenario, alter weapon fire rate, fabricate events or count key presses. If expiry wins or fewer events occur, runtime shot-budget boundary remains unexercised; source bound stays source evidence"
+    }
+  ],
+  "result_contract": {
+    "per_case_statuses": [
+      "passed-with-evidence",
+      "failed",
+      "blocked",
+      "not-exercised"
+    ],
+    "missing_event_or_frame": "blocked or not-exercised, never inferred pass",
+    "current_trace_may_support": "Actual engine callback-visible samples once observed in a hash-bound protected run; no dynamic evidence exists yet",
+    "complete_gate_requires": [
+      "Exact input/deployed/source binding",
+      "Actual engine Fire and callback-visible phase measurements",
+      "Minimum before/active/after shots and images",
+      "State exactly which cancellation/lifecycle cases were exercised; pending cases cannot inherit runtime qualification",
+      "Independent post-stop ammo and owner/state cleanup",
+      "Successful private restoration receipts"
+    ],
+    "not_implied": [
+      "BO3 retail implementation or three-minute behavior",
+      "compound engine atomicity",
+      "all weapons/maps/perks",
+      "multiplayer without real P2",
+      "WAN/client-wide compatibility",
+      "owner acceptance",
+      "complete package closure"
+    ],
+    "runtime_executed": false,
+    "runtime_qualified": false,
+    "owner_accepted": false,
+    "run_receipt": null,
+    "minimum_visible_demo_cases": [
+      "normal_before",
+      "active_transfer",
+      "expiry_and_normal_after",
+      "depletion_zero_reserve"
+    ],
+    "full_plan_coverage_requires": "All named cases passed with actual evidence; blocked/not-exercised cases remain outside any claimed coverage"
+  },
+  "previous_source_checkpoint": {
+    "repository": "maxis0191/iw7-creator-sdk",
+    "merge_revision": "5cc96aadb5c4a6ed0ebfd240649b629f4af2dafd",
+    "author_revision": "d7d4272c752cf1036bffa2c11d289a8537970773",
+    "pull_request": 15,
+    "path": "sdk/modding/examples/stock-option/sdk_stock_option_v1.gsc",
+    "bytes": 8155,
+    "sha256": "76ffe158e0acb4b10f933d24256ae63fc18bd33e4d3e9b244932b0caf269f0e2",
+    "compiler": {
+      "version": "gsc-tool 1.5.1.359",
+      "bytes": 23029248,
+      "sha256": "1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb",
+      "offline_phases_passed": [
+        "parse-dry",
+        "comp-dry",
+        "comp",
+        "disasm"
+      ],
+      "binary_bytes": 2834,
+      "binary_sha256": "37fafa6f7307bb4100c5678de1238217388debf7b23c84a097f2206907bd49ee",
+      "disassembly_bytes": 25884,
+      "disassembly_sha256": "1d402dde3bb1a375dbc2c5e75073f8577eae5d2296d05fc3f9969b63897ee618",
+      "binary_consumption_audited": false,
+      "engine_link_verified": false
+    },
+    "source_accounting": {
+      "tests": 7,
+      "valid_pairs": 8064,
+      "passed": true,
+      "rerun_required_for_this_plan": false
+    }
+  }
+}

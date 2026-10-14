@@ -1,8 +1,18 @@
 {
   "schema": "iw7.stock-option-source-validation/1",
   "date": "2026-10-14",
-  "source_bytes": 8155,
-  "source_sha256": "76ffe158e0acb4b10f933d24256ae63fc18bd33e4d3e9b244932b0caf269f0e2",
+  "source_bytes": 11035,
+  "source_sha256": "5a28e5a220aedfaed4481bdbd5440aec8c14bf90b5840ae62122d05a86575fba",
+  "previous_checkpoint": {
+    "merge_revision": "5cc96aadb5c4a6ed0ebfd240649b629f4af2dafd",
+    "source_bytes": 8155,
+    "source_sha256": "76ffe158e0acb4b10f933d24256ae63fc18bd33e4d3e9b244932b0caf269f0e2",
+    "binary_bytes": 2834,
+    "binary_sha256": "37fafa6f7307bb4100c5678de1238217388debf7b23c84a097f2206907bd49ee",
+    "disassembly_bytes": 25884,
+    "disassembly_sha256": "1d402dde3bb1a375dbc2c5e75073f8577eae5d2296d05fc3f9969b63897ee618",
+    "runtime_executed": false
+  },
   "compiler": "gsc-tool1.5.1.359",
   "compiler_sha256": "1adfd67414a9b886cbad57ee0378f622eed485bcef7711322aee478e298fadcb",
   "offline_phases": [
@@ -14,31 +24,31 @@
     {
       "mode": "comp",
       "exit_code": 0,
-      "dry_run": true
-    },
-    {
-      "mode": "comp",
-      "exit_code": 0,
       "dry_run": false,
-      "output_bytes": 2834,
-      "output_sha256": "37fafa6f7307bb4100c5678de1238217388debf7b23c84a097f2206907bd49ee"
+      "output_bytes": 3509,
+      "output_sha256": "2b907170f96e9edef1339bbaf4c3d7f29c263338524e4b22af5b14f5620be52f"
     },
     {
       "mode": "disasm",
       "exit_code": 0,
       "dry_run": false,
-      "input_sha256": "37fafa6f7307bb4100c5678de1238217388debf7b23c84a097f2206907bd49ee",
-      "output_bytes": 25884,
-      "output_sha256": "1d402dde3bb1a375dbc2c5e75073f8577eae5d2296d05fc3f9969b63897ee618"
+      "input_sha256": "2b907170f96e9edef1339bbaf4c3d7f29c263338524e4b22af5b14f5620be52f",
+      "output_bytes": 32760,
+      "output_sha256": "99f294074a95eef304252ae247ae7ef63253365df8e8c7972c6d332659cdc1ae"
     }
   ],
-  "source_tests": {
+  "historical_source_tests": {
+    "evidence_revision": "d7d4272c752cf1036bffa2c11d289a8537970773",
+    "source_sha256": "76ffe158e0acb4b10f933d24256ae63fc18bd33e4d3e9b244932b0caf269f0e2",
     "command": "python -B sdk/modding/examples/stock-option/test_source.py -v",
     "tests": 7,
     "passed": 7,
     "production_arithmetic_executed": true,
     "engine_emulated": false,
-    "exhaustive_valid_clip_reserve_pairs": 8064
+    "exhaustive_valid_clip_reserve_pairs": 8064,
+    "rerun_for_telemetry_change": false,
+    "production_pure_helper_byte_unchanged": true,
+    "pure_helper_sha256": "3d684d59138c0955c345ee777630b7c17e113d1338f0506117fbc7432b821d45"
   },
   "runtime_executed": false,
   "real_weapon_fired_observed": false,
@@ -48,5 +58,14 @@
   "closure_complete": false,
   "next_test": "Protected private actual Fire with paired clip/reserve observations before, during, after expiry and depletion; reload/switch cancellation and normal fallback",
   "external_script_calls_declared_by_disassembler": 0,
-  "binary_consumption_audited": false
+  "binary_consumption_audited": false,
+  "telemetry_tests": {
+    "command": "python -B sdk/modding/examples/stock-option/test_trace.py --disassembly runtime/stock-option-telemetry-b/disassembled/iw7/sdk_stock_option_v1.gscasm -v",
+    "tests": 4,
+    "passed": 4,
+    "actual_compiler_disassembly_checked": true,
+    "engine_emulated": false,
+    "production_arithmetic_rerun": false,
+    "scope": "Exact unchanged accounting helper; getter/short-circuit mapping; source path emit order; pinned compiler disassembly setter/readback/failure branch order. Not engine execution or binary-consumption audit."
+  }
 }
