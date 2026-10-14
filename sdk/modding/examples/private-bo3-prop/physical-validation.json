@@ -1,0 +1,134 @@
+{
+  "schema": "iw7.private-bo3-packet-validation/1",
+  "date": "2026-10-14",
+  "scope": "Actual private mod-only archives; no game installation or new runtime qualification",
+  "sdk": {
+    "existing_creator_and_zip_writer": true,
+    "pull_requests": [
+      20,
+      21
+    ],
+    "merge": "9171aa142cdfc0c458f02529995e4dd9b2081dda",
+    "source": "d0822dadd54b168c700a7fa16f28b28057815bbf"
+  },
+  "driver": {
+    "capsule_sha256": "0cae508b7f37a973e860ce591bcf76aa059dcbcf9a3ab2d1436cdba01ed9ff2c",
+    "resource_source_revision": "f2e5362fe8c1536396d56ee14f55735374384091",
+    "local_single_use": true,
+    "operational_files": 7,
+    "atomic_job_source_sha256": "ddefa72ff2b98286cd585d1178c13e67dcd646bbcf39d51365660901366c5ca8",
+    "capsule_bytes": 3672
+  },
+  "first_attempt": {
+    "payload_started": false,
+    "cause": "JSON registry creation time rehydrated as DateTime failed a direct ISO string comparison",
+    "tree_closed": true,
+    "pty_exit_code": 1,
+    "preserved": true,
+    "reservation_released": true
+  },
+  "correction": {
+    "wrong_one_tick_denied": true,
+    "accepted_types": [
+      "String",
+      "DateTime",
+      "DateTimeOffset"
+    ],
+    "pid_image_parent_preserved": true,
+    "owned_job_mock_groups_passed": 7,
+    "date_kind_regression_groups_passed": 15,
+    "packet_synthetic_groups_passed": 3,
+    "exact_utc_ticks": true
+  },
+  "execution": {
+    "full_job_tree_closed": true,
+    "fastfile_build": false,
+    "original_identities_absent": true,
+    "kind": "Analysis",
+    "independent_closure_utc": "2026-10-14T11:42:28.5908002Z",
+    "cleanup_confirmed": true,
+    "original_host": "Bundled PowerShell -NoLogo -NoProfile -NoExit -File",
+    "pty_exit_code": 0,
+    "game": false,
+    "lease_count_after": 0,
+    "child_exit_code": 0,
+    "native_build": false,
+    "reservation_released": true
+  },
+  "physical": {
+    "verified": true,
+    "creator_archive": {
+      "bytes": 32590,
+      "sha256": "1dcf4d74fcb25954a0adfd99a7af236cd8979527830281a3bfd15feb39234945",
+      "members": {
+        "fastdl/mods/paris_bo3_static_probe/mod.ff": {
+          "bytes": 9904,
+          "sha256": "50ca9124d35f4ea5e9f017adafcf012df01b9991d1fcde2597c8f0f58aabcd0c"
+        },
+        "manifest.json": {
+          "bytes": 3481,
+          "sha256": "56d389bdc1932634aa0f7ae90910eb9b78a160914390cbbaf15dc3df71ede410"
+        },
+        "server/iw7-mod/custom_scripts/cp/paris_bo3_static_probe.gsc": {
+          "bytes": 8607,
+          "sha256": "a8b8d07e7d3bad415b1bb69d09954b21342ba54c9d4b4d7137321f9e3f8e637a"
+        },
+        "server/mods/paris_bo3_static_probe/mod.ff": {
+          "bytes": 9904,
+          "sha256": "50ca9124d35f4ea5e9f017adafcf012df01b9991d1fcde2597c8f0f58aabcd0c"
+        }
+      }
+    },
+    "player_archive": {
+      "bytes": 10760,
+      "sha256": "0cea6ad05751dc14fc4b02b91f293c2e906317734291f7ebc0446261af7e254d",
+      "members": {
+        "PLAY.txt": {
+          "bytes": 578,
+          "sha256": "66db04dca192df3dc0b6a6fa62eb40dfb66daf580c80fe0f15c26841fc9b1739"
+        },
+        "mods/paris_bo3_static_probe/mod.ff": {
+          "bytes": 9904,
+          "sha256": "50ca9124d35f4ea5e9f017adafcf012df01b9991d1fcde2597c8f0f58aabcd0c"
+        }
+      }
+    },
+    "project_manifest": {
+      "bytes": 5016,
+      "sha256": "3690ea5d6b051645c985d584af529f3776aa174a318ba0cd225aff179cba7569"
+    },
+    "ff": {
+      "bytes": 9904,
+      "sha256": "50ca9124d35f4ea5e9f017adafcf012df01b9991d1fcde2597c8f0f58aabcd0c"
+    },
+    "server_script": {
+      "bytes": 8607,
+      "sha256": "a8b8d07e7d3bad415b1bb69d09954b21342ba54c9d4b4d7137321f9e3f8e637a"
+    },
+    "fresh_stage_verified": true,
+    "copy_backup_rollback_verified": true,
+    "original_temporary_identity_restored": true,
+    "temporary_fixture_removed": true,
+    "game_installation_touched": false,
+    "native_prerequisite_measured": false,
+    "native_supplied_separately": true,
+    "installed": false,
+    "copy_and_play_ready": false,
+    "runtime_ready": false,
+    "owner_accepted": false,
+    "public_deployment": false,
+    "gallery_copied": false
+  },
+  "boundaries": {
+    "assets_binaries_logs_machine_paths_committed": false,
+    "owner_accepted": false,
+    "animation_qualified": false,
+    "new_package_install_rejoin_tested": false,
+    "authentic_bo3_textures": false,
+    "ready_to_deploy": false,
+    "main_changed": false,
+    "collision_qualified": false,
+    "archives_private_local_only": true,
+    "historical_game_proof_replayed": false
+  }
+}
