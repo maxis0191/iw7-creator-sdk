@@ -65,6 +65,8 @@
     "sdk/modding/examples/original-rig-probe/SCENARIO.md",
     "sdk/modding/examples/original-rig-probe/sdk_original_rig_probe.gsc",
     "sdk/modding/examples/original-rig-probe/test_example.py",
+    "sdk/modding/examples/original-rig-stock-witness/SCENARIO.md",
+    "sdk/modding/examples/original-rig-stock-witness/sdk_original_rig_stock_witness.gsc",
     "sdk/modding/examples/original-sound/Complete-StaticClosure.py",
     "sdk/modding/examples/original-sound/manifest.json",
     "sdk/modding/examples/original-sound/Materialize-Plan.ps1",
