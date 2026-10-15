@@ -202,6 +202,21 @@ def prepare_writer_inputs(project, output, tools_root, native_source_root, *, ma
             "runtime_ready": False, "owner_accepted": False}
 
 
+def _material_producer(tools_root):
+    directory = Path(tools_root) / "tools-source/asset-bridge/surfaces"
+    cached = sys.modules.get("inspect_content")
+    if cached is not None and Path(cached.__file__).resolve() != (directory / "inspect_content.py").resolve():
+        raise ValueError("Conflicting material producer already loaded; use a fresh Python process")
+    previous = sys.path[:]
+    try:
+        # The reviewed module imports its inspect_content sibling before adding
+        # the image bridge. A spec loader alone does not add this directory.
+        sys.path.insert(0, str(directory))
+        return module(directory / "authored_dds_material.py", "creator_original_material")
+    finally:
+        sys.path[:] = previous
+
+
 def material_inputs(project, tools_root, *, manifest):
     """Return existing DDS/material producer payloads from explicit author inputs.
 
@@ -215,8 +230,7 @@ def material_inputs(project, tools_root, *, manifest):
 def _material_inputs(report, context, tools_root):
     f, root, inputs = context["shared"], context["root"], context["inputs"]
     data = report["descriptor"]
-    producer = module(Path(tools_root) / "tools-source/asset-bridge/surfaces/authored_dds_material.py",
-                      "creator_original_material")
+    producer = _material_producer(tools_root)
     texture = data["texture"]
     if texture["kind"] == "rgba8":
         # Use the first validated in-memory snapshot, never a reread that could

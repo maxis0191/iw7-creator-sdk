@@ -39,6 +39,11 @@ bytes per pixel. It is text, not a generated bitmap or measured DDS. The real
 producer's `rgba8_dds` uses its existing encoder; the SDK adds no image serializer.
 DDS inputs use its existing strict single-2D/one-mip DX10 subset. Plan never
 opens DDS bytes. The material producer alone validates the actual DDS/layout.
+The examples declare slot 1 for the retained Material C template layout: index
+0 is its normal (semantic 15), index 1 its diffuse (semantic 14). Supply and pin
+the actual template/sidecars under their applicable admission before preparation;
+the declaration does not authenticate a template or prove CBT/render behavior.
+Other templates need their own explicit correct slot; no binding is reordered.
 
 `material_template` maps explicit roles to relative author project paths:
 material, statebits, statebitsmap, optionally stateinfo/cbi/cbt as required by

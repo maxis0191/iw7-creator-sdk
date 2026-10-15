@@ -4,6 +4,8 @@ Source only. This is a third data project through the same original author
 inputs; its 256 x 256 x 16 box is not a restriction on other projects. Its
 model-local bounds are [-128,-128,0] to [128,128,16], with 24 vertices/12 triangles.
 Original yellow/dark pixel source and the material-template paths remain editable.
+The source recipe selects diffuse slot 1 for the known Material C layout, keeping
+its normal at slot 0. Actual template/sidecar identity remains pending admission.
 No model, DDS file, FF or runtime result is supplied by this source example.
 
 | Binding | Exact project identity |

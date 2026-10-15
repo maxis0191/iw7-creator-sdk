@@ -52,6 +52,7 @@ class AuthorInputTests(unittest.TestCase):
             self.assertTrue(sdk.validate(manifest, stage="plan")["valid"])
             self.assertFalse(sdk.validate(manifest, stage="package")["valid"])
             self.assertTrue(report["source_contract_valid"])
+            self.assertEqual(report["descriptor"]["texture"]["slot"], 1)
             for key in ("geometry_verified", "opaque_inputs_read", "build_executed", "package_ready", "runtime_ready", "owner_accepted"):
                 self.assertIs(report[key], False)
             self.assertTrue({"manifest", "authoring", "geometry", "script", "rgba8"} <= set(report["inputs"]))
@@ -192,6 +193,37 @@ class AuthorInputTests(unittest.TestCase):
         self.assertEqual(result["material_name"], "sdk_turn_prism_material")
         self.assertEqual(set(result["template"]), {"material", "statebits", "statebitsmap"})
         self.assertEqual(before, {p.relative_to(self.project): p.read_bytes() for p in self.project.rglob("*") if p.is_file()})
+
+    @unittest.skipUnless((ROOT / "tools-source/asset-bridge/surfaces/authored_dds_material.py").is_file(),
+                         "Prepared exact producer sources required")
+    def test_real_material_producer_import_in_fresh_host_restores_search_path(self):
+        # No producer mock, retail template, DDS/FF file or native process. The
+        # invalid owned bytes must reach the real API and receive its refusal.
+        script = Path(self.temp.name) / "fresh_import.py"
+        script.write_text('''import importlib.util
+from pathlib import Path
+import sys
+root = Path(sys.argv[1])
+spec = importlib.util.spec_from_file_location("fresh_sdk_author", root / "sdk/modding/creator_authoring.py")
+author = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(author)
+before = sys.path[:]
+producer = author._material_producer(root)
+assert sys.path == before, "producer import leaked sys.path"
+try:
+    producer.prepare_material(zone="source_case", image_name="source_case_color",
+        material_name="source_case_material", texture_slot=1,
+        dds=b"INVALID OWNED SOURCE TEST BYTES; NOT A DDS", template={})
+except ValueError:
+    pass
+else:
+    raise AssertionError("real material producer accepted invalid source bytes")
+print("actual pinned material API imported and refused invalid input")
+''', encoding="utf-8")
+        run = subprocess.run([__import__("sys").executable, "-B", str(script), str(ROOT)],
+                             cwd=ROOT, capture_output=True, text=True, timeout=20)
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertIn("actual pinned material API imported", run.stdout)
 
     @unittest.skipUnless(shutil.which("pwsh"), "PowerShell 7 required for actual Plan dispatch")
     def test_real_creator_plan_binds_inputs_but_refuses_unproved_capability(self):
