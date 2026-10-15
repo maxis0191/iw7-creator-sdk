@@ -118,6 +118,9 @@ def _checked(project, source_root, build_root, tools_root, manifest):
         value = record["Stdout"]
         require(type(value) is str and not value.startswith(("\\\\?\\", "\\\\.\\", "//?/", "//./")),
                 "Ordinary reader output required")
+        # Apply the existing relative-path envelope before walking filesystem
+        # ancestors; a bounded JSON string can still contain thousands of them.
+        require(len(value) <= len(str(build)) + 1 + 240, "Bounded reader provenance required")
         path = Path(value)
         require(path.is_absolute(), "Absolute reader provenance required")
         require(all(f.sdk.transport.safe_path(part) for part in value[len(path.anchor):].replace("\\", "/").split("/")),

@@ -215,6 +215,13 @@ class OriginalReceiptTests(unittest.TestCase):
             self.bind()
         self.assertFalse((self.project / "composition.json").exists())
 
+    def test_reader_path_envelope_is_enforced_before_filesystem_ancestor_walk(self):
+        self.state["GeometryReader"]["Stdout"] = str(self.build) + "/ordinary" * 150 + "/stdout.log"
+        self.save_state()
+        with self.assertRaisesRegex(ValueError, "Bounded reader provenance"):
+            self.bind()
+        self.assertFalse((self.project / "composition.json").exists())
+
     def test_nested_reader_mutation_after_first_snapshot_refuses_bind_and_materialize(self):
         names = self.nested_readers()
         for action in ("Bind", "Materialize"):
