@@ -21,7 +21,7 @@ def body(text, name):
 
 
 def require_gates(text):
-    activation = body(text, "activate").split("level.sdk_raygun_pap_registration = state;", 1)[0]
+    activation = body(text, "activate_pair").split("level.sdk_raygun_pap_registration = state;", 1)[0]
     for guard in ("!isdefined(assets_observed)", "assets_observed != true",
                   "!isdefined(scenario_reviewed)", "scenario_reviewed != true",
                   "!private_context(approved_fs_game)", "!isplayer(self)", "!isalive(self)",
@@ -43,6 +43,29 @@ def require_gates(text):
                   'getdvarint("g_inactivity") == 0'):
         if guard not in context:
             raise ValueError("Missing private context: " + guard)
+
+
+def require_pair_contract(text):
+    wrapper = body(text, "activate").strip()
+    if wrapper != 'return activate_pair("raygun", assets_observed, scenario_reviewed, approved_fs_game);':
+        raise ValueError("Legacy caller must forward its exact attestations and context")
+    selector = body(text, "select_pair")
+    branches = re.findall(r'(?:if|else if) \(profile == "([^"\n]+)"\)\s*\{\s*'
+                          r'pair\.base = "([^"\n]+)";\s*pair\.pap = "([^"\n]+)";\s*\}', selector)
+    if branches != [("raygun", "sdk_raygun_zm", "sdk_raygun_pap_zm"),
+                    ("shredder-clone", "sdk_shredder_clone_zm", "sdk_shredder_clone_pap_zm")]:
+        raise ValueError("Exact finite private pair profiles required")
+    if ('if (!isdefined(profile)) return undefined;' not in selector or
+            'else return undefined;' not in selector or
+            'pair.upgraded = pair.base + "+" + pair.pap;' not in selector):
+        raise ValueError("Unknown profile refusal and exact combined identity required")
+    activation = body(text, "activate_pair")
+    prefix = activation.split('if (!isdefined(assets_observed)', 1)[0].strip()
+    if prefix != 'pair = select_pair(profile);\n    if (!isdefined(pair)) return false;':
+        raise ValueError("Invalid profile must refuse before activation")
+    for assignment in ('base = pair.base;', 'pap = pair.pap;', 'upgraded = pair.upgraded;'):
+        if assignment not in activation:
+            raise ValueError("Activation must use the selected private identity")
 
 
 def require_mutation_boundary(text):
@@ -70,6 +93,9 @@ def require_mutation_boundary(text):
         raise ValueError("Transaction, prerequisite or server mutation forbidden")
     if re.search(r"\.(?:lvl|score|money|points)\s*(?:\+\+|--|[+\-*/]=)", code):
         raise ValueError("Retail level/currency adjustment forbidden")
+    if (re.search(r'\b(?:special_weapon_logic|shredder_death_logic|setscriptablepartstate|dodamage|finishagentdamage)\s*\(', code) or
+            re.search(r'\blevel\.(?:agent_funcs|onzombiedamage_func|lethaldamage_func)\b', code)):
+        raise ValueError("Private PAP registration must not install a damage or equip controller")
 
 
 def require_cleanup_order(text):
@@ -119,9 +145,40 @@ class RayGunPapSourceTests(unittest.TestCase):
 
     def test_default_init_cannot_publish_state_or_call_activation(self):
         init = body(self.text, "init")
-        self.assertNotIn("activate(", init)
+        self.assertNotRegex(init, r'\bactivate(?:_pair)?\(')
         self.assertNotRegex(init, r"\b(?:level|self)\.[\w]+\s*=(?!=)")
         self.assertIn("explicit_caller_attestations_required", init)
+
+    def test_finite_pair_contract_and_unchanged_legacy_caller(self):
+        require_pair_contract(self.text)
+        for old, new in (("assets_observed, scenario_reviewed, approved_fs_game);", "true, true, approved_fs_game);"),
+                         ('pair.base = "sdk_shredder_clone_zm";', 'pair.base = "iw7_shredder_zm";'),
+                         ('pair.pap = "sdk_shredder_clone_pap_zm";', 'pair.pap = "shredderpap1";'),
+                         ('profile == "shredder-clone"', 'profile == "projectile"'),
+                         ('else return undefined;', 'else return pair;'),
+                         ('if (!isdefined(profile)) return undefined;', ''),
+                         ('if (!isdefined(pair)) return false;', ''),
+                         ('upgraded = pair.upgraded;', 'upgraded = "sdk_raygun_zm+sdk_raygun_pap_zm";')):
+            with self.subTest(change=old), self.assertRaises(ValueError):
+                require_pair_contract(self.text.replace(old, new, 1))
+
+    def test_no_extra_profile_or_controller_dispatch(self):
+        selector = body(self.text, "select_pair")
+        changed = selector.replace('else return undefined;',
+            'else if (profile == "third")\n    {\n        pair.base = "sdk_third";\n'
+            '        pair.pap = "sdk_third_pap";\n    }\n    else return undefined;', 1)
+        with self.assertRaises(ValueError):
+            require_pair_contract(self.text.replace(selector, changed, 1))
+        require_mutation_boundary(self.text)
+        for forbidden in ('thread shredder_death_logic(a, b, c, d);',
+                          'special_weapon_logic(a, b, c, d);',
+                          'self setscriptablepartstate("shredder", "active");',
+                          'self dodamage(100, self.origin);',
+                          'self finishagentdamage(a, b, c);',
+                          'level.agent_funcs["generic_zombie"]["on_damaged_finished"] = ::activate;',
+                          'level.onzombiedamage_func = ::activate;'):
+            with self.subTest(controller=forbidden), self.assertRaises(ValueError):
+                require_mutation_boundary(self.text + '\n' + forbidden)
 
     def test_prewrite_guards_and_negative_weakened_attestations(self):
         require_gates(self.text)
@@ -143,15 +200,13 @@ class RayGunPapSourceTests(unittest.TestCase):
                 require_mutation_boundary(self.text + "\n" + forbidden)
 
     def test_shared_record_without_fabricated_upgrade(self):
-        activation = body(self.text, "activate")
+        activation = body(self.text, "activate_pair")
         self.assertIn('state.record = before_base;', activation)
         self.assertIn('state.record.lvl = 1;', activation)
         self.assertIn('self.pap[base] = state.record;', activation)
         self.assertIn('self.pap[upgraded] = state.record;', activation)
         self.assertIn('state.map["pap1"] = pap;', activation)
-        self.assertIn('base = "sdk_raygun_zm";', activation)
-        self.assertIn('pap = "sdk_raygun_pap_zm";', activation)
-        self.assertIn('upgraded = "sdk_raygun_zm+sdk_raygun_pap_zm";', activation)
+        require_pair_contract(self.text)
         self.assertNotRegex(activation, r'\.lvl\s*=\s*2|\.lvl\+\+')
 
     def test_second_upgrade_shortened_family_bypass_is_refused(self):
@@ -159,13 +214,13 @@ class RayGunPapSourceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             require_gates(self.text.replace('isdefined(level.pap[upgraded_fallback])', 'false', 1))
         self.assertIn('upgraded_fallback = getsubstr(upgraded, 0, upgraded.size - 1);',
-                      body(self.text, "activate"))
+                      body(self.text, "activate_pair"))
         watcher = body(self.text, "watch_context")
         self.assertIn('isdefined(level.pap[state.upgraded])', watcher)
         self.assertIn('isdefined(level.pap[state.upgraded_fallback])', watcher)
 
     def test_real_donor_prerequisite_is_read_only_before_publication(self):
-        activation = body(self.text, "activate")
+        activation = body(self.text, "activate_pair")
         before = activation.split('level.sdk_raygun_pap_registration = state;', 1)[0]
         self.assertIn('!scripts\\engine\\utility::flag("fuses_inserted") &&', before)
         self.assertIn('!scripts\\cp\\zombies\\directors_cut::directors_cut_is_activated()) return false;', before)
@@ -218,7 +273,7 @@ class RayGunPapSourceTests(unittest.TestCase):
         self.assertIn('self waittill("disconnect");', body(self.text, "departed"))
 
     def test_registration_has_no_yield_and_no_accepted_runtime_marker(self):
-        activation = body(self.text, "activate")
+        activation = body(self.text, "activate_pair")
         writes = activation.split('level.sdk_raygun_pap_registration = state;', 1)[1].split('level thread watch_context', 1)[0]
         self.assertNotRegex(writes, r'\b(?:wait|waittill|thread)\b')
         markers = [line for line in self.text.splitlines() if 'print(' in line]

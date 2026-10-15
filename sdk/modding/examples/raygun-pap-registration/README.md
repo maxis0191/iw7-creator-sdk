@@ -1,4 +1,4 @@
-# Private Ray Gun PAP registration seam
+# Private weapon PAP registration seam
 
 2026-10-14: Source only. This module installs no bindings from `init()`. Its
 `sdk_raygun_pap_enable` dvar defaults to zero; setting it alone still refuses.
@@ -15,6 +15,16 @@ HUD or BO3 static-prop receipt cannot satisfy them. `approved_fs_game` is the ex
 new weapon project's mod, not a guessed namespace. Rig and HUD mods refuse.
 No magic readiness dvar, new proof schema or automatic true argument is supplied.
 
+2026-10-16: the existing three-argument `activate` remains the RayGun compatibility
+entrypoint, forwarding those same attestations and context. The new finite
+`activate_pair(profile, assets_observed, scenario_reviewed, approved_fs_game)`
+selects only `raygun` or `shredder-clone`; undefined and unknown profiles refuse.
+For the latter, a reviewed caller uses
+`player sdk_raygun_pap_registration::activate_pair("shredder-clone", assets_observed, scenario_reviewed, approved_fs_game)`.
+Both profiles share the existing enable/stop dvars, private state slot, gates,
+five bindings and cleanup. They cannot run concurrently. No profile grants an
+asset, validates its native fields or installs a damage/equip controller.
+
 ## Binding and retail path
 
 | Identity | Meaning |
@@ -22,6 +32,13 @@ No magic readiness dvar, new proof schema or automatic true argument is supplied
 | `sdk_raygun_zm` | Bare player weapon, semantic tier 0 / retail level 1 |
 | `sdk_raygun_pap_zm` | Native PAP attachment, still awaiting actual asset proof |
 | `sdk_raygun_zm+sdk_raygun_pap_zm` | Expected rebuilt variant, tier 1 / retail level 2 |
+
+The `shredder-clone` profile instead selects bare `sdk_shredder_clone_zm`, PAP
+attachment `sdk_shredder_clone_pap_zm`, and expected rebuilt variant
+`sdk_shredder_clone_zm+sdk_shredder_clone_pap_zm`. Actual loaded names and the
+rebuilt variant remain engine checks. The reported donor type pair BULLET1 /
+attachment NONE0 stays distinct from Native's PROJECTILE3/3 author. The selector
+does not inspect or coerce either type, the native PAP boolean, damage or physics.
 
 Activation requires the sole live selected player already holding the exact
 bare weapon, no upgraded variant, existing retail dictionaries, and an existing
@@ -90,8 +107,9 @@ Level unload discards the VM. Disconnected entities require runtime validation.
 Markers `BINDINGS_REGISTERED`, `RESTORE_DEFERRED`, `RESTORE_PENDING` and
 `BINDINGS_RESTORED` always retain `runtime_ready=0`; none is an accepted PAP
 transaction. Source fixtures exercise guard/mutation/cleanup regressions with
-negative source controls. The retained gsc-tool 1.5.1.359 parsed this module's
-grammar. Neither those fixtures nor grammar parsing prove engine linking,
+negative source controls. The retained gsc-tool 1.5.1.359 parsed the earlier SDK26
+module before the finite-profile extension; this extension has not been parsed
+or executed as GSC here. Neither those fixtures nor the earlier grammar parsing prove engine linking,
 array/struct reference comparison, actual loaded assets, weapon rebuild, cost,
 pickup, restoration under disconnect or owner acceptance. No engine compiler,
 native/FF build, asset extraction, deployment or game test was run here.
@@ -99,3 +117,20 @@ native/FF build, asset extraction, deployment or game test was run here.
 Next: qualify the actual full assets and fresh protected private scenario with
 the native/server owners, then obtain the distinct runtime GO. Keep this module
 inactive and Main's runtime untouched until those proofs exist.
+
+## Shredder mechanics remain blocked
+
+Renaming a native definition does not inherit Shredder's name-indexed script
+behavior. At the retained GSC pin above, `gametype_zombie.gsc:439-440` exposes a
+damage callback before rewards/feedback (`497-501`), then calls
+`zombies_weapons::special_weapon_logic` at `504` and the damage-finished callback
+at `512`. Inside `zombies_weapons.gsc:108-161`, the Shredder branch raises health
+before the generic quest/lethal callbacks. Inserting at either existing callback
+changes that order; invoking the entire dispatcher twice duplicates side effects.
+No supported exact insertion is established here. The stock death controller at
+`615-675` and equip-FX switch at `1441-1478` are not registered by this PAP module.
+
+The Source safety checks include negative controls for unknown/changed profiles,
+automatic attestations and forbidden damage/equip callback installation. They do
+not execute GSC. Neither profile proves actual damage, projectile travel/impact,
+contact, collision bodies, physics, client prediction or peer replication.
