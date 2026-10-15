@@ -54,7 +54,8 @@ class AuthorInputTests(unittest.TestCase):
             self.assertTrue(report["source_contract_valid"])
             for key in ("geometry_verified", "opaque_inputs_read", "build_executed", "package_ready", "runtime_ready", "owner_accepted"):
                 self.assertIs(report[key], False)
-            self.assertEqual(set(report["inputs"]), {"manifest", "authoring", "geometry", "script", "rgba8"})
+            self.assertTrue({"manifest", "authoring", "geometry", "script", "rgba8"} <= set(report["inputs"]))
+            self.assertTrue(set(report["inputs"]) <= {"manifest", "authoring", "geometry", "script", "rgba8", "producer/geometry"})
             reports.append(report)
         self.assertNotEqual(reports[0]["descriptor"]["namespace"], reports[1]["descriptor"]["namespace"])
         self.assertNotEqual(reports[0]["inputs"]["geometry"]["sha256"], reports[1]["inputs"]["geometry"]["sha256"])

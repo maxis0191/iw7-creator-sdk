@@ -124,9 +124,18 @@ def _select(project, tools_root, *, manifest):
             nodes[gsc]["scope"] == "server", "Original content belongs to the declared client/server sides")
     require("original-rigid-authoring/1" in manifest["requires"]["client"],
             "Original authoring must retain its unqualified capability, not inherit the cube witness")
+    geometry_validated = False
+    geometry_producer = Path(tools_root) / "ops/model-lab/geometry.py"
+    if geometry_producer.is_file():
+        inputs.read(Path(tools_root), "ops/model-lab/geometry.py", "producer/geometry", 128 * 1024)
+        verifier = module(geometry_producer, "creator_original_geometry")
+        if hasattr(verifier, "validate_authored"):
+            verifier.validate_authored(geometry, model_name=names["model_name"], material_reference=names["material_name"])
+            geometry_validated = True
     inputs.recheck()
     report = {"api": API, "source_contract_valid": True, "descriptor": descriptor, "inputs": inputs.records,
-            "geometry_source_bound": True, "geometry_verified": False, "texture": texture_summary,
+            "geometry_source_bound": True, "geometry_source_validated": geometry_validated,
+            "geometry_verified": False, "texture": texture_summary,
             "source_scene": {"model_name": names["model_name"], "placement": placement,
                              "transform_verified": False, "physics_serialized": False},
             "opaque_inputs_read": False, "build_executed": False, "package_ready": False,
