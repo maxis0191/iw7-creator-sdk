@@ -9,9 +9,10 @@ is introduced by this source selection.
 | --- | --- | --- | --- |
 | `examples/original-authoring/turn-prism` | Triangular prism, 18 vertices / 8 triangles | 4 x 4 navy/cyan bands | Use rotates through four orientations |
 | `examples/original-authoring/step-lantern` | Two stacked boxes, 48 vertices / 24 triangles | 8 x 4 orange/cream/brown pattern | Use arms or cancels a four-second pulse |
+| `examples/original-authoring/platform-contact` | Fixture-specific box, 24 vertices / 12 triangles | 8 x 8 yellow/dark pattern | One armed retail trigger; fixture owns contact/withdrawal |
 
 Their names, geometry, pixels and GSC are separate editable files. The second
-project is not a renamed singleton plan. Both retain one rigid root, one surface
+project is not a renamed singleton plan. All retain one rigid root, one surface
 and one LOD. Geometry bounds are declared source inputs, awaiting the producer's
 independent validation; no collision or physics follows from them.
 
