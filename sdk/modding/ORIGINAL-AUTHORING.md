@@ -159,6 +159,19 @@ is reported as pending for offline Bind/Materialize only. Other source/capabilit
 errors, active-project errors, Plan, Build and Package keep their refusals.
 No runtime/source compatibility proof is created by this inspection allowance.
 
+Reader provenance keeps its original absolute `Stdout` values and H1 identity
+fields. The consumer accepts legacy direct-root outputs and ordinary retained
+subdirectories such as `owned-model-geometry/stdout.log` and
+`owned-model-authored-material/stdout.log`. It derives canonical relative names
+under BuildRoot and uses those complete names for the existing Inputs snapshots
+and rechecks; it never drops a directory or renames/copies an original stdout.
+Finalization records the two relative names alongside the bound original build
+receipt. Traversal, outside roots, relative provenance, ADS/device names,
+redirects/reparse points and 8.3 aliases within the reader portion are refused.
+Equivalent TEMP/BuildRoot aliases retain the existing Windows root
+canonicalization. JSON, byte bounds, FF/readback binding and qualification flags
+are unchanged. Stage's SDK29 API/pin and runtime GSC identity remain separate.
+
 `Creator Package` uses its unchanged generic checks and sole ZIP writer. These
 candidates cannot package while the original capability, recipient closure,
 native CBT semantics, zone rawfile, GSC linking, rendered pixels, real input,
