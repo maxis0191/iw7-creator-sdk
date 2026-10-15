@@ -252,7 +252,7 @@
     {
       "id": "x64-zt-extensions",
       "repository": "https://github.com/maxis0191/x64-zt-extensions.git",
-      "revision": "6c03fcf8e2950058b4f4cad94d990e948daa5f0d",
+      "revision": "5c2286cf0d4ff083f98fe5394bc3b36d6242bed7",
       "files": [
         "ops/doom-source/half_uv.hpp",
         "ops/doom-source/prepare_ff.py",
@@ -261,6 +261,7 @@
         "ops/model-lab/Build-ModelFF.ps1",
         "ops/model-lab/Build-Writer.ps1",
         "ops/model-lab/ModelFF.Core.ps1",
+        "ops/model-lab/RESIDENT-RIGID.md",
         "ops/model-lab/geometry.py",
         "ops/model-lab/prepare_ff.py",
         "ops/model-lab/prepare_writer.py",
