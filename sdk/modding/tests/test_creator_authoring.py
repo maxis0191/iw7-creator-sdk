@@ -175,8 +175,8 @@ class AuthorInputTests(unittest.TestCase):
     def test_material_dispatch_uses_validated_first_pixel_snapshot_and_no_writes(self):
         templates = self.project / "templates"
         templates.mkdir()
-        for name in ("material.json", "material.statebits", "material.statebitsmap"):
-            (templates / name).write_bytes(b"SYNTHETIC SOURCE DISPATCH TEST; not an IW7 template\n")
+        for name in self.descriptor()["material_template"].values():
+            (self.project / name).write_bytes(b"SYNTHETIC SOURCE DISPATCH TEST; not an IW7 template\n")
         observed = []
         def rgba(width, height, pixels):
             observed.append((width, height, pixels))
@@ -191,7 +191,7 @@ class AuthorInputTests(unittest.TestCase):
         self.assertEqual(observed[0][:2], (4, 4))
         self.assertEqual(observed[0][2], bytes(json.loads(before[Path("color.rgba8.json")])["pixels"]))
         self.assertEqual(result["material_name"], "sdk_turn_prism_material")
-        self.assertEqual(set(result["template"]), {"material", "statebits", "statebitsmap"})
+        self.assertEqual(set(result["template"]), {"material", "statebits", "statebitsmap", "stateinfo", "cbi", "cbt"})
         self.assertEqual(before, {p.relative_to(self.project): p.read_bytes() for p in self.project.rglob("*") if p.is_file()})
 
     @unittest.skipUnless((ROOT / "tools-source/asset-bridge/surfaces/authored_dds_material.py").is_file(),

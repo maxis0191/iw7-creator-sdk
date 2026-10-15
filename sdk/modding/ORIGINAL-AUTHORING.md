@@ -45,9 +45,14 @@ the actual template/sidecars under their applicable admission before preparation
 the declaration does not authenticate a template or prove CBT/render behavior.
 Other templates need their own explicit correct slot; no binding is reordered.
 
-`material_template` maps explicit roles to relative author project paths:
-material, statebits, statebitsmap, optionally stateinfo/cbi/cbt as required by
-the actual IW7 template. The examples intentionally do not contain retail JSON
+`material_template` maps explicit roles to relative author project paths.
+The general producer requires `material`, `statebits`, `statebitsmap`; `cbi` and
+`cbt` are required when the actual material has constants. `stateinfo` is
+required when the actual state fields need it. The examples explicitly declare
+all six paths for retained Material C: its two constants require `cbi`/`cbt`,
+while its present stateFlags makes `stateinfo` optional. The supplied stateinfo
+role is preserved rather than dropped. This is the historical Source contract,
+not a fresh inspection or authentication of retail bytes. The examples intentionally do not contain retail JSON
 or sidecar payloads. The author supplies already owned, qualified templates;
 state/technique/other image bindings remain recipient dependencies, not original
 authored shaders. Plan does not read those opaque/template inputs or treat
@@ -95,16 +100,57 @@ These are not called by Plan. Actual retail templates, serialized model artifact
 and future native/FF operations retain their separate admission. Staging FF
 inputs does not create a FF. The existing Build-Writer/Build-ModelFF wrappers own
 compilation, strict candidate checks, process/resource lifetimes and readback.
-Producer pins, these consumer branches and the actual build route still require
-their final integration checks; no successful real operation is claimed here.
-The old ModelLabV2 `Bind`/`Materialize` route still targets its retained resident
-profile; it is not silently reused for authored plan/3. `Creator Package` remains
-generic for a project with real qualified payload/closure. These source examples
-cannot package while their new capability and actual evidence are blocked.
+The existing ModelLabV2 `Bind`/`Materialize` entrypoints also dispatch to the
+authored plan/3 profile `iw7-authored-rigid-v1`. The resident profile remains its
+separate existing branch. No new builder, ZIP writer, engine hook or per-project
+allowlist is involved. The consumer calls the existing `prepare_ff` independent
+stage/material/image readers and binds their actual receipts.
+
+After a separately admitted writer/FF run has closed and restored successfully:
+
+```powershell
+./sdk/modding/Creator.ps1 -Action Bind -Adapter ModelLabV2 `
+  -Project $authorProject -ModelSourceRoot $authoredStage -BuildRoot $completedFFRun `
+  -ReviewReference $actualGscAndClosureReview `
+  -ClientSource $reviewedClientSource -ServerSource $reviewedServerSource -Protocol 2 -Json
+
+./sdk/modding/Creator.ps1 -Action Materialize -Adapter ModelLabV2 `
+  -Project $authorProject -BuildRoot $completedFFRun -FinalizeRoot $freshCandidate `
+  -ClientSource $reviewedClientSource -ServerSource $reviewedServerSource -Protocol 2 -Json
+```
+
+`Bind` preserves existing `composition.json` and requires a fresh declaration.
+Its existing composition schema gains `surface_roundtrip_sha256` for this
+profile. The immutable binding covers current GSC/closure, source plan,
+material derivation, closed build state, native geometry output, surface
+readback and exact FF bytes. The current author geometry must match the writer
+recipe. Current texture/template/slot inputs are reprocessed by their owner
+and must match the staged material metadata and payload hashes; an old valid FF
+cannot silently approve edited author inputs. Unlike Plan, these operations
+read supplied template/DDS/serialized files and retain their separate admission.
+
+`Materialize` rechecks those bindings and the delegated readback, then writes a
+fresh local candidate using the actual names and payload bytes. It records dump,
+GSC and NCS representations, adds only producer-declared recipient technique and
+image dependencies, and keeps closure incomplete. A missing source proof for
+exactly the primary project's blocked `original-rigid-authoring/1` capability
+is reported as pending for offline Bind/Materialize only. Other source/capability
+errors, active-project errors, Plan, Build and Package keep their refusals.
+No runtime/source compatibility proof is created by this inspection allowance.
+
+`Creator Package` uses its unchanged generic checks and sole ZIP writer. These
+candidates cannot package while the original capability, recipient closure,
+native CBT semantics, zone rawfile, GSC linking, rendered pixels, real input,
+multiplayer and owner evidence remain unqualified. Materialize writes both plan
+and failing package validation reports; package/runtime/owner flags stay false.
+Actual native operation and unchanged-runtime independent creator trials have
+not been measured. Source orchestration tests use explicit synthetic text
+stand-ins, not genuine DDS/model/FF or native process evidence.
 
 The smallest next measurable lot is producer validation/preparation for these
 same inputs, then a separately authorized build/readback and creator trial of
 both projects with the same compatible runtime. The criterion is an independent
 author changing names, geometry, texture and GSC without a new engine patch,
 asset allowlist or SDK edit. It has not been measured here. No PE, native model,
-DDS file, FF, stock access, admission, deployment or game trial was performed.
+DDS file, FF, stock access, admission, deployment or game trial was performed
+for this Source integration.

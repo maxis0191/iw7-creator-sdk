@@ -143,7 +143,8 @@ def _select(project, tools_root, *, manifest):
             "pending": ["The existing generic rigid producer must validate the authored geometry and prepare writer inputs.",
                         "The existing DDS/material producer must validate the actual texture and explicit template/sidecars.",
                         "A newly measured build/readback, complete closure and unchanged-runtime creator trial remain required."]}
-    return report, {"shared": f, "root": root, "inputs": inputs, "geometry": geometry, "rgba8": rgba8}
+    return report, {"shared": f, "root": root, "inputs": inputs, "geometry": geometry, "rgba8": rgba8,
+                    "script": script_raw}
 
 
 def select(project, tools_root, *, manifest):

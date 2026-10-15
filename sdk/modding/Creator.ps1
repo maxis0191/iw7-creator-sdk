@@ -197,6 +197,23 @@ try:
         raise ValueError("Fix invalid project contracts before compatibility or adapter checks")
     errors = packager.compat.check_environment(manifests, client_source=args["client_source"],
         server_source=args["server_source"], protocol=args["protocol"], mode="cp")
+    # Bind/Materialize inspect retained local bytes; they do not deploy or
+    # qualify the target runtime. Preserve precisely this primary project's
+    # already-blocked author capability as pending during offline inspection.
+    # Package, Build, Plan, other capabilities and active projects keep the
+    # unchanged compatibility refusal. No source/protocol assertion is invented.
+    offline_author = (args["adapter"] == "ModelLabV2" and args["action"] in ("Bind", "Materialize") and
+        "original-rigid-authoring/1" in manifests[0]["requires"]["client"] and
+        (project / "authoring.json").is_file())
+    if offline_author:
+        local = module(root / "sdk/modding/creator_authoring.py", "creator_original_authoring")
+        report["source_selection"] = local.select(project, root, manifest=manifests[0])
+        report["pending"].extend(report["source_selection"]["pending"])
+        unqualified = "Capability source proof missing: client/original-rigid-authoring/1 in " + manifests[0]["package"]["id"]
+        if unqualified in errors:
+            errors.remove(unqualified)
+            report["pending"].append("Original author target capability is unqualified; local Bind/Materialize inspection only. Package/Build/Run remain blocked.")
+            report["offline_author_inspection"] = True
     step("dependencies-and-target", "passed" if not errors else "blocked", errors or
          ["Exact versions, conflicts, asset/destination collisions and declared source/protocol checked",
           "Supplied source pins are assertions; no installed binary or server was inspected"])
