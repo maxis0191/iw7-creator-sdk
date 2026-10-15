@@ -1,9 +1,9 @@
 {
   "schema": "iw7.source-dependency-package/1",
   "name": "dependencies.zip",
-  "tag": "source-deps-9a42447ade5fa930",
-  "sha256": "9a42447ade5fa93002838129d04ad4e7ad366775bf3f26dc656ca8c11f2b809a",
-  "bytes": 395692,
-  "files": 101,
+  "tag": "source-deps-b64d532b13aaf487",
+  "sha256": "b64d532b13aaf4877fea334d30365b390052046b69c5529327a19fece83e0021",
+  "bytes": 411431,
+  "files": 105,
   "description": "Exact source-only dependency exports; private build input, not a gameplay release."
 }
