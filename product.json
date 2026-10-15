@@ -220,7 +220,7 @@
     {
       "id": "iw7-mod-components",
       "repository": "https://github.com/maxis0191/iw7-mod-components.git",
-      "revision": "93fd16b1b7e9da0b46b0348973baa55cd363b1ca",
+      "revision": "8f8da005230bed04b6461e33dadf4184f1240703",
       "files": [
         "ops/Base-Client.Core.ps1",
         "ops/Get-ServerInfo.ps1",
