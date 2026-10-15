@@ -127,7 +127,8 @@ try:
     if args["package_layout"] != "player" and args["player_language"] != "en":
         raise ValueError("PlayerLanguage fr requires PackageLayout player")
     if args["adapter"] in ("ModelLabV2", "OriginalArenaV1"):
-        supported = ("Plan", "Materialize", "Bind") if args["adapter"] == "OriginalArenaV1" else ("Materialize", "Bind")
+        authored_plan = args["adapter"] == "ModelLabV2" and args["action"] == "Plan" and (Path(args["project"]) / "authoring.json").is_file()
+        supported = ("Plan", "Materialize", "Bind") if args["adapter"] == "OriginalArenaV1" or authored_plan else ("Materialize", "Bind")
         if args["action"] not in supported:
             raise ValueError(args["adapter"] + " supports only " + ", ".join(supported) + "; no Build adapter is invoked")
         if args["recipient_proof"] or args["recipient_root"] or args["gsc_audit_evidence"]:
@@ -278,7 +279,13 @@ try:
         else:
             step("adapter-plan", "pending", ["Source-only planning contract selected; native adapter and complete evidence remain required"])
     elif args["adapter"] == "ModelLabV2":
-        step("adapter-plan", "not-run", ["Retained ModelLab v2 source/build and reviewed GSC declarations only; no builder invoked"])
+        if args["action"] == "Plan":
+            local = module(root / "sdk/modding/creator_authoring.py", "creator_original_authoring")
+            report["source_selection"] = local.select(project, root, manifest=data)
+            report["pending"].extend(report["source_selection"]["pending"])
+            step("source-selection", "passed", ["Editable original source inputs bound; no opaque asset, writer or build read/run"])
+        else:
+            step("adapter-plan", "not-run", ["Retained ModelLab v2 source/build and reviewed GSC declarations only; no builder invoked"])
     elif args["adapter"] == "OriginalArenaV1":
         if args["action"] == "Plan":
             local = module(root / "sdk/modding/creator_model_materialize.py", "creator_model_materialize")

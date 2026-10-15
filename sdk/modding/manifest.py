@@ -162,6 +162,7 @@ def validate(data, root=None, stage="plan", target="stock", client_source=None, 
         skeletal_plan = "skeletal-animation-import/1" in required["client"]
         arena_plan = "original-arena-display/1" in required["client"]
         bo3_prop = "bo3-mp-static-prop-display/1" in required["client"]
+        authored_rigid = "original-rigid-authoring/1" in required["client"]
         if bo3_prop:
             # This bounded witness must never inherit the old cube/arena claim
             # or authorize another imported model through a broad capability.
@@ -192,7 +193,7 @@ def validate(data, root=None, stage="plan", target="stock", client_source=None, 
                 # Plan may describe it, while package/delivery remain refused.
                 # Do not mislabel an experimental rig as the tested rigid cube.
                 if not skeletal_plan:
-                    if not arena_plan and not bo3_prop:
+                    if not arena_plan and not bo3_prop and not authored_rigid:
                         need("client", "xmodel-rigid/1")
                     need("engine", "model-netconststrings/1")
             if node["scope"] == "client" and node["kind"] == "anim":

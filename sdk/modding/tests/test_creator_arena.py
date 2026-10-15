@@ -54,6 +54,8 @@ def fixture(root):
             model_lab = load(WORLD / "model_lab.py", "arena_model_lab_fixture")
             sys.modules.update(prepare=prepare, model_lab=model_lab,
                                prepare_writer=load(ROOT / "ops/model-lab/prepare_writer.py", "arena_writer_fixture"))
+            sys.modules.update(modal_window=load(WORLD / "modal_window.py", "arena_modal_fixture"),
+                               test_coverage=load(WORLD / "test_coverage.py", "arena_coverage_fixture"))
             tests = load(WORLD / "test_arena.py", "arena_shared_test_fixture")
             prepared, artifacts = tests.ModelLabTests().prepare_fixture(root)
             source = root / "source"
