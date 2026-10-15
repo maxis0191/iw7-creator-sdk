@@ -121,6 +121,17 @@ These are not called by Plan. Actual retail templates, serialized model artifact
 and future native/FF operations retain their separate admission. Staging FF
 inputs does not create a FF. The existing Build-Writer/Build-ModelFF wrappers own
 compilation, strict candidate checks, process/resource lifetimes and readback.
+
+Source packaging uses the reviewed shared composer with Git attributes resolved
+from each owner's exact pinned commit. The frozen B2 template is the LF form of
+assets8f55 `ops/model-lab/writer.cpp`: 13,833 bytes, SHA-256
+`3494bbacda6964c5b6966673698851ffe083341f2dabed3cd48de99559021b38`.
+An older SDK29 Source export produced its CRLF form despite the same Git blob;
+the strict writer template gate correctly refused those different bytes. New
+Stage Source packages use the corrected dependency archive. Existing SDK29/B2
+packages and receipts stay unchanged; no template hash is weakened or repaired
+in place. Stage Source adoption, SDK30 reader consumption and the runtime GSC
+identity remain distinct. This packaging correction is not a new Stage/FF GO.
 The existing ModelLabV2 `Bind`/`Materialize` entrypoints also dispatch to the
 authored plan/3 profile `iw7-authored-rigid-v1`. The resident profile remains its
 separate existing branch. No new builder, ZIP writer, engine hook or per-project
