@@ -5,7 +5,9 @@ format. Existing producer modules own geometry, DDS, material and FF validation.
 """
 import importlib.util
 import math
+import os
 import re
+import sys
 from pathlib import Path
 
 API = "creator-original-authoring/1"
@@ -18,11 +20,12 @@ FIELDS = {"schema", "namespace", "zone", "model_name", "mesh_name", "material_na
 def module(path, name):
     spec = importlib.util.spec_from_file_location(name, path)
     value = importlib.util.module_from_spec(spec)
+    sys.modules[name] = value
     spec.loader.exec_module(value)
     return value
 
 
-def select(project, tools_root, *, manifest):
+def _select(project, tools_root, *, manifest):
     """Inspect source texts only, preserving pending template/runtime inputs.
 
     DDS and material sidecars are never opened by Plan. The hashes here bind
@@ -78,6 +81,7 @@ def select(project, tools_root, *, manifest):
     relative(texture["source"])
     texture_summary = {"kind": texture["kind"], "source": texture["source"], "slot": texture["slot"],
                        "dds_verified": False}
+    rgba8 = None
     if texture["kind"] == "rgba8":
         pixels = text_json(texture["source"], "rgba8")
         require(isinstance(pixels, dict) and set(pixels) == {"width", "height", "pixels"} and
@@ -89,6 +93,7 @@ def select(project, tools_root, *, manifest):
                 all(type(value) is int and 0 <= value <= 255 for value in values),
                 "RGBA8 source requires exactly four integer bytes per pixel")
         texture_summary.update(width=pixels["width"], height=pixels["height"], source_pixels_bound=True)
+        rgba8 = pixels
     templates = descriptor["material_template"]
     require(isinstance(templates, dict) and TEMPLATE_REQUIRED <= set(templates) <= TEMPLATE_REQUIRED | TEMPLATE_OPTIONAL,
             "Existing material template roles must be explicit")
@@ -120,7 +125,7 @@ def select(project, tools_root, *, manifest):
     require("original-rigid-authoring/1" in manifest["requires"]["client"],
             "Original authoring must retain its unqualified capability, not inherit the cube witness")
     inputs.recheck()
-    return {"api": API, "source_contract_valid": True, "descriptor": descriptor, "inputs": inputs.records,
+    report = {"api": API, "source_contract_valid": True, "descriptor": descriptor, "inputs": inputs.records,
             "geometry_source_bound": True, "geometry_verified": False, "texture": texture_summary,
             "source_scene": {"model_name": names["model_name"], "placement": placement,
                              "transform_verified": False, "physics_serialized": False},
@@ -129,3 +134,137 @@ def select(project, tools_root, *, manifest):
             "pending": ["The existing generic rigid producer must validate the authored geometry and prepare writer inputs.",
                         "The existing DDS/material producer must validate the actual texture and explicit template/sidecars.",
                         "A newly measured build/readback, complete closure and unchanged-runtime creator trial remain required."]}
+    return report, {"shared": f, "root": root, "inputs": inputs, "geometry": geometry, "rgba8": rgba8}
+
+
+def select(project, tools_root, *, manifest):
+    return _select(project, tools_root, manifest=manifest)[0]
+
+
+def _model_producer(tools_root):
+    """Load only the existing reviewed producer, never an arbitrary JSON command."""
+    directory = Path(tools_root) / "ops/model-lab"
+    for name in ("geometry", "prepare_writer"):
+        cached = sys.modules.get(name)
+        if cached is not None and Path(cached.__file__).resolve() != (directory / (name + ".py")).resolve():
+            raise ValueError("Conflicting producer already loaded; use a fresh Python process")
+    previous = sys.path[:]
+    try:
+        sys.path.insert(0, str(directory))
+        producer = module(directory / "prepare_writer.py", "creator_original_writer")
+        if not hasattr(producer, "prepare_authored"):
+            raise ValueError("Prepared tools predate the reviewed original geometry producer")
+        return producer
+    finally:
+        sys.path[:] = previous
+
+
+def prepare_writer_inputs(project, output, tools_root, native_source_root, *, manifest):
+    """Prepare source/header/writer inputs through the existing producer only.
+
+    No compiler, native binary, stock, FF, reservation or gameplay is invoked.
+    Caller-supplied native_source_root is the pinned serializer SOURCE checkout.
+    """
+    report, context = _select(project, tools_root, manifest=manifest)
+    f, root, inputs = context["shared"], context["root"], context["inputs"]
+    destination = Path(os.path.abspath(output))
+    f.safe_existing(destination.parent)
+    native = f.safe_existing(native_source_root).resolve(strict=True)
+    f.require(not os.path.lexists(destination) and not destination.is_relative_to(root) and
+              not root.is_relative_to(destination) and not destination.is_relative_to(native) and
+              not native.is_relative_to(destination), "Fresh nonoverlapping author writer destination required")
+    data = report["descriptor"]
+    producer = _model_producer(tools_root)
+    inputs.recheck()
+    result = producer.prepare_authored(destination, native, root / data["geometry_source"],
+        namespace=data["namespace"], zone=data["zone"], mesh_name=data["mesh_name"],
+        material_reference=data["material_name"])
+    f.require(result["model_name"] == data["model_name"] and
+              result["geometry_input_sha256"] == report["inputs"]["geometry"]["sha256"],
+              "Writer consumed different author geometry; preserve the fresh output for diagnosis")
+    checked = producer.verify_authored_preparation(destination)
+    f.require(f.encoded(checked) == f.encoded(result) and
+              all(result[key] is False for key in ("compiled", "ff_built", "ready")),
+              "Written source recipe differs or incorrectly claims a compiled result")
+    inputs.recheck()
+    return {"api": API, "writer_source_prepared": True, "writer_source": result,
+            "author_inputs": report["inputs"], "source_root": str(destination),
+            "native_compiled": False, "ff_built": False, "build_verified": False,
+            "runtime_ready": False, "owner_accepted": False}
+
+
+def material_inputs(project, tools_root, *, manifest):
+    """Return existing DDS/material producer payloads from explicit author inputs.
+
+    This operation DOES read supplied template/sidecar bytes and a DDS if chosen.
+    It is separate from read-only Plan and never writes an output or starts a tool.
+    """
+    report, context = _select(project, tools_root, manifest=manifest)
+    return _material_inputs(report, context, tools_root)
+
+
+def _material_inputs(report, context, tools_root):
+    f, root, inputs = context["shared"], context["root"], context["inputs"]
+    data = report["descriptor"]
+    producer = module(Path(tools_root) / "tools-source/asset-bridge/surfaces/authored_dds_material.py",
+                      "creator_original_material")
+    texture = data["texture"]
+    if texture["kind"] == "rgba8":
+        # Use the first validated in-memory snapshot, never a reread that could
+        # replace/bless a change-read-restore race in the author pixel input.
+        pixels = context["rgba8"]
+        dds = producer.rgba8_dds(pixels["width"], pixels["height"], bytes(pixels["pixels"]))
+    else:
+        dds = inputs.read(root, texture["source"], "dds", 17 * 1024 * 1024)
+    template = {role: inputs.read(root, path, "template/" + role, 256 * 1024)
+                for role, path in data["material_template"].items()}
+    inputs.recheck()
+    result = producer.prepare_material(zone=data["zone"], image_name=data["image_name"],
+        material_name=data["material_name"], texture_slot=texture["slot"], dds=dds, template=template)
+    inputs.recheck()
+    return result
+
+
+def stage_ff_inputs(project, writer_run, output, tools_root, *, manifest):
+    """Join measured writer inputs and the existing material producer's payloads.
+
+    This DOES read the supplied model artifacts/templates. It never compiles a
+    native tool, creates a FF, touches stock or starts a game. The existing stage
+    verifier remains the only authority for its artifact/recipe checks.
+    """
+    report, context = _select(project, tools_root, manifest=manifest)
+    f, inputs = context["shared"], context["inputs"]
+    writer_root = f.safe_existing(writer_run).resolve(strict=True)
+    destination = Path(os.path.abspath(output))
+    f.safe_existing(destination.parent)
+    project_root = context["root"]
+    f.require(not os.path.lexists(destination) and all(
+        not destination.is_relative_to(root) and not root.is_relative_to(destination)
+        for root in (project_root, writer_root)), "Fresh nonoverlapping authored FF input destination required")
+    recipe = f.decoded(inputs.read(writer_root, "writer-source.json", "writer/recipe", 512 * 1024))
+    descriptor = report["descriptor"]
+    f.require(recipe["namespace"] == descriptor["namespace"] and recipe["zone"] == descriptor["zone"] and
+              recipe["model_name"] == descriptor["model_name"] and recipe["mesh_name"] == descriptor["mesh_name"] and
+              recipe["material_reference"] == descriptor["material_name"] and
+              recipe["geometry_input_sha256"] == report["inputs"]["geometry"]["sha256"],
+              "Measured writer belongs to different current author inputs")
+    # Reuse the SAME validated project/pixel snapshots; a second selection could
+    # otherwise bind a different texture between the writer check and staging.
+    material = _material_inputs(report, context, tools_root)
+    directory = Path(tools_root) / "ops/model-lab"
+    _model_producer(tools_root)
+    previous = sys.path[:]
+    try:
+        sys.path.insert(0, str(directory))
+        stage = module(directory / "prepare_ff.py", "creator_original_ff_stage")
+        f.require(hasattr(stage, "stage_authored"), "Prepared tools predate the reviewed authored FF stage")
+        inputs.recheck()
+        result = stage.stage_authored(writer_root, destination, material_inputs=material)
+        f.require(all(result[key] is False for key in ("ff_built", "pixels_verified", "ready")),
+                  "FF input preparation cannot claim build or runtime qualification")
+        inputs.recheck()
+    finally:
+        sys.path[:] = previous
+    return {"api": API, "ff_inputs_staged": True, "source_plan": result,
+            "opaque_inputs_read": True, "native_compiled": False, "ff_built": False,
+            "build_verified": False, "runtime_ready": False, "owner_accepted": False}

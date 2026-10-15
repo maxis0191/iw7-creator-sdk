@@ -6,7 +6,9 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[3]
 SDK = ROOT / "sdk/modding"
@@ -157,6 +159,38 @@ class AuthorInputTests(unittest.TestCase):
         self.save("authoring.json", value)
         with self.assertRaises(ValueError):
             self.select()
+
+    def test_writer_consumer_rejects_changed_geometry_without_claiming_preparation(self):
+        native = Path(self.temp.name) / "native-source"
+        native.mkdir()
+        result = {"model_name": "sdk_turn_prism_model", "geometry_input_sha256": "0" * 64,
+                  "compiled": False, "ff_built": False, "ready": False}
+        producer = SimpleNamespace(prepare_authored=lambda *args, **kwargs: result)
+        with patch.object(authoring, "_model_producer", return_value=producer), self.assertRaisesRegex(ValueError, "different author geometry"):
+            authoring.prepare_writer_inputs(self.project, Path(self.temp.name) / "prepared", ROOT, native,
+                                            manifest=self.manifest)
+
+    def test_material_dispatch_uses_validated_first_pixel_snapshot_and_no_writes(self):
+        templates = self.project / "templates"
+        templates.mkdir()
+        for name in ("material.json", "material.statebits", "material.statebitsmap"):
+            (templates / name).write_bytes(b"SYNTHETIC SOURCE DISPATCH TEST; not an IW7 template\n")
+        observed = []
+        def rgba(width, height, pixels):
+            observed.append((width, height, pixels))
+            return b"SYNTHETIC SOURCE DISPATCH TEST; not a DDS"
+        producer = SimpleNamespace(rgba8_dds=rgba, prepare_material=lambda **kwargs: kwargs)
+        original_loader = authoring.module
+        def loader(path, name):
+            return producer if name == "creator_original_material" else original_loader(path, name)
+        before = {p.relative_to(self.project): p.read_bytes() for p in self.project.rglob("*") if p.is_file()}
+        with patch.object(authoring, "module", side_effect=loader):
+            result = authoring.material_inputs(self.project, ROOT, manifest=self.manifest)
+        self.assertEqual(observed[0][:2], (4, 4))
+        self.assertEqual(observed[0][2], bytes(json.loads(before[Path("color.rgba8.json")])["pixels"]))
+        self.assertEqual(result["material_name"], "sdk_turn_prism_material")
+        self.assertEqual(set(result["template"]), {"material", "statebits", "statebitsmap"})
+        self.assertEqual(before, {p.relative_to(self.project): p.read_bytes() for p in self.project.rglob("*") if p.is_file()})
 
     @unittest.skipUnless(shutil.which("pwsh"), "PowerShell 7 required for actual Plan dispatch")
     def test_real_creator_plan_binds_inputs_but_refuses_unproved_capability(self):

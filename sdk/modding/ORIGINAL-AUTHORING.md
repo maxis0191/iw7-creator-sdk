@@ -71,6 +71,27 @@ writer, build or packager. Producer integration is required before this becomes
 a complete authored build route. The original templates cannot be relabeled as
 proof for these projects.
 
+The same module exposes small consumer routines for separately authorized
+operations; they delegate to the existing reviewed producer APIs:
+
+- `prepare_writer_inputs(project, output, tools_root, native_source_root, manifest=...)`
+  prepares source/header/writer inputs and checks the written source recipe.
+  The supplied native root is the pinned serializer **source**, not an executable
+  or retail stock. It does not compile the writer.
+- `material_inputs(project, tools_root, manifest=...)` reads the explicit template
+  roles and DDS if selected, or encodes the first validated RGBA8 snapshot through
+  the producer. It returns that producer's in-memory payloads unchanged.
+- `stage_ff_inputs(project, writer_run, output, tools_root, manifest=...)` requires
+  a measured writer run belonging to the current geometry, then delegates the
+  model/material/recipe join to `prepare_ff.stage_authored`.
+
+These are not called by Plan. Actual retail templates, serialized model artifacts
+and future native/FF operations retain their separate admission. Staging FF
+inputs does not create a FF. The existing Build-Writer/Build-ModelFF wrappers own
+compilation, strict candidate checks, process/resource lifetimes and readback.
+Producer pins, these consumer branches and the actual build route still require
+their final integration checks; no successful real operation is claimed here.
+
 The smallest next measurable lot is producer validation/preparation for these
 same inputs, then a separately authorized build/readback and creator trial of
 both projects with the same compatible runtime. The criterion is an independent
