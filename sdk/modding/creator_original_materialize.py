@@ -112,17 +112,34 @@ def _checked(project, source_root, build_root, tools_root, manifest):
             all(type(geometry[key]) is int and type(plan["selected_counts"][key]) is int and
                 geometry[key] == plan["selected_counts"][key] for key in ("vertices", "triangles")),
             "Native geometry receipt identity/counts differ")
-    geometry_stdout = Path(state["GeometryReader"]["Stdout"])
-    surface_stdout = Path(state["SurfaceReader"]["Stdout"])
-    require(all(path.is_absolute() for path in (geometry_stdout, surface_stdout)), "Absolute reader outputs required")
-    geometry_stdout, surface_stdout = (f.safe_existing(path).resolve(strict=True) for path in (geometry_stdout, surface_stdout))
-    require(all(path.parent == build for path in (geometry_stdout, surface_stdout)),
-            "Reader outputs must be directly under the retained build")
-    raw_geometry = f.decoded(read(build, geometry_stdout.name, "build/native-geometry-stdout"))
+    def reader_name(record):
+        # Keep the absolute legacy/H1 provenance untouched. Only an ordinary,
+        # canonical relative name reaches Inputs; never discard its directories.
+        value = record["Stdout"]
+        require(type(value) is str and not value.startswith(("\\\\?\\", "\\\\.\\", "//?/", "//./")),
+                "Ordinary reader output required")
+        path = Path(value)
+        require(path.is_absolute(), "Absolute reader provenance required")
+        require(all(f.sdk.transport.safe_path(part) for part in value[len(path.anchor):].replace("\\", "/").split("/")),
+                "Unsafe reader path component")
+        canonical = f.safe_existing(path).resolve(strict=True)
+        require(canonical.is_relative_to(build), "Reader output escapes retained build")
+        relative = canonical.relative_to(build)
+        require(f.sdk.transport.safe_path(relative.as_posix()), "Safe relative reader output required")
+        # Root aliases are canonicalized like other SDK inputs. An 8.3 alias
+        # inside the retained reader path cannot replace its actual file name.
+        require(os.path.normcase(str(Path(*path.parts[-len(relative.parts):]))) == os.path.normcase(str(relative)),
+                "Canonical reader relative path required; alias refused")
+        return relative.as_posix()
+
+    geometry_stdout = reader_name(state["GeometryReader"])
+    surface_stdout = reader_name(state["SurfaceReader"])
+    reader_outputs = {"geometry": geometry_stdout, "surface": surface_stdout}
+    raw_geometry = f.decoded(read(build, geometry_stdout, "build/native-geometry-stdout"))
     require(f.encoded(raw_geometry) == f.encoded({key: value for key, value in geometry.items()
                             if key not in ("ff", "source_plan_sha256", "dumped_artifacts")}),
             "Enriched geometry receipt differs from its actual native output")
-    require(read(build, surface_stdout.name, "build/surface-stdout") == surface_raw,
+    require(read(build, surface_stdout, "build/surface-stdout") == surface_raw,
             "Retained surface receipt differs from actual reader output")
     artifacts = geometry["dumped_artifacts"]
     require(type(artifacts) is list and len(artifacts) == 2 and
@@ -153,7 +170,8 @@ def _checked(project, source_root, build_root, tools_root, manifest):
             "selection": selection, "plan": plan, "plan_raw": plan_raw, "recipe": recipe,
             "derivation": derivation, "state_raw": state_raw, "geometry_raw": geometry_raw,
             "surface_raw": surface_raw, "ff": ff, "ff_tuple": ff_tuple, "dumps": dumps,
-            "source_data": source_data, "gsc": context["script"], "project_identity": project_identity}
+            "source_data": source_data, "gsc": context["script"], "project_identity": project_identity,
+            "reader_outputs": reader_outputs}
 
 
 def bind(project, source_root, build_root, tools_root, *, manifest, review_reference):
@@ -274,6 +292,7 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
                 "Recipient technique/other image resolution, native CBT semantics and zone rawfile representation remain unqualified.",
                 "GSC import/linking, rendered pixels, real input, multiplayer and owner acceptance remain unqualified."]
     evidence = {"api": API, "adapter": "ModelLabV2", "geometry_profile": PROFILE, "composition": descriptor,
+                "reader_outputs": checked["reader_outputs"],
                 "inputs": inputs.records, "node_representations": representations, "build_executed": False,
                 "geometry_roundtrip_rechecked": True, "surface_roundtrip_rechecked": True,
                 "closure_complete": False, "package_ready": False, "runtime_ready": False, "owner_accepted": False,

@@ -152,6 +152,94 @@ class OriginalReceiptTests(unittest.TestCase):
         self.assertTrue(any("Capability not qualified: original-rigid-authoring/1" in item for item in plan["pending"]))
         self.assertEqual((output / "mod.ff").read_bytes(), (self.build / "mod.ff").read_bytes())
 
+    def nested_readers(self):
+        names = {}
+        for reader, phase in (("GeometryReader", "model-geometry"), ("SurfaceReader", "model-authored-material")):
+            before = Path(self.state[reader]["Stdout"])
+            name = "owned-" + phase + "/stdout.log"
+            self.write(self.build, name, before.read_bytes())
+            identity = dict(PID=123, Image="C:\\SYNTHETIC_SOURCE_TEST\\reader.exe",
+                            CreatedUtc="2026-10-15T00:00:00.0000000Z")
+            self.state[reader].update(Stdout=str(self.build / name), Phase=phase, Identity=identity,
+                RootExited=True, ActiveProcesses=0, JobClosed=True, Arguments=["SYNTHETIC SOURCE TEST"],
+                ImageSHA256="f" * 64, OwnerEvidence=dict(Stage="Fixture", Phase=phase, Identity=identity,
+                    TreeClosureConfirmed=True, ExitCode=0))
+            names[reader] = name
+        self.save_state()
+        return names
+
+    def test_nested_h1_readers_bind_and_materialize_without_relabeling_original_receipts(self):
+        names = self.nested_readers()
+        original_state = (self.build / "state.local.json").read_bytes()
+        binding = self.bind()
+        self.assertEqual(binding["composition"]["assets"]["build_receipt_sha256"], digest(original_state))
+        output = self.root / "candidate"
+        result = consumer.materialize(self.project, self.build, output, ROOT,
+            manifest=self.manifest, client_source=None, server_source=None)
+        evidence = json.loads((output / "finalization.json").read_text())
+        self.assertEqual(evidence["reader_outputs"], {"geometry": names["GeometryReader"], "surface": names["SurfaceReader"]})
+        self.assertEqual(original_state, (self.build / "state.local.json").read_bytes())
+        self.assertFalse(result["package_ready"])
+        self.assertFalse(result["runtime_ready"])
+
+    def test_reader_escape_traversal_relative_ads_and_device_paths_refuse(self):
+        names = self.nested_readers()
+        original = copy.deepcopy(self.state)
+        outside = self.root / "build-sibling/stdout.log"
+        self.write(outside.parent, outside.name, b"SYNTHETIC SOURCE TEXT\n")
+        for reader in names:
+            values = [str(outside), names[reader], str(self.build) + "/../build/" + names[reader],
+                      str(self.build) + "/./" + names[reader], str(self.build / names[reader]) + ":stream",
+                      str(self.build) + "/NUL/stdout.log", str(self.build) + "/dir./stdout.log",
+                      "\\\\?\\C:\\SYNTHETIC_SOURCE_TEST\\stdout.log", "\\\\.\\NUL", True]
+            for value in values:
+                with self.subTest(reader=reader, value=value):
+                    self.state = copy.deepcopy(original)
+                    self.state[reader]["Stdout"] = value
+                    self.save_state()
+                    with self.assertRaises((ValueError, OSError)):
+                        self.bind()
+                    self.assertFalse((self.project / "composition.json").exists())
+
+    def test_redirected_nested_reader_is_refused_before_resolving_its_target(self):
+        self.nested_readers()
+        target = self.build / "owned-model-geometry"
+        alias = self.build / "redirected-reader"
+        try:
+            alias.symlink_to(target, target_is_directory=True)
+        except OSError:
+            self.skipTest("Host does not permit an actual directory symlink")
+        self.state["GeometryReader"]["Stdout"] = str(alias / "stdout.log")
+        self.save_state()
+        with self.assertRaisesRegex(ValueError, "Redirected"):
+            self.bind()
+        self.assertFalse((self.project / "composition.json").exists())
+
+    def test_nested_reader_mutation_after_first_snapshot_refuses_bind_and_materialize(self):
+        names = self.nested_readers()
+        for action in ("Bind", "Materialize"):
+            for reader, name in names.items():
+                with self.subTest(action=action, reader=reader):
+                    composition = self.project / "composition.json"
+                    if composition.exists():
+                        composition.unlink()
+                    raw = (self.build / name).read_bytes()
+                    self.verifier.verify_authored_dump = lambda *a: copy.deepcopy(self.surface)
+                    if action == "Materialize":
+                        self.bind()
+                    def changed(*args):
+                        (self.build / name).write_bytes(raw + b"\n")
+                        return copy.deepcopy(self.surface)
+                    self.verifier.verify_authored_dump = changed
+                    with self.assertRaisesRegex(ValueError, "Input changed"):
+                        if action == "Bind":
+                            self.bind()
+                        else:
+                            consumer.materialize(self.project, self.build, self.root / "candidate", ROOT,
+                                manifest=self.manifest, client_source=None, server_source=None)
+                    (self.build / name).write_bytes(raw)
+                    self.assertFalse((self.root / "candidate").exists())
+
     def test_pending_failed_boolean_exit_or_wrong_surface_hash_refuses_before_binding(self):
         original = copy.deepcopy(self.state)
         mutations = [dict(Restored=False), dict(RetainedLeaseToken="unclosed"), dict(Failure="failed"),
@@ -427,17 +515,18 @@ print("actual final closure gate checked synthetic text; no native operation")
             consumer.materialize(self.project, self.build, self.project / "candidate", ROOT,
                                  manifest=self.manifest, client_source=None, server_source=None)
 
-    @unittest.skipUnless(sys.platform == "win32", "Windows 8.3 path identity")
-    def test_short_path_receipts_work_and_output_alias_cannot_overlap_inputs(self):
+    def short_path(self, path):
         import ctypes
         function = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
         function.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
         function.restype = ctypes.c_uint32
-        def short(path):
-            buffer = ctypes.create_unicode_buffer(32768)
-            self.assertTrue(function(str(path), buffer, len(buffer)))
-            return Path(buffer.value)
-        project_alias, build_alias = short(self.project), short(self.build)
+        buffer = ctypes.create_unicode_buffer(32768)
+        self.assertTrue(function(str(path), buffer, len(buffer)))
+        return Path(buffer.value)
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows 8.3 path identity")
+    def test_short_path_receipts_work_and_output_alias_cannot_overlap_inputs(self):
+        project_alias, build_alias = self.short_path(self.project), self.short_path(self.build)
         if project_alias == self.project:
             self.skipTest("Host has no distinct 8.3 alias")
         self.state["GeometryReader"]["Stdout"] = str(build_alias / "geometry.stdout.json")
@@ -448,6 +537,21 @@ print("actual final closure gate checked synthetic text; no native operation")
             consumer.materialize(self.project, self.build, project_alias / "candidate", ROOT,
                                  manifest=self.manifest, client_source=None, server_source=None)
         self.assertFalse((self.project / "candidate").exists())
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows 8.3 reader alias identity")
+    def test_nested_reader_8dot3_component_alias_is_refused(self):
+        names = self.nested_readers()
+        reader = self.build / names["GeometryReader"]
+        alias = self.short_path(reader.parent)
+        if alias.name == reader.parent.name:
+            self.skipTest("Host has no distinct reader-directory 8.3 alias")
+        # Use the normal build root so the test specifically proves the child
+        # component refusal, separate from valid equivalent TEMP root aliases.
+        self.state["GeometryReader"]["Stdout"] = str(self.build / alias.name / reader.name)
+        self.save_state()
+        with self.assertRaisesRegex(ValueError, "alias refused"):
+            self.bind()
+        self.assertFalse((self.project / "composition.json").exists())
 
 
 if __name__ == "__main__":
