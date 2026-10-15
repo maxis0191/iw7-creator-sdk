@@ -324,6 +324,28 @@ print("real existing stage reader rejected incomplete text receipt")
             consumer.materialize(self.project, self.build, self.project / "candidate", ROOT,
                                  manifest=self.manifest, client_source=None, server_source=None)
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows 8.3 path identity")
+    def test_short_path_receipts_work_and_output_alias_cannot_overlap_inputs(self):
+        import ctypes
+        function = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
+        function.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
+        function.restype = ctypes.c_uint32
+        def short(path):
+            buffer = ctypes.create_unicode_buffer(32768)
+            self.assertTrue(function(str(path), buffer, len(buffer)))
+            return Path(buffer.value)
+        project_alias, build_alias = short(self.project), short(self.build)
+        if project_alias == self.project:
+            self.skipTest("Host has no distinct 8.3 alias")
+        self.state["GeometryReader"]["Stdout"] = str(build_alias / "geometry.stdout.json")
+        self.state["SurfaceReader"]["Stdout"] = str(build_alias / "surface.stdout.json")
+        self.save_state()
+        self.bind()
+        with self.assertRaisesRegex(ValueError, "nonoverlapping"):
+            consumer.materialize(self.project, self.build, project_alias / "candidate", ROOT,
+                                 manifest=self.manifest, client_source=None, server_source=None)
+        self.assertFalse((self.project / "candidate").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

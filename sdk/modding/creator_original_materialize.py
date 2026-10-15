@@ -115,7 +115,9 @@ def _checked(project, source_root, build_root, tools_root, manifest):
             "Native geometry receipt identity/counts differ")
     geometry_stdout = Path(state["GeometryReader"]["Stdout"])
     surface_stdout = Path(state["SurfaceReader"]["Stdout"])
-    require(all(path.is_absolute() and path.parent == build for path in (geometry_stdout, surface_stdout)),
+    require(all(path.is_absolute() for path in (geometry_stdout, surface_stdout)), "Absolute reader outputs required")
+    geometry_stdout, surface_stdout = (f.safe_existing(path).resolve(strict=True) for path in (geometry_stdout, surface_stdout))
+    require(all(path.parent == build for path in (geometry_stdout, surface_stdout)),
             "Reader outputs must be directly under the retained build")
     raw_geometry = f.decoded(read(build, geometry_stdout.name, "build/native-geometry-stdout"))
     require(f.encoded(raw_geometry) == f.encoded({key: value for key, value in geometry.items()
@@ -219,7 +221,7 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
               f.pin(script["closure_sha256"]) and script["closure_sha256"].lower() == f.sha(f.encoded(manifest["package"]["closure"])),
               "Reviewed author GSC/closure or measured payload differs")
     output = Path(os.path.abspath(output_root))
-    f.safe_existing(output.parent)
+    output = f.safe_existing(output.parent).resolve(strict=True) / output.name
     f.require(not os.path.lexists(output) and all(not output.is_relative_to(root) and not root.is_relative_to(output)
               for root in (checked["project"], checked["source"], checked["build"])), "Fresh nonoverlapping author candidate required")
     result = copy.deepcopy(manifest)
