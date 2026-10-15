@@ -86,7 +86,7 @@ watch_context(state)
     level endon("game_ended");
     while (!state.stopped)
     {
-        if (!context()) { cleanup(state); return; }
+        if (!context() || !isdefined(level.sdk_step_lantern) || level.sdk_step_lantern != state) { cleanup(state); return; }
         wait 0.1;
     }
 }
@@ -118,4 +118,3 @@ pulse(state, player, ticket)
     state.uses++;
     if (isdefined(player) && isplayer(player)) player iprintln("Lantern pulse completed: " + state.uses);
 }
-

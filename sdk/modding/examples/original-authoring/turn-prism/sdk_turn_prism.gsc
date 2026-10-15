@@ -82,7 +82,7 @@ watch_context(state)
     level endon("game_ended");
     while (!state.stopped)
     {
-        if (!context()) { cleanup(state); return; }
+        if (!context() || !isdefined(level.sdk_turn_prism) || level.sdk_turn_prism != state) { cleanup(state); return; }
         wait 0.1;
     }
 }
@@ -102,4 +102,3 @@ cleanup(state)
     state.model = undefined;
     level.sdk_turn_prism = undefined;
 }
-
