@@ -316,9 +316,11 @@
         "tools-source/asset-bridge/t7-iw7/test_readback.py",
         "tools-source/asset-bridge/world/original-arena/arena.py",
         "tools-source/asset-bridge/world/original-arena/model_lab.py",
+        "tools-source/asset-bridge/world/original-arena/modal_window.py",
         "tools-source/asset-bridge/world/original-arena/prepare.py",
         "tools-source/asset-bridge/world/original-arena/readback.py",
         "tools-source/asset-bridge/world/original-arena/test_arena.py",
+        "tools-source/asset-bridge/world/original-arena/test_coverage.py",
         "tools-source/asset-bridge/world/trigger_bridge.py"
       ],
       "purpose": "Explicit source, test and integration contracts; no runtime artifacts."
