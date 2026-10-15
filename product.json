@@ -312,6 +312,7 @@
         "tools-source/asset-bridge/t7-iw7/export_contract.py",
         "tools-source/asset-bridge/t7-iw7/readback.py",
         "tools-source/asset-bridge/t7-iw7/resident_image.py",
+        "tools-source/asset-bridge/t7-iw7/streamed_contract.py",
         "tools-source/asset-bridge/t7-iw7/test_readback.py",
         "tools-source/asset-bridge/world/original-arena/arena.py",
         "tools-source/asset-bridge/world/original-arena/model_lab.py",
