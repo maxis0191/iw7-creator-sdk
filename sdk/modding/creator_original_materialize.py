@@ -78,8 +78,7 @@ def _checked(project, source_root, build_root, tools_root, manifest):
             type(plan["source_files"]) is dict and 1 <= len(plan["source_files"]) <= 32 and
             type(plan["dump_files"]) is list and 1 <= len(plan["dump_files"]) <= 32 and
             len(set(plan["dump_files"])) == len(plan["dump_files"]), "Bounded distinct authored inventories required")
-    for name in ("writer-provenance.json", *recipe["source_files"]):
-        read(source, "evidence/writer/" + name, "source/writer/" + name, 512 * 1024)
+    author._writer_snapshots(f, inputs, source, recipe, prefix="evidence/writer/")
     source_data = {name: read(source, name, "source/file/" + name, 20 * 1024 * 1024)
                    for name in plan["source_files"]}
     state_raw = read(build, "state.local.json", "build/state")

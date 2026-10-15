@@ -210,6 +210,51 @@ class OriginalReceiptTests(unittest.TestCase):
             self.bind()
         self.assertFalse((self.project / "composition.json").exists())
 
+    def pending_writer_receipts(self):
+        root = self.source / "evidence/writer"
+        self.write(root, "writer-provenance.json", encoded({"NativeReleasePending": True}))
+        self.write(root, "writer-closure.json", encoded({"synthetic_text_closure": True}))
+        self.write(root, "writer-native-run.json", encoded({"synthetic_text_native_run": True}))
+        return root
+
+    def test_new_writer_receipts_are_enrolled_for_bind_and_materialize(self):
+        self.pending_writer_receipts()
+        self.bind()
+        result = consumer.materialize(self.project, self.build, self.root / "candidate", ROOT,
+            manifest=self.manifest, client_source=None, server_source=None)
+        evidence = json.loads((self.root / "candidate/finalization.json").read_text())
+        for name in ("writer-closure.json", "writer-native-run.json"):
+            self.assertIn("writer/evidence/writer/" + name, evidence["inputs"])
+        self.assertFalse(result["package_ready"])
+        self.assertFalse(result["runtime_ready"])
+
+    def test_new_receipt_mutations_during_both_readers_refuse_bind_and_materialize(self):
+        for action in ("Bind", "Materialize"):
+            for phase in ("verify_authored_stage", "verify_authored_dump"):
+                for name in ("writer-closure.json", "writer-native-run.json"):
+                    with self.subTest(action=action, phase=phase, name=name):
+                        root = self.pending_writer_receipts()
+                        composition = self.project / "composition.json"
+                        if composition.exists():
+                            composition.unlink()
+                        self.verifier.verify_authored_stage = lambda *a: self.plan
+                        self.verifier.verify_authored_dump = lambda *a: copy.deepcopy(self.surface)
+                        if action == "Materialize":
+                            self.bind()
+                        def changed(*args):
+                            (root / name).write_bytes(encoded({"synthetic_changed": True}))
+                            return self.plan if phase == "verify_authored_stage" else copy.deepcopy(self.surface)
+                        setattr(self.verifier, phase, changed)
+                        with self.assertRaisesRegex(ValueError, "Input changed"):
+                            if action == "Bind":
+                                self.bind()
+                            else:
+                                consumer.materialize(self.project, self.build, self.root / "candidate", ROOT,
+                                    manifest=self.manifest, client_source=None, server_source=None)
+                        self.assertFalse((self.root / "candidate").exists())
+                        if action == "Bind":
+                            self.assertFalse(composition.exists())
+
     def test_existing_dispatch_consumes_authored_receipts(self):
         dispatch = load("creator_model_materialize")
         # Both public entrypoints must reach this same authored consumer, rather
@@ -256,6 +301,64 @@ print("real existing stage reader rejected incomplete text receipt")
                              capture_output=True, text=True, timeout=20)
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         self.assertIn("real existing stage reader rejected", run.stdout)
+
+    @unittest.skipUnless((ROOT / "ops/model-lab/prepare_ff.py").is_file(), "Prepared final producer sources required")
+    def test_actual_new_closure_gate_accepts_bound_text_and_rejects_pending_or_missing_receipts(self):
+        # Synthetic declared JSON fields, never real process identities/results.
+        # The final producer alone interprets their contract in a fresh host.
+        script = r'''import hashlib, json, sys
+from pathlib import Path
+tools, root = map(Path, sys.argv[1:])
+sys.path.insert(0, str(tools / "ops/model-lab"))
+from prepare_ff import validate_native_closure, PIN
+root.mkdir()
+encode = lambda value: (json.dumps(value, sort_keys=True) + "\n").encode()
+sha = lambda raw: hashlib.sha256(raw).hexdigest()
+key = "IW7.ModelWriter.Root." + "1" * 32
+provenance = dict(NativeReleasePending=True, NativeRootKey=key, NativeClosureEvidence="writer-closure.json",
+    SourcePin=PIN, Source={"synthetic_source_test": True}, WriterSHA256="a"*64, CompilerSHA256="b"*64)
+provenance_raw = encode(provenance)
+native = dict(Schema="iw7.model-writer-native-run/1", Status="NativeRoundtripPassed", NativeRootKey=key,
+    SourcePin=PIN, Source=provenance["Source"], WriterSHA256="a"*64, CompilerSHA256="b"*64,
+    ReleasePending=True, LeaseReleased=False, TreeClosureConfirmed=True, Quarantined=False, Ready=False, Stages=[])
+for index, (name, kind, image) in enumerate((("discovery","Fixture","vswhere.exe"), ("compile","Compile","cl.exe"), ("fixture","Fixture","model-writer.exe")), 1):
+    native["Stages"].append(dict(Name=name, Stage=kind, ExitCode=0, TreeClosureConfirmed=True,
+        ImageSHA256="b"*64 if name=="compile" else "a"*64,
+        Identity=dict(PID=index, Image="C:\\SYNTHETIC_SOURCE_TEST\\"+image, CreatedUtc="2026-10-15T00:00:00.0000000Z")))
+native_raw = encode(native)
+closure = dict(Schema="iw7.model-writer-closure/1", NativeRootKey=key, WriterProvenanceSHA256=sha(provenance_raw),
+    NativeRunSHA256=sha(native_raw), JobClosureVerified=True, LeaseReleased=True, InputGuardsClosed=True,
+    PreReleasePublicationsVerified=True, Ready=False)
+closure_raw = encode(closure)
+(root/"writer-native-run.json").write_bytes(native_raw)
+(root/"writer-closure.json").write_bytes(closure_raw)
+assert validate_native_closure(root, provenance, provenance_raw) == (closure_raw, native_raw)
+for name in ("writer-closure.json", "writer-native-run.json"):
+    path = root/name
+    raw = path.read_bytes()
+    path.unlink()
+    try:
+        validate_native_closure(root, provenance, provenance_raw)
+    except OSError:
+        pass
+    else:
+        raise AssertionError("missing first receipt accepted")
+    path.write_bytes(raw)
+closure["LeaseReleased"] = False
+(root/"writer-closure.json").write_bytes(encode(closure))
+try:
+    validate_native_closure(root, provenance, provenance_raw)
+except ValueError:
+    pass
+else:
+    raise AssertionError("unclosed receipt accepted")
+assert validate_native_closure(root, {}, b"{}\n") == (None, None)
+print("actual final closure gate checked synthetic text; no native operation")
+'''
+        run = subprocess.run([sys.executable, "-B", "-c", script, str(ROOT), str(self.root / "closure-text")],
+                             capture_output=True, text=True, timeout=20)
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertIn("actual final closure gate checked", run.stdout)
 
     @unittest.skipUnless(shutil.which("pwsh"), "PowerShell 7 required for real Creator refusal paths")
     def test_real_cli_offline_inspection_does_not_waive_other_or_package_errors(self):

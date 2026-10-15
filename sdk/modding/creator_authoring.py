@@ -249,6 +249,37 @@ def _material_inputs(report, context, tools_root):
     return result
 
 
+def _writer_snapshots(f, inputs, root, recipe, *, prefix="", artifacts=False):
+    """Enroll producer-owned writer inputs before its independent validation.
+
+    Only the final producer interprets native publication/closure semantics.
+    Presence of its pending marker requires retaining both first snapshots,
+    even when that marker will subsequently be rejected as malformed.
+    """
+    def read(name, limit=512 * 1024):
+        first = inputs.reads.copy()
+        raw = inputs.read(root, prefix + name, "writer/" + prefix + name, limit)
+        f.require(all(inputs.reads[path] == snapshot for path, snapshot in first.items()),
+                  "First writer input snapshot changed during repeated read")
+        return raw
+    provenance = f.decoded(read("writer-provenance.json"))
+    f.require(type(provenance) is dict, "Writer provenance object required")
+    if "NativeReleasePending" in provenance:
+        read("writer-closure.json", 65536)
+        read("writer-native-run.json", 1024 * 1024)
+    f.require(type(recipe["source_files"]) is dict and 1 <= len(recipe["source_files"]) <= 16,
+              "Bounded writer source inventory required")
+    for name in recipe["source_files"]:
+        read(name)
+    if artifacts:
+        names = recipe["artifact_paths"]
+        f.require(type(names) is list and len(names) == 2 and len(set(names)) == 2,
+                  "Two distinct writer artifacts required")
+        for name in names:
+            read("artifacts/" + name, 8192)
+    inputs.recheck()
+
+
 def stage_ff_inputs(project, writer_run, output, tools_root, *, manifest):
     """Join measured writer inputs and the existing material producer's payloads.
 
@@ -272,6 +303,7 @@ def stage_ff_inputs(project, writer_run, output, tools_root, *, manifest):
               recipe["material_reference"] == descriptor["material_name"] and
               recipe["geometry_input_sha256"] == report["inputs"]["geometry"]["sha256"],
               "Measured writer belongs to different current author inputs")
+    _writer_snapshots(f, inputs, writer_root, recipe, artifacts=True)
     # Reuse the SAME validated project/pixel snapshots; a second selection could
     # otherwise bind a different texture between the writer check and staging.
     material = _material_inputs(report, context, tools_root)
@@ -290,5 +322,6 @@ def stage_ff_inputs(project, writer_run, output, tools_root, *, manifest):
     finally:
         sys.path[:] = previous
     return {"api": API, "ff_inputs_staged": True, "source_plan": result,
+            "inputs": inputs.records,
             "opaque_inputs_read": True, "native_compiled": False, "ff_built": False,
             "build_verified": False, "runtime_ready": False, "owner_accepted": False}

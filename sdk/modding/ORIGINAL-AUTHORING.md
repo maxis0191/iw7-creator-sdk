@@ -96,6 +96,27 @@ operations; they delegate to the existing reviewed producer APIs:
   a measured writer run belonging to the current geometry, then delegates the
   model/material/recipe join to `prepare_ff.stage_authored`.
 
+The pinned assets producer includes the reviewed two-phase writer publication
+contract from PR172. `writer-provenance.json` can contain
+`NativeReleasePending=true`, its `NativeRootKey` and the fixed
+`NativeClosureEvidence=writer-closure.json`. This pre-release provenance alone
+does not close native ownership. The separate `writer-native-run.json` records
+the same source/writer/compiler and three closed stages;
+`writer-closure.json` binds both exact snapshots plus job closure, lease release,
+input guard closure and verified pre-release publication. The existing
+`prepare_ff.validate_native_closure` owns those semantic checks for both legacy
+and authored routes. Historical provenance without the marker retains its
+explicit producer compatibility; it is not evidence of this new contract.
+
+Before `stage_authored` validates any writer run, the SDK enrolls its recipe,
+provenance, recipe source files, two artifacts and the two conditional ownership
+receipts into the first `Inputs` snapshots. Bind/Materialize enroll the staged
+`evidence/writer` copies before either independent stage/readback call. Every
+first snapshot is rechecked after producer calls and final candidate readback;
+a repeated read cannot replace it. These are bounded local receipt reads, not
+another native supervisor or serializer. Source tests use synthetic text fields
+and exercise the actual pinned closure gate; they do not prove a native run.
+
 These are not called by Plan. Actual retail templates, serialized model artifacts
 and future native/FF operations retain their separate admission. Staging FF
 inputs does not create a FF. The existing Build-Writer/Build-ModelFF wrappers own

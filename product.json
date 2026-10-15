@@ -254,7 +254,7 @@
     {
       "id": "x64-zt-extensions",
       "repository": "https://github.com/maxis0191/x64-zt-extensions.git",
-      "revision": "5c2286cf0d4ff083f98fe5394bc3b36d6242bed7",
+      "revision": "8f55ac7819d93f5bcede273aea3e478ae9438a12",
       "files": [
         "ops/doom-source/half_uv.hpp",
         "ops/doom-source/prepare_ff.py",
@@ -279,6 +279,8 @@
         "tools-source/asset-bridge/animation/rig/half_uv.hpp",
         "tools-source/asset-bridge/common/StockBinding.Core.ps1",
         "tools-source/asset-bridge/h1-fixture/H1Native.Core.ps1",
+        "tools-source/asset-bridge/h1-fixture/H1Native.Compiler.ps1",
+        "tools-source/asset-bridge/h1-fixture/H1Native.JobMembers.cs",
         "tools-source/asset-bridge/h1-fixture/inspect_fixture.py",
         "tools-source/asset-bridge/model/BuildJob.cs",
         "tools-source/asset-bridge/recipient/Recipient.Core.ps1",
@@ -290,6 +292,7 @@
         "tools-source/asset-bridge/recipient/recipient_dialog.py",
         "tools-source/asset-bridge/recipient/recipient_phase.py",
         "tools-source/asset-bridge/surfaces/MaterialV2.Core.ps1",
+        "tools-source/asset-bridge/surfaces/MaterialV2.Compiler.ps1",
         "tools-source/asset-bridge/surfaces/authored_dds_material.py",
         "tools-source/asset-bridge/surfaces/AUTHORED-DDS-MATERIAL.md",
         "tools-source/asset-bridge/surfaces/inspect_content.py",
@@ -313,6 +316,7 @@
         "tools-source/asset-bridge/surfaces/strict-content-sources.patch",
         "tools-source/asset-bridge/t7-iw7/boot_contract.py",
         "tools-source/asset-bridge/t7-iw7/export_contract.py",
+        "tools-source/asset-bridge/t7-iw7/T7Build.Profile.ps1",
         "tools-source/asset-bridge/t7-iw7/readback.py",
         "tools-source/asset-bridge/t7-iw7/resident_image.py",
         "tools-source/asset-bridge/t7-iw7/streamed_contract.py",
