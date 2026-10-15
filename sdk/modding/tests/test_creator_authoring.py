@@ -1,5 +1,6 @@
 """Editable source contracts only. No producer, DDS, model, FF or game run."""
 import copy
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -171,6 +172,69 @@ class AuthorInputTests(unittest.TestCase):
         with patch.object(authoring, "_model_producer", return_value=producer), self.assertRaisesRegex(ValueError, "different author geometry"):
             authoring.prepare_writer_inputs(self.project, Path(self.temp.name) / "prepared", ROOT, native,
                                             manifest=self.manifest)
+
+    def writer_receipts(self):
+        writer = Path(self.temp.name) / "writer"
+        writer.mkdir(exist_ok=True)
+        data = self.descriptor()
+        recipe = {key: data[key] for key in ("namespace", "zone", "model_name", "mesh_name")}
+        recipe.update(material_reference=data["material_name"],
+            geometry_input_sha256=hashlib.sha256((self.project / "geometry.source.json").read_bytes()).hexdigest(),
+            source_files={"writer.cpp": "0" * 64}, artifact_paths=["xmodel/source_test.xmb", "xsurface/source_test.xsb"])
+        for name, value in {"writer-source.json": recipe, "writer-provenance.json": {"NativeReleasePending": True},
+                            "writer-native-run.json": {"synthetic_text_native_run": True},
+                            "writer-closure.json": {"synthetic_text_closure": True}}.items():
+            (writer / name).write_text(json.dumps(value), encoding="utf-8")
+        for name in ("writer.cpp", *["artifacts/" + name for name in recipe["artifact_paths"]]):
+            path = writer / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("SYNTHETIC SOURCE TEST TEXT; not a model or native result\n", encoding="utf-8")
+        return writer
+
+    def stage_with(self, writer, callback):
+        loader = authoring.module
+        producer = SimpleNamespace(stage_authored=callback)
+        with patch.object(authoring, "_material_inputs", return_value={"synthetic_source_test": True}), \
+             patch.object(authoring, "_model_producer", return_value=None), \
+             patch.object(authoring, "module", side_effect=lambda path, name:
+                          producer if name == "creator_original_ff_stage" else loader(path, name)):
+            return authoring.stage_ff_inputs(self.project, writer, Path(self.temp.name) / "stage", ROOT,
+                                             manifest=self.manifest)
+
+    def test_stage_enrolls_first_writer_sources_artifacts_and_two_phase_receipts(self):
+        writer = self.writer_receipts()
+        called = []
+        def stage(*args, **kwargs):
+            called.append(True)
+            return dict(ff_built=False, pixels_verified=False, ready=False)
+        result = self.stage_with(writer, stage)
+        self.assertEqual(called, [True])
+        for name in ("writer/recipe", "writer/writer-provenance.json", "writer/writer-closure.json",
+                     "writer/writer-native-run.json", "writer/writer.cpp", "writer/artifacts/xmodel/source_test.xmb"):
+            self.assertIn(name, result["inputs"])
+        self.assertFalse(result["ff_built"])
+        self.assertFalse(result["runtime_ready"])
+
+    def test_stage_refuses_missing_or_reader_mutated_new_receipts(self):
+        for name in ("writer-closure.json", "writer-native-run.json"):
+            with self.subTest(name=name):
+                writer = self.writer_receipts()
+                path = writer / name
+                path.unlink()
+                called = []
+                def no_read(*args, **kwargs):
+                    called.append(True)
+                    raise AssertionError("Missing first receipt reached stage validation")
+                with self.assertRaises(OSError):
+                    self.stage_with(writer, no_read)
+                self.assertEqual(called, [])
+                writer = self.writer_receipts()
+                def changed(*args, **kwargs):
+                    path.write_text('{"synthetic_changed":true}', encoding="utf-8")
+                    return dict(ff_built=False, pixels_verified=False, ready=False)
+                with self.assertRaisesRegex(ValueError, "Input changed"):
+                    self.stage_with(writer, changed)
+                self.assertFalse((Path(self.temp.name) / "stage").exists())
 
     def test_material_dispatch_uses_validated_first_pixel_snapshot_and_no_writes(self):
         templates = self.project / "templates"
