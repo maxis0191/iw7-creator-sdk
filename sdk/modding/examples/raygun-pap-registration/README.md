@@ -107,8 +107,9 @@ Level unload discards the VM. Disconnected entities require runtime validation.
 Markers `BINDINGS_REGISTERED`, `RESTORE_DEFERRED`, `RESTORE_PENDING` and
 `BINDINGS_RESTORED` always retain `runtime_ready=0`; none is an accepted PAP
 transaction. Source fixtures exercise guard/mutation/cleanup regressions with
-negative source controls. The retained gsc-tool 1.5.1.359 parsed this module's
-grammar. Neither those fixtures nor grammar parsing prove engine linking,
+negative source controls. The retained gsc-tool 1.5.1.359 parsed the earlier SDK26
+module before the finite-profile extension; this extension has not been parsed
+or executed as GSC here. Neither those fixtures nor the earlier grammar parsing prove engine linking,
 array/struct reference comparison, actual loaded assets, weapon rebuild, cost,
 pickup, restoration under disconnect or owner acceptance. No engine compiler,
 native/FF build, asset extraction, deployment or game test was run here.
