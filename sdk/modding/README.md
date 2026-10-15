@@ -23,10 +23,11 @@ ready project with `-Action Package -Output <fresh-zip>`. Packaging reuses the
 existing distribution gates and ZIP writer, requires explicit source/protocol
 assertions, and does not build a fastfile or qualify runtime acceptance.
 
-The [original author inputs](ORIGINAL-AUTHORING.md) add two independently editable
-geometry/texture/behavior source projects through ModelLabV2 Plan. This route
-retains an explicitly blocked capability until generic producer integration,
-new build/readback and an unchanged-runtime creator trial are qualified. It does
+The [original author inputs](ORIGINAL-AUTHORING.md) add three independently editable
+geometry/texture/behavior source projects through ModelLabV2 Plan and the existing
+Bind/Materialize entrypoints for retained authored plan/3 receipts. This route
+retains an explicitly blocked capability until new build/readback and an
+unchanged-runtime independent creator trial are qualified. It does
 not reinterpret the retained Beacon, BO3 prop or cube proof as a new asset proof.
 
 The [editable server-only spawn-tip example](examples/server-spawn-tip/sdk_spawn_tip.gsc)

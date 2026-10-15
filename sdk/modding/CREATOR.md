@@ -33,10 +33,13 @@ It does not accept an arbitrary edited game project as a working compiler input.
 `AnimationProbe` and `MaterialV2` are named extension points with explicit blocked
 status until their actual adapters and evidence paths are connected.
 
-`ModelLabV2` supports only the existing `Materialize` action for a retained
-resident multisurface Model Lab build and an explicitly reviewed GSC/closure
-declaration. It reuses the resident reader and SDK gates, preserves actual asset
-names and ordered slots, and leaves package/runtime qualification pending.
+`ModelLabV2` supports Bind/Materialize for a retained resident multisurface build
+and reviewed GSC/closure declaration. Its editable original-author route also
+uses Plan and those same Bind/Materialize entrypoints with authored plan/3
+writer/FF/surface receipts. It delegates to the existing profile readers,
+preserves actual asset names and ordered slots, and keeps package/runtime
+qualification pending. See [original author inputs](ORIGINAL-AUTHORING.md) for
+that profile's strict local inspection allowance and unqualified capability.
 See [Model Lab materialization](MODEL-LAB-MATERIALIZE.md) for the explicit input
 contract and the distinction between an IW7 placeholder and imported textures.
 

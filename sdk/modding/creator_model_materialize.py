@@ -132,6 +132,9 @@ def bind(project, source_root, build_root, tools_root, *, manifest, review_refer
     gsc = inputs.read(project, gsc_name, "project/gsc", 65536)
     plan_raw = inputs.read(source, "model-ff-plan.json", "source/plan", METADATA)
     plan = f.decoded(plan_raw)
+    if adapter == "ModelLabV2" and plan.get("geometry_profile") == "iw7-authored-rigid-v1":
+        authored = module(Path(tools_root) / "sdk/modding/creator_original_materialize.py", "creator_original_materialize")
+        return authored.bind(project, source, build, tools_root, manifest=original, review_reference=review_reference)
     arena = source_profile(plan, adapter, original, require)
     model_id, mesh_id = "xmodel:" + plan["model_name"], "xsurface:" + plan["mesh_name"]
     declared = {node["id"] for node in original["package"]["closure"]["nodes"]}
@@ -216,6 +219,10 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
     original = document(project, "manifest.json", "project/manifest")
     require(f.encoded(original) == f.encoded(manifest), "Project manifest changed after Creator compatibility checks")
     descriptor = document(project, "composition.json", "project/composition", 65536)
+    if adapter == "ModelLabV2" and isinstance(descriptor.get("assets"), dict) and "surface_roundtrip_sha256" in descriptor["assets"]:
+        authored = module(Path(tools_root) / "sdk/modding/creator_original_materialize.py", "creator_original_materialize")
+        return authored.materialize(project, build, output, tools_root, manifest=original,
+                                    client_source=client_source, server_source=server_source)
     exact(descriptor, ("schema", "assets", "script"), "ModelLab composition")
     require(descriptor["schema"] == "iw7.creator-model-composition/1", "ModelLab composition schema required")
     assets, script = descriptor["assets"], descriptor["script"]
