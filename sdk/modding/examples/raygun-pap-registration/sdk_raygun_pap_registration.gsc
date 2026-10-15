@@ -11,14 +11,22 @@ init()
 // Undefined/false arguments refuse before any private dictionary mutation.
 activate(assets_observed, scenario_reviewed, approved_fs_game)
 {
+    return activate_pair("raygun", assets_observed, scenario_reviewed, approved_fs_game);
+}
+
+// Finite private PAP profiles only. This does not register a damage controller.
+activate_pair(profile, assets_observed, scenario_reviewed, approved_fs_game)
+{
+    pair = select_pair(profile);
+    if (!isdefined(pair)) return false;
     if (!isdefined(assets_observed) || assets_observed != true ||
         !isdefined(scenario_reviewed) || scenario_reviewed != true ||
         !private_context(approved_fs_game) || !isplayer(self) || !isalive(self) ||
         !isdefined(level.players) || level.players.size != 1 || level.players[0] != self ||
         isdefined(level.sdk_raygun_pap_registration)) return false;
-    base = "sdk_raygun_zm";
-    pap = "sdk_raygun_pap_zm";
-    upgraded = "sdk_raygun_zm+sdk_raygun_pap_zm";
+    base = pair.base;
+    pap = pair.pap;
+    upgraded = pair.upgraded;
     upgraded_fallback = getsubstr(upgraded, 0, upgraded.size - 1);
     if (self getcurrentweapon() != base || !(self hasweapon(base)) || self hasweapon(upgraded) ||
         !isdefined(self.pap) || !isdefined(level.pap) ||
@@ -74,8 +82,27 @@ activate(assets_observed, scenario_reviewed, approved_fs_game)
     level thread watch_context(state);
     level thread game_end(state);
     self thread departed(state);
-    print("[SDK raygun PAP] BINDINGS_REGISTERED; base=sdk_raygun_zm; pap=sdk_raygun_pap_zm; semantic_max_tier=1; native_base_level=1; native_pap_level=2; callbacks_changed=0; transaction_pending=1; runtime_ready=0.");
+    print("[SDK raygun PAP] BINDINGS_REGISTERED; base=" + base + "; pap=" + pap + "; semantic_max_tier=1; native_base_level=1; native_pap_level=2; callbacks_changed=0; transaction_pending=1; runtime_ready=0.");
     return true;
+}
+
+select_pair(profile)
+{
+    if (!isdefined(profile)) return undefined;
+    pair = spawnstruct();
+    if (profile == "raygun")
+    {
+        pair.base = "sdk_raygun_zm";
+        pair.pap = "sdk_raygun_pap_zm";
+    }
+    else if (profile == "shredder-clone")
+    {
+        pair.base = "sdk_shredder_clone_zm";
+        pair.pap = "sdk_shredder_clone_pap_zm";
+    }
+    else return undefined;
+    pair.upgraded = pair.base + "+" + pair.pap;
+    return pair;
 }
 
 private_context(approved_fs_game)
