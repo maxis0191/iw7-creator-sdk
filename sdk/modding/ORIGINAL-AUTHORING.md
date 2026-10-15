@@ -66,10 +66,11 @@ validation and compatibility still refuse unsupported inputs. Neither a changed
 JSON capability nor a matching protocol qualifies the actual runtime.
 
 Existing BeaconV1, retained ModelLabV2 materialization, BO3 witnesses, PAP and
-their source pins remain separate. The current new selector does not invoke a
-writer, build or packager. Producer integration is required before this becomes
-a complete authored build route. The original templates cannot be relabeled as
-proof for these projects.
+their source pins remain separate. The selector does not invoke a writer, build
+or packager. The small preparation consumers below now use the pinned original
+geometry and DDS/material producers, including their existing authored FF stage.
+Actual preparation and new build/readback remain separate operations. The
+original templates cannot be relabeled as proof for these projects.
 
 The same module exposes small consumer routines for separately authorized
 operations; they delegate to the existing reviewed producer APIs:
@@ -91,6 +92,10 @@ inputs does not create a FF. The existing Build-Writer/Build-ModelFF wrappers ow
 compilation, strict candidate checks, process/resource lifetimes and readback.
 Producer pins, these consumer branches and the actual build route still require
 their final integration checks; no successful real operation is claimed here.
+The old ModelLabV2 `Bind`/`Materialize` route still targets its retained resident
+profile; it is not silently reused for authored plan/3. `Creator Package` remains
+generic for a project with real qualified payload/closure. These source examples
+cannot package while their new capability and actual evidence are blocked.
 
 The smallest next measurable lot is producer validation/preparation for these
 same inputs, then a separately authorized build/readback and creator trial of
