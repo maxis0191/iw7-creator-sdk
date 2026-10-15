@@ -294,6 +294,7 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
     f.require(package_check["ready"] is False and set(package_check["checked"]) == {entry["id"] for entry in files},
               "Unqualified authored package gate or payload checking changed")
     outputs["validation-package.json"] = f.encoded(package_check)
+    f.require(f.identity(f.safe_existing(output).stat())[:2] == directory_identity, "Candidate directory changed")
     with (output / "validation-package.json").open("xb") as stream:
         stream.write(outputs["validation-package.json"])
     verified = f.Inputs()
@@ -301,6 +302,7 @@ def materialize(project, build_root, output_root, tools_root, *, manifest, clien
         f.require(verified.read(output, name, name, len(raw)) == raw, "Materialized authored output changed")
     inputs.recheck()
     verified.recheck()
+    f.require(f.identity(f.safe_existing(output).stat())[:2] == directory_identity, "Candidate directory changed")
     return {"api": API, "materialized": True, "candidate_root": str(output), "manifest_path": str(output / "manifest.json"),
             "creator_output_verified": True, "candidate_files_verified": verified.records,
             "closure_complete": False, "package_ready": False, "runtime_ready": False, "owner_accepted": False,
