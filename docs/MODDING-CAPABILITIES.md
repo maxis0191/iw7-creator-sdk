@@ -5,8 +5,13 @@ inspection, rendering, physics, AI, gameplay, networking and creator tools.
 BO3 is a reference and a source of demonstrations, not a ceiling. Individual
 extensions can go deeper than reproducing an editor; superiority over every
 BO3 tool or unrestricted control of every IW7 subsystem is not established.
-Authentic BO3 textures, a usable Ray Gun with real PAP/projectile behavior, and
-the adapted full HUD remain the immediate visible goals.
+
+Owner correction, 2026-10-16: IW7 engine control is the primary objective, not
+BO3-to-IW7 portability. The [engine strategy](ENGINE-MODDING-STRATEGY.md) defines
+the working method and reviewer/orchestrator roles. Kino and Ray Gun remain
+particular requested demonstrations, without blocking independent IW7 work.
+The HUD showcase is cancelled and Rhino remains retired. Dated snapshots below
+retain their historical proposals and are not current orders to resume them.
 
 ## 2026-10-15: five surfaces for deeper creator control
 

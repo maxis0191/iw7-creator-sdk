@@ -1,5 +1,15 @@
 # Product ownership
 
+## Primary owner objective, 2026-10-16
+
+Deep, reusable control of IW7's own engine and rules is the primary objective.
+BO3 is an optional interoperability use case, never the destination or a
+mandatory prerequisite. Read [the engine strategy](docs/ENGINE-MODDING-STRATEGY.md).
+Kino/Ray Gun remain particular requested demos; do not block independent useful
+IW7 work behind them. Rhino stays retired and the HUD showcase stays cancelled.
+Workers report to the execution orchestrator; hourly strategic review is not a
+second orchestrator or routine approval gate. Preserve specific execution stops.
+
 Author manifests, validation, GSC compiler audit adapters, author examples, composition and packaging. Native engine and asset conversion implementations are versioned dependencies.
 
 Before editing, classify the change by product and inspect `product.json`,
