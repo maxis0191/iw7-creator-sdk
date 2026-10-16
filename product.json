@@ -2,6 +2,7 @@
   "schema": "iw7.product/1",
   "id": "iw7-creator-sdk",
   "exports": [
+    "docs/ENGINE-MODDING-STRATEGY.md",
     "docs/COMMUNITY-MOD-DISTRIBUTION.md",
     "docs/MOD-PACKAGES.md",
     "docs/MODDING-CAPABILITIES.md",

@@ -1,5 +1,10 @@
 # IW7 creator SDK
 
+The primary goal is deep, reusable control of IW7's engine and native rules.
+BO3 import is one optional use case. Start with the owner's
+[engine-modding strategy](docs/ENGINE-MODDING-STRATEGY.md), then the
+[capability evidence](docs/MODDING-CAPABILITIES.md).
+
 Author manifests, validation, GSC compiler audit adapters, author examples, composition and packaging. Native engine and asset conversion implementations are versioned dependencies.
 
 This repository is private. It complements the public owner forks; it does not
