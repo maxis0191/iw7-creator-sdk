@@ -190,5 +190,41 @@
       "comment": "rear speakers of mus_zombies_gameover",
       "source": "stock"
     }
-  ]
+  ],
+  "zones": {
+    "comment": "sound zones (bed, reverb, mix, filter, occlusion) copied from Spaceland's zone table; the zone named after the map is the level's default zone; the module switches a player's zone by area",
+    "defs": "${IW7_DUMP}/cp_zmb/sound",
+    "defs_bank": "cp_zmb.all",
+    "rows": [
+      {
+        "name": "cp_iwz",
+        "copy": "cp_zmb_basement_lg_room"
+      },
+      {
+        "name": "iwz_station",
+        "copy": "cp_zmb_basement_lg_room"
+      },
+      {
+        "name": "iwz_stairs",
+        "copy": "cp_zmb_basement_med_hallway"
+      },
+      {
+        "name": "iwz_service",
+        "copy": "cp_zmb_basement_med_room"
+      },
+      {
+        "name": "iwz_platform",
+        "copy": "cp_zmb_ice_cave_lg_room"
+      },
+      {
+        "name": "iwz_tunnel",
+        "copy": "cp_zmb_ice_cave_med_hallway"
+      },
+      {
+        "name": "iwz_quiet",
+        "copy": "cp_zmb_wave_mix",
+        "comment": "no bed (test baselines, scripted silences)"
+      }
+    ]
+  }
 }

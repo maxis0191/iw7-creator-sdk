@@ -329,6 +329,13 @@ ambience_stop()
     level.iwz_ambience_bed = undefined;
 }
 
+// own thread: an engine refusal of the zone or of a part name ends this thread only, not the area watch
+iwz_set_audio_zone( audio_zone )
+{
+    self setclienttriggeraudiozonepartialwithfade( audio_zone, 1.0, "ambient", "reverb", "mix", "filter" );
+    print( "[IWZ audio] AZONE_SET player=" + self.name + " audio_zone=" + audio_zone + " t=" + gettime() );
+}
+
 // a zone of the ambience: axis-aligned box mins..maxs, 2D bed alias (undefined: the default bed)
 ambience_zone( name, mins, maxs, bed )
 {
@@ -337,6 +344,18 @@ ambience_zone( name, mins, maxs, bed )
     z.mins = mins;
     z.maxs = maxs;
     z.bed = bed;
+    return z;
+}
+
+// an area mapped to a sound zone of the bank (bed streamed by the engine, reverb, mix, filter): the player
+// is switched to it with setclienttriggeraudiozonepartialwithfade when entering the area
+ambience_audio_zone( name, mins, maxs, audio_zone )
+{
+    z = spawnstruct();
+    z.name = name;
+    z.mins = mins;
+    z.maxs = maxs;
+    z.audio_zone = audio_zone;
     return z;
 }
 
@@ -422,6 +441,13 @@ iwz_ambience_bed_player()
             name = z.name;
             if ( isdefined( z.bed ) )
                 want = z.bed;
+
+            if ( isdefined( z.audio_zone ) && ( !isdefined( self.iwz_audio_zone ) || self.iwz_audio_zone != z.audio_zone ) )
+            {
+                self.iwz_audio_zone = z.audio_zone;
+                print( "[IWZ audio] AZONE player=" + self.name + " zone=" + name + " audio_zone=" + z.audio_zone + " t=" + gettime() );
+                self thread iwz_set_audio_zone( z.audio_zone );
+            }
         }
 
         same = isdefined( want ) && isdefined( self.iwz_bed ) && want == self.iwz_bed;

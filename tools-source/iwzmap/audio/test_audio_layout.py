@@ -59,6 +59,13 @@ class LayoutTest(unittest.TestCase):
         self.assertTrue(any('5 looping emitters (limit 4)' in e for e in errors))
         self.assertTrue(any('5 looping emitters in total (limit 3)' in e for e in errors))
 
+    def test_audio_zones(self):
+        s = spec(zones={'pit': {'audio_zone': 'z_pit'}, 'hall': {'audio_zone': 'z_missing'}})
+        r = audio_layout.plan(LAYOUT, s, BANK, {'z_pit'})
+        self.assertEqual(r['errors'], ['zone hall: audio zone z_missing is not a sound zone of the bank'])
+        text = audio_layout.gsc(r, 'cp_x', 'layout.json')
+        self.assertIn('ambience_audio_zone( "pit", ( 0, 1000, -400 ), ( 1000, 1400, -80 ), "z_pit" );', text)
+
     def test_rc1_rooms(self):
         layout = {'rooms': {'arrival': {'box': [0, 4800, 1024, 5824], 'height': 288}}}
         r = audio_layout.plan(layout, {'zones': {'arrival': {'bed': 'bed_a'}},
