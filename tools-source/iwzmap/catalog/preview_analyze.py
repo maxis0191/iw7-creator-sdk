@@ -51,7 +51,7 @@ def parse_lines(lines):
                  'bg': int(re.search(r'bg=(\d+)', ln).group(1)), 'cam': cur}
             pvs.append(d)
         elif '[IWZ local] BG ' in ln:
-            bgs.append(int(re.search(r'k=(\d+)', ln).group(1)))
+            bgs.append((int(re.search(r'k=(\d+)', ln).group(1)), cur))
     return cams, pvs, bgs
 
 
@@ -198,20 +198,24 @@ def main():
     for run in a.run:
         res = json.load(open(os.path.join(run, 'result.local.json'), encoding='utf-8-sig'))
         cams, pvs, bgk = parse_lines(res.get('Lines') or [])
-        bg_imgs = {}
-        for k in bgk:
+        bg_imgs, bg_cam = {}, {}
+        for k, ci in bgk:
             p = os.path.join(run, 'iwzbg%d.bmp' % k)
             if os.path.exists(p):
                 bg_imgs[k] = Image.open(p).convert('RGB')
-        # pixels that change between background frames (HUD counters, flicker) are not trusted
-        static = None
-        ks = sorted(bg_imgs)
-        if len(ks) > 1:
+                bg_cam[k] = ci
+        # pixels that change between background frames of the same camera (HUD counters, flicker) are not
+        # trusted; frames of different cameras show different views and are never compared
+        statics = {}
+        for ci in set(bg_cam.values()):
+            ks = sorted(k for k in bg_imgs if bg_cam[k] == ci)
+            if len(ks) < 2:
+                continue
             acc = None
             for i in range(1, len(ks)):
                 d = ImageChops.difference(bg_imgs[ks[i]], bg_imgs[ks[0]]).convert('L').point(lambda v: 255 if v > a.static_thr else 0)
                 acc = d if acc is None else ImageChops.lighter(acc, d)
-            static = ImageChops.invert(acc.filter(ImageFilter.MaxFilter(9)))
+            statics[ci] = ImageChops.invert(acc.filter(ImageFilter.MaxFilter(9)))
         for pv in pvs:
             fp = os.path.join(run, 'iwzpv%d.bmp' % pv['n'])
             row = {'run': os.path.basename(run.rstrip('/\\')), 'n': pv['n'], 'model': pv['model'], 'frame': fp}
@@ -273,8 +277,8 @@ def main():
             pbox = bbox_of(pts)
             cbox = bbox_of(corners)
             # 3. silhouette from background difference
-            near = [bg_imgs[k] for k in (pv['bg'] - 1, pv['bg']) if k in bg_imgs]
-            mask = diff_mask(frame, near, static, a.thr) if near else None
+            near = [bg_imgs[k] for k in (pv['bg'] - 1, pv['bg']) if k in bg_imgs and bg_cam[k] == pv['cam']]
+            mask = diff_mask(frame, near, statics.get(pv['cam']), a.thr) if near else None
             if mask is not None and pbox:
                 mask, row['discardedPixels'] = keep_components_near(mask, pbox, a.roi)
             mbox = mask.getbbox() if mask else None
@@ -304,7 +308,8 @@ def main():
                 dr.rectangle((pbox[0] - ox, pbox[1] - oy, pbox[2] - ox, pbox[3] - oy), outline=(0, 255, 0))
             if mbox:
                 dr.rectangle((mbox[0] - ox, mbox[1] - oy, mbox[2] - ox, mbox[3] - oy), outline=(255, 0, 255))
-            safe = re.sub(r'[^A-Za-z0-9_.-]', '_', pv['model'])
+            # one crop per frame: a model previewed from several cameras keeps every view
+            safe = re.sub(r'[^A-Za-z0-9_.-]', '_', pv['model']) + '_n%d' % pv['n']
             cp = os.path.join(a.out, 'crops', safe + '.png')
             crop.save(cp)
             ov.save(os.path.join(a.out, 'crops', safe + '.check.png'))

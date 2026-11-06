@@ -142,5 +142,21 @@ class ProjectionTests(unittest.TestCase):
         self.assertAlmostEqual(v[1], 1, places=6)
 
 
+class LogParseTests(unittest.TestCase):
+    def test_background_frames_belong_to_their_camera(self):
+        lines = ['[IWZ local] PREVIEW CAM ci=0; eye=(0, 0, 60); angles=(8, 0, 0); fov=65; fovscale=1',
+                 '[IWZ local] BG k=0; t=1',
+                 '[IWZ local] PV n=0; model=a; origin=(1, 2, 3); angles=(0, 150, 0); lo=(1, 2, 3); hi=(1, 2, 3); '
+                 'd=40; eye=(0, 0, 60); bg=1',
+                 '[IWZ local] BG k=1; t=2',
+                 '[IWZ local] PREVIEW CAM ci=1; eye=(0, 0, 60); angles=(8, 180, 0); fov=65; fovscale=1',
+                 '[IWZ local] BG k=2; t=3',
+                 '[IWZ local] PV n=1000; model=a; origin=(1, 2, 3); angles=(0, 330, 0); lo=(1, 2, 3); hi=(1, 2, 3); '
+                 'd=40; eye=(0, 0, 60); bg=3']
+        cams, pvs, bgs = pa.parse_lines(lines)
+        self.assertEqual(bgs, [(0, 0), (1, 0), (2, 1)])
+        self.assertEqual([p['cam'] for p in pvs], [0, 1])
+
+
 if __name__ == '__main__':
     unittest.main()
