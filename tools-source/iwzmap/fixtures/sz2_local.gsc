@@ -118,8 +118,30 @@ iwz_walk( player )
         }
     }
     print( "[IWZ local] VOLUMES probes=" + probes.size + " fails=" + vol_fail );
+    // istouching (the stock player-zone test) with the player standing on each probe
+    touch_fail = 0;
+    foreach ( p in probes )
+    {
+        v = level.spawn_volume_array[p.zone];
+        if ( !isdefined( v ) )
+            continue;
+        player setorigin( p.origin - ( 0, 0, 40 ) );
+        wait 0.1;
+        if ( !( player istouching( v ) ) )
+        {
+            print( "[IWZ local] WALKFAIL touch_out zone=" + p.zone + " point=" + p.origin );
+            touch_fail++;
+        }
+    }
+    print( "[IWZ local] TOUCH probes=" + probes.size + " fails=" + touch_fail );
+    doors = [];
+    //@DOORS@
+    player setorigin( walk[0] );
+    wait 0.5;
+    iwz_door_checks( doors, "closed" );
     iwz_open_doors( player );
     wait 1;
+    iwz_door_checks( doors, "open" );
     player freezecontrols( 1 );
     fails = 0;
     steps = 0;
@@ -213,6 +235,54 @@ iwz_walk( player )
         print( "[IWZ local] WALKPT k=" + k + " origin=" + player.origin + " ground=" + player isonground() + " zone=" + zone );
     }
     print( "[IWZ local] WALK steps=" + steps + " fails=" + fails );
+}
+
+// door collision: player hull traces through each door at 3 points across its span, 30 above the sill
+iwz_door_checks( doors, state )
+{
+    blocked_total = 0;
+    foreach ( d in doors )
+    {
+        blocked = 0;
+        for ( k = 1; k <= 3; k++ )
+        {
+            s = d.lo + ( d.hi - d.lo ) * k / 4;
+            if ( d.axis == 0 )
+            {
+                a = ( d.plane - 48, s, d.z0 + 30 );
+                b = ( d.plane + 48, s, d.z0 + 30 );
+            }
+            else
+            {
+                a = ( s, d.plane - 48, d.z0 + 30 );
+                b = ( s, d.plane + 48, d.z0 + 30 );
+            }
+            got = playerphysicstrace( a, b );
+            back = playerphysicstrace( b, a );
+            if ( distance( got, b ) > 2 && distance( back, a ) > 2 )
+                blocked++;
+        }
+        blocked_total += blocked;
+        ok = ( state == "closed" && blocked == 3 ) || ( state == "open" && blocked == 0 );
+        if ( d.name == "pap_shutter" && state == "open" )
+            ok = blocked == 3;
+        print( "[IWZ local] DOORCHECK " + state + " door=" + d.name + " blocked=" + blocked + "/3 ok=" + ok );
+        if ( !ok )
+            print( "[IWZ local] WALKFAIL door_" + state + " door=" + d.name + " blocked=" + blocked );
+    }
+}
+
+iwz_door( name, axis, plane, lo, hi, z0, z1 )
+{
+    d = spawnstruct();
+    d.name = name;
+    d.axis = axis;
+    d.plane = plane;
+    d.lo = lo;
+    d.hi = hi;
+    d.z0 = z0;
+    d.z1 = z1;
+    return d;
 }
 
 iwz_probe( zone, x, y, z )

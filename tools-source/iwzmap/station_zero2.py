@@ -107,7 +107,7 @@ OPENINGS = [
     {'name': 'o_hall_street', 'kind': 'open', 'axis': 'x', 'walls': {'hall': 4400, 'street': 4400},
      'a': -304, 'b': 112, 'z0': 0, 'z1': 320},
     {'name': 'a_control_pap', 'kind': 'arch', 'axis': 'x', 'walls': {'control': 4000, 'pap_alcove': 4016},
-     'a': 2976, 'b': 3232, 'z0': -320, 'z1': -112},
+     'a': 2976, 'b': 3232, 'z0': -320, 'z1': -136},
 ]
 OP = {o['name']: o for o in OPENINGS}
 
@@ -331,7 +331,7 @@ def sign(zone, key, axis, fixed, facing, s, zc, width, height=None, frame=True, 
     if 'v' in flip: uv = [(u, 1 - v) for u, v in uv]
     B.quad(key, zone, pts, n=n, uvs=uv, collide=False)
     SIGNS.append({'zone': zone, 'image': key, 'center': ((a + b) / 2 if axis == 'x' else fixed, fixed if axis == 'x' else (a + b) / 2, zc),
-                  'axis': axis, 'facing': facing, 'size': (width, height)})
+                  'axis': axis, 'facing': facing, 'size': (width, height), 'off': off, 'hanging': not frame and depth == 0.0})
 
 
 def hanging_sign(zone, key, x, y, zc, width, ceil_z, axis='x', height=None):
@@ -708,7 +708,7 @@ for a, b in [(-400, -296), (-264, -136), (-104, 24), (56, 184), (216, 336)]:
 # grab poles at the doors
 for a, b in CAR_DOORS:
     B.box(((a + b) / 2 - 1.5, 1540, CAR_FLOOR), ((a + b) / 2 + 1.5, 1543, CAR_ROOF), 'chrome_trim', Z, collide=False, nav=False)
-TEDDY_SPOT = (-200, CY0 + WT + 12, CAR_FLOOR + 107)
+TEDDY_SPOT = (-200, CY0 + WT + 11, CAR_FLOOR + 106)        # top of the rack bar (z -214), centre of its depth
 region('car', Z, (CX0 + WT, CY0 + WT + 26, CX1 - WT, CY1 - WT), CAR_FLOOR)
 # signs, posters, map on the platform walls
 for x in (-1536, 0, 1536):
@@ -991,7 +991,7 @@ REGION_ZONE = {r['name']: r['zone'] for r in REGIONS}
 # ============================================================================ gameplay tables
 K = {'classname': '157', 'targetname': '822', 'origin': '543', 'angles': '65', 'noteworthy': '638', 'target': '820',
      'area': '60666', 'parameters': '61049', 'model': '497', 'groupname': '502', 'radius': '599', 'linkname': '636',
-     'animation': '60661', 'fxid': '60859'}
+     'animation': '60661', 'fxid': '60859', 'spawnflags': '687', 'dummy': '51961'}
 
 
 def ent(**kw):
@@ -1067,13 +1067,13 @@ WHEELS = [   # (template scriptable, origin, yaw, zone): first = start location
 POWER = {'origin': (3500, 2420, -270), 'yaw': 90, 'zones': list(ZONES), 'switch_model': 'icbm_electricpanel_switch_02'}
 PAP = {'origin': (3104, 4100, -320), 'yaw': 270, 'zone': 'control_room'}
 QUEST = {   # Pack-a-Punch relays (gameplay agent: logic), trap and EE spots (data only)
-    'relay_1': {'zone': 'platform_a', 'origin': (768, 2026, -260), 'yaw': 90},
-    'relay_2': {'zone': 'platform_b', 'origin': (-3390, 3215, -300), 'yaw': 90},
-    'relay_3': {'zone': 'generator_room', 'origin': (3660, 3150, -250), 'yaw': 270},
+    'relay_1': {'zone': 'platform_a', 'origin': (768, 2027, -300), 'yaw': 90, 'model_yaw': 0},          # column north face
+    'relay_2': {'zone': 'platform_b', 'origin': (-3390, 3211, -340), 'yaw': 90, 'model_yaw': 0},        # old booth wall
+    'relay_3': {'zone': 'generator_room', 'origin': (3660, 3167, -260), 'yaw': 270, 'model_yaw': 180},  # control panel
     'pap_shutter': {'zone': 'control_room', 'origin': (3104, 4010, -320), 'yaw': 270, 'size': (256, 208)},
-    'trap_third_rail_fusebox': {'zone': 'platform_a', 'origin': (-768, 1974, -280), 'yaw': 270},
+    'trap_third_rail_fusebox': {'zone': 'platform_a', 'origin': (-768, 1975, -300), 'yaw': 270, 'model_yaw': 180},
     'trap_third_rail_volume': {'zone': 'platform_a', 'box': (-2400, 1200, -384, 2600, 1600, -300)},
-    'teddy_bear': {'zone': 'platform_a', 'origin': TEDDY_SPOT, 'yaw': 0, 'note': 'luggage rack above a seat inside the car'},
+    'teddy_bear': {'zone': 'platform_a', 'origin': TEDDY_SPOT, 'yaw': 90, 'note': 'on the luggage rack above the seat x -264..-136, facing into the car'},
 }
 
 ws = mapgen.stock_worldspawn(os.path.join(tpl, 'maps/cp/cp_zmb.d3dbsp.ents'))
@@ -1177,9 +1177,60 @@ for o in OPENINGS:
     DOORS.append({'name': o['name'], 'target': o['scriptable'], 'cost': o['cost'], 'zones': o['zones'], 'axis': 0 if o['axis'] == 'y' else 1,
                   'plane': plane, 'lo': o['a'], 'hi': o['b'], 'z0': o['z0'], 'z1': o['z1']})
 layout['doors'] = DOORS
+# door blockers: every debris door (and the PaP shutter) gets collision-only script_brushmodel targets, copies of one
+# kept template sub-model (sz2_submodels.json, from the compiler's IWZ_KEEP_SUBMODELS log) tiled over the opening;
+# stock clear_debris does connectpaths() + notsolid() on them
+SUBMODELS = []
+_smj = os.environ.get('IWZ_SUBMODELS') or os.path.join(HERE, 'sz2_submodels.json')
+if os.path.isfile(_smj):
+    SUBMODELS = json.load(open(_smj)).get('blockers', [])
+BLOCKERS = []
+
+
+def door_blockers(targetname, axis, plane, a, b, z0, z1):
+    """Tile the opening (span a..b along the wall, z0..z1, wall plane `plane`) with copies of the chosen sub-model."""
+    if not SUBMODELS:
+        return 0
+    sm = SUBMODELS[0]
+    (mx, my, mz), (hx, hy, hz) = sm['mid'], sm['half']
+    # wide horizontal axis of the shape along the wall: yaw 0 keeps x, yaw 90 swaps
+    wide_x = hx >= hy
+    span, thick = (2 * hx, 2 * hy) if wide_x else (2 * hy, 2 * hx)
+    height = 2 * hz
+    nx = max(1, int(math.ceil((b - a + 8) / span)))
+    nz = max(1, int(math.ceil((z1 - z0 + 4) / height)))
+    count = 0
+    for i in range(nx):
+        c = a - 4 + span / 2 + i * (b - a + 8 - span) / max(1, nx - 1) if nx > 1 else (a + b) / 2
+        for k in range(nz):
+            zc = z0 + hz + k * (z1 - z0 + 4 - height) / max(1, nz - 1) if nz > 1 else (z0 + z1) / 2
+            # the entity origin is placed so the shape's bounds centre lands on (c, plane, zc)
+            if axis == 'x':          # wall along x: span along x, thin along y
+                yaw = 0 if wide_x else 90
+                lx, ly = (mx, my) if yaw == 0 else (-my, mx)
+                org = (c - lx, plane - ly, zc - mz)
+            else:                    # wall along y: span along y, thin along x
+                yaw = 90 if wide_x else 0
+                lx, ly = (mx, my) if yaw == 0 else (-my, mx)
+                org = (plane - lx, c - ly, zc - mz)
+            ents.append(ent(classname='script_brushmodel', targetname=targetname, model=sm['model'], origin=fmt(org),
+                            angles='0 %g 0' % yaw, spawnflags='1', dummy=sm.get('dummy', 'ScriptBrushModelDummyFixed')))
+            BLOCKERS.append({'target': targetname, 'model': sm['model'], 'origin': org, 'yaw': yaw})
+            count += 1
+    return count
+
+
+for o in OPENINGS:
+    if o['kind'] != 'door':
+        continue
+    p_ = sorted(o['walls'].values())
+    door_blockers(o['scriptable'], o['axis'], (p_[0] + p_[1]) / 2, o['a'], o['b'], o['z0'], o['z1'])
+_pa = OP['a_control_pap']
+door_blockers('iwz_pap_shutter', 'x', 4008, _pa['a'], _pa['b'], _pa['z0'], _pa['z1'])
+layout['blockers'] = BLOCKERS
 # power
-istruct('generator', POWER['origin'], POWER['yaw'], parameters=','.join(POWER['zones']), target='iwz_power_switch')
-ents.append(ent(classname='script_model', targetname='iwz_power_switch', model=POWER['switch_model'],
+istruct('generator', POWER['origin'], POWER['yaw'], parameters='power_all', target='iwz_power_switch')
+ents.append(ent(classname='script_model', targetname='iwz_power_switch', model=POWER['switch_model'], noteworthy='-pitch',
                 origin=fmt((POWER['origin'][0], POWER['origin'][1] - 16, POWER['origin'][2])), angles='75 %g 0' % POWER['yaw']))
 for weapon, wm, origin, yaw, zone in WALL_BUYS:
     if wm:
@@ -1204,6 +1255,21 @@ for scriptable, origin, yaw, zone in WHEELS:
 for name, q in QUEST.items():
     if 'origin' in q:
         ents.append(ent(classname='script_struct', targetname='iwz_' + name, origin=fmt(q['origin']), angles='0 %g 0' % q['yaw']))
+    if 'model_yaw' in q:
+        ents.append(ent(classname='script_model', targetname='iwz_' + name + '_model', model='fac_sort_machine_fuse_box_set_01',
+                        origin=fmt(q['origin']), angles='0 %g 0' % q['model_yaw']))
+# stock fast-travel / hidden-room init runs on every map: give its lookups parked entities so its threads idle
+# instead of looping on undefined (gameplay REPORT defect 7)
+for tn in ('hidden_room_portal', 'center_portal', 'fast_travel_tube_start', 'fast_travel_tube_end', 'hidden_travel_tube_start',
+           'hidden_travel_tube_end'):
+    ents.append(ent(classname='script_model', targetname=tn, model='tag_origin', origin='0 0 -3000', angles='0 0 0'))
+ents.append(ent(classname='script_struct', targetname='hidden_room_spot', origin='0 0 -3000', angles='0 0 0'))
+# PaP shutter: two rolling steel gates (stock gate_warehouse_refinery_01, 156 x 12 x 186, origin at its corner) in the
+# arch between the control room and the PaP alcove, raised by the relay quest; collision from door blockers below
+PAP_ARCH = OP['a_control_pap']
+for gx in (PAP_ARCH['a'] - 28, PAP_ARCH['a'] - 28 + 156):
+    ents.append(ent(classname='script_model', targetname='iwz_pap_shutter', model='gate_warehouse_refinery_01',
+                    origin=fmt((gx, 4002, PAP_ARCH['z0'])), angles='0 0 0'))
 for d in DECOR:
     ents.append(ent(classname='script_model', model=d['model'], origin=fmt(d['origin']), angles='0 %g 0' % d.get('yaw', 0)))
 open(os.path.join(out, 'scriptables.txt'), 'w', newline='\n').write('\n'.join(relocations) + '\n')
@@ -1225,6 +1291,9 @@ link_lines = ['    links[links.size] = [ "%s", "%s" ];' % l for l in ZONE_LINKS]
 gsc = gsc.replace('//@DOORS@', '\n'.join(door_lines)).replace('//@LINKS@', '\n'.join(link_lines))
 gsc = gsc.replace('//@INITIAL@', 'level.initial_active_volumes = [ %s ];' % ', '.join('"%s"' % z for z in INITIAL_ZONES))
 gsc = gsc.replace('//@WHEEL@', '"%s"' % WHEELS[0][3])
+tb = QUEST['trap_third_rail_volume']['box']
+gsc = gsc.replace('//@TRAPMIN@', '( %g, %g, %g )' % tb[:3]).replace('//@TRAPMAX@', '( %g, %g, %g )' % tb[3:])
+gsc = gsc.replace('//@TRAPRAILY@', '%g' % THIRD_Y)
 open(os.path.join(out, 'cp_iwz.gsc'), 'w', newline='\n').write(gsc)
 
 # ============================================================================ capture views, walk path, summaries
@@ -1256,6 +1325,27 @@ view_lines = []
 for zone, vs in VIEWS.items():
     for k, (x, y, z, yaw, pitch) in enumerate(vs):
         view_lines.append('    views[views.size] = iwz_view( "%s_%d", %g, %g, %g, %g, %g );' % (zone, k, x, y, z, yaw, pitch))
+# sign check views: for each sign / poster image, one wall-mounted instance seen straight on from the floor in front
+SIGN_VIEWS, SIGN_VIEW_LIST, _seen = {}, [], set()
+for si, sg in enumerate(SIGNS):
+    if sg['image'] in _seen:
+        continue
+    (cx, cy, zc), (w, h) = sg['center'], sg['size']
+    nx, ny = (0, sg['facing']) if sg['axis'] == 'x' else (sg['facing'], 0)
+    sx, sy = (cx, cy + sg['facing'] * sg['off']) if sg['axis'] == 'x' else (cx + sg['facing'] * sg['off'], cy)
+    for d in (max(160, 1.3 * w), 220, 160, 120, 300):
+        vx, vy = sx + nx * d, sy + ny * d
+        fz = floor_z_at(vx, vy)
+        if fz is None:
+            continue
+        yaw = math.degrees(math.atan2(-ny, -nx)) % 360
+        pitch = -math.degrees(math.atan2(zc - (fz + 60), d))
+        SIGN_VIEWS[len(SIGN_VIEW_LIST)] = si
+        SIGN_VIEW_LIST.append((round(vx, 1), round(vy, 1), fz, round(yaw, 2), round(pitch, 2)))
+        _seen.add(sg['image'])
+        break
+for k, (x, y, z, yaw, pitch) in enumerate(SIGN_VIEW_LIST):
+    view_lines.append('    views[views.size] = iwz_view( "sign_%d", %g, %g, %g, %g, %g );' % (k, x, y, z, yaw, pitch))
 for k, (x, y, z, yaw, pitch) in enumerate(GALLERY_VIEWS):
     view_lines.append('    views[views.size] = iwz_view( "gallery_%d", %g, %g, %g, %g, %g );' % (k, x, y, z, yaw, pitch))
 walk_lines = ['    walk[walk.size] = ( %g, %g, %g );' % tuple(p) for p in WALK]
@@ -1270,9 +1360,16 @@ for r in REGIONS:
         continue
     probe_lines.append('    probes[probes.size] = iwz_probe( "%s", %g, %g, %g );' % (r['zone'], cx, cy, cz + 40))
 NL = chr(10)
+fdoor_lines = ['    doors[doors.size] = iwz_door( "%s", %d, %g, %g, %g, %g, %g );' % (d['name'], d['axis'], d['plane'], d['lo'], d['hi'], d['z0'], d['z1'])
+               for d in DOORS]
+fdoor_lines.append('    doors[doors.size] = iwz_door( "pap_shutter", 1, 4008, %g, %g, %g, %g );' % (OP['a_control_pap']['a'], OP['a_control_pap']['b'],
+                                                                                              OP['a_control_pap']['z0'], OP['a_control_pap']['z1']))
+fx = fx.replace('//@DOORS@', NL.join(fdoor_lines))
 fx = fx.replace('//@VIEWS@', NL.join(view_lines)).replace('//@WALK@', NL.join(walk_lines)).replace('//@PROBES@', NL.join(probe_lines))
 open(os.path.join(out, 'iwzmap_sz2_local.gsc'), 'w', newline=NL).write(fx)
 layout['views'] = VIEWS
+layout['sign_views'] = SIGN_VIEWS
+layout['sign_view_list'] = SIGN_VIEW_LIST
 layout['walk'] = WALK
 layout['gallery'] = {'materials': GALLERY_ITEMS, 'texels': GALLERY_TEXELS, 'views': GALLERY_VIEWS}
 json.dump(layout, open(os.path.join(out, 'layout.json'), 'w'), indent=1, default=list)
