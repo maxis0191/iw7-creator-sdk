@@ -53,11 +53,36 @@ def project(P, cam, w, h):
     return px, py, ok
 
 
+def viz(out, i, frame, ix, iy, lum, fit, E):
+    """frame (linear luma, sRGB encoded) | predicted luma k * (albedo E)^g splatted at the projected texel centres and
+    filled to the nearest splat | log2 ratio frame / prediction (blue -2 .. red +2, grey 0)."""
+    from scipy import ndimage
+    H, W = frame.shape
+    pred = fit['k'] * E ** fit['gamma']
+    img = np.full((H, W), np.nan); img[iy, ix] = pred
+    rat = np.full((H, W), np.nan); rat[iy, ix] = np.log2(np.maximum(lum, 1e-5) / np.maximum(pred, 1e-5))
+    miss = np.isnan(img)
+    dist, (jy, jx) = ndimage.distance_transform_edt(miss, return_indices=True)
+    img = img[jy, jx]; rat = rat[jy, jx]
+    far = dist > 48
+    img[far] = 0; rat[far] = np.nan
+    enc = lambda v: (np.clip(np.where(v <= 0.0031308, v * 12.92, 1.055 * np.power(np.maximum(v, 0), 1 / 2.4) - 0.055), 0, 1) * 255).astype(np.uint8)
+    f8 = enc(frame); p8 = enc(img)
+    r = np.clip(np.nan_to_num(rat) / 2, -1, 1)
+    rgb = np.stack([128 + 127 * r, 128 - 64 * np.abs(r), 128 - 127 * r], -1).astype(np.uint8)
+    rgb[np.isnan(rat)] = 0
+    os.makedirs(out, exist_ok=True)
+    Image.fromarray(np.hstack([np.stack([f8] * 3, -1), np.stack([p8] * 3, -1), rgb])).resize((W * 3 // 2, H // 2)).save(
+        os.path.join(out, 'compare%d.png' % i))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('bake'); ap.add_argument('views'); ap.add_argument('frames'); ap.add_argument('out')
     ap.add_argument('--prefix', default='iwzview'); ap.add_argument('--pattern'); ap.add_argument('--frames-flat')
     ap.add_argument('--eye', type=float); ap.add_argument('--fov', type=float)
+    ap.add_argument('--viz', help='directory for per-view comparison images: frame | baked E through the fitted tone '
+                                  'curve, projected | visible texels coloured by luma/prediction ratio')
     a = ap.parse_args()
     d = np.load(os.path.join(a.bake, 'bake.npz'))
     w = lmbake.read_world(os.path.join(a.bake, 'world.bin'))
@@ -69,6 +94,14 @@ def main():
     x, y = d['tx_x'], d['tx_y']
     A, B, D = d['A'][y, x], d['B'][y, x], d['D'][y, x]
     E = (A + B * lmbake.oct_decode(D)[:, 2:3]).mean(1)
+    # radiance proxy: albedo (lights.json of the bake, luminance) * E; the frame luma also carries the texture
+    alb = np.ones(len(E))
+    lj = os.path.join(a.bake, 'lights.json')
+    if os.path.exists(lj):
+        cfg = json.load(open(lj)); mats = lmbake.read_world(os.path.join(a.bake, 'world.bin'))['materials']
+        al = np.array([cfg.get('albedo', {}).get(m, cfg.get('default_albedo', [0.5] * 3)) for m in mats], float) @ [0.2126, 0.7152, 0.0722]
+        alb = al[d['tx_mat']]
+    R = alb * E
     chart = d['tx_chart']
     views = [tuple(float(c) for c in v.split(',')) for v in a.views.split(';') if v]
     frames = [load_frame(os.path.join(a.frames, '%s%d.bmp' % (a.prefix, i))) for i in range(len(views))]
@@ -133,6 +166,9 @@ def main():
             le, ll = np.log(E[g]), np.log(lum[g])
             gamma, logk = np.polyfit(le, ll, 1)
             pred = logk + gamma * le
+            lr_ = np.log(R[g]); gr_, lk_ = np.polyfit(lr_, ll, 1)
+            vr['samples_albedo'] = {'pearson_log': float(np.corrcoef(lr_, ll)[0, 1]), 'tone_fit': {'k': float(np.exp(lk_)), 'gamma': float(gr_)},
+                                    'residual_rel_median': float(np.median(np.abs(np.exp(ll - lk_ - gr_ * lr_) - 1)))}
             vr['samples'] = {'n': int(g.sum()), 'pearson_log': float(np.corrcoef(le, ll)[0, 1]),
                              'pearson_linear': float(np.corrcoef(E[g], lum[g])[0, 1]),
                              'tone_fit': {'k': float(np.exp(logk)), 'gamma': float(gamma)},
@@ -194,10 +230,12 @@ def main():
                 vr['calibrated_prediction'] = {'material_texels': int(m.sum()), 'pearson_log': float(np.corrcoef(np.log(pred), np.log(lum[m]))[0, 1]),
                                                'rel_err_median': float(np.median(np.abs(rel))), 'rel_bias_median': float(np.median(rel)),
                                                'rel_err_p90': float(np.percentile(np.abs(rel), 90))}
+        if a.viz and 'samples' in vr:
+            viz(a.viz, i, frames[i], ix[g], iy[g], lum[g], vr['samples_albedo']['tone_fit'], R[g])
         rep['views'].append(vr)
         s = vr.get('samples', {})
-        print('view %d: visible %d, r_log %.3f, walls %d, mean luma CV %.3f%s' % (
-            i, ok.sum(), s.get('pearson_log', float('nan')), len(vr['walls']),
+        print('view %d: visible %d, r_log %.3f (albedo*E %.3f), walls %d, mean luma CV %.3f%s' % (
+            i, ok.sum(), s.get('pearson_log', float('nan')), vr.get('samples_albedo', {}).get('pearson_log', float('nan')), len(vr['walls']),
             np.mean([x['luma_cv'] for x in vr['walls']]) if vr['walls'] else float('nan'),
             (', flat CV %.3f' % np.mean([x['flat_luma_cv'] for x in vr['walls']])) if flat and vr['walls'] else ''))
         for q in pr:
