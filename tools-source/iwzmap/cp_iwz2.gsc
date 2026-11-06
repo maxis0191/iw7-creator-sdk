@@ -11,6 +11,8 @@ main()
     level.spawn_fx_func = scripts\cp\maps\cp_zmb\cp_zmb::cp_zmb_spawn_fx_func;
     //@INITIAL@
     level.map_interaction_func = scripts\cp\maps\cp_zmb\cp_zmb_interactions::register_interactions;
+    level.wait_for_interaction_func = scripts\cp\maps\cp_zmb\cp_zmb_interactions::zmb_wait_for_interaction_triggered;
+    level.player_interaction_monitor = scripts\cp\maps\cp_zmb\cp_zmb_interactions::zmb_player_interaction_monitor;
     level.magic_wheel_spin_hint = &"CP_ZMB_INTERACTIONS_SPIN_WHEEL";
     scripts\cp\maps\cp_zmb\cp_zmb_player_character_setup::init_player_characters();
     scripts\cp\maps\cp_zmb\cp_zmb::setup_generic_zombie_model_list();

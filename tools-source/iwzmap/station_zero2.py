@@ -955,11 +955,6 @@ if GALLERY:
 # ============================================================================ write world, collision, nav
 os.makedirs(sys.argv[2], exist_ok=True)
 tpl, out = sys.argv[1], sys.argv[2]
-nv, ni, ns, wb = mapgen.write_world(B.mesh, os.path.join(out, 'world.bin'))
-col = [tuple(tuple(c * mapgen.HAVOK_SCALE for c in p) for p in t) for t in B.mesh.col]
-blob, info = hkcm_write.encode(col, os.path.join(tpl, 'maps/cp/cp_zmb.d3dbsp.colmap.hkx'), tag=382,
-                               max_tris=int(os.environ.get('IWZ_MAX_TRIS', '127')))
-open(os.path.join(out, 'colmap.hkx'), 'wb').write(blob)
 
 # nav cells: one z per 32-unit cell from the region list (first region wins), minus solid blockers
 cells, owner = {}, {}
@@ -1009,26 +1004,34 @@ def fmt(p):
 
 STARTS = [(-700, 3880, 0, 270), (-560, 3880, 0, 270), (-420, 3880, 0, 270), (-280, 3880, 0, 270)]
 # spawners: (zone, x, y, z, kind, yaw); kind: ground | wall | ceiling (stock recipe, gameplay/stock-spawn-recipe.md)
-SPAWNERS = [
+SPAWNERS = [   # >= 48 from walls/props, inside the zone volume, on the navmesh (sz2_plan.py checks the last two)
     ('ticket_hall', -96, 4416, 0, 'ground', 270), ('ticket_hall', -1120, 4300, 0, 'ground', 315),
-    ('ticket_hall', 320, 4300, 0, 'ground', 225), ('ticket_hall', -1120, 3300, 0, 'wall', 0), ('ticket_hall', 320, 3300, 0, 'wall', 180),
-    ('stair_a', -600, 2470, -320, 'ground', 90), ('stair_a', -600, 3150, 0, 'ceiling', 270),
-    ('stair_a', -740, 2800, None, 'wall', 0),
+    ('ticket_hall', 320, 4320, 0, 'ground', 225), ('ticket_hall', -1100, 3480, 0, 'ground', 45),
+    ('ticket_hall', -1136, 3300, 0, 'wall', 0), ('ticket_hall', 336, 3300, 0, 'wall', 180), ('ticket_hall', -400, 4300, 320, 'ceiling', 270),
+    ('stair_a', -600, 2460, -320, 'ground', 90), ('stair_a', -700, 2470, -320, 'ground', 90), ('stair_a', -500, 2470, -320, 'ground', 90),
+    ('stair_a', -600, 3150, 0, 'ground', 270), ('stair_a', -752, 2800, None, 'wall', 0), ('stair_a', -600, 3140, 288, 'ceiling', 270),
     ('platform_a', 2520, 1300, -384, 'ground', 180), ('platform_a', 2520, 1500, -384, 'ground', 180),
-    ('platform_a', -2300, 1300, -384, 'ground', 0), ('platform_a', -1600, 2340, -320, 'wall', 270),
-    ('platform_a', 1600, 2340, -320, 'wall', 270), ('platform_a', 800, 2200, -320, 'ground', 270),
-    ('platform_a', -1300, 1700, -320, 'ground', 90),
-    ('maint_corridor', 3150, 2300, -320, 'ground', 270), ('maint_corridor', 2500, 1800, -320, 'wall', 0),
-    ('maint_corridor', 3080, 1760, -320, 'ground', 180),
+    ('platform_a', -2300, 1280, -384, 'ground', 0), ('platform_a', -1600, 2352, -320, 'wall', 270),
+    ('platform_a', 1600, 2352, -320, 'wall', 270), ('platform_a', 800, 2200, -320, 'ground', 270),
+    ('platform_a', -1300, 1700, -320, 'ground', 90), ('platform_a', 1500, 1300, -384, 'ground', 90),
+    ('maint_corridor', 3150, 2300, -320, 'ground', 270), ('maint_corridor', 2550, 1800, -320, 'ground', 0),
+    ('maint_corridor', 3080, 1760, -320, 'ground', 180), ('maint_corridor', 3080, 2050, -320, 'ground', 270),
+    ('maint_corridor', 2800, 1728, -320, 'wall', 90), ('maint_corridor', 3080, 2150, -96, 'ceiling', 270),
     ('generator_room', 2680, 2480, -320, 'ground', 45), ('generator_room', 3720, 2480, -320, 'ground', 135),
-    ('generator_room', 2680, 3100, -320, 'wall', 0), ('generator_room', 3720, 2900, -320, 'wall', 180),
+    ('generator_room', 2700, 3100, -320, 'ground', 315), ('generator_room', 3700, 3000, -320, 'ground', 225),
+    ('generator_room', 2648, 2700, -320, 'wall', 0), ('generator_room', 3752, 2700, -320, 'wall', 180),
     ('control_room', 2680, 3300, -320, 'ground', 45), ('control_room', 3520, 3300, -320, 'ground', 135),
-    ('control_room', 3100, 3900, -32, 'ceiling', 270),
+    ('control_room', 2700, 3900, -320, 'ground', 315), ('control_room', 3500, 3900, -320, 'ground', 225),
+    ('control_room', 3100, 3800, -32, 'ceiling', 270), ('control_room', 2648, 3650, -320, 'wall', 0),
     ('service_tunnel', -3500, 1300, -384, 'ground', 0), ('service_tunnel', -2700, 1300, -384, 'ground', 180),
-    ('service_tunnel', -3400, 2400, -384, 'ground', 270), ('service_tunnel', -3520, 1900, -384, 'wall', 0),
+    ('service_tunnel', -3400, 2400, -384, 'ground', 270), ('service_tunnel', -3100, 1500, -384, 'ground', 270),
+    ('service_tunnel', -3552, 1900, -384, 'wall', 0), ('service_tunnel', -3000, 1264, -384, 'wall', 90),
     ('platform_b', -3500, 2700, -384, 'ground', 45), ('platform_b', -2150, 2700, -384, 'ground', 135),
-    ('platform_b', -3500, 3300, -384, 'wall', 0), ('platform_b', -2700, 3330, -384, 'ground', 270),
-    ('stair_b', -1990, 3250, -384, 'ground', 0), ('stair_b', -1290, 3150, 0, 'ceiling', 180),
+    ('platform_b', -3552, 3300, -384, 'wall', 0), ('platform_b', -2700, 3330, -384, 'ground', 270),
+    ('platform_b', -2900, 2700, -384, 'ground', 90), ('platform_b', -2800, 3000, -32, 'ceiling', 270),
+    ('stair_b', -1990, 3250, -384, 'ground', 0), ('stair_b', -1290, 3300, 0, 'ground', 180),
+    ('stair_b', -1990, 3170, -384, 'ground', 0), ('stair_b', -1290, 3170, 0, 'ground', 180),
+    ('stair_b', -1600, 3352, None, 'wall', 270), ('stair_b', -1270, 3250, 288, 'ceiling', 180),
 ]
 DOG_SPAWNERS = {   # goon / brute landing spots (2-4 per zone)
     'ticket_hall': [(-1000, 4200), (200, 4200), (-900, 3400)], 'stair_a': [(-600, 3150)],
@@ -1037,9 +1040,11 @@ DOG_SPAWNERS = {   # goon / brute landing spots (2-4 per zone)
     'service_tunnel': [(-3100, 1400), (-3400, 2000)], 'platform_b': [(-3300, 2900), (-2400, 3100)], 'stair_b': [(-1260, 3250)],
 }
 IDLE_SPOTS = {z: v[:2] for z, v in DOG_SPAWNERS.items()}
-RESPAWNS = {'ticket_hall': [(-500, 4100, 0)], 'stair_a': [(-600, 3150, 0)], 'platform_a': [(-200, 2200, -320), (1500, 2200, -320)],
-            'maint_corridor': [(3080, 2200, -320)], 'generator_room': [(3000, 2600, -320)], 'control_room': [(3100, 3400, -320)],
-            'service_tunnel': [(-3000, 1400, -384)], 'platform_b': [(-2800, 3000, -384)], 'stair_b': [(-1260, 3250, 0)]}
+RESPAWNS = {'ticket_hall': [(-500, 4100, 0), (-200, 3450, 0)], 'stair_a': [(-600, 3150, 0), (-600, 2460, -320)],
+            'platform_a': [(-200, 2200, -320), (1500, 2200, -320), (-1500, 2200, -320)],
+            'maint_corridor': [(3080, 2200, -320), (2700, 1800, -320)], 'generator_room': [(3000, 2600, -320), (3500, 3000, -320)],
+            'control_room': [(3100, 3400, -320), (2800, 3700, -320)], 'service_tunnel': [(-3000, 1400, -384), (-3400, 2200, -384)],
+            'platform_b': [(-2800, 3000, -384), (-3300, 2800, -384)], 'stair_b': [(-1260, 3250, 0), (-1990, 3250, -384)]}
 # interactions: perk machines (relocated stock scriptables), wall buys, magic wheels, power, PaP, quest/EE spots
 PERKS = [   # (interaction, scriptable, origin, yaw, zone)
     ('perk_machine_revive', 'perk_machine_up_n_atoms_sign', (370, 3460, 0), 180, 'ticket_hall'),
@@ -1093,6 +1098,29 @@ def floor_z_at(x, y, zone=None):
     i, j = int(math.floor(x / CELL)), int(math.floor(y / CELL))
     return cells.get((i, j))
 
+
+for zone, x, y, z, kind, yaw in SPAWNERS:
+    if kind == 'wall':
+        # vent opening at the foot of the nearest wall the spawner faces away from: dark hole + steel frame + vent grille
+        fx, fy = round(math.cos(math.radians(yaw))), round(math.sin(math.radians(yaw)))
+        wz = floor_z_at(x, y) if z is None else z
+        if fx != 0:
+            wx = x - fx * 48
+            B.wall_plane(zone, 'y', wx + fx * 0.6, fx, y - 28, y + 28, wz + 4, wz + 44, 'black', collide=False)
+            B.slab_y(y - 32, y + 32, wx, wz + 2, wz + 46, 2, 'steel_trim', zone, fx, collide=False, nav=False)
+        else:
+            wy = y - fy * 48
+            B.wall_plane(zone, 'x', wy + fy * 0.6, fy, x - 28, x + 28, wz + 4, wz + 44, 'black', collide=False)
+            B.slab_x(x - 32, x + 32, wy, wz + 2, wz + 46, 2, 'steel_trim', zone, fy, collide=False, nav=False)
+    elif kind == 'ceiling':
+        B.quad('black', zone, [(x - 28, y + 28, z - 0.6), (x + 28, y + 28, z - 0.6), (x + 28, y - 28, z - 0.6), (x - 28, y - 28, z - 0.6)], n=(0, 0, -1), collide=False)
+        B.box((x - 32, y - 32, z - 3), (x + 32, y + 32, z - 1), {'side': 'steel_trim', 'bottom': 'grate'}, zone, collide=False, nav=False, skip=('top',))
+# render world and collision (after the entry-point vents, which are drawn from the spawner table)
+nv, ni, ns, wb = mapgen.write_world(B.mesh, os.path.join(out, 'world.bin'))
+col = [tuple(tuple(c * mapgen.HAVOK_SCALE for c in p) for p in t) for t in B.mesh.col]
+blob, info = hkcm_write.encode(col, os.path.join(tpl, 'maps/cp/cp_zmb.d3dbsp.colmap.hkx'), tag=382,
+                               max_tris=int(os.environ.get('IWZ_MAX_TRIS', '127')))
+open(os.path.join(out, 'colmap.hkx'), 'wb').write(blob)
 
 for zone, x, y, z, kind, yaw in SPAWNERS:
     if z is None:
