@@ -46,6 +46,7 @@ Baked lightmap (Python 3.12 with numpy, numba, scipy, pillow; DirectXTex texconv
 
 ```powershell
 python -I bake\lmbake.py out\sz_src out\sz_src\lights.json out\sz_baked   # station_zero.py writes lights.json
+python -I bake\layout_lights.py <src> <src>\lights.json   # or: lights.json from a level generator's layout.json lights
 .\build-map-wait.ps1 -Src out\sz_baked -UmOut out\um_cp_iwz_baked             # the compiler ships lightmap\*.dds
 python -I bake\lm_measure.py out\sz_baked "<views>" <run dir> measure.json   # frames of a local run vs the bake
 ```

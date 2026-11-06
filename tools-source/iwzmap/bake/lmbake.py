@@ -1,6 +1,6 @@
 """Lightmap baker for generated IW7 worlds (iwzmap).
 
-usage: lmbake.py <source dir> <lights.json> <out dir> [--texel 8] [--rays 100] [--bounces 2] [--quick]
+usage: lmbake.py <source dir> <lights.json> <out dir> [--texel 8] [--rays 100] [--bounces 2] [--quick] [--denoise 1]
 
 <source dir> is an iwzcompile source (world.bin, colmap.hkx, ...). The out dir receives a copy of it with
   world.bin          lightmap coordinates rewritten to the baked atlas (one chart per planar triangle group)
@@ -114,7 +114,8 @@ def build_charts(w, texel):
                     keep[seen[key][0]] = (a, b, c); seen[key] = (seen[key][0], True)
                 continue
             seen[key] = (len(keep), facing); keep.append((a, b, c))
-        # union-find over shared vertices, split by normal direction
+        # union-find over shared corners (welded by position: generated meshes are often unindexed, one quad per
+        # triangle pair), split by normal direction and plane
         parent = list(range(len(keep)))
         def find(x):
             while parent[x] != x:
@@ -123,11 +124,18 @@ def build_charts(w, texel):
         owner = {}
         for k, t in enumerate(keep):
             for v in t:
-                if v in owner:
-                    ra, rb = find(owner[v]), find(k)
-                    if ra != rb and np.dot(nrm[keep[ra][0]], nrm[t[0]]) > 0.999: parent[ra] = rb
+                # corner key: position and shading frame (corners shared by perpendicular walls stay apart)
+                key = tuple(np.round(pos[v] * 8).astype(np.int64)) + tuple(np.round(nrm[v] * 64).astype(np.int64)) + \
+                    tuple(np.round(tan[v] * 64).astype(np.int64)) + (int(tw[v] > 0),)
+                if key in owner:
+                    ra, rb = find(owner[key]), find(k)
+                    q = keep[ra][0]
+                    # same plane and the same shading frame (D is encoded in the frame of one chart vertex)
+                    if ra != rb and np.dot(nrm[q], nrm[t[0]]) > 0.999 and np.dot(tan[q], tan[t[0]]) > 0.999 and \
+                            tw[q] == tw[t[0]] and abs(np.dot(nrm[t[0]], pos[q] - pos[t[0]])) < 0.25:
+                        parent[ra] = rb
                 else:
-                    owner[v] = k
+                    owner[key] = k
         groups = {}
         for k in range(len(keep)): groups.setdefault(find(k), []).append(k)
         for g in groups.values():
@@ -248,7 +256,20 @@ def preview(path, rgb):
 
 
 # ------------------------------------------------------------------ bake
-def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, pattern=None):
+def chart_filter(val, x, y, chart, W, H, r):
+    """(2r+1)^2 box filter of per-texel values restricted to texels of the same chart (no bleeding across
+    charts, walls or corners)."""
+    img = np.zeros((H + 2 * r, W + 2 * r, val.shape[1])); cid = np.full((H + 2 * r, W + 2 * r), -1, np.int64)
+    img[y + r, x + r] = val; cid[y + r, x + r] = chart
+    acc = np.zeros_like(val); cnt = np.zeros(len(val))
+    for dy in range(-r, r + 1):
+        for dx in range(-r, r + 1):
+            m = cid[y + r + dy, x + r + dx] == chart
+            acc[m] += img[y[m] + r + dy, x[m] + r + dx]; cnt[m] += 1
+    return acc / np.maximum(cnt, 1)[:, None]
+
+
+def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, pattern=None, denoise=1):
     t_start = time.time(); timing = {}
     cfg = json.load(open(lights_path))
     texel = texel or cfg.get('texel', 8)
@@ -304,8 +325,6 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
     # indirect: one set of cosine rays per texel, reused by every bounce
     t0 = time.time()
     nr_ = 16 if quick else nrays
-    htri, hu, hv, hdist, hside = rt.gather_rays(p, nn, tu, tv, nr_, 7, *S_args)
-    timing['gather_rays'] = time.time() - t0
     tid = np.full((H, W), -1, np.int64)
     tid[tx['y'], tx['x']] = np.arange(n)
     tid = dilate(tid, tid >= 0)
@@ -321,15 +340,21 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
             out[r0:r0 + 8192] = np.where(t < 0, -1, np.where((sd < 0) | (tri_mat[np.maximum(t, 0)] < 0), -2, h))
         return out
 
-    hits = hit_texels(htri, hu, hv, hside)            # -1 sky, -2 back face/occluder (black)
     sky = np.array(cfg.get('sky', [0, 0, 0]), float)
     amb = cfg.get('ambient', {})
     fill = np.array(amb.get('color', [0, 0, 0]), float)
-    ao = (hdist > amb.get('ao_radius', 96)).mean(1)
+    # rays traced in texel chunks and reduced at once to hit texel ids (int32: n x rays x 4 bytes is what stays)
+    idx = np.empty((n, nr_), np.int32); ao = np.empty(n)
+    for c0 in range(0, n, 65536):
+        c1 = min(n, c0 + 65536)
+        htri, hu, hv, hdist, hside = rt.gather_rays(p[c0:c1], nn[c0:c1], tu[c0:c1], tv[c0:c1], nr_, 7 + c0, *S_args)
+        hits = hit_texels(htri, hu, hv, hside)        # -1 sky, -2 back face/occluder (black)
+        idx[c0:c1] = np.where(hits == -1, n, np.where(hits == -2, n + 1, hits))
+        ao[c0:c1] = (hdist > amb.get('ao_radius', 96)).mean(1)
+        del htri, hu, hv, hdist, hside, hits
+    timing['gather_rays'] = time.time() - t0
     a_tex = alb[tx['mat']]; e_tex = emi[tx['mat']]
     Eind = np.zeros((n, 3))
-    idx = np.where(hits == -1, n, np.where(hits == -2, n + 1, hits)).astype(np.int32)
-    del hits, htri, hu, hv, hside
     for k in range(bounces):
         Lout = np.vstack([a_tex * (Edir + Eind) + e_tex, sky[None], np.zeros((1, 3))])
         Eind = np.concatenate([Lout[idx[r0:r0 + 8192]].mean(1) for r0 in range(0, n, 8192)])
@@ -354,6 +379,8 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
     zq = np.maximum(oct_decode(rg)[:, 2], 0.05)
     B = Edir / zq[:, None]
     A = Eind + fill * ao[:, None]
+    if denoise > 0:                                  # indirect light is low frequency: chart-local box filter
+        A = chart_filter(A, tx['x'], tx['y'], tx['chart'], W, H, denoise)
     # calibration patches (controlled engine experiments): texels inside a box get chosen A, B and direction
     for pt in (pattern or []):
         lo, hi = np.array(pt['box'][:3], float), np.array(pt['box'][3:], float)
@@ -369,6 +396,10 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
         sd = norm(np.array(cfg['sun']['dir'], float))
         far = p + nn * 0.5 - sd[None] * 1e5
         S = rt.visible(p + nn * 0.5, far, *S_args).astype(float) * (np.dot(nn, -sd) > 0)
+    for pt in (pattern or []):                       # calibration patches may also force the sun visibility
+        if 'S' in pt:
+            lo, hi = np.array(pt['box'][:3], float), np.array(pt['box'][3:], float)
+            S[np.all((p >= lo) & (p <= hi), 1) & ((nn @ np.array(pt.get('normal', [0, 0, 1]), float)) > 0.99)] = pt['S']
 
     imgA = np.zeros((H, W, 3), np.float32); imgB = np.zeros((H, W, 3), np.float32)
     imgD = np.zeros((H, W, 2), np.float32); imgS = np.zeros((H, W), np.float32)
@@ -475,6 +506,8 @@ if __name__ == '__main__':
     ap.add_argument('src'); ap.add_argument('lights'); ap.add_argument('out')
     ap.add_argument('--texel', type=float); ap.add_argument('--rays', type=int, default=100)
     ap.add_argument('--bounces', type=int, default=2); ap.add_argument('--quick', action='store_true')
+    ap.add_argument('--denoise', type=int, default=1, help='chart-local box filter radius of the indirect term (0 = off)')
     ap.add_argument('--pattern', help='json list of calibration patches {box, normal, A, B, Dz, name}')
     a = ap.parse_args()
-    bake(a.src, a.lights, a.out, a.texel, a.rays, a.bounces, a.quick, json.load(open(a.pattern)) if a.pattern else None)
+    bake(a.src, a.lights, a.out, a.texel, a.rays, a.bounces, a.quick, json.load(open(a.pattern)) if a.pattern else None,
+         a.denoise)
