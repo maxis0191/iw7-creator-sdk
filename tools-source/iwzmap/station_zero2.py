@@ -889,6 +889,14 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor('generator_room', 'fac_trash_bin', 2640, 3140, -320, 0, (20, 20, 28))
     decor('platform_b', 'park_trash_can_blue_01', -2200, 3360, -384, 0, (16, 16, 24))
     decor('platform_b', 'furniture_park_bench_01_blue', -3000, 3350, -384, 0, (48, 16, 20))
+    # control room: CRT monitors on the signal desks, generator room workbench, corridor lockers
+    for x0_ in (2700, 3020, 3340):
+        for dx in (60, 180):
+            decor('control_room', 'zmb_tv_crt_01', x0_ + dx, 3560, -284, 90)
+    decor('generator_room', 'mp_dart_workbench_01', 3770, 2950, -320, 0, (16, 44, 22))
+    decor('generator_room', 'dns_locker_set_01', 2780, 3172, -320, 180, (20, 10, 50))
+    decor('generator_room', 'dns_locker_set_01', 2822, 3172, -320, 180, (20, 10, 50))
+    decor('maint_corridor', 'dns_locker_set_01', 3188, 2100, -320, 90, (10, 20, 50))
 
 # ---------------------------------------------------------------- reveals and portals of every opening
 for o in OPENINGS:

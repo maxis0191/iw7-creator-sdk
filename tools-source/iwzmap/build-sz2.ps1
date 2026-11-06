@@ -6,7 +6,9 @@ param(
   [string]$ZoneToolExe='C:\Users\ezvalo\Documents\IW7-Products\worktrees\x64-zt-iwz-map\build\bin\x64\Release\zonetool.exe',
   [string]$TemplateDump='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-map-ref-a\dump',
   [string]$Arena='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-release\cp_iwz-rc1\usermaps\cp_iwz\cp_iwz.arena',
-  [int]$Tries=120)
+  [int]$Tries=120,
+  [switch]$KeepSubmodels,                                                                             # door blockers: zonetool codex/iwzmap-door-brushmodels
+  [switch]$CompileOnly)
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
 $ErrorActionPreference='Stop'
@@ -23,9 +25,13 @@ if(Test-Path "$W\iwz_src"){ Remove-Item "$W\iwz_src" -Recurse -Force }
 Copy-Item -Recurse $Src "$W\iwz_src"
 if(Test-Path "$W\dump\$Map"){ Remove-Item -LiteralPath "$W\dump\$Map" -Recurse -Force }
 $env:IWZ_GEN_TOME='1'; $env:IWZ_KEEP_ENTSHAPES='1'
-try { $c = Invoke-Zt @('-iwzcompile','cp_zmb_tpl','cp_zmb',$Map,"$W\iwz_src") 900 } finally { Remove-Item Env:IWZ_GEN_TOME,Env:IWZ_KEEP_ENTSHAPES -ErrorAction SilentlyContinue }
+if($KeepSubmodels){ $env:IWZ_KEEP_SUBMODELS='1' }
+try { $c = Invoke-Zt @('-iwzcompile','cp_zmb_tpl','cp_zmb',$Map,"$W\iwz_src") 900 } finally { Remove-Item Env:IWZ_GEN_TOME,Env:IWZ_KEEP_ENTSHAPES,Env:IWZ_KEEP_SUBMODELS -ErrorAction SilentlyContinue }
+$full = Get-ChildItem "$W\zt-*.out.log" | Sort-Object LastWriteTime | Select-Object -Last 1
+if($full){ Copy-Item $full.FullName "$UmOut.compile.log" -Force -ErrorAction SilentlyContinue }
 if(($c -join "`n") -notmatch 'iwzmap: wrote'){ $c | Select-Object -Last 25; throw 'iwzcompile failed' }
-($c | Select-String 'iwzmap: wrote|relit|WARNING').Line | Select-Object -First 30
+($c | Select-String 'iwzmap: wrote|relit|sub-model|brush models|obstacle').Line | Select-Object -First 30
+if($CompileOnly){ return }
 if(Test-Path "$W\zonetool\$Map"){ Remove-Item -LiteralPath "$W\zonetool\$Map" -Recurse -Force }
 python -I "$S\assemble.py" $W $Map "$Src\cp_iwz.gsc" "$D\patch_cp_zmb" "$D\techsets_cp_zmb" "$D\techsets_global_cp" "$D\techsets_global" "$D\cp_zmb" | Select-Object -Last 3
 if($LASTEXITCODE){ throw 'assemble failed' }
