@@ -1,4 +1,4 @@
-"""Unit tests for the dump readers and catalog (synthetic dumps; run: python -I -m unittest test_catalog)."""
+"""Unit tests for the dump readers and catalog (synthetic dumps; run: python -I test_catalog.py)."""
 import json
 import os
 import struct

@@ -51,7 +51,6 @@ iwz_pv_run()
             wait 0.1;
     wait 3;
     self.ignoreme = 1;
-    self enableinvulnerability();
     self takeallweapons();
     spawn_origin = self.origin;
     print("[IWZ local] SPAWNED; origin=" + spawn_origin);

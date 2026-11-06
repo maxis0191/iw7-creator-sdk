@@ -9,7 +9,9 @@ param(
     [string]$UsermapDir='-',                                                    # '-' = stock map; else a usermap dir
     [double]$Fill=0.30,
     [string]$ExtraArgs='',
-    [int]$MaxWaitMin=180
+    [int]$MaxWaitMin=180,
+    [int]$MinSeconds=300,                                                       # map load + intro before the booth starts
+    [string]$InjectDll=''                                                       # optional Com_Error journal DLL
 )
 # Engine preview of stock models through the local private runner (sv_lanOnly, random password, loopback,
 # private desktop, staged files restored) with the iwzmap_preview.gsc fixture. Waits 60 s and retries with a
@@ -22,13 +24,14 @@ if($cur){$chunks+=$cur}
 if($chunks.Count -gt 10){throw 'at most 10 dvar chunks (about 300 models)'}
 $dv=''; for($i=0;$i -lt $chunks.Count;$i++){ $dv+=" +set paris_iwz_pv$i `"$($chunks[$i])`"" }
 $camCount=($Cam.Split('|')).Count
-$seconds=[Math]::Min(600,[int](90+$camCount*($Models.Count*2.2+8)))
+$seconds=[Math]::Min(600,[Math]::Max($MinSeconds,[int](120+$camCount*($Models.Count*2.2+8))))
 $args0="+set paris_iwz_cam `"$Cam`" +set paris_iwz_fill $Fill$dv $ExtraArgs"
+$inject=@{}; if($InjectDll){$inject.InjectDll=$InjectDll}
 $deadline=[datetime]::UtcNow.AddMinutes($MaxWaitMin); $try=0
 while($true){
     $out=if($try){"$OutputRoot-r$try"}else{$OutputRoot}
     $err=''
-    try{ & $Runner -SourcePackage $SourcePackage -GameRoot $GameRoot -OutputRoot $out -UsermapDir $UsermapDir -Map $Map -Fixture $fixture -ExtraArgs $args0 -Seconds $seconds }
+    try{ & $Runner -SourcePackage $SourcePackage -GameRoot $GameRoot -OutputRoot $out -UsermapDir $UsermapDir -Map $Map -Fixture $fixture -ExtraArgs $args0 -Seconds $seconds @inject }
     catch{ $err=$_.Exception.Message }
     $res=Join-Path $out 'result.local.json'
     if(!$err -and (Test-Path $res)){ $err=(Get-Content $res -Raw|ConvertFrom-Json).Error }

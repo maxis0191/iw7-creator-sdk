@@ -125,9 +125,27 @@ def diff_mask(frame, bgs, static_mask, thr):
     return m
 
 
+def keep_components_near(mask, box, grow):
+    """Drop changed regions that do not touch the projected box grown by `grow` (moving cars, beams, flicker
+    elsewhere in the background). A component that touches it is kept whole, so a model larger than its
+    bounds still shows as a low IoU."""
+    import numpy as np
+    from scipy import ndimage
+    m = np.array(mask) > 0
+    lab, n = ndimage.label(m)
+    w, h = mask.size
+    gx = (box[2] - box[0]) * grow
+    gy = (box[3] - box[1]) * grow
+    x0, y0 = max(0, int(box[0] - gx)), max(0, int(box[1] - gy))
+    x1, y1 = min(w, int(box[2] + gx) + 1), min(h, int(box[3] + gy) + 1)
+    keep = set(np.unique(lab[y0:y1, x0:x1])) - {0}
+    out = np.isin(lab, list(keep)) if keep else np.zeros_like(m)
+    return Image.fromarray((out * 255).astype('uint8')), int(m.sum() - out.sum())
+
+
 def texture_stats(frame, mask):
     g = frame.convert('L')
-    vals = [v for v, k in zip(g.getdata(), mask.getdata()) if k]
+    vals = [v for v, k in zip(g.get_flattened_data() if hasattr(g, 'get_flattened_data') else g.getdata(), mask.get_flattened_data() if hasattr(mask, 'get_flattened_data') else mask.getdata()) if k]
     if len(vals) < 50:
         return {'pixels': len(vals)}
     n = len(vals)
@@ -164,6 +182,8 @@ def main():
     ap.add_argument('--out', required=True)
     ap.add_argument('--hfov-scale', type=float, default=1.0)
     ap.add_argument('--thr', type=int, default=14)
+    ap.add_argument('--roi', type=float, default=0.05)
+    ap.add_argument('--min-luma', type=float, default=14.0)  # night maps (cp_disco) light props dimly
     ap.add_argument('--tile', type=int, default=240)
     ap.add_argument('--cols', type=int, default=8)
     a = ap.parse_args()
@@ -215,6 +235,9 @@ def main():
             row['engineBoundsDiff'] = round(min(ediff, adiff), 3)
             row['engineBoundsSemantics'] = 'oriented' if ediff <= adiff else 'world-aabb'
             row['engineBounds'] = 'PASS' if min(ediff, adiff) <= 0.6 else 'FAIL'
+            if pv['lo'] == pv['hi']:
+                # getpointinbounds returns the origin for a script_model (no absmin/absmax): not a measurement
+                row['engineBounds'] = 'N/A'
             if not os.path.exists(fp):
                 row['error'] = 'frame missing'
                 rows.append(row)
@@ -251,6 +274,8 @@ def main():
             # 3. silhouette from background difference
             near = [bg_imgs[k] for k in (pv['bg'] - 1, pv['bg']) if k in bg_imgs]
             mask = diff_mask(frame, near, static, a.thr) if near else None
+            if mask is not None and pbox:
+                mask, row['discardedPixels'] = keep_components_near(mask, pbox, a.roi)
             mbox = mask.getbbox() if mask else None
             row['projBox'] = [round(x, 1) for x in pbox] if pbox else None
             row['boundsBox'] = [round(x, 1) for x in cbox] if cbox else None
@@ -260,7 +285,7 @@ def main():
             if mask is not None and mbox:
                 st = texture_stats(frame, mask)
                 row['texture'] = st
-                ok = st.get('pixels', 0) >= 200 and st.get('meanLuma', 0) >= 18 and st.get('blackFrac', 1) <= 0.5 \
+                ok = st.get('pixels', 0) >= 200 and st.get('meanLuma', 0) >= a.min_luma and st.get('blackFrac', 1) <= 0.5 \
                     and st.get('stdLuma', 0) >= 4 and st.get('twoTone', 1) <= 0.97
                 row['textured'] = 'PASS' if ok else 'FAIL'
             else:
@@ -283,7 +308,7 @@ def main():
             crop.save(cp)
             ov.save(os.path.join(a.out, 'crops', safe + '.check.png'))
             row['crop'] = cp
-            row['pass'] = row['engineBounds'] == 'PASS' and row['silhouette'] == 'PASS' and row['textured'] == 'PASS'
+            row['pass'] = row['engineBounds'] != 'FAIL' and row['silhouette'] == 'PASS' and row['textured'] == 'PASS'
             rows.append(row)
     json.dump({'schema': 'iwz.asset-previews/1', 'hfovScale': a.hfov_scale, 'rows': rows},
               open(os.path.join(a.out, 'previews.json'), 'w'), indent=1)
@@ -317,8 +342,10 @@ def sheet(rows, cat, out, tile, cols, name='contact_sheet'):
             dr.text((x + 3, y + tile + 1), r['model'][:38], fill=(235, 235, 235), font=font)
             dr.text((x + 3, y + tile + 15), '%s %s' % (','.join(c['zones'])[:16], 'x'.join('%g' % round(s) for s in c['size'])),
                     fill=(200, 200, 200), font=font)
-            dr.text((x + 3, y + tile + 29), 'iou %.2f eb %.2f %s' % (r.get('iou', 0), r.get('engineBoundsDiff', -1),
-                                                                     'PASS' if r.get('pass') else 'FAIL'), fill=col, font=font)
+            eb = 'n/a' if r.get('engineBounds') == 'N/A' else '%.2f' % r.get('engineBoundsDiff', -1)
+            dr.text((x + 3, y + tile + 29), 'iou %.2f tex %s eb %s %s' % (
+                r.get('iou', 0), (r.get('texture') or {}).get('meanLuma', '-'), eb, 'PASS' if r.get('pass') else 'FAIL'),
+                fill=col, font=font)
         img.save(os.path.join(out, '%s_%02d.png' % (name, page // per)))
 
 

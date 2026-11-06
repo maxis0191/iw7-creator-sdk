@@ -118,11 +118,18 @@ class Zone:
             self._mat[name] = ztdump.read_material(p) if p else None
         return self._mat[name]
 
+    shared_dirs = []  # dumps of always-loaded zones (global_cp, common_cp...): their images cost nothing
+
     def image(self, name):
         if name not in self._img:
-            p = _first(self.dirs, 'images', name.replace('*', '_') + '.iw7Image')
+            fn = name.replace('*', '_') + '.iw7Image'
+            p = _first(self.dirs, 'images', fn)
+            shared = False
+            if not p:
+                p = _first(Zone.shared_dirs, 'images', fn)
+                shared = bool(p)
             try:
-                self._img[name] = ztdump.read_image(p) if p else None
+                self._img[name] = dict(ztdump.read_image(p), shared=shared) if p else None
             except ztdump.DumpError as e:
                 self._img[name] = {'error': str(e)}
         return self._img[name]
@@ -186,14 +193,22 @@ def model_row(zone, path, pak_present):
     embedded = 0
     streamed = {}
     missing_images = []
+    image_cost = {}
     for n, im in images.items():
         if not im or 'error' in im:
             missing_images.append(n)
             continue
+        if im.get('shared'):
+            image_cost[n] = {'embedded': 0, 'streamed': {}, 'shared': True}
+            continue
         embedded += im['embeddedBytes']
+        per = {}
         for s in im['streams']:
             k = 'imagefile%d.pak' % s['fileIndex']
             streamed[k] = streamed.get(k, 0) + s['bytes']
+            per[k] = per.get(k, 0) + s['bytes']
+        image_cost[n] = {'embedded': im['embeddedBytes'], 'streamed': per,
+                         'size': [im['width'], im['height']], 'format': im['format']}
     row['images'] = sorted(images)
     row['cost'] = {
         'surfaceBytes': surf_bytes,
@@ -201,6 +216,7 @@ def model_row(zone, path, pak_present):
         'streamedImageBytes': streamed,
         'streamPaksInBaseGame': {k: pak_present(k) for k in streamed},
         'missingImages': missing_images,
+        'images': image_cost,
     }
     techs = sorted({x.get('techset') for x in row['materials'] if x.get('techset')})
     row['techsets'] = techs
@@ -225,6 +241,7 @@ def build(args):
         return present[fname]
 
     always = set(x for x in (args.always_loaded or '').split(',') if x)
+    Zone.shared_dirs = [d for d in (args.shared or '').split(';') if d]
     rows = {}
     errors = []
     for z in zones:
@@ -298,6 +315,57 @@ def previewlist(args):
         print('%s:%.2f:%.2f:%.2f:%.2f' % (n, mid[0], mid[1], mid[2], rad))
 
 
+def kit(args):
+    """Kit from engine-checked previews: rows that pass, with roles, and the embedding cost of the set
+    (each surface/image counted once; models of the template zone cost nothing)."""
+    cat = {r['name']: r for r in json.load(open(args.catalog))['models']}
+    roles = {}
+    if args.roles:
+        for line in open(args.roles):
+            n, _, role = line.strip().partition('	')
+            if n:
+                roles[n] = role
+    rows = []
+    for pj in args.previews:
+        for r in json.load(open(pj))['rows']:
+            rows.append(r)
+    template = set(x for x in (args.template or '').split(',') if x)
+    picked, seen = [], set()
+    surf_bytes, emb, streamed, imgs_seen = 0, 0, {}, set()
+    for r in rows:
+        if not r.get('pass') or r['model'] in seen or (roles and r['model'] not in roles):
+            continue
+        seen.add(r['model'])
+        c = cat[r['model']]
+        free = bool(template.intersection(c['zones']))
+        row = {'name': c['name'], 'source': c['zones'][0], 'alsoIn': c['zones'][1:], 'role': roles.get(c['name'], ''),
+               'category': c['category'], 'bounds': c['bounds'], 'size': c['size'],
+               'tris0': c['lods'][0].get('tris') if c['lods'] else None, 'lods': len(c['lods']),
+               'collision': bool(c['collision']['havokLodData'] or c['collision']['collSurfs']),
+               'materials': [m['name'] for m in c['materials']], 'emissive': c['emissive'],
+               'inTemplateZone': free, 'preview': r['crop'], 'frame': r['frame'],
+               'check': {'iou': r['iou'], 'texture': r.get('texture'), 'engineBounds': r.get('engineBounds')}}
+        picked.append(row)
+        if free:
+            continue
+        surf_bytes += c['cost']['surfaceBytes']
+        for im, ic in c['cost'].get('images', {}).items():
+            if im in imgs_seen:
+                continue
+            imgs_seen.add(im)
+            emb += ic['embedded']
+            for k, v in ic['streamed'].items():
+                streamed[k] = streamed.get(k, 0) + v
+    out = {'schema': 'iwz.asset-kit/1', 'count': len(picked), 'models': picked,
+           'cost': {'models': sum(1 for p in picked if not p['inTemplateZone']),
+                    'surfaceBytes': surf_bytes, 'embeddedImageBytes': emb, 'uniqueImages': len(imgs_seen),
+                    'streamedImageBytesByPak': streamed,
+                    'note': 'models outside the template zone; images counted once; streamed bytes stay in the '
+                            'base game paks when the zone keeps the XStreamFile references'}}
+    json.dump(out, open(args.out, 'w'), indent=1)
+    print('kit: %d models -> %s' % (len(picked), args.out))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sp = ap.add_subparsers(dest='cmd', required=True)
@@ -306,6 +374,7 @@ def main(argv=None):
     b.add_argument('--out', required=True)
     b.add_argument('--base-paks')
     b.add_argument('--always-loaded')
+    b.add_argument('--shared', help='";"-separated dumps of always-loaded zones searched last for images (cost 0)')
     q = sp.add_parser('query')
     q.add_argument('catalog')
     q.add_argument('--category')
@@ -318,8 +387,14 @@ def main(argv=None):
     p = sp.add_parser('previewlist')
     p.add_argument('catalog')
     p.add_argument('names')
+    k = sp.add_parser('kit')
+    k.add_argument('catalog')
+    k.add_argument('--previews', action='append', required=True)
+    k.add_argument('--roles')
+    k.add_argument('--template')
+    k.add_argument('--out', required=True)
     a = ap.parse_args(argv)
-    {'build': build, 'query': query, 'fx': fx, 'previewlist': previewlist}[a.cmd](a)
+    {'kit': kit, 'build': build, 'query': query, 'fx': fx, 'previewlist': previewlist}[a.cmd](a)
 
 
 if __name__ == '__main__':

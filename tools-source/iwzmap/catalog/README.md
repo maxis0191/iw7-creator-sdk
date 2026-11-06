@@ -10,7 +10,7 @@ proves each picked model in the engine with a preview frame.
 | `iwzmap_preview.gsc` | preview booth fixture for the local private runner: one `script_model` at a time in front of a held camera, engine bounds via `getpointinbounds`, `capture_frame` per model and background frames |
 | `Run-Preview.ps1` | runs the booth on a stock map (or a usermap) through `iw7-paris-server/ops/iwzmap/Test-IWZMapLocal.ps1`, retrying while the machine resource lease is busy |
 | `preview_analyze.py` | per frame: engine bounds vs catalog bounds, silhouette (background difference) vs projected LOD0 vertices (IoU), texture statistics (not black, not a two-tone checker); crops and contact sheets |
-| `test_catalog.py` | unit tests on synthetic dumps (`python -I -m unittest test_catalog`) |
+| `test_catalog.py` | unit tests on synthetic dumps (`python -I test_catalog.py`) |
 
 ## Dumps
 
