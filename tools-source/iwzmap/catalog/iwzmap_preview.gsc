@@ -33,6 +33,25 @@ iwz_pv_watch()
     player thread iwz_pv_run();
 }
 
+// zombies that wander into the camera would spoil both the model and the background frames: hide every
+// spawned enemy (they keep running their logic; the player is protected and ignored)
+iwz_pv_hide_ai()
+{
+    level endon("game_ended");
+    for (;;)
+    {
+        if (isdefined(level.spawned_enemies))
+        {
+            foreach (z in level.spawned_enemies)
+            {
+                if (isdefined(z))
+                    z hide();
+            }
+        }
+        wait 0.1;
+    }
+}
+
 iwz_pv_bg(k)
 {
     wait 0.6;
@@ -54,6 +73,8 @@ iwz_pv_run()
     self takeallweapons();
     spawn_origin = self.origin;
     print("[IWZ local] SPAWNED; origin=" + spawn_origin);
+    if (getdvar("paris_iwz_hideai") != "0")
+        level thread iwz_pv_hide_ai();
     cams = strtok(getdvar("paris_iwz_cam"), "|");
     anchor = spawn("script_model", spawn_origin);
     anchor setmodel("tag_origin");
