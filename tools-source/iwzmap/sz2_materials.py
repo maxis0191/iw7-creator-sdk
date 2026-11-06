@@ -22,11 +22,11 @@ def S(path, su, sv=None, **kw):
 MATERIALS = {
     # metro tiles (w_l_sm_replace_i0c0s0n0p0)
     'tile_white':     S('dt_tile_ceramic_white', 64),
-    'tile_black':     S('fac_tile_black_01', 64),
+    'tile_black':     S('fac_tile_black_01', 32),
     'tile_floor':     S('stone_floor_tiles_01', 128),               # ..s0o0n0p0
     'checker':        S('stone_marble_tile_checker_01', 128),
     'marble':         S('fah_marble_floor_01', 128),
-    'conc_tiles':     S('concrete_tiles_01', 128),
+    'conc_tiles':     S('concrete_tiles_01', 64),
     'conc_tiles_trim': S('concrete_tiles_01_trim', 64),
     'restaurant':     S('fah_restaurant_tiles_01', 96),
     # concrete / plaster / brick
@@ -47,7 +47,7 @@ MATERIALS = {
     'drywall_gray':   S('iw7_drywall_painted_gray_01', 256),        # ..n0q0p0 (detail)
     'drywall_green':  S('iw7_drywall_painted_green_01', 256),
     'ceil_tiles':     S('plaster_ceiling_tiles_01', 128),
-    'ceil_tile':      S('ceiling_tile_01', 128),
+    'ceil_tile':      S('ceiling_tile_01', 96),
     # metal
     'steel_trim':     S('metal_bare_steel_trim_01', 64),
     'steel_trim_sheet': S('metal_bare_steel_trim_sheet_01', 64),
@@ -137,9 +137,32 @@ custom_tint('tile_green', 'tile_green', 'dt_tile_ceramic_white', (0.42, 0.62, 0.
 custom_tint('tile_cream', 'tile_cream', 'dt_tile_ceramic_white', (1.0, 0.93, 0.78, 1.0), su=64)
 custom_tint('metal_silver', 'metal_silver', 'fac_brushedmetal_02', (0.9, 0.92, 0.95, 1.0), su=128)
 custom_tint('carriage_red', 'carriage_red', 'metal_painted_red_01', (0.75, 0.08, 0.06, 1.0), su=128)
+custom_tint('panel_wall_red', 'panel_wall_red', 'metal_painted_wall_panel_04', (1.0, 0.42, 0.38, 1.0), su=128)
+custom_tint('panel_dark_red', 'panel_dark_red', 'metal_panel_dark_01', (1.0, 0.5, 0.46, 1.0), su=128)
+custom_tint('ceil_red', 'ceil_red', 'ceiling_tile_01', (1.0, 0.62, 0.58, 1.0), su=96)
 custom_tint('seat_blue', 'seat_blue', 'fac_rubber_mat_black', (0.25, 0.35, 0.8, 1.0), su=64)
 
 
 def material_rows():
     """zone csv rows for the custom materials."""
     return ['material,' + c['path'] for c in CUSTOM.values()]
+
+
+# engine verification (material gallery, run level/runs/views-g2, frames analysis-g2/gallery_*.jpg):
+# PROVEN = renders as expected on generated world quads; FAILED = do not use on world quads with this vertex format
+_FAILED = {
+    'puddle': 'FAILED: renders as an opaque grey square (reveal/v0 blend needs vertex alpha or reveal data)',
+    'blood_splat': 'FAILED: renders as an opaque red square (_rvl reveal techset)',
+    'yellow_line': 'FAILED: renders as an opaque yellow board (v0 techset)',
+    'exit_sign': 'PROVEN renders, but the art is a Spaceland "thanks for visiting" sign: not used',
+}
+_UNCHECKED = {'water_stain', 'ceiling_stain', 'leak_stain', 'wall_stain', 'glass'}   # blends, not readable on the gallery's black wall
+for _k, _m in MATERIALS.items():
+    if _k in _FAILED:
+        _m['verified'] = _FAILED[_k]
+    elif _k in _UNCHECKED:
+        _m['verified'] = 'NOT_PROVEN (blend: not measurable on the gallery wall; glass PROVEN visually in the carriage windows)'
+    else:
+        _m['verified'] = 'PROVEN (gallery views-g2)'
+for _k in ('panel_wall_red', 'panel_dark_red', 'ceil_red'):
+    MATERIALS[_k]['verified'] = 'NOT_PROVEN in the gallery (tint clone of a PROVEN material; checked in zone views)'

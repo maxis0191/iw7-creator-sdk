@@ -130,7 +130,7 @@ def bands(style, zf, zc):
         return [(zf, zf + 10, 'rubber_trim', 2), (zf + 10, zf + 112, 'tile_black', 0), (zf + 112, zf + 120, 'steel_trim', 1.5),
                 (zf + 120, zc - 20, 'tile_white', 0), (zc - 20, zc, 'molding', 3)]
     if style == 'metro_cream':
-        return [(zf, zf + 10, 'rubber_trim', 2), (zf + 10, zf + 112, 'tile_black', 0), (zf + 112, zf + 120, 'steel_trim', 1.5),
+        return [(zf, zf + 10, 'rubber_trim', 2), (zf + 10, zf + 112, 'tile_green', 0), (zf + 112, zf + 120, 'steel_trim', 1.5),
                 (zf + 120, zc - 20, 'tile_cream', 0), (zc - 20, zc, 'molding', 3)]
     if style == 'maint':
         return [(zf, zf + 10, 'rubber_trim', 2), (zf + 10, zf + 64, 'conc_painted', 0), (zf + 64, zf + 70, 'beam_yellow', 1),
@@ -141,8 +141,8 @@ def bands(style, zf, zc):
     if style == 'tunnel':
         return [(zf, zf + 32, 'conc_dark', 0), (zf + 32, zc, 'conc_seam', 0)]
     if style == 'control':
-        return [(zf, zf + 10, 'rubber_trim', 2), (zf + 10, zf + 96, 'panel_dark', 0), (zf + 96, zf + 104, 'steel_trim', 1.5),
-                (zf + 104, zc, 'panel_wall', 0)]
+        return [(zf, zf + 10, 'rubber_trim', 2), (zf + 10, zf + 96, 'panel_dark_red', 0), (zf + 96, zf + 104, 'steel_trim', 1.5),
+                (zf + 104, zc, 'panel_wall_red', 0)]
     if style == 'track':
         return [(zf, zf + 64, 'conc_dark', 0)] + bands('metro', zf + 64, zc)
     if style == 'brick':
@@ -204,12 +204,12 @@ def reveal(o, zone):
     if p1 - p0 < 0.5:
         return
     if o['axis'] == 'x':
-        B.quad('conc_trim_floor', zone, [(a, p0, z0), (b, p0, z0), (b, p1, z0), (a, p1, z0)], n=(0, 0, 1))
+        B.quad('conc_floor', zone, [(a, p0, z0), (b, p0, z0), (b, p1, z0), (a, p1, z0)], n=(0, 0, 1))
         B.quad('conc_painted', zone, [(a, p1, z1), (b, p1, z1), (b, p0, z1), (a, p0, z1)], n=(0, 0, -1), tone='dark')
         B.quad('conc_painted', zone, [(a, p1, z0), (a, p0, z0), (a, p0, z1), (a, p1, z1)], n=(1, 0, 0))
         B.quad('conc_painted', zone, [(b, p0, z0), (b, p1, z0), (b, p1, z1), (b, p0, z1)], n=(-1, 0, 0))
     else:
-        B.quad('conc_trim_floor', zone, [(p0, a, z0), (p1, a, z0), (p1, b, z0), (p0, b, z0)], n=(0, 0, 1))
+        B.quad('conc_floor', zone, [(p0, a, z0), (p1, a, z0), (p1, b, z0), (p0, b, z0)], n=(0, 0, 1))
         B.quad('conc_painted', zone, [(p0, b, z1), (p1, b, z1), (p1, a, z1), (p0, a, z1)], n=(0, 0, -1), tone='dark')
         B.quad('conc_painted', zone, [(p0, a, z0), (p1, a, z0), (p1, a, z1), (p0, a, z1)], n=(0, 1, 0))
         B.quad('conc_painted', zone, [(p1, b, z0), (p0, b, z0), (p0, b, z1), (p1, b, z1)], n=(0, -1, 0))
@@ -456,8 +456,9 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
             for sa, sb in segs:
                 za, zb = zline(sa), zline(sb)
                 # stringer covering the step/wall junction, then tile bands parallel to the slope
-                for lo_off, hi_off, mat in ((-rise - 2, 12, 'rubber_trim'), (12, 112, 'tile_black'), (112, 120, 'steel_trim'),
-                                            (120, head - 20, 'tile_white'), (head - 20, head, 'molding')):
+                lower, upper = ('tile_green', 'tile_cream') if style == 'metro_cream' else ('tile_black', 'tile_white')
+                for lo_off, hi_off, mat in ((-rise - 2, 12, 'rubber_trim'), (12, 112, lower), (112, 120, 'steel_trim'),
+                                            (120, head - 20, upper), (head - 20, head, 'molding')):
                     B.wall_sloped(zone, wax, cfix, facing, sa, sb, za + lo_off, zb + lo_off, za + hi_off, zb + hi_off, mat)
         # handrails 36 above the nosing line along both walls
         for cfix, sgn in ((c0, 1), (c1, -1)):
@@ -477,7 +478,7 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
         nrm = bk.norm(bk.cross(bk.sub(pts[1], pts[0]), bk.sub(pts[3], pts[0])))
         if nrm[2] > 0:
             pts = [pts[1], pts[0], pts[3], pts[2]]
-        B.quad('ceil_tiles', zone, pts, tone='dark')
+        B.quad('ceil_tile', zone, pts, tone='dark')
     return zline, (r0, r1)
 
 
@@ -491,7 +492,7 @@ DECOR = []         # script_model map entities (stock models placed at load)
 
 # ---------------------------------------------------------------- 1 ticket hall  (-1200,3200)-(400,4400), z 0..320
 Z = 'ticket_hall'
-room(Z, 'hall', (-1200, 3200, 400, 4400), 0, 320, 'metro', 'checker', 'ceil_tiles', skip=())
+room(Z, 'hall', (-1200, 3200, 400, 4400), 0, 320, 'metro', 'checker', 'ceil_tile', skip=())
 # ceiling: coffers made of steel beams every 400 + fluorescent strips
 for x in range(-1200 + 400, 400, 400):
     B.box((x - 8, 3200, 296), (x + 8, 4400, 320), 'ibeam', Z, collide=False, nav=False)
@@ -524,7 +525,7 @@ strip_light(Z, BX0 + 40, 3690, BX1 - 40, 3710, 136, depth=4)
 rail_run(Z, 'x', 96, 260, TURN_Y, 0, h=40)
 rail_run(Z, 'x', 340, 400, TURN_Y, 0, h=40)
 # street exit (north): collapsed stairs up to rubble, zombie entry
-room(Z, 'street', (-304, 4400, 112, 4600), 0, 320, 'metro', 'tile_floor', 'ceil_tiles', skip=('south',))
+room(Z, 'street', (-304, 4400, 112, 4600), 0, 320, 'metro', 'tile_floor', 'ceil_tile', skip=('south',))
 for k in range(6):
     B.box((-304, 4448 + k * 24, 0), (112, 4600, 16 * (k + 1)), {'top': 'stair_tread', 'side': 'conc_painted'}, Z, collide=True, nav=True)
 for k, (rx, ry, rw, rh) in enumerate([(-260, 4520, 120, 90), (-110, 4500, 140, 120), (40, 4530, 90, 70), (-200, 4570, 260, 200)]):
@@ -568,12 +569,12 @@ floor(Z, 'conc_tiles', -2192, 1648, 1904, 1760, DECK_Z)
 floor(Z, 'conc_tiles', 2112, 1648, 2400, 1760, DECK_Z)
 floor(Z, 'yellow_grip', -2192, 1624, 1904, 1648, DECK_Z)
 floor(Z, 'yellow_grip', 2112, 1624, 2400, 1648, DECK_Z)
-floor(Z, 'conc_trim_floor', -2192, 1600, 1904, 1624, DECK_Z)
-floor(Z, 'conc_trim_floor', 2112, 1600, 2400, 1624, DECK_Z)
+floor(Z, 'conc_painted', -2192, 1600, 1904, 1624, DECK_Z)
+floor(Z, 'conc_painted', 2112, 1600, 2400, 1624, DECK_Z)
 # platform edge face (deck to pit) with a coping lip
 for x0_, x1_ in ((-2192, 1904), (2112, 2400)):
     B.wall_plane(Z, 'x', 1600, -1, x0_, x1_, PIT_Z, DECK_Z, 'conc_dark')
-    B.box((x0_, 1596, DECK_Z - 6), (x1_, 1600, DECK_Z), 'conc_trim_floor', Z, collide=False, nav=False)
+    B.box((x0_, 1596, DECK_Z - 6), (x1_, 1600, DECK_Z), 'conc_painted', Z, collide=False, nav=False)
 # stairwells into the pit (4 steps), railing on the deck side
 for wname, (wx0, wy0, wx1, wy1, ddir) in WELLS.items():
     if ddir < 0:   # descends westwards: low end at wx0
@@ -609,13 +610,13 @@ for x in range(-2176, 2304, 768):
 wall(Z, 'platform_deck', 'y', -2400, +1, 1600, 2400, DECK_Z, PCEIL, 'metro')
 wall(Z, 'pit', 'y', -2400, +1, 1200, 1600, PIT_Z, -96, 'brick')
 B.wall_plane(Z, 'y', -2400, +1, 1200, 1600, -96, PCEIL, 'tile_white')
-B.box((-2400, 1200, -112), (-2392, 1600, -88), 'conc_trim_floor', Z, collide=False, nav=False)
+B.box((-2400, 1200, -112), (-2392, 1600, -88), 'conc_painted', Z, collide=False, nav=False)
 # east wall: deck part with the corridor door, pit part = tunnel mouth recess closed by a grate
 wall(Z, 'platform_deck', 'y', 2400, -1, 1600, 2400, DECK_Z, PCEIL, 'metro')
 B.wall_plane(Z, 'y', 2400, -1, 1200, 1216, PIT_Z, PCEIL, 'tile_white')
 B.wall_plane(Z, 'y', 2400, -1, 1584, 1600, PIT_Z, PCEIL, 'tile_white')
 B.wall_plane(Z, 'y', 2400, -1, 1216, 1584, -128, PCEIL, 'tile_white')
-B.box((2392, 1200, -144), (2400, 1600, -120), 'conc_trim_floor', Z, collide=False, nav=False)
+B.box((2392, 1200, -144), (2400, 1600, -120), 'conc_painted', Z, collide=False, nav=False)
 room(Z, 'recess', (2400, 1216, 2592, 1584), PIT_Z, -128, 'tunnel', 'conc_dark', 'conc_dark', skip=('west',))
 B.wall_plane(Z, 'y', 2560, -1, 1216, 1584, PIT_Z, -128, 'grate', collide=True)
 B.wall_plane(Z, 'y', 2591, -1, 1216, 1584, PIT_Z, -128, 'black', collide=False)
@@ -725,8 +726,7 @@ for x, p in ((-768, 'poster_lasttrain'), (512, 'poster_mindgap'), (-2048, 'poste
 sign(Z, 'sign_staff_only', 'y', 2400, -1, 1800, -90, 192)
 for x in (-1900, -400, 900, 2000):
     decal_wall(Z, 'leak_stain', 'x', 2400, -1, x, -120, 96, 180)
-decal_floor(Z, 'puddle', -900, 1300, PIT_Z, 256, 128)
-decal_floor(Z, 'blood_splat', 600, 2200, DECK_Z, 128, 128)
+decal_floor(Z, 'blood_pool', 600, 2200, DECK_Z, 96, 96)
 # nav regions: deck (minus wells), coping strip, pit (around the car underframe), recess
 region('deck', Z, (-2400, 1760, 2400, 2400), DECK_Z, (16, 0, 16, 16))
 region('deck_mid', Z, (-2192, 1600, 1904, 1760), DECK_Z, (0, 0, 0, 0))
@@ -751,7 +751,6 @@ for y_ in (2000, 2200):
 for x_ in (2600, 2900):
     wall_lamp(Z, 'x', 1920, -1, x_, -150, mat='lamp_warm')
 sign(Z, 'sign_generator', 'x', 1920, -1, 2700, -170, 192)
-decal_floor(Z, 'puddle', 2800, 1800, -320, 192, 96)
 region('corridor_a', Z, (2416, 1680, 3200, 1920), -320)
 region('corridor_b', Z, (2960, 1920, 3200, 2384), -320, (16, 0, 16, 16))
 adjacent('corridor_a', 'corridor_b')
@@ -766,7 +765,7 @@ for x in (2800, 3200, 3600):
         strip_light(Z, x - 48, y - 8, x + 48, y + 8, 8, mat='lamp_warm')
 # generator plinth + housing (box placeholder until the kit model), control panel for relay 3
 GEN = (3300, 2800)
-B.box((GEN[0] - 120, GEN[1] - 72, -320), (GEN[0] + 120, GEN[1] + 72, -304), 'conc_trim_floor', Z)
+B.box((GEN[0] - 120, GEN[1] - 72, -320), (GEN[0] + 120, GEN[1] + 72, -304), 'conc_painted', Z)
 B.box((GEN[0] - 96, GEN[1] - 56, -304), (GEN[0] + 96, GEN[1] + 56, -200), {'side': 'beam_yellow', 'top': 'diamond'}, Z)
 B.box((3560, 3120, -320), (3760, 3184, -260), {'side': 'panel_dark', 'top': 'steel_trim'}, Z)       # control panel
 B.box((3560, 3168, -260), (3760, 3184, -200), {'side': 'panel_dark', 'top': 'steel_trim'}, Z)
@@ -776,7 +775,7 @@ region('generator', Z, (2600, 2400, 3800, 3184), -320)
 
 # ---------------------------------------------------------------- 6 control room (2600,3200)-(3600,4000), -320..-32 + PaP alcove
 Z = 'control_room'
-room(Z, 'control', (2600, 3200, 3600, 4000), -320, -32, 'control', 'rubber_mat', 'ceil_tile')
+room(Z, 'control', (2600, 3200, 3600, 4000), -320, -32, 'control', 'rubber_mat', 'ceil_red')
 room(Z, 'pap_alcove', (2976, 4016, 3232, 4160), -320, -112, 'control', 'diamond', 'conc_dark', skip=('south',))
 for x in (2750, 3100, 3450):
     for y in (3400, 3800):
@@ -821,8 +820,6 @@ for y in range(1800, 2584, 400):
     wall_lamp(Z, 'y', -3584, +1, y, -170, mat='lamp_warm', w=12, h=10)
 for y_ in (1230, 1240):
     B.box((-3600, y_, -210), (-2416, y_ + 3, -206), 'metal_black', Z, collide=False, nav=False)   # cables
-decal_floor(Z, 'puddle', -3000, 1300, -384, 256, 128)
-decal_floor(Z, 'puddle', -3400, 2200, -384, 192, 192)
 region('tunnel_a', Z, (-3600, 1216, -2416, 1584), -384, (16, 16, 16, 0))
 region('tunnel_b', Z, (-3600, 1584, -3216, 2584), -384, (16, 0, 16, 16))
 adjacent('tunnel_a', 'tunnel_b')
@@ -1204,7 +1201,7 @@ open(os.path.join(out, 'cp_iwz.gsc'), 'w', newline='\n').write(gsc)
 
 # ============================================================================ capture views, walk path, summaries
 VIEWS = {   # 5 per zone: (x, y, z eye-ish origin of the player, yaw, pitch)
-    'ticket_hall': [(-1100, 4300, 0, 315, 5), (300, 3300, 0, 135, 5), (-500, 3880, 0, 270, 10), (-96, 4380, 0, 90, -10), (-1100, 3300, 0, 30, 0)],
+    'ticket_hall': [(-1100, 4300, 0, 315, 5), (300, 3300, 0, 135, 5), (-500, 3880, 0, 270, 10), (-96, 4060, 0, 90, -6), (-1100, 3300, 0, 30, 0)],
     'stair_a': [(-600, 3150, 0, 270, 20), (-600, 2460, -320, 90, -20), (-760, 2800, -160, 300, 10), (-600, 3240, 0, 270, 10), (-600, 2440, -320, 270, 0)],
     'platform_a': [(-2300, 2300, -320, 345, 5), (2300, 2300, -320, 195, 5), (-200, 2200, -320, 270, 10), (-40, 1520, -320, 0, 0), (-1500, 1300, -384, 0, -5)],
     'maint_corridor': [(2460, 1800, -320, 0, 0), (3150, 1760, -320, 90, 0), (3080, 2350, -320, 270, 0), (2900, 1720, -320, 180, 0), (3150, 2000, -320, 180, 5)],
