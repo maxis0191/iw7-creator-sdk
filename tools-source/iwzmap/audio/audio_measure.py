@@ -3,7 +3,8 @@
     python audio_measure.py match --ref song.flac --rec capture.wav [--rec-start S --rec-dur D] [--ref-max S]
     python audio_measure.py levels --rec capture.wav --windows windows.json [--ref hint.flac]
     python audio_measure.py run --rec capture.wav --log result.local.json --song song.flac --hint hint.flac
-                                [--activate act.flac] [--out report.json] [--plot curve.png]
+                                [--activate act.flac] [--rumble loop.flac] [--bed name=bed.flac ...]
+                                [--wave newwave.flac] [--out report.json] [--plot curve.png]
 
 match  finds where a recorded window sits in the reference (FFT cross-correlation of the mono signals,
        normalized), then reports for that alignment: the normalized correlation peak, the Pearson r of the
@@ -11,7 +12,9 @@ match  finds where a recorded window sits in the reference (FFT cross-correlatio
 levels RMS (dBFS) and the level of a reference signal's band per window ({"label", "start", "end"} list).
 run    the Station Zero audio witness: aligns the fixture timeline ([IWZ audio] lines with gettime) to the
        capture through the song onset, then measures the hint loop level per distance step, the song match
-       and the activation sound; writes one JSON report (and optionally a PNG of level vs distance).
+       and the activation sound; optionally the lone train-rumble steps (RUMBLE_STEP), which zone bed plays in
+       each BED_ZONE window (best match among --bed references) and where the round-start stinger sits in the
+       capture against WAVE_START; writes one JSON report (and optionally a PNG of level vs distance).
 """
 import argparse
 import json
@@ -246,6 +249,54 @@ def run(args):
         a = decode(args.activate)
         t0 = int(act['t']) / 1000.0 + clock
         report['activation'] = match(a, rec, max(0.0, t0 - 0.5), 3.0)
+    # 5. lone train-rumble source at distances (alias falloff 600..4000 units)
+    if getattr(args, 'rumble', None):
+        rum = decode(args.rumble)
+        looped = np.concatenate([rum, rum, rum])
+        rows = []
+        for e in (x for x in events if x['event'] == 'RUMBLE_STEP'):
+            t0 = int(e['t']) / 1000.0 + clock
+            hold = int(e.get('hold', 4000)) / 1000.0
+            row = levels(rec, [{'label': 'd=%s' % e['d'], 'distance': float(e['d']), 'start': t0 + 0.6, 'end': t0 + hold - 0.3}], rum)[0]
+            m = match(looped, rec, row['start'], 2.5)
+            row['rumble_xcorr_peak'] = m.get('xcorr_peak')
+            row['rumble_spectral_r'] = m.get('spectral_r')
+            row['rumble_gain_db'] = m.get('gain_db')
+            rows.append(row)
+        report['rumble_steps'] = rows
+        report['rumble_audible_steps'] = [r['distance'] for r in rows if (r.get('rumble_xcorr_peak') or 0) > 0.5]
+    # 6. zone beds: the best matching bed reference per BED_ZONE window
+    if getattr(args, 'bed', None):
+        beds = {}
+        for item in args.bed:
+            name, _, path = item.partition('=')
+            beds[name] = decode(path)
+        rows = []
+        for e in (x for x in events if x['event'] == 'BED_ZONE'):
+            t0 = int(e['t']) / 1000.0 + clock
+            hold = int(e.get('hold', 5000)) / 1000.0
+            row = {'zone': e.get('zone'), 'bed_logged': e.get('bed'), 'start': t0 + 0.5, 'end': t0 + hold - 0.25}
+            row.update(levels(rec, [{'label': 'BED', 'start': row['start'], 'end': row['end']}])[0])
+            scores = {}
+            for name, ref in beds.items():
+                m = match(ref, rec, row['start'], min(4.0, row['end'] - row['start']))
+                scores[name] = {'xcorr_peak': m.get('xcorr_peak'), 'spectral_r': m.get('spectral_r'), 'gain_db': m.get('gain_db')}
+            row['matches'] = scores
+            row['best'] = max(scores, key=lambda k: scores[k]['xcorr_peak'] or 0) if scores else None
+            rows.append(row)
+        report['beds'] = rows
+    # 7. round-start stinger: where the reference sits in the capture vs the WAVE_START line
+    if getattr(args, 'wave', None):
+        wave = mono(decode(args.wave))
+        i, peak, norm = xcorr_lag(wave, mono(rec))
+        guard = int(0.5 * RATE)
+        rest = np.concatenate([norm[:max(0, i - guard)], norm[i + guard:]])
+        w = {'capture_s': i / RATE, 'xcorr_peak': peak, 'xcorr_second': float(rest.max()) if len(rest) else 0.0}
+        starts = [e for e in events if e['event'] == 'WAVE_START']
+        if starts:
+            w['wave_start_capture_s'] = [int(e['t']) / 1000.0 + clock for e in starts]
+            w['delay_after_wave_start_s'] = min((w['capture_s'] - t for t in w['wave_start_capture_s']), key=abs)
+        report['wave_music'] = w
     if args.plot and lv:
         plot_png(args.plot, lv, report.get('silence', {}).get('median_dbfs'), args.dist_max)
         report['plot'] = args.plot
@@ -273,6 +324,9 @@ def main(argv=None):
     p.add_argument('--activate')
     p.add_argument('--song-window', type=float, default=30.0)
     p.add_argument('--dist-max', type=float, default=550.0, help='hint alias dist_max (falloff end)')
+    p.add_argument('--rumble', help='train rumble loop (RUMBLE_STEP windows)')
+    p.add_argument('--bed', action='append', default=[], help='name=bed.flac, a candidate zone bed (BED_ZONE windows)')
+    p.add_argument('--wave', help='round-start stinger (WAVE_START)')
     p.add_argument('--out')
     p.add_argument('--plot')
     args = ap.parse_args(argv)
