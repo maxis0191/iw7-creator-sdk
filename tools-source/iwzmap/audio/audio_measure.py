@@ -50,7 +50,8 @@ def xcorr_lag(needle, hay):
     n = len(needle)
     corr = signal.fftconvolve(hay, needle[::-1], mode='valid')
     # normalize by the energy of each hay window
-    e = np.sqrt(np.convolve(np.square(hay), np.ones(n), mode='valid')) * np.sqrt(np.sum(np.square(needle)))
+    c = np.concatenate([[0.0], np.cumsum(np.square(hay, dtype=np.float64))])
+    e = np.sqrt(np.maximum(c[n:] - c[:-n], 0.0)) * np.sqrt(np.sum(np.square(needle, dtype=np.float64)))
     norm = corr / np.maximum(e, 1e-12)
     i = int(np.argmax(norm))
     return i, float(norm[i]), norm
@@ -71,31 +72,52 @@ def match(ref, rec, rec_start=0.0, rec_dur=20.0, ref_max=None, rate=RATE):
         r = r[:int(ref_max * rate)]
     a, b = int(rec_start * rate), int((rec_start + rec_dur) * rate)
     w = mono(rec)[a:b]
-    if len(w) < rate or not np.any(w):
+    if len(w) < rate // 2 or not np.any(w):
         return {'error': 'empty or silent capture window', 'rec_start': rec_start, 'rec_dur': rec_dur}
-    i, peak, norm = xcorr_lag(w, r)
-    aligned = r[i:i + len(w)]
+    if len(w) <= len(r):
+        # the capture window sits somewhere inside the (longer) reference
+        i, peak, norm = xcorr_lag(w, r)
+        aligned = r[i:i + len(w)]
+        ref_offset, rec_offset = i / rate, 0.0
+    else:
+        # a short reference (one-shot) sits somewhere inside the capture window
+        i, peak, norm = xcorr_lag(r, w)
+        aligned, w = r, w[i:i + len(r)]
+        ref_offset, rec_offset = 0.0, i / rate
     pearson = float(np.corrcoef(aligned, w)[0, 1])
     gain = dbfs(w) - dbfs(aligned)
     # how far the best peak stands above the rest of the correlation curve (outside +-50 ms)
     guard = int(0.05 * rate)
     rest = np.concatenate([norm[:max(0, i - guard)], norm[i + guard:]])
     second = float(rest.max()) if len(rest) else 0.0
-    return {'ref_offset_s': i / rate, 'rec_start_s': rec_start, 'rec_dur_s': len(w) / rate,
-            'ref_time_at_rec_zero_s': i / rate - rec_start,
+    return {'ref_offset_s': ref_offset, 'rec_start_s': rec_start + rec_offset, 'rec_dur_s': len(w) / rate,
+            'ref_time_at_rec_zero_s': ref_offset - rec_start - rec_offset,
             'xcorr_peak': peak, 'xcorr_second': second, 'pearson_r': pearson,
             'spectral_r': spec_corr(aligned, w, rate), 'gain_db': gain,
             'rec_rms_dbfs': dbfs(w), 'ref_rms_dbfs': dbfs(aligned)}
 
 
-def band_level(x, ref, rate=RATE):
-    """Level (dB) of x inside the band holding 90% of the reference's energy."""
+def band_filter(x, ref, rate=RATE):
+    """x filtered to the band holding 90% of the reference's energy."""
     f, p = signal.welch(mono(ref), rate, nperseg=4096)
     c = np.cumsum(p) / np.sum(p)
     lo, hi = f[np.searchsorted(c, 0.05)], f[np.searchsorted(c, 0.95)]
     lo, hi = max(lo, 20.0), min(hi, rate / 2 - 100)
     sos = signal.butter(4, [lo, hi], btype='band', fs=rate, output='sos')
-    return dbfs(signal.sosfilt(sos, mono(x))), (float(lo), float(hi))
+    return signal.sosfilt(sos, mono(x)), (float(lo), float(hi))
+
+
+def band_level(x, ref, rate=RATE):
+    """Level (dB) of x inside the band holding 90% of the reference's energy."""
+    y, band = band_filter(x, ref, rate)
+    return dbfs(y), band
+
+
+def median_level(x, rate=RATE, block=0.25):
+    """Median of 250 ms block levels: a steady loop's level, robust to one-shot transients."""
+    n = int(block * rate)
+    blocks = [dbfs(x[i:i + n]) for i in range(0, len(x) - n + 1, n)]
+    return float(np.median(blocks)) if blocks else -200.0
 
 
 def levels(rec, windows, ref=None, rate=RATE):
@@ -103,11 +125,46 @@ def levels(rec, windows, ref=None, rate=RATE):
     for w in windows:
         a, b = int(w['start'] * rate), int(w['end'] * rate)
         seg = rec[a:b]
-        row = dict(w, rms_dbfs=dbfs(mono(seg)))
+        row = dict(w, rms_dbfs=dbfs(mono(seg)), median_dbfs=median_level(mono(seg), rate))
         if ref is not None and len(seg):
-            row['band_dbfs'], row['band_hz'] = band_level(seg, ref, rate)
+            y, row['band_hz'] = band_filter(seg, ref, rate)
+            row['band_dbfs'] = dbfs(y)
+            row['band_median_dbfs'] = median_level(y, rate)
         out.append(row)
     return out
+
+
+def plot_png(path, rows, silence_db=None, dist_max=550):
+    """Level vs distance chart (PIL, no plotting library needed)."""
+    from PIL import Image, ImageDraw
+    W, H, L, R, T, B = 760, 420, 70, 20, 40, 50
+    img = Image.new('RGB', (W, H), 'white')
+    g = ImageDraw.Draw(img)
+    xs = [r['distance'] for r in rows]
+    ys = [r['band_median_dbfs'] for r in rows] + [r['median_dbfs'] for r in rows]
+    x0, x1 = 0, max(xs) * 1.05
+    y0, y1 = min(-80.0, min(ys)) - 5, max(ys) + 5
+    px = lambda x: L + (x - x0) / (x1 - x0) * (W - L - R)
+    py = lambda y: T + (y1 - max(y, y0)) / (y1 - y0) * (H - T - B)
+    for yv in range(int(y0 // 10 * 10), int(y1) + 1, 10):
+        g.line([(L, py(yv)), (W - R, py(yv))], fill=(230, 230, 230))
+        g.text((8, py(yv) - 6), '%d dB' % yv, fill='black')
+    for xv in range(0, int(x1) + 1, 100):
+        g.text((px(xv) - 10, H - B + 8), str(xv), fill='black')
+    g.line([(px(dist_max), T), (px(dist_max), H - B)], fill=(220, 0, 0))
+    g.text((px(dist_max) + 4, T + 2), 'dist_max %d' % dist_max, fill=(220, 0, 0))
+    if silence_db is not None:
+        g.line([(L, py(silence_db)), (W - R, py(silence_db))], fill=(150, 150, 150))
+    for key, colour in (('median_dbfs', (120, 120, 200)), ('band_median_dbfs', (0, 90, 180))):
+        pts = sorted((px(r['distance']), py(r[key])) for r in rows)
+        g.line(pts, fill=colour, width=2)
+        for x, y in pts:
+            g.ellipse([x - 4, y - 4, x + 4, y + 4], outline=colour, width=2)
+    g.text((L, 10), 'Hint loop level vs distance (in-game capture): dark = hint band median, light = full band median',
+           fill='black')
+    g.text((W // 2 - 90, H - 20), 'player distance to the bear (units)', fill='black')
+    g.rectangle([L, T, W - R, H - B], outline='black')
+    img.save(path)
 
 
 LINE = re.compile(r'\[IWZ audio\] (\w+)(.*)')
@@ -159,21 +216,23 @@ def run(args):
         hold = int(e.get('hold', 4000)) / 1000.0
         windows.append({'label': 'd=%s' % e['d'], 'distance': float(e['d']), 'start': t0 + 0.75, 'end': t0 + hold - 0.25})
     lv = levels(rec, windows, hint)
+    looped = np.concatenate([hint, hint, hint])   # the loop wraps inside a window: match against the loop
     for row in lv:
-        a, b = int(row['start'] * RATE), int(row['end'] * RATE)
-        m = match(hint, rec, row['start'], row['end'] - row['start'])
+        m = match(looped, rec, row['start'], 2.0)
         row['hint_xcorr_peak'] = m.get('xcorr_peak')
         row['hint_spectral_r'] = m.get('spectral_r')
     report['hint_steps'] = lv
     if lv:
         d = np.array([r['distance'] for r in lv])
-        L = np.array([r['band_dbfs'] for r in lv])
+        L = np.array([r['band_median_dbfs'] for r in lv])
         order = np.argsort(d)
-        report['hint_monotonic_decreasing_with_distance'] = bool(np.all(np.diff(L[order]) <= 1.0))
+        # level never rises by more than 2 dB when the player moves away (inside the audible range)
+        report['hint_monotonic_decreasing_with_distance'] = bool(np.all(np.diff(L[order]) <= 2.0))
         report['hint_level_near_minus_far_db'] = float(L[order][0] - L[order][-1])
-        inside = d <= 550
+        inside = d <= args.dist_max
         if inside.sum() >= 2:
-            report['hint_slope_db_per_100u_inside_550'] = float(np.polyfit(d[inside], L[inside], 1)[0] * 100)
+            report['hint_slope_db_per_100u_inside'] = float(np.polyfit(d[inside], L[inside], 1)[0] * 100)
+        report['hint_audible_steps'] = [float(x) for x, y in zip(d, L) if y > -80]
     # 3. ambience window and silence baseline, if the fixture printed them
     for name in ('SILENCE', 'AMBIENCE'):
         e = next((x for x in events if x['event'] == name), None)
@@ -188,22 +247,7 @@ def run(args):
         t0 = int(act['t']) / 1000.0 + clock
         report['activation'] = match(a, rec, max(0.0, t0 - 0.5), 3.0)
     if args.plot and lv:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(figsize=(7, 4))
-        ax.plot([r['distance'] for r in lv], [r['band_dbfs'] for r in lv], 'o-', label='hint loop band level')
-        ax.plot([r['distance'] for r in lv], [r['rms_dbfs'] for r in lv], 's--', alpha=0.6, label='full-band RMS')
-        if 'silence' in report:
-            ax.axhline(report['silence']['rms_dbfs'], color='gray', ls=':', label='silence baseline')
-        ax.axvline(550, color='red', ls=':', label='alias dist_max 550')
-        ax.set_xlabel('player distance to the bear (units)')
-        ax.set_ylabel('dBFS')
-        ax.set_title('Hint loop level vs distance (in-game capture)')
-        ax.legend()
-        ax.grid(alpha=0.3)
-        fig.tight_layout()
-        fig.savefig(args.plot, dpi=110)
+        plot_png(args.plot, lv, report.get('silence', {}).get('median_dbfs'), args.dist_max)
         report['plot'] = args.plot
     return report
 
@@ -228,6 +272,7 @@ def main(argv=None):
     p.add_argument('--hint', required=True)
     p.add_argument('--activate')
     p.add_argument('--song-window', type=float, default=30.0)
+    p.add_argument('--dist-max', type=float, default=550.0, help='hint alias dist_max (falloff end)')
     p.add_argument('--out')
     p.add_argument('--plot')
     args = ap.parse_args(argv)

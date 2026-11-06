@@ -2,7 +2,10 @@
   "bank": "cp_iwz.all",
   "zone": "cp_iwz",
   "template_aliases": "${IW7_DUMP}/cp_zmb/sound/cp_zmb.all.aliases.csv",
-  "stock_banks": ["${GAME}/cp_zmb.sabl", "${GAME}/code_post_gfx.sabs"],
+  "stock_banks": [
+    "${GAME}/cp_zmb.sabl",
+    "${GAME}/code_post_gfx.sabs"
+  ],
   "aliases": [
     {
       "name": "mus_iwz_abracadavre",
@@ -10,7 +13,11 @@
       "template": "mus_zombies_newwave",
       "source": "${BO3_EXPORT}/iwz-audio-cosmo/bo3/sounds/all/mus/zm/dlc5/ee_final_mixes/abracadavre.flac",
       "file": "iwz\\mus\\abracadavre",
-      "set": {"vol_min": 0.5, "vol_max": 0.5, "MusicContent": "music"}
+      "set": {
+        "vol_min": 0.5,
+        "vol_max": 0.5,
+        "MusicContent": "music"
+      }
     },
     {
       "name": "zmb_iwz_ee_hint_lp",
@@ -18,7 +25,16 @@
       "template": "emt_light_hum_lp_03",
       "source": "${BO3_EXPORT}/iwz-audio-common-egg/bo3/sounds/all/zmb/egg/meteor_loop.flac",
       "file": "iwz\\egg\\meteor_loop",
-      "set": {"vol_min": 0.5, "vol_max": 0.5, "dist_min": 100.0, "dist_max": 550.0, "volumefalloffcurve": "default", "loop": "looping"}
+      "set": {
+        "vol_min": 0.5,
+        "vol_max": 0.5,
+        "dist_min": 100.0,
+        "dist_max": 550.0,
+        "volumefalloffcurve": "default",
+        "loop": "looping",
+        "pitch_min": 1.0,
+        "pitch_max": 1.0
+      }
     },
     {
       "name": "zmb_iwz_ee_activate",
@@ -26,7 +42,15 @@
       "template": "rollercoaster_sign_up",
       "source": "${BO3_EXPORT}/iwz-audio-common-egg/bo3/sounds/all/zmb/egg/meteor_affirm.flac",
       "file": "iwz\\egg\\meteor_affirm",
-      "set": {"vol_min": 0.55, "vol_max": 0.55, "dist_min": 150.0, "dist_max": 1200.0, "volumefalloffcurve": "default"}
+      "set": {
+        "vol_min": 0.55,
+        "vol_max": 0.55,
+        "dist_min": 150.0,
+        "dist_max": 1200.0,
+        "volumefalloffcurve": "default",
+        "pitch_min": 1.0,
+        "pitch_max": 1.0
+      }
     },
     {
       "name": "amb_cp_zmb_basement_lr",
@@ -58,7 +82,13 @@
       "comment": "distant train rumble: stock coaster_engine_low trolley loop, script volume replaced by a fixed level and a wide 3D falloff",
       "template": "coaster_engine_low",
       "source": "stock",
-      "set": {"vol_min": 0.35, "vol_max": 0.35, "dist_min": 600.0, "dist_max": 4000.0, "volumefalloffcurve": "default"}
+      "set": {
+        "vol_min": 0.35,
+        "vol_max": 0.35,
+        "dist_min": 600.0,
+        "dist_max": 4000.0,
+        "volumefalloffcurve": "default"
+      }
     }
   ]
 }
