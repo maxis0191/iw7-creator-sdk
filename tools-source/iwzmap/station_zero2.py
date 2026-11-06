@@ -1080,7 +1080,7 @@ QUEST = {   # Pack-a-Punch relays (gameplay agent: logic), trap and EE spots (da
     'relay_3': {'zone': 'generator_room', 'origin': (3660, 3167, -260), 'yaw': 270, 'model_yaw': 180},  # control panel
     'pap_shutter': {'zone': 'control_room', 'origin': (3104, 4010, -320), 'yaw': 270, 'size': (256, 208)},
     'trap_third_rail_fusebox': {'zone': 'platform_a', 'origin': (-768, 1975, -300), 'yaw': 270, 'model_yaw': 180},
-    'trap_third_rail_volume': {'zone': 'platform_a', 'box': (-2400, 1200, -384, 2600, 1600, -300)},
+    'trap_third_rail_volume': {'zone': 'platform_a', 'box': (-2400, 1200, -384, 2600, 1600, -350)},
     'teddy_bear': {'zone': 'platform_a', 'origin': TEDDY_SPOT, 'yaw': 90, 'note': 'on the luggage rack above the seat x -264..-136, facing into the car'},
 }
 

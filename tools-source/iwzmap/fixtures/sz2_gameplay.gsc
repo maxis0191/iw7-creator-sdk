@@ -96,6 +96,61 @@ iwz_game_run()
     else
         print("[IWZ game] POWER missing");
 
+    // 5. PaP quest: the three relays (stock trigger notify; the 2 s Use hold is simulated by paris_iwz_autouse)
+    for (i = 1; i <= 3; i++)
+    {
+        r = scripts\engine\utility::getstruct("iwz_relay_" + i, "targetname");
+        if (!isdefined(r) || !isdefined(r.use))
+        {
+            print("[IWZ game] QUEST relay_missing i=" + i);
+            continue;
+        }
+        player setorigin(r.origin + anglestoforward(r.angles) * 40);
+        wait 0.5;
+        r.use notify("trigger", player);
+        wait 0.5;
+    }
+    wait 4;
+    print("[IWZ game] QUEST relays_on=" + level.iwz_relays_on + " pap_open=" + isdefined(level.iwz_pap_open));
+    a = (3104, 3960, -290);
+    b = (3104, 4060, -290);
+    got = playerphysicstrace(a, b);
+    print("[IWZ game] SHUTTER passable=" + (distance(got, b) < 2) + " stopped=" + got);
+
+    // 6. Third Rail trap: money, trigger, zombies moved into the pit must die
+    player scripts\cp\cp_persistence::set_player_currency(5000);
+    money = player scripts\cp\cp_persistence::get_player_currency();
+    fb = scripts\engine\utility::getstruct("iwz_trap_third_rail_fusebox", "targetname");
+    if (isdefined(fb) && isdefined(level.iwz_trap_use))
+    {
+        player setorigin(fb.origin + anglestoforward(fb.angles) * 48);
+        wait 0.5;
+        level.iwz_trap_use notify("trigger", player);
+        wait 1;
+        moved = 0;
+        if (isdefined(level.spawned_enemies))
+        {
+            foreach (zombie in level.spawned_enemies)
+            {
+                if (isdefined(zombie) && isalive(zombie) && moved < 4)
+                {
+                    zombie setorigin((-1500 + moved * 300, 1300, -380));
+                    moved++;
+                }
+            }
+        }
+        wait 3;
+        alive = 0;
+        foreach (zombie in level.spawned_enemies)
+        {
+            if (isdefined(zombie) && isalive(zombie) && zombie.origin[1] < 1600 && zombie.origin[2] < -350)
+                alive++;
+        }
+        print("[IWZ game] TRAP money_before=" + money + " money_after=" + (player scripts\cp\cp_persistence::get_player_currency()) + " moved=" + moved + " alive_in_pit=" + alive);
+    }
+    else
+        print("[IWZ game] TRAP missing");
+
     views = strtok(getdvar("paris_iwz_views"), ";");
     for (i = 0; i < views.size; i++)
     {

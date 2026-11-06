@@ -19,7 +19,7 @@ $extra='+set vid_width 1920 +set vid_height 1080 +set r_mode 1920x1080 +set cg_f
 switch($Mode){
   'views'    { $extra+=' +set paris_iwz_mode views +set paris_iwz_noweapons 1 +set paris_iwz_cmds "cg_draw2D 0"'; if($Only){ $extra+=" +set paris_iwz_only $Only" } }
   'walk'     { $extra+=' +set paris_iwz_mode walk' }
-  'gameplay' { $extra+=' +set paris_iwz_gameplay 1' }
+  'gameplay' { $extra+=' +set paris_iwz_gameplay 1 +set paris_iwz_autouse 1 +set developer_script 1' }
 }
 for($k=0;$k -lt $Tries;$k++){
   $main=(Resolve-Path $GameRoot).Path

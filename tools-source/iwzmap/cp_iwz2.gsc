@@ -246,6 +246,8 @@ iwz_relay_wait()
     {
         self.use waittill( "trigger", p );
         held = 0;
+        if ( getdvarint( "paris_iwz_autouse" ) )      // private test fixture only: the Use hold is simulated
+            held = 2;
         while ( isdefined( p ) && isalive( p ) && p usebuttonpressed() && distance( p.origin, self.use.origin ) < 128 && held < 2 )
         {
             wait 0.1;
