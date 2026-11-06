@@ -40,6 +40,21 @@ class Mesh:
         if collide:
             self.col += [(p0, p1, p2), (p0, p2, p3)]
 
+    def quad_uv(self, material, pts, uvs, normal, tangent, lm, collide=True, double_sided=None):
+        """Quad with explicit texture coordinates (pts counter-clockwise seen from the normal side)."""
+        verts, idx = self.mat(material)
+        base = len(verts)
+        for p, (u, v) in zip(pts, uvs):
+            verts.append((tuple(float(c) for c in p), u, v, lm, pack_unit(normal), pack_unit(tangent)))
+        idx += [base, base + 1, base + 2, base, base + 2, base + 3]
+        if double_sided is None:
+            double_sided = os.environ.get('IWZ_DOUBLE_SIDED') == '1'
+        if double_sided:
+            idx += [base, base + 2, base + 1, base, base + 3, base + 2]
+        if collide:
+            p0, p1, p2, p3 = pts
+            self.col += [(p0, p1, p2), (p0, p2, p3)]
+
 
 def box_faces(mesh, mn, mx, mats, lm, inward=False, skip=()):
     """Six faces of an axis-aligned box. mats: dict face->material ('floor','ceiling','wall')."""

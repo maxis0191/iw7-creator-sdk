@@ -48,3 +48,23 @@ Older routes (`IWZ_KEEP_UMBRA`, `IWZ_SLOT_SURFACES`) are superseded.
 A zombies usermap also needs the iw7-mod `Usermaps` script fix (fork branch
 `fix/usermaps-cp-map-stats`): without it one installed `cp_` usermap breaks the
 whole CHOOSE FILM list.
+
+## Station Zero v2 (stage 2 level design)
+
+`station_zero2.py` builds the nine-zone metro station of the stage 2 level design from textured brushes
+(`brushkit.py`: world-aligned quads with per-material texture world size, boxes, banded walls with door
+openings, reveals and frames, straight stairs with render steps and a smooth collision ramp). Data tables
+(`ZONES`, `OPENINGS`, `SPAWNERS`, `PERKS`, `WALL_BUYS`, `WHEELS`, `QUEST`, `PROPS`, `LIGHTS`, `SIGNS`, `VIEWS`,
+`WALK`) are kept separate so the static model, light, audio and gameplay tools can plug in. Materials and their
+UV scales are in `sz2_materials.py`; custom-image signs/posters and tinted lamps are cloned stock world materials
+written by `sz2_assemble.py`. The level script is `cp_iwz2.gsc` (generated door / zone link tables).
+
+```powershell
+$env:IWZ_DOUBLE_SIDED='1'                       # optional: IWZ_GALLERY=1 adds the material / texel gallery room
+python -I station_zero2.py <stock cp_zmb dump> <src>
+python -I sz2_plan.py <src>                     # offline plan image + nav/data checks (exit 1 on failure)
+.\build-sz2.ps1 -Src <src> -UmOut <usermap dir> # own zonetool work dir, leased
+.\run-sz2.ps1 -Tag <run> -UsermapDir <dir> -Mode views|walk|gameplay -Fixture <src>\iwzmap_sz2_local.gsc
+python -I sz2_frames.py <run dir> <src> <analysis dir>   # contact sheets, luma, gallery sampling
+python -I sz2_lmpick.py <analysis>\gallery.json sz2_lm_table.json   # measured per-zone texels
+```
