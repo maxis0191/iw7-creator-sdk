@@ -705,6 +705,9 @@ for a, b in [(-400, -296), (-264, -136), (-104, 24), (56, 184), (216, 336)]:
     B.box((a, CY0 + WT, CAR_FLOOR), (b, CY0 + WT + 26, CAR_FLOOR + 18), {'side': 'metal_black', 'top': 'seat_blue'}, Z, collide=True, nav=True)
     B.box((a, CY0 + WT, CAR_FLOOR + 18), (b, CY0 + WT + 6, CAR_FLOOR + 40), {'side': 'seat_blue', 'top': 'seat_blue'}, Z, collide=True, nav=False)
     B.box((a, CY0 + WT, CAR_FLOOR + 104), (b, CY0 + WT + 22, CAR_FLOOR + 106), 'chrome_trim', Z, collide=True, nav=False)
+    for bx_ in (a + 4, b - 4):     # rack brackets (wall to the front rail, angled look from two short boxes)
+        B.box((bx_ - 1, CY0 + WT, CAR_FLOOR + 94), (bx_ + 1, CY0 + WT + 4, CAR_FLOOR + 104), 'chrome_trim', Z, collide=False, nav=False)
+        B.box((bx_ - 1, CY0 + WT + 4, CAR_FLOOR + 100), (bx_ + 1, CY0 + WT + 22, CAR_FLOOR + 104), 'chrome_trim', Z, collide=False, nav=False)
 # grab poles at the doors
 for a, b in CAR_DOORS:
     B.box(((a + b) / 2 - 1.5, 1540, CAR_FLOOR), ((a + b) / 2 + 1.5, 1543, CAR_ROOF), 'chrome_trim', Z, collide=False, nav=False)

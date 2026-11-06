@@ -6,7 +6,7 @@ param(
   [string]$ZoneToolExe='C:\Users\ezvalo\Documents\IW7-Products\worktrees\x64-zt-iwz-map\build\bin\x64\Release\zonetool.exe',
   [string]$TemplateDump='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-map-ref-a\dump',
   [string]$Arena='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-release\cp_iwz-rc1\usermaps\cp_iwz\cp_iwz.arena',
-  [int]$Tries=120,
+  [int]$Tries=600,
   [switch]$KeepSubmodels,                                                                             # door blockers: zonetool codex/iwzmap-door-brushmodels
   [switch]$CompileOnly)
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
@@ -16,7 +16,7 @@ $S=$PSScriptRoot; $W=$Work; $D=$TemplateDump
 function Invoke-Zt([string[]]$a,[int]$t){
   for($k=0;$k -lt $Tries;$k++){
     try { return (& "$S\zt.ps1" -Work $W -ZtArgs $a -TimeoutSec $t -Owner 'IWZ Station Zero v2 level build') }
-    catch { if($_.Exception.Message -match 'Resource busy|Heavy job already reserved|busy|wait before heavy admission|wait for its owner'){ Start-Sleep 60; continue }; throw }
+    catch { if($_.Exception.Message -match 'Resource busy|Heavy job already reserved|busy|wait before heavy admission|wait for its owner'){ Start-Sleep 15; continue }; throw }
   }
   throw 'resource lease not obtained'
 }
