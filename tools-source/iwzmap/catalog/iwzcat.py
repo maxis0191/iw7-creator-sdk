@@ -325,11 +325,34 @@ def kit(args):
             n, _, role = line.strip().partition('	')
             if n:
                 roles[n] = role
-    rows = []
+    rejected = set()
+    if args.reject:
+        for line in open(args.reject):
+            n = line.split('#')[0].split('	')[0].strip()
+            if n:
+                rejected.add(n)
+    # best passing frame per model (highest silhouette IoU), in roles order when roles are given
+    best = {}
+    order = []
     for pj in args.previews:
         for r in json.load(open(pj))['rows']:
-            rows.append(r)
+            m = r['model']
+            if m not in order:
+                order.append(m)
+            if r.get('pass') and m not in rejected and (m not in best or r['iou'] > best[m]['iou']):
+                best[m] = r
+    if roles:
+        order = [m for m in roles if m in best]
+    rows = [best[m] for m in order if m in best]
     template = set(x for x in (args.template or '').split(',') if x)
+    # techsets the template zone already brings (its `require,techsets_*` zones): a material of another zone whose
+    # techset is not among them needs that zone's techsets_<zone> fast file required too (stock, no download)
+    have_ts = set()
+    for d in (args.template_techsets or '').split(';'):
+        td = os.path.join(d, 'techsets') if d and os.path.isdir(os.path.join(d, 'techsets')) else d
+        if td and os.path.isdir(td):
+            have_ts.update(f[:-len('.techset')] for f in os.listdir(td) if f.endswith('.techset'))
+    missing_ts = {}
     picked, seen = [], set()
     surf_bytes, emb, streamed, imgs_seen = 0, 0, {}, set()
     for r in rows:
@@ -345,6 +368,10 @@ def kit(args):
                'materials': [m['name'] for m in c['materials']], 'emissive': c['emissive'],
                'inTemplateZone': free, 'preview': r['crop'], 'frame': r['frame'],
                'check': {'iou': r['iou'], 'texture': r.get('texture'), 'engineBounds': r.get('engineBounds')}}
+        if have_ts and not free:
+            row['techsetsNotInTemplate'] = sorted(t for t in c.get('techsets', []) if t not in have_ts)
+            for t in row['techsetsNotInTemplate']:
+                missing_ts.setdefault(t, set()).update(z for z in c['zones'] if z not in template)
         picked.append(row)
         if free:
             continue
@@ -360,9 +387,14 @@ def kit(args):
            'cost': {'models': sum(1 for p in picked if not p['inTemplateZone']),
                     'surfaceBytes': surf_bytes, 'embeddedImageBytes': emb, 'uniqueImages': len(imgs_seen),
                     'streamedImageBytesByPak': streamed,
+                    'techsetsNotInTemplate': {t: sorted(z) for t, z in sorted(missing_ts.items())},
                     'note': 'models outside the template zone; images counted once; streamed bytes stay in the '
                             'base game paks when the zone keeps the XStreamFile references'}}
     json.dump(out, open(args.out, 'w'), indent=1)
+    if args.sheet:
+        import preview_analyze
+        os.makedirs(args.sheet, exist_ok=True)
+        preview_analyze.sheet(rows, cat, args.sheet, 240, 8, name='kit_sheet')
     print('kit: %d models -> %s' % (len(picked), args.out))
 
 
@@ -392,6 +424,9 @@ def main(argv=None):
     k.add_argument('--previews', action='append', required=True)
     k.add_argument('--roles')
     k.add_argument('--template')
+    k.add_argument('--template-techsets', help='";"-separated techsets_* dumps the template zone requires')
+    k.add_argument('--reject', help='file of model names rejected on visual review (false-positive frames)')
+    k.add_argument('--sheet', help='directory for contact sheets of the kit frames')
     k.add_argument('--out', required=True)
     a = ap.parse_args(argv)
     {'kit': kit, 'build': build, 'query': query, 'fx': fx, 'previewlist': previewlist}[a.cmd](a)
