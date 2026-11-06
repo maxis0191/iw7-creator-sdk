@@ -35,7 +35,7 @@ while($true){
     catch{ $err=$_.Exception.Message }
     $res=Join-Path $out 'result.local.json'
     if(!$err -and (Test-Path $res)){ $err=(Get-Content $res -Raw|ConvertFrom-Json).Error }
-    if($err -and ($err -match 'Resource busy|Heavy job already reserved|Base game occupied') -and [datetime]::UtcNow -lt $deadline){ "busy ($err); retry in 60 s"; Start-Sleep 60; $try++; continue }
+    if($err -and ($err -match 'Resource busy|Heavy job already reserved|Base game occupied|Resource lease not found') -and [datetime]::UtcNow -lt $deadline){ "busy ($err); retry in 60 s"; Start-Sleep 60; $try++; continue }
     "RUN DIR $out"
     break
 }
