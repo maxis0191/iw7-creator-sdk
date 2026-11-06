@@ -57,7 +57,7 @@ images (`*lightmap0_primary/secondary/secondunorm`: same names, own size) when t
 `lightmap\secondary.dds`. World shader: `E = A + ssao * B * saturate(dot(N, D))`, diffuse = albedo * E, with
 A = secondary top half, B = bottom half, D = secondunorm (rotated octahedral, tangent frame) and S = primary
 (baked sun visibility; the sun itself is shaded at runtime). Engine evidence (iwz-stage2/lightmaps): calibration
-patches give E = A + B * Dz exactly (B-only patches render like the equal-E A-only patches); the baked/flat luma
+patches give E = A + B * Dz (B-only patches render within 4..11 % of the equal-E A-only patches); the baked/flat luma
 ratio follows the baked E (r 0.87..0.985 per view); forcing S = 0/0.5/1 indoors changes nothing measurable.
 
 Compiler switches (environment): `IWZ_GEN_TOME` (generated conservative Umbra
