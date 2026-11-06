@@ -331,16 +331,19 @@ def kit(args):
             n = line.split('#')[0].split('	')[0].strip()
             if n:
                 rejected.add(n)
-    # best passing frame per model (highest silhouette IoU), in roles order when roles are given
+    # passing frame per model: the first --previews file with a pass wins (list the preview runs made inside the
+    # target map first), the highest silhouette IoU within that file; roles order when roles are given
     best = {}
     order = []
-    for pj in args.previews:
+    for k, pj in enumerate(args.previews):
         for r in json.load(open(pj))['rows']:
             m = r['model']
             if m not in order:
                 order.append(m)
-            if r.get('pass') and m not in rejected and (m not in best or r['iou'] > best[m]['iou']):
-                best[m] = r
+            if not r.get('pass') or m in rejected:
+                continue
+            if m not in best or (best[m]['_k'] == k and r['iou'] > best[m]['iou']):
+                best[m] = dict(r, _k=k)
     if roles:
         order = [m for m in roles if m in best]
     rows = [best[m] for m in order if m in best]
