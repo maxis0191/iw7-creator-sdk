@@ -183,6 +183,7 @@ def main():
     ap.add_argument('--hfov-scale', type=float, default=1.0)
     ap.add_argument('--thr', type=int, default=14)
     ap.add_argument('--roi', type=float, default=0.05)
+    ap.add_argument('--static-thr', type=int, default=20)  # background-to-background change marking HUD/flicker pixels
     ap.add_argument('--min-luma', type=float, default=14.0)  # night maps (cp_disco) light props dimly
     ap.add_argument('--tile', type=int, default=240)
     ap.add_argument('--cols', type=int, default=8)
@@ -208,7 +209,7 @@ def main():
         if len(ks) > 1:
             acc = None
             for i in range(1, len(ks)):
-                d = ImageChops.difference(bg_imgs[ks[i]], bg_imgs[ks[0]]).convert('L').point(lambda v: 255 if v > a.thr else 0)
+                d = ImageChops.difference(bg_imgs[ks[i]], bg_imgs[ks[0]]).convert('L').point(lambda v: 255 if v > a.static_thr else 0)
                 acc = d if acc is None else ImageChops.lighter(acc, d)
             static = ImageChops.invert(acc.filter(ImageFilter.MaxFilter(9)))
         for pv in pvs:
