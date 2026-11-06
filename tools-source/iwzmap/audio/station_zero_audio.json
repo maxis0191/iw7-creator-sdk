@@ -89,6 +89,106 @@
         "dist_max": 4000.0,
         "volumefalloffcurve": "default"
       }
+    },
+    {
+      "name": "amb_cp_zmb_ice_cave_lr",
+      "comment": "2D room tone bed (Spaceland ice cave: low cavern wind) for the platforms and the service tunnel, streamed loop",
+      "source": "stock"
+    },
+    {
+      "name": "emt_light_hum_lp_02",
+      "comment": "fluorescent light hum emitter (variant 2)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_light_hum_lp_03",
+      "comment": "fluorescent light hum emitter (variant 3, unoccluded)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_appliance_hum_lp_02",
+      "comment": "electrical hum emitter (pipes, corridor)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_appliance_hum_lp_03",
+      "comment": "electrical hum emitter (generator, 550 units)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_wispy_wind_paper_lp_01",
+      "comment": "draught with paper rustle (collapsed street stairs)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_cp_zmb_wind_omin_01_lp",
+      "comment": "interior wind (boarded windows, old station)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_metal_groan_med",
+      "comment": "random distant metal groans (service tunnel)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_spark_burst",
+      "comment": "random spark bursts (fuse boxes, generator)",
+      "source": "stock"
+    },
+    {
+      "name": "mus_zombies_newwave",
+      "comment": "stock cp_zmb wave music, re-banked: round start stinger, played by the stock wave loop (scripts/cp/zombies wave start, soundexists-gated); front pair, rear pair as its secondary alias",
+      "source": "stock",
+      "secondary": "mus_zombies_newwave_lsrs"
+    },
+    {
+      "name": "mus_zombies_newwave_lsrs",
+      "comment": "rear speakers of mus_zombies_newwave",
+      "source": "stock"
+    },
+    {
+      "name": "mus_zombies_endwave",
+      "comment": "stock cp_zmb wave music, re-banked: round end stinger (stock wave loop); front pair, rear pair as its secondary alias",
+      "source": "stock",
+      "secondary": "mus_zombies_endwave_lsrs"
+    },
+    {
+      "name": "mus_zombies_endwave_lsrs",
+      "comment": "rear speakers of mus_zombies_endwave",
+      "source": "stock"
+    },
+    {
+      "name": "mus_zombies_eventwave_start",
+      "comment": "stock cp_zmb wave music, re-banked: special-wave start stinger (stock wave loop); front pair, rear pair as its secondary alias",
+      "source": "stock",
+      "secondary": "mus_zombies_eventwave_start_lsrs"
+    },
+    {
+      "name": "mus_zombies_eventwave_start_lsrs",
+      "comment": "rear speakers of mus_zombies_eventwave_start",
+      "source": "stock"
+    },
+    {
+      "name": "mus_zombies_eventwave_end",
+      "comment": "stock cp_zmb wave music, re-banked: special-wave end stinger (stock wave loop); front pair, rear pair as its secondary alias",
+      "source": "stock",
+      "secondary": "mus_zombies_eventwave_end_lsrs"
+    },
+    {
+      "name": "mus_zombies_eventwave_end_lsrs",
+      "comment": "rear speakers of mus_zombies_eventwave_end",
+      "source": "stock"
+    },
+    {
+      "name": "mus_zombies_gameover",
+      "comment": "stock cp_zmb wave music, re-banked: game over music (stock end-game, playlocalsound); front pair, rear pair as its secondary alias",
+      "source": "stock",
+      "secondary": "mus_zombies_gameover_lsrs"
+    },
+    {
+      "name": "mus_zombies_gameover_lsrs",
+      "comment": "rear speakers of mus_zombies_gameover",
+      "source": "stock"
     }
   ]
 }

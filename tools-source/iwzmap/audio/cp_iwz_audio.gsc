@@ -2,7 +2,11 @@
 // scripts/cp/maps/cp_iwz/cp_iwz_audio.gsc; the level script cp_iwz.gsc calls it from main():
 //
 //   level thread scripts\cp\maps\cp_iwz\cp_iwz_audio::song_ee_init( ( x, y, z ), ( 0, yaw, 0 ) );
-//   level thread scripts\cp\maps\cp_iwz\cp_iwz_audio::ambience_init( emitters, "amb_cp_zmb_basement_lr" );
+//   level thread scripts\cp\maps\cp_iwz\cp_iwz_audio::ambience_init( emitters, "amb_cp_zmb_basement_lr", zones );
+//
+// (audio_layout.py writes both calls, with every position, from the level generator's layout.json.)
+// song_ee_init origin = the point the bear rests on (seat, rack, floor): p7_zm_teddybear's model origin is
+// its centre (lod0 bounds z -14.2..13.9), so the model is raised by opts.model_offset (default 14.2).
 //
 // Aliases (map sound bank cp_iwz.all, built by x64-zt-extensions iw7-audio/iwz_audio_bank.py from
 // iw7-creator-sdk tools-source/iwzmap/audio/station_zero_audio.json):
@@ -31,11 +35,13 @@ song_ee_init( origin, angles, opts )
         opts = spawnstruct();
 
     ee = spawnstruct();
-    ee.origin = origin;
+    ee.origin = origin;                                        // resting point (base of the bear)
     ee.angles = ( 0, 0, 0 );
     if ( isdefined( angles ) )
         ee.angles = angles;
     ee.model_name = iwz_opt( opts.model, "p7_zm_teddybear" );
+    ee.model_offset = iwz_opt( opts.model_offset, ( 0, 0, 14.2 ) );   // model origin above the resting point
+    ee.target = ee.origin + ee.model_offset;                   // centre of the bear: hum, look, use, sound
     ee.song = iwz_opt( opts.song, "mus_iwz_abracadavre" );
     ee.hint_alias = iwz_opt( opts.hint_alias, "zmb_iwz_ee_hint_lp" );
     ee.activate_alias = iwz_opt( opts.activate_alias, "zmb_iwz_ee_activate" );
@@ -48,14 +54,14 @@ song_ee_init( origin, angles, opts )
     ee.done = 0;
     level.iwz_song_ee = ee;
 
-    ee.model = spawn( "script_model", ee.origin );
+    ee.model = spawn( "script_model", ee.target );
     ee.model.angles = ee.angles;
     ee.model setmodel( ee.model_name );
 
     // the hint loop lives on its own origin: hiding or deleting the model never cuts it short
-    ee.hum = spawn( "script_origin", ee.origin + ( 0, 0, 8 ) );
+    ee.hum = spawn( "script_origin", ee.target );
     ee.hum playloopsound( ee.hint_alias );
-    print( "[IWZ audio] EE_ARMED origin=" + ee.origin + " model=" + ee.model_name + " hint=" + ee.hint_alias + " t=" + gettime() );
+    print( "[IWZ audio] EE_ARMED origin=" + ee.origin + " target=" + ee.target + " model=" + ee.model_name + " hint=" + ee.hint_alias + " t=" + gettime() );
 
     if ( ee.allow_damage )
         ee.model thread iwz_ee_watch_damage( ee );
@@ -119,7 +125,7 @@ iwz_ee_can_use( ee, player )
     if ( !player usebuttonpressed() && !scripts\engine\utility::is_true( player.iwz_ee_use_override ) )
         return 0;
 
-    target = ee.origin + ( 0, 0, 8 );
+    target = ee.target;
     eye = player geteye();
 
     if ( distance( eye, target ) > ee.use_radius + 48 || distance2d( player.origin, ee.origin ) > ee.use_radius )
@@ -170,7 +176,7 @@ iwz_ee_activate( ee, player, method )
 
     print( "[IWZ audio] EE_ACTIVATED by=" + name + " method=" + method + " t=" + gettime() );
     ee.hum stoploopsound();
-    playsoundatpos( ee.origin + ( 0, 0, 8 ), ee.activate_alias );
+    playsoundatpos( ee.target, ee.activate_alias );
 
     if ( isdefined( ee.model ) )
     {
@@ -235,8 +241,10 @@ iwz_play_hidden_song( ee )
 }
 
 // Ambience: looping 3D emitters, random one-shot emitters and a 2D room tone bed per client.
-// emitters: array of structs { alias, origin, random (0/1), min_wait, max_wait }
-ambience_init( emitters, bed )
+// emitters: array of structs { alias, origin, random (0/1), min_wait, max_wait } (ambience_emitter)
+// bed: default 2D bed alias; zones: optional array of ambience_zone structs, the first zone holding the
+// player selects its bed (checked twice a second, "[IWZ audio] BED ..." on every change).
+ambience_init( emitters, bed, zones )
 {
     level endon( "game_ended" );
     level.iwz_ambience = [];
@@ -265,9 +273,27 @@ ambience_init( emitters, bed )
 
     print( "[IWZ audio] AMB_START emitters=" + level.iwz_ambience.size + " t=" + gettime() );
 
-    if ( isdefined( bed ) && soundexists( bed ) )
+    level.iwz_ambience_zones = [];
+    if ( isdefined( zones ) )
+    {
+        foreach ( z in zones )
+        {
+            if ( isdefined( z.bed ) && !soundexists( z.bed ) )
+            {
+                print( "[IWZ audio] AMB_MISSING alias=" + z.bed + " zone=" + z.name );
+                z.bed = undefined;
+            }
+            level.iwz_ambience_zones[level.iwz_ambience_zones.size] = z;
+        }
+    }
+
+    if ( isdefined( bed ) && !soundexists( bed ) )
+        bed = undefined;
+
+    if ( isdefined( bed ) || level.iwz_ambience_zones.size )
     {
         level.iwz_ambience_bed = bed;
+        level.iwz_ambience_beds_on = 1;
         level thread iwz_ambience_bed_watch();
     }
 
@@ -289,17 +315,43 @@ ambience_init( emitters, bed )
 ambience_stop()
 {
     level notify( "iwz_ambience_stop" );
+    level.iwz_ambience_beds_on = 0;
 
-    if ( isdefined( level.iwz_ambience_bed ) )
+    foreach ( player in level.players )
     {
-        foreach ( player in level.players )
+        if ( isdefined( player ) && isdefined( player.iwz_bed ) )
         {
-            if ( isdefined( player ) )
-                player stoplocalsound( level.iwz_ambience_bed );
+            player stoplocalsound( player.iwz_bed );
+            player.iwz_bed = undefined;
         }
-
-        level.iwz_ambience_bed = undefined;
     }
+
+    level.iwz_ambience_bed = undefined;
+}
+
+// a zone of the ambience: axis-aligned box mins..maxs, 2D bed alias (undefined: the default bed)
+ambience_zone( name, mins, maxs, bed )
+{
+    z = spawnstruct();
+    z.name = name;
+    z.mins = mins;
+    z.maxs = maxs;
+    z.bed = bed;
+    return z;
+}
+
+ambience_zone_at( origin )
+{
+    if ( !isdefined( level.iwz_ambience_zones ) )
+        return undefined;
+
+    foreach ( z in level.iwz_ambience_zones )
+    {
+        if ( origin[0] >= z.mins[0] && origin[0] <= z.maxs[0] && origin[1] >= z.mins[1] && origin[1] <= z.maxs[1] && origin[2] >= z.mins[2] && origin[2] <= z.maxs[2] )
+            return z;
+    }
+
+    return undefined;
 }
 
 ambience_emitter( alias, origin, random, min_wait, max_wait )
@@ -340,21 +392,57 @@ iwz_ambience_bed_watch()
     }
 }
 
+// one bed per player: the bed of the zone the player stands in (else the default bed), restarted after a
+// respawn, switched when the player crosses into a zone with another bed
 iwz_ambience_bed_player()
 {
     self endon( "disconnect" );
     level endon( "iwz_ambience_stop" );
+    self.iwz_bed = undefined;
+    zone_name = "";
 
     for (;;)
     {
-        while ( !isalive( self ) )
+        if ( !isalive( self ) )
+        {
+            if ( isdefined( self.iwz_bed ) )
+                self stoplocalsound( self.iwz_bed );
+
+            self.iwz_bed = undefined;
+            zone_name = "";
             wait 0.25;
+            continue;
+        }
 
-        if ( !isdefined( level.iwz_ambience_bed ) )
-            return;
+        want = level.iwz_ambience_bed;
+        name = "none";
+        z = ambience_zone_at( self.origin );
+        if ( isdefined( z ) )
+        {
+            name = z.name;
+            if ( isdefined( z.bed ) )
+                want = z.bed;
+        }
 
-        self stoplocalsound( level.iwz_ambience_bed );
-        self playlocalsound( level.iwz_ambience_bed );
-        self waittill( "spawned_player" );
+        same = isdefined( want ) && isdefined( self.iwz_bed ) && want == self.iwz_bed;
+        if ( !same && ( isdefined( want ) || isdefined( self.iwz_bed ) ) )
+        {
+            if ( isdefined( self.iwz_bed ) )
+                self stoplocalsound( self.iwz_bed );
+
+            self.iwz_bed = want;
+            if ( isdefined( want ) )
+                self playlocalsound( want );
+
+            shown = "none";
+            if ( isdefined( want ) )
+                shown = want;
+            print( "[IWZ audio] BED player=" + self.name + " zone=" + name + " bed=" + shown + " t=" + gettime() );
+        }
+        else if ( name != zone_name )
+            print( "[IWZ audio] ZONE player=" + self.name + " zone=" + name + " t=" + gettime() );
+
+        zone_name = name;
+        wait 0.5;
     }
 }
