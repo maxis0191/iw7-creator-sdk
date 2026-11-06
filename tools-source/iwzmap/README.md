@@ -48,14 +48,17 @@ Baked lightmap (Python 3.12 with numpy, numba, scipy, pillow; DirectXTex texconv
 python -I bake\lmbake.py out\sz_src out\sz_src\lights.json out\sz_baked   # station_zero.py writes lights.json
 python -I bake\layout_lights.py <src> <src>\lights.json   # or: lights.json from a level generator's layout.json lights
 .\build-map-wait.ps1 -Src out\sz_baked -UmOut out\um_cp_iwz_baked             # the compiler ships lightmap\*.dds
-python -I bake\lm_measure.py out\sz_baked "<views>" <run dir> measure.json   # frames of a local run vs the bake
+python -I bake\lm_measure.py out\sz_baked "<views>" <run dir> measure.json --frames-flat <flat run> --viz <dir> `
+       --eye 58.45 --fov 133.14   # frames of a local run vs the bake (camera of the base client, 1280x720)
 ```
 
 The compiler (`iwzmap_lightmap.cpp`, x64-zt branch `codex/iwzmap-lightmaps`) replaces the template lightmap
 images (`*lightmap0_primary/secondary/secondunorm`: same names, own size) when the source has
 `lightmap\secondary.dds`. World shader: `E = A + ssao * B * saturate(dot(N, D))`, diffuse = albedo * E, with
 A = secondary top half, B = bottom half, D = secondunorm (rotated octahedral, tangent frame) and S = primary
-(baked sun visibility; the sun itself is shaded at runtime).
+(baked sun visibility; the sun itself is shaded at runtime). Engine evidence (iwz-stage2/lightmaps): calibration
+patches give E = A + B * Dz exactly (B-only patches render like the equal-E A-only patches); the baked/flat luma
+ratio follows the baked E (r 0.87..0.985 per view); forcing S = 0/0.5/1 indoors changes nothing measurable.
 
 Compiler switches (environment): `IWZ_GEN_TOME` (generated conservative Umbra
 tome; required for complete rooms), `IWZ_KEEP_ENTSHAPES` (template entity
