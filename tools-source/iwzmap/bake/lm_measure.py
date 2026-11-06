@@ -107,8 +107,8 @@ def main():
         eye, fov = a.eye, a.fov
     else:
         best = None
-        for eye in (52, 56, 60, 64, 68):
-            for fov in np.arange(70, 92, 1.0):
+        for eye in (54, 56, 58, 60, 62, 64):
+            for fov in np.arange(110, 146, 1.0):
                 s = score(eye, fov)
                 if best is None or s > best[0]: best = (s, eye, fov)
         _, eye, fov = best
