@@ -107,8 +107,8 @@ def main():
         eye, fov = a.eye, a.fov
     else:
         best = None
-        for eye in (54, 56, 58, 60, 62, 64):
-            for fov in np.arange(110, 146, 1.0):
+        for eye in (50, 53, 56, 58, 60, 62, 64, 67, 70):
+            for fov in np.arange(118, 150, 1.0):
                 s = score(eye, fov)
                 if best is None or s > best[0]: best = (s, eye, fov)
         _, eye, fov = best
@@ -143,6 +143,20 @@ def main():
             vr['sample_points'] = [{'pos': [round(float(c), 1) for c in P[j]], 'pixel': [int(ix[j]), int(iy[j])],
                                     'E_baked': round(float(E[j]), 4), 'luma': round(float(lum[j]), 4),
                                     'luma_pred': round(float(np.exp(logk) * E[j] ** gamma), 4)} for j in pick]
+        if lf is not None:
+            # same pixels of a run with the template-texel lighting: luma ratio cancels the material texture;
+            # within a room the flat run's irradiance is constant, so the ratio follows the baked E alone
+            gr = g & (lf > 1e-4)
+            if gr.sum() > 50:
+                lr = np.log(lum[gr] / lf[gr]); le = np.log(E[gr])
+                per = []
+                for c in np.unique(chart[gr]):
+                    m = chart[gr] == c
+                    if m.sum() > 60 and np.std(le[m]) > 0.05:
+                        per.append(float(np.corrcoef(lr[m], le[m])[0, 1]))
+                vr['ratio_vs_flat'] = {'n': int(gr.sum()), 'pearson_log_all': float(np.corrcoef(lr, le)[0, 1]),
+                                       'pearson_log_per_wall_median': float(np.median(per)) if per else None,
+                                       'walls_tested': len(per)}
         for c in np.unique(chart[ok]):
             m = ok & (chart == c)
             if m.sum() < 60: continue
@@ -162,6 +176,24 @@ def main():
                 pr.append({'name': pt.get('name'), 'texels': int(inner.sum()), 'luma_mean': float(np.mean(lum[inner])),
                            'luma_std': float(np.std(lum[inner])), 'E_set': float(np.mean(E[inner]))})
         if pr: vr['pattern'] = pr
+        # rendered vs baked on the calibration material: the A-only patches give the engine response luma = f(E)
+        # (tone mapping and the material albedo included); predict the other texels of that material from their baked E
+        cal = [q for q in pr if q['name'] and q['name'].startswith('A')]
+        if len(cal) >= 4:
+            ce = np.log([q['E_set'] for q in cal]); cl = np.log([q['luma_mean'] for q in cal])
+            o = np.argsort(ce); ce, cl = ce[o], cl[o]
+            inpat = np.zeros(len(P), bool)
+            for pt in pattern:
+                lo, hi = np.array(pt['box'][:3]), np.array(pt['box'][3:])
+                inpat |= np.all((P >= lo - [16, 16, 0]) & (P <= hi + [16, 16, 0]), 1)
+            pmat = d['tx_mat'][np.all((P >= np.array(pattern[0]['box'][:3])) & (P <= np.array(pattern[0]['box'][3:])), 1)]
+            m = g & ~inpat & (d['tx_mat'] == np.bincount(pmat).argmax()) & (N[:, 2] > 0.9) & (E >= np.exp(ce[0])) & (E <= np.exp(ce[-1]))
+            if m.sum() > 50:
+                pred = np.exp(np.interp(np.log(E[m]), ce, cl))
+                rel = lum[m] / pred - 1
+                vr['calibrated_prediction'] = {'material_texels': int(m.sum()), 'pearson_log': float(np.corrcoef(np.log(pred), np.log(lum[m]))[0, 1]),
+                                               'rel_err_median': float(np.median(np.abs(rel))), 'rel_bias_median': float(np.median(rel)),
+                                               'rel_err_p90': float(np.percentile(np.abs(rel), 90))}
         rep['views'].append(vr)
         s = vr.get('samples', {})
         print('view %d: visible %d, r_log %.3f, walls %d, mean luma CV %.3f%s' % (
