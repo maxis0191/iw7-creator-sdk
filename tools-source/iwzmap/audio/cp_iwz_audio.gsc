@@ -100,7 +100,10 @@ iwz_ee_watch_use( ee )
 
             if ( player.iwz_ee_hold >= ee.use_hold )
             {
-                level notify( "iwz_song_ee_activated", player, "use" );
+                method = "use";
+                if ( !player usebuttonpressed() )
+                    method = "use_scripted";
+                level notify( "iwz_song_ee_activated", player, method );
                 return;
             }
         }
@@ -111,7 +114,9 @@ iwz_ee_watch_use( ee )
 
 iwz_ee_can_use( ee, player )
 {
-    if ( !player usebuttonpressed() )
+    // iwz_ee_use_override: a script (test fixture, scripted sequence) holds Use for the player; every other
+    // condition below (reach, look cone, line of sight, hold time) still applies
+    if ( !player usebuttonpressed() && !scripts\engine\utility::is_true( player.iwz_ee_use_override ) )
         return 0;
 
     target = ee.origin + ( 0, 0, 8 );
