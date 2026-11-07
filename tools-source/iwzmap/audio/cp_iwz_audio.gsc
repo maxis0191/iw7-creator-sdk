@@ -447,6 +447,7 @@ iwz_ambience_random( e )
     {
         wait( randomfloatrange( e.min_wait, e.max_wait ) );
         playsoundatpos( e.origin, e.alias );
+        iwz_scape_log( "random", e.alias, e.origin );
     }
 }
 
@@ -536,6 +537,13 @@ iwz_ambience_bed_player()
             continue;
         }
 
+        // soundscape_lonely: the room tone is held off for a few seconds
+        if ( isdefined( self.iwz_silence_until ) && gettime() < self.iwz_silence_until )
+        {
+            wait 0.25;
+            continue;
+        }
+
         want = level.iwz_ambience_bed;
         name = "none";
         z = ambience_zone_at( self.origin );
@@ -573,5 +581,430 @@ iwz_ambience_bed_player()
 
         zone_name = name;
         wait 0.5;
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Soundscape: loneliness and identity layered on the beds and emitters (audio_layout.py writes the calls from the
+// "soundscape" section of the placement spec). Every event prints "[IWZ audio] SCAPE kind=<k> alias=<a>
+// at=<x>,<y>,<z> t=<gettime>" when dvar paris_iwz_scape_debug is 1 (audio_measure.py events matches each event in
+// a capture); nothing is printed otherwise.
+// ---------------------------------------------------------------------------------------------------------------
+
+iwz_scape_log( kind, alias, origin )
+{
+    if ( !getdvarint( "paris_iwz_scape_debug" ) )
+        return;
+
+    print( "[IWZ audio] SCAPE kind=" + kind + " alias=" + alias + " at=" + int( origin[0] ) + "," + int( origin[1] ) + "," + int( origin[2] ) + " t=" + gettime() );
+}
+
+iwz_scape_players()
+{
+    out = [];
+    if ( !isdefined( level.players ) )
+        return out;
+
+    foreach ( p in level.players )
+    {
+        if ( isdefined( p ) && isalive( p ) )
+            out[out.size] = p;
+    }
+
+    return out;
+}
+
+iwz_scape_inside( p, mins, maxs )
+{
+    return p[0] >= mins[0] && p[0] <= maxs[0] && p[1] >= mins[1] && p[1] <= maxs[1] && p[2] >= mins[2] && p[2] <= maxs[2];
+}
+
+// sparse randomized one-shots around a player who stands in one of the boxes: every min..max seconds, at a random
+// point near..far units from that player inside the same boxes (heights 20..140 above the player). burst > 0: the
+// alias is a loop played on a temporary origin for burst/2..burst seconds (rats).
+soundscape_scatter( alias, mins, maxs, min_wait, max_wait, near, far, burst )
+{
+    s = spawnstruct();
+    s.alias = alias;
+    s.mins = mins;
+    s.maxs = maxs;
+    s.min_wait = min_wait;
+    s.max_wait = max_wait;
+    s.near = near;
+    s.far = far;
+    s.burst = iwz_opt( burst, 0 );
+    level thread iwz_scape_scatter( s );
+}
+
+iwz_scape_scatter( s )
+{
+    level endon( "game_ended" );
+    level endon( "iwz_ambience_stop" );
+
+    if ( !soundexists( s.alias ) )
+    {
+        print( "[IWZ audio] AMB_MISSING alias=" + s.alias );
+        return;
+    }
+
+    wait( randomfloat( s.max_wait ) );
+
+    for (;;)
+    {
+        wait( randomfloatrange( s.min_wait, s.max_wait ) );
+        listeners = [];
+        foreach ( p in iwz_scape_players() )
+        {
+            for ( i = 0; i < s.mins.size; i++ )
+            {
+                if ( iwz_scape_inside( p.origin, s.mins[i], s.maxs[i] ) )
+                {
+                    listeners[listeners.size] = p;
+                    break;
+                }
+            }
+        }
+
+        if ( !listeners.size )
+            continue;
+
+        from = listeners[randomint( listeners.size )].origin;
+        pos = undefined;
+        for ( k = 0; k < 16 && !isdefined( pos ); k++ )
+        {
+            a = randomfloat( 360 );
+            d = randomfloatrange( s.near, s.far );
+            c = from + ( cos( a ) * d, sin( a ) * d, randomfloatrange( 20, 140 ) );
+            for ( i = 0; i < s.mins.size; i++ )
+            {
+                if ( iwz_scape_inside( c, s.mins[i], s.maxs[i] ) )
+                {
+                    pos = c;
+                    break;
+                }
+            }
+        }
+
+        if ( !isdefined( pos ) )
+            continue;
+
+        iwz_scape_log( "scatter", s.alias, pos );
+        if ( s.burst > 0 )
+        {
+            ent = spawn( "script_origin", pos );
+            ent playloopsound( s.alias );
+            wait( randomfloatrange( s.burst * 0.5, s.burst ) );
+            ent stoploopsound();
+            wait 0.1;
+            ent delete();
+        }
+        else
+            playsoundatpos( pos, s.alias );
+    }
+}
+
+// a looping object sound (radio, generator, fluorescent tube) on its own origin
+soundscape_loop( alias, origin )
+{
+    if ( !soundexists( alias ) )
+    {
+        print( "[IWZ audio] AMB_MISSING alias=" + alias );
+        return undefined;
+    }
+
+    ent = spawn( "script_origin", origin );
+    ent playloopsound( alias );
+    iwz_scape_log( "loop", alias, origin );
+    return ent;
+}
+
+// broken station PA: every min..max seconds one announcement clip, the same clip on every speaker, each speaker
+// 70 ms after the previous one (the echo of a long PA line)
+soundscape_pa( aliases, speakers, min_wait, max_wait )
+{
+    level thread iwz_scape_pa( aliases, speakers, min_wait, max_wait );
+}
+
+iwz_scape_pa( aliases, speakers, min_wait, max_wait )
+{
+    level endon( "game_ended" );
+    level endon( "iwz_ambience_stop" );
+    wait( randomfloatrange( min_wait * 0.3, min_wait ) );
+
+    for (;;)
+    {
+        alias = aliases[randomint( aliases.size )];
+        if ( soundexists( alias ) )
+        {
+            iwz_scape_log( "pa", alias, speakers[0] );
+            foreach ( sp in speakers )
+            {
+                playsoundatpos( sp, alias );
+                wait 0.07;
+            }
+        }
+
+        wait( randomfloatrange( min_wait, max_wait ) );
+    }
+}
+
+// flickering tubes: the level script swaps the lamp models; a crackle plays at the first swap of each burst
+soundscape_flicker( alias, targetname )
+{
+    level thread iwz_scape_flicker( alias, iwz_opt( targetname, "iwz_flicker" ) );
+}
+
+iwz_scape_flicker( alias, targetname )
+{
+    level endon( "game_ended" );
+    wait 2;
+    lamps = getentarray( targetname, "targetname" );
+    foreach ( l in lamps )
+        l thread iwz_scape_flicker_lamp( alias );
+}
+
+iwz_scape_flicker_lamp( alias )
+{
+    level endon( "game_ended" );
+    self endon( "death" );
+    last = self.model;
+    last_t = 0;
+
+    for (;;)
+    {
+        wait 0.05;
+        if ( !isdefined( self ) )
+            return;
+
+        m = self.model;
+        if ( m != last && gettime() - last_t > 700 )
+        {
+            playsoundatpos( self.origin, alias );
+            iwz_scape_log( "flicker", alias, self.origin );
+            last_t = gettime();
+        }
+
+        last = m;
+    }
+}
+
+// generator: power-up surge, then the hum, once the stock power flag is set
+soundscape_power( hum_alias, surge_alias, origins )
+{
+    level thread iwz_scape_power( hum_alias, surge_alias, origins );
+}
+
+iwz_scape_power( hum_alias, surge_alias, origins )
+{
+    level endon( "game_ended" );
+    while ( !scripts\engine\utility::flag_exist( "power_on" ) )
+        wait 0.5;
+
+    scripts\engine\utility::flag_wait( "power_on" );
+    if ( soundexists( surge_alias ) )
+    {
+        playsoundatpos( origins[0], surge_alias );
+        iwz_scape_log( "power", surge_alias, origins[0] );
+    }
+
+    wait 1.5;
+    foreach ( o in origins )
+        soundscape_loop( hum_alias, o );
+}
+
+// the ticket-booth phone: rings now and then; a player coming within radius hangs it up (receiver click)
+soundscape_phone( origin, ring_alias, hangup_alias, min_wait, max_wait, radius )
+{
+    level thread iwz_scape_phone( origin, ring_alias, hangup_alias, min_wait, max_wait, radius );
+}
+
+iwz_scape_player_near( origin, radius )
+{
+    foreach ( p in iwz_scape_players() )
+    {
+        if ( distance( p.origin, origin ) < radius )
+            return 1;
+    }
+
+    return 0;
+}
+
+iwz_scape_phone( origin, ring_alias, hangup_alias, min_wait, max_wait, radius )
+{
+    level endon( "game_ended" );
+    level endon( "iwz_ambience_stop" );
+
+    for (;;)
+    {
+        wait( randomfloatrange( min_wait, max_wait ) );
+        if ( iwz_scape_player_near( origin, radius ) )
+            continue;
+
+        rings = randomintrange( 4, 9 );
+        for ( i = 0; i < rings; i++ )
+        {
+            if ( iwz_scape_player_near( origin, radius ) )
+            {
+                playsoundatpos( origin, hangup_alias );
+                iwz_scape_log( "phone_hangup", hangup_alias, origin );
+                break;
+            }
+
+            playsoundatpos( origin, ring_alias );
+            iwz_scape_log( "phone", ring_alias, origin );
+            for ( k = 0; k < 35 && !iwz_scape_player_near( origin, radius ); k++ )
+                wait 0.1;
+        }
+    }
+}
+
+// the parked train: engine ticking as it cools, an air-brake hiss now and then, a door chime the first time each
+// player boards the carriage (box mins..maxs)
+soundscape_train( mins, maxs, tick_alias, tick_origin, hiss_alias, hiss_origins, hiss_min, hiss_max, chime_alias, chime_origin )
+{
+    soundscape_loop( tick_alias, tick_origin );
+    level thread iwz_scape_train_hiss( hiss_alias, hiss_origins, hiss_min, hiss_max );
+    level thread iwz_scape_train_board( mins, maxs, chime_alias, chime_origin );
+}
+
+iwz_scape_train_hiss( alias, origins, min_wait, max_wait )
+{
+    level endon( "game_ended" );
+    level endon( "iwz_ambience_stop" );
+
+    for (;;)
+    {
+        wait( randomfloatrange( min_wait, max_wait ) );
+        o = origins[randomint( origins.size )];
+        playsoundatpos( o, alias );
+        iwz_scape_log( "train_hiss", alias, o );
+    }
+}
+
+iwz_scape_train_board( mins, maxs, alias, origin )
+{
+    level endon( "game_ended" );
+
+    for (;;)
+    {
+        foreach ( p in iwz_scape_players() )
+        {
+            if ( !isdefined( p.iwz_boarded ) && iwz_scape_inside( p.origin, mins, maxs ) )
+            {
+                p.iwz_boarded = 1;
+                playsoundatpos( origin, alias );
+                iwz_scape_log( "train_chime", alias, origin );
+            }
+        }
+
+        wait 0.25;
+    }
+}
+
+// silence as a tool: a player alone (no other living player within radius; solo: no zombie within radius either)
+// in one of the dead-zone boxes loses the room tone for `silence` seconds under a low swell, at most once per
+// min_gap..max_gap seconds; the bed fades back in afterwards
+soundscape_lonely( alias, radius, min_gap, max_gap, silence, mins, maxs )
+{
+    s = spawnstruct();
+    s.alias = alias;
+    s.radius = radius;
+    s.min_gap = min_gap;
+    s.max_gap = max_gap;
+    s.silence = silence;
+    s.mins = mins;
+    s.maxs = maxs;
+    level.iwz_scape_lonely = s;
+    level thread iwz_scape_lonely_watch( s );
+}
+
+iwz_scape_lonely_watch( s )
+{
+    level endon( "game_ended" );
+    while ( !isdefined( level.players ) )
+        wait 0.05;
+
+    foreach ( p in level.players )
+        p thread iwz_scape_lonely_player( s );
+
+    for (;;)
+    {
+        level waittill( "connected", p );
+        p thread iwz_scape_lonely_player( s );
+    }
+}
+
+iwz_scape_alone( s )
+{
+    foreach ( p in iwz_scape_players() )
+    {
+        if ( p != self && distance( p.origin, self.origin ) < s.radius )
+            return 0;
+    }
+
+    if ( isdefined( level.spawned_enemies ) )
+    {
+        foreach ( z in level.spawned_enemies )
+        {
+            if ( isdefined( z ) && isalive( z ) && distance( z.origin, self.origin ) < s.radius * 0.6 )
+                return 0;
+        }
+    }
+
+    for ( i = 0; i < s.mins.size; i++ )
+    {
+        if ( iwz_scape_inside( self.origin, s.mins[i], s.maxs[i] ) )
+            return 1;
+    }
+
+    return 0;
+}
+
+iwz_scape_lonely_player( s )
+{
+    self endon( "disconnect" );
+    level endon( "game_ended" );
+    next = gettime() + int( randomfloatrange( s.min_gap * 0.5, s.min_gap ) * 1000 );
+
+    for (;;)
+    {
+        wait 1;
+        if ( !isalive( self ) || gettime() < next || !self iwz_scape_alone( s ) )
+            continue;
+
+        self.iwz_silence_until = gettime() + int( s.silence * 1000 );
+        if ( isdefined( self.iwz_bed ) )
+        {
+            self iwz_bed_stop();
+            self.iwz_bed = undefined;
+        }
+
+        self playlocalsound( s.alias );
+        iwz_scape_log( "lonely", s.alias, self.origin );
+        next = gettime() + int( randomfloatrange( s.min_gap, s.max_gap ) * 1000 );
+    }
+}
+
+// identity sting: once per player when the intro screen ends (late joiners: on their first spawn)
+soundscape_intro( alias )
+{
+    level thread iwz_scape_intro( alias );
+}
+
+iwz_scape_intro( alias )
+{
+    level endon( "game_ended" );
+    while ( !scripts\engine\utility::flag_exist( "introscreen_over" ) )
+        wait 0.2;
+
+    scripts\engine\utility::flag_wait( "introscreen_over" );
+    if ( !soundexists( alias ) )
+        return;
+
+    foreach ( p in iwz_scape_players() )
+    {
+        p.iwz_intro_done = 1;
+        p playlocalsound( alias );
+        iwz_scape_log( "intro", alias, p.origin );
     }
 }

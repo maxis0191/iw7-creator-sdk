@@ -82,6 +82,28 @@ class LayoutTest(unittest.TestCase):
         self.assertEqual(r['zones'][0]['mins'], [0, 4800, -16])
         self.assertEqual(r['emitters'][0]['origin'], [512, 5312, 40])
 
+class SoundscapeTest(unittest.TestCase):
+    def test_calls_far_points_and_checks(self):
+        sc = {'scatter': [{'alias': 'creak', 'zones': ['hall', 'pit'], 'wait': [5, 9], 'dist': [100, 400]}],
+              'far': [{'alias': 'creak', 'at': [-3000, 0, 0], 'wait': [60, 90]}],
+              'loops': [{'alias': 'hum', 'at': 'decor:gen@pit', 'zone': 'pit', 'offset': [0, 0, 20]}],
+              'phone': {'ring': 'creak', 'hangup': 'hum', 'at': 'light:hall:0', 'zone': 'hall', 'wait': [30, 60], 'radius': 150},
+              'intro': {'alias': 'bed_a'}}
+        r = audio_layout.soundscape(spec(soundscape=sc), LAYOUT, audio_layout.zones_of(LAYOUT), BANK)
+        self.assertEqual(r['errors'], [])
+        self.assertEqual(r['far'][0]['origin'], [-3000.0, 0.0, 0.0])          # outside every zone: allowed for far
+        text = '\n'.join(audio_layout.gsc_calls(r['calls'], 'm'))
+        self.assertIn('m::soundscape_scatter( "creak", [ ( 0, 0, -16 ), ( 0, 1000, -400 ) ], [ ( 1000, 1000, 320 ), ( 1000, 1400, -80 ) ], 5, 9, 100, 400, 0 );', text)
+        self.assertIn('m::soundscape_loop( "hum", ( 100, 1100, -364 ) );', text)
+        self.assertIn('m::soundscape_phone( ( 500, 500, 300 ), "creak", "hum", 30, 60, 150 );', text)
+        self.assertIn('m::soundscape_intro( "bed_a" );', text)
+        sc['scatter'][0]['alias'] = 'nope'
+        sc['loops'][0]['at'] = [5000, 5000, 0]
+        errors = '\n'.join(audio_layout.soundscape(spec(soundscape=sc), LAYOUT, audio_layout.zones_of(LAYOUT), BANK)['errors'])
+        self.assertIn('alias nope is not in the bank', errors)
+        self.assertIn('lies outside zone pit', errors)
+
+
 
 if __name__ == '__main__':
     unittest.main()

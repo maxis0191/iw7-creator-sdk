@@ -1,8 +1,8 @@
 {
   "map": "cp_iwz",
   "comment": "Station Zero stage-2 layout (LEVEL-DESIGN.md zones). Each area selects a sound zone of the bank (bed + reverb + mix copied from Spaceland: basement rooms/halls/stairs, ice-cave platforms and tunnel); the map-named zone cp_iwz is the level default. Emitters anchored to the generator's lights, decor, quest points and interactions.",
-  "max_loops_per_zone": 6,
-  "max_loops_total": 24,
+  "max_loops_per_zone": 8,
+  "max_loops_total": 36,
   "zones": {
     "stair_a": {
       "audio_zone": "iwz_stairs"
@@ -264,5 +264,555 @@
     "at": "quest:teddy_bear",
     "zone": "platform_a",
     "comment": "resting point on the luggage rack; the module raises the bear by its half height"
+  },
+  "soundscape": {
+    "comment": "Loneliness and identity (owner 2026-11-07): Station Zero was sealed the night of an incident; the last train still stands at the platform and everything stopped. Sparse one-shots around players, a broken PA, object sounds, the parked train, silence when alone, Ascension stings. Rates are per listener group: a scatter fires only while a living player stands in one of its zones.",
+    "scatter": [
+      {
+        "alias": "amb_iwz_creak",
+        "zones": [
+          "platform_a",
+          "platform_b",
+          "service_tunnel"
+        ],
+        "wait": [
+          16,
+          36
+        ],
+        "dist": [
+          500,
+          1400
+        ],
+        "note": "metal of the platforms and tunnel settling"
+      },
+      {
+        "alias": "amb_iwz_creak",
+        "zones": [
+          "ticket_hall",
+          "stair_a",
+          "stair_b"
+        ],
+        "wait": [
+          24,
+          58
+        ],
+        "dist": [
+          400,
+          1200
+        ]
+      },
+      {
+        "alias": "amb_iwz_creak",
+        "zones": [
+          "maint_corridor",
+          "generator_room",
+          "control_room"
+        ],
+        "wait": [
+          26,
+          55
+        ],
+        "dist": [
+          300,
+          900
+        ]
+      },
+      {
+        "alias": "amb_iwz_drip",
+        "zones": [
+          "platform_a",
+          "platform_b",
+          "service_tunnel"
+        ],
+        "wait": [
+          6,
+          16
+        ],
+        "dist": [
+          150,
+          600
+        ],
+        "note": "leaks over the track bed"
+      },
+      {
+        "alias": "amb_iwz_drip",
+        "zones": [
+          "maint_corridor"
+        ],
+        "wait": [
+          10,
+          24
+        ],
+        "dist": [
+          100,
+          450
+        ]
+      },
+      {
+        "alias": "amb_iwz_gust",
+        "zones": [
+          "platform_a",
+          "platform_b",
+          "service_tunnel"
+        ],
+        "wait": [
+          24,
+          60
+        ],
+        "dist": [
+          900,
+          2000
+        ],
+        "note": "tunnel draught"
+      },
+      {
+        "alias": "amb_iwz_moan",
+        "zones": [
+          "ticket_hall",
+          "stair_a",
+          "stair_b",
+          "platform_a",
+          "platform_b",
+          "service_tunnel"
+        ],
+        "wait": [
+          35,
+          80
+        ],
+        "dist": [
+          900,
+          2200
+        ],
+        "note": "something moving far away"
+      },
+      {
+        "alias": "amb_iwz_moan",
+        "zones": [
+          "maint_corridor",
+          "generator_room",
+          "control_room"
+        ],
+        "wait": [
+          45,
+          100
+        ],
+        "dist": [
+          600,
+          1200
+        ]
+      },
+      {
+        "alias": "amb_iwz_debris",
+        "zones": [
+          "ticket_hall",
+          "stair_a",
+          "stair_b",
+          "platform_a",
+          "platform_b",
+          "service_tunnel",
+          "maint_corridor",
+          "generator_room",
+          "control_room"
+        ],
+        "wait": [
+          30,
+          70
+        ],
+        "dist": [
+          200,
+          900
+        ]
+      },
+      {
+        "alias": "amb_iwz_rats_lp",
+        "zones": [
+          "service_tunnel",
+          "platform_b",
+          "maint_corridor",
+          "platform_a"
+        ],
+        "wait": [
+          40,
+          90
+        ],
+        "dist": [
+          150,
+          500
+        ],
+        "burst": 3.0
+      }
+    ],
+    "far": [
+      {
+        "alias": "amb_iwz_phantom_train",
+        "at": [
+          -4400,
+          1900,
+          -350
+        ],
+        "wait": [
+          150,
+          300
+        ],
+        "note": "a train coming up the west tunnel that never arrives"
+      },
+      {
+        "alias": "amb_iwz_phantom_train",
+        "at": [
+          3500,
+          1350,
+          -370
+        ],
+        "wait": [
+          170,
+          320
+        ],
+        "note": "and from the east portal"
+      },
+      {
+        "alias": "amb_iwz_phantom_horn",
+        "at": [
+          -5200,
+          1600,
+          -300
+        ],
+        "wait": [
+          120,
+          260
+        ],
+        "note": "a horn very far away"
+      },
+      {
+        "alias": "amb_iwz_phantom_horn",
+        "at": [
+          4300,
+          1300,
+          -300
+        ],
+        "wait": [
+          140,
+          280
+        ]
+      },
+      {
+        "alias": "amb_iwz_spark",
+        "at": "decor:emergency_shutoff_sm_panel_01@maint_corridor#0",
+        "wait": [
+          10,
+          28
+        ],
+        "zone": "maint_corridor",
+        "note": "broken panel"
+      },
+      {
+        "alias": "amb_iwz_spark",
+        "at": "decor:emergency_shutoff_sm_panel_01@maint_corridor#1",
+        "wait": [
+          12,
+          30
+        ],
+        "zone": "maint_corridor"
+      },
+      {
+        "alias": "amb_iwz_spark",
+        "at": "decor:emergency_shutoff_sm_panel_01@platform_a",
+        "wait": [
+          14,
+          34
+        ],
+        "zone": "platform_a"
+      },
+      {
+        "alias": "amb_iwz_spark",
+        "at": "decor:electrical_control_panel_01@generator_room#1",
+        "wait": [
+          12,
+          30
+        ],
+        "zone": "generator_room"
+      },
+      {
+        "alias": "amb_iwz_spark",
+        "at": "decor:electrical_control_box_03@service_tunnel#2",
+        "wait": [
+          15,
+          40
+        ],
+        "zone": "service_tunnel"
+      },
+      {
+        "alias": "amb_iwz_tv_static",
+        "at": "decor:zmb_tv_crt_01@control_room#0",
+        "wait": [
+          14,
+          32
+        ],
+        "zone": "control_room",
+        "note": "dead CRTs catching a channel"
+      },
+      {
+        "alias": "amb_iwz_tv_static",
+        "at": "decor:zmb_tv_crt_01@control_room#3",
+        "wait": [
+          16,
+          36
+        ],
+        "zone": "control_room"
+      },
+      {
+        "alias": "amb_iwz_tv_static",
+        "at": "decor:com_tv2_testpattern@control_room",
+        "wait": [
+          12,
+          30
+        ],
+        "zone": "control_room"
+      }
+    ],
+    "loops": [
+      {
+        "alias": "amb_iwz_radio_lp",
+        "at": "decor:zmb_frequency_device_radio@control_room",
+        "zone": "control_room",
+        "offset": [
+          0,
+          0,
+          10
+        ]
+      },
+      {
+        "alias": "amb_iwz_fluor_lp",
+        "at": "light:ticket_hall:0",
+        "zone": "ticket_hall",
+        "offset": [
+          0,
+          0,
+          -12
+        ]
+      },
+      {
+        "alias": "amb_iwz_fluor_lp",
+        "at": "light:ticket_hall:6",
+        "zone": "ticket_hall",
+        "offset": [
+          0,
+          0,
+          -12
+        ]
+      },
+      {
+        "alias": "amb_iwz_fluor_lp",
+        "at": "light:ticket_hall:11",
+        "zone": "ticket_hall",
+        "offset": [
+          0,
+          0,
+          -12
+        ]
+      },
+      {
+        "alias": "amb_iwz_fluor_lp",
+        "at": "light:platform_a:2",
+        "zone": "platform_a",
+        "offset": [
+          0,
+          0,
+          -12
+        ]
+      },
+      {
+        "alias": "amb_iwz_fluor_lp",
+        "at": "light:platform_a:7",
+        "zone": "platform_a",
+        "offset": [
+          0,
+          0,
+          -12
+        ]
+      },
+      {
+        "alias": "amb_iwz_fluor_lp",
+        "at": "light:platform_a:12",
+        "zone": "platform_a",
+        "offset": [
+          0,
+          0,
+          -12
+        ]
+      },
+      {
+        "alias": "amb_iwz_fluor_lp",
+        "at": "light:stair_a:0",
+        "zone": "stair_a",
+        "offset": [
+          0,
+          0,
+          -12
+        ]
+      },
+      {
+        "alias": "amb_iwz_fluor_lp",
+        "at": "light:stair_b:2",
+        "zone": "stair_b",
+        "offset": [
+          0,
+          0,
+          -12
+        ]
+      },
+      {
+        "alias": "amb_iwz_fluor_lp",
+        "at": "light:control_room:6",
+        "zone": "control_room",
+        "offset": [
+          0,
+          0,
+          -12
+        ]
+      }
+    ],
+    "pa": {
+      "aliases": [
+        "amb_iwz_pa_00",
+        "amb_iwz_pa_01",
+        "amb_iwz_pa_02",
+        "amb_iwz_pa_03",
+        "amb_iwz_pa_04",
+        "amb_iwz_pa_05"
+      ],
+      "speakers": [
+        {
+          "at": "decor:misc_wall_mounted_loudspeaker_01@platform_a#0",
+          "zone": "platform_a"
+        },
+        {
+          "at": "decor:misc_wall_mounted_loudspeaker_01@platform_a#1",
+          "zone": "platform_a"
+        },
+        {
+          "at": "decor:misc_wall_mounted_loudspeaker_01@platform_a#2",
+          "zone": "platform_a"
+        },
+        {
+          "at": "zone:0.3,0.5,280",
+          "zone": "ticket_hall"
+        },
+        {
+          "at": "zone:0.75,0.5,280",
+          "zone": "ticket_hall"
+        },
+        {
+          "at": "zone:0.5,0.5,200",
+          "zone": "maint_corridor"
+        }
+      ],
+      "wait": [
+        70,
+        150
+      ]
+    },
+    "flicker": {
+      "alias": "amb_iwz_flicker"
+    },
+    "power": {
+      "hum": "amb_iwz_gen_lp",
+      "surge": "amb_iwz_gen_start",
+      "at": [
+        {
+          "at": "decor:zom_machinery_generator_portable_01@generator_room",
+          "zone": "generator_room"
+        },
+        {
+          "at": "decor:clk_defend_generator_solo@generator_room",
+          "zone": "generator_room",
+          "offset": [
+            0,
+            0,
+            40
+          ]
+        }
+      ]
+    },
+    "phone": {
+      "ring": "amb_iwz_phone_ring",
+      "hangup": "amb_iwz_phone_hangup",
+      "at": "decor:zmb_mobile_ticket_booth@ticket_hall",
+      "zone": "ticket_hall",
+      "offset": [
+        0,
+        0,
+        44
+      ],
+      "wait": [
+        60,
+        140
+      ],
+      "radius": 180
+    },
+    "train": {
+      "comment": "parked carriage on the track: generator CAR box x -416..352, y 1428..1596, floor -320 (deck)",
+      "box": [
+        -416,
+        1428,
+        -330,
+        352,
+        1596,
+        -180
+      ],
+      "tick": {
+        "alias": "amb_iwz_train_tick_lp",
+        "at": [
+          -30,
+          1512,
+          -342
+        ]
+      },
+      "hiss": {
+        "alias": "amb_iwz_train_hiss",
+        "at": [
+          [
+            -300,
+            1512,
+            -350
+          ],
+          [
+            250,
+            1512,
+            -350
+          ]
+        ],
+        "wait": [
+          40,
+          90
+        ]
+      },
+      "chime": {
+        "alias": "amb_iwz_train_chime",
+        "at": [
+          0,
+          1590,
+          -250
+        ]
+      }
+    },
+    "lonely": {
+      "alias": "amb_iwz_lonely",
+      "radius": 1600,
+      "gap": [
+        150,
+        300
+      ],
+      "silence": 9,
+      "zones": [
+        "service_tunnel",
+        "platform_b",
+        "stair_b",
+        "maint_corridor",
+        "platform_a"
+      ]
+    },
+    "intro": {
+      "alias": "mus_iwz_intro"
+    }
   }
 }
