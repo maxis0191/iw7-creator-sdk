@@ -40,7 +40,48 @@ iwz_main()
     }
     else if ( mode == "walk" )
         iwz_walk( player );
+    else if ( mode == "walkcap" )
+        iwz_walkcap( player );
     print( "[IWZ local] DONE" );
+}
+
+// walkthrough capture: every navmesh point of a 256-unit grid, 4 yaws, eye height; part "k/n" of the list
+iwz_walkcap( player )
+{
+    wc = [];
+    //@WALKCAP@
+    part = strtok( getdvar( "paris_iwz_wc_part" ), "/" );
+    k = 0;
+    n = 1;
+    if ( part.size == 2 )
+    {
+        k = int( part[0] );
+        n = int( part[1] );
+    }
+    count = 0;
+    last = ( 0, 0, 0 );
+    player freezecontrols( 1 );
+    if ( getdvarint( "paris_iwz_noweapons" ) )
+        player takeallweapons();
+    for ( i = 0; i < wc.size; i++ )
+    {
+        if ( ( int( i / 4 ) % n ) != k )
+            continue;
+        v = wc[i];
+        if ( distance( v.origin, last ) > 1 )
+        {
+            player setorigin( v.origin );
+            last = v.origin;
+            wait 1.2;
+        }
+        player setplayerangles( v.angles );
+        wait 0.6;
+        executecommand( "capture_frame iwzv_" + v.name );
+        wait 0.3;
+        count++;
+        print( "[IWZ local] WC name=" + v.name + "; origin=" + player.origin + "; ground=" + player isonground() );
+    }
+    print( "[IWZ local] WALKCAP part=" + k + "/" + n + " frames=" + count + " of " + wc.size );
 }
 
 iwz_views( player )

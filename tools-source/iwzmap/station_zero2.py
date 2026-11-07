@@ -155,6 +155,9 @@ def bands(style, zf, zc):
     raise KeyError(style)
 
 
+WELD = float(os.environ.get('IWZ_WELD', '1'))      # units of overlap at module joins (0 = off)
+
+
 def wall(zone, space, axis, fixed, facing, s0, s1, zf, zc, style, frame='frame'):
     """Banded wall with the openings of `space` cut out; door frames around door/arch openings on this side."""
     holes = holes_for(space, axis, fixed)
@@ -172,8 +175,12 @@ def wall(zone, space, axis, fixed, facing, s0, s1, zf, zc, style, frame='frame')
         for p, q, z0, z1 in pieces:
             if q - p < 0.5 or z1 - z0 < 0.5:
                 continue
+            vtop = z1 if mat.startswith('tile') else None
+            if WELD:
+                p, q = (p - WELD if p <= s0 + 0.01 else p), (q + WELD if q >= s1 - 0.01 else q)
+                z0, z1 = (z0 - WELD if z0 <= zf + 0.01 else z0), (z1 + WELD if z1 >= zc - 0.01 else z1)
             if pr == 0:
-                B.wall_plane(zone, axis, fixed, facing, p, q, z0, z1, mat, vtop=z1 if mat.startswith('tile') else None)
+                B.wall_plane(zone, axis, fixed, facing, p, q, z0, z1, mat, vtop=vtop)
             else:
                 if axis == 'x':
                     B.slab_x(p, q, fixed, z0, z1, pr, mat, zone, facing, collide=False, skip=('bottom',) if z0 > zf + 1 else ('bottom',))
@@ -931,6 +938,11 @@ region('generator', Z, (2600, 2400, 3800, 3184), -320)
 Z = 'control_room'
 room(Z, 'control', (2600, 3200, 3600, 4000), -320, -32, 'control_neutral', 'metal_floor', 'deck_black')     # art pass 5: floor / wainscot / ceiling values apart
 room(Z, 'pap_alcove', (2976, 4016, 3232, 4160), -320, -112, 'control', 'diamond', 'conc_dark', skip=('south',))
+# reveal of the alcove opening through the 16-unit control-room wall: lintel underside and side reveals (sz2_seams:
+# the void showed between the wall face and the alcove ceiling)
+ceiling(Z, 'conc_dark', 2976, 4000, 3232, 4016, -112)
+B.wall_plane(Z, 'y', 2976, +1, 4000, 4016, -320, -112, 'conc_dark')
+B.wall_plane(Z, 'y', 3232, -1, 4000, 4016, -320, -112, 'conc_dark')
 DESKS = [(2640, 3520), (3260, 3520), (3300, 3760)]     # (x0, y0) of 240 x 80 signal desks; lane x 2880..3260 kept clear
 for x0_, y0_ in DESKS:                # cool fluorescents over the signal desks (desk light)
     strip_light(Z, x0_ + 56, y0_ + 32, x0_ + 184, y0_ + 48, -32, mat='lamp_cool')
@@ -2025,6 +2037,22 @@ for o in OPENINGS:
     pass
 # local fixture with the capture views, walk path and zone probes baked in
 fx = open(os.path.join(HERE, 'fixtures', 'sz2_local.gsc')).read()
+# walkthrough capture (coordinator 2026-11-07): nav cells on a 256-unit grid whose 5x5 cell neighbourhood is all
+# walkable (camera clear of walls, review C stair_b_3 clipping), at feet height (the engine adds the eye), 4 yaws each.
+# Frame names carry zone, position and yaw: wc_<zone>_<x>_<y>_y<yaw>. Captured by the fixture mode "walkcap" in parts
+# (dvar paris_iwz_wc_part "k/n") so each private run stays short.
+WALKCAP = []
+WC_STEP = 8         # cells (8 x 32 = 256 units)
+for (i, j), z in sorted(cells.items()):
+    if i % WC_STEP or j % WC_STEP:
+        continue
+    if not all((i + di, j + dj) in cells and abs(cells[(i + di, j + dj)] - z) < 20 * max(1, abs(di), abs(dj)) for di in range(-2, 3) for dj in range(-2, 3)):
+        continue
+    zone = REGION_ZONE.get(owner[(i, j)], owner[(i, j)])
+    x, y = (i + 0.5) * CELL, (j + 0.5) * CELL
+    for yaw in (0, 90, 180, 270):
+        WALKCAP.append(('wc_%s_%d_%d_y%d' % (zone, x, y, yaw), x, y, z + 1, yaw))
+wc_lines = ['    wc[wc.size] = iwz_view( "%s", %g, %g, %g, %g, 0 );' % v for v in WALKCAP]
 view_lines = []
 for zone, vs in VIEWS.items():
     for k, (x, y, z, yaw, pitch) in enumerate(vs):
@@ -2093,7 +2121,7 @@ fdoor_lines = ['    doors[doors.size] = iwz_door( "%s", %d, %g, %g, %g, %g, %g )
 fdoor_lines.append('    doors[doors.size] = iwz_door( "pap_shutter", 1, 4008, %g, %g, %g, %g );' % (OP['a_control_pap']['a'], OP['a_control_pap']['b'],
                                                                                               OP['a_control_pap']['z0'], OP['a_control_pap']['z1']))
 fx = fx.replace('//@DOORS@', NL.join(fdoor_lines))
-fx = fx.replace('//@VIEWS@', NL.join(view_lines)).replace('//@FXVIEWS@', NL.join(fxv_lines)).replace('//@WALK@', NL.join(walk_lines)).replace('//@PROBES@', NL.join(probe_lines))
+fx = fx.replace('//@VIEWS@', NL.join(view_lines)).replace('//@FXVIEWS@', NL.join(fxv_lines)).replace('//@WALK@', NL.join(walk_lines)).replace('//@WALKCAP@', NL.join(wc_lines)).replace('//@PROBES@', NL.join(probe_lines))
 open(os.path.join(out, 'iwzmap_sz2_local.gsc'), 'w', newline=NL).write(fx)
 layout['views'] = VIEWS
 layout['sign_views'] = SIGN_VIEWS
@@ -2105,6 +2133,7 @@ layout['fx_views'] = FX_VIEWS
 layout['decals'] = DECALS
 layout['sign_view_list'] = SIGN_VIEW_LIST
 layout['walk'] = WALK
+layout['walkcap'] = [{'name': n, 'origin': [x, y, z], 'yaw': yw} for n, x, y, z, yw in WALKCAP]
 layout['gallery'] = {'materials': GALLERY_ITEMS, 'texels': GALLERY_TEXELS, 'views': GALLERY_VIEWS}
 for e_ in ents:      # named placed models (quest, relays, shutter, lever) for sz2_propcheck.py
     d_ = dict(e_)

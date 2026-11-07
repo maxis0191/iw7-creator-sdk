@@ -1,9 +1,10 @@
 param(
   [Parameter(Mandatory)][string]$Tag,                         # run name: <Runs>\<Tag> (must not exist)
   [Parameter(Mandatory)][string]$UsermapDir,                  # cp_iwz.ff + cp_iwz.arena
-  [ValidateSet('views','walk','gameplay')][string]$Mode='views',
+  [ValidateSet('views','walk','gameplay','walkcap')][string]$Mode='views',
   [string]$Fixture,                                           # views/walk: the generated iwzmap_sz2_local.gsc; gameplay: the gameplay fixture
   [string]$Only='',                                           # views: capture only names containing this text
+  [string]$Part='0/1',                                        # walkcap: part k/n of the walkthrough positions
   [int]$Seconds=420,
   [string]$Runs='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\level\runs',
   [string]$Server='C:\Users\ezvalo\Documents\IW7-Paris-Server\.claude\worktrees\custom-zombies-map-iwz-26cd2d',
@@ -19,6 +20,7 @@ $extra='+set vid_width 1920 +set vid_height 1080 +set r_mode 1920x1080 +set cg_f
 switch($Mode){
   'views'    { $extra+=' +set paris_iwz_mode views +set paris_iwz_noweapons 1 +set paris_iwz_fxhold 1 +set paris_iwz_cmds "cg_draw2D 0"'; if($Only){ $extra+=" +set paris_iwz_only $Only" } }
   'walk'     { $extra+=' +set paris_iwz_mode walk' }
+  'walkcap'  { $extra+=" +set paris_iwz_mode walkcap +set paris_iwz_noweapons 1 +set paris_iwz_wc_part $Part" + ' +set paris_iwz_cmds "cg_draw2D 0"' }
   'gameplay' { $extra+=' +set paris_iwz_gameplay 1 +set paris_iwz_autouse 1 +set developer_script 1' }
 }
 for($k=0;$k -lt $Tries;$k++){
