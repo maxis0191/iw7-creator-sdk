@@ -10,7 +10,7 @@ main()
     level.use_adjacent_volumes = 1;
     level.spawn_fx_func = scripts\cp\maps\cp_zmb\cp_zmb::cp_zmb_spawn_fx_func;
     //@INITIAL@
-    level.map_interaction_func = scripts\cp\maps\cp_zmb\cp_zmb_interactions::register_interactions;
+    level.map_interaction_func = ::iwz_register_interactions;
     level.wait_for_interaction_func = scripts\cp\maps\cp_zmb\cp_zmb_interactions::zmb_wait_for_interaction_triggered;
     level.player_interaction_monitor = scripts\cp\maps\cp_zmb\cp_zmb_interactions::zmb_player_interaction_monitor;
     level.magic_wheel_spin_hint = &"CP_ZMB_INTERACTIONS_SPIN_WHEEL";
@@ -420,4 +420,38 @@ iwz_fx( name, origin, repeat )
     f.origin = origin;
     f.repeat = repeat;
     return f;
+}
+
+// Spaceland's interaction registry, minus the init functions of Spaceland systems this map has no structs for
+// (cryobomb, forgefreeze, gator teeth, ark quest, scrambler, DJ quest parts...: one-off init runtime errors in every
+// run). Kept: every interaction that has a struct here, and the wheel / Pack-a-Punch / power / perk families.
+iwz_register_interactions()
+{
+    scripts\cp\maps\cp_zmb\cp_zmb_interactions::register_interactions();
+    used = [];
+    foreach ( s in level.all_interaction_structs )
+    {
+        if ( isdefined( s.script_noteworthy ) )
+            used[s.script_noteworthy] = 1;
+    }
+    keep = [ "wheel", "pap", "upgrade", "perk", "debris", "generator", "power", "laststand", "lost_and_found", "afterlife" ];
+    disabled = "";
+    names = getarraykeys( level.interactions );
+    foreach ( n in names )
+    {
+        i = level.interactions[n];
+        if ( isdefined( used[n] ) || !isdefined( i.init_func ) )
+            continue;
+        k = 0;
+        foreach ( w in keep )
+        {
+            if ( issubstr( n, w ) )
+                k = 1;
+        }
+        if ( k )
+            continue;
+        i.init_func = undefined;
+        disabled += n + " ";
+    }
+    print( "[IWZ level] INTERACTIONS registered=" + names.size + " init_disabled=" + disabled );
 }
