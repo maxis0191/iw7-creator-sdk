@@ -382,7 +382,9 @@ ambience_stop()
 // own thread: an engine refusal of the zone or of a part name ends this thread only, not the area watch
 iwz_set_audio_zone( audio_zone )
 {
-    self setclienttriggeraudiozonepartialwithfade( audio_zone, 1.0, "ambient", "reverb", "mix", "filter" );
+    // the engine's own zone bed ("ambient" part) stays silent in a usermap (runs f1/f3): the zone's bed is
+    // played by iwz_ambience_bed_player; only reverb, mix and filter come from the sound zone
+    self setclienttriggeraudiozonepartialwithfade( audio_zone, 1.0, "reverb", "mix", "filter" );
     print( "[IWZ audio] AZONE_SET player=" + self.name + " audio_zone=" + audio_zone + " t=" + gettime() );
 }
 
@@ -397,15 +399,17 @@ ambience_zone( name, mins, maxs, bed )
     return z;
 }
 
-// an area mapped to a sound zone of the bank (bed streamed by the engine, reverb, mix, filter): the player
-// is switched to it with setclienttriggeraudiozonepartialwithfade when entering the area
-ambience_audio_zone( name, mins, maxs, audio_zone )
+// an area mapped to a sound zone of the bank (reverb, mix, filter): the player is switched to it with
+// setclienttriggeraudiozonepartialwithfade when entering the area; bed: the 2D bed alias the module plays there
+// (audio_layout.py passes the sound zone's ambience alias)
+ambience_audio_zone( name, mins, maxs, audio_zone, bed )
 {
     z = spawnstruct();
     z.name = name;
     z.mins = mins;
     z.maxs = maxs;
     z.audio_zone = audio_zone;
+    z.bed = bed;
     return z;
 }
 

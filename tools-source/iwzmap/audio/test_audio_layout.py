@@ -66,6 +66,13 @@ class LayoutTest(unittest.TestCase):
         text = audio_layout.gsc(r, 'cp_x', 'layout.json')
         self.assertIn('ambience_audio_zone( "pit", ( 0, 1000, -400 ), ( 1000, 1400, -80 ), "z_pit" );', text)
 
+    def test_audio_zone_bed_from_bank(self):
+        # the engine's zone bed is silent in a usermap: the module plays the sound zone's ambience alias itself
+        s = spec(zones={'pit': {'audio_zone': 'z_pit'}})
+        r = audio_layout.plan(LAYOUT, s, BANK, {'z_pit': {'name': 'z_pit', 'ambience': 'amb_bed'}})
+        self.assertEqual(r['zones'][0]['bed'], 'amb_bed')
+        self.assertIn('"z_pit", "amb_bed" );', audio_layout.gsc(r, 'cp_test', 'layout.json'))
+
     def test_rc1_rooms(self):
         layout = {'rooms': {'arrival': {'box': [0, 4800, 1024, 5824], 'height': 288}}}
         r = audio_layout.plan(layout, {'zones': {'arrival': {'bed': 'bed_a'}},

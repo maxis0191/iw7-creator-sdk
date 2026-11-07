@@ -3,8 +3,8 @@
     python audio_layout.py --layout <layout.json> --spec station_zero_audio_layout.json --bank station_zero_audio.json
                            --out <zone root>/scripts/cp/maps/<map>/<map>_audio_layout.gsc [--report positions.json]
 
-The spec names, per zone, its sound zone ("audio_zone": a zone row of the bank spec: bed, reverb, mix;
-the engine streams the bed) or a 2D bed alias ("bed", playlocalsound), and the emitters by anchors in the layout, so positions follow the
+The spec names, per zone, its sound zone ("audio_zone": a zone row of the bank spec: reverb, mix, filter)
+and/or a 2D bed alias ("bed"), and the emitters by anchors in the layout, so positions follow the
 level generator when rooms move:
   light:<zone>:<i>          i-th light of that zone        decor:<model>@<zone>    first matching decor
   quest:<name>              a quest point (teddy_bear ...)  interaction:<kind>      first interaction of that kind
@@ -12,6 +12,10 @@ level generator when rooms move:
   [x, y, z]                 an explicit origin
 plus an optional "offset": [dx, dy, dz]. Two layout formats are read: stage-2 "zones" {name: {box: [x0, y0,
 z0, x1, y1, z1]}} (floor = z0 + 16) and rc1 "rooms" {name: {box: [x0, y0, x1, y1], height}} (floor 0).
+
+Beds: the module plays each zone's bed itself (playlocalsound, per player): a sound zone's own engine bed
+stays silent in a usermap (runs f1/f3, 2026-11-07), so a zone without "bed" takes its sound zone's
+"ambience" alias from the bank spec.
 
 Checks (exit 1 on any): every alias is in the bank spec, every emitter lies inside its zone box, random
 emitters have 0 < min_wait < max_wait, looping emitters per zone and in total stay under the limits, the
@@ -107,6 +111,8 @@ def plan(layout, spec, bank_aliases, audio_zones=()):
         audio_zone = z.get('audio_zone')
         if audio_zone and audio_zone not in audio_zones:
             errors.append('zone %s: audio zone %s is not a sound zone of the bank' % (name, audio_zone))
+        if audio_zone and not bed and isinstance(audio_zones, dict):
+            bed = audio_zones.get(audio_zone, {}).get('ambience')
         beds.append({'zone': name, 'mins': list(zones[name][0]), 'maxs': list(zones[name][1]), 'bed': bed,
                      'audio_zone': audio_zone})
     default_bed = spec.get('default_bed')
@@ -165,8 +171,9 @@ def gsc(result, mapname, source):
            'init()', '{', '    zones = [];']
     for z in result['zones']:
         if z.get('audio_zone'):
-            out.append('    zones[zones.size] = %s::ambience_audio_zone( "%s", %s, %s, "%s" );' % (
-                mod, z['zone'], vec(z['mins']), vec(z['maxs']), z['audio_zone']))
+            bed = ', "%s"' % z['bed'] if z.get('bed') else ''
+            out.append('    zones[zones.size] = %s::ambience_audio_zone( "%s", %s, %s, "%s"%s );' % (
+                mod, z['zone'], vec(z['mins']), vec(z['maxs']), z['audio_zone'], bed))
             continue
         bed = '"%s"' % z['bed'] if z['bed'] else 'undefined'
         out.append('    zones[zones.size] = %s::ambience_zone( "%s", %s, %s, %s );' % (mod, z['zone'], vec(z['mins']), vec(z['maxs']), bed))
@@ -202,7 +209,7 @@ def main(argv=None):
     with open(args.bank, encoding='utf-8') as f:
         bank = json.load(f)
     aliases = {a['name'] for a in bank['aliases']}
-    audio_zones = {r['name'] for r in bank.get('zones', {}).get('rows', [])}
+    audio_zones = {r['name']: r for r in bank.get('zones', {}).get('rows', [])}
     result = plan(layout, spec, aliases, audio_zones)
     mapname = args.map or spec.get('map') or bank.get('zone')
     if args.report:
