@@ -445,7 +445,7 @@ iwz_ambience_random( e )
 
     for (;;)
     {
-        wait( randomfloatrange( e.min_wait, e.max_wait ) );
+        iwz_scape_wait( e.min_wait, e.max_wait );
         playsoundatpos( e.origin, e.alias );
         iwz_scape_log( "random", e.alias, e.origin );
     }
@@ -599,6 +599,22 @@ iwz_scape_log( kind, alias, origin )
     print( "[IWZ audio] SCAPE kind=" + kind + " alias=" + alias + " at=" + int( origin[0] ) + "," + int( origin[1] ) + "," + int( origin[2] ) + " t=" + gettime() );
 }
 
+// a random wait of min..max seconds of soundscape time: test runs speed every soundscape timer up with dvar
+// paris_iwz_scape_rate (> 1); the rate is read every half second, so a change applies at once
+iwz_scape_wait( min_wait, max_wait )
+{
+    target = randomfloatrange( min_wait, max_wait );
+    elapsed = 0;
+    while ( elapsed < target )
+    {
+        wait 0.5;
+        r = getdvarfloat( "paris_iwz_scape_rate" );
+        if ( r < 1 )
+            r = 1;
+        elapsed += 0.5 * r;
+    }
+}
+
 iwz_scape_players()
 {
     out = [];
@@ -647,11 +663,11 @@ iwz_scape_scatter( s )
         return;
     }
 
-    wait( randomfloat( s.max_wait ) );
+    iwz_scape_wait( 0, s.max_wait );
 
     for (;;)
     {
-        wait( randomfloatrange( s.min_wait, s.max_wait ) );
+        iwz_scape_wait( s.min_wait, s.max_wait );
         listeners = [];
         foreach ( p in iwz_scape_players() )
         {
@@ -729,7 +745,7 @@ iwz_scape_pa( aliases, speakers, min_wait, max_wait )
 {
     level endon( "game_ended" );
     level endon( "iwz_ambience_stop" );
-    wait( randomfloatrange( min_wait * 0.3, min_wait ) );
+    iwz_scape_wait( min_wait * 0.3, min_wait );
 
     for (;;)
     {
@@ -744,7 +760,7 @@ iwz_scape_pa( aliases, speakers, min_wait, max_wait )
             }
         }
 
-        wait( randomfloatrange( min_wait, max_wait ) );
+        iwz_scape_wait( min_wait, max_wait );
     }
 }
 
@@ -836,7 +852,7 @@ iwz_scape_phone( origin, ring_alias, hangup_alias, min_wait, max_wait, radius )
 
     for (;;)
     {
-        wait( randomfloatrange( min_wait, max_wait ) );
+        iwz_scape_wait( min_wait, max_wait );
         if ( iwz_scape_player_near( origin, radius ) )
             continue;
 
@@ -852,6 +868,7 @@ iwz_scape_phone( origin, ring_alias, hangup_alias, min_wait, max_wait, radius )
 
             playsoundatpos( origin, ring_alias );
             iwz_scape_log( "phone", ring_alias, origin );
+            level notify( "iwz_scape_phone_ring" );
             for ( k = 0; k < 35 && !iwz_scape_player_near( origin, radius ); k++ )
                 wait 0.1;
         }
@@ -874,7 +891,7 @@ iwz_scape_train_hiss( alias, origins, min_wait, max_wait )
 
     for (;;)
     {
-        wait( randomfloatrange( min_wait, max_wait ) );
+        iwz_scape_wait( min_wait, max_wait );
         o = origins[randomint( origins.size )];
         playsoundatpos( o, alias );
         iwz_scape_log( "train_hiss", alias, o );
@@ -964,12 +981,12 @@ iwz_scape_lonely_player( s )
 {
     self endon( "disconnect" );
     level endon( "game_ended" );
-    next = gettime() + int( randomfloatrange( s.min_gap * 0.5, s.min_gap ) * 1000 );
+    self iwz_scape_wait( s.min_gap * 0.5, s.min_gap );
 
     for (;;)
     {
         wait 1;
-        if ( !isalive( self ) || gettime() < next || !self iwz_scape_alone( s ) )
+        if ( !isalive( self ) || !self iwz_scape_alone( s ) )
             continue;
 
         self.iwz_silence_until = gettime() + int( s.silence * 1000 );
@@ -981,7 +998,7 @@ iwz_scape_lonely_player( s )
 
         self playlocalsound( s.alias );
         iwz_scape_log( "lonely", s.alias, self.origin );
-        next = gettime() + int( randomfloatrange( s.min_gap, s.max_gap ) * 1000 );
+        self iwz_scape_wait( s.min_gap, s.max_gap );
     }
 }
 

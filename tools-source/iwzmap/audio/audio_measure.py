@@ -7,6 +7,8 @@
                                 [--wave newwave.flac] [--out report.json] [--plot curve.png]
     python audio_measure.py probe --rec capture.wav --log result.local.json --journal engine-errors.log
                                   [--ref name=file ...] [--out report.json]
+    python audio_measure.py scape --rec capture.wav --log result.local.json --journal engine-errors.log
+                                  --manifest iwz_audio_manifest.json --out <folder>
 
 match  finds where a recorded window sits in the reference (FFT cross-correlation of the mono signals,
        normalized), then reports for that alignment: the normalized correlation peak, the Pearson r of the
@@ -17,10 +19,17 @@ run    the Station Zero audio witness: aligns the fixture timeline ([IWZ audio] 
        and the activation sound; optionally the lone train-rumble steps (RUMBLE_STEP), which zone bed plays in
        each BED_ZONE window (best match among --bed references) and where the round-start stinger sits in the
        capture against WAVE_START; writes one JSON report (and optionally a PNG of level vs distance).
+probe  BED_PROBE windows placed on the capture clock by the diagnostic DLL mark (no known sound needed).
+scape  the soundscape witness (fixture iwzmap_soundscape.gsc, module SCAPE lines): per zone window the loudness
+       (RMS, 250 ms block median / p10 / p90, 100 ms peak, true peak) and a WAV listening sample; per soundscape
+       event the best match of the alias's bank audio at the logged time (xcorr, gain, level, delay, distance from
+       the player); the round-start stings after WAVE_START; the masking window and the stock purchase sound's
+       peak over the soundscape's 90th percentile before it.
 """
 import argparse
 import json
 import math
+import os
 import re
 import subprocess
 import sys
@@ -349,6 +358,148 @@ def probe(args):
     return report
 
 
+def write_wav(path, x, rate=RATE):
+    """16-bit PCM WAV (stdlib wave)."""
+    import wave
+    y = np.clip(np.asarray(x, np.float32), -1.0, 1.0)
+    if y.ndim == 1:
+        y = y[:, None]
+    with wave.open(path, 'wb') as w:
+        w.setnchannels(y.shape[1])
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes((y * 32767.0).astype('<i2').tobytes())
+
+
+def loudness(seg, rate=RATE):
+    """Levels of a window: RMS, 250 ms block median / 10th / 90th percentile, 100 ms peak block, true peak (dBFS)."""
+    x = mono(seg)
+    def blocks(n):
+        n = int(n * rate)
+        return [dbfs(x[i:i + n]) for i in range(0, len(x) - n + 1, n)]
+    b = blocks(0.25)
+    p = blocks(0.1)
+    return {'rms_dbfs': dbfs(x), 'median_dbfs': float(np.median(b)) if b else -200.0,
+            'p10_dbfs': float(np.percentile(b, 10)) if b else -200.0, 'p90_dbfs': float(np.percentile(b, 90)) if b else -200.0,
+            'peak100ms_dbfs': max(p) if p else -200.0,
+            'true_peak_dbfs': 20 * math.log10(float(np.max(np.abs(seg))) + 1e-12)}
+
+
+def manifest_refs(manifest_path):
+    """{alias: [flac paths]} from an iwz_audio_bank.py manifest."""
+    with open(manifest_path) as f:
+        man = json.load(f)
+    refs = {}
+    for a in man['aliases']:
+        if a.get('dest') and os.path.isfile(a['dest']) and a['dest'] not in refs.setdefault(a['alias'], []):
+            refs[a['alias']].append(a['dest'])
+    return refs
+
+
+def scape(args):
+    rec = decode(args.rec)
+    with open(args.log, encoding='utf-8-sig') as f:
+        log = json.load(f)
+    events = parse_lines(log.get('Lines', []))
+    audio = log.get('Audio') or {}
+    report = {'capture': args.rec, 'capture_seconds': len(rec) / RATE, 'ff': log.get('FFSHA256'), 'zones': [], 'events': [],
+              'waves': [], 'buys': []}
+    marks = {}
+    with open(args.journal, encoding='utf-8', errors='replace') as f:
+        for line in f:
+            m = MARK.search(line)
+            if m:
+                marks[m.group(1)] = (int(m.group(2)), int(m.group(3)))
+    mark = next((e for e in events if e['event'] == 'BED_MARK' and e.get('seq') in marks), None)
+    if not mark or 'start_qpc' not in audio:
+        report['error'] = 'no BED_MARK line with a journaled mark, or no capture start_qpc'
+        return report
+    q, fq = marks[mark['seq']]
+    clock = (q - int(audio['start_qpc'])) / fq - int(mark['t']) / 1000.0
+    report['gsc_to_capture_offset_s'] = clock
+    refs = manifest_refs(args.manifest)
+    cache = {}
+
+    def ref(path):
+        if path not in cache:
+            cache[path] = decode(path)
+        return cache[path]
+
+    os.makedirs(args.out, exist_ok=True)
+    zones = [e for e in events if e['event'] == 'SCAPE_ZONE']
+    for k, e in enumerate(zones):
+        t0 = int(e['t']) / 1000.0 + clock
+        hold = int(e.get('hold', 60000)) / 1000.0
+        a, b = int(t0 * RATE), int((t0 + hold) * RATE)
+        seg = rec[a:b]
+        row = {'zone': e['name'], 'at': e.get('at'), 'start_s': t0, 'seconds': hold}
+        row.update(loudness(seg))
+        if hold >= args.sample_min:
+            wav = os.path.join(args.out, '%02d_%s.wav' % (k, e['name']))
+            write_wav(wav, seg)
+            row['wav'] = wav
+        row['events'] = [x.get('alias') for x in events if x['event'] == 'SCAPE' and t0 <= int(x['t']) / 1000.0 + clock < t0 + hold]
+        report['zones'].append(row)
+
+    for e in (x for x in events if x['event'] == 'SCAPE'):
+        t = int(e['t']) / 1000.0 + clock
+        row = {'kind': e.get('kind'), 'alias': e.get('alias'), 'at': e.get('at'), 'capture_s': t}
+        zone = None
+        for z in report['zones']:
+            if z['start_s'] - 1.5 <= t < z['start_s'] + z['seconds']:
+                zone = z
+        if zone and zone.get('at') and e.get('at'):
+            p = [float(v) for v in zone['at'].split(',')]
+            s = [float(v) for v in e['at'].split(',')]
+            row['zone'] = zone['zone']
+            row['distance'] = float(np.linalg.norm(np.array(p) + [0, 0, 60] - np.array(s)))
+        best = None
+        for path in refs.get(e.get('alias'), []):
+            r = ref(path)
+            looped = e.get('kind') == 'loop' or len(r) > 12 * RATE
+            if looped:
+                if t + 1.0 > len(rec) / RATE:
+                    continue
+                win_start = t + 1.0
+                m = match(np.concatenate([r, r]), rec, win_start, 2.0)
+            else:
+                m = match(r, rec, max(0.0, t - 0.25), min(len(r) / RATE + 1.0, 8.0))
+            if 'error' in m:
+                continue
+            if best is None or m['xcorr_peak'] > best['xcorr_peak']:
+                best = dict(m, ref=path)
+        if best:
+            row.update({'xcorr': best['xcorr_peak'], 'xcorr_second': best.get('xcorr_second'), 'spectral_r': best['spectral_r'],
+                        'gain_db': best['gain_db'], 'level_dbfs': best['rec_rms_dbfs'], 'ref': best['ref'],
+                        'delay_s': best['rec_start_s'] - t})
+        report['events'].append(row)
+
+    for e in (x for x in events if x['event'] == 'WAVE_START'):
+        t = int(e['t']) / 1000.0 + clock
+        best = None
+        for path in refs.get('mus_zombies_newwave', []):
+            m = match(ref(path), rec, max(0.0, t - 0.5), 30.0)
+            if 'error' not in m and (best is None or m['xcorr_peak'] > best['xcorr_peak']):
+                best = dict(m, ref=path)
+        report['waves'].append({'capture_s': t, 'kind': e.get('kind'), 'xcorr': best and best['xcorr_peak'],
+                                'gain_db': best and best['gain_db'], 'ref': best and best['ref'],
+                                'delay_s': best and best['rec_start_s'] - t})
+
+    ms = next((e for e in events if e['event'] == 'SCAPE_MASK_START'), None)
+    me = next((e for e in events if e['event'] == 'SCAPE_MASK_END'), None)
+    if ms and me:
+        a, b = int(ms['t']) / 1000.0 + clock, int(me['t']) / 1000.0 + clock
+        report['mask_window'] = dict(loudness(rec[int(a * RATE):int(b * RATE)]), start_s=a, end_s=b, zombies=me.get('zombies'))
+        for e in (x for x in events if x['event'] == 'SCAPE_BUY'):
+            t = int(e['t']) / 1000.0 + clock
+            before = loudness(rec[int((t - 3.0) * RATE):int((t - 0.2) * RATE)])
+            after = loudness(rec[int(t * RATE):int((t + 0.8) * RATE)])
+            report['buys'].append({'capture_s': t, 'before_median_dbfs': before['median_dbfs'], 'before_p90_dbfs': before['p90_dbfs'],
+                                   'buy_peak100ms_dbfs': after['peak100ms_dbfs'],
+                                   'snr_db': after['peak100ms_dbfs'] - before['p90_dbfs']})
+    return report
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0])
     sub = ap.add_subparsers(dest='cmd', required=True)
@@ -381,7 +532,20 @@ def main(argv=None):
     p.add_argument('--journal', required=True, help='diagnostic DLL journal (engine-errors.log) with the mark line')
     p.add_argument('--ref', action='append', default=[], help='name=file, a reference to match in each window')
     p.add_argument('--out')
+    p = sub.add_parser('scape')
+    p.add_argument('--rec', required=True)
+    p.add_argument('--log', required=True)
+    p.add_argument('--journal', required=True)
+    p.add_argument('--manifest', required=True, help='iwz_audio_bank.py iwz_audio_manifest.json (alias -> audio files)')
+    p.add_argument('--out', required=True, help='folder: report.json and the per-zone listening WAVs')
+    p.add_argument('--sample-min', type=float, default=30.0, help='windows at least this long are saved as WAV')
     args = ap.parse_args(argv)
+    if args.cmd == 'scape':
+        result = scape(args)
+        with open(os.path.join(args.out, 'report.json'), 'w') as f:
+            json.dump(result, f, indent=1)
+        print(json.dumps({k: v for k, v in result.items() if k not in ('events',)}, indent=1)[:4000])
+        return 0
     if args.cmd == 'match':
         result = match(decode(args.ref), decode(args.rec), args.rec_start, args.rec_dur, args.ref_max)
     elif args.cmd == 'levels':
