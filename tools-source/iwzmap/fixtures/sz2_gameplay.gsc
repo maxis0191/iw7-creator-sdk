@@ -104,7 +104,9 @@ iwz_game_run()
         {
             before = player scripts\cp\cp_persistence::get_player_currency();
             [[ level.interactions["perk_machine_rat_a_tat"].activation_func ]](s, player);
-            wait 2;
+            // the perk is granted after the drinking animation
+            for (t = 0; t < 40 && !(player scripts\cp\utility::has_zombie_perk("perk_machine_rat_a_tat")); t++)
+                wait 0.25;
             print("[IWZ game] RATATAT paid=" + (before - player scripts\cp\cp_persistence::get_player_currency()) + " has=" + player scripts\cp\utility::has_zombie_perk("perk_machine_rat_a_tat"));
         }
     }
