@@ -88,6 +88,9 @@ def main(argv=None):
     ap.add_argument('--runtime-csv', action='append', default=[], help='dump csv of a zone loaded at runtime (shared techsets/shaders)')
     ap.add_argument('--allow-require', action='store_true', help='techset without a dump: require,techsets_<zone> (ZoneTool loads it)')
     ap.add_argument('--keep-scriptable', action='store_true', help='keep the scriptable mover of the models (needs its dump and dependencies)')
+    ap.add_argument('--material-map', action='append', default=[],
+                    help='old=new: rename a material of the kit models (the subway train window glass to a translucent '
+                         'glass of the same zone dump); also read from IWZ_KIT_MATERIAL_MAP (old=new;old=new)')
     ap.add_argument('--dry-run', action='store_true')
     a = ap.parse_args(argv)
 
@@ -215,6 +218,15 @@ def main(argv=None):
                 add(os.path.join(xdir, f), os.path.join('xmodel', f))
         strs = set(strings_of(xm))
         xdata = open(xm, 'rb').read()
+        # material renames (asset tokens `07 01 <name> 00`; later uses are OFFSET tokens to the same entry)
+        remapped = False
+        for mm in list(a.material_map) + [m_ for m_ in os.environ.get('IWZ_KIT_MATERIAL_MAP', '').split(';') if m_]:
+            o_, n_ = mm.split('=', 1)
+            tok_o = b'\x07\x01' + o_.encode() + b'\x00'
+            if tok_o in xdata:
+                xdata = xdata.replace(tok_o, b'\x07\x01' + n_.encode() + b'\x00')
+                strs.discard(o_); strs.add(n_); remapped = True
+                info.setdefault('materialMap', []).append(mm)
         # scriptable mover (animated stock props such as the subway train): a static kit prop does not need it; it
         # would pull the scriptable's animations, FX and sounds. Dropped from a patched copy of the .xmb.
         known = set()
@@ -236,7 +248,7 @@ def main(argv=None):
             if patched is None:
                 missing.append('asset %s of %s (not a droppable scriptable mover)' % (s, name)); continue
             xdata = patched; info['droppedScriptable'] = s
-        if xdata is not None and info.get('droppedScriptable'):
+        if xdata is not None and (info.get('droppedScriptable') or remapped):
             writes.append((xdata, os.path.join(dst, 'xmodel', name + '.xmb')))
         else:
             add(xm, os.path.join('xmodel', name + '.xmb'))
