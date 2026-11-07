@@ -1920,6 +1920,11 @@ if KIT:
             vz_ = floor_z_at(vx_, vy_)
             if vz_ is None or abs(vz_ - mz_) > 80:
                 continue
+            # the camera must stand in the model's own zone (g23: the generator was viewed from the control room,
+            # through the wall)
+            zb_ = ZONES[d['zone']]['box']
+            if not (zb_[0] + 32 <= vx_ <= zb_[3] - 32 and zb_[1] + 32 <= vy_ <= zb_[4] - 32):
+                continue
             yaw_ = (ang_ + 180) % 360
             pitch_ = -math.degrees(math.atan2(mz_ + c_[2] - (vz_ + 60), dist_))
             VIEWS['kit'].append((round(vx_), round(vy_), vz_, yaw_, round(pitch_, 1)))
