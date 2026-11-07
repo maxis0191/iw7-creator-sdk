@@ -24,15 +24,15 @@ switch($Mode){
 for($k=0;$k -lt $Tries;$k++){
   $main=(Resolve-Path $GameRoot).Path
   $busy=@(Get-CimInstance Win32_Process|Where-Object {$_.ExecutablePath -and $_.ExecutablePath.StartsWith($main+'\',[StringComparison]::OrdinalIgnoreCase)}).Count
-  if($busy){ "game occupied, waiting"; Start-Sleep 60; continue }
+  if($busy){ "game occupied, waiting"; Start-Sleep 10; continue }
   try {
     $r = & "$Server\ops\iwzmap\Test-IWZMapLocal.ps1" -SourcePackage $SourcePackage -GameRoot $GameRoot -OutputRoot $out -UsermapDir $UsermapDir -Map cp_iwz -Fixture $Fixture -ExtraArgs $extra -Seconds $Seconds -InjectDll $InjectDll
     $r
     $j = Get-Content (Join-Path $out 'result.local.json') -Raw | ConvertFrom-Json
-    if($j.Error -match 'Resource busy|Heavy job already reserved|occupied|wait before heavy admission|wait for its owner'){ Remove-Item $out -Recurse -Force; Start-Sleep 60; continue }
+    if($j.Error -match 'Resource busy|Heavy job already reserved|occupied|wait before heavy admission|wait for its owner'){ Remove-Item $out -Recurse -Force; Start-Sleep 10; continue }
     break
   } catch {
-    if($_.Exception.Message -match 'Resource busy|Heavy job already reserved|occupied|wait before heavy admission|wait for its owner'){ if(Test-Path $out){ Remove-Item $out -Recurse -Force }; Start-Sleep 60; continue }
+    if($_.Exception.Message -match 'Resource busy|Heavy job already reserved|occupied|wait before heavy admission|wait for its owner'){ if(Test-Path $out){ Remove-Item $out -Recurse -Force }; Start-Sleep 10; continue }
     throw
   }
 }
