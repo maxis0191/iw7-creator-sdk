@@ -1116,6 +1116,89 @@ for x in (-1900, -1650, -1400):
 sign(Z, 'sign_to_platforms', 'y', -2048, +1, 3252, -150, 192)
 region('stair_b', Z, (-2048, 3104, -1216, 3400), lambda x, y: zl_b(x))
 
+# ---------------------------------------------------------------- art pass 4: wall structure in the service wing
+# (lead 2026-11-07, contact sheet g18: corridor, generator room, control room and tunnel walls still read as plain
+# plaster). Wall ribs / pilasters, a low wainscot band and an upper molding on every long wall, skipping openings,
+# vents, signs and lamps; tunnel ribs close the ceiling ribs into full lining rings. Render only (no collision, no nav).
+def _spans(s0, s1, avoid):
+    return [(a, b) for a, b in bk.spans_minus(s0, s1, [(c - h, c + h) for c, h in avoid]) if b - a >= 12]
+
+
+def wall_band(zone, axis, fixed, facing, s0, s1, z0, z1, mat, depth=3, avoid=()):
+    for a, b in _spans(s0, s1, avoid):
+        if axis == 'x':
+            B.slab_x(a, b, fixed, z0, z1, depth, mat, zone, facing, collide=False, nav=False)
+        else:
+            B.slab_y(a, b, fixed, z0, z1, depth, mat, zone, facing, collide=False, nav=False)
+
+
+def wall_ribs(zone, axis, fixed, facing, positions, z0, z1, mat='ibeam', w=12, depth=8, avoid=()):
+    for c in positions:
+        if any(abs(c - a) < h + w for a, h in avoid):
+            continue
+        if axis == 'x':
+            B.slab_x(c - w / 2, c + w / 2, fixed, z0, z1, depth, mat, zone, facing, collide=False, nav=False)
+            geo_prop('rib', zone, (c - w / 2, fixed - depth, z0), (c + w / 2, fixed + depth, z1))
+        else:
+            B.slab_y(c - w / 2, c + w / 2, fixed, z0, z1, depth, mat, zone, facing, collide=False, nav=False)
+            geo_prop('rib', zone, (fixed - depth, c - w / 2, z0), (fixed + depth, c + w / 2, z1))
+
+
+if os.environ.get('IWZ_ARCH4', '1') == '1':
+    # maintenance corridor (L): ribs every 200, dark concrete plinth, steel molding under the ceiling
+    Zm_ = 'maint_corridor'
+    av_s = [(2800, 40)]                                            # wall vent spawner
+    av_n = [(2700, 110), (2600, 30), (2900, 30), (3080, 110)]      # generator sign, lamps, corridor bend opening
+    av_e = [(2000, 30), (2200, 30), (2250, 40)]                    # lamps, wall fan
+    wall_ribs(Zm_, 'x', 1680, +1, range(2516, 3200, 200), -320, -96, avoid=av_s)
+    wall_ribs(Zm_, 'x', 1920, -1, range(2516, 2976, 200), -320, -96, avoid=av_n)
+    wall_ribs(Zm_, 'y', 3200, -1, range(1780, 2384, 200), -320, -96, avoid=av_e)
+    wall_ribs(Zm_, 'y', 2960, +1, range(2020, 2384, 200), -320, -96)
+    wall_band(Zm_, 'x', 1680, +1, 2416, 3200, -320, -288, 'conc_dark', avoid=av_s)
+    wall_band(Zm_, 'x', 1920, -1, 2416, 2976, -320, -288, 'conc_dark')
+    wall_band(Zm_, 'y', 3200, -1, 1680, 2384, -320, -288, 'conc_dark')
+    wall_band(Zm_, 'y', 2960, +1, 1920, 2384, -320, -288, 'conc_dark')
+    # generator room: panel wainscot, overhead pipe runs along both long walls, molding
+    Zg_ = 'generator_room'
+    av_gs = [(3080, 100)]                                           # arch from the corridor
+    av_gn = [(3100, 104), (3660, 110), (2800, 60)]                  # door to control, control panel, lockers
+    av_gw = [(2675, 75)]                                            # electrical panel + wall vent
+    av_ge = [(2700, 40)]                                            # wall vent
+    wall_band(Zg_, 'x', 2400, +1, 2600, 3800, -320, -272, 'panel_dark', avoid=av_gs)
+    wall_band(Zg_, 'x', 3184, -1, 2600, 3800, -320, -272, 'panel_dark', avoid=av_gn)
+    wall_band(Zg_, 'y', 2600, +1, 2400, 3184, -320, -272, 'panel_dark', avoid=av_gw)
+    wall_band(Zg_, 'y', 3800, -1, 2400, 3184, -320, -272, 'panel_dark', avoid=av_ge)
+    for y_, f_ in ((2400, 1), (3184, -1)):
+        wall_band(Zg_, 'x', y_, f_, 2600, 3800, -272, -266, 'steel_trim', depth=4, avoid=av_gs if f_ > 0 else av_gn)
+        for k_, (zp, mat) in enumerate(((-40, 'metal_red'), (-62, 'metal_black'))):     # pipe pair below the ceiling
+            yy = y_ + f_ * (14 + 10 * k_)
+            B.box((2600, yy - 4, zp - 4), (3800, yy + 4, zp + 4), mat, Zg_, collide=False, nav=False)
+    # control room: panelled pilasters, wainscot and a ceiling molding
+    Zc_ = 'control_room'
+    av_cs = [(3100, 120)]
+    av_cn = [(3104, 150), (2800, 140), (2660, 50)]
+    av_cw = [(3650, 50)]
+    av_ce = [(3600, 180), (3650, 40)]
+    pilasters(Zc_, 'x', 3200, +1, 2600, 3600, -320, -32, step=250, avoid=av_cs, lower='panel_dark', upper='panel_wall')
+    pilasters(Zc_, 'x', 4000, -1, 2600, 3600, -320, -32, step=250, avoid=av_cn, lower='panel_dark', upper='panel_wall')
+    pilasters(Zc_, 'y', 2600, +1, 3200, 4000, -320, -32, step=266, avoid=av_cw, lower='panel_dark', upper='panel_wall')
+    pilasters(Zc_, 'y', 3600, -1, 3200, 4000, -320, -32, step=266, avoid=av_ce, lower='panel_dark', upper='panel_wall')
+    for ax_, fx_, fc_, a_, b_, av_ in (('x', 3200, 1, 2600, 3600, av_cs), ('x', 4000, -1, 2600, 3600, [(3104, 150)]),
+                                      ('y', 2600, 1, 3200, 4000, av_cw), ('y', 3600, -1, 3200, 4000, [])):
+        wall_band(Zc_, ax_, fx_, fc_, a_, b_, -320, -284, 'panel_dark', avoid=av_)
+        wall_band(Zc_, ax_, fx_, fc_, a_, b_, -56, -44, 'steel_trim', depth=5, avoid=av_)
+    # service tunnel: lining rings (the ceiling ribs continue down both walls), a painted safety line
+    Zt_ = 'service_tunnel'
+    wall_ribs(Zt_, 'x', 1216, +1, range(-3500, -2416, 320), -384, -96, w=12, depth=10)
+    wall_ribs(Zt_, 'x', 1584, -1, [x_ for x_ in range(-3500, -2416, 320) if x_ > -3216], -384, -96, w=12, depth=10)
+    wall_ribs(Zt_, 'y', -3600, +1, range(1700, 2584, 320), -384, -96, w=12, depth=10)
+    wall_ribs(Zt_, 'y', -3216, -1, range(1700, 2584, 320), -384, -96, w=12, depth=10, avoid=[(2100, 70)])
+    wall_band(Zt_, 'x', 1216, +1, -3600, -2416, -384, -360, 'conc_painted')
+    wall_band(Zt_, 'x', 1216, +1, -3600, -2416, -300, -294, 'yellow_grip', depth=1)
+    wall_band(Zt_, 'y', -3600, +1, 1584, 2584, -384, -360, 'conc_painted')
+    wall_band(Zt_, 'y', -3600, +1, 1584, 2584, -300, -294, 'yellow_grip', depth=1)
+
+
 # ---------------------------------------------------------------- stock decor models (rc1-proven), clip boxes block nav
 # IWZ_KIT=1: foreign-zone kit models (cp_disco / cp_final) imported by build-sz2 -KitModels (x64-zt and SDK
 # codex/iwzmap-kit-import, 9 models proven textured in cp_iwz by the kit-import agent); KIT_MODELS goes to layout.json
