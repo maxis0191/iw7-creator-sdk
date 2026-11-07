@@ -1339,6 +1339,8 @@ for tn in ('hidden_room_portal', 'center_portal', 'fast_travel_tube_start', 'fas
            'hidden_travel_tube_end'):
     ents.append(ent(classname='script_model', targetname=tn, model='tag_origin', origin='0 0 -3000', angles='0 0 0'))
 ents.append(ent(classname='script_struct', targetname='hidden_room_spot', origin='0 0 -3000', angles='0 0 0'))
+for m_ in ('icbm_electricpanel9_on', 'beacon_light_plasticcase_red_off'):      # quest state models: keep them loaded
+    ents.append(ent(classname='script_model', model=m_, origin='0 0 -3000', angles='0 0 0'))
 # PaP shutter: two rolling steel gates (stock gate_warehouse_refinery_01, 156 x 12 x 186, origin at its corner) in the
 # arch between the control room and the PaP alcove, raised by the relay quest; collision from door blockers below
 PAP_ARCH = OP['a_control_pap']

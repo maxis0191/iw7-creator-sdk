@@ -19,6 +19,10 @@ main()
     scripts\cp\zombies\interaction_magicwheel::set_magic_wheel_starting_location( //@WHEEL@ );
     // the stock Spaceland DJ booth system starts on every map; without its booth it loops on an undefined level.dj
     // (782 runtime errors in run g5-gameplay-a): give it a parked stand-in entity
+    // relay state models swapped by the quest (the map ents reference only the starting state: run g8-gameplay-a
+    // setmodel errors on beacon_light_plasticcase_red_off)
+    precachemodel( "icbm_electricpanel9_on" );
+    precachemodel( "beacon_light_plasticcase_red_off" );
     level.dj = spawn( "script_model", ( 0, 0, -3000 ) );
     level.dj setmodel( "tag_origin" );
     level._effect["iwz_relay_red"] = loadfx( "vfx/iw7/core/zombie/weapon/shredder/zmb_part_glow_red.vfx" );
