@@ -555,6 +555,7 @@ for k in range(6):
     B.box((-304, 4448 + k * 24, 0), (112, 4600, 16 * (k + 1)), {'top': 'stair_tread', 'side': 'conc_painted'}, Z, collide=True, nav=True)
 for k, (rx, ry, rw, rh) in enumerate([(-260, 4520, 120, 90), (-110, 4500, 140, 120), (40, 4530, 90, 70), (-200, 4570, 260, 200)]):
     B.box((rx - rw / 2, ry - 30, 0), (rx + rw / 2, ry + 30, rh), {'side': 'conc_dark', 'top': 'conc'}, Z)
+strip_light(Z, -160, 4500, -40, 4516, 320)
 sign(Z, 'sign_station_zero', 'x', 4400, -1, -700, 220, 384)
 sign(Z, 'sign_network_map', 'y', 400, -1, 3950, 170, 256, 128)
 sign(Z, 'sign_to_platforms', 'x', 3200, +1, -600, 268, 256)
@@ -961,7 +962,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zh, 'soda_machine_zmb', 384, 4050, 0, 180, (14, 18, 20))
     for y_ in (3880, 3920):
         decor(Zh, 'park_token_machine', 388, y_, 0, 180, (12, 12, 32))
-    decor(Zh, 'zmb_mobile_ticket_booth', -1170, 3900, 0, 0, (18, 43, 23))
+    decor(Zh, 'zmb_mobile_ticket_booth', -1170, 3640, 0, 0, (18, 43, 23))     # clear of the west-wall posters
     decor(Zh, 'barrier_pedestrian_01', -230, 4380, 0, 0)
     decor(Zh, 'debris_concrete_rubble_pile_01_dark', 40, 4440, 0, 200)
     decor(Zh, 'com_trashbag2_black', -1140, 4360, 0, 30, (16, 16, 20))
@@ -991,8 +992,6 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     for x_ in (2640, 2680):
         decor(Zc, 'furniture_filing_cabinet', x_, 3990, -320, 270, (17, 8, 17))
     # maintenance corridor: duct along the ceiling, wall vents, hanging wires
-    for x_ in (2672, 2800, 2928, 3056):
-        decor(Zm, 'duct_metal_rectangle_straight_128', x_ + 128, 1890, -116, 0)
     decor(Zm, 'misc_wall_mounted_fan_01', 3198, 2250, -200, 180)
     decor(Zm, 'hanging_wires_01', 3080, 2000, -96, 0)
     # service tunnel: cones and a construction sign at the buffer stop, tarp on the wall
@@ -1235,19 +1234,10 @@ PERKS = [   # (interaction, scriptable, origin, yaw, zone)
     ('perk_machine_run', 'perk_machine_racin_stripes_sign', (2630, 2900, -320), 0, 'generator_room'),
     ('perk_machine_rat_a_tat', 'perk_machine_bang_bangs_sign', (-3570, 2800, -384), 0, 'platform_b'),
 ]
-FX = [   # ambient kit FX (assets/kit/fx_kit.tsv, cp_zmb): engine check sz2_fxcheck.py (held vs running frames)
-    {'fx': 'vfx/iw7/core/zombie/environment/vfx_cop_zmb_particle_dust', 'origin': (0, 2000, -180), 'zone': 'platform_a', 'repeat': False},
-    {'fx': 'vfx/iw7/core/zombie/environment/vfx_cop_zmb_particle_dust', 'origin': (-400, 3950, 150), 'zone': 'ticket_hall', 'repeat': False},
-    {'fx': 'vfx/iw7/core/zombie/environment/vfx_cop_zmb_particle_dust', 'origin': (-2800, 3000, -250), 'zone': 'platform_b', 'repeat': False},
-    {'fx': 'vfx/iw7/core/zombie/environment/vfx_knee_high_fog_dark', 'origin': (-1000, 1400, -384), 'zone': 'platform_a', 'repeat': False},
-    {'fx': 'vfx/iw7/core/zombie/environment/vfx_knee_high_fog_dark', 'origin': (-3000, 1400, -384), 'zone': 'service_tunnel', 'repeat': False},
-    {'fx': 'vfx/iw7/core/zombie/environment/vfx_zmb_drips', 'origin': (-3100, 1400, -100), 'zone': 'service_tunnel', 'repeat': True},
-    {'fx': 'vfx/iw7/core/zombie/environment/vfx_zmb_drips', 'origin': (2800, 1800, -100), 'zone': 'maint_corridor', 'repeat': True},
-    {'fx': 'vfx/iw7/core/zombie/environment/vfx_zmb_drips', 'origin': (-3200, 3200, -36), 'zone': 'platform_b', 'repeat': True},
-    {'fx': 'vfx/iw7/_requests/coop/generator_idle', 'origin': (3300, 2800, -206), 'zone': 'generator_room', 'repeat': False},
-    {'fx': 'vfx/iw7/core/zombie/vfx_zmb_smk_ambient_hang_med', 'origin': (3000, 2650, -150), 'zone': 'generator_room', 'repeat': False},
-    {'fx': 'vfx/iw7/core/zombie/vfx_zmb_src_core_elec_bolts', 'origin': (-768, 1960, -260), 'zone': 'platform_a', 'repeat': True},
+FX = [   # ambient kit FX (assets/kit/fx_kit.tsv, cp_zmb) kept after the engine check sz2_fxcheck.py (run g12-views-a: only
+         # vfx_zb_trash_a_ch renders measurably; dust, fog, drips, generator_idle, hanging smoke and bolts were not detected)
     {'fx': 'vfx/iw7/core/zombie/environment/vfx_zb_trash_a_ch', 'origin': (-100, 4440, 10), 'zone': 'ticket_hall', 'repeat': True},
+    {'fx': 'vfx/iw7/core/zombie/environment/vfx_zb_trash_a_ch', 'origin': (-2400, 1400, -374), 'zone': 'platform_a', 'repeat': True},
 ]
 WALL_BUYS = [   # (weapon, world model, origin, yaw, zone)
     ('iw7_revolver_zm', 'weapon_kb_revolver_wm', (-1184, 4100, 64), 90, 'ticket_hall'),

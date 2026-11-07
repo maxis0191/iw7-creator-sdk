@@ -10,9 +10,9 @@ behind the camera, smaller than 24x24 px or less than half inside the frame are 
 more than 45 % of its pixels have luma < 0.05 (flat black), or when its luma spread (p90 - p10) is < 0.03 with mean
 luma < 0.2 (untextured dark slab). The crop is the projected box, so background can lower the dark fraction: the
 check errs towards passing partially visible props; a prop is flagged if it is flagged in any view where it fills
-at least 1 % of the frame. The decision uses the central 40 % of the box (the prop itself): median luma < 0.08, or,
-with the kit preview's measured texture luma (kit_final.json check.texture.meanLuma, engine preview), a median below
-35 % of it and below 0.15. Writes <out>/propcheck.json and <out>/prop_<name>_<view>.jpg for flagged crops.
+at least 1 % of the frame. The decision uses the central 40 % of the box (the prop itself): with the kit preview's measured
+texture luma (kit_final.json check.texture.meanLuma, engine preview) a median below 35 % of it and below 0.15; without
+a preview a median below 0.08; always more than 45 % of the box below luma 0.05. Writes <out>/propcheck.json and <out>/prop_<name>_<view>.jpg for flagged crops.
 """
 import json, math, os, sys
 import numpy as np
@@ -109,7 +109,7 @@ for name, (vx, vy, vz, yaw, pitch) in views:
         km = KIT.get(p['name'])
         if km and km.get('check', {}).get('texture'):
             ref = km['check']['texture']['meanLuma'] / 255.0
-        flag = fill >= 0.01 and (med < 0.08 or dark > 0.45 or (ref is not None and med < 0.35 * ref and med < 0.15))
+        flag = fill >= 0.01 and (dark > 0.45 or (ref is None and med < 0.08) or (ref is not None and med < 0.35 * ref and med < 0.15))
         rec = {'view': name, 'median': round(med, 3), 'dark_frac': round(dark, 3), 'spread': round(float(p90 - p10), 3),
                'preview': None if ref is None else round(ref, 3), 'fill': round(fill, 4), 'flag': bool(flag)}
         key = '%d:%s' % (pi, p['name'])
