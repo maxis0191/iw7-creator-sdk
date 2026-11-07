@@ -54,8 +54,12 @@
     },
     {
       "name": "amb_cp_zmb_basement_lr",
-      "comment": "2D room tone bed (Spaceland basement), streamed loop",
-      "source": "stock"
+      "comment": "2D room tone bed (Spaceland basement), streamed loop; vol_mod emitter: every alias on vol_mod ambience (and loaded music rows) is digitally silent in this usermap, whatever the channel or speaker map, while the same loop on vol_mod emitter plays (runs b4/b1, 2026-11-07)",
+      "source": "stock",
+      "template": "amb_cp_zmb_basement_lr",
+      "set": {
+        "vol_mod": "emitter"
+      }
     },
     {
       "name": "emt_appliance_hum_lp_01",
@@ -92,8 +96,12 @@
     },
     {
       "name": "amb_cp_zmb_ice_cave_lr",
-      "comment": "2D room tone bed (Spaceland ice cave: low cavern wind) for the platforms and the service tunnel, streamed loop",
-      "source": "stock"
+      "comment": "2D room tone bed (Spaceland ice cave: low cavern wind) for the platforms and the service tunnel, streamed loop; vol_mod emitter: every alias on vol_mod ambience (and loaded music rows) is digitally silent in this usermap, whatever the channel or speaker map, while the same loop on vol_mod emitter plays (runs b4/b1, 2026-11-07)",
+      "source": "stock",
+      "template": "amb_cp_zmb_ice_cave_lr",
+      "set": {
+        "vol_mod": "emitter"
+      }
     },
     {
       "name": "emt_light_hum_lp_02",
@@ -192,26 +200,32 @@
     },
     {
       "name": "amb_iwz_bed_station",
-      "comment": "station bed: 24 s seamless loop of the Spaceland basement tone, loaded (the streamed looping stock bed stays silent in a usermap, runs w4/w5)",
+      "comment": "station bed: 24 s seamless loop of the Spaceland basement tone, loaded; vol_mod emitter: every alias on vol_mod ambience (and loaded music rows) is digitally silent in this usermap, whatever the channel or speaker map, while the same loop on vol_mod emitter plays (runs b4/b1, 2026-11-07); 0.16 = about -37 dBFS in the capture",
       "template": "amb_cp_zmb_basement_lr",
       "source": "stock",
       "file": "iwz/amb/bed_station",
       "loop_seconds": 24,
       "set": {
         "type": "loaded",
-        "loop": "looping"
+        "loop": "looping",
+        "vol_mod": "emitter",
+        "vol_min": 0.16,
+        "vol_max": 0.16
       }
     },
     {
       "name": "amb_iwz_bed_cave",
-      "comment": "platform / tunnel bed: 24 s seamless loop of the Spaceland ice-cave tone, loaded",
+      "comment": "platform / tunnel bed: 24 s seamless loop of the Spaceland ice-cave tone, loaded; vol_mod emitter: every alias on vol_mod ambience (and loaded music rows) is digitally silent in this usermap, whatever the channel or speaker map, while the same loop on vol_mod emitter plays (runs b4/b1, 2026-11-07); 0.16 = about -37 dBFS in the capture",
       "template": "amb_cp_zmb_ice_cave_lr",
       "source": "stock",
       "file": "iwz/amb/bed_cave",
       "loop_seconds": 24,
       "set": {
         "type": "loaded",
-        "loop": "looping"
+        "loop": "looping",
+        "vol_mod": "emitter",
+        "vol_min": 0.16,
+        "vol_max": 0.16
       }
     }
   ],
