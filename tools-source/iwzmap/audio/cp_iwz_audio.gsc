@@ -122,6 +122,12 @@ iwz_ee_watch_use( ee )
 
     for (;;)
     {
+        if ( !isdefined( level.players ) )
+        {
+            wait 0.05;
+            continue;
+        }
+
         foreach ( player in level.players )
         {
             if ( !isdefined( player ) || !isalive( player ) )
@@ -357,8 +363,11 @@ ambience_stop()
 {
     level notify( "iwz_ambience_stop" );
     level.iwz_ambience_beds_on = 0;
+    players = [];
+    if ( isdefined( level.players ) )
+        players = level.players;
 
-    foreach ( player in level.players )
+    foreach ( player in players )
     {
         if ( isdefined( player ) && isdefined( player.iwz_bed ) )
         {
@@ -441,6 +450,11 @@ iwz_ambience_bed_watch()
 {
     level endon( "game_ended" );
     level endon( "iwz_ambience_stop" );
+
+    // the level script calls this from main(), before level.players exists: players present then are
+    // picked up here, later ones by the "connected" notify
+    while ( !isdefined( level.players ) )
+        wait 0.05;
 
     foreach ( player in level.players )
         player thread iwz_ambience_bed_player();
