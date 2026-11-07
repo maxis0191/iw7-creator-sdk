@@ -1233,6 +1233,13 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         decor(Zb, 'traffic_cone_sml_01', x_, y_, -384, 0, (8, 8, 14))
     decor(Zb, 'barrier_pedestrian_01', -3100, 2680, -384, 0)
     decor(Zb, 'ind_debris_metal_scrap_04', -3300, 3000, -384, 20)
+    # kit handrail end posts at both ends of both stair handrails
+    for x_ in (-794, -406):
+        decor('stair_a', 'barrier_handrail_end_01', x_, 2440, -320, 0)
+        decor('stair_a', 'barrier_handrail_end_01', x_, 3096, 0, 180)
+    for y_ in (3110, 3394):
+        decor('stair_b', 'barrier_handrail_end_01', -2040, y_, -384, 90)
+        decor('stair_b', 'barrier_handrail_end_01', -1288, y_, 0, 270)
     # bare-wall fills (sz2_density.py --debug)
     for x_ in (-2300, -1790, -1150, -380, 260, 1020, 1700, 2250):              # track wall boxes and vents
         decor(Zp, 'electrical_control_box_03', x_, 1201, -300, 90)
