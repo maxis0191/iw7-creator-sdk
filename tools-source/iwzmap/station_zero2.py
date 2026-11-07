@@ -1826,6 +1826,8 @@ for gx in (PAP_ARCH['a'] - 28, PAP_ARCH['a'] - 28 + 156):
 SMODELS = os.environ.get('IWZ_SMODELS') == '1'
 smodel_lines = []
 for d in DECOR:
+    if os.environ.get('IWZ_KIT_ONLY') and d['model'] in KIT_MODELS and d['model'] != os.environ['IWZ_KIT_ONLY']:
+        continue     # kit crash bisect: one imported model per build
     if os.environ.get('IWZ_KIT_BASELINE') == '1' and d['model'] in KIT_MODELS:
         continue     # kit proof baseline: the same map (placements, clips, views) without the imported models
     if SMODELS and d['model'] not in KIT_MODELS:
@@ -2003,7 +2005,7 @@ layout['views'] = VIEWS
 layout['sign_views'] = SIGN_VIEWS
 layout['fx'] = FX
 layout['flicker'] = FLICKER
-layout['kit_models'] = sorted(KIT_MODELS)
+layout['kit_models'] = sorted(m for m in KIT_MODELS if not os.environ.get('IWZ_KIT_ONLY') or m == os.environ['IWZ_KIT_ONLY'])
 layout['flicker_views'] = FLK_VIEWS
 layout['fx_views'] = FX_VIEWS
 layout['decals'] = DECALS
