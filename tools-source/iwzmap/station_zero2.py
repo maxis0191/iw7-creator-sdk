@@ -1116,8 +1116,14 @@ sign(Z, 'sign_to_platforms', 'y', -2048, +1, 3252, -150, 192)
 region('stair_b', Z, (-2048, 3104, -1216, 3400), lambda x, y: zl_b(x))
 
 # ---------------------------------------------------------------- stock decor models (rc1-proven), clip boxes block nav
+# IWZ_KIT=1: foreign-zone kit models (cp_disco / cp_final) imported by build-sz2 -KitModels (x64-zt and SDK
+# codex/iwzmap-kit-import, 9 models proven textured in cp_iwz by the kit-import agent); KIT_MODELS goes to layout.json
+KIT = os.environ.get('IWZ_KIT') == '1'
+KIT_MODELS = set()
+
+
 def decor(zone, model, x, y, z, yaw=0, clip=None):
-    DECOR.append({'zone': zone, 'model': model, 'origin': (x, y, z), 'yaw': yaw})
+    DECOR.append({'zone': zone, 'model': model, 'origin': (x, y, z), 'yaw': yaw, 'clip': clip})
     if clip:
         hx, hy, hz = clip
         B.collision_box((x - hx, y - hy, z), (x + hx, y + hy, z + 2 * hz))
@@ -1129,7 +1135,10 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     for x in (-950, 300):
         decor('ticket_hall', 'furniture_park_bench_01_blue', x, 4340, 0, 0, (48, 16, 20))
     for x in (-2048, -1024, 64, 1536):
-        decor('platform_a', 'furniture_park_bench_01_blue', x, 2340, DECK_Z, 0, (48, 16, 20))
+        if KIT:     # worn subway bench (cp_disco, 40 x 192): long axis along the wall
+            decor('platform_a', 'cp_disco_worn_subway_bench', x, 2350, DECK_Z, 90, (96, 20, 20))
+        else:
+            decor('platform_a', 'furniture_park_bench_01_blue', x, 2340, DECK_Z, 0, (48, 16, 20))
     for x in (-1600, 300, 2100):
         decor('platform_a', 'park_trash_can_red_01', x, 2370, DECK_Z, 0, (16, 16, 24))
     decor('maint_corridor', 'dns_locker_set_01', 2700, 1704, -320, 90, (96, 24, 48))
@@ -1150,6 +1159,22 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor('generator_room', 'dns_locker_set_01', 2780, 3172, -320, 180, (20, 10, 50))
     decor('generator_room', 'dns_locker_set_01', 2822, 3172, -320, 180, (20, 10, 50))
     decor('maint_corridor', 'dns_locker_set_01', 3188, 2100, -320, 90, (10, 20, 50))
+    if KIT:
+        # parked stock subway train at the dead end of the track pit (static, scriptable mover dropped by kit_import;
+        # 780 long along x after yaw 90); its clip box also cuts the pit navmesh, ~100 units stay free on each side
+        decor('platform_a', 'cp_disco_subway_train_bsp2xmodel', 1490, 1400, -378, 90, (390, 93, 105))
+        # ticket hall fare line east of the booth: three turnstiles and a broken one
+        for x_, m_ in ((130, 'cp_disco_subway_turnstyle_animated'), (190, 'cp_disco_subway_turnstyle_animated'),
+                       (250, 'cp_disco_subway_turnstyle_animated'), (310, 'cp_disco_subway_turnstyle_missing_arm')):
+            decor('ticket_hall', m_, x_, 3700, 0, 90, (18, 16, 23))
+        # generator room: a second generator unit and oil drums; corridor drum
+        decor('generator_room', 'clk_defend_generator_solo', 3300, 3080, -320, 0, (47, 21, 21))
+        for x_, y_, a_ in ((3700, 2700, 0), (3740, 2735, 40), (3150, 1730, 15)):
+            decor('generator_room' if y_ > 2400 else 'maint_corridor', 'equipment_oil_barrel_military_01', x_, y_, -320, a_, (14, 14, 22))
+        # old platform: loose planks by the rubble
+        for x_, y_, a_ in ((-3300, 3000, 30), (-3270, 3030, 75)):
+            decor('platform_b', 'p7_zm_der_plank_wood_2x12x96', x_, y_, -384, a_)
+        KIT_MODELS.update(d['model'] for d in DECOR if d['model'].startswith(('cp_disco_', 'cp_final_', 'clk_defend', 'equipment_oil_barrel', 'p7_zm_der_plank')))
     # asset kit (assets/kit/kit_final.json, lead 2026-11-07): free cp_zmb models only. The cp_disco / cp_final models need
     # require,techsets_cp_disco|cp_final in the zone csv, a route not built yet: they are guarded behind IWZ_KIT_DISCO.
     Zh, Zp, Zg, Zc, Zm, Zt, Zb = 'ticket_hall', 'platform_a', 'generator_room', 'control_room', 'maint_corridor', 'service_tunnel', 'platform_b'
@@ -1824,6 +1849,7 @@ layout['views'] = VIEWS
 layout['sign_views'] = SIGN_VIEWS
 layout['fx'] = FX
 layout['flicker'] = FLICKER
+layout['kit_models'] = sorted(KIT_MODELS)
 layout['flicker_views'] = FLK_VIEWS
 layout['fx_views'] = FX_VIEWS
 layout['decals'] = DECALS

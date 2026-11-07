@@ -20,8 +20,13 @@ CELL = 32
 UNITS_PER_M = 39.37
 
 items = []
+boxes = []     # clip boxes of large decor (a parked train dresses its whole flank, not only its centre)
 for d in lay.get('decor', []) + lay.get('models', []):
     items.append(tuple(d['origin']))
+    c = d.get('clip')
+    if c and max(c[0], c[1]) > 160:
+        x, y, z = d['origin']
+        boxes.append((x - c[0], y - c[1], x + c[0], y + c[1], z))
 for g in lay.get('geo_props', []):
     items.append(tuple((a + b) / 2 for a, b in zip(g['mins'], g['maxs'])))
 for s in lay.get('signs', []):
@@ -50,7 +55,8 @@ for zone, cs in sorted(by_zone.items()):
     bare = set()
     for (i, j) in boundary:
         cx, cy, cz = (i + 0.5) * CELL, (j + 0.5) * CELL, own[(i, j)]
-        if not any(math.hypot(p[0] - cx, p[1] - cy) < 160 and abs(p[2] - cz) < 280 for p in inside):
+        near_box = any(math.hypot(max(b[0] - cx, 0, cx - b[2]), max(b[1] - cy, 0, cy - b[3])) < 160 and abs(b[4] - cz) < 280 for b in boxes)
+        if not near_box and not any(math.hypot(p[0] - cx, p[1] - cy) < 160 and abs(p[2] - cz) < 280 for p in inside):
             bare.add((i, j))
     best, seen = 0, set()
     for c in bare:
