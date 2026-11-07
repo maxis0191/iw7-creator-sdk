@@ -15,6 +15,7 @@ param(
   [string]$KitModels='',                                                                              # kit_import.py: foreign-zone xmodels 'a,b,c' (or 'zone:name')
   [string]$KitJson='', [string]$KitTier='', [string]$KitZones='',                                     # or rows of a kit_final.json (filtered by tier / source zones)
   [string[]]$KitDumps=@(),                                                                            # '<zone>=<dump root>;<techsets dump root>' (zonetool -dumpzonetypes <zone> xmodel,xmodelsurfs,material,image,physicsasset,physicsfxshape; zonetool -dumpzone techsets_<zone>)
+  [string[]]$KitRuntimeCsv=@(),                                                                       # extra csvs of runtime techset zones (techsets_common)
   [string]$KitReport='')
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
@@ -67,7 +68,9 @@ if($KitModels -or $KitJson){
   if($KitJson){ $ka+=@('--kit',$KitJson); if($KitTier){ $ka+=@('--tier',$KitTier) }; if($KitZones){ $ka+=@('--zones',$KitZones) } }
   if($KitReport){ $ka+=@('--report',$KitReport) }
   # techsets/shaders the template map's techset zones define at runtime: referenced, not embedded again
-  Get-ChildItem $D -Directory -Filter 'techsets_*' | ForEach-Object { $c=Join-Path $_.FullName "$($_.Name).csv"; if(Test-Path $c){ $ka+=@('--runtime-csv',$c) } }
+  foreach($td in [IO.Directory]::GetDirectories($D,'techsets_*')){ $c=Join-Path $td ((Split-Path $td -Leaf)+'.csv'); if(Test-Path $c){ $ka+=@('--runtime-csv',$c) } }
+  # techsets_common has no template dump (its full dump dies): csv from 'zonetool -dumpzonetypes techsets_common rawfile'
+  foreach($c in @($KitRuntimeCsv) + @(($env:KIT_EXTRA_RUNTIME_CSV -split ';') | Where-Object { $_ })){ if($c -and (Test-Path $c)){ $ka+=@('--runtime-csv',$c) } }
   python -I "$S\kit_import.py" @ka
   if($LASTEXITCODE){ throw 'kit_import failed' }
 }
