@@ -12,7 +12,8 @@ Inside the projected box:
             (a missing material / untextured slab is flat), not more than 45 % pixels with luma < 0.05 (black)
   lit       mean luma of the drawn pixels >= 0.25 x the kit preview's mean luma (engine preview of the stock model)
   colour    chroma correlation with the kit preview crop (mean normalised r/g/b; informative, lighting differs)
-A model passes when one view where it fills >= 1500 px has drawn >= 0.35 and is textured and lit.
+A model passes when one view where its box covers >= 1500 px has drawn >= 0.35 (or >= 3000 drawn pixels: thin
+models) and is textured and lit.
 Writes <out>/kit_proof.json and side-by-side crops <out>/kit_<model>_<view>.jpg (kit | baseline | preview).
 """
 import argparse, json, math, os, sys
@@ -122,7 +123,10 @@ def main():
                 rec['chromaDist'] = round(float(np.abs(pc - chroma).sum()), 4)
             rec['textured'] = bool(rec['spread'] >= 0.04 and rec['edges'] >= 0.01 and rec['black'] <= 0.45)
             rec['lit'] = bool(rec['meanLuma'] >= 0.25 * ref_luma) if ref_luma else bool(rec['meanLuma'] >= 0.08)
-            rec['pass'] = bool(rec['pixels'] >= 1500 and (rec['drawn'] is None or rec['drawn'] >= 0.35) and rec['textured'] and rec['lit'])
+            rec['drawnPixels'] = int(drawn.sum()) if B is not None else None
+            # thin or diagonal models (a plank) fill little of their box: enough drawn pixels also counts
+            seen = rec['drawn'] is None or rec['drawn'] >= 0.35 or rec['drawnPixels'] >= 3000
+            rec['pass'] = bool(rec['pixels'] >= 1500 and seen and rec['textured'] and rec['lit'])
             res.setdefault(d['model'], {'model': d['model'], 'origin': d['origin'], 'views': []})['views'].append(rec)
             tiles = [Image.fromarray((crop * 255).astype(np.uint8))]
             if B is not None:
@@ -142,7 +146,7 @@ def main():
     json.dump(out, open(os.path.join(a.out, 'kit_proof.json'), 'w'), indent=1)
     for r in sorted(res.values(), key=lambda r: r['model']):
         best = max(r['views'], key=lambda v: (v['pass'], v['pixels']))
-        print('%-4s %-42s view %d px %6d drawn %s luma %.3f (preview %.3f) spread %.3f edges %.3f black %.2f chromaDist %s'
+        print('%-4s %-42s view %d px %7d drawn %s luma %.3f (preview %.3f) spread %.3f edges %.3f black %.2f chromaDist %s'
               % ('PASS' if r['pass'] else 'FAIL', r['model'], best['view'], best['pixels'], best['drawn'], best['meanLuma'],
                  best['previewLuma'], best['spread'], best['edges'], best['black'], best.get('chromaDist')))
     if missing:
