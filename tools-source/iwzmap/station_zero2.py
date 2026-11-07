@@ -1897,7 +1897,10 @@ SMODELS = os.environ.get('IWZ_SMODELS') == '1'
 # static-models agent's table of the 17,010 cp_zmb static models.
 SMODEL_STOCK = None
 _smc = os.environ.get('IWZ_SMODEL_STOCK_CSV', r'C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\smodels\stock-smodels.csv')
-if SMODELS and os.path.isfile(_smc):
+# x64-zt door-brushmodels (static-model donor fix): the compiler now picks a donor with the same lod / surface layout
+# and refuses a model without one, so every template model can be static again; IWZ_SMODEL_STOCK_ONLY=1 restores the
+# stock-instance filter (the g22-g24 workaround).
+if SMODELS and os.environ.get('IWZ_SMODEL_STOCK_ONLY') == '1' and os.path.isfile(_smc):
     import csv as _csv
     SMODEL_STOCK = set(r['model'] for r in _csv.DictReader(open(_smc)))
 smodel_lines = []
@@ -1995,6 +1998,21 @@ if KIT:
             VIEWS['kit'].append((round(vx_), round(vy_), vz_, yaw_, round(pitch_, 1)))
             _done.add(d['model'])
             break
+# interaction check views (lead g24 review: doors, buys and paths must stay lit in a darker map): one view per
+# interaction struct, from open floor 110 units in front of it, aimed at it; sz2_mood.py measures the centre window
+VIEWS['interact'] = []
+for it in layout['interactions']:
+    ox_, oy_, oz_ = it['origin']
+    for sgn_ in (-1, 1):
+        a_ = math.radians(it.get('yaw', 0))
+        vx_, vy_ = ox_ + sgn_ * 110 * math.cos(a_), oy_ + sgn_ * 110 * math.sin(a_)
+        vz_ = floor_z_at(vx_, vy_)
+        if vz_ is None or abs(vz_ - (oz_ - 24)) > 120:
+            continue
+        yaw_ = math.degrees(math.atan2(oy_ - vy_, ox_ - vx_)) % 360
+        pitch_ = -math.degrees(math.atan2(oz_ - (vz_ + 60), 110))
+        VIEWS['interact'].append((round(vx_), round(vy_), vz_, round(yaw_, 1), round(pitch_, 1)))
+        break
 WALK = [   # waypoint path through every zone (doors are opened by the walk fixture first); stair points at the ramp ends
     (-528, 3880, 0), (-528, 3500, 0), (-600, 3250, 0), (-600, 3150, 0), (-600, 3088, 0), (-600, 2448, -320), (-600, 2440, -320),
     (-600, 2200, -320), (0, 2200, -320), (0, 1620, -320), (-40, 1520, -320), (0, 1620, -320), (1000, 1800, -320), (2300, 1800, -320),
