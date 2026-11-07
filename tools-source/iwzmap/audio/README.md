@@ -35,7 +35,7 @@ BO3's Chronicles hidden song (`_zm_audio_zhd.gsc`, decompiled from `zm_cosmodrom
 | `mus_iwz_abracadavre` | `mus_zombies_newwave` | streamed, 2D `music_lr` | vol 0.5, MusicContent music |
 | `zmb_iwz_ee_hint_lp` | `emt_light_hum_lp_03` | loaded, 3D `amb_elm_unres_3d`, looping | 100..550 units, default curve |
 | `zmb_iwz_ee_activate` | `rollercoaster_sign_up` | loaded, 3D `equip_use_unres_3d` | 150..1200 units |
-| `amb_cp_zmb_basement_lr` | stock | streamed, 2D `amb_bed_2d` loop | room tone bed (Spaceland basement) |
+| `amb_cp_zmb_basement_lr` | stock | streamed, 2D `amb_bed_2d` loop | stock room tone (source of `amb_iwz_bed_station`; a looping alias cannot be played by script) |
 | `emt_appliance_hum_lp_01` | stock | loaded 3D loop, 35..450 | electrical hum |
 | `emt_light_hum_lp_01` | stock | loaded 3D loop, 35..450 | fluorescent hum |
 | `emt_water_drip_lp` | stock | loaded 3D loop, 65..450 | drips |
@@ -73,7 +73,16 @@ level thread scripts\cp\maps\cp_iwz\cp_iwz_audio::ambience_init( emitters, "amb_
 ```
 
 The bed of the first zone holding the player plays (default bed elsewhere), checked twice a second; a change
-prints `[IWZ audio] BED player=... zone=... bed=...`.
+prints `[IWZ audio] BED player=... zone=... bed=...`. `ambience_audio_zone( name, mins, maxs, audio_zone, bed )`
+also switches the player's bank sound zone (reverb, mix, filter); `audio_layout.py` passes the sound zone's
+`ambience` alias as `bed`.
+
+Beds are per player and played by the module, not by the engine: in a usermap the engine's sound-zone bed stays
+silent and `playlocalsound` refuses a looping alias (script runtime error, visible with `developer_script 1`).
+The bank ships each bed as a nonlooping clip (`retrigger_overlap` in `station_zero_audio.json`: 24 s seamless loop
++ 2 s, faded in and out) plus its twin `<bed>_b` on another 2D channel; `iwz_bed_loop` alternates the two every
+24 s, so consecutive copies cross-fade back into the loop (a new `playlocalsound` on the same channel replaces
+the player's voice there). Other local sounds (the hidden song) are not affected.
 
 `song_ee_init( origin, angles, opts )`: `origin` is the point the bear rests on; p7_zm_teddybear's model origin
 is its centre (lod0 bounds z -14.2..13.9, 28 units tall, BO3 scale kept), so the model, the hint loop and the
@@ -112,15 +121,17 @@ the distance sweep, the Use activation and the song. Then:
 python audio_measure.py run --rec <run>/audio.wav --log <run>/result.local.json --song abracadavre.flac --hint meteor_loop.flac --activate meteor_affirm.flac --out report.json --plot hint_falloff.png
 ```
 
-## Status of the in-game witness (runs w4..w6, rc1 lab world, 2026-11-07)
+## Status of the in-game witness (2026-11-07)
 
-PROVEN in game: song (xcorr 1.000), activation (0.988, pitch 1.0), hint loop falloff (audible 60..500, silent
->= 600), lone train rumble (-40.8 / -43.4 / -51.3 dBFS at 700 / 1500 / 3000 units, silent at 4600), stock wave
-start stinger after WAVE_START (0.898), area/zone switching lines, bear drawn textured at BO3 scale after the
-x64-zt-extensions normals and LOD-order repairs (`iw7_xsurface_normals.py`, `iw7_xmodel_lods.py`).
-FAILED: 2D beds. Any alias on channel `amb_bed_2d` / vol_mod `ambience` stays silent in the usermap, streamed or
-loaded, played with playlocalsound or as a sound-zone bed; the zone switch itself is accepted. Next step:
-re-template the bed loops on an audible 2D row or find what mutes that channel. Hold-Use from real input:
-console `+activate` and a test client's `botpressbutton("use")` never reach `usebuttonpressed()` in the local
-session; the module's Use path is witnessed through its scripted override (reach, look cone, trace, hold).
+Runs w4..w6 (rc1 lab world): song (xcorr 1.000), activation (0.988, pitch 1.0), hint loop falloff (audible
+60..500, silent >= 600), lone train rumble (-40.8 / -43.4 / -51.3 dBFS at 700 / 1500 / 3000 units, silent at 4600),
+stock wave start stinger after WAVE_START (0.898), bear drawn textured at BO3 scale after the x64-zt-extensions
+normals and LOD-order repairs (`iw7_xsurface_normals.py`, `iw7_xmodel_lods.py`).
 
+Runs f4..f12 (level g11 world rebuilt with this module and bank; developer_script 1, no module error):
+- Bear Use from a real key press: the server branch's diagnostic DLL posts WM_KEYDOWN/UP of F (bound to
+  `+activate`) to the game window; the engine fires the bear's `"trigger"` (method `use_trigger`) from the car
+  aisle while looking at it, refuses it while looking away (`EE_TRIGGER_REFUSED`); console `+activate` never
+  reaches the usercmd. Song and activation sound found in the capture after a real-key activation.
+- Zone beds: see `iwz-stage2/audio/NOTES.md` (runs f7, f9, f11): station / cave bed identified per area by
+  cross-correlation with the source clip, zone switches audible as a change of bed.
