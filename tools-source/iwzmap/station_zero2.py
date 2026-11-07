@@ -289,7 +289,11 @@ DIM = os.environ.get('IWZ_DIM', '1') == '1'     # g25 mood pass: half the fluore
 def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=6, dead=False):
     """Ceiling fluorescent fitting: a steel housing with an emissive diffuser underneath (dead: dark diffuser, no light)."""
     k_ = STRIP_COUNT[zone] = STRIP_COUNT.get(zone, -1) + 1
-    if DIM and mat in ('lamp_cool', 'lamp_warm') and (k_ % 3 == 1 if zone.startswith('stair') else k_ % 4 in (1, 2)):
+    dimmed = DIM and not dead and mat in ('lamp_cool', 'lamp_warm') and (k_ % 3 == 1 if zone.startswith('stair') else k_ % 4 in (1, 2))
+    if dimmed:
+        # keeps its layout light record (intensity 0, dead): the audio layout addresses fixtures by zone index
+        LIGHTS.append({'zone': zone, 'origin': ((x0 + x1) / 2, (y0 + y1) / 2, z - depth - 4), 'type': 'omni',
+                       'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 384, 'intensity': 0.0, 'fixture': mat, 'dead': True})
         dead = True
     if dead:
         mat = 'panel_dark'
@@ -1334,6 +1338,8 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         for dx_ in (60, 180):
             decor(Zc, 'lab_desk_02', x0_ + dx_, y0_ + 40, -320, 90, (96, 32, 35))
     decor(Zg, 'clk_defend_generator_solo' if KIT else 'zom_machinery_generator_portable_01', GEN[0], GEN[1], -304, 0)
+    # a portable set on the floor beside the plinth (the audio layout's generator hum and power cue anchor on it)
+    decor(Zg, 'zom_machinery_generator_portable_01', GEN[0] + 170, GEN[1] - 110, -320, 30, (44, 28, 34))
     # ticket hall: soda + token machines on the east wall, mobile ticket booth, pedestrian barriers at the street exit,
     # rubble and trash at the collapsed street stairs
     decor(Zh, 'soda_machine_zmb', 384, 4050, 0, 180, (14, 18, 20))
