@@ -50,7 +50,7 @@ def main():
     lay = json.load(open(os.path.join(a.src, 'layout.json')))
     kit = {m['name']: m for m in json.load(open(a.kit))['models']}
     assets = a.assets or os.path.dirname(os.path.dirname(os.path.abspath(a.kit)))
-    props = [d for d in lay['decor'] if d.get('zone') == a.zone]
+    props = [d for d in lay['decor'] if d.get('zone') == a.zone or (a.zone == 'kit' and d.get('model') in lay.get('kit_models', []))]
     views = lay['views'].get(a.zone, [])
     res = {}
     for vi, (vx, vy, vz, yaw, pitch) in enumerate(views):

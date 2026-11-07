@@ -1872,6 +1872,26 @@ VIEWS = {   # 5 per zone: (x, y, z eye-ish origin of the player, yaw, pitch)
     'platform_b': [(-3540, 2660, -384, 40, 5), (-2120, 3340, -384, 220, 5), (-2800, 3000, -384, 90, 0), (-3400, 3000, -384, 0, 0), (-2120, 2700, -384, 150, 0)],
     'stair_b': [(-2020, 3250, -384, 0, -15), (-1260, 3300, 0, 180, 20), (-1700, 3250, -200, 0, -10), (-1150, 3300, 0, 180, 15), (-1600, 3150, -150, 180, 10)],
 }
+# kit check views (IWZ_KIT): one view per imported model, from open floor 200+ units away, aimed at the model's middle
+if KIT:
+    VIEWS['kit'] = []
+    _done = set()
+    for d in DECOR:
+        if d['model'] not in KIT_MODELS or d['model'] in _done:
+            continue
+        mx_, my_, mz_ = d['origin']
+        c_ = d.get('clip') or (24, 24, 24)
+        dist_ = max(c_[0], c_[1]) + 200
+        for ang_ in (90, 270, 0, 180, 45, 135, 225, 315):
+            vx_ = mx_ + dist_ * math.cos(math.radians(ang_)); vy_ = my_ + dist_ * math.sin(math.radians(ang_))
+            vz_ = floor_z_at(vx_, vy_)
+            if vz_ is None or abs(vz_ - mz_) > 80:
+                continue
+            yaw_ = (ang_ + 180) % 360
+            pitch_ = -math.degrees(math.atan2(mz_ + c_[2] - (vz_ + 60), dist_))
+            VIEWS['kit'].append((round(vx_), round(vy_), vz_, yaw_, round(pitch_, 1)))
+            _done.add(d['model'])
+            break
 WALK = [   # waypoint path through every zone (doors are opened by the walk fixture first); stair points at the ramp ends
     (-528, 3880, 0), (-528, 3500, 0), (-600, 3250, 0), (-600, 3150, 0), (-600, 3088, 0), (-600, 2448, -320), (-600, 2440, -320),
     (-600, 2200, -320), (0, 2200, -320), (0, 1620, -320), (-40, 1520, -320), (0, 1620, -320), (1000, 1800, -320), (2300, 1800, -320),
