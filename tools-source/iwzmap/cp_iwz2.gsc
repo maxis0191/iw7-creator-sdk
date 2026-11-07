@@ -34,6 +34,8 @@ main()
     level.pap_1_camo = "camo01";
     level.pap_2_camo = "camo04";
     level.no_pap_camos = [ "axe", "iw7_axe_zm", "forgefreeze" ];
+    // the stock magic wheel plays this when a wheel moves; Spaceland loads it in its own fx script (QA g13: playfx undefined)
+    level._effect["vfx_magicwheel_fire"] = loadfx( "vfx/iw7/_requests/coop/vfx_magicwheel_fire.vfx" );
     level._effect["iwz_relay_red"] = loadfx( "vfx/iw7/core/zombie/weapon/shredder/zmb_part_glow_red.vfx" );
     level._effect["iwz_relay_green"] = loadfx( "vfx/iw7/core/zombie/weapon/dischord/zmb_part_glow_green.vfx" );
     level._effect["iwz_rail_arc"] = loadfx( "vfx/iw7/_requests/coop/vfx_mini_grey_shock_arc.vfx" );
