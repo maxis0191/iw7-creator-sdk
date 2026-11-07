@@ -13,9 +13,23 @@ import os
 ART = os.environ.get('IWZ_ART_DIR', r'C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\art')
 
 
+# Colour image size of every stock material (GrayWolf PNG export of cp_zmb, 2026-11-08; material_dims.json). Many stock
+# trims are strips (steel_trim 1024x128, ibeam 2048x256, stair_tread 1024x256): mapping them square stretched them 4-16x
+# (review A6: jambs, pilasters, beam sides, stair treads). S() now keeps the image aspect (sv = su * h / w) and TRIM
+# materials are strip-mapped by brushkit (u along the face's long edge, v exactly once across its short side).
+import json as _json
+_DIMS = _json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'material_dims.json')))
+_DIMS_BY_PATH = {}
+TRIM = {'frame', 'light_line_yellow', 'arrow_stripes', 'conc_trim_floor', 'steel_trim', 'ibeam', 'ibeam_bare', 'molding',
+        'cornertrim', 'chrome_trim', 'stair_tread', 'wood_trim', 'light_diffuser', 'rubber_trim', 'yellow_line', 'conc_tiles_trim'}
+TRIM_MAX = 96.0       # a face whose short side is longer than this tiles the trim with its true aspect instead
+
+
 def S(path, su, sv=None, **kw):
     d = {'path': 'w/' + path, 'su': float(su), 'sv': float(sv if sv is not None else su), 'verified': 'NOT_PROVEN'}
     d.update(kw)
+    if sv is None:
+        d['aspect_pending'] = True        # resolved against material_dims.json below
     return d
 
 
@@ -108,6 +122,17 @@ MATERIALS = {
     'top_stain':      S('dirt_stain_top_01', 128, collide=False),
     'floor_stain':    S('dirt_water_stain_01', 128, collide=False),
 }
+
+for _k, _m in MATERIALS.items():
+    _d = _DIMS.get(_k) or {}
+    if _d.get('w') and _d.get('h'):
+        _m['img'] = (_d['w'], _d['h'])
+        if _m.pop('aspect_pending', False):
+            _m['sv'] = _m['su'] * _d['h'] / _d['w']
+    _m.pop('aspect_pending', None)
+    if _k in TRIM:
+        _m['trim'] = True
+        _m['trim_max'] = TRIM_MAX
 
 # custom materials written into the map zone (path, stock base material, colour image / constants)
 POSTER_BASE = 'zombies_theater_poster01'      # w_l_sm_replace_i0c0: identity normal + colour (semantic 2)

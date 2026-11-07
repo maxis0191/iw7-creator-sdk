@@ -44,6 +44,7 @@ class Builder:
         self.blockers = []                # (x0, y0, x1, y1, z0, z1): solid footprints for the nav generator
         self.used = {}                    # material key -> quads
         self.quads = 0
+        self.trim_quads = 0
         self.records = []                 # (zone, material key, 4 points, normal): every quad, for sz2_flatness.py
 
     # ------------------------------------------------------------------ primitives
@@ -61,6 +62,26 @@ class Builder:
             t = face_tangent(n)
         self.records.append((zone, mat, [tuple(round(c, 2) for c in p) for p in pts], tuple(round(c, 4) for c in n)))
         spec = self.materials[mat]
+        if uvs is None and spec.get('trim') and spec.get('img'):
+            # strip mapping for trim textures: u along the long edge, v once across the short side, true aspect
+            e1, e2 = sub(pts[1], pts[0]), sub(pts[3], pts[0])
+            l1, l2 = dot(e1, e1) ** 0.5, dot(e2, e2) ** 0.5
+            short = min(l1, l2)
+            if 0 < short <= spec.get('trim_max', 96.0):
+                w, h = spec['img']
+                if w >= h:      # horizontal strip image: u runs along the face
+                    t = norm(e1 if l1 >= l2 else e2)
+                    b = cross(n, t)
+                    vs = [-dot(p, b) for p in pts]
+                    v0 = min(vs)
+                    uvs = [(dot(p, t) / (short * w / h) + uvoff[0], (v - v0) / short) for p, v in zip(pts, vs)]
+                else:           # vertical strip image: u once across the face, v runs along it
+                    t = norm(e2 if l1 >= l2 else e1)
+                    b = cross(n, t)
+                    us = [dot(p, t) for p in pts]
+                    u0 = min(us)
+                    uvs = [((u - u0) / short, -dot(p, b) / (short * h / w) + uvoff[1]) for p, u in zip(pts, us)]
+                self.trim_quads += 1
         if uvs is None:
             b = cross(n, t)
             su, sv = spec['su'] * uvscale, spec['sv'] * uvscale

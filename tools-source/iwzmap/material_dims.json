@@ -1,0 +1,402 @@
+{
+ "tile_white": {
+  "image": "dt_tile_ceramic_white_col_dt_tile_ceramic_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "tile_black": {
+  "image": "fac_tile_slate_black_col_fac_tile_slate_black_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "tile_floor": {
+  "image": "stone_floor_tiles_01_c_stone_floor_tiles_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "checker": {
+  "image": "stone_marble_tile_checker_01_c_stone_marble_tile_checker_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "marble": {
+  "image": "fah_marble_floor_01_col_stone_marble_floor_01_sg_packed_cs",
+  "w": 1024,
+  "h": 1024
+ },
+ "conc_tiles": {
+  "image": "concrete_tiles_01_c_concrete_tiles_01_sg_packed_cs",
+  "w": 1024,
+  "h": 1024
+ },
+ "conc_tiles_trim": {
+  "image": "concrete_tiles_01_trim_c_concrete_tiles_01_trim_sg_packed_cs",
+  "w": 1024,
+  "h": 512
+ },
+ "restaurant": {
+  "image": "fah_restaurant_tiles_01_col_fah_restaurant_tiles_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "conc_lined": {
+  "image": "concrete_wall_12_lined_dirty_c",
+  "w": 1024,
+  "h": 1024
+ },
+ "conc_seam": {
+  "image": "concrete_wall_04_seam_grey_c_concrete_wall_04_seam_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "conc_wall": {
+  "image": "ch_concretewall02_col_ch_concretewall02_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "conc_painted": {
+  "image": "concrete_wall_painted_01_c_concrete_wall_painted_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "conc": {
+  "image": "concrete_01_c_concrete_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "conc_dark": {
+  "image": "clk_concrete_bunker_dark_col_clk_concrete_bunker_dark_sg_packed_cs",
+  "w": 1024,
+  "h": 1024
+ },
+ "conc_floor": {
+  "image": "concrete_floor_polished_01_c_concrete_floor_polished_01_sg_packed_cs",
+  "w": 2048,
+  "h": 2048
+ },
+ "conc_trim_floor": {
+  "image": "concrete_trim_floor_01_c_concrete_trim_floor_01_sg_packed_cs",
+  "w": 1024,
+  "h": 128
+ },
+ "conc_floor_gray": {
+  "image": "concrete_painted_floor_glossy_01_gray_c_concrete_painted_floor_glossy_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "brick_white": {
+  "image": "brick_painted_white_col_brick_painted_white_sg_packed_cs",
+  "w": 1024,
+  "h": 1024
+ },
+ "brick_gray": {
+  "image": "brick_painted_white_col_brick_painted_white_sg_packed_cs",
+  "w": 1024,
+  "h": 1024
+ },
+ "herringbone": {
+  "image": "t7_brick_herringbone_dirty_02_c_t7_brick_herringbone_dirty_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "plaster_green": {
+  "image": "plaster_wall_04_green_light_c_plaster_wall_04_green_light_sg_packed_cs",
+  "w": 1024,
+  "h": 1024
+ },
+ "plaster_grey": {
+  "image": "plaster_wall_04_grey_dark_01_c_plaster_wall_04_grey_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "drywall_gray": {
+  "image": "iw7_drywall_painted_white_a_iw7_drywall_painted_white_c_sg_packed_cs",
+  "w": 1024,
+  "h": 1024
+ },
+ "drywall_green": {
+  "image": "iw7_drywall_painted_white_a_iw7_drywall_painted_white_c_sg_packed_cs",
+  "w": 1024,
+  "h": 1024
+ },
+ "ceil_tiles": {
+  "image": "plaster_ceiling_tiles_01_c_plaster_ceiling_tiles_01_sg_alt1_packed_cs",
+  "w": 256,
+  "h": 256
+ },
+ "ceil_tile": {
+  "image": "ceiling_tile_01_c_ceiling_tile_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "steel_trim": {
+  "image": "black_1024x128_metal_bare_steel_trim_01_sg_packed_cs",
+  "w": 1024,
+  "h": 128
+ },
+ "steel_trim_sheet": {
+  "image": "metal_bare_steel_trim_sheet_01_c_metal_bare_steel_trim_sheet_01_sg_packed_cs",
+  "w": 1024,
+  "h": 1024
+ },
+ "chrome_trim": {
+  "image": "metal_aluminum_trim_03_c_metal_chrome_trim_03_sg_packed_cs",
+  "w": 512,
+  "h": 128
+ },
+ "ibeam": {
+  "image": "metal_ibeam_trim_painted_01_c_metal_ibeam_trim_bare_02_sg_packed_cs",
+  "w": 2048,
+  "h": 256
+ },
+ "ibeam_bare": {
+  "image": "metal_ibeam_trim_bare_02_c_metal_ibeam_trim_bare_02_sg_packed_cs",
+  "w": 2048,
+  "h": 256
+ },
+ "beam_yellow": {
+  "image": "metal_painted_scratched_yellow_01_c_metal_painted_scratched_yellow_01_sg_packed_cs",
+  "w": 1024,
+  "h": 256
+ },
+ "grate": {
+  "image": "fac_metal_grate_01_col_fac_metal_grate_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "grating_under": {
+  "image": "metal_grating_underside_02_c_metal_grating_underside_02_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "diamond": {
+  "image": "metal_bare_diamondplate_01_c_metal_bare_diamondplate_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "rollup": {
+  "image": "door_metal_rollup_grey_large_01_c_door_metal_rollup_grey_large_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "vent": {
+  "image": "metal_vent_02_c_metal_vent_02_sg_packed_cs",
+  "w": 512,
+  "h": 1024
+ },
+ "panel_dark": {
+  "image": "metal_panel_dark_01_c_metal_panel_black_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "panel_wall": {
+  "image": "metal_painted_wall_panel_04_c_metal_painted_wall_panel_04_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "metal_red": {
+  "image": "metal_painted_red_01_c_metal_painted_red_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "metal_black": {
+  "image": "metal_painted_01_black_c_metal_painted_01_black_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "metal_blue": {
+  "image": "metal_painted_dark_blue_c",
+  "w": 1024,
+  "h": 1024
+ },
+ "brushed": {
+  "image": "fac_brushedmetal_col_fac_brushedmetal_sg_mid_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "corrugated": {
+  "image": "metal_corrugated_01_c_metal_corrugated_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "frame": {
+  "image": "metal_trim_frame_01_c_metal_trim_frame_01_sg_packed_cs",
+  "w": 2048,
+  "h": 128
+ },
+ "metal_floor": {
+  "image": "metal_floor_grey_01_c",
+  "w": 1024,
+  "h": 1024
+ },
+ "deck_black": {
+  "image": "metal_deck_painted_black_01_c_metal_deck_painted_black_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "rubber_trim": {
+  "image": "fac_black_rubber_trim_col_fac_black_rubber_trim_sg_packed_cs",
+  "w": 256,
+  "h": 128
+ },
+ "rubber_mat": {
+  "image": "fac_black_rubber_mat_col_fac_black_rubber_mat_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "stair_tread": {
+  "image": "rubber_non_skid_stair_01_c_rubber_non_skid_stair_01_sg_packed_cs",
+  "w": 1024,
+  "h": 256
+ },
+ "yellow_grip": {
+  "image": "sidewalkgrip_01_yellow_c_sidewalkgrip_01_yellow_sg_packed_cs",
+  "w": 512,
+  "h": 1024
+ },
+ "wood_planks": {
+  "image": "fah_wood_planks_01_col_fah_wood_planks_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "wood_floor": {
+  "image": "wood_rustic_floor_02_c_wood_rustic_floor_02_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "wood_trim": {
+  "image": "wood_trim_wall_01_c_wood_trim_wall_01_sg_packed_cs",
+  "w": 1024,
+  "h": 256
+ },
+ "wood_green": {
+  "image": "wood_worn_painted_01_c_wood_worn_painted_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "molding": {
+  "image": "plaster_molding_02_white_trim_c_plaster_molding_02_white_trim_sg_packed_cs",
+  "w": 1024,
+  "h": 128
+ },
+ "chainlink": {
+  "image": "zeb_fence_chainlink_col_zeb_white_metal_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "map_board": {
+  "image": "zmb_underground_map_c",
+  "w": 1024,
+  "h": 1024
+ },
+ "exit_sign": {
+  "image": "signage_zmb_exit_sign_01_c",
+  "w": 1024,
+  "h": 256
+ },
+ "light_panel": {
+  "image": "plastic_wall_panel_light_01_c_plastic_wall_panel_light_01_sg_packed_cs",
+  "w": 512,
+  "h": 1024
+ },
+ "light_panel_red": {
+  "image": "plastic_wall_panel_light_01_c_plastic_wall_panel_light_01_sg_packed_cs",
+  "w": 512,
+  "h": 1024
+ },
+ "light_diffuser": {
+  "image": "glass_led_light_diffuser_01_c_glass_led_light_diffuser_01_sg_packed_cs",
+  "w": 1024,
+  "h": 256
+ },
+ "light_line_yellow": {
+  "image": "light_line_yellow_02_c_light_line_yellow_02_sg_packed_cs",
+  "w": 1024,
+  "h": 64
+ },
+ "neon_orange": {
+  "image": "zmb_neon_tubes_01_orange_e",
+  "w": null,
+  "h": null
+ },
+ "black": {
+  "image": "com_black_true",
+  "w": null,
+  "h": null
+ },
+ "glass": {
+  "image": "glass_clear_01_c",
+  "w": 512,
+  "h": 512
+ },
+ "cornertrim": {
+  "image": "intro_concrete_trim_damaged01_dec_col2_intro_concrete_trim_damaged01_dec_spc2&intro_concrete_trim_damaged01_dec_cos2_sg_packed_cs",
+  "w": 1024,
+  "h": 128
+ },
+ "arrow_stripes": {
+  "image": "paint_arrow_stripes_01_c_paint_arrow_stripes_01_sg_packed_cs",
+  "w": 1024,
+  "h": 64
+ },
+ "yellow_line": {
+  "image": "paint_lines_01_thick_yellow_clean_c_paint_lines_01_thick_blue_clean_sg_packed_cs",
+  "w": 128,
+  "h": 1024
+ },
+ "water_stain": {
+  "image": "dirt_water_stain_01_c",
+  "w": 512,
+  "h": 1024
+ },
+ "ceiling_stain": {
+  "image": "ceiling_waterstain1_col_alt1",
+  "w": 512,
+  "h": 512
+ },
+ "leak_stain": {
+  "image": "dirt_stain_leaking_01_c_dirt_stain_leaking_01_sg_packed_cs",
+  "w": 512,
+  "h": 512
+ },
+ "wall_stain": {
+  "image": "wall_stain_01_c",
+  "w": 512,
+  "h": 512
+ },
+ "blood_pool": {
+  "image": "t7_decal_blood_pool_01_c_t7_decal_blood_pool_01_sg_packed_cs",
+  "w": null,
+  "h": null
+ },
+ "blood_splat": {
+  "image": "t7_decal_blood_splatter_01_c_t7_decal_blood_hand_01_sg_packed_cs",
+  "w": null,
+  "h": null
+ },
+ "puddle": {
+  "image": "water_puddle_tiling_01_rvl_c_water_puddle_tiling_01_rvl_sg_packed_cs",
+  "w": 1024,
+  "h": 1024
+ },
+ "ballast": {
+  "image": "fac_rooftop_ground_01_col",
+  "w": 1024,
+  "h": 1024
+ },
+ "drip_stain": {
+  "image": "dirt_stain_water_drips_01_c",
+  "w": 1024,
+  "h": 512
+ },
+ "top_stain": {
+  "image": "dirt_stain_top_01_c",
+  "w": 2048,
+  "h": 256
+ },
+ "floor_stain": {
+  "image": "dirt_water_stain_01_c",
+  "w": 512,
+  "h": 1024
+ }
+}
