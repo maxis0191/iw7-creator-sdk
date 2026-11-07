@@ -900,6 +900,57 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor('generator_room', 'dns_locker_set_01', 2780, 3172, -320, 180, (20, 10, 50))
     decor('generator_room', 'dns_locker_set_01', 2822, 3172, -320, 180, (20, 10, 50))
     decor('maint_corridor', 'dns_locker_set_01', 3188, 2100, -320, 90, (10, 20, 50))
+    # asset kit (assets/kit/kit_final.json, lead 2026-11-07): free cp_zmb models only. The cp_disco / cp_final models need
+    # require,techsets_cp_disco|cp_final in the zone csv, a route not built yet: they are guarded behind IWZ_KIT_DISCO.
+    Zh, Zp, Zg, Zc, Zm, Zt, Zb = 'ticket_hall', 'platform_a', 'generator_room', 'control_room', 'maint_corridor', 'service_tunnel', 'platform_b'
+    # ticket hall: soda + token machines on the east wall, mobile ticket booth, pedestrian barriers at the street exit,
+    # rubble and trash at the collapsed street stairs
+    decor(Zh, 'soda_machine_zmb', 384, 4050, 0, 180, (14, 18, 20))
+    for y_ in (3880, 3920):
+        decor(Zh, 'park_token_machine', 388, y_, 0, 180, (12, 12, 32))
+    decor(Zh, 'zmb_mobile_ticket_booth', -1170, 3900, 0, 0, (18, 43, 23))
+    decor(Zh, 'barrier_pedestrian_01', -230, 4380, 0, 0)
+    decor(Zh, 'debris_concrete_rubble_pile_01_dark', 40, 4440, 0, 200)
+    decor(Zh, 'com_trashbag2_black', -1140, 4360, 0, 30, (16, 16, 20))
+    decor(Zh, 'p7_box_cardboard_a_closed', -1080, 4370, 0, 70, (16, 16, 15))
+    decor(Zh, 'com_debris_paper_iw6_02', -300, 3450, 0, 25)
+    decor(Zh, 'sign_clock_04', -1000, 4398, 230, 270)
+    # platform: PA speakers and clocks on the north wall, trash, paper
+    for x_ in (-1536, 0, 1536):
+        decor(Zp, 'misc_wall_mounted_loudspeaker_01', x_ + 256, 2398, -110, 270)
+    for x_ in (-768, 768):
+        decor(Zp, 'sign_clock_04', x_, 2398, -120, 0)
+    decor(Zp, 'com_trashbag2_black', -2340, 2350, -320, 10, (16, 16, 20))
+    decor(Zp, 'com_debris_paper_iw6_02', 900, 1900, -320, 60)
+    decor(Zp, 'office_paper_stack01_iw6', -900, 2360, -320, 0)
+    # generator room: control panel and wall pipes on the walls, air handler, emergency shutoff
+    decor(Zg, 'electrical_control_panel_01', 2602, 2650, -320, 0, (11, 22, 41))
+    decor(Zg, 'wall_mounted_pipes_01', 3796, 2600, -320, 180)
+    decor(Zg, 'electrical_industrial_air_vent_box_01', 3600, 2480, -320, 0, (100, 50, 49))
+    decor(Zg, 'emergency_shutoff_sm_panel_01', 3460, 2402, -260, 90)
+    decor(Zg, 'equipment_old_computer', 3760, 2950, -276, 180)
+    # control room: desks with test-pattern monitors, chairs, radio, filing cabinets
+    for x0_ in (2700, 3020, 3340):
+        decor(Zc, 'chair_folding_iw6', x0_ + 120, 3480, -320, 90, (12, 11, 19))
+        decor(Zc, 'sdf_console_control_panel_08', x0_ + 120, 3550, -284, 270)
+    decor(Zc, 'com_tv2_testpattern', 3540, 3592, -250, 270)
+    decor(Zc, 'zmb_frequency_device_radio', 2760, 3592, -250, 270)
+    for x_ in (2640, 2680):
+        decor(Zc, 'furniture_filing_cabinet', x_, 3990, -320, 270, (17, 8, 17))
+    # maintenance corridor: duct along the ceiling, wall vents, hanging wires
+    for x_ in (2672, 2800, 2928, 3056):
+        decor(Zm, 'duct_metal_rectangle_straight_128', x_ + 128, 1890, -116, 0)
+    decor(Zm, 'misc_wall_mounted_fan_01', 3198, 2250, -200, 180)
+    decor(Zm, 'hanging_wires_01', 3080, 2000, -96, 0)
+    # service tunnel: cones and a construction sign at the buffer stop, tarp on the wall
+    for x_, y_ in ((-3500, 1500), (-3470, 1540), (-3440, 1470)):
+        decor(Zt, 'traffic_cone_sml_01', x_, y_, -384, 0, (8, 8, 14))
+    decor(Zt, 'pardon_our_dust_sign', -3300, 1250, -384, 0, (24, 14, 42))
+    decor(Zt, 'dns_fence_tarp_01', -3598, 2100, -360, 90)
+    # old platform: trash bags, cardboard, paper
+    decor(Zb, 'com_trashbag2_black', -3550, 3350, -384, 0, (16, 16, 20))
+    decor(Zb, 'p7_box_cardboard_a_closed', -2500, 3360, -384, 15, (16, 16, 15))
+    decor(Zb, 'com_debris_paper_iw6_02', -2900, 2900, -384, 120)
 
 # ---------------------------------------------------------------- reveals and portals of every opening
 for o in OPENINGS:
@@ -1266,9 +1317,17 @@ for scriptable, origin, yaw, zone in WHEELS:
 for name, q in QUEST.items():
     if 'origin' in q:
         ents.append(ent(classname='script_struct', targetname='iwz_' + name, origin=fmt(q['origin']), angles='0 %g 0' % q['yaw']))
-    if 'model_yaw' in q:
+    if 'model_yaw' in q and not name.startswith('relay_'):
         ents.append(ent(classname='script_model', targetname='iwz_' + name + '_model', model='fac_sort_machine_fuse_box_set_01',
                         origin=fmt(q['origin']), angles='0 %g 0' % q['model_yaw']))
+    if name.startswith('relay_'):
+        # kit relay: wall panel icbm_electricpanel9_off (red state) / _on (green state) with a red beacon on top;
+        # the panel's front is its local +x, the wall face is the quest origin
+        o_ = q['origin']
+        ents.append(ent(classname='script_model', targetname='iwz_' + name + '_panel', model='icbm_electricpanel9_off',
+                        origin=fmt((o_[0], o_[1], o_[2] + 40)), angles='0 %g 0' % q['yaw']))
+        ents.append(ent(classname='script_model', targetname='iwz_' + name + '_beacon', model='beacon_light_plasticcase_red_on',
+                        origin=fmt((o_[0], o_[1], o_[2] + 54)), angles='0 %g 0' % q['yaw']))
 # stock fast-travel / hidden-room init runs on every map: give its lookups parked entities so its threads idle
 # instead of looping on undefined (gameplay REPORT defect 7)
 for tn in ('hidden_room_portal', 'center_portal', 'fast_travel_tube_start', 'fast_travel_tube_end', 'hidden_travel_tube_start',

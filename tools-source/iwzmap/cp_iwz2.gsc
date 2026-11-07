@@ -269,6 +269,12 @@ iwz_relay_on( s )
         return;
     s.on = 1;
     s.use makeunusable();
+    panel = getent( s.targetname + "_panel", "targetname" );
+    if ( isdefined( panel ) )
+        panel setmodel( "icbm_electricpanel9_on" );
+    beacon = getent( s.targetname + "_beacon", "targetname" );
+    if ( isdefined( beacon ) )
+        beacon setmodel( "beacon_light_plasticcase_red_off" );
     if ( isdefined( s.lamp ) )
         s.lamp delete();
     s.lamp = spawnfx( level._effect["iwz_relay_green"], s.origin + anglestoforward( s.angles ) * 6 + ( 0, 0, 30 ) );
