@@ -8,7 +8,9 @@ param(
   [string]$Arena='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-release\cp_iwz-rc1\usermaps\cp_iwz\cp_iwz.arena',
   [int]$Tries=600,
   [switch]$KeepSubmodels,                                                                             # door blockers: zonetool codex/iwzmap-door-brushmodels
-  [switch]$CompileOnly)
+  [switch]$CompileOnly,
+  [string]$AudioSdk='',                                                                               # sdk codex/iwzmap-audio tools-source\iwzmap\audio: adds the audio module
+  [string]$AudioBank='', [string]$AudioModels='')
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
 $ErrorActionPreference='Stop'
@@ -37,6 +39,15 @@ python -I "$S\assemble.py" $W $Map "$Src\cp_iwz.gsc" "$D\patch_cp_zmb" "$D\techs
 if($LASTEXITCODE){ throw 'assemble failed' }
 python -I "$S\sz2_assemble.py" $W $Map $Src
 if($LASTEXITCODE){ throw 'sz2_assemble failed' }
+if($AudioSdk){
+  # audio module (audio agent): placement script from this layout, bank + teddy model + scripts into the zone
+  python -I "$AudioSdk\audio_layout.py" --layout "$Src\layout.json" --spec "$AudioSdk\station_zero_audio_layout.json" --bank "$AudioSdk\station_zero_audio.json" --out "$W\cp_iwz_audio_layout.gsc" --report "$UmOut.audio_positions.json"
+  if($LASTEXITCODE){ throw 'audio_layout failed' }
+  $aa=@("$W\zone_source\$Map.csv","$W\zonetool\$Map",$Map,'--layout-gsc',"$W\cp_iwz_audio_layout.gsc")
+  if($AudioBank){ $aa+=@('--bank-root',$AudioBank) }; if($AudioModels){ $aa+=@('--model-root',$AudioModels) }
+  python -I "$AudioSdk\add_audio.py" @aa
+  if($LASTEXITCODE){ throw 'add_audio failed' }
+}
 $null = New-Item -ItemType Directory -Force "$W\zonetool\$Map\techsets\ps"
 if(!(Test-Path "$W\zonetool\$Map\techsets\ps\null.hlsl.cso")){ [IO.File]::WriteAllBytes("$W\zonetool\$Map\techsets\ps\null.hlsl.cso",[byte[]]@()) }
 $csv="$W\zone_source\$Map.csv"; $lines=Get-Content $csv

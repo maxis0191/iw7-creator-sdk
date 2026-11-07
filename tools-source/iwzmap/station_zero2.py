@@ -1361,6 +1361,8 @@ link_lines = ['    links[links.size] = [ "%s", "%s" ];' % l for l in ZONE_LINKS]
 gsc = gsc.replace('//@DOORS@', '\n'.join(door_lines)).replace('//@LINKS@', '\n'.join(link_lines))
 gsc = gsc.replace('//@INITIAL@', 'level.initial_active_volumes = [ %s ];' % ', '.join('"%s"' % z for z in INITIAL_ZONES))
 gsc = gsc.replace('//@WHEEL@', '"%s"' % WHEELS[0][3])
+if os.environ.get('IWZ_AUDIO') == '1':     # audio module added by build-sz2.ps1 -AudioSdk (audio agent's add_audio.py)
+    gsc = gsc.replace('//@AUDIO@', r'level thread scripts\cp\maps\cp_iwz\cp_iwz_audio_layout::init();')
 tb = QUEST['trap_third_rail_volume']['box']
 gsc = gsc.replace('//@TRAPMIN@', '( %g, %g, %g )' % tb[:3]).replace('//@TRAPMAX@', '( %g, %g, %g )' % tb[3:])
 gsc = gsc.replace('//@TRAPRAILY@', '%g' % THIRD_Y)

@@ -32,6 +32,7 @@ main()
     level thread iwz_pap_quest();
     level thread iwz_third_rail();
     level thread iwz_report();
+    //@AUDIO@
 }
 
 // door purchases: wrap the stock debris activation so the barrier knows which door was bought
