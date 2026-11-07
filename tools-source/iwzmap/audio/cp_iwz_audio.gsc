@@ -476,6 +476,8 @@ iwz_ambience_bed_watch()
 // faded in over the head and out over the tail: iwz_audio_bank.py "retrigger_overlap"), started again every
 // (length - bed_overlap) seconds so consecutive copies cross-fade back into the loop. playlocalsound refuses a
 // looping alias (script runtime error, silence) and the engine's sound-zone bed stays silent in a usermap.
+// A second playlocalsound of an alias still playing restarts it (run f7: the tail was cut, a 1 s dip), so the
+// copies alternate between <alias> and its twin <alias>_b (the bank tool writes the twin row).
 iwz_bed_loop( alias )
 {
     self endon( "disconnect" );
@@ -487,10 +489,19 @@ iwz_bed_loop( alias )
     if ( period < 1.0 )
         period = 1.0;
 
+    twin = alias + "_b";
+    if ( !soundexists( twin ) )
+        twin = alias;
+
+    current = alias;
     for (;;)
     {
-        self playlocalsound( alias );
+        self playlocalsound( current );
         wait( period );
+        if ( current == alias )
+            current = twin;
+        else
+            current = alias;
     }
 }
 
@@ -498,7 +509,11 @@ iwz_bed_stop()
 {
     self notify( "iwz_bed_stop" );
     if ( isdefined( self.iwz_bed ) )
+    {
         self stoplocalsound( self.iwz_bed );
+        if ( soundexists( self.iwz_bed + "_b" ) )
+            self stoplocalsound( self.iwz_bed + "_b" );
+    }
 }
 
 iwz_ambience_bed_player()

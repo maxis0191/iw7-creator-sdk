@@ -204,34 +204,6 @@
       "retrigger_overlap": 2
     },
     {
-      "name": "amb_iwz_bt_nl_emitter",
-      "comment": "diagnostic twin of amb_iwz_bed_station on vol_mod emitter (bed probe)",
-      "template": "amb_cp_zmb_basement_lr",
-      "source": "stock",
-      "file": "iwz/amb/bed_station",
-      "loop_seconds": 24,
-      "set": {
-        "type": "loaded",
-        "loop": "nonlooping",
-        "vol_mod": "emitter"
-      },
-      "retrigger_overlap": 2
-    },
-    {
-      "name": "amb_iwz_bt_nl_music",
-      "comment": "diagnostic twin of amb_iwz_bed_station on vol_mod music (bed probe)",
-      "template": "amb_cp_zmb_basement_lr",
-      "source": "stock",
-      "file": "iwz/amb/bed_station",
-      "loop_seconds": 24,
-      "set": {
-        "type": "loaded",
-        "loop": "nonlooping",
-        "vol_mod": "music"
-      },
-      "retrigger_overlap": 2
-    },
-    {
       "name": "amb_iwz_bed_cave",
       "comment": "cave bed: 24 s seamless loop of the Spaceland ice-cave tone + 2 s re-trigger overlap (26 s, loaded, nonlooping); per-player 2D bed re-triggered by the module (playlocalsound refuses looping aliases with a script runtime error and the engine sound-zone bed stays silent in a usermap: runs b4/f3/f5 with developer_script 1)",
       "template": "amb_cp_zmb_ice_cave_lr",
