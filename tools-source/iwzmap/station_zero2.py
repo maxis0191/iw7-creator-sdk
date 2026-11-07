@@ -140,6 +140,9 @@ def bands(style, zf, zc):
                 (zf + 112, zc - 18, 'brick_white', 0), (zc - 18, zc, 'molding', 2.5)]
     if style == 'tunnel':
         return [(zf, zf + 32, 'conc_dark', 0), (zf + 32, zc, 'conc_seam', 0)]
+    if style == 'control_neutral':
+        return [(zf, zf + 10, 'rubber_trim', 2), (zf + 10, zf + 96, 'panel_dark', 0), (zf + 96, zf + 104, 'steel_trim', 1.5),
+                (zf + 104, zc, 'panel_wall', 0)]
     if style == 'control':
         return [(zf, zf + 10, 'rubber_trim', 2), (zf + 10, zf + 96, 'panel_dark_red', 0), (zf + 96, zf + 104, 'steel_trim', 1.5),
                 (zf + 104, zc, 'panel_wall_red', 0)]
@@ -359,7 +362,11 @@ def decal_floor(zone, mat, x, y, z, w, h, rot=False):
     B.quad(mat, zone, [(x0, y0, z + 0.4), (x1, y0, z + 0.4), (x1, y1, z + 0.4), (x0, y1, z + 0.4)], n=(0, 0, 1), uvs=uv, collide=False)
 
 
+DECALS = []        # decal quads (sz2_fxcheck.py: not an opaque square)
+
+
 def decal_wall(zone, mat, axis, fixed, facing, s, zc, w, h):
+    DECALS.append({'zone': zone, 'mat': mat, 'axis': axis, 'fixed': fixed, 'facing': facing, 's': s, 'zc': zc, 'w': w, 'h': h})
     a, b, z0, z1 = s - w / 2, s + w / 2, zc - h / 2, zc + h / 2
     if axis == 'x':
         y = fixed + facing * 0.4
@@ -385,6 +392,11 @@ def column(zone, x, y, z0, z1, half=24):
 def rail_run(zone, axis, s0, s1, c, z, h=36, post=96, mat='steel_trim', collide=True):
     """Handrail / safety railing: posts every `post` and a top rail; collision as a thin wall."""
     n = max(1, int(round((s1 - s0) / post)))
+    for k_ in range(int((s1 - s0) // 128) + 1):
+        a_ = s0 + k_ * 128
+        b_ = min(s1, a_ + 128)
+        if b_ - a_ > 8:
+            geo_prop('rail', zone, (a_, c - 2, z) if axis == 'x' else (c - 2, a_, z), (b_, c + 2, z + h) if axis == 'x' else (c + 2, b_, z + h))
     for k in range(n + 1):
         s = s0 + (s1 - s0) * k / n
         if axis == 'x':
@@ -463,6 +475,12 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
         # handrails 36 above the nosing line along both walls
         for cfix, sgn in ((c0, 1), (c1, -1)):
             cc = cfix + sgn * 4
+            sa_ = min(r0, r1)
+            while sa_ < max(r0, r1):
+                sb_ = min(max(r0, r1), sa_ + 128)
+                zm_ = zline((sa_ + sb_) / 2) + 34
+                geo_prop('handrail', zone, P(sa_, cc - 2, zm_ - 4) if axis == 'x' else (cc - 2, sa_, zm_ - 4), P(sb_, cc + 2, zm_ + 4) if axis == 'x' else (cc + 2, sb_, zm_ + 4))
+                sa_ = sb_
             p0 = (r0, zline(r0) + 34)
             p1 = (r1, zline(r1) + 34)
             pts_hi = [P(p0[0], cc - 1.5, p0[1] + 3), P(p1[0], cc - 1.5, p1[1] + 3), P(p1[0], cc + 1.5, p1[1] + 3), P(p0[0], cc + 1.5, p0[1] + 3)]
@@ -484,6 +502,12 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
 
 # ============================================================================ build
 LIGHTS = []        # primary light records for the light compiler (origin, colour, radius); fixtures are geometry
+GEO_PROPS = []     # world-geometry props checked by sz2_propcheck.py / counted by sz2_density.py (name, zone, mins, maxs)
+MODELS = []        # other placed models (quest, relay, shutter, lever) for sz2_propcheck.py
+
+
+def geo_prop(name, zone, mn, mx):
+    GEO_PROPS.append({'name': name, 'zone': zone, 'mins': mn, 'maxs': mx})
 LIGHT_COLOR = {'lamp_cool': (0.85, 0.93, 1.0), 'lamp_warm': (1.0, 0.58, 0.22), 'lamp_red': (1.0, 0.06, 0.04),
                'lamp_green': (0.1, 1.0, 0.2), 'light_panel': (1, 1, 1)}
 SIGNS = []
@@ -506,7 +530,8 @@ TURN_Y = 3700
 gates = []
 x = -1168
 while x < -240:
-    B.box((x, TURN_Y - 32, 0), (x + 32, TURN_Y + 32, 40), {'side': 'brushed', 'top': 'steel_trim'}, Z)   # cabinet
+    B.box((x, TURN_Y - 32, 0), (x + 32, TURN_Y + 32, 40), {'side': 'panel_wall', 'top': 'steel_trim'}, Z)   # cabinet
+    geo_prop('turnstile_%d' % x, Z, (x, TURN_Y - 32, 0), (x + 32, TURN_Y + 32, 40))
     B.box((x + 32, TURN_Y - 2, 28), (x + 56, TURN_Y + 2, 32), 'chrome_trim', Z, collide=False, nav=False)  # arm
     gates.append(x + 64)
     x += 96
@@ -536,6 +561,8 @@ sign(Z, 'sign_to_platforms', 'x', 3200, +1, -600, 268, 256)
 sign(Z, 'sign_to_old_station', 'y', -1200, +1, 3304, 268, 192)
 sign(Z, 'poster_station_zero', 'y', -1200, +1, 3900, 120, 96, 144)
 sign(Z, 'poster_mindgap', 'y', -1200, +1, 4150, 120, 96, 144)
+sign(Z, 'poster_lasttrain', 'x', 3200, +1, -200, 120, 96, 144)
+sign(Z, 'poster_mindgap', 'y', 400, -1, 3620, 120, 96, 144)
 decal_wall(Z, 'leak_stain', 'x', 4400, -1, 300, 200, 128, 220)
 hanging_sign(Z, 'sign_to_platforms', -700, 3640, 236, 256, 296)
 hanging_sign(Z, 'sign_station_zero_plain', -700, 4210, 236, 320, 296)
@@ -623,6 +650,7 @@ B.wall_plane(Z, 'y', 2400, -1, 1216, 1584, -128, PCEIL, 'tile_white')
 B.box((2392, 1200, -144), (2400, 1600, -120), 'conc_painted', Z, collide=False, nav=False)
 room(Z, 'recess', (2400, 1216, 2592, 1584), PIT_Z, -128, 'tunnel', 'conc_dark', 'conc_dark', skip=('west',))
 B.wall_plane(Z, 'y', 2560, -1, 1216, 1584, PIT_Z, -128, 'grate', collide=True)
+geo_prop('recess_grate', Z, (2556, 1216, PIT_Z), (2564, 1584, -128))
 B.wall_plane(Z, 'y', 2591, -1, 1216, 1584, PIT_Z, -128, 'black', collide=False)
 floor(Z, 'conc_dark', 2400, 1216, 2592, 1584, PIT_Z, tone='dark')
 # columns every 512 on the deck
@@ -635,6 +663,9 @@ THIRD_Y = 1436
 
 
 def track(zone, x0, x1):
+    # ballast bed under the sleepers and rails
+    B.quad('ballast', zone, [(x0, 1450, PIT_Z + 0.5), (x1, 1450, PIT_Z + 0.5), (x1, 1574, PIT_Z + 0.5), (x0, 1574, PIT_Z + 0.5)], n=(0, 0, 1), collide=False)
+    B.quad('ballast', zone, [(x0, 1420, PIT_Z + 0.4), (x1, 1420, PIT_Z + 0.4), (x1, 1452, PIT_Z + 0.4), (x0, 1452, PIT_Z + 0.4)], n=(0, 0, 1), collide=False)
     xs = x0 + 16
     while xs < x1 - 16:
         B.box((xs - 5, 1460, PIT_Z), (xs + 5, 1564, PIT_Z + 4), 'wood_planks', zone, collide=False, nav=False, skip=('bottom',))
@@ -758,6 +789,9 @@ for y_ in (2000, 2200):
 for x_ in (2600, 2900):
     wall_lamp(Z, 'x', 1920, -1, x_, -150, mat='lamp_warm')
 sign(Z, 'sign_generator', 'x', 1920, -1, 2700, -170, 192)
+decal_wall(Z, 'top_stain', 'x', 1680, +1, 2700, -130, 192, 64)
+decal_wall(Z, 'drip_stain', 'y', 3200, -1, 2050, -220, 128, 160)
+decal_floor(Z, 'floor_stain', 2900, 1800, -320, 160, 128)
 region('corridor_a', Z, (2416, 1680, 3200, 1920), -320)
 region('corridor_b', Z, (2960, 1920, 3200, 2384), -320, (16, 0, 16, 16))
 adjacent('corridor_a', 'corridor_b')
@@ -773,7 +807,7 @@ for x in (2800, 3200, 3600):
 # generator plinth + housing (box placeholder until the kit model), control panel for relay 3
 GEN = (3300, 2800)
 B.box((GEN[0] - 120, GEN[1] - 72, -320), (GEN[0] + 120, GEN[1] + 72, -304), 'conc_painted', Z)
-B.box((GEN[0] - 96, GEN[1] - 56, -304), (GEN[0] + 96, GEN[1] + 56, -200), {'side': 'beam_yellow', 'top': 'diamond'}, Z)
+B.collision_box((GEN[0] - 100, GEN[1] - 50, -304), (GEN[0] + 100, GEN[1] + 50, -206))     # kit generator body (decor below)
 B.box((3560, 3120, -320), (3760, 3184, -260), {'side': 'panel_dark', 'top': 'steel_trim'}, Z)       # control panel
 B.box((3560, 3168, -260), (3760, 3184, -200), {'side': 'panel_dark', 'top': 'steel_trim'}, Z)
 sign(Z, 'sign_signal_control', 'x', 3184, -1, 3100, -70, 192)
@@ -782,18 +816,21 @@ region('generator', Z, (2600, 2400, 3800, 3184), -320)
 
 # ---------------------------------------------------------------- 6 control room (2600,3200)-(3600,4000), -320..-32 + PaP alcove
 Z = 'control_room'
-room(Z, 'control', (2600, 3200, 3600, 4000), -320, -32, 'control', 'rubber_mat', 'ceil_red')
+room(Z, 'control', (2600, 3200, 3600, 4000), -320, -32, 'control_neutral', 'rubber_mat', 'ceil_tile')
 room(Z, 'pap_alcove', (2976, 4016, 3232, 4160), -320, -112, 'control', 'diamond', 'conc_dark', skip=('south',))
-for x in (2750, 3100, 3450):
-    for y in (3400, 3800):
-        strip_light(Z, x - 32, y - 8, x + 32, y + 8, -32, mat='lamp_red')
+for x in (2820, 3140, 3460):          # cool fluorescents over the signal desks (desk light)
+    strip_light(Z, x - 64, 3552, x + 64, 3568, -32, mat='lamp_cool')
+for x in (2750, 3450):                # red emergency accents
+    strip_light(Z, x - 32, 3792, x + 32, 3808, -32, mat='lamp_red')
+strip_light(Z, 3100 - 64, 3292, 3100 + 64, 3308, -32, mat='lamp_cool')
 for y_ in (3350, 3650, 3950):
     wall_lamp(Z, 'y', 2600, +1, y_, -120, mat='lamp_red', w=16, h=16)
     wall_lamp(Z, 'y', 3600, -1, y_, -120, mat='lamp_red', w=16, h=16)
 # signal desks (boxes, until the kit) and the network map board
 for x0_ in (2700, 3020, 3340):
-    B.box((x0_, 3520, -320), (x0_ + 240, 3600, -284), {'side': 'panel_dark', 'top': 'steel_trim'}, Z)
-    B.box((x0_ + 10, 3584, -284), (x0_ + 230, 3600, -250), {'side': 'panel_dark', 'top': 'steel_trim'}, Z)
+    B.box((x0_, 3520, -320), (x0_ + 240, 3600, -284), {'side': 'panel_wall', 'top': 'steel_trim'}, Z)
+    geo_prop('desk_%d' % x0_, Z, (x0_, 3520, -320), (x0_ + 240, 3600, -284))
+    B.box((x0_ + 10, 3584, -284), (x0_ + 230, 3600, -250), {'side': 'panel_wall', 'top': 'steel_trim'}, Z)
 decal_wall(Z, 'map_board', 'y', 3600, -1, 3600, -180, 320, 160)
 sign(Z, 'sign_network_map', 'x', 4000, -1, 2800, -170, 256, 128)
 B.wall_plane(Z, 'x', 4150, -1, 2976, 3232, -320, -112, 'rollup', collide=False)
@@ -827,13 +864,22 @@ for y in range(1800, 2584, 400):
     wall_lamp(Z, 'y', -3584, +1, y, -170, mat='lamp_warm', w=12, h=10)
 for y_ in (1230, 1240):
     B.box((-3600, y_, -210), (-2416, y_ + 3, -206), 'metal_black', Z, collide=False, nav=False)   # cables
+for x_, y_ in ((-2950, 1250), (-3560, 2200)):    # standing work lights (kit park_standing_light_on_white)
+    LIGHTS.append({'zone': Z, 'origin': (x_, y_, -270), 'type': 'omni', 'color': (1.0, 0.95, 0.85), 'radius': 420, 'intensity': 1.0,
+                   'fixture': 'work_light'})
+for x_ in range(-3500, -2416, 320):               # steel ribs across the tunnel ceiling
+    B.box((x_ - 6, 1216, -120), (x_ + 6, 1584, -96), 'ibeam', Z, collide=False, nav=False)
+for y_ in range(1700, 2584, 320):
+    B.box((-3600, y_ - 6, -120), (-3216, y_ + 6, -96), 'ibeam', Z, collide=False, nav=False)
+decal_wall(Z, 'drip_stain', 'x', 1584, -1, -2900, -200, 160, 180)
+decal_wall(Z, 'drip_stain', 'y', -3216, -1, 2100, -200, 160, 180)
 region('tunnel_a', Z, (-3600, 1216, -2416, 1584), -384, (16, 16, 16, 0))
 region('tunnel_b', Z, (-3600, 1584, -3216, 2584), -384, (16, 0, 16, 16))
 adjacent('tunnel_a', 'tunnel_b')
 
 # ---------------------------------------------------------------- 8 platform_b (-3600,2616)-(-2064,3400), -384..-32
 Z = 'platform_b'
-room(Z, 'platform_b', (-3600, 2600, -2064, 3400), -384, -32, 'old', 'herringbone', 'conc_painted')
+room(Z, 'platform_b', (-3600, 2600, -2064, 3400), -384, -32, 'old', 'tile_floor', 'conc_painted')
 for x in range(-3500, -2064, 256):
     B.box((x - 8, 2600, -56), (x + 8, 3400, -32), 'ibeam', Z, collide=False, nav=False)
 for x in (-3300, -2800, -2300):
@@ -842,11 +888,11 @@ for x in (-3300, -2800, -2300):
 # boarded windows on the north wall
 for x in (-3400, -3000, -2600):
     B.wall_plane(Z, 'x', 3399, -1, x - 80, x + 80, -260, -120, 'black', collide=False)
-    for k in range(4):
-        z_ = -250 + k * 34
-        B.box((x - 92, 3388, z_), (x + 92, 3398, z_ + 26), 'wood_planks', Z, collide=False, nav=False)
+    for fa_, fb_, fz0_, fz1_ in ((x - 92, x - 80, -272, -108), (x + 80, x + 92, -272, -108), (x - 80, x + 80, -272, -260), (x - 80, x + 80, -120, -108)):
+        B.slab_x(fa_, fb_, 3400, fz0_, fz1_, 4, 'wood_trim', Z, -1, collide=False, nav=False)     # window frame
 # abandoned kiosk and the old ticket booth (relay 2)
 B.box((-2560, 2700, -384), (-2320, 2820, -344), {'side': 'wood_green', 'top': 'wood_trim'}, Z)
+geo_prop('kiosk', Z, (-2560, 2700, -384), (-2320, 2830, -220))
 B.box((-2560, 2810, -344), (-2320, 2820, -232), {'side': 'wood_green'}, Z)
 B.box((-2570, 2690, -232), (-2310, 2830, -220), {'side': 'wood_trim', 'top': 'wood_green', 'bottom': 'wood_trim'}, Z, collide=False, nav=False)
 OLD_BOOTH = (-3480, 3200, -3300, 3380)
@@ -857,6 +903,9 @@ sign(Z, 'sign_old_station', 'x', 2600, +1, -2900, -120, 320)
 sign(Z, 'sign_old_station', 'y', -3600, +1, 3000, -120, 320)
 sign(Z, 'poster_lasttrain', 'x', 3400, -1, -2300, -200, 96, 144)
 decal_wall(Z, 'wall_stain', 'x', 3400, -1, -3200, -150, 160, 160)
+decal_wall(Z, 'drip_stain', 'y', -3600, +1, 2800, -180, 160, 200)
+decal_wall(Z, 'top_stain', 'x', 2600, +1, -3200, -60, 256, 64)
+decal_floor(Z, 'floor_stain', -2900, 3100, -384, 192, 160)
 region('platform_b', Z, (-3600, 2600, -2064, 3400), -384)
 
 # ---------------------------------------------------------------- 9 stair_b (-2048,3104)-(-1216,3400): -384 -> 0 rising east
@@ -955,6 +1004,74 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zb, 'com_trashbag2_black', -3550, 3350, -384, 0, (16, 16, 20))
     decor(Zb, 'p7_box_cardboard_a_closed', -2500, 3360, -384, 15, (16, 16, 15))
     decor(Zb, 'com_debris_paper_iw6_02', -2900, 2900, -384, 120)
+    # ---- art pass 2 ----
+    # generator room: kit generator (air handler body on the plinth, control panel, fuse boxes, red pipe runs)
+    decor(Zg, 'electrical_industrial_air_vent_box_01', GEN[0] - 12, GEN[1] - 8, -304, 0)
+    decor(Zg, 'zom_machinery_generator_portable_01', GEN[0] + 60, GEN[1], -206, 0)
+    decor(Zg, 'electrical_control_panel_01', GEN[0] - 150, GEN[1] - 60, -320, 0, (11, 22, 41))
+    for k_ in range(3):
+        decor(Zg, 'pipe_metal_painted_straight_128_red', GEN[0] + 40, GEN[1] + 56 + 128 * k_, -150, 0)
+    decor(Zg, 'fac_sort_machine_fuse_box_set_01', 3000, 3182, -320, 180, (18, 7, 37))
+    decor(Zg, 'fac_sort_machine_fuse_box_set_01', 3800 - 2, 3050, -320, 90, (7, 18, 37))
+    decor(Zg, 'misc_wall_mounted_fan_01', 2602, 3000, -150, 0)
+    # maintenance corridor: pipe clusters along both long walls, wall boxes, shutoff panels, fan, ladder, junk
+    for x_ in (2440, 2606, 2772, 2938):
+        decor(Zm, 'pipe_corridor_cluster_01', x_, 1912, -140, 270)
+        decor(Zm, 'pipe_corridor_cluster_01', x_, 1688, -170, 270)
+    for x_ in (2560, 2880, 3120):
+        decor(Zm, 'electrical_control_box_03', x_, 1681, -280, 90)
+    for x_ in (2650, 3000):
+        decor(Zm, 'emergency_shutoff_sm_panel_01', x_, 1918, -230, 270)
+    decor(Zm, 'misc_wall_mounted_fan_01', 2850, 1918, -150, 270)
+    decor(Zm, 'wall_mounted_pipes_01', 2962, 2150, -320, 180)
+    decor(Zm, 'ladder01_large_closed', 3196, 2320, -320, 90)
+    decor(Zm, 'hanging_wires_01', 2700, 1800, -96, 0)
+    decor(Zm, 'ammo_crate_01_dust', 3150, 1720, -320, 0, (18, 30, 15))
+    decor(Zm, 'p7_box_cardboard_a_closed', 3150, 1790, -320, 20, (16, 21, 15))
+    # service tunnel: work lights (lights table entries below), struts, junk, rubble, cones
+    decor(Zt, 'park_standing_light_on_white', -2950, 1250, -384, 0, (11, 11, 58))
+    decor(Zt, 'park_standing_light_on_white', -3560, 2200, -384, 0, (11, 11, 58))
+    decor(Zt, 'com_junktire', -2800, 1560, -372, 30)
+    decor(Zt, 'ind_debris_metal_scrap_04', -3200, 1560, -384, 70)
+    decor(Zt, 'debris_concrete_rubble_pile_01_dark', -3500, 2500, -384, 20)
+    decor(Zt, 'zmb_wood_support_02', -3300, 1580, -360, 0)
+    for y_ in (1700, 2000, 2300):
+        decor(Zt, 'electrical_control_box_03', -3599, y_, -290, 0)
+    for x_ in (-3300, -2700):
+        decor(Zt, 'electrical_control_box_03', x_, 1217, -290, 90)
+    # old platform: kit boarded windows, rubble, a dead work light, caution signs and cones
+    for x_ in (-3400, -3000, -2600):
+        for dx_ in (-41, 41):
+            for z_ in (-258, -190):
+                decor(Zb, 'zmb_spaceland_zombie_spawn_window_01', x_ + dx_, 3394, z_, 0)
+    decor(Zb, 'debris_concrete_rubble_pile_01_dark', -3450, 2700, -384, 40)
+    decor(Zb, 'debris_concrete_rubble_pile_01_dark', -2250, 3300, -384, 160)
+    decor(Zb, 'park_standing_light_on_white', -2350, 2700, -384, 0, (11, 11, 58))          # dead: no light entry
+    decor(Zb, 'pardon_our_dust_sign', -2700, 2680, -384, 270, (24, 14, 42))
+    for x_, y_ in ((-2780, 2700), (-2620, 2700)):
+        decor(Zb, 'traffic_cone_sml_01', x_, y_, -384, 0, (8, 8, 14))
+    decor(Zb, 'barrier_pedestrian_01', -3100, 2680, -384, 0)
+    decor(Zb, 'ind_debris_metal_scrap_04', -3300, 3000, -384, 20)
+    # bare-wall fills (sz2_density.py --debug)
+    for x_ in (-2300, -1790, -1150, -380, 260, 1020, 1700, 2250):              # track wall boxes and vents
+        decor(Zp, 'electrical_control_box_03', x_, 1201, -300, 90)
+    for x_ in (-2000, -560, 900, 2100):
+        decor(Zp, 'duct_metal_rectangle_vent', x_, 1201, -350, 90)
+    decor(Zp, 'electrical_control_panel_01', -2398, 2100, -320, 0, (11, 22, 41))
+    decor(Zp, 'emergency_shutoff_sm_panel_01', -2398, 1680, -280, 0)
+    decor(Zp, 'electrical_control_box_03', 2398, 2200, -280, 180)
+    decor(Zp, 'park_trash_can_blue_01', -290, 2365, -320, 0, (17, 17, 24))
+    decor(Zp, 'sign_clock_04', 528, 2398, -130, 0)
+    decor(Zp, 'trashbin_01_iw6', 1280, 2365, -320, 0, (11, 13, 22))
+    decor(Zb, 'com_trashbag2_black', -2110, 2800, -384, 0, (16, 16, 20))
+    decor(Zb, 'sign_clock_04', -2066, 2950, -150, 180)
+    decor(Zt, 'electrical_control_box_03', -2550, 1583, -290, 270)
+    for y_ in (1900, 2300):
+        decor(Zt, 'electrical_control_box_03', -3217, y_, -290, 180)
+    decor(Zh, 'furniture_park_bench_01_red', -900, 3240, 0, 90, (48, 20, 22))
+    decor(Zh, 'furniture_park_bench_01_red', 20, 3240, 0, 90, (48, 20, 22))
+    decor(Zh, 'trashbin_01_iw6', 250, 3236, 0, 0, (11, 13, 22))
+    decor(Zh, 'trashbin_01_iw6', -460, 4380, 0, 0, (11, 13, 22))
 
 # ---------------------------------------------------------------- reveals and portals of every opening
 for o in OPENINGS:
@@ -1118,6 +1235,20 @@ PERKS = [   # (interaction, scriptable, origin, yaw, zone)
     ('perk_machine_run', 'perk_machine_racin_stripes_sign', (2630, 2900, -320), 0, 'generator_room'),
     ('perk_machine_rat_a_tat', 'perk_machine_bang_bangs_sign', (-3570, 2800, -384), 0, 'platform_b'),
 ]
+FX = [   # ambient kit FX (assets/kit/fx_kit.tsv, cp_zmb): engine check sz2_fxcheck.py (held vs running frames)
+    {'fx': 'vfx/iw7/core/zombie/environment/vfx_cop_zmb_particle_dust', 'origin': (0, 2000, -180), 'zone': 'platform_a', 'repeat': False},
+    {'fx': 'vfx/iw7/core/zombie/environment/vfx_cop_zmb_particle_dust', 'origin': (-400, 3950, 150), 'zone': 'ticket_hall', 'repeat': False},
+    {'fx': 'vfx/iw7/core/zombie/environment/vfx_cop_zmb_particle_dust', 'origin': (-2800, 3000, -250), 'zone': 'platform_b', 'repeat': False},
+    {'fx': 'vfx/iw7/core/zombie/environment/vfx_knee_high_fog_dark', 'origin': (-1000, 1400, -384), 'zone': 'platform_a', 'repeat': False},
+    {'fx': 'vfx/iw7/core/zombie/environment/vfx_knee_high_fog_dark', 'origin': (-3000, 1400, -384), 'zone': 'service_tunnel', 'repeat': False},
+    {'fx': 'vfx/iw7/core/zombie/environment/vfx_zmb_drips', 'origin': (-3100, 1400, -100), 'zone': 'service_tunnel', 'repeat': True},
+    {'fx': 'vfx/iw7/core/zombie/environment/vfx_zmb_drips', 'origin': (2800, 1800, -100), 'zone': 'maint_corridor', 'repeat': True},
+    {'fx': 'vfx/iw7/core/zombie/environment/vfx_zmb_drips', 'origin': (-3200, 3200, -36), 'zone': 'platform_b', 'repeat': True},
+    {'fx': 'vfx/iw7/_requests/coop/generator_idle', 'origin': (3300, 2800, -206), 'zone': 'generator_room', 'repeat': False},
+    {'fx': 'vfx/iw7/core/zombie/vfx_zmb_smk_ambient_hang_med', 'origin': (3000, 2650, -150), 'zone': 'generator_room', 'repeat': False},
+    {'fx': 'vfx/iw7/core/zombie/vfx_zmb_src_core_elec_bolts', 'origin': (-768, 1960, -260), 'zone': 'platform_a', 'repeat': True},
+    {'fx': 'vfx/iw7/core/zombie/environment/vfx_zb_trash_a_ch', 'origin': (-100, 4440, 10), 'zone': 'ticket_hall', 'repeat': True},
+]
 WALL_BUYS = [   # (weapon, world model, origin, yaw, zone)
     ('iw7_revolver_zm', 'weapon_kb_revolver_wm', (-1184, 4100, 64), 90, 'ticket_hall'),
     ('iw7_ump45_zml', 'weapon_ump_wm', (-784, 2600, -180), 90, 'stair_a'),
@@ -1145,7 +1276,7 @@ QUEST = {   # Pack-a-Punch relays (gameplay agent: logic), trap and EE spots (da
 ws = mapgen.stock_worldspawn(os.path.join(tpl, 'maps/cp/cp_zmb.d3dbsp.ents'))
 ents, relocations, triggers = [], [], []
 layout = {'zones': {}, 'doors': [], 'spawners': [], 'starts': [], 'interactions': [], 'quest': QUEST, 'lights': LIGHTS,
-          'signs': SIGNS, 'props': PROPS, 'decor': DECOR}
+          'signs': SIGNS, 'props': PROPS, 'decor': DECOR, 'geo_props': GEO_PROPS, 'models': MODELS}
 for x, y, z, yaw in STARTS:
     ents.append(ent(classname='script_struct', targetname='default_player_start', origin=fmt((x, y, z)), angles='0 %g 0' % yaw))
     layout['starts'].append((x, y, z))
@@ -1372,6 +1503,9 @@ link_lines = ['    links[links.size] = [ "%s", "%s" ];' % l for l in ZONE_LINKS]
 gsc = gsc.replace('//@DOORS@', '\n'.join(door_lines)).replace('//@LINKS@', '\n'.join(link_lines))
 gsc = gsc.replace('//@INITIAL@', 'level.initial_active_volumes = [ %s ];' % ', '.join('"%s"' % z for z in INITIAL_ZONES))
 gsc = gsc.replace('//@WHEEL@', '"%s"' % WHEELS[0][3])
+gsc = gsc.replace('//@FXLOAD@', chr(10).join('    level._effect["iwz_fx_%d"] = loadfx( "%s" );' % (k, f['fx']) for k, f in enumerate(FX)))
+gsc = gsc.replace('//@FXPLACE@', chr(10).join('    fx[fx.size] = iwz_fx( "iwz_fx_%d", ( %g, %g, %g ), %d );' % (k, *f['origin'], 1 if f['repeat'] else 0)
+                                         for k, f in enumerate(FX)))
 if os.environ.get('IWZ_AUDIO') == '1':     # audio module added by build-sz2.ps1 -AudioSdk (audio agent's add_audio.py)
     gsc = gsc.replace('//@AUDIO@', r'level thread scripts\cp\maps\cp_iwz\cp_iwz_audio_layout::init();')
 tb = QUEST['trap_third_rail_volume']['box']
@@ -1428,6 +1562,19 @@ for si, sg in enumerate(SIGNS):
         SIGN_VIEW_LIST.append((round(vx, 1), round(vy, 1), fz, round(yaw, 2), round(pitch, 2)))
         _seen.add(sg['image'])
         break
+# FX check views: one per FX, ~300 units away on the floor, looking at it (captured with the FX held, then running)
+FX_VIEWS = []
+for fi, f in enumerate(FX):
+    fx_, fy_, fz_ = f['origin']
+    for dx_, dy_ in ((300, 0), (-300, 0), (0, 300), (0, -300), (200, 200), (-200, -200), (200, -200), (-200, 200)):
+        gz_ = floor_z_at(fx_ + dx_, fy_ + dy_)
+        if gz_ is None:
+            continue
+        yaw_ = math.degrees(math.atan2(-dy_, -dx_)) % 360
+        pitch_ = -math.degrees(math.atan2(fz_ - (gz_ + 60), math.hypot(dx_, dy_)))
+        FX_VIEWS.append((fi, (fx_ + dx_, fy_ + dy_, gz_, round(yaw_, 2), round(pitch_, 2))))
+        break
+fxv_lines = ['    fxviews[fxviews.size] = iwz_view( "fx_%d", %g, %g, %g, %g, %g );' % (fi, *v) for fi, v in FX_VIEWS]
 for k, (x, y, z, yaw, pitch) in enumerate(SIGN_VIEW_LIST):
     view_lines.append('    views[views.size] = iwz_view( "sign_%d", %g, %g, %g, %g, %g );' % (k, x, y, z, yaw, pitch))
 for k, (x, y, z, yaw, pitch) in enumerate(GALLERY_VIEWS):
@@ -1449,13 +1596,23 @@ fdoor_lines = ['    doors[doors.size] = iwz_door( "%s", %d, %g, %g, %g, %g, %g )
 fdoor_lines.append('    doors[doors.size] = iwz_door( "pap_shutter", 1, 4008, %g, %g, %g, %g );' % (OP['a_control_pap']['a'], OP['a_control_pap']['b'],
                                                                                               OP['a_control_pap']['z0'], OP['a_control_pap']['z1']))
 fx = fx.replace('//@DOORS@', NL.join(fdoor_lines))
-fx = fx.replace('//@VIEWS@', NL.join(view_lines)).replace('//@WALK@', NL.join(walk_lines)).replace('//@PROBES@', NL.join(probe_lines))
+fx = fx.replace('//@VIEWS@', NL.join(view_lines)).replace('//@FXVIEWS@', NL.join(fxv_lines)).replace('//@WALK@', NL.join(walk_lines)).replace('//@PROBES@', NL.join(probe_lines))
 open(os.path.join(out, 'iwzmap_sz2_local.gsc'), 'w', newline=NL).write(fx)
 layout['views'] = VIEWS
 layout['sign_views'] = SIGN_VIEWS
+layout['fx'] = FX
+layout['fx_views'] = FX_VIEWS
+layout['decals'] = DECALS
 layout['sign_view_list'] = SIGN_VIEW_LIST
 layout['walk'] = WALK
 layout['gallery'] = {'materials': GALLERY_ITEMS, 'texels': GALLERY_TEXELS, 'views': GALLERY_VIEWS}
+for e_ in ents:      # named placed models (quest, relays, shutter, lever) for sz2_propcheck.py
+    d_ = dict(e_)
+    if d_.get(K['classname']) == 'script_model' and d_.get(K['targetname'], '').startswith('iwz_') and d_.get(K['model'], 'tag_origin') != 'tag_origin':
+        o_ = [float(v) for v in d_[K['origin']].split()]
+        a_ = [float(v) for v in d_.get(K['angles'], '0 0 0').split()]
+        if o_[2] > -2000:
+            MODELS.append({'zone': None, 'model': d_[K['model']], 'origin': o_, 'yaw': a_[1], 'targetname': d_[K['targetname']]})
 json.dump(layout, open(os.path.join(out, 'layout.json'), 'w'), indent=1, default=list)
 json.dump({'custom': MT.CUSTOM, 'used': sorted(B.used)}, open(os.path.join(out, 'custom_materials.json'), 'w'), indent=1)
 plan = {'regions': [{'name': r['name'], 'zone': r['zone'], 'rect': r['rect']} for r in REGIONS], 'adj': [sorted(a) for a in ADJ],

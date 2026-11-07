@@ -17,7 +17,7 @@ $ErrorActionPreference='Stop'
 $out=Join-Path $Runs $Tag
 $extra='+set vid_width 1920 +set vid_height 1080 +set r_mode 1920x1080 +set cg_fov 65'
 switch($Mode){
-  'views'    { $extra+=' +set paris_iwz_mode views +set paris_iwz_noweapons 1 +set paris_iwz_cmds "cg_draw2D 0"'; if($Only){ $extra+=" +set paris_iwz_only $Only" } }
+  'views'    { $extra+=' +set paris_iwz_mode views +set paris_iwz_noweapons 1 +set paris_iwz_fxhold 1 +set paris_iwz_cmds "cg_draw2D 0"'; if($Only){ $extra+=" +set paris_iwz_only $Only" } }
   'walk'     { $extra+=' +set paris_iwz_mode walk' }
   'gameplay' { $extra+=' +set paris_iwz_gameplay 1 +set paris_iwz_autouse 1 +set developer_script 1' }
 }

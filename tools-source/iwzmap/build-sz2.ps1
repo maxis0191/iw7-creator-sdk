@@ -33,6 +33,12 @@ $full = Get-ChildItem "$W\zt-*.out.log" | Sort-Object LastWriteTime | Select-Obj
 if($full){ Copy-Item $full.FullName "$UmOut.compile.log" -Force -ErrorAction SilentlyContinue }
 if(($c -join "`n") -notmatch 'iwzmap: wrote'){ $c | Select-Object -Last 25; throw 'iwzcompile failed' }
 ($c | Select-String 'iwzmap: wrote|relit|brush models|generated trigger|lightmap').Line | Select-Object -First 30
+if($KeepSubmodels -and (Test-Path "$Src\plan.json")){
+  # gate: compiled trigger volumes must be point-testable and hold their spawners / zone cells (volume_check.py,
+  # volumes agent, SDK codex/iwzmap-volumes 12f2f8f)
+  python -I "$S\volume_check.py" "$W\dump\$Map\maps\cp" $Map --plan "$Src\plan.json" --require-spawners --gap-regions 'portal:a_tunnel_platform_b,portal:d_hall_stair_a,portal:d_platform_tunnel' --json "$UmOut.volume_check.json" | Select-Object -Last 4
+  if($LASTEXITCODE){ throw 'volume_check failed' }
+}
 if($CompileOnly){ return }
 if(Test-Path "$W\zonetool\$Map"){ Remove-Item -LiteralPath "$W\zonetool\$Map" -Recurse -Force }
 python -I "$S\assemble.py" $W $Map "$Src\cp_iwz.gsc" "$D\patch_cp_zmb" "$D\techsets_cp_zmb" "$D\techsets_global_cp" "$D\techsets_global" "$D\cp_zmb" | Select-Object -Last 3

@@ -102,6 +102,11 @@ MATERIALS = {
     'blood_pool':     S('t7_decal_blood_pool_01', 96, collide=False),
     'blood_splat':    S('t7_decal_blood_splatter_01_rvl', 96, collide=False),
     'puddle':         S('water_puddle_tiling_01_rvl', 128, collide=False),
+    # art pass 2 (engine check in the views runs: sz2_propcheck / frames)
+    'ballast':        S('fac_rooftop_ground_01', 128),               # track bed gravel
+    'drip_stain':     S('dirt_stain_water_drips_01', 128, collide=False),
+    'top_stain':      S('dirt_stain_top_01', 128, collide=False),
+    'floor_stain':    S('dirt_water_stain_01', 128, collide=False),
 }
 
 # custom materials written into the map zone (path, stock base material, colour image / constants)
@@ -135,7 +140,7 @@ custom_tint('lamp_green', 'lamp_green', EMISSIVE_BASE, (0.1, 1.0, 0.2, 1.0), emi
 # tinted stock surfaces
 custom_tint('tile_green', 'tile_green', 'dt_tile_ceramic_white', (0.42, 0.62, 0.45, 1.0), su=64)
 custom_tint('tile_cream', 'tile_cream', 'dt_tile_ceramic_white', (1.0, 0.93, 0.78, 1.0), su=64)
-custom_tint('metal_silver', 'metal_silver', 'fac_brushedmetal_02', (0.9, 0.92, 0.95, 1.0), su=128)
+custom_tint('metal_silver', 'metal_silver', 'metal_painted_wall_panel_04', (0.82, 0.85, 0.9, 1.0), su=128)
 custom_tint('carriage_red', 'carriage_red', 'metal_painted_red_01', (0.75, 0.08, 0.06, 1.0), su=128)
 custom_tint('panel_wall_red', 'panel_wall_red', 'metal_painted_wall_panel_04', (1.0, 0.42, 0.38, 1.0), su=128)
 custom_tint('panel_dark_red', 'panel_dark_red', 'metal_panel_dark_01', (1.0, 0.5, 0.46, 1.0), su=128)
@@ -156,7 +161,7 @@ _FAILED = {
     'yellow_line': 'FAILED: renders as an opaque yellow board (v0 techset)',
     'exit_sign': 'PROVEN renders, but the art is a Spaceland "thanks for visiting" sign: not used',
 }
-_UNCHECKED = {'water_stain', 'ceiling_stain', 'leak_stain', 'wall_stain', 'glass'}   # blends, not readable on the gallery's black wall
+_UNCHECKED = {'water_stain', 'ceiling_stain', 'leak_stain', 'wall_stain', 'glass', 'ballast', 'drip_stain', 'top_stain', 'floor_stain'}   # blends, not readable on the gallery's black wall
 for _k, _m in MATERIALS.items():
     if _k in _FAILED:
         _m['verified'] = _FAILED[_k]

@@ -34,7 +34,10 @@ iwz_main()
     }
     mode = getdvar( "paris_iwz_mode" );
     if ( mode == "views" )
+    {
         iwz_views( player );
+        iwz_fx_views( player );
+    }
     else if ( mode == "walk" )
         iwz_walk( player );
     print( "[IWZ local] DONE" );
@@ -60,6 +63,32 @@ iwz_views( player )
         wait 1;
         print( "[IWZ local] VIEW name=" + v.name + "; origin=" + player.origin + "; ground=" + player isonground() + "; angles=" + player getplayerangles() );
     }
+}
+
+iwz_fx_views( player )
+{
+    fxviews = [];
+    //@FXVIEWS@
+    if ( !fxviews.size || getdvar( "paris_iwz_only" ) != "" )
+        return;
+    for ( pass = 0; pass < 2; pass++ )
+    {
+        if ( pass == 1 )
+        {
+            setdvar( "paris_iwz_fxhold", 0 );
+            wait 4;
+        }
+        for ( i = 0; i < fxviews.size; i++ )
+        {
+            v = fxviews[i];
+            player setorigin( v.origin );
+            player setplayerangles( v.angles );
+            wait 1.5;
+            executecommand( "capture_frame iwzv_" + v.name + ( pass ? "_on" : "_off" ) );
+            wait 0.7;
+        }
+    }
+    print( "[IWZ local] FXVIEWS " + fxviews.size );
 }
 
 iwz_view( name, x, y, z, yaw, pitch )

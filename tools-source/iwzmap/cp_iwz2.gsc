@@ -25,6 +25,7 @@ main()
     precachemodel( "beacon_light_plasticcase_red_off" );
     level.dj = spawn( "script_model", ( 0, 0, -3000 ) );
     level.dj setmodel( "tag_origin" );
+//@FXLOAD@
     level._effect["iwz_relay_red"] = loadfx( "vfx/iw7/core/zombie/weapon/shredder/zmb_part_glow_red.vfx" );
     level._effect["iwz_relay_green"] = loadfx( "vfx/iw7/core/zombie/weapon/dischord/zmb_part_glow_green.vfx" );
     level._effect["iwz_rail_arc"] = loadfx( "vfx/iw7/_requests/coop/vfx_mini_grey_shock_arc.vfx" );
@@ -35,6 +36,7 @@ main()
     level thread iwz_wheel_cleanup();
     level thread iwz_pap_quest();
     level thread iwz_third_rail();
+    level thread iwz_ambient_fx();
     level thread iwz_report();
     //@AUDIO@
 }
@@ -375,4 +377,39 @@ iwz_third_rail_run( owner, seconds )
 iwz_in_box( p, lo, hi )
 {
     return p[0] >= lo[0] && p[0] <= hi[0] && p[1] >= lo[1] && p[1] <= hi[1] && p[2] >= lo[2] - 8 && p[2] <= hi[2];
+}
+
+// ambient kit FX (generated table); private test fixture holds them with paris_iwz_fxhold 1 to capture before/after
+iwz_ambient_fx()
+{
+    level endon( "game_ended" );
+    fx = [];
+    //@FXPLACE@
+    wait 2;
+    while ( getdvarint( "paris_iwz_fxhold" ) )
+        wait 0.2;
+    foreach ( f in fx )
+    {
+        f.ent = spawnfx( level._effect[f.name], f.origin );
+        triggerfx( f.ent );
+    }
+    print( "[IWZ level] FX_ON " + fx.size );
+    for ( ;; )
+    {
+        wait 3;
+        foreach ( f in fx )
+        {
+            if ( f.repeat )
+                triggerfx( f.ent );
+        }
+    }
+}
+
+iwz_fx( name, origin, repeat )
+{
+    f = spawnstruct();
+    f.name = name;
+    f.origin = origin;
+    f.repeat = repeat;
+    return f;
 }
