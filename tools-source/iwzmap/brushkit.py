@@ -51,6 +51,11 @@ class Builder:
         otherwise world aligned with the material's texture world size (su, sv) and offsets in repeats."""
         if n is None:
             n = norm(cross(sub(pts[1], pts[0]), sub(pts[2], pts[0])))
+        elif dot(cross(sub(pts[1], pts[0]), sub(pts[2], pts[0])), n) < 0:
+            # winding against the stated normal: collision (one-sided for bullet traces) would face away; reverse
+            pts = [pts[1], pts[0], pts[3], pts[2]]
+            if uvs is not None:
+                uvs = [uvs[1], uvs[0], uvs[3], uvs[2]]
         if t is None:
             t = face_tangent(n)
         spec = self.materials[mat]

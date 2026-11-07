@@ -1145,6 +1145,9 @@ layout = {'zones': {}, 'doors': [], 'spawners': [], 'starts': [], 'interactions'
 for x, y, z, yaw in STARTS:
     ents.append(ent(classname='script_struct', targetname='default_player_start', origin=fmt((x, y, z)), angles='0 %g 0' % yaw))
     layout['starts'].append((x, y, z))
+for k in range(8):
+    ents.append(ent(classname='trigger_use', targetname='player_use_trigger', origin=fmt((-1100 + 60 * k, 3750, 40)),
+                    model='?%d' % (4 + k % 4), dummy='triggermodeldummydefault'))
 ents.append(ent(classname='mp_global_intermission', origin='-400 3500 220', angles='10 270 0'))
 vm = os.environ.get('IWZ_VOLUME_MODEL')
 for k, (zone, zd) in enumerate(ZONES.items()):
@@ -1185,6 +1188,8 @@ blob, info = hkcm_write.encode(col, os.path.join(tpl, 'maps/cp/cp_zmb.d3dbsp.col
 open(os.path.join(out, 'colmap.hkx'), 'wb').write(blob)
 
 for zone, x, y, z, kind, yaw in SPAWNERS:
+    if kind != 'ceiling' and floor_z_at(x, y) is not None:
+        z = floor_z_at(x, y)
     if z is None:
         z = floor_z_at(x, y)
     e = dict(classname='script_struct', targetname=zone + '_spawner', noteworthy='static', angles='0 %g 0' % yaw)

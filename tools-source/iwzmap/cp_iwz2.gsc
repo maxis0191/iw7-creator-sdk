@@ -98,6 +98,10 @@ iwz_zone_links()
     //@LINKS@
     for ( i = 0; i < 600 && !isdefined( level.spawn_volume_array ); i++ )
         wait 0.1;
+    // the adjacency table (level._id_186E) exists once the stock spawning init sets this flag
+    while ( !scripts\engine\utility::flag_exist( "init_adjacent_volumes_done" ) )
+        wait 0.1;
+    scripts\engine\utility::flag_wait( "init_adjacent_volumes_done" );
     foreach ( l in links )
     {
         scripts\cp\zombies\zombies_spawning::update_volume_adjacency_by_name( l[0], l[1] );
