@@ -50,14 +50,11 @@ main()
     // two flags are kept
     level.announcer_vo_playing = 0;
     level.player_vo_playing = 0;
-    // per-map ranked leaderboard rows are keyed by level.script and the ranked player data has no cp_iwz row: every
-    // wave (update_highest_wave_lb) and every kill (updateleaderboardstats) raised getrankedplayerdata errors (QA g18:
-    // 214 per run). Career stats (coopCareerStats) are kept; only the per-map leaderboard rows are skipped.
-    replacefunc( scripts\cp\cp_persistence::update_highest_wave_lb, ::iwz_skip_map_leaderboard5 );
-    replacefunc( scripts\cp\cp_persistence::updateleaderboardstats, ::iwz_skip_map_leaderboard6 );
-    // Director's Cut (Paris module) on a map the stock tables do not list: perkaholic waited on an undefined time and
-    // the PaP "fuses" loop read an undefined machine list (QA g18 minor)
-    replacefunc( scripts\cp\zombies\directors_cut::get_pre_perkaholic_wait_time, ::iwz_dc_perkaholic_wait );
+    // per-map ranked leaderboard rows are keyed by level.script and the ranked player data has no cp_iwz row
+    // (update_highest_wave_lb / updateleaderboardstats errors). g19 replaced those functions with replacefunc from the
+    // level script and players then spawned without their start weapon (the Paris loadout also uses replacefunc):
+    // the map no longer replaces stock functions; the leaderboard errors stay (stock code, no guard on level.script).
+    // Director's Cut (Paris module): the PaP "fuses" loop reads this list on maps the stock tables do not list
     if ( !isdefined( level.player_pap_machines ) )
         level.player_pap_machines = [];
     level.iwz_door_open = [];
@@ -518,17 +515,4 @@ iwz_flicker_lamp()
             level.iwz_flicker_toggles++;
         }
     }
-}
-
-iwz_skip_map_leaderboard5( a, b, c, d, e )
-{
-}
-
-iwz_skip_map_leaderboard6( a, b, c, d, e, f )
-{
-}
-
-iwz_dc_perkaholic_wait()
-{
-    return 9;      // Spaceland value
 }
