@@ -65,11 +65,18 @@ iwz_game_run()
         player scripts\cp\cp_persistence::set_player_currency(5000);
         before = player scripts\cp\cp_persistence::get_player_currency();
         dir = anglestoforward(trig.angles);
-        player setorigin((trig.origin[0] - dir[0] * 56, trig.origin[1] - dir[1] * 56, trig.origin[2] - 24));
-        wait 0.5;
-        face = vectortoangles(trig.origin - player geteye());
-        player setplayerangles((face[0], face[1], 0));
-        wait 0.3;
+        // a player standing 72 units in front of the struct, looking at the door horizontally (the stock FOV test
+        // measures from the feet: aiming the eye down at the low struct fails it)
+        stand = (trig.origin[0] - dir[0] * 72, trig.origin[1] - dir[1] * 72, trig.origin[2] + 40);
+        gt = bullettrace(stand, stand - (0, 0, 400), 0, undefined);
+        player setorigin(gt["position"] + (0, 0, 1));
+        face = vectortoangles(trig.origin - player.origin);
+        player setplayerangles((0, face[1], 0));
+        wait 1;
+        fov = vectordot(anglestoforward(player getplayerangles()), vectornormalize(trig.origin - player.origin)) > cos(25);
+        tr = bullettrace(player geteye(), trig.origin, 0, player);
+        print("[IWZ game] DOORDIAG floor=" + gt["position"] + " player=" + player.origin + " onground=" + player isonground() + " fov=" + fov
+            + " trace=" + tr["fraction"] + " hit=" + tr["position"] + " struct=" + trig.origin);
         usable = player scripts\cp\cp_interaction::_id_9C64(player, trig);
         if (!scripts\engine\utility::array_contains(level.current_interaction_structs, trig))
             scripts\cp\cp_interaction::add_to_current_interaction_list(trig);
@@ -150,8 +157,19 @@ iwz_game_run()
         player setorigin(w.origin + anglestoforward(w.angles) * 50 + (0, 0, 1));
         wait 0.5;
         w notify("trigger", player);
-        wait 9;
-        w notify("trigger", player);
+        // stock spin: 5 s rotation, then the won weapon (script_weapon w.weapon at the wheel_fx_spot) is made usable
+        // for the spinning player; taking it is a Use on that weapon entity
+        wait 6.5;
+        spot = "none";
+        if (isdefined(w.weapon))
+            spot = "" + w.weapon.origin;
+        print("[IWZ game] WHEELSPIN weapon_ent=" + isdefined(w.weapon) + " at=" + spot);
+        if (isdefined(w.weapon))
+        {
+            player setorigin(w.weapon.origin + anglestoforward(w.angles) * 40 - (0, 0, 50));
+            wait 0.3;
+            w.weapon notify("trigger", player);
+        }
         wait 2;
         wa = player getweaponslistprimaries();
         got = "";
@@ -290,9 +308,14 @@ iwz_stair_climb(player, zone, bottom, top)
     nearest = 99999;
     t0 = gettime();
     reached = 0;
+    trail = "";
+    tick = 0;
     while (gettime() - t0 < 35000 && isdefined(z) && isalive(z))
     {
         player.health = player.maxhealth;
+        if (tick % 2 == 0)
+            trail = trail + int(z.origin[0]) + "," + int(z.origin[1]) + "," + int(z.origin[2]) + " ";
+        tick++;
         d = distance(z.origin, player.origin);
         if (d < nearest)
             nearest = int(d);
@@ -306,6 +329,7 @@ iwz_stair_climb(player, zone, bottom, top)
     zend = (0, 0, 0);
     if (isdefined(z))
         zend = z.origin;
+    print("[IWZ game] STAIRTRAIL " + zone + " " + trail);
     print("[IWZ game] STAIR " + zone + " reached=" + reached + " nearest=" + nearest + " seconds=" + int((gettime() - t0) / 1000) + " start=" + start + " end=" + zend);
     if (isdefined(z) && isalive(z))
         z dodamage(z.health + 1000, z.origin);
