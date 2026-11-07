@@ -59,7 +59,7 @@ CELL = 32
 ZONES = {
     'ticket_hall':    {'box': (-1200, 3200, -16, 400, 4600, 336), 'probe': (1.00, 1.04, 1.12, 0.6)},
     'stair_a':        {'box': (-800, 2400, -336, -400, 3200, 304), 'probe': (0.92, 0.96, 1.04, 0.6)},
-    'platform_a':     {'box': (-2400, 1200, -400, 2600, 2400, 16), 'probe': (0.80, 0.98, 1.10, 0.6)},
+    'platform_a':     {'box': (-2400, 1200, -400, 2400, 2400, 16), 'probe': (0.80, 0.98, 1.10, 0.6)},
     'maint_corridor': {'box': (2400, 1680, -336, 3200, 2400, -80), 'probe': (1.20, 0.86, 0.50, 0.6)},
     'generator_room': {'box': (2600, 2400, -336, 3800, 3200, 48), 'probe': (1.30, 0.92, 0.52, 0.7)},
     'control_room':   {'box': (2600, 3200, -336, 3600, 4160, -16), 'probe': (1.10, 0.30, 0.26, 0.5)},
@@ -772,7 +772,9 @@ B.wall_plane(Z, 'y', 2400, -1, 1584, 1600, PIT_Z, PCEIL, 'tile_white')
 B.wall_plane(Z, 'y', 2400, -1, 1216, 1584, -128, PCEIL, 'tile_white')
 B.box((2392, 1200, -144), (2400, 1600, -120), 'conc_painted', Z, collide=False, nav=False)
 room(Z, 'recess', (2400, 1216, 2592, 1584), PIT_Z, -128, 'tunnel', 'conc_dark', 'conc_dark', skip=('west',))
-B.wall_plane(Z, 'y', 2560, -1, 1216, 1584, PIT_Z, -128, 'grate', collide=True)
+B.wall_plane(Z, 'y', 2560, -1, 1216, 1584, PIT_Z, -128, 'grate', collide=False)
+B.wall_plane(Z, 'y', 2410, -1, 1216, 1584, PIT_Z, -128, 'grate', collide=False)
+B.collision_quad([(2410, 1216, PIT_Z), (2410, 1584, PIT_Z), (2410, 1584, -128), (2410, 1216, -128)], n=(-1, 0, 0))
 geo_prop('recess_grate', Z, (2556, 1216, PIT_Z), (2564, 1584, -128))
 B.wall_plane(Z, 'y', 2591, -1, 1216, 1584, PIT_Z, -128, 'black', collide=False)
 floor(Z, 'conc_dark', 2400, 1216, 2592, 1584, PIT_Z, tone='dark')
@@ -919,9 +921,9 @@ region('deck', Z, (-2400, 1760, 2400, 2400), DECK_Z, (16, 0, 16, 16))
 region('deck_mid', Z, (-2192, 1600, 1904, 1760), DECK_Z, (0, 0, 0, 0))
 region('deck_east', Z, (2112, 1600, 2400, 1760), DECK_Z, (0, 0, 16, 0))
 region('pit', Z, (-2400, 1200, 2400, 1600), PIT_Z, (0, 16, 0, 16))
-region('recess', Z, (2400, 1216, 2560, 1584), PIT_Z, (0, 16, 16, 16))
+
 for a, b_ in (('deck', 'deck_mid'), ('deck', 'deck_east'), ('deck', 'well_w'), ('deck', 'well_e'), ('deck_mid', 'well_w'),
-              ('deck_mid', 'well_e'), ('deck_east', 'well_e'), ('pit', 'well_w'), ('pit', 'well_e'), ('pit', 'recess')):
+              ('deck_mid', 'well_e'), ('deck_east', 'well_e'), ('pit', 'well_w'), ('pit', 'well_e')):
     adjacent(a, b_)
 for a, b in CAR_DOORS:     # car doors: portals between the coping and the car interior
     nm = region('portal:car%d' % a, Z, (a + 12, 1560, b - 12, 1608), DECK_Z, (0, 0, 0, 0))
@@ -1328,7 +1330,7 @@ os.makedirs(sys.argv[2], exist_ok=True)
 tpl, out = sys.argv[1], sys.argv[2]
 
 # nav cells: one z per 32-unit cell from the region list (first region wins), minus solid blockers
-cells, owner = {}, {}
+cells, owner, corner_z = {}, {}, {}
 for r in REGIONS:
     x0, y0, x1, y1 = r['rect']
     mw, ms, me, mn = r['m']
@@ -1348,6 +1350,9 @@ for r in REGIONS:
                 continue
             cells[(i, j)] = round(z, 2)
             owner[(i, j)] = r['name']
+            if callable(r['z']):
+                corner_z[(i, j)] = tuple(round(r['z'](x_, y_), 2) for x_, y_ in ((i * CELL, j * CELL), ((i + 1) * CELL, j * CELL),
+                                                                                  ((i + 1) * CELL, (j + 1) * CELL), (i * CELL, (j + 1) * CELL)))
 
 
 def link(a, b):
@@ -1355,7 +1360,7 @@ def link(a, b):
     return oa == ob or frozenset((oa, ob)) in ADJ
 
 
-nav, nareas = mapgen.nav_graph(cells, CELL, link)
+nav, nareas = mapgen.nav_graph(cells, CELL, link, corner_z)
 open(os.path.join(out, 'navgraph.bin'), 'wb').write(nav)
 REGION_ZONE = {r['name']: r['zone'] for r in REGIONS}
 
@@ -1381,7 +1386,7 @@ SPAWNERS = [   # >= 48 from walls/props, inside the zone volume, on the navmesh 
     ('ticket_hall', -1136, 3300, 0, 'wall', 0), ('ticket_hall', 336, 3300, 0, 'wall', 180), ('ticket_hall', -400, 4300, 320, 'ceiling', 270),
     ('stair_a', -600, 2460, -320, 'ground', 90), ('stair_a', -700, 2470, -320, 'ground', 90), ('stair_a', -500, 2470, -320, 'ground', 90),
     ('stair_a', -600, 3150, 0, 'ground', 270), ('stair_a', -752, 2800, None, 'wall', 0), ('stair_a', -600, 3140, 288, 'ceiling', 270),
-    ('platform_a', 2520, 1300, -384, 'ground', 180), ('platform_a', 2520, 1500, -384, 'ground', 180),
+    ('platform_a', 2340, 1300, -384, 'ground', 180), ('platform_a', 2340, 1500, -384, 'ground', 180),
     ('platform_a', -2300, 1280, -384, 'ground', 0), ('platform_a', -1600, 2352, -320, 'wall', 270),
     ('platform_a', 1600, 2352, -320, 'wall', 270), ('platform_a', 800, 2200, -320, 'ground', 270),
     ('platform_a', -1300, 1700, -320, 'ground', 90), ('platform_a', 1500, 1300, -384, 'ground', 90),

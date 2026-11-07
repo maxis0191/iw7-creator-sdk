@@ -5,9 +5,11 @@ main()
     level.iwz_custom_map = 2;
     scripts\mp\mp_agent::init_agent( "mp/default_agent_definition.csv" );
     scripts\mp\agents\zombie\zombie_agent::registerscriptedagent();
+    scripts\mp\agents\zombie_brute\zombie_brute_agent::registerscriptedagent();     // Spaceland registerscriptedagents()
     level.coop_weapontable = "cp/cp_weapontable.csv";
     level.disable_zombie_exo_abilities = 1;
     level.use_adjacent_volumes = 1;
+    scripts\mp\agents\zombie_clown\zombie_clown::zombie_clown_init();      // Spaceland main(): clown event waves (QA g11 stall)
     level.spawn_fx_func = scripts\cp\maps\cp_zmb\cp_zmb::cp_zmb_spawn_fx_func;
     //@INITIAL@
     level.map_interaction_func = ::iwz_register_interactions;
@@ -372,7 +374,7 @@ iwz_third_rail_run( owner, seconds )
             {
                 if ( isdefined( z ) && isalive( z ) && iwz_in_box( z.origin, lo, hi ) )
                 {
-                    z dodamage( z.health + 1000, z.origin, owner, owner, "MOD_UNKNOWN" );
+                    z dodamage( z.health + 1000, z.origin );      // no attacker: trap kills skip the usermap leaderboard
                     kills++;
                 }
             }
