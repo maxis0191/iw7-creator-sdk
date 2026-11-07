@@ -44,16 +44,12 @@ main()
     level._effect["iwz_relay_green"] = loadfx( "vfx/iw7/core/zombie/weapon/dischord/zmb_part_glow_green.vfx" );
     level._effect["iwz_rail_arc"] = loadfx( "vfx/iw7/_requests/coop/vfx_mini_grey_shock_arc.vfx" );
     level._effect["iwz_rail_spark"] = loadfx( "vfx/iw7/core/zombie/vfx_zmb_console_sparks.vfx" );
-    // Spaceland main() voice set-up (QA g18: ~1,150 vo_is_playing errors per run from player_pain_vo /
-    // codecallback_playerdamage and the trap): zmb_vo_init clears level.announcer_vo_playing / level.player_vo_playing
-    // and registers the map VO handlers; the area / team-buy VO and character VO prefixes as in Spaceland
-    level.purchase_area_vo = scripts\cp\maps\cp_zmb\cp_zmb_vo::purchase_area_vo;
-    level.team_buy_vos = scripts\cp\maps\cp_zmb\cp_zmb_vo::purchase_team_buy_vos;
-    level.cac_vo_male = scripts\engine\utility::array_randomize( [ "p1_", "p3_" ] );
-    level.cac_vo_female = scripts\engine\utility::array_randomize( [ "p2_" ] );
+    // voice state flags vo_is_playing reads (QA g18: ~1,150 vo_is_playing errors per run from player_pain_vo /
+    // codecallback_playerdamage and the trap); Spaceland's zmb_vo_init sets them to 0. g19 called the full Spaceland
+    // VO set-up (zmb_vo_init, cac VO prefixes, area VO) and players spawned without their start weapon: only the
+    // two flags are kept
     level.announcer_vo_playing = 0;
     level.player_vo_playing = 0;
-    level thread scripts\cp\maps\cp_zmb\cp_zmb_vo::zmb_vo_init();
     // per-map ranked leaderboard rows are keyed by level.script and the ranked player data has no cp_iwz row: every
     // wave (update_highest_wave_lb) and every kill (updateleaderboardstats) raised getrankedplayerdata errors (QA g18:
     // 214 per run). Career stats (coopCareerStats) are kept; only the per-map leaderboard rows are skipped.
