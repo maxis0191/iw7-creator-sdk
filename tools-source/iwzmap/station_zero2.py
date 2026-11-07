@@ -1808,6 +1808,8 @@ for gx in (PAP_ARCH['a'] - 28, PAP_ARCH['a'] - 28 + 156):
 SMODELS = os.environ.get('IWZ_SMODELS') == '1'
 smodel_lines = []
 for d in DECOR:
+    if os.environ.get('IWZ_KIT_BASELINE') == '1' and d['model'] in KIT_MODELS:
+        continue     # kit proof baseline: the same map (placements, clips, views) without the imported models
     if SMODELS and d['model'] not in KIT_MODELS:
         x_, y_, z_ = d['origin']
         smodel_lines.append('%s %g %g %g 0 %g 0 1' % (d['model'], x_, y_, z_, d.get('yaw', 0)))
