@@ -275,8 +275,15 @@ SPACE_ZONE = {'hall': 'ticket_hall', 'street': 'ticket_hall', 'stair_a': 'stair_
 
 
 # ============================================================================ helpers for details
+STRIP_COUNT = {}
+DIM = os.environ.get('IWZ_DIM', '1') == '1'     # g25 mood pass: half the fluorescents are dead, in clusters
+
+
 def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=6, dead=False):
     """Ceiling fluorescent fitting: a steel housing with an emissive diffuser underneath (dead: dark diffuser, no light)."""
+    k_ = STRIP_COUNT[zone] = STRIP_COUNT.get(zone, -1) + 1
+    if DIM and mat in ('lamp_cool', 'lamp_warm') and (k_ % 3 == 1 if zone.startswith('stair') else k_ % 4 in (1, 2)):
+        dead = True
     if dead:
         mat = 'panel_dark'
     B.box((x0 - 3, y0 - 3, z - depth), (x1 + 3, y1 + 3, z), {'side': 'steel_trim', 'top': 'steel_trim'}, zone,
@@ -285,8 +292,10 @@ def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=6, dead=False):
            n=(0, 0, -1), uvs=[(0, 0), (1, 0), (1, 1), (0, 1)], collide=False)
     if dead:
         return
+    coloured = mat not in ('lamp_cool', 'lamp_warm', 'light_panel')
     LIGHTS.append({'zone': zone, 'origin': ((x0 + x1) / 2, (y0 + y1) / 2, z - depth - 4), 'type': 'omni',
-                   'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 384, 'intensity': 1.0, 'fixture': mat})
+                   'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 96 if coloured else 384,
+                   'intensity': 0.5 if coloured else 1.0, 'fixture': mat})
 
 
 def wall_lamp(zone, axis, fixed, facing, s, z, mat='lamp_warm', w=24, h=12):
@@ -303,8 +312,9 @@ def wall_lamp(zone, axis, fixed, facing, s, z, mat='lamp_warm', w=24, h=12):
         pts = [(x, s - w / 2 * facing, z), (x, s + w / 2 * facing, z), (x, s + w / 2 * facing, z + h), (x, s - w / 2 * facing, z + h)]
         B.quad(mat, zone, pts, n=(facing, 0, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
         o = (fixed + facing * 12, s, z + h / 2)
-    LIGHTS.append({'zone': zone, 'origin': o, 'type': 'omni', 'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 320,
-                   'intensity': 1.0, 'fixture': mat})
+    coloured = mat not in ('lamp_cool', 'lamp_warm', 'light_panel')
+    LIGHTS.append({'zone': zone, 'origin': o, 'type': 'omni', 'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 96 if coloured else 320,
+                   'intensity': 0.5 if coloured else 1.0, 'fixture': mat})
 
 
 def sign(zone, key, axis, fixed, facing, s, zc, width, height=None, frame=True, depth=1.5):
@@ -643,7 +653,7 @@ MODELS = []        # other placed models (quest, relay, shutter, lever) for sz2_
 
 def geo_prop(name, zone, mn, mx):
     GEO_PROPS.append({'name': name, 'zone': zone, 'mins': mn, 'maxs': mx})
-LIGHT_COLOR = {'lamp_cool': (0.85, 0.93, 1.0), 'lamp_warm': (1.0, 0.80, 0.58), 'lamp_red': (1.0, 0.06, 0.04),
+LIGHT_COLOR = {'lamp_cool': (0.85, 0.93, 1.0), 'lamp_warm': (1.0, 0.86, 0.70), 'lamp_red': (1.0, 0.06, 0.04),
                'lamp_green': (0.1, 1.0, 0.2), 'light_panel': (1, 1, 1)}
 SIGNS = []
 PROPS = []         # static models from the asset kit: {'zone', 'model', 'origin', 'angles', 'scale', 'collision'}
@@ -1002,9 +1012,8 @@ Z = 'platform_b'
 room(Z, 'platform_b', (-3600, 2600, -2064, 3400), -384, -32, 'old', 'herringbone', 'deck_black')
 for x in range(-3500, -2064, 256):
     B.box((x - 8, 2600, -56), (x + 8, 3400, -32), 'ibeam', Z, collide=False, nav=False)
-for x in (-3300, -2800, -2300):
-    for y in (2800, 3200):
-        strip_light(Z, x - 48, y - 6, x + 48, y + 6, -56, mat='lamp_warm')
+strip_light(Z, -2800 - 48, 3000 - 6, -2800 + 48, 3000 + 6, -56, mat='lamp_warm')     # the one bare light of the old station
+strip_light(Z, -3300 - 48, 2800 - 6, -3300 + 48, 2800 + 6, -56, mat='lamp_warm', dead=True)
 # boarded windows on the north wall
 for x in (-3400, -3000, -2600):
     B.wall_plane(Z, 'x', 3399, -1, x - 80, x + 80, -260, -120, 'brick_gray', collide=False)     # bricked-up window behind the boards
@@ -1287,7 +1296,13 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
                                             ('generator_room', 2604, 2800, -120, 0, (1.0, 0.45, 0.1)),
                                             ('generator_room', 3200, 3180, -120, 270, (1.0, 0.25, 0.08)),
                                             ('service_tunnel', -3596, 2400, -150, 0, (1.0, 0.25, 0.08)),
-                                            ('service_tunnel', -2700, 1220, -150, 90, (1.0, 0.45, 0.1))):
+                                            ('service_tunnel', -2700, 1220, -150, 90, (1.0, 0.45, 0.1)),
+                                            ('ticket_hall', -1196, 3500, 250, 0, (1.0, 0.45, 0.1)),
+                                            ('ticket_hall', -900, 4396, 250, 270, (1.0, 0.25, 0.08)),
+                                            ('platform_a', 1500, 2396, -150, 270, (1.0, 0.45, 0.1)),
+                                            ('platform_a', -1500, 2396, -150, 270, (1.0, 0.25, 0.08)),
+                                            ('control_room', 3596, 3600, -100, 180, (1.0, 0.25, 0.08)),
+                                            ('platform_b', -2900, 3396, -150, 270, (1.0, 0.45, 0.1))):
             dec_(zn_, 'clk_emergency_light', x_, y_, z_, yaw_)
             LIGHTS.append({'zone': zn_, 'origin': (x_, y_, z_ - 10), 'type': 'omni', 'color': col_, 'radius': 160, 'intensity': 0.6,
                            'fixture': 'emergency'})

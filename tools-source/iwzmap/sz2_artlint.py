@@ -28,6 +28,8 @@ Rules (lead / owner review of g24):
                    decor clip box (review A7: board through a crate, signs on lamps and pipes)
   sign-dupe        the same sign image twice within 600 units in one zone (review A8: stacked duplicate signs)
   stair-tactile    tactile paving on more than two tread heights of one stair (review C: all-yellow treads)
+  colour-cast      a baked coloured light (channel spread > 0.4) without a fixture or with a radius over 192
+                   (reviews A9/B: red, green, pink and mustard casts with no visible source)
 Exit status 1 when any rule fails.
 """
 import argparse, json, os, sys
@@ -85,6 +87,10 @@ def main():
     for zone, zs in grip_treads.items():
         if len(zs) > 2:
             fails.append('stair-tactile %s has tactile paving on %d tread heights' % (zone, len(zs)))
+    for l in lay.get('lights', []):
+        col = l.get('color', (1, 1, 1))
+        if max(col) - min(col) > 0.4 and (not l.get('fixture') or l.get('radius', 384) > 192):
+            fails.append('colour-cast %s light in %s at %s radius %s' % (l.get('fixture'), l['zone'], l['origin'], l.get('radius')))
     for k, m in SM.MATERIALS.items():
         if m.get('custom') or not m.get('img'):
             continue
