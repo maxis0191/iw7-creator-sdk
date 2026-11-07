@@ -107,3 +107,16 @@ the distance sweep, the Use activation and the song. Then:
 ```
 python audio_measure.py run --rec <run>/audio.wav --log <run>/result.local.json --song abracadavre.flac --hint meteor_loop.flac --activate meteor_affirm.flac --out report.json --plot hint_falloff.png
 ```
+
+## Status of the in-game witness (runs w4..w6, rc1 lab world, 2026-11-07)
+
+PROVEN in game: song (xcorr 1.000), activation (0.988, pitch 1.0), hint loop falloff (audible 60..500, silent
+>= 600), lone train rumble (-40.8 / -43.4 / -51.3 dBFS at 700 / 1500 / 3000 units, silent at 4600), stock wave
+start stinger after WAVE_START (0.898), area/zone switching lines, bear drawn textured at BO3 scale after the
+x64-zt-extensions normals and LOD-order repairs (`iw7_xsurface_normals.py`, `iw7_xmodel_lods.py`).
+FAILED: 2D beds. Any alias on channel `amb_bed_2d` / vol_mod `ambience` stays silent in the usermap, streamed or
+loaded, played with playlocalsound or as a sound-zone bed; the zone switch itself is accepted. Next step:
+re-template the bed loops on an audible 2D row or find what mutes that channel. Hold-Use from real input:
+console `+activate` and a test client's `botpressbutton("use")` never reach `usebuttonpressed()` in the local
+session; the module's Use path is witnessed through its scripted override (reach, look cone, trace, hold).
+
