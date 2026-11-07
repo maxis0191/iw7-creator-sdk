@@ -237,22 +237,30 @@
       {
         "name": "cp_iwz",
         "copy": "cp_zmb_basement_lg_room",
-        "ambience": "amb_iwz_bed_station"
+        "ambience": "amb_iwz_bed_station",
+        "no_mix": true,
+        "comment": "Spaceland basement row without basement_mix: with it the zone bed played digitally silent (run f1, 2026-11-07); ice-cave rows have no mix and play"
       },
       {
         "name": "iwz_station",
         "copy": "cp_zmb_basement_lg_room",
-        "ambience": "amb_iwz_bed_station"
+        "ambience": "amb_iwz_bed_station",
+        "no_mix": true,
+        "comment": "Spaceland basement row without basement_mix: with it the zone bed played digitally silent (run f1, 2026-11-07); ice-cave rows have no mix and play"
       },
       {
         "name": "iwz_stairs",
         "copy": "cp_zmb_basement_med_hallway",
-        "ambience": "amb_iwz_bed_station"
+        "ambience": "amb_iwz_bed_station",
+        "no_mix": true,
+        "comment": "Spaceland basement row without basement_mix: with it the zone bed played digitally silent (run f1, 2026-11-07); ice-cave rows have no mix and play"
       },
       {
         "name": "iwz_service",
         "copy": "cp_zmb_basement_med_room",
-        "ambience": "amb_iwz_bed_station"
+        "ambience": "amb_iwz_bed_station",
+        "no_mix": true,
+        "comment": "Spaceland basement row without basement_mix: with it the zone bed played digitally silent (run f1, 2026-11-07); ice-cave rows have no mix and play"
       },
       {
         "name": "iwz_platform",
