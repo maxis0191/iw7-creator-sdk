@@ -4,6 +4,8 @@
 //   retrigger  spawnfx once, triggerfx again every min seconds
 //   interval   playfx every randomfloatrange( min, max ) seconds
 //   oneshot    playfx once
+//   flicker    looping effect switched off/on in short stutters every randomfloatrange( min, max ) seconds (a dying
+//              lamp's glow; same rhythm as iwz_flicker's lamp models)
 // Private proof runs only (dvar paris_iwz_fxproof set by the fixture command line): paris_iwz_fxonly selects the
 // running effects (-1 all, -2 none, k only effect k), polled every 0.1 s. A normal match never polls.
 iwz_fx_main()
@@ -70,6 +72,8 @@ iwz_fx_start( f )
             f thread iwz_fx_retrigger();
         }
     }
+    else if ( f.mode == "flicker" )
+        f thread iwz_fx_flicker();
     else
         f thread iwz_fx_plays();
 }
@@ -93,6 +97,28 @@ iwz_fx_retrigger()
         wait self.a;
         if ( isdefined( self.ent ) )
             triggerfx( self.ent );
+    }
+}
+
+iwz_fx_flicker()
+{
+    self endon( "iwz_fx_stop" );
+    level endon( "game_ended" );
+    self.ent = spawnfx( level._effect[self.key], self.origin, self.fwd, self.up );
+    triggerfx( self.ent );
+    for ( ;; )
+    {
+        wait randomfloatrange( self.a, self.b );
+        n = randomintrange( 2, 5 );
+        for ( i = 0; i < n; i++ )
+        {
+            self.ent delete();
+            self.ent = undefined;
+            wait randomfloatrange( 0.05, 0.15 );
+            self.ent = spawnfx( level._effect[self.key], self.origin, self.fwd, self.up );
+            triggerfx( self.ent );
+            wait randomfloatrange( 0.05, 0.2 );
+        }
     }
 }
 

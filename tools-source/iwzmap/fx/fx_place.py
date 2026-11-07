@@ -17,6 +17,7 @@ fx.txt: one effect per line, '#' starts a comment, fields separated by blanks:
   mode=retrigger:<s>         spawnfx once, triggerfx again every <s> seconds (non-looping assets as ambience)
   mode=interval:<a>-<b>      playfx every random a..b seconds (sparks, debris dust, flicker bursts)
   mode=oneshot               playfx once at start
+  mode=flicker:<a>-<b>       looping effect stuttering off/on every random a..b seconds (dying lamp glow)
   delay=<s>                  loop: triggerfx time offset (stock createfx uses -4: the emitter starts pre-rolled);
                              interval/oneshot: wait before the first play
   view=x,y,z,yaw,pitch       proof camera (player origin = feet); default: candidates computed from the layout zone
@@ -80,6 +81,9 @@ def parse_fx_txt(path, catalog):
         if m.startswith('interval:'):
             a, b = m.split(':', 1)[1].split('-')
             e['mode'], e['min'], e['max'] = 'interval', float(a), float(b)
+        elif m.startswith('flicker:'):
+            a_, b_ = m.split(':', 1)[1].split('-')
+            e['mode'], e['min'], e['max'] = 'flicker', float(a_), float(b_)
         elif m.startswith('retrigger:'):
             e['mode'], e['min'] = 'retrigger', float(m.split(':', 1)[1]); e['max'] = e['min']
         elif m in ('loop', 'oneshot'):
