@@ -18,13 +18,14 @@ techsets_<zone>, which it loads first).
 A material, image or techset already present in the zone csv (full or `,name` reference) is shared: the template map's
 zones provide it at runtime and nothing is linked for it.
 
-usage: kit_import.py <work dir> <map> --dump <zone>=<dump root> [--dump ...] (--models a,b,c | --kit kit_final.json
+usage: kit_import.py <work dir> <map> --dump <zone>=<dump root>[;<root>...] [--dump ...] (--models a,b,c | --kit kit_final.json
        [--tier core] [--zones cp_disco,cp_final]) [--report report.json] [--dry-run]
 Exit 1 when a model, surface, material, state file or image is missing (nothing is written to the csv then).
 """
 import argparse, json, os, re, sys
 
 WORLD_FIRST = 'com_map,'
+BADPATH = set(':*?"<>|\\')                     # strings of the .xmb that cannot be asset file names
 
 
 def strings_of(path, minlen=3):
@@ -44,8 +45,33 @@ def main(argv=None):
     ap.add_argument('--dry-run', action='store_true')
     a = ap.parse_args(argv)
 
-    dumps = dict(d.split('=', 1) for d in a.dump)
-    dst = os.path.join(a.work, 'zonetool', a.map)
+    dumps = {}                                  # zone -> [dump roots], searched in order
+    for d in a.dump:
+        z, roots = d.split('=', 1)
+        dumps.setdefault(z, []).extend(r for r in roots.split(';') if r)
+
+    def find(zone, rel):
+        for r in dumps.get(zone or '', []):
+            p = os.path.join(r, rel)
+            if os.path.isfile(p):
+                return p
+        return None
+
+    listing = {}
+
+    def find_all(zone, sub, stem):
+        """files <sub>/<stem> and <sub>/<stem>.<ext> of the first root that has any"""
+        for r in dumps.get(zone or '', []):
+            d = os.path.join(r, sub, os.path.dirname(stem))
+            if d not in listing:
+                listing[d] = os.listdir(d) if os.path.isdir(d) else []
+            b = os.path.basename(stem)
+            hit = [f for f in listing[d] if f == b or f.startswith(b + '.')]
+            if hit:
+                return [(os.path.join(d, f), os.path.join(sub, os.path.dirname(stem), f)) for f in hit]
+        return []
+
+    dst =os.path.join(a.work, 'zonetool', a.map)
     csvp = os.path.join(a.work, 'zone_source', a.map + '.csv')
     lines = open(csvp).read().splitlines()
     have = {}                                   # (type, name) -> 'full' | 'ref'
@@ -68,7 +94,7 @@ def main(argv=None):
         if ':' in n:
             z, n = n.split(':', 1); models[n] = z
         elif n not in models:
-            hit = [z for z, r in dumps.items() if os.path.isfile(os.path.join(r, 'xmodel', n + '.xmb'))]
+            hit = [z for z in dumps if find(z, os.path.join('xmodel', n + '.xmb'))]
             models[n] = hit[0] if hit else None
 
     plan = []                                   # (src, dst) links
@@ -81,31 +107,29 @@ def main(argv=None):
         plan.append((src, os.path.join(dst, rel)))
 
     for name, zone in sorted(models.items()):
-        root = dumps.get(zone or '')
-        if not root:
+        if not dumps.get(zone or ''):
             missing.append('zone dump for %s (%s)' % (name, zone)); continue
         if ('xmodel', name) in have:
             rep['models'][name] = {'zone': zone, 'status': 'already in zone (%s)' % have[('xmodel', name)]}
             continue
-        xm = os.path.join(root, 'xmodel', name + '.xmb')
-        if not os.path.isfile(xm):
+        xm = find(zone, os.path.join('xmodel', name + '.xmb'))
+        if not xm:
             missing.append('xmodel:' + name); continue
         info = {'zone': zone, 'surfaces': [], 'materials': [], 'physics': []}
-        for f in os.listdir(os.path.join(root, 'xmodel')):
+        xdir = os.path.dirname(xm)
+        for f in os.listdir(xdir):
             if f == name + '.xmb' or (f.startswith(name + '_lod') and f.endswith('.hkx')):
-                add(os.path.join(root, 'xmodel', f), os.path.join('xmodel', f))
+                add(os.path.join(xdir, f), os.path.join('xmodel', f))
         strs = set(strings_of(xm))
         for s in sorted(strs):
-            xs = os.path.join(root, 'xsurface', s + '.xsb')
-            if os.path.isfile(xs):
+            xs = find(zone, os.path.join('xsurface', s + '.xsb'))
+            if xs:
                 add(xs, os.path.join('xsurface', s + '.xsb')); info['surfaces'].append(s)
                 rep['surfaceBytes'] += os.path.getsize(xs)
             for sub in ('physicsasset', 'physicsfxshape', 'proceduralbones'):
-                d = os.path.join(root, sub)
-                if os.path.isdir(d) and s and os.path.isfile(os.path.join(d, s)):
-                    add(os.path.join(d, s), os.path.join(sub, s)); info['physics'].append(sub + ':' + s)
-            mj = os.path.join(root, 'materials', s + '.json')
-            if os.path.isfile(mj):
+                for pp, rel in (find_all(zone, sub, s) if s and not set(s) & BADPATH else []):
+                    add(pp, rel); info['physics'].append(rel.replace(os.sep, '/'))
+            if find(zone, os.path.join('materials', s + '.json')):
                 info['materials'].append(s)
         if not info['surfaces']:
             missing.append('xsurface:' + name)
@@ -115,7 +139,7 @@ def main(argv=None):
             seen_mat.add(mat)
             if ('material', mat) in have:
                 rep['materials']['shared'].append(mat); continue
-            mj = os.path.join(root, 'materials', mat + '.json')
+            mj = find(zone, os.path.join('materials', mat + '.json'))
             md = json.load(open(mj))
             add(mj, os.path.join('materials', mat + '.json'))
             rep['materials']['new'].append(mat)
@@ -124,8 +148,8 @@ def main(argv=None):
                 for sub, exts, need in (('state', ('.stateinfo', '.statebits', '.statebitsmap'), ('.statebits', '.statebitsmap')),
                                         ('constantbuffer', ('.cbi', '.cbt'), ())):
                     for ext in exts:
-                        p = os.path.join(root, 'techsets', sub, tech, mat + ext)
-                        if os.path.isfile(p):
+                        p = find(zone, os.path.join('techsets', sub, tech, mat + ext))
+                        if p:
                             add(p, os.path.join('techsets', sub, tech, mat + ext))
                         elif ext in need or (sub == 'constantbuffer' and md.get('constantTable')):
                             missing.append('%s %s/%s%s' % (sub, tech, mat, ext))
@@ -142,8 +166,8 @@ def main(argv=None):
                 seen_img.add(img)
                 if ('image', img) in have:
                     rep['images']['shared'] += 1; continue
-                ip = os.path.join(root, 'images', img + '.iw7Image')
-                if not os.path.isfile(ip):
+                ip = find(zone, os.path.join('images', img + '.iw7Image'))
+                if not ip:
                     missing.append('image:' + img); continue
                 add(ip, os.path.join('images', img + '.iw7Image'))
                 rep['images']['new'] += 1; rep['images']['bytes'] += os.path.getsize(ip)
