@@ -371,7 +371,7 @@ ambience_stop()
     {
         if ( isdefined( player ) && isdefined( player.iwz_bed ) )
         {
-            player stoplocalsound( player.iwz_bed );
+            player iwz_bed_stop();
             player.iwz_bed = undefined;
         }
     }
@@ -472,6 +472,35 @@ iwz_ambience_bed_watch()
 
 // one bed per player: the bed of the zone the player stands in (else the default bed), restarted after a
 // respawn, switched when the player crosses into a zone with another bed
+// A per-player 2D bed: the bank ships it as a NONLOOPING clip (seamless loop + its first bed_overlap seconds,
+// faded in over the head and out over the tail: iwz_audio_bank.py "retrigger_overlap"), started again every
+// (length - bed_overlap) seconds so consecutive copies cross-fade back into the loop. playlocalsound refuses a
+// looping alias (script runtime error, silence) and the engine's sound-zone bed stays silent in a usermap.
+iwz_bed_loop( alias )
+{
+    self endon( "disconnect" );
+    self endon( "iwz_bed_stop" );
+    level endon( "game_ended" );
+    level endon( "iwz_ambience_stop" );
+    overlap = iwz_opt( level.iwz_bed_overlap, 2.0 );
+    period = lookupsoundlength( alias ) / 1000.0 - overlap;
+    if ( period < 1.0 )
+        period = 1.0;
+
+    for (;;)
+    {
+        self playlocalsound( alias );
+        wait( period );
+    }
+}
+
+iwz_bed_stop()
+{
+    self notify( "iwz_bed_stop" );
+    if ( isdefined( self.iwz_bed ) )
+        self stoplocalsound( self.iwz_bed );
+}
+
 iwz_ambience_bed_player()
 {
     self endon( "disconnect" );
@@ -484,7 +513,7 @@ iwz_ambience_bed_player()
         if ( !isalive( self ) )
         {
             if ( isdefined( self.iwz_bed ) )
-                self stoplocalsound( self.iwz_bed );
+                self iwz_bed_stop();
 
             self.iwz_bed = undefined;
             zone_name = "";
@@ -513,11 +542,11 @@ iwz_ambience_bed_player()
         if ( !same && ( isdefined( want ) || isdefined( self.iwz_bed ) ) )
         {
             if ( isdefined( self.iwz_bed ) )
-                self stoplocalsound( self.iwz_bed );
+                self iwz_bed_stop();
 
             self.iwz_bed = want;
             if ( isdefined( want ) )
-                self playlocalsound( want );
+                self thread iwz_bed_loop( want );
 
             shown = "none";
             if ( isdefined( want ) )

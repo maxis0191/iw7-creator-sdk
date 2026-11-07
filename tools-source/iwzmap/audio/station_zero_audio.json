@@ -54,12 +54,8 @@
     },
     {
       "name": "amb_cp_zmb_basement_lr",
-      "comment": "2D room tone bed (Spaceland basement), streamed loop; vol_mod emitter: every alias on vol_mod ambience (and loaded music rows) is digitally silent in this usermap, whatever the channel or speaker map, while the same loop on vol_mod emitter plays (runs b4/b1, 2026-11-07)",
-      "source": "stock",
-      "template": "amb_cp_zmb_basement_lr",
-      "set": {
-        "vol_mod": "emitter"
-      }
+      "comment": "2D room tone bed (Spaceland basement), streamed loop",
+      "source": "stock"
     },
     {
       "name": "emt_appliance_hum_lp_01",
@@ -96,12 +92,8 @@
     },
     {
       "name": "amb_cp_zmb_ice_cave_lr",
-      "comment": "2D room tone bed (Spaceland ice cave: low cavern wind) for the platforms and the service tunnel, streamed loop; vol_mod emitter: every alias on vol_mod ambience (and loaded music rows) is digitally silent in this usermap, whatever the channel or speaker map, while the same loop on vol_mod emitter plays (runs b4/b1, 2026-11-07)",
-      "source": "stock",
-      "template": "amb_cp_zmb_ice_cave_lr",
-      "set": {
-        "vol_mod": "emitter"
-      }
+      "comment": "2D room tone bed (Spaceland ice cave: low cavern wind) for the platforms and the service tunnel, streamed loop",
+      "source": "stock"
     },
     {
       "name": "emt_light_hum_lp_02",
@@ -200,33 +192,57 @@
     },
     {
       "name": "amb_iwz_bed_station",
-      "comment": "station bed: 24 s seamless loop of the Spaceland basement tone, loaded; vol_mod emitter: every alias on vol_mod ambience (and loaded music rows) is digitally silent in this usermap, whatever the channel or speaker map, while the same loop on vol_mod emitter plays (runs b4/b1, 2026-11-07); 0.16 = about -37 dBFS in the capture",
+      "comment": "station bed: 24 s seamless loop of the Spaceland basement tone + 2 s re-trigger overlap (26 s, loaded, nonlooping); per-player 2D bed re-triggered by the module (playlocalsound refuses looping aliases with a script runtime error and the engine sound-zone bed stays silent in a usermap: runs b4/f3/f5 with developer_script 1)",
       "template": "amb_cp_zmb_basement_lr",
       "source": "stock",
       "file": "iwz/amb/bed_station",
       "loop_seconds": 24,
       "set": {
         "type": "loaded",
-        "loop": "looping",
-        "vol_mod": "emitter",
-        "vol_min": 0.16,
-        "vol_max": 0.16
-      }
+        "loop": "nonlooping"
+      },
+      "retrigger_overlap": 2
+    },
+    {
+      "name": "amb_iwz_bt_nl_emitter",
+      "comment": "diagnostic twin of amb_iwz_bed_station on vol_mod emitter (bed probe)",
+      "template": "amb_cp_zmb_basement_lr",
+      "source": "stock",
+      "file": "iwz/amb/bed_station",
+      "loop_seconds": 24,
+      "set": {
+        "type": "loaded",
+        "loop": "nonlooping",
+        "vol_mod": "emitter"
+      },
+      "retrigger_overlap": 2
+    },
+    {
+      "name": "amb_iwz_bt_nl_music",
+      "comment": "diagnostic twin of amb_iwz_bed_station on vol_mod music (bed probe)",
+      "template": "amb_cp_zmb_basement_lr",
+      "source": "stock",
+      "file": "iwz/amb/bed_station",
+      "loop_seconds": 24,
+      "set": {
+        "type": "loaded",
+        "loop": "nonlooping",
+        "vol_mod": "music"
+      },
+      "retrigger_overlap": 2
     },
     {
       "name": "amb_iwz_bed_cave",
-      "comment": "platform / tunnel bed: 24 s seamless loop of the Spaceland ice-cave tone, loaded; vol_mod emitter: every alias on vol_mod ambience (and loaded music rows) is digitally silent in this usermap, whatever the channel or speaker map, while the same loop on vol_mod emitter plays (runs b4/b1, 2026-11-07); 0.16 = about -37 dBFS in the capture",
+      "comment": "cave bed: 24 s seamless loop of the Spaceland ice-cave tone + 2 s re-trigger overlap (26 s, loaded, nonlooping); per-player 2D bed re-triggered by the module (playlocalsound refuses looping aliases with a script runtime error and the engine sound-zone bed stays silent in a usermap: runs b4/f3/f5 with developer_script 1)",
       "template": "amb_cp_zmb_ice_cave_lr",
       "source": "stock",
       "file": "iwz/amb/bed_cave",
       "loop_seconds": 24,
       "set": {
         "type": "loaded",
-        "loop": "looping",
-        "vol_mod": "emitter",
-        "vol_min": 0.16,
-        "vol_max": 0.16
-      }
+        "loop": "nonlooping"
+      },
+      "retrigger_overlap": 2
     }
   ],
   "zones": {
@@ -237,30 +253,22 @@
       {
         "name": "cp_iwz",
         "copy": "cp_zmb_basement_lg_room",
-        "ambience": "amb_iwz_bed_station",
-        "no_mix": true,
-        "comment": "Spaceland basement row without basement_mix: with it the zone bed played digitally silent (run f1, 2026-11-07); ice-cave rows have no mix and play"
+        "ambience": "amb_iwz_bed_station"
       },
       {
         "name": "iwz_station",
         "copy": "cp_zmb_basement_lg_room",
-        "ambience": "amb_iwz_bed_station",
-        "no_mix": true,
-        "comment": "Spaceland basement row without basement_mix: with it the zone bed played digitally silent (run f1, 2026-11-07); ice-cave rows have no mix and play"
+        "ambience": "amb_iwz_bed_station"
       },
       {
         "name": "iwz_stairs",
         "copy": "cp_zmb_basement_med_hallway",
-        "ambience": "amb_iwz_bed_station",
-        "no_mix": true,
-        "comment": "Spaceland basement row without basement_mix: with it the zone bed played digitally silent (run f1, 2026-11-07); ice-cave rows have no mix and play"
+        "ambience": "amb_iwz_bed_station"
       },
       {
         "name": "iwz_service",
         "copy": "cp_zmb_basement_med_room",
-        "ambience": "amb_iwz_bed_station",
-        "no_mix": true,
-        "comment": "Spaceland basement row without basement_mix: with it the zone bed played digitally silent (run f1, 2026-11-07); ice-cave rows have no mix and play"
+        "ambience": "amb_iwz_bed_station"
       },
       {
         "name": "iwz_platform",
