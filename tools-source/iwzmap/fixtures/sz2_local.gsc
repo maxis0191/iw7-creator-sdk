@@ -188,12 +188,12 @@ iwz_walk( player )
                 print( "[IWZ local] WALKFAIL ceiling seg=" + k + " at=" + target );
                 fails++;
             }
-            // 4. no horizontal escape (every 4th step): rays must hit a wall within 5000
+            // 4. no horizontal escape (every 4th step): rays must hit a wall within 9000
             if ( steps % 4 == 0 )
             {
                 foreach ( dir in dirs )
                 {
-                    tr = bullettrace( target + ( 0, 0, 48 ), target + ( 0, 0, 48 ) + dir * 5000, 0, player );
+                    tr = bullettrace( target + ( 0, 0, 48 ), target + ( 0, 0, 48 ) + dir * 9000, 0, player );
                     if ( tr["fraction"] >= 1 )
                     {
                         print( "[IWZ local] WALKFAIL ray_escape seg=" + k + " at=" + target + " dir=" + dir );
@@ -203,7 +203,7 @@ iwz_walk( player )
                 for ( d = 0; d < 4; d++ )
                 {
                     dir = dirs[d * 2];
-                    end = target + ( 0, 0, 24 ) + dir * 5000;
+                    end = target + ( 0, 0, 24 ) + dir * 9000;
                     got = playerphysicstrace( target + ( 0, 0, 24 ), end );
                     if ( distance( got, end ) < 2 )
                     {

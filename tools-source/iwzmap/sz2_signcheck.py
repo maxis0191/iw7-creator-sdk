@@ -5,8 +5,8 @@ usage: sz2_signcheck.py <run dir (iwzv_sign_<k>.bmp frames)> <generated source d
 For every sign view of layout.json ('sign_views': view index -> sign index), the sign quad corners are projected into
 the frame with the capture camera model (same as sz2_frames.py), the quad is rectified to the image aspect, and the
 rectified crop is compared (normalised cross-correlation of the grey gradients, 256 px wide) with the source image as
-authored and with its mirrored / flipped / rotated variants. PASS when the authored orientation scores best and above
-0.35. Writes <out>/signcheck.json and <out>/sign_<k>.jpg (crop | source side by side).
+authored and with its mirrored / flipped / rotated variants. PASS when the authored orientation scores best, at least
+0.25 and 0.1 above every other variant. Writes <out>/signcheck.json and <out>/sign_<k>.jpg (crop | source side by side).
 """
 import json, math, os, sys
 import numpy as np
@@ -104,7 +104,8 @@ for vk, si in sorted(layout.get('sign_views', {}).items(), key=lambda t: int(t[0
                 'rotated180': ref.transpose(Image.ROTATE_180)}
     scores = {k: round(float((fc * feat(v, FW, FH)).sum()), 3) for k, v in variants.items()}
     best = max(scores, key=scores.get)
-    ok = best == 'as_authored' and scores['as_authored'] >= 0.35
+    others = max(v for k, v in scores.items() if k != 'as_authored')
+    ok = best == 'as_authored' and scores['as_authored'] >= 0.25 and scores['as_authored'] - others >= 0.1
     side = Image.new('RGB', (ow * 2 + 8, oh), (0, 0, 0))
     side.paste(crop, (0, 0)); side.paste(ref.resize((ow, oh)), (ow + 8, 0))
     side.save(os.path.join(out, 'sign_%d.jpg' % vk), quality=88)

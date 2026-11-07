@@ -17,6 +17,10 @@ main()
     scripts\cp\maps\cp_zmb\cp_zmb_player_character_setup::init_player_characters();
     scripts\cp\maps\cp_zmb\cp_zmb::setup_generic_zombie_model_list();
     scripts\cp\zombies\interaction_magicwheel::set_magic_wheel_starting_location( //@WHEEL@ );
+    // the stock Spaceland DJ booth system starts on every map; without its booth it loops on an undefined level.dj
+    // (782 runtime errors in run g5-gameplay-a): give it a parked stand-in entity
+    level.dj = spawn( "script_model", ( 0, 0, -3000 ) );
+    level.dj setmodel( "tag_origin" );
     level._effect["iwz_relay_red"] = loadfx( "vfx/iw7/core/zombie/weapon/shredder/zmb_part_glow_red.vfx" );
     level._effect["iwz_relay_green"] = loadfx( "vfx/iw7/core/zombie/weapon/dischord/zmb_part_glow_green.vfx" );
     level._effect["iwz_rail_arc"] = loadfx( "vfx/iw7/_requests/coop/vfx_mini_grey_shock_arc.vfx" );
