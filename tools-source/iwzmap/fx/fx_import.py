@@ -21,6 +21,8 @@ plus the kit-import dumps of the same zone for materials / images / models / tec
 
 usage: fx_import.py <work dir> <map> --dump <zone>=<root>[;<root>...] --fx <zone>:<vfx path>[,...]
        [--runtime-csv <csv> ...] [--ncs-out <json>] [--report <json>] [--dry-run]
+Models referenced by an effect (debris chunks) are not linked here: --dry-run lists them as kitModels
+('<zone>:<model>'); add them to kit_import.py's model list (build-sz2.ps1 -KitModels), which runs first.
 Exit 1 when something referenced is missing (nothing is written then).
 """
 import argparse, json, os, re, sys
@@ -40,6 +42,7 @@ def main(argv=None):
     ap.add_argument('--fx', action='append', default=[], help='<zone>:<vfx path> (comma separated list allowed)')
     ap.add_argument('--runtime-csv', action='append', default=[])
     ap.add_argument('--ncs-out', default='')
+    ap.add_argument('--ncs-skip', default='', help='comma list of imported effects NOT appended to the level list (experiment: is the list needed)')
     ap.add_argument('--report', default='')
     ap.add_argument('--dry-run', action='store_true')
     a = ap.parse_args(argv)
@@ -75,7 +78,7 @@ def main(argv=None):
 
     plan, rows, ref_rows, missing = [], [], [], []
     rep = {'fx': {}, 'materials': {'new': [], 'shared': []}, 'images': {'new': 0, 'shared': 0}, 'techsets': {'embedded': [], 'shared': []},
-           'models': [], 'ncs_added': []}
+           'models': [], 'ncs_added': [], 'kitModels': []}
 
     def add(src, rel):
         plan.append((src, os.path.join(dst, rel)))
@@ -185,12 +188,14 @@ def main(argv=None):
             if find(zone, os.path.join('xmodel', s + '.xmb')) or ('xmodel', s) in have:
                 info['models'].append(s)
                 if ('xmodel', s) not in have:
-                    missing.append('xmodel %s (import it with kit_import.py first)' % s)
+                    # models (debris chunks) come in through kit_import.py (-KitModels), which runs first
+                    rep['kitModels'].append('%s:%s' % (zone, s))
+                    if not a.dry_run:
+                        missing.append('xmodel %s (add %s:%s to the kit models)' % (s, zone, s))
                 continue
-            for sub, ext in (('particlesimanimation', ''), ('lights', ''), ('physicsfxshape', ''), ('vectorfield', '')):
-                d = os.path.join(dumps.get(zone, [''])[0], sub)
-                if os.path.isdir(d) and any(f.startswith(os.path.basename(s)) for f in os.listdir(os.path.dirname(os.path.join(d, s)) or d) if os.path.isdir(os.path.dirname(os.path.join(d, s)))):
-                    info['other'].append('%s/%s' % (sub, s)); missing.append('%s %s (not handled yet)' % (sub, s))
+            if find(zone, os.path.join('particlesimanimation', s + '.iw7psa')) or any(
+                    os.path.isfile(os.path.join(r, 'particlesimanimation', s)) for r in dumps.get(zone, [])):
+                info['other'].append('particlesimanimation/' + s); missing.append('particlesimanimation %s (not handled yet)' % s)
         rep['fx'][name] = info
         rows.append('vfx,' + name)
 
@@ -198,8 +203,9 @@ def main(argv=None):
     ncs_p = os.path.join(dst, NCS)
     ncs = json.load(open(ncs_p)) if os.path.isfile(ncs_p) else {'stringType': 5, 'sourceType': 0, 'stringList': []}
     lst = list(ncs.get('stringList') or [])
+    skip = set(x[:-4] if x.endswith('.vfx') else x for x in a.ncs_skip.split(',') if x)
     for z, n in want:
-        if n not in lst:
+        if n not in lst and n not in skip:
             lst.append(n); rep['ncs_added'].append(n)
     ncs['stringList'] = lst
     rep['missing'] = missing; rep['rows'] = rows; rep['refRows'] = ref_rows

@@ -1,14 +1,14 @@
 """Measure in engine frames that placed FX render: same camera, FX off vs FX on, pixel-change mask restricted to the FX
 region, temporal change across the on frames, and the frame-time cost (fxperf DLL phases).
 
-usage: fx_proof.py <run dir> <fx manifest json> <out dir> [--perf <fxperf summary>] [--hfov 80.7] [--thr 0.035]
+usage: fx_proof.py <run dir> <fx manifest json> <out dir> [--perf <fxperf summary>] [--hfov 80.7] [--thr 0.03] [--blur 3]
 
 Frames (fx_proof_fixture.gsc): iwzf_<k>_off0, iwzf_<k>_off1 (FX k held), iwzf_<k>_on0..on4 (+0.4/1.0/1.8/2.8/4.0 s after
 FX k started). Camera of FX k: the fixture's "[IWZ local] FXPROOF k=..; feet=..; angles=.." line (eye = feet + 60).
 Region: box of +-region units (z: +-region/2 around target) projected with the capture camera (cg_fov 65 at 16:9 ->
 horizontal fov 80.7).
 Per FX:
-  noise_in / noise_out   fraction of pixels whose luma changed > thr between off0 and off1 (inside / outside region)
+  noise_in / noise_out   fraction of pixels whose blurred luma (7x7 box, film grain) changed > thr between off0 and off1 (inside / outside region)
   change_in / change_out max over on frames of the fraction changed > thr against off0
   temporal_in            mean fraction changed > thr between consecutive on frames inside the region
   RENDERS  change_in >= 0.004, change_in >= 4 x noise_in + 0.002, change_in >= 3 x change_out
@@ -42,8 +42,14 @@ def vec(s):
     return [float(v) for v in re.findall(r'-?\d+(?:\.\d+)?(?:e-?\d+)?', s)][:3]
 
 
-def luma(im):
-    return 0.2126 * im[..., 0] + 0.7152 * im[..., 1] + 0.0722 * im[..., 2]
+def luma(im, r=3):
+    """luma, box-blurred over (2r+1)^2 pixels: IW7 film grain changes single pixels between any two frames"""
+    l = 0.2126 * im[..., 0] + 0.7152 * im[..., 1] + 0.0722 * im[..., 2]
+    if r <= 0:
+        return l
+    c = np.pad(l, ((r + 1, r), (r + 1, r)), mode='edge').cumsum(0).cumsum(1)
+    k = 2 * r + 1
+    return (c[k:, k:] - c[:-k, k:] - c[k:, :-k] + c[:-k, :-k]) / (k * k)
 
 
 def load(run, name):
@@ -67,7 +73,8 @@ def main(argv=None):
     ap.add_argument('run'); ap.add_argument('manifest'); ap.add_argument('out')
     ap.add_argument('--perf', default='')
     ap.add_argument('--hfov', type=float, default=80.7)
-    ap.add_argument('--thr', type=float, default=0.035)
+    ap.add_argument('--thr', type=float, default=0.03)
+    ap.add_argument('--blur', type=int, default=3)
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
     man = json.load(open(a.manifest))
@@ -105,8 +112,8 @@ def main(argv=None):
         if x1 - x0 < 8 or y1 - y0 < 8:
             r['result'] = 'OFF_FRAME'; continue
         region = np.zeros((h, w), bool); region[y0:y1, x0:x1] = True
-        L0, L1 = luma(off0), luma(off1)
-        Ls = [luma(x) for x in ons]
+        L0, L1 = luma(off0, a.blur), luma(off1, a.blur)
+        Ls = [luma(x, a.blur) for x in ons]
         frac = lambda m, sel: float(m[sel].mean()) if sel.any() else 0.0
         noise = np.abs(L1 - L0) > a.thr
         changes = [np.abs(L - L0) > a.thr for L in Ls]

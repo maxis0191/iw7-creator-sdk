@@ -1,6 +1,6 @@
 {
  "schema": "iwzmap.fx-catalog/1",
- "note": "Aliases for fx.txt. fx = vfx path without .vfx (must be in the level ncs_efx list, or imported by fx_import.py). mode/delay/angles/region/region_dz/settle are defaults a fx.txt line can override. status/evidence are filled from fx_proof runs. Default angles follow the stock cp_zmb createfx placements (decomp 4277: hang smoke 270,0,0; light cone 300,180,180; light wedge 339,181,0).",
+ "note": "Aliases for fx.txt. fx = vfx path without .vfx (must be in the level ncs_efx list, or imported by fx_import.py). mode/delay/angles/region/region_dz/settle are defaults a fx.txt line can override. status/evidence are filled from fx_proof runs. Default angles follow the stock cp_zmb createfx placements (decomp 4277: hang smoke 270,0,0; light cone 300,180,180; light wedge 339,181,0). Entries with \"import\" are foreign-zone effects: build with fx_import.py (build-sz2.ps1 -FxImport <zone>:<fx>) so they are in the FF and in the level effect list.",
  "fx": {
   "dust_motes": {
    "fx": "vfx/iw7/core/zombie/environment/vfx_cop_zmb_particle_dust",
@@ -209,6 +209,121 @@
    "kind": "moths around a lamp",
    "mode": "loop",
    "region": 64,
+   "status": "untested"
+  },
+  "steam_pipe": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_broken_pipe_steam",
+   "import": "cp_disco",
+   "kind": "steam jet from a broken pipe",
+   "mode": "loop",
+   "region": 96,
+   "status": "untested"
+  },
+  "steam_grate": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_grate_steam_01",
+   "import": "cp_disco",
+   "kind": "steam rising from a floor grate",
+   "mode": "loop",
+   "region": 96,
+   "region_dz": 48,
+   "status": "untested"
+  },
+  "steam_sewer": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_sewer_grate_steam",
+   "import": "cp_disco",
+   "kind": "sewer grate steam",
+   "mode": "loop",
+   "region": 96,
+   "region_dz": 48,
+   "status": "untested"
+  },
+  "drips_line": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_water_drips_line",
+   "import": "cp_disco",
+   "kind": "leaking seam: drips with floor splash",
+   "mode": "loop",
+   "region": 96,
+   "status": "untested"
+  },
+  "drips_circle": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_water_drips_circle",
+   "import": "cp_disco",
+   "kind": "leak: drips with floor splash",
+   "mode": "loop",
+   "region": 96,
+   "status": "untested"
+  },
+  "dust_fall_tunnel": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_dust_fall_tunnel",
+   "import": "cp_disco",
+   "kind": "falling debris dust",
+   "mode": "loop",
+   "region": 96,
+   "region_dz": -80,
+   "status": "untested"
+  },
+  "motes": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_amb_motes",
+   "import": "cp_disco",
+   "kind": "dust motes (sprites, not a particle cloud)",
+   "mode": "loop",
+   "region": 128,
+   "status": "untested"
+  },
+  "motes_bright": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_amb_motes_bright",
+   "import": "cp_disco",
+   "kind": "dust motes in light shafts",
+   "mode": "loop",
+   "region": 128,
+   "status": "untested"
+  },
+  "light_beam": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_streetlight_cone",
+   "import": "cp_disco",
+   "kind": "god ray / lamp beam",
+   "mode": "loop",
+   "region": 128,
+   "region_dz": -96,
+   "angles": [
+    90,
+    0,
+    0
+   ],
+   "status": "untested"
+  },
+  "bulb_glow": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_incandescent_lf",
+   "import": "cp_disco",
+   "kind": "bulb glow / lens flare",
+   "mode": "loop",
+   "region": 48,
+   "status": "untested"
+  },
+  "embers": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_zb_spark_a",
+   "import": "cp_disco",
+   "kind": "embers / ash sparks",
+   "mode": "loop",
+   "region": 96,
+   "region_dz": 32,
+   "status": "untested"
+  },
+  "mist": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_light_mist",
+   "import": "cp_disco",
+   "kind": "light mist / haze",
+   "mode": "loop",
+   "region": 160,
+   "status": "untested"
+  },
+  "pipe_smoke": {
+   "fx": "vfx/iw7/levels/cp_disco/amb/vfx_pipe_smoke",
+   "import": "cp_disco",
+   "kind": "smoke from a pipe",
+   "mode": "loop",
+   "region": 96,
+   "region_dz": 48,
    "status": "untested"
   }
  }

@@ -65,7 +65,8 @@ iwz_fxp_main()
     level waittill( "connected", player );
     while ( !isalive( player ) )
         wait 0.2;
-    wait 6;
+    // the start loadout arrives a few seconds after the spawn: wait for it, then keep the view clear
+    wait 12;
     player.ignoreme = 1;
     player takeallweapons();
     executecommand( "cg_draw2D 0" );
@@ -111,6 +112,7 @@ iwz_fxp_main()
         setdvar( "paris_iwz_fxphase", 2 * k + 1 );
         wait 3;
         setdvar( "paris_iwz_fxphase", 0 );
+        player takeallweapons();
         executecommand( "capture_frame iwzf_" + k + "_off0" );
         wait 0.5;
         executecommand( "capture_frame iwzf_" + k + "_off1" );

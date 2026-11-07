@@ -21,6 +21,7 @@ fx.txt: one effect per line, '#' starts a comment, fields separated by blanks:
                              interval/oneshot: wait before the first play
   view=x,y,z,yaw,pitch       proof camera (player origin = feet); default: candidates computed from the layout zone
   region=<r>                 proof region half size in units (default from the catalog, else 64)
+  region_dz=<dz>             proof region centre offset from the origin along z (drips: below the ceiling point)
   zone=<zone>                layout zone (default: the zone box containing the origin)
 
 Only effects of the level NetConstStrings list (`ncs_efx_level`, plus lists given with --ncs, e.g. one written by
@@ -69,6 +70,8 @@ def parse_fx_txt(path, catalog):
                 e['region'] = float(v)
             elif k == 'zone':
                 e['zone'] = v
+            elif k == 'region_dz':
+                e['region_dz'] = float(v)
             elif k == 'settle':
                 e['settle'] = float(v)
             else:
@@ -142,17 +145,23 @@ def main(argv=None):
     ap.add_argument('--catalog', default=os.path.join(HERE, 'fx_catalog.json'))
     ap.add_argument('--fixture-out', default='')
     ap.add_argument('--manifest-out', default='')
+    ap.add_argument('--allow-unlisted', default='', help='comma list of effects allowed outside the --ncs lists (experiments)')
+    ap.add_argument('--list-imports', action='store_true', help='print the <zone>:<fx> list fx_import.py needs for this fx.txt and exit')
     ap.add_argument('--dry-run', action='store_true')
     a = ap.parse_args(argv)
 
     catalog = json.load(open(a.catalog))['fx'] if os.path.isfile(a.catalog) else {}
     fx = parse_fx_txt(a.fx_txt, catalog)
+    if a.list_imports:
+        imp = sorted(set('%s:%s' % (catalog[e['alias']]['import'], e['fx']) for e in fx if e['alias'] and catalog[e['alias']].get('import')))
+        print(','.join(imp)); return 0
     lay = json.load(open(os.path.join(a.src, 'layout.json')))
     zones = lay.get('zones', {})
     ncs = set()
     for p in a.ncs:
         ncs |= set(json.load(open(p)).get('stringList') or [])
-    bad = [e for e in fx if ncs and e['fx'] not in ncs]
+    allow = set(x for x in a.allow_unlisted.split(',') if x)
+    bad = [e for e in fx if ncs and e['fx'] not in ncs and e['fx'] not in allow]
     if bad:
         raise SystemExit('not in the level FX list (ncs_efx): %s' % ', '.join('%s=%s' % (e['name'], e['fx']) for e in bad))
     for e in fx:
