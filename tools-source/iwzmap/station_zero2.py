@@ -1367,7 +1367,7 @@ REGION_ZONE = {r['name']: r['zone'] for r in REGIONS}
 # ============================================================================ gameplay tables
 K = {'classname': '157', 'targetname': '822', 'origin': '543', 'angles': '65', 'noteworthy': '638', 'target': '820',
      'area': '60666', 'parameters': '61049', 'model': '497', 'groupname': '502', 'radius': '599', 'linkname': '636',
-     'animation': '60661', 'fxid': '60859', 'spawnflags': '687', 'dummy': '51961'}
+     'animation': '60661', 'fxid': '60859', 'spawnflags': '687', 'dummy': '51961', 'f60803': '60803'}
 
 
 def ent(**kw):
@@ -1560,6 +1560,13 @@ for o in OPENINGS:
         istruct('debris_%d' % o['cost'], org, yaw, area=other_zone, target=o['scriptable'])
     vis = (mid, plane, o['z0']) if o['axis'] == 'x' else (plane, mid, o['z0'])
     relocations.append('%s 0 %g %g %g %g' % (o['scriptable'], vis[0], vis[1], vis[2], 0 if o['axis'] == 'x' else 90))
+    # the stock door purchase (interaction_openareas, started by the zombie gametype): a trigger_use 'door_buy' whose
+    # target is the debris structs' target; a player's Use on it pays and calls the debris activation. Spaceland's
+    # own door trigger models are reused (single box hull at the entity origin, axis aligned): ?41 half 108 x 36 x 96
+    # for doors spanning x, ?52 half 30 x 134 x 96 for doors spanning y; field 60803 as on Spaceland's triggers.
+    ents.append(ent(classname='trigger_use', targetname='door_buy', target=o['scriptable'], noteworthy='debris_%d' % o['cost'],
+                    origin=fmt((vis[0], vis[1], o['z0'] + 96)), model='?41' if o['axis'] == 'x' else '?52',
+                    dummy='triggermodeldummydefault', f60803=40))
     DOORS.append({'name': o['name'], 'target': o['scriptable'], 'cost': o['cost'], 'zones': o['zones'], 'axis': 0 if o['axis'] == 'y' else 1,
                   'plane': plane, 'lo': o['a'], 'hi': o['b'], 'z0': o['z0'], 'z1': o['z1']})
 layout['doors'] = DOORS

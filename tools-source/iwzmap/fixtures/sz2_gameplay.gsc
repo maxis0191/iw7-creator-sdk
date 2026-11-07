@@ -84,6 +84,22 @@ iwz_game_run()
         wait 0.3;
         player.interaction_trigger notify("trigger", player);
         wait 2.5;
+        // the stock door_buy trigger_use of this door (what a player's Use fires on Spaceland doors)
+        dt = undefined;
+        alltrigs = getentarray("door_buy", "targetname");
+        foreach (t in alltrigs)
+        {
+            if (isdefined(t.target) && t.target == trig.target)
+                dt = t;
+        }
+        mid = player scripts\cp\cp_persistence::get_player_currency();
+        if (isdefined(dt) && mid == before)
+        {
+            dt notify("trigger", player);
+            wait 2.5;
+        }
+        print("[IWZ game] DOORBUY door_buy_triggers=" + alltrigs.size + " found=" + isdefined(dt) + " paid_struct_path=" + (before - mid)
+            + " paid_trigger=" + (mid - player scripts\cp\cp_persistence::get_player_currency()));
         after = player scripts\cp\cp_persistence::get_player_currency();
         active = isdefined(level.spawn_volume_array["stair_a"]) && scripts\engine\utility::is_true(level.spawn_volume_array["stair_a"].active);
         print("[IWZ game] DOORTRIG usable=" + usable + " paid=" + (before - after) + " stair_a_active=" + active + " player=" + player.origin);
