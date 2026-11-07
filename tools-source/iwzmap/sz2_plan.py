@@ -88,6 +88,15 @@ for s in layout['spawners']:
         fails.append('spawner %s %s (%g %g %g) off nav' % (s['zone'], s['kind'], x, y, z))
     elif c not in reach:
         fails.append('spawner %s (%g %g) unreachable' % (s['zone'], x, y))
+    # a spawner inside (or within 24 of) a decor clip box: its zombie spawns into the prop (QA g18: platform_a vents)
+    if s['kind'] != 'ceiling':
+        for d in layout.get('decor', []):
+            cl = d.get('clip')
+            if not cl:
+                continue
+            dx_, dy_, dz_ = d['origin']
+            if abs(x - dx_) < cl[0] + 24 and abs(y - dy_) < cl[1] + 24 and abs(z - dz_) < 2 * cl[2] + 40:
+                fails.append('spawner %s (%g %g) inside the clip of %s at (%g %g)' % (s['zone'], x, y, d['model'], dx_, dy_))
 for it in layout['interactions']:
     x, y, z = it['origin']
     if cell_at(x, y, None) is None:
