@@ -11,7 +11,11 @@ param(
   [switch]$CompileOnly,
   [switch]$NavObstacles,                                                                              # IWZ_SUBMODEL_NAVOBST=keep (closed doors cut the navmesh)
   [string]$AudioSdk='',                                                                               # sdk codex/iwzmap-audio tools-source\iwzmap\audio: adds the audio module
-  [string]$AudioBank='', [string]$AudioModels='')
+  [string]$AudioBank='', [string]$AudioModels='',
+  [string]$KitModels='',                                                                              # kit_import.py: foreign-zone xmodels 'a,b,c' (or 'zone:name')
+  [string]$KitJson='', [string]$KitTier='', [string]$KitZones='',                                     # or rows of a kit_final.json (filtered by tier / source zones)
+  [string[]]$KitDumps=@(),                                                                            # '<zone>=<dump root>' (zonetool -dumpzonetypes <zone> xmodel,xmodelsurfs,material,image,physicsasset,physicsfxshape)
+  [string]$KitReport='')
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
 $ErrorActionPreference='Stop'
@@ -55,6 +59,15 @@ if($AudioSdk){
   if($AudioBank){ $aa+=@('--bank-root',$AudioBank) }; if($AudioModels){ $aa+=@('--model-root',$AudioModels) }
   python -I "$AudioSdk\add_audio.py" @aa
   if($LASTEXITCODE){ throw 'add_audio failed' }
+}
+if($KitModels -or $KitJson){
+  # foreign-zone kit models (cp_disco, cp_final, ...): link their dumps, add xmodel rows and require,techsets_<zone>
+  $ka=@($W,$Map); foreach($d in $KitDumps){ $ka+=@('--dump',$d) }
+  if($KitModels){ $ka+=@('--models',$KitModels) }
+  if($KitJson){ $ka+=@('--kit',$KitJson); if($KitTier){ $ka+=@('--tier',$KitTier) }; if($KitZones){ $ka+=@('--zones',$KitZones) } }
+  if($KitReport){ $ka+=@('--report',$KitReport) }
+  python -I "$S\kit_import.py" @ka
+  if($LASTEXITCODE){ throw 'kit_import failed' }
 }
 $null = New-Item -ItemType Directory -Force "$W\zonetool\$Map\techsets\ps"
 if(!(Test-Path "$W\zonetool\$Map\techsets\ps\null.hlsl.cso")){ [IO.File]::WriteAllBytes("$W\zonetool\$Map\techsets\ps\null.hlsl.cso",[byte[]]@()) }
