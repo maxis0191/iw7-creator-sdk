@@ -592,6 +592,10 @@ for wname, (wx0, wy0, wx1, wy1, ddir) in WELLS.items():
         sb = xs[0] + (xs[1] - xs[0]) * (k + 1) / N
         B.wall_sloped(Z, 'x', wy1, -1, sa, sb, zl(sa) - 18, zl(sb) - 18, DECK_Z, DECK_Z, 'conc_dark')
     rail_run(Z, 'x', xs[0], xs[1], wy1 + 3, DECK_Z, h=38)
+    # well end faces from the track bed to the deck: close the space under the deck at both ends of the well
+    # (engine walk g9: rays escaped under deck_east / the deck west end from the pit)
+    B.wall_plane(Z, 'y', xs[0], +1, wy0, wy1, PIT_Z, DECK_Z, 'conc_dark')
+    B.wall_plane(Z, 'y', xs[1], -1, wy0, wy1, PIT_Z, DECK_Z, 'conc_dark')
     region(wname, Z, (xs[0], wy0, xs[1], wy1), (lambda f: (lambda x, y: f(x)))(zl), (16 if ddir < 0 else 0, 0, 0 if ddir < 0 else 16, 16))
 # pit floor (track bed) and track wall
 floor(Z, 'conc_dark', -2400, 1200, 2400, 1600, PIT_Z, tone='dark')
