@@ -1718,8 +1718,31 @@ PAP_ARCH = OP['a_control_pap']
 for gx in (PAP_ARCH['a'] - 28, PAP_ARCH['a'] - 28 + 156):
     ents.append(ent(classname='script_model', targetname='iwz_pap_shutter', model='gate_warehouse_refinery_01',
                     origin=fmt((gx, 4002, PAP_ARCH['z0'])), angles='0 0 0'))
+# IWZ_SMODELS=1: template-zone decor becomes compiled static models (smodels.txt, x64-zt codex/iwzmap-static-models
+# a99270f merged in door-brushmodels bd5e7fb): drawn and bullet-blocking without entity cost; player / zombie blocking
+# stays with the decor clip boxes (world collision + nav cut). Foreign-zone kit models stay script_models (kit_import).
+SMODELS = os.environ.get('IWZ_SMODELS') == '1'
+smodel_lines = []
 for d in DECOR:
+    if SMODELS and d['model'] not in KIT_MODELS:
+        x_, y_, z_ = d['origin']
+        smodel_lines.append('%s %g %g %g 0 %g 0 1' % (d['model'], x_, y_, z_, d.get('yaw', 0)))
+        d['static'] = True
+        continue
     ents.append(ent(classname='script_model', model=d['model'], origin=fmt(d['origin']), angles='0 %g 0' % d.get('yaw', 0)))
+if smodel_lines:
+    open(os.path.join(out, 'smodels.txt'), 'w', newline='\n').write('\n'.join(smodel_lines) + '\n')
+# IWZ_LIGHTS=1: real primary lights (lights.txt) for coloured accents the bake does not carry: the tunnel signal lamps
+# throw a small red / green pool on the portal (stock intensity units: thousands; x10 of 3000 is clearly visible)
+if os.environ.get('IWZ_LIGHTS') == '1':
+    light_txt = []
+    for l in LIGHTS:
+        fx = l.get('fixture')
+        if fx in ('lamp_red', 'lamp_green'):
+            r_, g_, b_ = (1.0, 0.12, 0.06) if fx == 'lamp_red' else (0.12, 1.0, 0.25)
+            x_, y_, z_ = l['origin']
+            light_txt.append('omni %g %g %g %.2f %.2f %.2f 30000 220' % (x_, y_, z_, r_, g_, b_))
+    open(os.path.join(out, 'lights.txt'), 'w', newline='\n').write('\n'.join(light_txt) + '\n')
 open(os.path.join(out, 'scriptables.txt'), 'w', newline='\n').write('\n'.join(relocations) + '\n')
 open(os.path.join(out, 'ents.txt'), 'w', newline='\n').write(mapgen.ents_text(ws, ents))
 
