@@ -574,6 +574,18 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     cq(lo_end, r0, z_lo, z_lo)
     cq(r0, r1, z_lo, z_hi)
     cq(r1, hi_end, z_hi, z_hi)
+    # zombies (scripted agents) do not climb the smooth ramp: they keep their height, pass under its rising face and
+    # fall out of the world (g14/g15 STAIR trails). Solid steps under the ramp (treads at their true height, risers
+    # facing down the stair; all on or below the nosing line, so players and downward traces still meet the ramp first)
+    # give agents 16-unit step-ups, matching the render treads.
+    cq(r0, s_a, z_lo, z_lo)
+    rn = (-d, 0, 0) if axis == 'x' else (0, -d, 0)
+    for k in range(n_steps):
+        sk0, sk1 = s_a + k * run, s_a + (k + 1) * run
+        zt = z_lo + (k + 1) * rise
+        B.collision_quad([P(sk0, c0, zt - rise), P(sk0, c1, zt - rise), P(sk0, c1, zt), P(sk0, c0, zt)], n=rn)
+        if k < n_steps - 1:
+            cq(sk0, sk1, zt, zt)
 
     def zline(s):
         t = (s - r0) / (r1 - r0)
