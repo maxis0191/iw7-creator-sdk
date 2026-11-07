@@ -87,16 +87,47 @@ iwz_game_run()
         // the stock door_buy trigger_use of this door (what a player's Use fires on Spaceland doors)
         dt = undefined;
         alltrigs = getentarray("door_buy", "targetname");
+        tinfo = "";
+        st = "undef";
+        if (isdefined(trig.target))
+            st = trig.target;
         foreach (t in alltrigs)
         {
+            tt = "undef";
+            if (isdefined(t.target))
+                tt = t.target;
+            tn = "undef";
+            if (isdefined(t.script_noteworthy))
+                tn = t.script_noteworthy;
+            tinfo = tinfo + t.origin + "/" + tt + "/" + tn + " ";
             if (isdefined(t.target) && t.target == trig.target)
                 dt = t;
         }
+        print("[IWZ game] DOORBUYTRIGS struct_target=" + st + " " + tinfo);
         mid = player scripts\cp\cp_persistence::get_player_currency();
         if (isdefined(dt) && mid == before)
         {
             dt notify("trigger", player);
             wait 2.5;
+        }
+        // second door (stair_b <- hall) through its door_buy trigger_use alone: nearest trigger to the doorway
+        bt = undefined;
+        foreach (t in alltrigs)
+        {
+            if (!isdefined(bt) || distance(t.origin, (-1208, 3304, 96)) < distance(bt.origin, (-1208, 3304, 96)))
+                bt = t;
+        }
+        if (isdefined(bt))
+        {
+            player setorigin((-1140, 3304, 0));
+            player setplayerangles((0, 180, 0));
+            wait 0.5;
+            b0 = player scripts\cp\cp_persistence::get_player_currency();
+            bt notify("trigger", player);
+            wait 3;
+            b1 = player scripts\cp\cp_persistence::get_player_currency();
+            bact = isdefined(level.spawn_volume_array["stair_b"]) && scripts\engine\utility::is_true(level.spawn_volume_array["stair_b"].active);
+            print("[IWZ game] DOORBUYTRIG trigger=" + bt.origin + " paid=" + (b0 - b1) + " stair_b_active=" + bact + " trigger_deleted=" + !isdefined(bt));
         }
         print("[IWZ game] DOORBUY door_buy_triggers=" + alltrigs.size + " found=" + isdefined(dt) + " paid_struct_path=" + (before - mid)
             + " paid_trigger=" + (mid - player scripts\cp\cp_persistence::get_player_currency()));
@@ -110,7 +141,7 @@ iwz_game_run()
     foreach (s in level.all_interaction_structs)
     {
         // a debris door whose zone (script_area: the zone on the other side) is still closed
-        if (isdefined(s.script_noteworthy) && s.script_noteworthy == "debris_750" && !isdefined(door) && isdefined(level.spawn_volume_array[s.script_area])
+        if (isdefined(s.script_noteworthy) && s.script_noteworthy == "debris_1000" && !isdefined(door) && isdefined(level.spawn_volume_array[s.script_area])
             && !scripts\engine\utility::is_true(level.spawn_volume_array[s.script_area].active))
             door = s;
     }
