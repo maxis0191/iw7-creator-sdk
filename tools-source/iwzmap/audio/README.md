@@ -78,9 +78,13 @@ prints `[IWZ audio] BED player=... zone=... bed=...`.
 `song_ee_init( origin, angles, opts )`: `origin` is the point the bear rests on; p7_zm_teddybear's model origin
 is its centre (lod0 bounds z -14.2..13.9, 28 units tall, BO3 scale kept), so the model, the hint loop and the
 Use/look/sound point (`ee.target`) sit at `origin + model_offset`. Options (a struct, all optional): `model`, `model_offset` ((0, 0, 14.2)), `song`, `hint_alias`,
-`activate_alias`, `use_radius` (72), `use_hold` (0.5 s), `look_dot` (0.85), `allow_damage` (1), `song_delay`
-(2.5 s), `xp` (0). Interaction: hold Use within reach while looking at the bear, without a prompt (BO1/BO2/BO3
-and the level design); a melee hit or shot also counts when the model takes damage (Spaceland). Level
+`activate_alias`, `use_radius` (96), `use_hold` (0.5 s), `look_dot` (0.85), `allow_damage` (1), `song_delay`
+(2.5 s), `xp` (0). Interaction (BO1/BO2/BO3, no prompt): the bear model is a usable entity (`makeusable`,
+`HINT_NOICON`, empty hint string); a player's Use press while the engine picks it notifies `"trigger"`, accepted
+within reach while looking at it (method `use_trigger`). Holding Use 0.5 s (`usebuttonpressed` poll, method `use`)
+is a second route; a melee hit or shot also counts when the model takes damage (Spaceland, `damage_mod_*`).
+Real input proof: console `+activate` never reaches the usercmd in a test client; a real key press does (the
+server branch's diagnostic DLL posts WM_KEYDOWN F to the game window, fixture `tests/fixtures/iwzmap_input.gsc`). Level
 notifies: `iwz_song_ee_activated` (player, method), `iwz_song_started`; `skip_song` ends the song early.
 `ambience_stop()` stops emitters and beds. Every step prints `[IWZ audio] <EVENT> ... t=<gettime>`.
 

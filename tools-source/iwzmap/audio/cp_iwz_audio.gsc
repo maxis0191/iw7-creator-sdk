@@ -47,7 +47,7 @@ song_ee_init( origin, angles, opts )
     ee.song = iwz_opt( opts.song, "mus_iwz_abracadavre" );
     ee.hint_alias = iwz_opt( opts.hint_alias, "zmb_iwz_ee_hint_lp" );
     ee.activate_alias = iwz_opt( opts.activate_alias, "zmb_iwz_ee_activate" );
-    ee.use_radius = iwz_opt( opts.use_radius, 72 );
+    ee.use_radius = iwz_opt( opts.use_radius, 96 );            // 2D reach: from a car aisle to the rack above the seat
     ee.use_hold = iwz_opt( opts.use_hold, 0.5 );          // seconds of Use held while looking at the bear
     ee.look_dot = iwz_opt( opts.look_dot, 0.85 );         // cosine of the look cone (about 32 degrees)
     ee.allow_damage = iwz_opt( opts.allow_damage, 1 );    // melee / shots, Spaceland style
