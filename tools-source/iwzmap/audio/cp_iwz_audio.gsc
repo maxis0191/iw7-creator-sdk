@@ -15,8 +15,10 @@
 //   zmb_iwz_ee_activate   BO1/BO3 hidden-song activation sound, 3D
 //
 // Easter egg, as in BO1/BO2/BO3 (and the Chronicles maps' song structs): the bear hums the hint loop; a
-// player holds Use on it (no hint string: it stays hidden), the activation sound plays, the bear vanishes,
-// and the song plays once for every player. Like Spaceland's own teddy bears (cp_zmb.gsc waitfordamage) a
+// player presses Use on it (the bear is a usable entity with no prompt: HINT_NOICON and an empty hint
+// string, as the BO3 song objects' trigger_use; the engine notifies "trigger" for the player's real Use
+// press), the activation sound plays, the bear vanishes, and the song plays once for every player.
+// Holding Use (usebuttonpressed polled for use_hold seconds) is a second route. Like Spaceland's own teddy bears (cp_zmb.gsc waitfordamage) a
 // melee hit or a shot also counts when the model takes damage. The song follows Spaceland's
 // play_hidden_song: the stock "add_hidden_song_to_playlist" notify stops any stock jukebox, 2.5 s later
 // the song starts, "skip_song" ends it early; it plays per client with playlocalsound like the stock
@@ -66,6 +68,7 @@ song_ee_init( origin, angles, opts )
     if ( ee.allow_damage )
         ee.model thread iwz_ee_watch_damage( ee );
 
+    ee.model thread iwz_ee_watch_trigger( ee );
     level thread iwz_ee_watch_use( ee );
 
     level waittill( "iwz_song_ee_activated", player, method );
@@ -80,7 +83,38 @@ iwz_opt( value, fallback )
     return fallback;
 }
 
-// BO-style interaction: hold Use within reach while looking at the bear (no prompt, no trigger entity)
+// BO-style interaction through the engine's Use: the bear model is usable without any prompt; a player's Use
+// press while the engine picks the bear as the looked-at usable entity notifies "trigger". The module's own
+// reach / look cone / line of sight check is applied on top (the engine's use radius is wider).
+iwz_ee_watch_trigger( ee )
+{
+    level endon( "game_ended" );
+    level endon( "iwz_song_ee_activated" );
+    self makeusable();
+    self setcursorhint( "HINT_NOICON" );
+    self sethintstring( "" );
+    ee.use_trigger = self;
+    print( "[IWZ audio] EE_USABLE ent=" + self getentitynumber() + " t=" + gettime() );
+
+    for (;;)
+    {
+        self waittill( "trigger", player );
+
+        if ( !isdefined( player ) || !isplayer( player ) || !isalive( player ) )
+            continue;
+
+        if ( !iwz_ee_in_reach( ee, player ) )
+        {
+            print( "[IWZ audio] EE_TRIGGER_REFUSED by=" + player.name + " t=" + gettime() );
+            continue;
+        }
+
+        level notify( "iwz_song_ee_activated", player, "use_trigger" );
+        return;
+    }
+}
+
+// second route: hold Use within reach while looking at the bear (button polled every 0.05 s)
 iwz_ee_watch_use( ee )
 {
     level endon( "game_ended" );
@@ -125,6 +159,12 @@ iwz_ee_can_use( ee, player )
     if ( !player usebuttonpressed() && !scripts\engine\utility::is_true( player.iwz_ee_use_override ) )
         return 0;
 
+    return iwz_ee_in_reach( ee, player );
+}
+
+// within reach of the bear, looking at it (about 32 degrees), nothing in between
+iwz_ee_in_reach( ee, player )
+{
     target = ee.target;
     eye = player geteye();
 
@@ -181,6 +221,7 @@ iwz_ee_activate( ee, player, method )
     if ( isdefined( ee.model ) )
     {
         ee.model setcandamage( 0 );
+        ee.model makeunusable();
         ee.model hide();
     }
 

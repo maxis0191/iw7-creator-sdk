@@ -5,6 +5,8 @@
     python audio_measure.py run --rec capture.wav --log result.local.json --song song.flac --hint hint.flac
                                 [--activate act.flac] [--rumble loop.flac] [--bed name=bed.flac ...]
                                 [--wave newwave.flac] [--out report.json] [--plot curve.png]
+    python audio_measure.py probe --rec capture.wav --log result.local.json --journal engine-errors.log
+                                  [--ref name=file ...] [--out report.json]
 
 match  finds where a recorded window sits in the reference (FFT cross-correlation of the mono signals,
        normalized), then reports for that alignment: the normalized correlation peak, the Pearson r of the
@@ -303,6 +305,50 @@ def run(args):
     return report
 
 
+MARK = re.compile(r'mark seq=(\d+) qpc=(-?\d+) qpc_frequency=(\d+)')
+
+
+def probe(args):
+    rec = decode(args.rec)
+    with open(args.log, encoding='utf-8-sig') as f:
+        log = json.load(f)
+    events = parse_lines(log.get('Lines', []))
+    audio = log.get('Audio') or {}
+    report = {'capture': args.rec, 'capture_seconds': len(rec) / RATE, 'capture_rms_dbfs': dbfs(mono(rec)), 'windows': []}
+    marks = {}
+    with open(args.journal, encoding='utf-8', errors='replace') as f:
+        for line in f:
+            m = MARK.search(line)
+            if m:
+                marks[m.group(1)] = (int(m.group(2)), int(m.group(3)))
+    mark = next((e for e in events if e['event'] == 'BED_MARK' and e.get('seq') in marks), None)
+    if not mark or 'start_qpc' not in audio:
+        report['error'] = 'no BED_MARK line with a journaled mark, or no capture start_qpc'
+        return report
+    q, fq = marks[mark['seq']]
+    clock = (q - int(audio['start_qpc'])) / fq - int(mark['t']) / 1000.0
+    report['gsc_to_capture_offset_s'] = clock
+    refs = {}
+    for item in args.ref:
+        name, _, path = item.partition('=')
+        refs[name] = decode(path)
+    for e in (x for x in events if x['event'] == 'BED_PROBE'):
+        t0 = int(e['t']) / 1000.0 + clock
+        hold = int(e.get('hold', 4000)) / 1000.0
+        row = {'kind': e.get('kind'), 'name': e.get('name'), 'exists': e.get('exists'), 'start': t0 + 0.5, 'end': t0 + hold - 0.3}
+        row.update(levels(rec, [{'label': 'probe', 'start': row['start'], 'end': row['end']}])[0])
+        scores = {}
+        for name, ref in refs.items():
+            looped = np.concatenate([ref, ref, ref])
+            m = match(looped, rec, row['start'], min(2.5, row['end'] - row['start']))
+            scores[name] = {'xcorr_peak': m.get('xcorr_peak'), 'spectral_r': m.get('spectral_r'), 'gain_db': m.get('gain_db')}
+        if scores:
+            row['matches'] = scores
+            row['best'] = max(scores, key=lambda k: scores[k]['xcorr_peak'] or 0)
+        report['windows'].append(row)
+    return report
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0])
     sub = ap.add_subparsers(dest='cmd', required=True)
@@ -329,6 +375,12 @@ def main(argv=None):
     p.add_argument('--wave', help='round-start stinger (WAVE_START)')
     p.add_argument('--out')
     p.add_argument('--plot')
+    p = sub.add_parser('probe')
+    p.add_argument('--rec', required=True)
+    p.add_argument('--log', required=True)
+    p.add_argument('--journal', required=True, help='diagnostic DLL journal (engine-errors.log) with the mark line')
+    p.add_argument('--ref', action='append', default=[], help='name=file, a reference to match in each window')
+    p.add_argument('--out')
     args = ap.parse_args(argv)
     if args.cmd == 'match':
         result = match(decode(args.ref), decode(args.rec), args.rec_start, args.rec_dur, args.ref_max)
@@ -336,7 +388,7 @@ def main(argv=None):
         with open(args.windows) as f:
             result = levels(decode(args.rec), json.load(f), decode(args.ref) if args.ref else None)
     else:
-        result = run(args)
+        result = run(args) if args.cmd == 'run' else probe(args)
         if args.out:
             with open(args.out, 'w') as f:
                 json.dump(result, f, indent=1)
