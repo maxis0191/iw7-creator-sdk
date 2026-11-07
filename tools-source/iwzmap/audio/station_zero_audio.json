@@ -189,6 +189,30 @@
       "name": "mus_zombies_gameover_lsrs",
       "comment": "rear speakers of mus_zombies_gameover",
       "source": "stock"
+    },
+    {
+      "name": "amb_iwz_bed_station",
+      "comment": "station bed: 24 s seamless loop of the Spaceland basement tone, loaded (the streamed looping stock bed stays silent in a usermap, runs w4/w5)",
+      "template": "amb_cp_zmb_basement_lr",
+      "source": "stock",
+      "file": "iwz/amb/bed_station",
+      "loop_seconds": 24,
+      "set": {
+        "type": "loaded",
+        "loop": "looping"
+      }
+    },
+    {
+      "name": "amb_iwz_bed_cave",
+      "comment": "platform / tunnel bed: 24 s seamless loop of the Spaceland ice-cave tone, loaded",
+      "template": "amb_cp_zmb_ice_cave_lr",
+      "source": "stock",
+      "file": "iwz/amb/bed_cave",
+      "loop_seconds": 24,
+      "set": {
+        "type": "loaded",
+        "loop": "looping"
+      }
     }
   ],
   "zones": {
@@ -198,27 +222,33 @@
     "rows": [
       {
         "name": "cp_iwz",
-        "copy": "cp_zmb_basement_lg_room"
+        "copy": "cp_zmb_basement_lg_room",
+        "ambience": "amb_iwz_bed_station"
       },
       {
         "name": "iwz_station",
-        "copy": "cp_zmb_basement_lg_room"
+        "copy": "cp_zmb_basement_lg_room",
+        "ambience": "amb_iwz_bed_station"
       },
       {
         "name": "iwz_stairs",
-        "copy": "cp_zmb_basement_med_hallway"
+        "copy": "cp_zmb_basement_med_hallway",
+        "ambience": "amb_iwz_bed_station"
       },
       {
         "name": "iwz_service",
-        "copy": "cp_zmb_basement_med_room"
+        "copy": "cp_zmb_basement_med_room",
+        "ambience": "amb_iwz_bed_station"
       },
       {
         "name": "iwz_platform",
-        "copy": "cp_zmb_ice_cave_lg_room"
+        "copy": "cp_zmb_ice_cave_lg_room",
+        "ambience": "amb_iwz_bed_cave"
       },
       {
         "name": "iwz_tunnel",
-        "copy": "cp_zmb_ice_cave_med_hallway"
+        "copy": "cp_zmb_ice_cave_med_hallway",
+        "ambience": "amb_iwz_bed_cave"
       },
       {
         "name": "iwz_quiet",

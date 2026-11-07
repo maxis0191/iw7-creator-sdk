@@ -272,10 +272,10 @@ def run(args):
             name, _, path = item.partition('=')
             beds[name] = decode(path)
         rows = []
-        for e in (x for x in events if x['event'] == 'BED_ZONE'):
+        for e in (x for x in events if x['event'] in ('BED_ZONE', 'BED_DIRECT')):
             t0 = int(e['t']) / 1000.0 + clock
             hold = int(e.get('hold', 5000)) / 1000.0
-            row = {'zone': e.get('zone'), 'bed_logged': e.get('bed'), 'start': t0 + 0.5, 'end': t0 + hold - 0.25}
+            row = {'event': e['event'], 'zone': e.get('zone'), 'bed_logged': e.get('bed'), 'start': t0 + 0.5, 'end': t0 + hold - 0.25}
             row.update(levels(rec, [{'label': 'BED', 'start': row['start'], 'end': row['end']}])[0])
             scores = {}
             for name, ref in beds.items():
