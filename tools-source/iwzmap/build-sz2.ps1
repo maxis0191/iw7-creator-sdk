@@ -9,6 +9,7 @@ param(
   [int]$Tries=600,
   [switch]$KeepSubmodels,                                                                             # door blockers: zonetool codex/iwzmap-door-brushmodels
   [switch]$CompileOnly,
+  [switch]$NavObstacles,                                                                              # IWZ_SUBMODEL_NAVOBST=keep (closed doors cut the navmesh)
   [string]$AudioSdk='',                                                                               # sdk codex/iwzmap-audio tools-source\iwzmap\audio: adds the audio module
   [string]$AudioBank='', [string]$AudioModels='')
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
@@ -28,7 +29,8 @@ Copy-Item -Recurse $Src "$W\iwz_src"
 if(Test-Path "$W\dump\$Map"){ Remove-Item -LiteralPath "$W\dump\$Map" -Recurse -Force }
 $env:IWZ_GEN_TOME='1'; $env:IWZ_KEEP_ENTSHAPES='1'
 if($KeepSubmodels){ $env:IWZ_KEEP_SUBMODELS='1'; $env:IWZ_TRIGGER_SHAPES='1' }
-try { $c = Invoke-Zt @('-iwzcompile','cp_zmb_tpl','cp_zmb',$Map,"$W\iwz_src") 900 } finally { Remove-Item Env:IWZ_GEN_TOME,Env:IWZ_KEEP_ENTSHAPES,Env:IWZ_KEEP_SUBMODELS,Env:IWZ_TRIGGER_SHAPES -ErrorAction SilentlyContinue }
+if($NavObstacles){ $env:IWZ_SUBMODEL_NAVOBST='keep' }
+try { $c = Invoke-Zt @('-iwzcompile','cp_zmb_tpl','cp_zmb',$Map,"$W\iwz_src") 900 } finally { Remove-Item Env:IWZ_GEN_TOME,Env:IWZ_KEEP_ENTSHAPES,Env:IWZ_KEEP_SUBMODELS,Env:IWZ_TRIGGER_SHAPES,Env:IWZ_SUBMODEL_NAVOBST -ErrorAction SilentlyContinue }
 $full = Get-ChildItem "$W\zt-*.out.log" | Sort-Object LastWriteTime | Select-Object -Last 1
 if($full){ Copy-Item $full.FullName "$UmOut.compile.log" -Force -ErrorAction SilentlyContinue }
 if(($c -join "`n") -notmatch 'iwzmap: wrote'){ $c | Select-Object -Last 25; throw 'iwzcompile failed' }
