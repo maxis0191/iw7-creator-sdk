@@ -14,7 +14,7 @@ param(
   [string]$AudioBank='', [string]$AudioModels='',
   [string]$KitModels='',                                                                              # kit_import.py: foreign-zone xmodels 'a,b,c' (or 'zone:name')
   [string]$KitJson='', [string]$KitTier='', [string]$KitZones='',                                     # or rows of a kit_final.json (filtered by tier / source zones)
-  [string[]]$KitDumps=@(),                                                                            # '<zone>=<dump root>' (zonetool -dumpzonetypes <zone> xmodel,xmodelsurfs,material,image,physicsasset,physicsfxshape)
+  [string[]]$KitDumps=@(),                                                                            # '<zone>=<dump root>;<techsets dump root>' (zonetool -dumpzonetypes <zone> xmodel,xmodelsurfs,material,image,physicsasset,physicsfxshape; zonetool -dumpzone techsets_<zone>)
   [string]$KitReport='')
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
@@ -66,6 +66,8 @@ if($KitModels -or $KitJson){
   if($KitModels){ $ka+=@('--models',$KitModels) }
   if($KitJson){ $ka+=@('--kit',$KitJson); if($KitTier){ $ka+=@('--tier',$KitTier) }; if($KitZones){ $ka+=@('--zones',$KitZones) } }
   if($KitReport){ $ka+=@('--report',$KitReport) }
+  # techsets/shaders the template map's techset zones define at runtime: referenced, not embedded again
+  Get-ChildItem $D -Directory -Filter 'techsets_*' | ForEach-Object { $c=Join-Path $_.FullName "$($_.Name).csv"; if(Test-Path $c){ $ka+=@('--runtime-csv',$c) } }
   python -I "$S\kit_import.py" @ka
   if($LASTEXITCODE){ throw 'kit_import failed' }
 }
