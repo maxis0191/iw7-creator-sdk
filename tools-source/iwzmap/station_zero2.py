@@ -1824,13 +1824,24 @@ for gx in (PAP_ARCH['a'] - 28, PAP_ARCH['a'] - 28 + 156):
 # a99270f merged in door-brushmodels bd5e7fb): drawn and bullet-blocking without entity cost; player / zombie blocking
 # stays with the decor clip boxes (world collision + nav cut). Foreign-zone kit models stay script_models (kit_import).
 SMODELS = os.environ.get('IWZ_SMODELS') == '1'
+# compiled static models only for models that have a stock static instance in the template: the compiler gives a model
+# without one another model's draw settings. g19 / g20 / g21 hit an access violation at iw7_ship+0xDCE6E7 (material #4
+# of lod 0 read past a model's material list, RAX = float data) and every one of them had these borrowing models
+# static: ammo_crate_01_dust, debris_concrete_rubble_pile_01_dark, ind_debris_metal_scrap_04, pardon_our_dust_sign,
+# zom_machinery_generator_portable_01 (g21 had no kit model). They stay script_models. IWZ_SMODEL_STOCK_CSV: the
+# static-models agent's table of the 17,010 cp_zmb static models.
+SMODEL_STOCK = None
+_smc = os.environ.get('IWZ_SMODEL_STOCK_CSV', r'C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\smodels\stock-smodels.csv')
+if SMODELS and os.path.isfile(_smc):
+    import csv as _csv
+    SMODEL_STOCK = set(r['model'] for r in _csv.DictReader(open(_smc)))
 smodel_lines = []
 for d in DECOR:
     if os.environ.get('IWZ_KIT_ONLY') and d['model'] in KIT_MODELS and d['model'] != os.environ['IWZ_KIT_ONLY']:
         continue     # kit crash bisect: one imported model per build
     if os.environ.get('IWZ_KIT_BASELINE') == '1' and d['model'] in KIT_MODELS:
         continue     # kit proof baseline: the same map (placements, clips, views) without the imported models
-    if SMODELS and d['model'] not in KIT_MODELS:
+    if SMODELS and d['model'] not in KIT_MODELS and (SMODEL_STOCK is None or d['model'] in SMODEL_STOCK):
         x_, y_, z_ = d['origin']
         smodel_lines.append('%s %g %g %g 0 %g 0 1' % (d['model'], x_, y_, z_, d.get('yaw', 0)))
         d['static'] = True
