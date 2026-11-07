@@ -22,6 +22,7 @@ records (`iw7-paris-server`: `ops/iwzmap/`, `tests/fixtures/iwzmap_*`,
 | `build_art.py`, `make_art.py` | map browser art zone `<map>_art.ff`: 2D list/vote images and the theater poster model, made from engine renders |
 | `lightmap_read.py` | decodes the template lightmap atlas to pick per-room texels |
 | `tome_read.py` | reads an Umbra format-20 tome header |
+| `volume_check.py` (+ `test_volume_check.py`) | offline check of a compiled map's trigger volumes: every info_volume / trigger_* has an entity Havok shape the engine can point-test (ispointinvolume = Havok point query, units / 32, no shape = never inside), of its trigger model's size; spawners and plan nav cells inside their zone volume (`--plan`, `--require-spawners`) |
 | `pipeline.ps1`, `build-map-wait.ps1`, `zt.ps1`, `build-zt.ps1`, `new-work.ps1` | build orchestration under the shared resource lease |
 | `native/error_journal.c` | diagnostic DLL for the local runner: Com_Error journal, fault dump, timed console commands, LuaFile dump, dvar force, RenderDoc trigger |
 
