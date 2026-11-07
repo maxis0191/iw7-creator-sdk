@@ -1910,13 +1910,16 @@ _smc = os.environ.get('IWZ_SMODEL_STOCK_CSV', r'C:\Users\ezvalo\Documents\IW7-Ru
 if SMODELS and os.environ.get('IWZ_SMODEL_STOCK_ONLY') == '1' and os.path.isfile(_smc):
     import csv as _csv
     SMODEL_STOCK = set(r['model'] for r in _csv.DictReader(open(_smc)))
+# models without a light grid lit template instance and without a same-layout donor: the compiler refuses them as
+# static models (compile-only probe with IWZ_SMODEL_ALLOW_SHAPE_MISMATCH=1 on g25, 2026-11-08); script_models instead
+SMODEL_NO_DONOR = {'pardon_our_dust_sign'}
 smodel_lines = []
 for d in DECOR:
     if os.environ.get('IWZ_KIT_ONLY') and d['model'] in KIT_MODELS and d['model'] != os.environ['IWZ_KIT_ONLY']:
         continue     # kit crash bisect: one imported model per build
     if os.environ.get('IWZ_KIT_BASELINE') == '1' and d['model'] in KIT_MODELS:
         continue     # kit proof baseline: the same map (placements, clips, views) without the imported models
-    if SMODELS and d['model'] not in KIT_MODELS and (SMODEL_STOCK is None or d['model'] in SMODEL_STOCK):
+    if SMODELS and d['model'] not in KIT_MODELS and d['model'] not in SMODEL_NO_DONOR and (SMODEL_STOCK is None or d['model'] in SMODEL_STOCK):
         x_, y_, z_ = d['origin']
         smodel_lines.append('%s %g %g %g 0 %g 0 1' % (d['model'], x_, y_, z_, d.get('yaw', 0)))
         d['static'] = True
