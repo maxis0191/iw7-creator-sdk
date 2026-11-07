@@ -139,7 +139,7 @@ def bands(style, zf, zc):
         return [(zf, zf + 10, 'wood_trim', 2), (zf + 10, zf + 104, 'wood_green', 0), (zf + 104, zf + 112, 'wood_trim', 2),
                 (zf + 112, zc - 18, 'brick_white', 0), (zc - 18, zc, 'molding', 2.5)]
     if style == 'tunnel':
-        return [(zf, zf + 32, 'conc_dark', 0), (zf + 32, zc, 'conc_seam', 0)]
+        return [(zf, zf + 96, 'conc_dark', 0), (zf + 96, zf + 100, 'steel_trim', 1), (zf + 100, zc, 'conc_seam', 0)]
     if style == 'control_neutral':
         return [(zf, zf + 10, 'rubber_trim', 2), (zf + 10, zf + 96, 'panel_dark', 0), (zf + 96, zf + 104, 'steel_trim', 1.5),
                 (zf + 104, zc, 'panel_wall', 0)]
@@ -994,7 +994,7 @@ region('generator', Z, (2600, 2400, 3800, 3184), -320)
 
 # ---------------------------------------------------------------- 6 control room (2600,3200)-(3600,4000), -320..-32 + PaP alcove
 Z = 'control_room'
-room(Z, 'control', (2600, 3200, 3600, 4000), -320, -32, 'control_neutral', 'rubber_mat', 'ceil_tile')
+room(Z, 'control', (2600, 3200, 3600, 4000), -320, -32, 'control_neutral', 'metal_floor', 'deck_black')     # art pass 5: floor / wainscot / ceiling values apart
 room(Z, 'pap_alcove', (2976, 4016, 3232, 4160), -320, -112, 'control', 'diamond', 'conc_dark', skip=('south',))
 DESKS = [(2640, 3520), (3260, 3520), (3300, 3760)]     # (x0, y0) of 240 x 80 signal desks; lane x 2880..3260 kept clear
 for x0_, y0_ in DESKS:                # cool fluorescents over the signal desks (desk light)
@@ -1070,7 +1070,7 @@ adjacent('tunnel_a', 'tunnel_b')
 
 # ---------------------------------------------------------------- 8 platform_b (-3600,2616)-(-2064,3400), -384..-32
 Z = 'platform_b'
-room(Z, 'platform_b', (-3600, 2600, -2064, 3400), -384, -32, 'old', 'herringbone', 'conc_seam')
+room(Z, 'platform_b', (-3600, 2600, -2064, 3400), -384, -32, 'old', 'herringbone', 'deck_black')
 for x in range(-3500, -2064, 256):
     B.box((x - 8, 2600, -56), (x + 8, 3400, -32), 'ibeam', Z, collide=False, nav=False)
 for x in (-3300, -2800, -2300):
