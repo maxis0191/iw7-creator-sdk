@@ -821,10 +821,12 @@ room(Z, 'control', (2600, 3200, 3600, 4000), -320, -32, 'control_neutral', 'rubb
 room(Z, 'pap_alcove', (2976, 4016, 3232, 4160), -320, -112, 'control', 'diamond', 'conc_dark', skip=('south',))
 for x in (2820, 3140, 3460):          # cool fluorescents over the signal desks (desk light)
     strip_light(Z, x - 64, 3552, x + 64, 3568, -32, mat='lamp_cool')
-for x in (2750, 3450):                # red emergency accents
-    strip_light(Z, x - 32, 3792, x + 32, 3808, -32, mat='lamp_red')
-strip_light(Z, 3100 - 64, 3292, 3100 + 64, 3308, -32, mat='lamp_cool')
-for y_ in (3350, 3650, 3950):
+strip_light(Z, 3100 - 32, 3792, 3100 + 32, 3808, -32, mat='lamp_red')     # red emergency accent (run g12: red dominated)
+for x in (2750, 3450):
+    strip_light(Z, x - 64, 3792, x + 64, 3808, -32, mat='lamp_cool')
+for x in (2750, 3100, 3450):
+    strip_light(Z, x - 64, 3292, x + 64, 3308, -32, mat='lamp_cool')
+for y_ in (3650,):
     wall_lamp(Z, 'y', 2600, +1, y_, -120, mat='lamp_red', w=16, h=16)
     wall_lamp(Z, 'y', 3600, -1, y_, -120, mat='lamp_red', w=16, h=16)
 # signal desks (boxes, until the kit) and the network map board
