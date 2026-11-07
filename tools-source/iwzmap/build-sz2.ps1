@@ -82,11 +82,16 @@ if(!(Test-Path "$W\zonetool\$Map\techsets\ps\null.hlsl.cso")){ [IO.File]::WriteA
 $csv="$W\zone_source\$Map.csv"; $lines=Get-Content $csv
 $req=@('techsets_common','techsets_global','techsets_common_core_mp','techsets_global_core_mp','techsets_common_mp','techsets_global_mp','techsets_common_cp','techsets_global_cp','techsets_cp_zmb')|ForEach-Object {"require,$_"}
 Set-Content $csv (@($lines[0])+$req+$lines[1..($lines.Count-1)]) -Encoding ascii
-if(Test-Path "$W\zone\$Map.ff"){ Remove-Item "$W\zone\$Map.ff" }
+foreach($ext in 'ff','sabl','sabs'){ if(Test-Path "$W\zone\$Map.$ext"){ Remove-Item "$W\zone\$Map.$ext" } }
 $b = Invoke-Zt @('-buildzone',$Map) 2400
 $b | Select-String -Pattern 'FATAL|TIMEOUT|ERROR|Successfully compiled' | Select-Object -First 15
 if(!(Test-Path "$W\zone\$Map.ff")){ $b | Select-Object -Last 30; throw 'buildzone produced no fastfile' }
 New-Item -ItemType Directory $UmOut -Force | Out-Null
 Copy-Item "$W\zone\$Map.ff" "$UmOut\$Map.ff" -Force
+# sound bank files (audio module): the usermap needs them next to the FF, and stale ones from an earlier build must go
+foreach($ext in 'sabl','sabs'){
+  if(Test-Path "$UmOut\$Map.$ext"){ Remove-Item "$UmOut\$Map.$ext" -Force }
+  if($AudioSdk -and (Test-Path "$W\zone\$Map.$ext")){ Copy-Item "$W\zone\$Map.$ext" "$UmOut\$Map.$ext" -Force }
+}
 if($Arena -and (Test-Path $Arena)){ Copy-Item $Arena "$UmOut\$Map.arena" -Force }
 "built $UmOut\$Map.ff $((Get-Item "$UmOut\$Map.ff").Length) bytes"

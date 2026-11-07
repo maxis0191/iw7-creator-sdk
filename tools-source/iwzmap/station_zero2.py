@@ -1742,6 +1742,10 @@ if os.environ.get('IWZ_LIGHTS') == '1':
             r_, g_, b_ = (1.0, 0.12, 0.06) if fx == 'lamp_red' else (0.12, 1.0, 0.25)
             x_, y_, z_ = l['origin']
             light_txt.append('omni %g %g %g %.2f %.2f %.2f 30000 220' % (x_, y_, z_, r_, g_, b_))
+    # the EE bear on the luggage rack reads dark against the lit car ceiling (audio agent): a small warm fill light
+    # in the aisle just below the rack, its radius limited to the bear
+    bx_, by_, bz_ = TEDDY_SPOT
+    light_txt.append('omni %g %g %g 1.00 0.85 0.65 20000 110' % (bx_, by_ + 40, bz_ - 20))
     open(os.path.join(out, 'lights.txt'), 'w', newline='\n').write('\n'.join(light_txt) + '\n')
 open(os.path.join(out, 'scriptables.txt'), 'w', newline='\n').write('\n'.join(relocations) + '\n')
 open(os.path.join(out, 'ents.txt'), 'w', newline='\n').write(mapgen.ents_text(ws, ents))
