@@ -39,6 +39,38 @@ HEX16 = re.compile(r'^[0-9a-f]{16}$')
 BADPATH = set(':*?"<>|\\')                     # strings of the .xmb that cannot be asset file names
 
 
+def drop_scriptable(data, name):
+    """XModel dump (.xmb) with its scriptableMoverDef token `07 01 <name> 00` replaced by the null token `07 00`.
+    The tail after it must be exactly: proceduralBones asset token, aim-assist bone strings, the three arrays
+    (unknown03 null, unknownVec3 null or 12-byte vectors, unknown04 null) - no OFFSET token can then refer to a
+    later entry, so dropping one entry is safe. Returns None when the layout differs."""
+    tok = b'\x07\x01' + name.encode() + b'\x00'
+    i = data.rfind(tok)
+    if i < 0:
+        return None
+    j = i + len(tok)
+    def take(pat):
+        nonlocal j
+        m = re.compile(pat, re.S).match(data, j)
+        if not m:
+            return None
+        j = m.end(); return m
+    if not take(rb'\x07(\x00|\x01[^\x00]*\x00)'):
+        return None
+    while take(rb'\x06\x01[^\x00]*\x00'):
+        pass
+    if not take(rb'\x08\x00'):
+        return None
+    m = take(rb'\x08(\x00|\x01(....))')
+    if not m:
+        return None
+    if m.group(2):
+        j += 12 * int.from_bytes(m.group(2), 'little')
+    if data[j:] != b'\x08\x00':
+        return None
+    return data[:i] + b'\x07\x00' + data[i + len(tok):]
+
+
 def strings_of(path, minlen=3):
     data = open(path, 'rb').read()
     return [m.decode('ascii') for m in re.findall(rb'[\x20-\x7e]{%d,}' % minlen, data)]
@@ -55,6 +87,7 @@ def main(argv=None):
     ap.add_argument('--report', default='')
     ap.add_argument('--runtime-csv', action='append', default=[], help='dump csv of a zone loaded at runtime (shared techsets/shaders)')
     ap.add_argument('--allow-require', action='store_true', help='techset without a dump: require,techsets_<zone> (ZoneTool loads it)')
+    ap.add_argument('--keep-scriptable', action='store_true', help='keep the scriptable mover of the models (needs its dump and dependencies)')
     ap.add_argument('--dry-run', action='store_true')
     a = ap.parse_args(argv)
 
@@ -157,6 +190,7 @@ def main(argv=None):
             models[n] = hit[0] if hit else None
 
     plan = []                                   # (src, dst) links
+    writes = []                                 # (bytes, dst) patched copies
     missing, rows, req_zones = [], [], set()
     rep = {'models': {}, 'materials': {'new': [], 'shared': []}, 'images': {'new': 0, 'shared': 0, 'bytes': 0},
            'techsets': {'embedded': {}, 'required': {}, 'shared': []}, 'linkedBytes': 0, 'surfaceBytes': 0}
@@ -177,9 +211,35 @@ def main(argv=None):
         info = {'zone': zone, 'surfaces': [], 'materials': [], 'physics': []}
         xdir = os.path.dirname(xm)
         for f in os.listdir(xdir):
-            if f == name + '.xmb' or (f.startswith(name + '_lod') and f.endswith('.hkx')):
+            if f.startswith(name + '_lod') and f.endswith('.hkx'):
                 add(os.path.join(xdir, f), os.path.join('xmodel', f))
         strs = set(strings_of(xm))
+        xdata = open(xm, 'rb').read()
+        # scriptable mover (animated stock props such as the subway train): a static kit prop does not need it; it
+        # would pull the scriptable's animations, FX and sounds. Dropped from a patched copy of the .xmb.
+        known = set()
+        for s in strs:
+            if find(zone, os.path.join('materials', s + '.json')) or find(zone, os.path.join('xsurface', s + '.xsb')):
+                known.add(s)
+        for s in sorted(strs - known - {name}):
+            if b'\x07\x01' + s.encode() + b'\x00' not in xdata or set(s) & BADPATH:
+                continue
+            if find_all(zone, 'physicsasset', s) or find_all(zone, 'physicsfxshape', s) or find_all(zone, 'proceduralbones', s):
+                continue
+            if a.keep_scriptable:
+                for pp, rel in find_all(zone, 'scriptable', s):
+                    add(pp, rel); info.setdefault('scriptable', []).append(rel.replace(os.sep, '/'))
+                if not find_all(zone, 'scriptable', s):
+                    missing.append('scriptable %s of %s' % (s, name))
+                continue
+            patched = drop_scriptable(xdata, s)
+            if patched is None:
+                missing.append('asset %s of %s (not a droppable scriptable mover)' % (s, name)); continue
+            xdata = patched; info['droppedScriptable'] = s
+        if xdata is not None and info.get('droppedScriptable'):
+            writes.append((xdata, os.path.join(dst, 'xmodel', name + '.xmb')))
+        else:
+            add(xm, os.path.join('xmodel', name + '.xmb'))
         for s in sorted(strs):
             xs = find(zone, os.path.join('xsurface', s + '.xsb'))
             if xs:
@@ -249,6 +309,11 @@ def main(argv=None):
             os.makedirs(os.path.dirname(d), exist_ok=True)
             os.link(src, d); linked += 1
             rep['linkedBytes'] += os.path.getsize(src)
+        for data, d in writes:
+            if os.path.exists(d):
+                os.remove(d)                   # a hardlink from an earlier run: never write through it
+            os.makedirs(os.path.dirname(d), exist_ok=True)
+            open(d, 'wb').write(data); linked += 1
         req = [r for r in ('require,' + z for z in rep['require']) if r not in lines]
         last_req = max([i for i, l in enumerate(lines) if l.startswith('require,')], default=0)
         lines[last_req + 1:last_req + 1] = req
