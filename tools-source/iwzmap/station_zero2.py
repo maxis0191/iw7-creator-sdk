@@ -1296,6 +1296,24 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zc, 'zmb_frequency_device_radio', 2700, 3592, -250, 270)
     for x_ in (2640, 2680):
         decor(Zc, 'furniture_filing_cabinet', x_, 3990, -320, 270, (17, 8, 17))
+    # clutter pass (lead 2026-11-07, contact sheet g18: service wing reads empty): crates, scrap and tanks along walls,
+    # clear of the walk lanes, spawners (>= 80) and doors
+    decor(Zt, 'ammo_crate_01_dust', -3300, 1250, -384, 10, (24, 16, 16))
+    decor(Zt, 'ammo_crate_01_dust', -3250, 1252, -384, 80, (24, 16, 16))
+    decor(Zt, 'p7_box_cardboard_a_closed', -3200, 1245, -384, 35, (16, 16, 15))
+    decor(Zt, 'ind_debris_metal_scrap_04', -2560, 1250, -384, 120)
+    decor(Zt, 'equipment_oxygen_tank_01', -3572, 1900, -384, 0, (14, 14, 40))
+    decor(Zt, 'equipment_oxygen_tank_01', -3572, 1935, -384, 50, (14, 14, 40))
+    decor(Zt, 'com_trashbag2_black', -3565, 2420, -384, 70, (16, 16, 20))
+    decor(Zt, 'com_debris_paper_iw6_02', -3420, 2200, -384, 15)
+    decor(Zg, 'ammo_crate_01_dust', 2660, 2880, -320, 0, (24, 16, 16))
+    decor(Zg, 'ammo_crate_01_dust', 2660, 2925, -320, 90, (24, 16, 16))
+    decor(Zg, 'p7_box_cardboard_a_closed', 2700, 2960, -320, 20, (16, 16, 15))
+    decor(Zg, 'com_trashbag2_black', 3760, 2860, -320, 40, (16, 16, 20))
+    decor(Zg, 'com_debris_paper_iw6_02', 3000, 3000, -320, 75)
+    decor(Zm, 'p7_box_cardboard_a_closed', 2470, 1890, -320, 15, (16, 16, 15))
+    decor(Zm, 'com_trashbag2_black', 3175, 2340, -320, 0, (16, 16, 20))
+    decor(Zm, 'com_debris_paper_iw6_02', 2650, 1840, -320, 40)
     # maintenance corridor: duct along the ceiling, wall vents, hanging wires
     decor(Zm, 'misc_wall_mounted_fan_01', 3198, 2250, -200, 180)
     decor(Zm, 'hanging_wires_01', 3080, 2000, -96, 0)
