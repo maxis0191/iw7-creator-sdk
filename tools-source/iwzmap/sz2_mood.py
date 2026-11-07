@@ -10,8 +10,14 @@ lighting contrast block_p90 / block_p10 (a difference cannot double on a 0..1 sc
 darker corners). Targets: median in [lo, hi]; with --ref, contrast >= spread-x * the reference contrast.
 Interaction views (iwzv_interact_<n>.bmp, the fixture's views aimed at doors / buys / perks / quest parts, if present):
 mean luma of the central 20 % window must reach --interact-min (paths and purchases stay readable in a darker map).
+Walkthrough frames (iwzv_wc_<zone>_<x>_<y>_y<yaw>.bmp, fixture mode walkcap) count for their zone as well.
+Flat black voids (reviews A3/B/C: black windows, panels, clock faces, plinths): 32 x 32 blocks darker than 0.3 x the
+frame's median luma (relative: the engine's auto exposure lifts true black to ~0.07) with a standard deviation < 0.01
+(no texture, unlike a dark but lit surface); a frame fails when more than --void-max of its blocks are such voids
+(0.04; on g24 this flags stair_b_3, stair_a_4, platform_b_2/4, generator_room_1, platform_a_2/3, kit_6, the frames
+the three reviews named).
 """
-import argparse, glob, json, os
+import argparse, glob, json, os, re
 import numpy as np
 from PIL import Image
 
@@ -26,12 +32,19 @@ def main():
     ap.add_argument('run'); ap.add_argument('out')
     ap.add_argument('--ref'); ap.add_argument('--median', type=float, nargs=2, default=(0.30, 0.40))
     ap.add_argument('--spread-x', type=float, default=2.0); ap.add_argument('--interact-min', type=float, default=0.22)
+    ap.add_argument('--void-max', type=float, default=0.04)
     a = ap.parse_args()
     ref = json.load(open(a.ref))['zones'] if a.ref else {}
-    zones, inter = {}, []
-    for f in sorted(glob.glob(os.path.join(a.run, 'iwzv_*.bmp'))):
+    zones, inter, voids = {}, [], []
+    files = []
+    for r_ in a.run.split(';'):
+        files += sorted(glob.glob(os.path.join(r_, 'iwzv_*.bmp')))
+    for f in files:
         name = os.path.basename(f)[5:-4]
         zone = name.rsplit('_', 1)[0]
+        m_ = re.match(r'wc_(.+)_(-?\d+)_(-?\d+)_y(\d+)$', name)
+        if m_:
+            zone = m_.group(1)
         if zone.startswith(('sign', 'flk', 'fx', 'kit')) or name.endswith(('_on', '_off')):
             continue
         l = luma(f)
@@ -42,9 +55,17 @@ def main():
             continue
         h, w = l.shape
         bh, bw = h // 48, w // 48
-        blocks = l[:bh * 48, :bw * 48].reshape(bh, 48, bw, 48).mean(axis=(1, 3)).ravel()
+        bk_ = l[:bh * 48, :bw * 48].reshape(bh, 48, bw, 48)
+        blocks = bk_.mean(axis=(1, 3)).ravel()
+        vb_ = l[:h // 32 * 32, :w // 32 * 32].reshape(h // 32, 32, w // 32, 32)
+        flat = float(((vb_.mean(axis=(1, 3)) < 0.3 * float(np.median(l))) & (vb_.std(axis=(1, 3)) < 0.01)).mean())
+        if flat > a.void_max:
+            voids.append({'view': name, 'flat_black': round(flat, 3)})
         zones.setdefault(zone, []).append((l.ravel()[::7], blocks))
-    rep = {'zones': {}, 'interact': inter, 'fails': []}
+    rep = {'zones': {}, 'interact': inter, 'voids': voids, 'fails': []}
+    for v_ in voids:
+        rep['fails'].append('flat black void %.1f%% of view %s' % (100 * v_['flat_black'], v_['view']))
+    print('flat black void frames: %d' % len(voids))
     for z, parts in sorted(zones.items()):
         v = np.concatenate([p[0] for p in parts]); bl = np.concatenate([p[1] for p in parts])
         p10, med, p90 = (float(np.percentile(v, q)) for q in (10, 50, 90))
