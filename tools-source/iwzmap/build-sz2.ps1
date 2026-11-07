@@ -11,7 +11,13 @@ param(
   [switch]$CompileOnly,
   [switch]$NavObstacles,                                                                              # IWZ_SUBMODEL_NAVOBST=keep (closed doors cut the navmesh)
   [string]$AudioSdk='',                                                                               # sdk codex/iwzmap-audio tools-source\iwzmap\audio: adds the audio module
-  [string]$AudioBank='', [string]$AudioModels='')
+  [string]$AudioBank='', [string]$AudioModels='',
+  [string]$KitModels='',                                                                              # kit_import.py: foreign-zone xmodels 'a,b,c' (or 'zone:name')
+  [string]$KitJson='', [string]$KitTier='', [string]$KitZones='',                                     # or rows of a kit_final.json (filtered by tier / source zones)
+  [string[]]$KitDumps=@(),                                                                            # '<zone>=<dump root>;<techsets dump root>' (zonetool -dumpzonetypes <zone> xmodel,xmodelsurfs,material,image,physicsasset,physicsfxshape; zonetool -dumpzone techsets_<zone>)
+  [string[]]$KitRuntimeCsv=@(),                                                                       # extra csvs of runtime techset zones (techsets_common)
+  [string]$KitReport='',
+  [switch]$ReuseCompile)                                                                              # keep the previous iwzcompile output of the same -Src (dump\<map>)
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
 $ErrorActionPreference='Stop'
@@ -24,6 +30,7 @@ function Invoke-Zt([string[]]$a,[int]$t){
   throw 'resource lease not obtained'
 }
 Copy-Item $ZoneToolExe "$W\zonetool.exe" -Force
+if($ReuseCompile -and (Test-Path "$W\dump\$Map\maps\cp\$Map.d3dbsp.ents")){ "reusing compiled $W\dump\$Map" } else {
 if(Test-Path "$W\iwz_src"){ Remove-Item "$W\iwz_src" -Recurse -Force }
 Copy-Item -Recurse $Src "$W\iwz_src"
 if(Test-Path "$W\dump\$Map"){ Remove-Item -LiteralPath "$W\dump\$Map" -Recurse -Force }
@@ -35,6 +42,7 @@ $full = Get-ChildItem "$W\zt-*.out.log" | Sort-Object LastWriteTime | Select-Obj
 if($full){ Copy-Item $full.FullName "$UmOut.compile.log" -Force -ErrorAction SilentlyContinue }
 if(($c -join "`n") -notmatch 'iwzmap: wrote'){ $c | Select-Object -Last 25; throw 'iwzcompile failed' }
 ($c | Select-String 'iwzmap: wrote|relit|brush models|generated trigger|lightmap').Line | Select-Object -First 30
+}
 if($KeepSubmodels -and (Test-Path "$Src\plan.json")){
   # gate: compiled trigger volumes must be point-testable and hold their spawners / zone cells (volume_check.py,
   # volumes agent, SDK codex/iwzmap-volumes 12f2f8f)
@@ -55,6 +63,19 @@ if($AudioSdk){
   if($AudioBank){ $aa+=@('--bank-root',$AudioBank) }; if($AudioModels){ $aa+=@('--model-root',$AudioModels) }
   python -I "$AudioSdk\add_audio.py" @aa
   if($LASTEXITCODE){ throw 'add_audio failed' }
+}
+if($KitModels -or $KitJson){
+  # foreign-zone kit models (cp_disco, cp_final, ...): link their dumps (models, materials, image headers, missing techsets), add xmodel rows
+  $ka=@($W,$Map); foreach($kd in $KitDumps){ $ka+=@("--dump",$kd) }
+  if($KitModels){ $ka+=@('--models',$KitModels) }
+  if($KitJson){ $ka+=@('--kit',$KitJson); if($KitTier){ $ka+=@('--tier',$KitTier) }; if($KitZones){ $ka+=@('--zones',$KitZones) } }
+  if($KitReport){ $ka+=@('--report',$KitReport) }
+  # techsets/shaders the template map's techset zones define at runtime: referenced, not embedded again
+  foreach($td in [IO.Directory]::GetDirectories($D,'techsets_*')){ $rcsv=Join-Path $td ((Split-Path $td -Leaf)+".csv"); if(Test-Path $rcsv){ $ka+=@("--runtime-csv",$rcsv) } }
+  # optional extra runtime csvs (techsets_common cannot be dumped: ZoneTool loads it at startup)
+  foreach($rcsv in @($KitRuntimeCsv)){ if($rcsv -and (Test-Path $rcsv)){ $ka+=@("--runtime-csv",$rcsv) } }
+  python -I "$S\kit_import.py" @ka
+  if($LASTEXITCODE){ throw 'kit_import failed' }
 }
 $null = New-Item -ItemType Directory -Force "$W\zonetool\$Map\techsets\ps"
 if(!(Test-Path "$W\zonetool\$Map\techsets\ps\null.hlsl.cso")){ [IO.File]::WriteAllBytes("$W\zonetool\$Map\techsets\ps\null.hlsl.cso",[byte[]]@()) }

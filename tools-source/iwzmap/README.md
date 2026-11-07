@@ -68,3 +68,26 @@ python -I sz2_plan.py <src>                     # offline plan image + nav/data 
 python -I sz2_frames.py <run dir> <src> <analysis dir>   # contact sheets, luma, gallery sampling
 python -I sz2_lmpick.py <analysis>\gallery.json sz2_lm_table.json   # measured per-zone texels
 ```
+
+## Stock models from other zones (kit import)
+
+The template carries cp_zmb only. `kit_import.py` adds stock xmodels of other zones (cp_disco, cp_final, ...) to the
+usermap zone: geometry, materials, image headers (pixels stream from the base `imagefile*.pak`), physics assets and
+the techsets the template's runtime techset zones lack. Needs ZoneTool x64-zt `codex/iwzmap-kit-import` or later
+(`-dumpzonetypes` writes a map zone's materials, whose definitions live in `techsets_<zone>`).
+
+```powershell
+# once per source zone, in the zonetool work dir (zt.ps1 lease)
+zonetool -dumpzonetypes cp_disco xmodel,xmodelsurfs,material,image,physicsasset,physicsfxshape
+zonetool -dumpzone techsets_cp_disco
+# build: models from a list or kit_final.json rows; '<zone>=<model dump>;<techsets dump>'
+.\build-sz2.ps1 -Src <src> -UmOut <dir> -KitModels 'cp_disco_subway_train_bsp2xmodel,clk_defend_generator_solo' `
+  -KitDumps 'cp_disco=<W>\dump\cp_disco;<W>\dump\techsets_cp_disco','cp_final=<W>\dump\cp_final;<W>\dump\techsets_cp_final'
+python -I kit_proof.py <kit run> <baseline run> <src> kit_final.json <out>   # drawn / textured / lit per model
+```
+
+Rules: a material, image, techset or shader already named by the zone csv or defined by a runtime techset zone is
+referenced, not copied; other techsets are embedded from the techsets dump (`.techset`, `.technique`,
+`.vertexdecl`, shader `.cso`). Do not `require` extra map techset zones: two of them next to the template's nine hung
+ZoneTool. Scriptable movers (the subway train's) are dropped from a patched `.xmb` copy (`--keep-scriptable` keeps
+them and then needs the scriptable dump and its dependencies).
