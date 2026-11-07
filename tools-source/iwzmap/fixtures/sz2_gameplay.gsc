@@ -122,12 +122,13 @@ iwz_game_run()
             player setorigin((-1140, 3304, 0));
             player setplayerangles((0, 180, 0));
             wait 0.5;
+            borg = bt.origin;
             b0 = player scripts\cp\cp_persistence::get_player_currency();
             bt notify("trigger", player);
             wait 3;
             b1 = player scripts\cp\cp_persistence::get_player_currency();
             bact = isdefined(level.spawn_volume_array["stair_b"]) && scripts\engine\utility::is_true(level.spawn_volume_array["stair_b"].active);
-            print("[IWZ game] DOORBUYTRIG trigger=" + bt.origin + " paid=" + (b0 - b1) + " stair_b_active=" + bact + " trigger_deleted=" + !isdefined(bt));
+            print("[IWZ game] DOORBUYTRIG trigger=" + borg + " paid=" + (b0 - b1) + " stair_b_active=" + bact + " trigger_deleted=" + !isdefined(bt));
         }
         print("[IWZ game] DOORBUY door_buy_triggers=" + alltrigs.size + " found=" + isdefined(dt) + " paid_struct_path=" + (before - mid)
             + " paid_trigger=" + (mid - player scripts\cp\cp_persistence::get_player_currency()));
