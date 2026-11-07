@@ -68,7 +68,29 @@ iwz_views( player )
 iwz_fx_views( player )
 {
     fxviews = [];
+    flkviews = [];
     //@FXVIEWS@
+    // flickering lamps: lamp held on, then held off (paris_iwz_flickertest), then free
+    for ( pass = 0; pass < 2 && getdvar( "paris_iwz_only" ) == ""; pass++ )
+    {
+        setdvar( "paris_iwz_flickertest", pass + 1 );
+        wait 0.5;
+        for ( i = 0; i < flkviews.size; i++ )
+        {
+            v = flkviews[i];
+            player setorigin( v.origin );
+            player setplayerangles( v.angles );
+            wait 1.2;
+            executecommand( "capture_frame iwzv_" + v.name + ( pass ? "_off" : "_on" ) );
+            wait 0.7;
+        }
+    }
+    setdvar( "paris_iwz_flickertest", 0 );
+    wait 4;
+    toggles = -1;
+    if ( isdefined( level.iwz_flicker_toggles ) )
+        toggles = level.iwz_flicker_toggles;
+    print( "[IWZ local] FLICKER views=" + flkviews.size + " toggles_after_release=" + toggles );
     if ( !fxviews.size || getdvar( "paris_iwz_only" ) != "" )
         return;
     for ( pass = 0; pass < 2; pass++ )

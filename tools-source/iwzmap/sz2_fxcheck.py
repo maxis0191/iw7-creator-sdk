@@ -49,7 +49,28 @@ def box_px(corners, cam, yaw, pitch, w, h):
     return max(0, int(min(xs))), max(0, int(min(ys))), min(w, int(max(xs))), min(h, int(max(ys)))
 
 
-res = {'fx': [], 'decals': []}
+res = {'fx': [], 'decals': [], 'flicker': []}
+for li, (vx, vy, vz, yaw, pitch) in lay.get('flicker_views', []):
+    f = lay['flicker'][li]
+    a, b = load('flk_%d_on' % li), load('flk_%d_off' % li)
+    if a is None or b is None:
+        res['flicker'].append({'zone': f['zone'], 'result': 'NO_FRAME'}); continue
+    h, w = a.shape[:2]
+    o = f['origin']
+    corners = [(o[0] + dx, o[1] + dy, o[2] + dz) for dx in (-40, 40) for dy in (-40, 40) for dz in (-24, 8)]
+    bx = box_px(corners, (vx, vy, vz + EYE), yaw, pitch, w, h)
+    if not bx or bx[2] - bx[0] < 8 or bx[3] - bx[1] < 8:
+        res['flicker'].append({'zone': f['zone'], 'result': 'OFF_FRAME'}); continue
+    x0, y0, x1, y1 = bx
+    d = np.abs(b - a).mean(axis=2)
+    inside = float(d[y0:y1, x0:x1].mean())
+    mask = np.ones_like(d, bool); mask[y0:y1, x0:x1] = False
+    outside = float(d[mask].mean()) if mask.any() else 0.0
+    la = float((0.2126 * a[y0:y1, x0:x1, 0] + 0.7152 * a[y0:y1, x0:x1, 1] + 0.0722 * a[y0:y1, x0:x1, 2]).mean())
+    lb = float((0.2126 * b[y0:y1, x0:x1, 0] + 0.7152 * b[y0:y1, x0:x1, 1] + 0.0722 * b[y0:y1, x0:x1, 2]).mean())
+    ok = inside >= 0.02 and inside >= 2 * outside and la > lb
+    res['flicker'].append({'zone': f['zone'], 'origin': o, 'diff_in': round(inside, 4), 'diff_out': round(outside, 4),
+                           'luma_on': round(la, 3), 'luma_off': round(lb, 3), 'result': 'PASS' if ok else 'FAIL'})
 for fi, (vx, vy, vz, yaw, pitch) in lay.get('fx_views', []):
     f = lay['fx'][fi]
     a, b = load('fx_%d_off' % fi), load('fx_%d_on' % fi)
@@ -117,5 +138,8 @@ for r in res['fx']:
     print('FX    %-62s %-15s %s %s' % (r['fx'], r['zone'], r['result'], r.get('diff_in', '')))
 for r in res['decals']:
     print('DECAL %-20s %-15s %s %s' % (r['mat'], r['zone'], r['result'], {k: r[k] for k in ('std', 'mean', 'ring') if k in r}))
+for r in res['flicker']:
+    print('FLICK %-15s %s %s' % (r['zone'], r['result'], {k: r[k] for k in ('diff_in', 'diff_out', 'luma_on', 'luma_off') if k in r}))
+print('flicker PASS %d/%d' % (sum(r['result'] == 'PASS' for r in res['flicker']), len(res['flicker'])))
 print('fx PASS %d/%d, decals PASS %d/%d (seen %d)' % (sum(r['result'] == 'PASS' for r in res['fx']), len(res['fx']),
       sum(r['result'] == 'PASS' for r in res['decals']), len(res['decals']), sum(r['result'] != 'NOT_SEEN' for r in res['decals'])))

@@ -22,6 +22,8 @@ main()
     // relay state models swapped by the quest (the map ents reference only the starting state: run g8-gameplay-a
     // setmodel errors on beacon_light_plasticcase_red_off)
     precachemodel( "icbm_electricpanel9_on" );
+    precachemodel( "mp_dart_lightfluo" );
+    precachemodel( "mp_dart_lightfluo_on" );
     precachemodel( "beacon_light_plasticcase_red_off" );
     level.dj = spawn( "script_model", ( 0, 0, -3000 ) );
     level.dj setmodel( "tag_origin" );
@@ -47,6 +49,7 @@ main()
     level thread iwz_pap_quest();
     level thread iwz_third_rail();
     level thread iwz_ambient_fx();
+    level thread iwz_flicker();
     level thread iwz_report();
     //@AUDIO@
 }
@@ -456,4 +459,45 @@ iwz_register_interactions()
         disabled += n + " ";
     }
     print( "[IWZ level] INTERACTIONS registered=" + names.size + " init_disabled=" + disabled );
+}
+
+// flickering fluorescents (old station, service tunnel): short bursts of off/on model swaps. Test dvar
+// paris_iwz_flickertest (private fixture only): 1 holds every lamp on, 2 holds every lamp off.
+iwz_flicker()
+{
+    level endon( "game_ended" );
+    wait 1;
+    lamps = getentarray( "iwz_flicker", "targetname" );
+    foreach ( l in lamps )
+        l thread iwz_flicker_lamp();
+    print( "[IWZ level] FLICKER lamps=" + lamps.size );
+}
+
+iwz_flicker_lamp()
+{
+    level endon( "game_ended" );
+    level.iwz_flicker_toggles = 0;
+    for ( ;; )
+    {
+        t = getdvarint( "paris_iwz_flickertest" );
+        if ( t == 1 || t == 2 )
+        {
+            if ( t == 1 )
+                self setmodel( "mp_dart_lightfluo_on" );
+            else
+                self setmodel( "mp_dart_lightfluo" );
+            wait 0.1;
+            continue;
+        }
+        wait randomfloatrange( 1.5, 5 );
+        n = randomintrange( 2, 5 );
+        for ( i = 0; i < n; i++ )
+        {
+            self setmodel( "mp_dart_lightfluo" );
+            wait randomfloatrange( 0.05, 0.15 );
+            self setmodel( "mp_dart_lightfluo_on" );
+            wait randomfloatrange( 0.05, 0.2 );
+            level.iwz_flicker_toggles++;
+        }
+    }
 }

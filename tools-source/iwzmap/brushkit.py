@@ -44,6 +44,7 @@ class Builder:
         self.blockers = []                # (x0, y0, x1, y1, z0, z1): solid footprints for the nav generator
         self.used = {}                    # material key -> quads
         self.quads = 0
+        self.records = []                 # (zone, material key, 4 points, normal): every quad, for sz2_flatness.py
 
     # ------------------------------------------------------------------ primitives
     def quad(self, mat, zone, pts, n=None, t=None, uvs=None, collide=True, tone='mid', uvoff=(0.0, 0.0), uvscale=1.0):
@@ -58,6 +59,7 @@ class Builder:
                 uvs = [uvs[1], uvs[0], uvs[3], uvs[2]]
         if t is None:
             t = face_tangent(n)
+        self.records.append((zone, mat, [tuple(round(c, 2) for c in p) for p in pts], tuple(round(c, 4) for c in n)))
         spec = self.materials[mat]
         if uvs is None:
             b = cross(n, t)

@@ -389,6 +389,122 @@ def column(zone, x, y, z0, z1, half=24):
     B.collision_box((x - half - 2, y - half - 2, z0), (x + half + 2, y + half + 2, z1))
 
 
+# ============================================================================ architecture detail (art pass 3)
+def floor_grid(zone, x0, y0, x1, y1, z, mat, step=480, w=12, border=24, skip=()):
+    """Inlaid strips on a floor: a border along the edges and lines every `step` both ways (0.3 above the floor)."""
+    zz = z + 0.3
+    strips = [(x0, y0, x1, y0 + border), (x0, y1 - border, x1, y1), (x0, y0, x0 + border, y1), (x1 - border, y0, x1, y1)]
+    x = x0 + step
+    while x < x1 - step / 2:
+        strips.append((x - w / 2, y0, x + w / 2, y1)); x += step
+    y = y0 + step
+    while y < y1 - step / 2:
+        strips.append((x0, y - w / 2, x1, y + w / 2)); y += step
+    for a, b, c, d in strips:
+        # cut the strip around skipped rectangles (props, booths) along its long axis
+        along_x = (c - a) >= (d - b)
+        lo, hi = (a, c) if along_x else (b, d)
+        cuts = [(s0, s1) if along_x else (t0, t1) for s0, t0, s1, t1 in skip if a < s1 and c > s0 and b < t1 and d > t0]
+        for p0, p1 in bk.spans_minus(lo, hi, cuts):
+            if p1 - p0 < 8:
+                continue
+            q = (p0, b, p1, d) if along_x else (a, p0, c, p1)
+            B.quad(mat, zone, [(q[0], q[1], zz), (q[2], q[1], zz), (q[2], q[3], zz), (q[0], q[3], zz)], n=(0, 0, 1), collide=False)
+
+
+def drains(zone, pts, z):
+    for x, y in pts:
+        B.quad('vent', zone, [(x - 16, y - 16, z + 0.35), (x + 16, y - 16, z + 0.35), (x + 16, y + 16, z + 0.35), (x - 16, y + 16, z + 0.35)],
+               n=(0, 0, 1), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
+
+
+def ceiling_grid(zone, x0, y0, x1, y1, z, step_x=None, step_y=None, depth=20, mat='ibeam'):
+    """Beams under a ceiling: crosswise every step_x (lines of constant x) and lengthwise every step_y."""
+    if step_x:
+        x = x0 + step_x
+        while x < x1 - 8:
+            B.box((x - 7, y0, z - depth), (x + 7, y1, z), mat, zone, collide=False, nav=False); x += step_x
+    if step_y:
+        y = y0 + step_y
+        while y < y1 - 8:
+            B.box((x0, y - 7, z - depth), (x1, y + 7, z), mat, zone, collide=False, nav=False); y += step_y
+
+
+def pilasters(zone, axis, fixed, facing, s0, s1, zf, zc, step=320, avoid=(), lower='tile_black', upper='tile_white'):
+    """Tiled pilasters with a steel capital and a rubber base every `step` along a wall, skipping `avoid` (s, half)."""
+    out = []
+    s = s0 + step / 2
+    while s < s1 - 40:
+        if not any(abs(s - a) < h for a, h in avoid):
+            if axis == 'x':
+                B.slab_x(s - 18, s + 18, fixed, zf, zf + 112, 8, lower, zone, facing, collide=False, nav=False)
+                B.slab_x(s - 16, s + 16, fixed, zf + 112, zc - 24, 6, upper, zone, facing, collide=False, nav=False)
+                B.slab_x(s - 22, s + 22, fixed, zc - 24, zc - 8, 12, 'steel_trim', zone, facing, collide=False, nav=False)
+                B.slab_x(s - 20, s + 20, fixed, zf, zf + 10, 10, 'rubber_trim', zone, facing, collide=False, nav=False)
+                geo_prop('pilaster', zone, (s - 18, fixed - 8, zf), (s + 18, fixed + 8, zc))
+            else:
+                B.slab_y(s - 18, s + 18, fixed, zf, zf + 112, 8, lower, zone, facing, collide=False, nav=False)
+                B.slab_y(s - 16, s + 16, fixed, zf + 112, zc - 24, 6, upper, zone, facing, collide=False, nav=False)
+                B.slab_y(s - 22, s + 22, fixed, zc - 24, zc - 8, 12, 'steel_trim', zone, facing, collide=False, nav=False)
+                B.slab_y(s - 20, s + 20, fixed, zf, zf + 10, 10, 'rubber_trim', zone, facing, collide=False, nav=False)
+                geo_prop('pilaster', zone, (fixed - 8, s - 18, zf), (fixed + 8, s + 18, zc))
+            out.append(s)
+        s += step
+    return out
+
+
+ADS = ['poster_lasttrain', 'poster_mindgap', 'poster_station_zero']
+
+
+def ad_frame(zone, axis, fixed, facing, s, zc, k):
+    """Recessed advertising panel: dark backing, steel frame, a poster."""
+    w, h = 112, 160
+    if axis == 'x':
+        B.wall_plane(zone, 'x', fixed + facing * 0.3, facing, s - w / 2, s + w / 2, zc - h / 2, zc + h / 2, 'metal_black', collide=False)
+        for a, b, z0, z1 in ((s - w / 2 - 8, s - w / 2, zc - h / 2 - 8, zc + h / 2 + 8), (s + w / 2, s + w / 2 + 8, zc - h / 2 - 8, zc + h / 2 + 8),
+                             (s - w / 2, s + w / 2, zc - h / 2 - 8, zc - h / 2), (s - w / 2, s + w / 2, zc + h / 2, zc + h / 2 + 8)):
+            B.slab_x(a, b, fixed, z0, z1, 3, 'steel_trim', zone, facing, collide=False, nav=False)
+    else:
+        B.wall_plane(zone, 'y', fixed + facing * 0.3, facing, s - w / 2, s + w / 2, zc - h / 2, zc + h / 2, 'metal_black', collide=False)
+        for a, b, z0, z1 in ((s - w / 2 - 8, s - w / 2, zc - h / 2 - 8, zc + h / 2 + 8), (s + w / 2, s + w / 2 + 8, zc - h / 2 - 8, zc + h / 2 + 8),
+                             (s - w / 2, s + w / 2, zc - h / 2 - 8, zc - h / 2), (s - w / 2, s + w / 2, zc + h / 2, zc + h / 2 + 8)):
+            B.slab_y(a, b, fixed, z0, z1, 3, 'steel_trim', zone, facing, collide=False, nav=False)
+    sign(zone, ADS[k % len(ADS)], axis, fixed, facing, s, zc, 96, 144, frame=False, depth=0.6)
+
+
+def wall_niche(zone, axis, fixed, facing, s, z0, w=96, h=72):
+    """Shallow dark niche (refuge / service recess) in a wall: black backing and a steel surround."""
+    if axis == 'x':
+        B.wall_plane(zone, 'x', fixed + facing * 0.4, facing, s - w / 2, s + w / 2, z0, z0 + h, 'black', collide=False)
+        B.slab_x(s - w / 2 - 6, s - w / 2, fixed, z0, z0 + h + 6, 3, 'steel_trim', zone, facing, collide=False, nav=False)
+        B.slab_x(s + w / 2, s + w / 2 + 6, fixed, z0, z0 + h + 6, 3, 'steel_trim', zone, facing, collide=False, nav=False)
+        B.slab_x(s - w / 2, s + w / 2, fixed, z0 + h, z0 + h + 6, 3, 'steel_trim', zone, facing, collide=False, nav=False)
+    else:
+        B.wall_plane(zone, 'y', fixed + facing * 0.4, facing, s - w / 2, s + w / 2, z0, z0 + h, 'black', collide=False)
+        B.slab_y(s - w / 2 - 6, s - w / 2, fixed, z0, z0 + h + 6, 3, 'steel_trim', zone, facing, collide=False, nav=False)
+        B.slab_y(s + w / 2, s + w / 2 + 6, fixed, z0, z0 + h + 6, 3, 'steel_trim', zone, facing, collide=False, nav=False)
+        B.slab_y(s - w / 2, s + w / 2, fixed, z0 + h, z0 + h + 6, 3, 'steel_trim', zone, facing, collide=False, nav=False)
+
+
+def cable_tray(zone, axis, s0, s1, c, z, w=24):
+    """Ceiling cable tray (steel) with a conduit beside it."""
+    if axis == 'x':
+        B.box((s0, c - w / 2, z - 4), (s1, c + w / 2, z), 'steel_trim', zone, collide=False, nav=False)
+        B.box((s0, c + w / 2 + 6, z - 3), (s1, c + w / 2 + 9, z), 'metal_black', zone, collide=False, nav=False)
+    else:
+        B.box((c - w / 2, s0, z - 4), (c + w / 2, s1, z), 'steel_trim', zone, collide=False, nav=False)
+        B.box((c + w / 2 + 6, s0, z - 3), (c + w / 2 + 9, s1, z), 'metal_black', zone, collide=False, nav=False)
+
+
+FLICKER = []      # flickering fluorescent pairs (kit mp_dart_lightfluo_on / mp_dart_lightfluo), toggled by the level script
+
+
+def flicker_lamp(zone, x, y, zc, yaw=0):
+    FLICKER.append({'zone': zone, 'origin': (x, y, zc), 'yaw': yaw})
+    LIGHTS.append({'zone': zone, 'origin': (x, y, zc - 8), 'type': 'omni', 'color': (0.85, 0.93, 1.0), 'radius': 300, 'intensity': 0.6,
+                   'fixture': 'flicker'})
+
+
 def rail_run(zone, axis, s0, s1, c, z, h=36, post=96, mat='steel_trim', collide=True):
     """Handrail / safety railing: posts every `post` and a top rail; collision as a thin wall."""
     n = max(1, int(round((s1 - s0) / post)))
@@ -441,6 +557,8 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
         sk0, sk1 = s_a + k * run, s_a + (k + 1) * run
         zt = z_lo + (k + 1) * rise
         rect(sk0, sk1, zt, 'stair_tread', False)
+        ns_ = sk0 + d * 4 if d > 0 else sk0 - 4
+        rect(min(sk0, ns_), max(sk0, ns_), zt + 0.3, 'yellow_grip', False)     # nosing strip
         # riser at sk0 facing the low end, with a steel nosing strip
         n = (-d, 0, 0) if axis == 'x' else (0, -d, 0)
         pts = [P(sk0, c0, zt - rise), P(sk0, c1, zt - rise), P(sk0, c1, zt), P(sk0, c0, zt)]
@@ -570,6 +688,10 @@ hanging_sign(Z, 'sign_station_zero_plain', -700, 4210, 236, 320, 296)
 # vending machine (east wall): red cabinet with a lit front panel
 B.box((340, 4180, 0), (400, 4260, 152), {'side': 'metal_red', 'top': 'steel_trim', 'west': 'light_panel'}, Z)
 decal_floor(Z, 'blood_pool', -500, 3450, 0, 96, 96)
+floor_grid(Z, -1200, 3200, 400, 4400, 0, 'tile_black', step=400, skip=((-1168, 3660, -240, 3740), (-224, 3600, 96, 3800)))
+drains(Z, [(-1000, 3400), (200, 3400), (-1000, 4250), (200, 4250)], 0)
+ceiling_grid(Z, -1200, 3200, 400, 4400, 320, step_y=400, depth=24)
+decal_floor(Z, 'floor_stain', -528, 3600, 0, 96, 400)
 region('hall', Z, (-1200, 3200, 400, 4400), 0)
 region('street', Z, (-304, 4400, 112, 4448), 0, (16, 0, 16, 0))
 adjacent('hall', 'street')
@@ -767,6 +889,32 @@ for x in (-1900, -400, 900, 2000):
     decal_wall(Z, 'leak_stain', 'x', 2400, -1, x, -120, 96, 180)
 decal_floor(Z, 'blood_pool', 600, 2200, DECK_Z, 96, 96)
 # nav regions: deck (minus wells), coping strip, pit (around the car underframe), recess
+_sign_s = [-1536, -1024, 0, 1024]
+_avoid = [(s_, 170) for s_ in _sign_s] + [(s_, 60) for s_ in (-1280, 256, 1792, -768, 768, 528)] + [(600, 90), (1100, 90), (2300, 120)]
+_pil = pilasters(Z, 'x', 2400, -1, -2400, 2300, DECK_Z, PCEIL, step=320, avoid=_avoid)
+_k = 0
+for a_, b_ in zip(_pil, _pil[1:]):
+    m_ = (a_ + b_) / 2
+    if b_ - a_ <= 360 and not any(abs(m_ - s_) < 260 for s_ in _sign_s) and not any(abs(m_ - s_) < 90 for s_ in (-1280, 256, 1792, -768, 768, 528, 600, 1100)):
+        ad_frame(Z, 'x', 2400, -1, m_, -165, _k); _k += 1
+floor_grid(Z, -2192, 1760, 1904, 2400, DECK_Z, 'conc_trim_floor', step=512, skip=())
+B.quad('stair_tread', Z, [(-2192, 1648, DECK_Z + 0.3), (1904, 1648, DECK_Z + 0.3), (1904, 1664, DECK_Z + 0.3), (-2192, 1664, DECK_Z + 0.3)], n=(0, 0, 1), collide=False)
+B.quad('stair_tread', Z, [(2112, 1648, DECK_Z + 0.3), (2400, 1648, DECK_Z + 0.3), (2400, 1664, DECK_Z + 0.3), (2112, 1664, DECK_Z + 0.3)], n=(0, 0, 1), collide=False)
+for x0_, x1_ in ((-2192, 1904), (2112, 2400)):
+    B.box((x0_, 1588, DECK_Z - 8), (x1_, 1600, DECK_Z), {'side': 'conc_painted', 'bottom': 'conc_dark', 'top': 'conc_painted'}, Z, collide=False, nav=False)
+for x_ in (-1800, -1100, 600, 1300):
+    wall_niche(Z, 'x', 1600, -1, x_, PIT_Z, w=96, h=56)
+drains(Z, [(-1500, 1300), (-700, 1300), (900, 1300), (1700, 1300)], PIT_Z)
+floor_grid(Z, -2400, 1200, 2400, 1420, PIT_Z, 'conc_trim_floor', step=384, w=10, border=10, skip=((-416, 1200, 352, 1430),))
+# tunnel portals at both pit ends (concrete arch frame) with signal lights
+for xw_, fc_ in ((-2400, +1), (2400, -1)):
+    B.slab_y(1200, 1232, xw_, PIT_Z, -96, 10, 'conc_painted', Z, fc_, collide=False, nav=False)
+    B.slab_y(1568, 1600, xw_, PIT_Z, -96, 10, 'conc_painted', Z, fc_, collide=False, nav=False)
+    B.slab_y(1200, 1600, xw_, -96, -72, 12, 'conc_painted', Z, fc_, collide=False, nav=False)
+    for y_, lamp_ in ((1220, 'lamp_red'), (1580, 'lamp_green')):
+        B.box((xw_ + fc_ * 10 - 4, y_ - 6, -150), (xw_ + fc_ * 10 + 4, y_ + 6, -118), 'metal_black', Z, collide=False, nav=False)
+        wall_lamp(Z, 'y', xw_ + fc_ * 14, fc_, y_, -142, mat=lamp_, w=8, h=8)
+ceiling_grid(Z, -2400, 1200, 2400, 2400, PCEIL, step_y=400, depth=28)
 region('deck', Z, (-2400, 1760, 2400, 2400), DECK_Z, (16, 0, 16, 16))
 region('deck_mid', Z, (-2192, 1600, 1904, 1760), DECK_Z, (0, 0, 0, 0))
 region('deck_east', Z, (2112, 1600, 2400, 1760), DECK_Z, (0, 0, 16, 0))
@@ -793,6 +941,11 @@ sign(Z, 'sign_generator', 'x', 1920, -1, 2700, -170, 192)
 decal_wall(Z, 'top_stain', 'x', 1680, +1, 2700, -130, 192, 64)
 decal_wall(Z, 'drip_stain', 'y', 3200, -1, 2050, -220, 128, 160)
 decal_floor(Z, 'floor_stain', 2900, 1800, -320, 160, 128)
+cable_tray(Z, 'x', 2416, 3200, 1740, -100)
+cable_tray(Z, 'y', 1920, 2384, 3150, -100)
+floor_grid(Z, 2416, 1680, 3200, 1920, -320, 'beam_yellow', step=1000, w=8, border=8)
+for (x0_, x1_, y_, f_) in ((2416, 3200, 1680, 1), (2416, 3200, 1920, -1)):
+    B.slab_x(x0_, x1_, y_, -110, -96, 4, 'steel_trim', Z, f_, collide=False, nav=False)
 region('corridor_a', Z, (2416, 1680, 3200, 1920), -320)
 region('corridor_b', Z, (2960, 1920, 3200, 2384), -320, (16, 0, 16, 16))
 adjacent('corridor_a', 'corridor_b')
@@ -813,6 +966,16 @@ B.box((3560, 3120, -320), (3760, 3184, -260), {'side': 'panel_dark', 'top': 'ste
 B.box((3560, 3168, -260), (3760, 3184, -200), {'side': 'panel_dark', 'top': 'steel_trim'}, Z)
 sign(Z, 'sign_signal_control', 'x', 3184, -1, 3100, -70, 192)
 decal_floor(Z, 'blood_pool', 2900, 2700, -320, 96, 96)
+for x_ in range(2700, 3800, 300):
+    for y_, f_ in ((2400, 1), (3184, -1)):
+        if not (3000 <= x_ <= 3200 and y_ == 3184) and not (3000 <= x_ <= 3200 and y_ == 2400):
+            B.slab_x(x_ - 10, x_ + 10, y_, -320, 32, 10, 'ibeam', Z, f_, collide=False, nav=False)
+            geo_prop('rib', Z, (x_ - 10, y_ - 10, -320), (x_ + 10, y_ + 10, 32))
+for y_ in (2500, 3100):
+    for x_, f_ in ((2600, 1), (3800, -1)):
+        B.slab_y(y_ - 10, y_ + 10, x_, -320, 32, 10, 'ibeam', Z, f_, collide=False, nav=False)
+floor_grid(Z, 2600, 2400, 3800, 3184, -320, 'beam_yellow', step=400, w=10, border=16, skip=((3170, 2720, 3430, 2880),))
+drains(Z, [(2800, 2800), (3600, 2600)], -320)
 region('generator', Z, (2600, 2400, 3800, 3184), -320)
 
 # ---------------------------------------------------------------- 6 control room (2600,3200)-(3600,4000), -320..-32 + PaP alcove
@@ -837,6 +1000,10 @@ for x0_ in (2700, 3020, 3340):
 decal_wall(Z, 'map_board', 'y', 3600, -1, 3600, -180, 320, 160)
 sign(Z, 'sign_network_map', 'x', 4000, -1, 2800, -170, 256, 128)
 B.wall_plane(Z, 'x', 4150, -1, 2976, 3232, -320, -112, 'rollup', collide=False)
+ceiling_grid(Z, 2600, 3200, 3600, 4000, -32, step_y=250, depth=16, mat='steel_trim')
+for x_ in (2980, 3300):
+    B.box((x_ - 7, 3200, -48), (x_ + 7, 4000, -32), 'steel_trim', Z, collide=False, nav=False)
+floor_grid(Z, 2600, 3200, 3600, 4000, -320, 'steel_trim', step=333, w=10, border=20, skip=((2700, 3520, 3580, 3600),))
 region('control', Z, (2600, 3200, 3600, 4000), -320)
 region('pap_alcove', Z, (2976, 4016, 3232, 4160), -320)
 
@@ -876,6 +1043,12 @@ for y_ in range(1700, 2584, 320):
     B.box((-3600, y_ - 6, -120), (-3216, y_ + 6, -96), 'ibeam', Z, collide=False, nav=False)
 decal_wall(Z, 'drip_stain', 'x', 1584, -1, -2900, -200, 160, 180)
 decal_wall(Z, 'drip_stain', 'y', -3216, -1, 2100, -200, 160, 180)
+cable_tray(Z, 'x', -3600, -2416, 1260, -122)
+cable_tray(Z, 'y', 1584, 2584, -3560, -122)
+floor_grid(Z, -3600, 1216, -2416, 1584, -384, 'conc_trim_floor', step=400, w=10, border=10, skip=((-3600, 1420, -2416, 1580),))
+floor_grid(Z, -3600, 1584, -3216, 2584, -384, 'conc_trim_floor', step=400, w=10, border=10)
+flicker_lamp(Z, -3100, 1400, -97)
+flicker_lamp(Z, -3400, 2300, -97, 90)
 region('tunnel_a', Z, (-3600, 1216, -2416, 1584), -384, (16, 16, 16, 0))
 region('tunnel_b', Z, (-3600, 1584, -3216, 2584), -384, (16, 0, 16, 16))
 adjacent('tunnel_a', 'tunnel_b')
@@ -909,6 +1082,13 @@ decal_wall(Z, 'wall_stain', 'x', 3400, -1, -3200, -150, 160, 160)
 decal_wall(Z, 'drip_stain', 'y', -3600, +1, 2800, -180, 160, 200)
 decal_wall(Z, 'top_stain', 'x', 2600, +1, -3200, -60, 256, 64)
 decal_floor(Z, 'floor_stain', -2900, 3100, -384, 192, 160)
+pilasters(Z, 'x', 2600, +1, -3600, -2064, -384, -32, step=384, avoid=((-2900, 200), (-3400, 170)), lower='wood_green', upper='brick_white')
+pilasters(Z, 'x', 3400, -1, -3600, -2064, -384, -32, step=384, avoid=((-3400, 110), (-3000, 110), (-2600, 110), (-2300, 80)), lower='wood_green', upper='brick_white')
+ceiling_grid(Z, -3600, 2600, -2064, 3400, -32, step_y=400, depth=24)
+floor_grid(Z, -3600, 2600, -2064, 3400, -384, 'wood_trim', step=384, w=12, border=24, skip=((-3480, 3200, -3300, 3380), (-2560, 2700, -2320, 2830)))
+drains(Z, [(-3300, 2700), (-2400, 3200)], -384)
+flicker_lamp(Z, -2550, 3000, -57)
+flicker_lamp(Z, -3050, 3000, -57)
 region('platform_b', Z, (-3600, 2600, -2064, 3400), -384)
 
 # ---------------------------------------------------------------- 9 stair_b (-2048,3104)-(-1216,3400): -384 -> 0 rising east
@@ -1445,6 +1625,11 @@ for scriptable, origin, yaw, zone in WHEELS:
     ents.append(ent(classname='script_struct', noteworthy='spinner', model='zmb_magic_wheel_spinner',
                     origin=fmt((origin[0] + 8 * fx, origin[1] + 8 * fy, origin[2] + 55.6)), angles='0 %g 0' % yaw))
     ents.append(ent(classname='script_model', noteworthy='out_of_order', model='tag_origin', origin=fmt((origin[0], origin[1], origin[2] + 37))))
+    # wheel_fx_spot: the stock wheel spawns the won weapon here (Spaceland: spinner + 14 to the wheel's right, 0.4 lower)
+    sx_, sy_ = origin[0] + 8 * fx, origin[1] + 8 * fy
+    rx_, ry_ = math.cos(math.radians(yaw - 90)), math.sin(math.radians(yaw - 90))
+    ents.append(ent(classname='script_struct', targetname='wheel_fx_spot', origin=fmt((sx_ + 14 * rx_, sy_ + 14 * ry_, origin[2] + 55.2)),
+                    angles='0 %g 0' % yaw))
     layout['interactions'].append({'kind': 'magic_wheel', 'scriptable': scriptable, 'origin': origin, 'yaw': yaw, 'zone': zone})
 for name, q in QUEST.items():
     if 'origin' in q:
@@ -1466,7 +1651,10 @@ for tn in ('hidden_room_portal', 'center_portal', 'fast_travel_tube_start', 'fas
            'hidden_travel_tube_end'):
     ents.append(ent(classname='script_model', targetname=tn, model='tag_origin', origin='0 0 -3000', angles='0 0 0'))
 ents.append(ent(classname='script_struct', targetname='hidden_room_spot', origin='0 0 -3000', angles='0 0 0'))
-for m_ in ('icbm_electricpanel9_on', 'beacon_light_plasticcase_red_off'):      # quest state models: keep them loaded
+for f_ in FLICKER:    # flickering fluorescent: the lit model, swapped with the unlit one by the level script
+    ents.append(ent(classname='script_model', targetname='iwz_flicker', model='mp_dart_lightfluo_on', origin=fmt(f_['origin']),
+                    angles='0 %g 0' % f_['yaw']))
+for m_ in ('icbm_electricpanel9_on', 'beacon_light_plasticcase_red_off', 'mp_dart_lightfluo'):      # swapped models: keep them loaded
     ents.append(ent(classname='script_model', model=m_, origin='0 0 -3000', angles='0 0 0'))
 # PaP shutter: two rolling steel gates (stock gate_warehouse_refinery_01, 156 x 12 x 186, origin at its corner) in the
 # arch between the control room and the PaP alcove, raised by the relay quest; collision from door blockers below
@@ -1567,6 +1755,17 @@ for fi, f in enumerate(FX):
         FX_VIEWS.append((fi, (fx_ + dx_, fy_ + dy_, gz_, round(yaw_, 2), round(pitch_, 2))))
         break
 fxv_lines = ['    fxviews[fxviews.size] = iwz_view( "fx_%d", %g, %g, %g, %g, %g );' % (fi, *v) for fi, v in FX_VIEWS]
+FLK_VIEWS = []     # flicker check views: lamp seen from the floor 260 units away
+for li, f in enumerate(FLICKER):
+    lx_, ly_, lz_ = f['origin']
+    for dx_, dy_ in ((260, 0), (-260, 0), (0, 260), (0, -260), (180, 180), (-180, -180)):
+        gz_ = floor_z_at(lx_ + dx_, ly_ + dy_)
+        if gz_ is None:
+            continue
+        FLK_VIEWS.append((li, (lx_ + dx_, ly_ + dy_, gz_, round(math.degrees(math.atan2(-dy_, -dx_)) % 360, 2),
+                               round(-math.degrees(math.atan2(lz_ - (gz_ + 60), math.hypot(dx_, dy_))), 2))))
+        break
+fxv_lines += ['    flkviews[flkviews.size] = iwz_view( "flk_%d", %g, %g, %g, %g, %g );' % (li, *v) for li, v in FLK_VIEWS]
 for k, (x, y, z, yaw, pitch) in enumerate(SIGN_VIEW_LIST):
     view_lines.append('    views[views.size] = iwz_view( "sign_%d", %g, %g, %g, %g, %g );' % (k, x, y, z, yaw, pitch))
 for k, (x, y, z, yaw, pitch) in enumerate(GALLERY_VIEWS):
@@ -1593,6 +1792,8 @@ open(os.path.join(out, 'iwzmap_sz2_local.gsc'), 'w', newline=NL).write(fx)
 layout['views'] = VIEWS
 layout['sign_views'] = SIGN_VIEWS
 layout['fx'] = FX
+layout['flicker'] = FLICKER
+layout['flicker_views'] = FLK_VIEWS
 layout['fx_views'] = FX_VIEWS
 layout['decals'] = DECALS
 layout['sign_view_list'] = SIGN_VIEW_LIST
@@ -1611,5 +1812,6 @@ plan = {'regions': [{'name': r['name'], 'zone': r['zone'], 'rect': r['rect']} fo
         'cells': [[i, j, z, owner[(i, j)]] for (i, j), z in cells.items()], 'blockers': B.blockers,
         'col_tris': len(B.mesh.col), 'bounds': wb}
 json.dump(plan, open(os.path.join(out, 'plan.json'), 'w'))
+json.dump({'quads': B.records}, open(os.path.join(out, 'surfaces.json'), 'w'))
 print('verts', nv, 'indices', ni, 'surfaces', ns, 'quads', B.quads, 'bounds', wb, 'collision', info, 'nav areas', nareas,
       'nav bytes', len(nav), 'materials', len(B.used), 'lights', len(LIGHTS), 'signs', len(SIGNS))
