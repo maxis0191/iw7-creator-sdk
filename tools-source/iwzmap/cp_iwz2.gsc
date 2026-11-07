@@ -26,6 +26,14 @@ main()
     level.dj = spawn( "script_model", ( 0, 0, -3000 ) );
     level.dj setmodel( "tag_origin" );
 //@FXLOAD@
+    // Spaceland main() weapon tables the stock perk/last-stand code reads (missing: Rat-a-tat purchase failed in
+    // give_rat_a_tat_perk -> getweapontoswitchbackto -> array_contains( undefined ), QA report item 12)
+    level.additional_laststand_weapon_exclusion = [ "iw7_cpbasketball_mp", "iw7_cpskeeball_mp", "iw7_cpclowntoothball_mp", "iw7_horseracepistol_zm_blue", "iw7_horseracepistol_zm_yellow", "iw7_horseracepistol_zm_red", "iw7_horseracepistol_zm_green", "iw7_shootgallery_zm", "iw7_blackholegun_mp", "iw7_penetrationrail_mp", "iw7_atomizer_mp", "iw7_glr_mp", "iw7_claw_mp", "iw7_steeldragon_mp", "iw7_shootgallery_zm_blue", "iw7_shootgallery_zm_yellow", "iw7_shootgallery_zm_red", "iw7_shootgallery_zm_green" ];
+    level.last_stand_weapons = [ "iw7_g18_zm", "iw7_mag_zm", "iw7_g18_zmr", "iw7_g18_zml", "iw7_g18c_zm", "iw7_revolver_zm", "iw7_revolver_zmr", "iw7_revolver_zmr_explosive", "iw7_revolver_zml", "iw7_revolver_zml_single", "iw7_emc_zm", "iw7_emc_zmr", "iw7_emc_zmr_burst", "iw7_emc_zml", "iw7_emc_zml_spread", "iw7_nrg_zm", "iw7_nrg_zmr", "iw7_nrg_zmr_smart", "iw7_nrg_zml", "iw7_nrg_zml_charge", "iw7_dischord_zm", "iw7_headcutter_zm", "iw7_shredder_zm", "iw7_facemelter_zm", "iw7_dischord_zm_pap1", "iw7_headcutter_zm_pap1", "iw7_shredder_zm_pap1", "iw7_facemelter_zm_pap1" ];
+    level.alt_mode_weapons_allowed = [ "iw7_g18_zm", "iw7_g18_zmr" ];
+    level.pap_1_camo = "camo01";
+    level.pap_2_camo = "camo04";
+    level.no_pap_camos = [ "axe", "iw7_axe_zm", "forgefreeze" ];
     level._effect["iwz_relay_red"] = loadfx( "vfx/iw7/core/zombie/weapon/shredder/zmb_part_glow_red.vfx" );
     level._effect["iwz_relay_green"] = loadfx( "vfx/iw7/core/zombie/weapon/dischord/zmb_part_glow_green.vfx" );
     level._effect["iwz_rail_arc"] = loadfx( "vfx/iw7/_requests/coop/vfx_mini_grey_shock_arc.vfx" );

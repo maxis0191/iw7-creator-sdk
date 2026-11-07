@@ -96,6 +96,19 @@ iwz_game_run()
     else
         print("[IWZ game] POWER missing");
 
+    // 4b. Rat-a-tat (QA item 12): stock perk activation on its machine struct, then the stock ownership test
+    player scripts\cp\cp_persistence::set_player_currency(5000);
+    foreach (s in level.all_interaction_structs)
+    {
+        if (isdefined(s.script_noteworthy) && s.script_noteworthy == "perk_machine_rat_a_tat")
+        {
+            before = player scripts\cp\cp_persistence::get_player_currency();
+            [[ level.interactions["perk_machine_rat_a_tat"].activation_func ]](s, player);
+            wait 2;
+            print("[IWZ game] RATATAT paid=" + (before - player scripts\cp\cp_persistence::get_player_currency()) + " has=" + player scripts\cp\utility::has_zombie_perk("perk_machine_rat_a_tat"));
+        }
+    }
+
     // 5. PaP quest: the three relays (stock trigger notify; the 2 s Use hold is simulated by paris_iwz_autouse)
     for (i = 1; i <= 3; i++)
     {
