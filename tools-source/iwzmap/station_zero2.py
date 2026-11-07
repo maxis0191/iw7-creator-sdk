@@ -996,8 +996,9 @@ region('generator', Z, (2600, 2400, 3800, 3184), -320)
 Z = 'control_room'
 room(Z, 'control', (2600, 3200, 3600, 4000), -320, -32, 'control_neutral', 'rubber_mat', 'ceil_tile')
 room(Z, 'pap_alcove', (2976, 4016, 3232, 4160), -320, -112, 'control', 'diamond', 'conc_dark', skip=('south',))
-for x in (2820, 3140, 3460):          # cool fluorescents over the signal desks (desk light)
-    strip_light(Z, x - 64, 3552, x + 64, 3568, -32, mat='lamp_cool')
+DESKS = [(2640, 3520), (3260, 3520), (3300, 3760)]     # (x0, y0) of 240 x 80 signal desks; lane x 2880..3260 kept clear
+for x0_, y0_ in DESKS:                # cool fluorescents over the signal desks (desk light)
+    strip_light(Z, x0_ + 56, y0_ + 32, x0_ + 184, y0_ + 48, -32, mat='lamp_cool')
 strip_light(Z, 3100 - 32, 3792, 3100 + 32, 3808, -32, mat='lamp_red')     # red emergency accent (run g12: red dominated)
 for x in (2750, 3450):
     strip_light(Z, x - 64, 3792, x + 64, 3808, -32, mat='lamp_cool')
@@ -1007,17 +1008,17 @@ for y_ in (3650,):
     wall_lamp(Z, 'y', 2600, +1, y_, -120, mat='lamp_red', w=16, h=16)
     wall_lamp(Z, 'y', 3600, -1, y_, -120, mat='lamp_red', w=16, h=16)
 # signal desks (boxes, until the kit) and the network map board
-for x0_ in (2700, 3020, 3340):
-    B.box((x0_, 3520, -320), (x0_ + 240, 3600, -284), {'side': 'panel_wall', 'top': 'steel_trim'}, Z)
-    geo_prop('desk_%d' % x0_, Z, (x0_, 3520, -320), (x0_ + 240, 3600, -284))
-    B.box((x0_ + 10, 3584, -284), (x0_ + 230, 3600, -250), {'side': 'panel_wall', 'top': 'steel_trim'}, Z)
+for x0_, y0_ in DESKS:
+    B.box((x0_, y0_, -320), (x0_ + 240, y0_ + 80, -284), {'side': 'panel_wall', 'top': 'steel_trim'}, Z)
+    geo_prop('desk_%d_%d' % (x0_, y0_), Z, (x0_, y0_, -320), (x0_ + 240, y0_ + 80, -284))
+    B.box((x0_ + 10, y0_ + 64, -284), (x0_ + 230, y0_ + 80, -250), {'side': 'panel_wall', 'top': 'steel_trim'}, Z)
 decal_wall(Z, 'map_board', 'y', 3600, -1, 3600, -180, 320, 160)
 sign(Z, 'sign_network_map', 'x', 4000, -1, 2800, -170, 256, 128)
 B.wall_plane(Z, 'x', 4150, -1, 2976, 3232, -320, -112, 'rollup', collide=False)
 ceiling_grid(Z, 2600, 3200, 3600, 4000, -32, step_y=250, depth=16, mat='steel_trim')
 for x_ in (2980, 3300):
     B.box((x_ - 7, 3200, -48), (x_ + 7, 4000, -32), 'steel_trim', Z, collide=False, nav=False)
-floor_grid(Z, 2600, 3200, 3600, 4000, -320, 'steel_trim', step=333, w=10, border=20, skip=((2700, 3520, 3580, 3600),))
+floor_grid(Z, 2600, 3200, 3600, 4000, -320, 'steel_trim', step=333, w=10, border=20, skip=tuple((x0_, y0_, x0_ + 240, y0_ + 80) for x0_, y0_ in DESKS))
 region('control', Z, (2600, 3200, 3600, 4000), -320)
 region('pap_alcove', Z, (2976, 4016, 3232, 4160), -320)
 
@@ -1134,12 +1135,12 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor('ticket_hall', 'park_trash_can_red_01', 360, 4100, 0, 0, (16, 16, 24))
     for x in (-950, 300):
         decor('ticket_hall', 'furniture_park_bench_01_blue', x, 4340, 0, 0, (48, 16, 20))
-    for x in (-2048, -1024, 64, 1536):
+    for x in (-2048, -1024, 64, 1300):
         if KIT:     # worn subway bench (cp_disco, 40 x 192): long axis along the wall
             decor('platform_a', 'cp_disco_worn_subway_bench', x, 2350, DECK_Z, 90, (96, 20, 20))
         else:
             decor('platform_a', 'furniture_park_bench_01_blue', x, 2340, DECK_Z, 0, (48, 16, 20))
-    for x in (-1600, 300, 2100):
+    for x in (-1750, 300, 2100):
         decor('platform_a', 'park_trash_can_red_01', x, 2370, DECK_Z, 0, (16, 16, 24))
     decor('maint_corridor', 'dns_locker_set_01', 2700, 1704, -320, 90, (96, 24, 48))
     decor('maint_corridor', 'pipe_metal_painted_straight_128_gray', 2600, 1690, -150, 0)
@@ -1152,9 +1153,9 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor('platform_b', 'park_trash_can_blue_01', -2200, 3360, -384, 0, (16, 16, 24))
     decor('platform_b', 'furniture_park_bench_01_blue', -3000, 3350, -384, 0, (48, 16, 20))
     # control room: CRT monitors on the signal desks, generator room workbench, corridor lockers
-    for x0_ in (2700, 3020, 3340):
+    for x0_, y0_ in DESKS:
         for dx in (60, 180):
-            decor('control_room', 'zmb_tv_crt_01', x0_ + dx, 3560, -284, 90)
+            decor('control_room', 'zmb_tv_crt_01', x0_ + dx, y0_ + 40, -284, 90)
     decor('generator_room', 'mp_dart_workbench_01', 3770, 2950, -320, 0, (16, 44, 22))
     decor('generator_room', 'dns_locker_set_01', 2780, 3172, -320, 180, (20, 10, 50))
     decor('generator_room', 'dns_locker_set_01', 2822, 3172, -320, 180, (20, 10, 50))
@@ -1205,11 +1206,11 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zg, 'emergency_shutoff_sm_panel_01', 3460, 2402, -260, 90)
     decor(Zg, 'equipment_old_computer', 3760, 2950, -276, 180)
     # control room: desks with test-pattern monitors, chairs, radio, filing cabinets
-    for x0_ in (2700, 3020, 3340):
-        decor(Zc, 'chair_folding_iw6', x0_ + 120, 3480, -320, 90, (12, 11, 19))
-        decor(Zc, 'sdf_console_control_panel_08', x0_ + 120, 3550, -284, 270)
-    decor(Zc, 'com_tv2_testpattern', 3540, 3592, -250, 270)
-    decor(Zc, 'zmb_frequency_device_radio', 2760, 3592, -250, 270)
+    for x0_, y0_ in DESKS:
+        decor(Zc, 'chair_folding_iw6', x0_ + 120, y0_ - 40, -320, 90, (12, 11, 19))
+        decor(Zc, 'sdf_console_control_panel_08', x0_ + 120, y0_ + 30, -284, 270)
+    decor(Zc, 'com_tv2_testpattern', 3460, 3592, -250, 270)
+    decor(Zc, 'zmb_frequency_device_radio', 2700, 3592, -250, 270)
     for x_ in (2640, 2680):
         decor(Zc, 'furniture_filing_cabinet', x_, 3990, -320, 270, (17, 8, 17))
     # maintenance corridor: duct along the ceiling, wall vents, hanging wires
@@ -1423,10 +1424,10 @@ SPAWNERS = [   # >= 48 from walls/props, inside the zone volume, on the navmesh 
     ('ticket_hall', -1136, 3300, 0, 'wall', 0), ('ticket_hall', 336, 3300, 0, 'wall', 180), ('ticket_hall', -400, 4300, 320, 'ceiling', 270),
     ('stair_a', -600, 2460, -320, 'ground', 90), ('stair_a', -700, 2470, -320, 'ground', 90), ('stair_a', -500, 2470, -320, 'ground', 90),
     ('stair_a', -600, 3150, 0, 'ground', 270), ('stair_a', -752, 2800, None, 'wall', 0), ('stair_a', -600, 3140, 288, 'ceiling', 270),
-    ('platform_a', 2340, 1300, -384, 'ground', 180), ('platform_a', 2340, 1500, -384, 'ground', 180),
-    ('platform_a', -2300, 1280, -384, 'ground', 0), ('platform_a', -1600, 2352, -320, 'wall', 270),
+    ('platform_a', 2250, 2000, -320, 'ground', 180), ('platform_a', 1150, 1700, -320, 'ground', 90),
+    ('platform_a', -2250, 2000, -320, 'ground', 0), ('platform_a', -1600, 2352, -320, 'wall', 270),
     ('platform_a', 1600, 2352, -320, 'wall', 270), ('platform_a', 800, 2200, -320, 'ground', 270),
-    ('platform_a', -1300, 1700, -320, 'ground', 90), ('platform_a', 1500, 1300, -384, 'ground', 90),
+    ('platform_a', -1300, 1700, -320, 'ground', 90), ('platform_a', -500, 1700, -320, 'ground', 90),
     ('maint_corridor', 3150, 2300, -320, 'ground', 270), ('maint_corridor', 2550, 1800, -320, 'ground', 0),
     ('maint_corridor', 3080, 1760, -320, 'ground', 180), ('maint_corridor', 3080, 2050, -320, 'ground', 270),
     ('maint_corridor', 2800, 1728, -320, 'wall', 90), ('maint_corridor', 3080, 2150, -96, 'ceiling', 270),
@@ -1794,7 +1795,9 @@ WALK = [   # waypoint path through every zone (doors are opened by the walk fixt
     (2600, 1800, -320), (3080, 1800, -320), (3080, 2300, -320), (3080, 2500, -320), (3100, 2900, -320), (3100, 3250, -320),
     (2980, 3450, -320), (2980, 3700, -320), (3104, 3950, -320), (2980, 3700, -320), (2980, 3450, -320), (3100, 3250, -320),
     (3080, 2300, -320), (3080, 1800, -320), (2600, 1800, -320), (1880, 1800, -320), (1880, 1680, -320), (1940, 1680, -320),
-    (2084, 1680, -384), (2090, 1560, -384), (2080, 1500, -384), (1000, 1300, -384), (-1500, 1300, -384), (-2350, 1400, -384),
+    (2084, 1680, -384), (2090, 1560, -384), (2080, 1250, -384), (1000, 1250, -384), (-1500, 1300, -384), (-2350, 1400, -384),
+    # pit <-> deck through the west stairwell (QA g18: service_tunnel -> platform_a deck route), then into the tunnel
+    (-2330, 1560, -384), (-2370, 1680, -384), (-2150, 1680, -320), (-2370, 1680, -384), (-2330, 1560, -384), (-2350, 1400, -384),
     (-2500, 1400, -384), (-3400, 1400, -384), (-3400, 2000, -384), (-3400, 2650, -384), (-2800, 3000, -384), (-2120, 3250, -384),
     (-2032, 3250, -384), (-1296, 3250, 0), (-1250, 3300, 0), (-1150, 3300, 0), (-528, 3500, 0), (-528, 3880, 0),
 ]

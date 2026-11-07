@@ -44,6 +44,26 @@ main()
     level._effect["iwz_relay_green"] = loadfx( "vfx/iw7/core/zombie/weapon/dischord/zmb_part_glow_green.vfx" );
     level._effect["iwz_rail_arc"] = loadfx( "vfx/iw7/_requests/coop/vfx_mini_grey_shock_arc.vfx" );
     level._effect["iwz_rail_spark"] = loadfx( "vfx/iw7/core/zombie/vfx_zmb_console_sparks.vfx" );
+    // Spaceland main() voice set-up (QA g18: ~1,150 vo_is_playing errors per run from player_pain_vo /
+    // codecallback_playerdamage and the trap): zmb_vo_init clears level.announcer_vo_playing / level.player_vo_playing
+    // and registers the map VO handlers; the area / team-buy VO and character VO prefixes as in Spaceland
+    level.purchase_area_vo = scripts\cp\maps\cp_zmb\cp_zmb_vo::purchase_area_vo;
+    level.team_buy_vos = scripts\cp\maps\cp_zmb\cp_zmb_vo::purchase_team_buy_vos;
+    level.cac_vo_male = scripts\engine\utility::array_randomize( [ "p1_", "p3_" ] );
+    level.cac_vo_female = scripts\engine\utility::array_randomize( [ "p2_" ] );
+    level.announcer_vo_playing = 0;
+    level.player_vo_playing = 0;
+    level thread scripts\cp\maps\cp_zmb\cp_zmb_vo::zmb_vo_init();
+    // per-map ranked leaderboard rows are keyed by level.script and the ranked player data has no cp_iwz row: every
+    // wave (update_highest_wave_lb) and every kill (updateleaderboardstats) raised getrankedplayerdata errors (QA g18:
+    // 214 per run). Career stats (coopCareerStats) are kept; only the per-map leaderboard rows are skipped.
+    replacefunc( scripts\cp\cp_persistence::update_highest_wave_lb, ::iwz_skip_map_leaderboard5 );
+    replacefunc( scripts\cp\cp_persistence::updateleaderboardstats, ::iwz_skip_map_leaderboard6 );
+    // Director's Cut (Paris module) on a map the stock tables do not list: perkaholic waited on an undefined time and
+    // the PaP "fuses" loop read an undefined machine list (QA g18 minor)
+    replacefunc( scripts\cp\zombies\directors_cut::get_pre_perkaholic_wait_time, ::iwz_dc_perkaholic_wait );
+    if ( !isdefined( level.player_pap_machines ) )
+        level.player_pap_machines = [];
     level.iwz_door_open = [];
     level thread iwz_door_purchases();
     level thread iwz_zone_links();
@@ -502,4 +522,17 @@ iwz_flicker_lamp()
             level.iwz_flicker_toggles++;
         }
     }
+}
+
+iwz_skip_map_leaderboard5( a, b, c, d, e )
+{
+}
+
+iwz_skip_map_leaderboard6( a, b, c, d, e, f )
+{
+}
+
+iwz_dc_perkaholic_wait()
+{
+    return 9;      // Spaceland value
 }
