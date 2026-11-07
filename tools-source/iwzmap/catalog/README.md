@@ -56,3 +56,21 @@ python -I preview_analyze.py --run <dir> --catalog catalog.json --dump cp_disco=
 The booth needs only the stock map that already holds the models (no build). Camera `rel` coordinates are
 relative to the player spawn. A frame passes when the engine bounds equal the catalog bounds (<= 0.6 unit),
 the silhouette box matches the projected LOD0 vertex box (IoU >= 0.7) and the masked pixels are lit and textured.
+
+Two-camera runs compare each frame only with the background frames of its own camera. The booth hides spawned
+zombies (`+set paris_iwz_hideai 0` to keep them). `getpointinbounds` on a `script_model` returns its origin, so
+the bounds check is the silhouette IoU of the projected catalog LOD0 vertices, not an engine bounds query.
+
+## Kit
+
+```powershell
+python iwzcat.py kit catalog.json --previews <run in target map>\previews.json --previews <other runs>... `
+    --roles roles.tsv --reject reject.tsv --template cp_zmb `
+    --template-techsets "<techsets_cp_zmb dump>;<techsets_global_cp dump>;..." --out kit.json --sheet <dir>
+```
+
+The first `--previews` file with a passing frame wins for a model (list the runs made inside the target map
+first). `cost` counts XModelSurfs bytes and image headers to embed, streamed mip bytes per base-game
+`imagefile<N>.pak` (no download: every client has them) and `techsetsNotInTemplate` (materials whose techsets
+need `require,techsets_<zone>` in the zone csv). Review the `--sheet` contact sheets: the texture test cannot tell
+a back face from a front face.
