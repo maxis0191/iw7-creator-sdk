@@ -1310,7 +1310,20 @@ if os.environ.get('IWZ_TRAIN_CARS') == '2':
 TRAIN_CAR_HALF = (268, 66.5, 95)  # nav cut half extents (x, y, z/2 above the rail top); detailed clip from the port's boxes
 TRAIN_DOOR_X = (-158, -70)       # the car's open +y door bay, car-local x
 TRAIN_FLOOR = 33.3               # car floor above its origin (rail top)
+TRAIN_CAR_FLOOR_TOP = 35.9       # top of the car's floor clip boxes above its origin (walk surface, deck -320.4)
+TRAIN_AISLE = 24                 # aisle lane half width (the port's clip boxes leave y +-26 free above the floor)
+TRAIN_AISLE_END = 224            # aisle ends at the end bulkheads (clip boxes from car-local x +-224)
 TRAIN_SPEC = {}
+BALLAST_TOP_HALF, BALLAST_FOOT_HALF = 62, 94
+
+
+def ballast_z(y):
+    d_ = abs(y - TRACK_CY)
+    if d_ <= BALLAST_TOP_HALF:
+        return TRAIN_BALLAST_Z
+    if d_ >= BALLAST_FOOT_HALF:
+        return TRAIN_BED
+    return TRAIN_BALLAST_Z - (TRAIN_BALLAST_Z - TRAIN_BED) * (d_ - BALLAST_TOP_HALF) / (BALLAST_FOOT_HALF - BALLAST_TOP_HALF)
 
 
 def train_kit():
@@ -1322,9 +1335,13 @@ def train_kit():
            [('service_tunnel', -2400 - TRAIN_SEG * k) for k in range(1, 6)]
     for zone, x0 in segs:
         decor(zone, 'iwz_track_256', x0, cy, bz, 0)
-    # ballast prism top: walkable 16 above the bed (a step); the bed nav stays (zombies step onto it)
+    # ballast prism: flat top y +-BALLAST_TOP_HALF at the ballast top, shoulders sloping to the bed at +-BALLAST_FOOT_HALF
+    # (QA g25t: a vertical 16-unit face could be stepped down but not climbed, by players or zombies)
     for x0, x1 in ((-2400, 2410), (-3600, -2400)):
-        B.collision_box((x0, cy - 62, TRAIN_BED), (x1, cy + 62, bz), nav=False)
+        t0, t1, f0, f1 = cy - BALLAST_TOP_HALF, cy + BALLAST_TOP_HALF, cy - BALLAST_FOOT_HALF, cy + BALLAST_FOOT_HALF
+        B.collision_quad([(x0, t0, bz), (x1, t0, bz), (x1, t1, bz), (x0, t1, bz)], n=(0, 0, 1))
+        B.collision_quad([(x0, f0, TRAIN_BED), (x1, f0, TRAIN_BED), (x1, t0, bz), (x0, t0, bz)], n=(0, -0.45, 0.89))
+        B.collision_quad([(x0, t1, bz), (x1, t1, bz), (x1, f1, TRAIN_BED), (x0, f1, TRAIN_BED)], n=(0, 0.45, 0.89))
     # buffer stop at the tunnel's west end, buffer heads facing the platform (+x)
     decor('service_tunnel', 'iwz_track_buffer_stop', -3560, cy, bz, 0)
     B.collision_box((-3560, cy - 52, bz), (-3488, cy + 52, bz + 48))
@@ -1342,7 +1359,21 @@ def train_kit():
         oz = TRAIN_RAIL_TOP
         decor('platform_a', 'iwz_t7e_subway_car_a', cx, cy, oz, yaw)
         hx, hy, hz = TRAIN_CAR_HALF
-        B.blockers.append((cx - hx, cy - hy, cx + hx, cy + hy, oz, oz + 2 * hz))     # nav cut only
+        fz_ = oz + TRAIN_CAR_FLOOR_TOP
+        d0_, d1_ = sorted((cx + TRAIN_DOOR_X[0], cx + TRAIN_DOOR_X[1]))
+        top_ = oz + 2 * hz
+        B.blockers.append((cx - hx, cy - hy, cx + hx, cy + hy, TRAIN_BED, fz_ - 2))                  # no bed / ballast nav under the car
+        B.blockers.append((cx - hx, cy - hy, cx + hx, cy - TRAIN_AISLE, fz_, top_))                   # track-side seats and wall
+        B.blockers.append((cx - hx, cy + TRAIN_AISLE, d0_, cy + hy, fz_, top_))                      # platform side, west of the door bay
+        B.blockers.append((d1_, cy + TRAIN_AISLE, cx + hx, cy + hy, fz_, top_))                      # platform side, east of the door bay
+        B.blockers.append((cx - hx, cy - TRAIN_AISLE, cx - TRAIN_AISLE_END, cy + TRAIN_AISLE, fz_, top_))   # end bulkheads
+        B.blockers.append((cx + TRAIN_AISLE_END, cy - TRAIN_AISLE, cx + hx, cy + TRAIN_AISLE, fz_, top_))
+        an_ = 'car_aisle_%d' % len(cars)
+        dn_ = 'car_door_%d' % len(cars)
+        region(an_, 'platform_a', (cx - TRAIN_AISLE_END, cy - 16, cx + TRAIN_AISLE_END, cy + 16), fz_, (0, 0, 0, 0))
+        region(dn_, 'platform_a', (d0_, cy + 16, d1_, EDGE_Y), fz_, (0, 0, 0, 0))
+        adjacent(an_, dn_)
+        adjacent(dn_, 'deck_mid')
         c, s_ = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
         for (a, b) in boxes:     # model-space clip boxes (players, bullets); yaw 0 / 180 keep them axis aligned
             xs = sorted((cx + c * a[0] - s_ * a[1], cx + c * b[0] - s_ * b[1]))
@@ -1780,26 +1811,21 @@ def edge_heights(k, e):
     return {0: (c_[0], c_[1]), 1: (c_[1], c_[2]), 2: (c_[3], c_[2]), 3: (c_[0], c_[3])}[e]
 
 
-if TRAIN and TRAIN_SPEC.get('channels_ballast', True):
-    _bz, _cy = TRAIN_BALLAST_Z, TRACK_CY
+if TRAIN:
+    # nav follows the ballast prism profile (flat top, 32-unit shoulders): centre and corner heights from ballast_z
     _chans = [(-2400, 2410), (-3600, -2400)]
-    _ballast = set(k for k in cells if any(x0 <= (k[0] + 0.5) * CELL <= x1 for x0, x1 in _chans) and abs((k[1] + 0.5) * CELL - _cy) <= 62
-                   and abs(cells[k] - PIT_Z) < 1)
-    for k in _ballast:
-        cells[k] = _bz
-        corner_z.pop(k, None)
+    _nb = 0
     for k in list(cells):
-        if k in _ballast or abs(cells[k] - PIT_Z) >= 1 or k in corner_z:
+        cx_, cy_ = (k[0] + 0.5) * CELL, (k[1] + 0.5) * CELL
+        if not any(x0 <= cx_ <= x1 for x0, x1 in _chans) or abs(cells[k] - PIT_Z) >= 1 or abs(cy_ - TRACK_CY) >= BALLAST_FOOT_HALF + CELL:
             continue
-        i_, j_ = k
-        c_ = [PIT_Z] * 4
-        if (i_, j_ - 1) in _ballast: c_[0] = c_[1] = _bz
-        if (i_ + 1, j_) in _ballast: c_[1] = c_[2] = _bz
-        if (i_, j_ + 1) in _ballast: c_[2] = c_[3] = _bz
-        if (i_ - 1, j_) in _ballast: c_[3] = c_[0] = _bz
-        if any(v != PIT_Z for v in c_):
-            corner_z[k] = tuple(c_)
-    NAV_SEAM_REPORT = {'ballast_cells': len(_ballast)}
+        y0_, y1_ = k[1] * CELL, (k[1] + 1) * CELL
+        c_ = (ballast_z(y0_), ballast_z(y0_), ballast_z(y1_), ballast_z(y1_))
+        if any(abs(v - PIT_Z) > 0.01 for v in c_):
+            cells[k] = round(ballast_z(cy_), 2)
+            corner_z[k] = tuple(round(v, 2) for v in c_)
+            _nb += 1
+    NAV_SEAM_REPORT = {'ballast_cells': _nb}
 else:
     NAV_SEAM_REPORT = {'ballast_cells': 0}
 _region_size = {}

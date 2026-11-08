@@ -121,6 +121,7 @@ def main():
 
     routes = [('pit', 'deck', ('pit', 'well_w', 'deck_mid', 'deck')), ('pit', 'deck', ('pit', 'well_e', 'deck_mid', 'deck_east', 'deck')),
               ('hall', 'deck', None), ('tunnel_a', 'deck', None)]
+    routes += [('deck', r_, None) for r_ in sorted(set(v[1] for v in cells.values())) if r_.startswith('car_aisle')]   # hero car: zombies enter
     rres = {}
     for ra, rb, via in routes:
         if ra not in region_zone or rb not in region_zone:
