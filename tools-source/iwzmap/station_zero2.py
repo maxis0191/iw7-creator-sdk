@@ -832,7 +832,7 @@ TRACK_Y0, TRACK_Y1 = 1392, 1584
 TRACK_CY = (TRACK_Y0 + TRACK_Y1) / 2
 GAUGE = 56.5                                   # standard gauge, inner rail faces (1 unit = 1 inch)
 RAIL_Y = (TRACK_CY - GAUGE / 2, TRACK_CY + GAUGE / 2)
-THIRD_Y = TRACK_CY - 60                        # conductor rail on the far side from the platform (trap line, gsc)
+THIRD_Y = TRACK_CY - (57.11 if TRAIN else 60)    # conductor rail on the far side from the platform (trap line, gsc); train kit: its rail line
 TRACK_SPEC = {'channels': [], 'gauge': GAUGE, 'centre_y': TRACK_CY, 'rail_y': list(RAIL_Y), 'third_rail_y': THIRD_Y,
               'floor_z': -384, 'owner': 'train agent (iwz-stage2\\train): rails, ties, third rail, buffer stop, car, platform edges',
               'note': 'clean channel; the level draws only its floor (dark concrete with a centred ballast strip)'}
