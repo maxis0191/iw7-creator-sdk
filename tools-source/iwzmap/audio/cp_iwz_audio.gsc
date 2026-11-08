@@ -967,7 +967,11 @@ iwz_scape_power( p )
     if ( isdefined( level.iwz_scape_banks ) )
     {
         if ( scripts\engine\utility::is_true( level.iwz_light_banks_external ) )
+        {
+            // the lighting script leads: relay + strikes on each of its bank notifies, PA boot after its last bank
             level thread iwz_scape_banks_external( p );
+            level scripts\engine\utility::waittill_any_timeout( 30, "iwz_power_lights_done" );
+        }
         else
         {
             foreach ( b in level.iwz_scape_banks )
