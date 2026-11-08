@@ -49,6 +49,8 @@ Rules (lead / owner review of g24):
   fx-fixture       a glow / flare sprite FX (layout fx_placed) without a lit fixture within 24 (review C: violet halos)
   fx-source        a drip FX without its leak (ceiling stain + puddle) (review C: blue streaks in mid-air)
   decor-rail       a decor model (catalog bounds, else its clip) through a railing / handrail / window frame
+  stair-soffit     a stair flight without side walls and without a stringer on its open side(s) (wells: the pit
+                   side; review C / train agent: black wedges under the well stairs)
   stacked          a decor model standing on top of another decor model's footprint (review C interact_10: a crate on
                    a turnstile); with --catalog / --kit the model bounds are used, else the clip boxes
 Exit status 1 when any rule fails.
@@ -178,6 +180,10 @@ def g27_rules(lay, quads, fails, bounds):
         for se in (lo, hi):
             if not any(r['zone'] == zone and r['mins'][sa] - 6 <= se <= r['maxs'][sa] + 6 and r['mins'][ax] - 8 <= c <= r['maxs'][ax] + 8 for r in rets):
                 fails.append('rail-return %s handrail at %s %g: no wall return at %g' % (zone, 'xy'[ax], c, se))
+    # stair-soffit (wells: open towards the pit on c0)
+    for st in lay.get('stairs', []):
+        if not st['side_walls'] and 'c0' not in st['stringers']:
+            fails.append('stair-soffit %s %s: open side without a stringer (void under the treads)' % (st['zone'], st['space']))
     # threshold
     ths = {t['name'] for t in lay.get('thresholds', [])}
     for o in lay.get('openings', []):

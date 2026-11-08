@@ -634,8 +634,11 @@ def rail_run(zone, axis, s0, s1, c, z, h=36, post=96, mat='steel_trim', collide=
             B.collision_box((c - 2, s0, z), (c + 2, s1, z + h + 3))
 
 
+STAIRS = []        # (g27) every stair flight: zone, space, open sides and their stringers (artlint stair-soffit)
+
+
 def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_lo, land_hi, n_steps, head=288,
-                   style='metro', side_walls=True, ceiling=True):
+                   style='metro', side_walls=True, ceiling=True, stringers=()):
     """Stair along `axis` from lo_end (z_lo) to hi_end (z_hi); lo_end/hi_end are the end wall planes (either order).
     Render: treads and risers. Collision: low landing, smooth ramp through the nosings, high landing.
     Walls: banded side walls parallel to the slope; ceiling `head` above the nosing line."""
@@ -671,6 +674,14 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
         if bk.dot(bk.cross(bk.sub(pts[1], pts[0]), bk.sub(pts[3], pts[0])), n) < 0:
             pts = [pts[1], pts[0], pts[3], pts[2]]
         B.quad('conc_floor', zone, pts, n=n, collide=False)            # riser: tread material
+        # (g27, train agent / review C: black wedges under the well stairs) a closed stringer on each open side seen
+        # from outside the flight: the stepped side face from the low floor up to every tread
+        for side_ in stringers:
+            cs_, fs_ = (c0, -1) if side_ == 'c0' else (c1, +1)
+            nn_ = (0, fs_, 0) if axis == 'x' else (fs_, 0, 0)
+            B.quad('conc_dark', zone, [P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=nn_, collide=False)
+    STAIRS.append({'zone': zone, 'space': space, 'side_walls': side_walls, 'stringers': list(stringers), 'axis': axis,
+                   'span': sorted((lo_end, hi_end)), 'c': [c0, c1], 'z': [z_lo, z_hi]})
     # collision: nosing line z(s) = z_lo + rise + (s - s_a) * rise / run, from s_a - run (z_lo) to s_b - run (z_hi)
     r0, r1 = s_a - run, s_b - run
 
@@ -1001,10 +1012,12 @@ if TRAIN:
 # stairwells into the pit (4 steps), railing on the deck side
 for wname, (wx0, wy0, wx1, wy1, ddir) in WELLS.items():
     if ddir < 0:   # descends westwards: low end at wx0
-        zl, _ = straight_stair(Z, wname, 'x', wx0, wx1, wy0, wy1, PIT_Z, DECK_Z, WELL_LAND, 0.0001, WELL_STEPS, side_walls=False, ceiling=False)
+        zl, _ = straight_stair(Z, wname, 'x', wx0, wx1, wy0, wy1, PIT_Z, DECK_Z, WELL_LAND, 0.0001, WELL_STEPS, side_walls=False, ceiling=False,
+                               stringers=('c0',))       # the pit side (y 1600) is open in front of the well
         lo, hi = wx0, wx1
     else:
-        zl, _ = straight_stair(Z, wname, 'x', wx1, wx0, wy0, wy1, PIT_Z, DECK_Z, WELL_LAND, 0.0001, WELL_STEPS, side_walls=False, ceiling=False)
+        zl, _ = straight_stair(Z, wname, 'x', wx1, wx0, wy0, wy1, PIT_Z, DECK_Z, WELL_LAND, 0.0001, WELL_STEPS, side_walls=False, ceiling=False,
+                               stringers=('c0',))
         lo, hi = wx1, wx0
     # well side face at wy1 (facing south into the well) from the stair line up to the deck
     segs = [(min(wx0, wx1), max(wx0, wx1))]
@@ -2880,7 +2893,7 @@ for it_ in layout['interactions']:
             'cue': it_['kind']}
     LIGHTS.append(cue_)
 layout['light_groups'] = {g_: sum(1 for l_ in LIGHTS if l_.get('group') == g_) for g_ in ('emergency', 'power', 'flicker')}
-layout.update({'throats': THROATS, 'conduits': CONDUITS, 'junctions': JUNCTIONS, 'signals': SIGNALS, 'thresholds': THRESHOLDS,
+layout.update({'stairs': STAIRS, 'throats': THROATS, 'conduits': CONDUITS, 'junctions': JUNCTIONS, 'signals': SIGNALS, 'thresholds': THRESHOLDS,
                'pipe_chases': PIPE_CHASES, 'fx_placed': FX_PLACED, 'leaks': LEAKS, 'wheel_lamps': WHEEL_LAMPS,
                'openings': [{k_: o_[k_] for k_ in ('name', 'kind', 'axis', 'walls', 'a', 'b', 'z0', 'z1')} for o_ in OPENINGS]})
 json.dump(layout, open(os.path.join(out, 'layout.json'), 'w'), indent=1, default=list)
