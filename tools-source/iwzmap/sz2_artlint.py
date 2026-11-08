@@ -28,6 +28,7 @@ Rules (lead / owner review of g24):
                    decor clip box (review A7: board through a crate, signs on lamps and pipes)
   sign-dupe        the same sign image twice within 600 units in one zone (review A8: stacked duplicate signs)
   stair-tactile    tactile paving on more than two tread heights of one stair (review C: all-yellow treads)
+  decal-aspect     a stock decal (layout decals) whose w/h differs from its image aspect by more than 15% (review C)
   colour-cast      a baked coloured light (channel spread > 0.4) without a fixture or with a radius over 192
                    (reviews A9/B: red, green, pink and mustard casts with no visible source)
 Exit status 1 when any rule fails.
@@ -91,6 +92,11 @@ def main():
         col = l.get('color', (1, 1, 1))
         if max(col) - min(col) > 0.4 and (not l.get('fixture') or l.get('radius', 384) > 192):
             fails.append('colour-cast %s light in %s at %s radius %s' % (l.get('fixture'), l['zone'], l['origin'], l.get('radius')))
+    for dc in lay.get('decals', []):
+        img = SM.MATERIALS.get(dc.get('mat'), {}).get('img')
+        if img and not SM.MATERIALS[dc['mat']].get('custom') and dc.get('w') and dc.get('h'):
+            if abs((dc['w'] / dc['h']) / (img[0] / img[1]) - 1) > 0.15:
+                fails.append('decal-aspect %s %gx%g vs image %dx%d in %s' % (dc['mat'], dc['w'], dc['h'], img[0], img[1], dc['zone']))
     for k, m in SM.MATERIALS.items():
         if m.get('custom') or not m.get('img'):
             continue
@@ -122,7 +128,7 @@ def main():
                 fails.append('track-bed %s (%s) at %s' % (mat, zone, [round(c) for c in pts[0]]))
         if n[2] > 0.9 and any(abs(zs[0] - f) < 3 for f in (0, -320, -384)):      # walkable floor planes only
             w = max(xs) - min(xs); h = max(ys) - min(ys)
-            if 6 <= min(w, h) < 16 and max(w, h) > 256 and m.get('su', 0) >= 64 and mat not in ('stair_tread', 'yellow_grip', 'steel_trim', 'rubber_trim', 'wood_trim', 'beam_yellow', 'ibeam') \
+            if 6 <= min(w, h) < 16 and max(w, h) > 256 and m.get('su', 0) >= 64 and not m.get('trim') and mat not in ('stair_tread', 'yellow_grip', 'steel_trim', 'rubber_trim', 'wood_trim', 'beam_yellow', 'ibeam') \
                     and not (mat == 'conc_painted' and min(ys) >= 1588 and max(ys) <= 1600):   # strip textures; beam tops at the ceiling; the platform coping
                 fails.append('floor-streak %s %gx%g in %s at %s' % (mat, round(w), round(h), zone, [round(c) for c in pts[0]]))
     for d in lay.get('decor', []):

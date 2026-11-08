@@ -380,7 +380,17 @@ def hanging_sign(zone, key, x, y, zc, width, ceil_z, axis='x', height=None):
             B.box((x - 1, ry - 1, zc + height / 2 + 3), (x + 1, ry + 1, ceil_z), 'chrome_trim', zone, collide=False, nav=False)
 
 
+def decal_fit(mat, w, h, rot=False):
+    img = MT.MATERIALS.get(mat, {}).get('img')
+    if not img:
+        return w, h
+    iw, ih = (img[1], img[0]) if rot else img
+    w2 = min(w, h * iw / ih)
+    return w2, w2 * ih / iw
+
+
 def decal_floor(zone, mat, x, y, z, w, h, rot=False):
+    w, h = decal_fit(mat, w, h, rot)
     x0, x1, y0, y1 = x - w / 2, x + w / 2, y - h / 2, y + h / 2
     uv = [(0, 1), (1, 1), (1, 0), (0, 0)]
     if rot: uv = uv[1:] + uv[:1]
@@ -391,6 +401,7 @@ DECALS = []        # decal quads (sz2_fxcheck.py: not an opaque square)
 
 
 def decal_wall(zone, mat, axis, fixed, facing, s, zc, w, h):
+    w, h = decal_fit(mat, w, h)
     DECALS.append({'zone': zone, 'mat': mat, 'axis': axis, 'fixed': fixed, 'facing': facing, 's': s, 'zc': zc, 'w': w, 'h': h})
     a, b, z0, z1 = s - w / 2, s + w / 2, zc - h / 2, zc + h / 2
     if axis == 'x':
@@ -740,6 +751,11 @@ floor(Z, 'yellow_grip', -2192, 1624, 1904, 1648, DECK_Z)
 floor(Z, 'yellow_grip', 2112, 1624, 2400, 1648, DECK_Z)
 floor(Z, 'conc_painted', -2192, 1600, 1904, 1624, DECK_Z)
 floor(Z, 'conc_painted', 2112, 1600, 2400, 1624, DECK_Z)
+for x_ in range(-2112, 2400, 384):
+    floor(Z, 'conc_trim_floor', x_ - 5, 1760, x_ + 5, 2368, DECK_Z + 0.25, collide=False)       # expansion joint
+for x_, y_, w_, h_ in ((-1700, 1980, 160, 120), (-860, 2140, 200, 140), (-120, 1880, 150, 110), (620, 2060, 220, 150),
+                       (1380, 1920, 170, 130), (2050, 2200, 150, 120)):
+    decal_floor(Z, 'floor_stain', x_, y_, DECK_Z + 0.4, w_, h_)
 # platform edge face (deck to pit) with a coping lip
 for x0_, x1_ in ((-2192, 1904), (2112, 2400)):
     B.wall_plane(Z, 'x', 1600, -1, x0_, x1_, PIT_Z, DECK_Z, 'conc_dark')
