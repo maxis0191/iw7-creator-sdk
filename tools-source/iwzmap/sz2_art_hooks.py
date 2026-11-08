@@ -17,12 +17,17 @@ import sz2_materials as MT
 ART_ROOT = MT.ART
 DECAL_BASE = 'wall_stain_01_dec'        # w_l_sm_ndw_blend_i0c0: blended colour (alpha) + identity normal
 NAMES = ['clock_face_stopped', 'departure_board_suspended', 'evac_signal_diagram', 'notice_closed_layers', 'notice_quarantine',
-         'notice_do_not_restart', 'poster_missing', 'poster_missing_1', 'poster_missing_2', 'poster_missing_3', 'ad_panel_broken',
+         'notice_do_not_restart', 'poster_missing', 'poster_missing_1', 'poster_missing_2', 'poster_missing_3',
+         'poster_missing_a', 'poster_missing_b', 'poster_missing_c', 'poster_station_zero_v2', 'ad_panel_broken',
          'grime_mask_floor', 'junction_grime', 'water_streak', 'sign_grime_overlay', 'decal_blood_feathered',
          'decal_grime_feathered', 'poster_illustration_2']
 KIND = {'departure_board_suspended': 'poster', 'evac_signal_diagram': 'poster', 'notice_quarantine': 'poster',
         'notice_do_not_restart': 'poster', 'poster_missing': 'poster', 'poster_missing_1': 'poster', 'poster_missing_2': 'poster',
-        'poster_missing_3': 'poster', 'ad_panel_broken': 'poster', 'poster_illustration_2': 'poster'}   # the rest: decal (alpha)
+        'poster_missing_3': 'poster', 'ad_panel_broken': 'poster', 'poster_illustration_2': 'poster',
+        'poster_missing_a': 'poster', 'poster_missing_b': 'poster', 'poster_missing_c': 'poster', 'poster_station_zero_v2': 'poster',
+        'grime_mask_floor': 'multiply'}   # the rest: decal (alpha)
+MULTIPLY_BASE = 'dirt_water_stain_01'   # w_unlit_multiply_lin_ndw: colour only, white = no change (art NOTES)
+BLOOD = 'decal_blood_feathered'        # variants decal_blood_feathered[_a.._d | _1.._4]: rotated / mirrored per placement
 
 
 def find(name):
@@ -33,7 +38,7 @@ def find(name):
             stem, ext = os.path.splitext(f)
             if stem.lower() in (name, name + '_c') and ext.lower() in ('.tga', '.png'):
                 hits.append(os.path.join(root, f))
-    hits.sort(key=lambda p: (not p.lower().endswith('.tga'), len(p)))
+    hits.sort(key=lambda p: (not p.lower().endswith('.tga'), 'g25' not in p.lower(), len(p)))     # delivered g25 set first
     return hits[0] if hits else None
 
 
@@ -50,6 +55,8 @@ def tga_of(path, name):
 
 
 AVAILABLE = {}       # name -> material key
+BLOOD_VARIANTS = []  # material keys of the delivered blood variants
+AGED_SIGNS = []      # signs whose material now uses the aged image
 
 
 def register():
@@ -63,10 +70,34 @@ def register():
         tga = tga_of(p, n)
         if KIND.get(n) == 'poster':
             MT.custom_image(key, 'art_' + n + '_c', tga)
+        elif KIND.get(n) == 'multiply':
+            MT.custom_image(key, 'art_' + n + '_c', tga, base=MULTIPLY_BASE)
+            MT.MATERIALS[key]['collide'] = False
         else:
             MT.custom_image(key, 'art_' + n + '_c', tga, base=DECAL_BASE)
             MT.MATERIALS[key]['collide'] = False
         AVAILABLE[n] = key
+    # blood variants (any suffix after the base name), in name order
+    seen = set()
+    for root, dirs, files in os.walk(ART_ROOT):
+        dirs[:] = [d for d in dirs if d not in ('hooks_tga',)]
+        for f in sorted(files):
+            stem, ext = os.path.splitext(f)
+            stem = stem[:-2] if stem.endswith('_c') else stem
+            if stem.startswith(BLOOD + '_') and ext.lower() in ('.tga', '.png') and stem not in seen and stem not in AVAILABLE:
+                p = find(stem)
+                if p:
+                    seen.add(stem)
+                    MT.custom_image('art_' + stem, 'art_' + stem + '_c', tga_of(p, stem), base=DECAL_BASE)
+                    MT.MATERIALS['art_' + stem]['collide'] = False
+                    BLOOD_VARIANTS.append('art_' + stem)
+    BLOOD_VARIANTS.sort()
+    # aged signs (art g25\signs_aged\<sign>_c.tga): the sign materials take them; no extra grime overlay then
+    for s_ in MT.SIGNS:
+        p = os.path.join(ART_ROOT, 'g25', 'signs_aged', s_ + '_c.tga')
+        if os.path.exists(p) and s_ in MT.CUSTOM:
+            MT.CUSTOM[s_]['tga'] = p
+            AGED_SIGNS.append(s_)
     return AVAILABLE
 
 

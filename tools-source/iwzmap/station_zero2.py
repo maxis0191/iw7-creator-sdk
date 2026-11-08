@@ -359,8 +359,10 @@ def sign(zone, key, axis, fixed, facing, s, zc, width, height=None, frame=True, 
     uv = [(0, 1), (1, 1), (1, 0), (0, 0)]       # bottom-left, bottom-right, top-right, top-left (texture v down)
     if 'u' in flip: uv = [(1 - u, v) for u, v in uv]
     if 'v' in flip: uv = [(u, 1 - v) for u, v in uv]
+    if key == 'poster_station_zero' and ART_HOOKS.key('poster_station_zero_v2'):
+        key = ART_HOOKS.key('poster_station_zero_v2')
     B.quad(key, zone, pts, n=n, uvs=uv, collide=False)
-    if frame and ART_HOOKS.key('sign_grime_overlay'):
+    if frame and ART_HOOKS.key('sign_grime_overlay') and not ART_HOOKS.AGED_SIGNS:
         B.quad(ART_HOOKS.key('sign_grime_overlay'), zone, [tuple(c + nc * 0.2 for c, nc in zip(p_, n)) for p_ in pts], n=n, uvs=uv, collide=False)
     SIGNS.append({'zone': zone, 'image': key, 'center': ((a + b) / 2 if axis == 'x' else fixed, fixed if axis == 'x' else (a + b) / 2, zc),
                   'axis': axis, 'facing': facing, 'size': (width, height), 'off': off, 'hanging': not frame and depth == 0.0})
@@ -396,12 +398,22 @@ def decal_fit(mat, w, h, rot=False):
 ART_DECAL_SWAP = {'blood_pool': 'decal_blood_feathered', 'floor_stain': 'decal_grime_feathered'}
 
 
-def decal_floor(zone, mat, x, y, z, w, h, rot=False):
-    mat = ART_HOOKS.key(ART_DECAL_SWAP.get(mat, '')) or mat
+BLOOD_COUNT = [0]
+
+
+def decal_floor(zone, mat, x, y, z, w, h, rot=False, mirror=False):
+    if mat == 'blood_pool' and ART_HOOKS.BLOOD_VARIANTS:
+        k_ = BLOOD_COUNT[0]; BLOOD_COUNT[0] += 1
+        n_ = len(ART_HOOKS.BLOOD_VARIANTS)
+        mat = ART_HOOKS.BLOOD_VARIANTS[k_ % n_]
+        rot, mirror = bool((k_ // n_) % 2) != rot, bool((k_ // (2 * n_)) % 2) != mirror
+    else:
+        mat = ART_HOOKS.key(ART_DECAL_SWAP.get(mat, '')) or mat
     w, h = decal_fit(mat, w, h, rot)
     x0, x1, y0, y1 = x - w / 2, x + w / 2, y - h / 2, y + h / 2
     uv = [(0, 1), (1, 1), (1, 0), (0, 0)]
     if rot: uv = uv[1:] + uv[:1]
+    if mirror: uv = [(1 - u, v) for u, v in uv]
     B.quad(mat, zone, [(x0, y0, z + 0.4), (x1, y0, z + 0.4), (x1, y1, z + 0.4), (x0, y1, z + 0.4)], n=(0, 0, 1), uvs=uv, collide=False)
 
 
@@ -1475,7 +1487,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor('generator_room', 'electrical_control_box_03', 3300, 2405, -200, 90)
     decor('generator_room', 'electrical_control_box_03', 2605, 2950, -200, 0)
     decor('generator_room', 'ladder01_large_closed', 3790, 2420, -320, 180)
-    decor(Zh, 'sign_clock_04', -1000, 4398, 230, 270)
+    decor(Zh, 'sign_clock_04', -1000, 4398, 230, 0)          # north wall: face -y
     # platform: PA speakers and clocks on the north wall, trash, paper
     for x_ in (-1536, 0, 1536):
         decor(Zp, 'misc_wall_mounted_loudspeaker_01', x_ + 256, 2398, -110, 270)
@@ -1584,7 +1596,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zp, 'sign_clock_04', 528, 2398, -130, 0)
     decor(Zp, 'trashbin_01_iw6', 1430, 2365, -320, 0, (11, 13, 22))
     decor(Zb, 'com_trashbag2_black', -2110, 2800, -384, 0, (16, 16, 20))
-    decor(Zb, 'sign_clock_04', -2066, 2950, -150, 180)
+    decor(Zb, 'sign_clock_04', -2066, 2950, -150, 270)       # east wall: face -x
     decor(Zt, 'electrical_control_box_03', -2550, 1583, -290, 270)
     for y_ in (1900, 2300):
         decor(Zt, 'electrical_control_box_03', -3217, y_, -290, 180)
@@ -1663,10 +1675,6 @@ tpl, out = sys.argv[1], sys.argv[2]
 # art drop-ins at fixed spots (sz2_art_hooks.py; each line is skipped while its image is missing)
 ART_PLACE = [
     # name, kind, zone, axis, fixed, facing, s, zc, w, h    (kind: wall decal | sign = framed-less poster quad)
-    ('clock_face_stopped', 'wall', 'ticket_hall', 'x', 4400, -1, -300, 240, 64, 64),
-    ('clock_face_stopped', 'wall', 'platform_a', 'x', 2400, -1, 256, -110, 64, 64),
-    ('clock_face_stopped', 'wall', 'control_room', 'x', 4000, -1, 2800, -120, 56, 56),
-    ('clock_face_stopped', 'wall', 'generator_room', 'x', 3184, -1, 2800, -100, 56, 56),
     ('departure_board_suspended', 'sign', 'ticket_hall', 'y', 400, -1, 3800, 200, 256, 64),
     ('notice_closed_layers', 'wall', 'platform_b', 'x', 3400, -1, -2700, -250, 96, 96),
     ('notice_closed_layers', 'wall', 'platform_b', 'x', 3400, -1, -3200, -250, 96, 96),
@@ -1677,6 +1685,10 @@ ART_PLACE = [
     ('poster_missing_2', 'sign', 'ticket_hall', 'y', -1200, +1, 3580, 130, 64, 96),
     ('poster_missing_3', 'sign', 'ticket_hall', 'y', -1200, +1, 3660, 130, 64, 96),
     ('poster_missing', 'sign', 'ticket_hall', 'y', -1200, +1, 3580, 130, 64, 96),
+    ('poster_missing_a', 'sign', 'ticket_hall', 'y', -1200, +1, 3500, 130, 64, 96),
+    ('poster_missing_b', 'sign', 'ticket_hall', 'y', -1200, +1, 3580, 130, 64, 96),
+    ('poster_missing_c', 'sign', 'ticket_hall', 'y', -1200, +1, 3660, 130, 64, 96),
+    ('poster_missing_b', 'sign', 'control_room', 'y', 2600, +1, 3500, -200, 64, 96),     # Daniel Malone, signal technician
     ('junction_grime', 'wall', 'ticket_hall', 'x', 4400, -1, -1000, 24, 256, 64),
     ('junction_grime', 'wall', 'ticket_hall', 'x', 4400, -1, -700, 24, 256, 64),
     ('junction_grime', 'wall', 'ticket_hall', 'x', 3200, +1, -1000, 24, 256, 64),
@@ -1688,17 +1700,30 @@ ART_PLACE = [
 _placed = set()
 for n_, kind_, zn_, ax_, fx_, fc_, s_, zc_, w_, h_ in ART_PLACE:
     k_ = ART_HOOKS.key(n_)
-    if not k_ or (n_ == 'poster_missing' and ART_HOOKS.key('poster_missing_2')):
+    if not k_ or (n_ == 'poster_missing' and (ART_HOOKS.key('poster_missing_2') or ART_HOOKS.key('poster_missing_b'))):
         continue
     if kind_ == 'sign':
         sign(zn_, k_, ax_, fx_, fc_, s_, zc_, w_, h_, frame=False, depth=0.6)
     else:
         decal_wall(zn_, k_, ax_, fx_, fc_, s_, zc_, w_, h_)
     _placed.add(n_)
+if ART_HOOKS.key('clock_face_stopped'):   # a stopped face 0.5 in front of every clock disc (model face at local y -3.024)
+    for d_ in DECOR:
+        if d_['model'] != 'sign_clock_04':
+            continue
+        cx_, cy_, cz_ = d_['origin']
+        a_ = math.radians(d_.get('yaw', 0))
+        nx_, ny_ = round(math.sin(a_)), round(-math.cos(a_))
+        if nx_:
+            decal_wall(d_['zone'], ART_HOOKS.key('clock_face_stopped'), 'y', cx_ + nx_ * 3.524 - nx_ * 0.4, nx_, cy_, cz_, 17, 17)
+        else:
+            decal_wall(d_['zone'], ART_HOOKS.key('clock_face_stopped'), 'x', cy_ + ny_ * 3.524 - ny_ * 0.4, ny_, cx_, cz_, 17, 17)
+        _placed.add('clock_face_stopped')
 if ART_HOOKS.key('grime_mask_floor'):     # generator room diamond plate: one large non-repeating grime / oil mask
     decal_floor('generator_room', ART_HOOKS.key('grime_mask_floor'), 3200, 2790, -320, 760, 760)
     _placed.add('grime_mask_floor')
-ART_HOOK_REPORT = {'available': sorted(ART_HOOKS.AVAILABLE), 'placed': sorted(_placed)}
+ART_HOOK_REPORT = {'available': sorted(ART_HOOKS.AVAILABLE), 'placed': sorted(_placed), 'blood_variants': ART_HOOKS.BLOOD_VARIANTS,
+                   'aged_signs': ART_HOOKS.AGED_SIGNS}
 
 cells, owner, corner_z = {}, {}, {}
 for r in REGIONS:
