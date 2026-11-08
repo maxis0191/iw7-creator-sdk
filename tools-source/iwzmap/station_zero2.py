@@ -129,7 +129,7 @@ def holes_for(space, axis, fixed):
 def bands(style, zf, zc):
     """(z0, z1, material, protrusion) from floor to ceiling."""
     if style == 'metro':
-        return [(zf, zf + 10, 'rubber_trim', 2), (zf + 10, zf + 112, 'tile_black', 0), (zf + 112, zf + 120, 'steel_trim', 1.5),
+        return [(zf, zf + 10, 'rubber_trim', 2), (zf + 10, zf + 112, 'tile_charcoal', 0), (zf + 112, zf + 120, 'steel_trim', 1.5),
                 (zf + 120, zc - 20, 'tile_white', 0), (zc - 20, zc, 'molding', 3)]
     if style == 'metro_cream':
         return [(zf, zf + 10, 'rubber_trim', 2), (zf + 10, zf + 112, 'tile_green', 0), (zf + 112, zf + 120, 'steel_trim', 1.5),
@@ -285,13 +285,16 @@ SPACE_ZONE = {'hall': 'ticket_hall', 'street': 'ticket_hall', 'stair_a': 'stair_
 
 # ============================================================================ helpers for details
 STRIP_COUNT = {}
+DIM_STRONG = {'maint_corridor', 'service_tunnel', 'generator_room', 'stair_b'}
+POOL_STRIP, POOL_WALL = 288, 224          # g26: tighter pools (was 384 / 320)
 DIM = os.environ.get('IWZ_DIM', '1') == '1'     # g25 mood pass: half the fluorescents are dead, in clusters
 
 
 def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=6, dead=False):
     """Ceiling fluorescent fitting: a steel housing with an emissive diffuser underneath (dead: dark diffuser, no light)."""
     k_ = STRIP_COUNT[zone] = STRIP_COUNT.get(zone, -1) + 1
-    dimmed = DIM and not dead and mat in ('lamp_cool', 'lamp_warm') and (k_ % 3 == 1 if zone.startswith('stair') else k_ % 4 in (1, 2))
+    dimmed = DIM and not dead and mat in ('lamp_cool', 'lamp_warm') and (
+        k_ % 3 in (1, 2) if zone in DIM_STRONG else (k_ % 3 == 1 if zone.startswith('stair') else k_ % 4 in (1, 2)))
     if dimmed:
         # keeps its layout light record (intensity 0, dead): the audio layout addresses fixtures by zone index
         LIGHTS.append({'zone': zone, 'origin': ((x0 + x1) / 2, (y0 + y1) / 2, z - depth - 4), 'type': 'omni',
@@ -307,7 +310,7 @@ def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=6, dead=False):
         return
     coloured = mat not in ('lamp_cool', 'lamp_warm', 'light_panel')
     LIGHTS.append({'zone': zone, 'origin': ((x0 + x1) / 2, (y0 + y1) / 2, z - depth - 4), 'type': 'omni',
-                   'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 96 if coloured else 384,
+                   'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 96 if coloured else POOL_STRIP,
                    'intensity': 0.5 if coloured else 1.0, 'fixture': mat})
 
 
@@ -326,7 +329,7 @@ def wall_lamp(zone, axis, fixed, facing, s, z, mat='lamp_warm', w=24, h=12):
         B.quad(mat, zone, pts, n=(facing, 0, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
         o = (fixed + facing * 12, s, z + h / 2)
     coloured = mat not in ('lamp_cool', 'lamp_warm', 'light_panel')
-    LIGHTS.append({'zone': zone, 'origin': o, 'type': 'omni', 'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 96 if coloured else 320,
+    LIGHTS.append({'zone': zone, 'origin': o, 'type': 'omni', 'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 96 if coloured else POOL_WALL,
                    'intensity': 0.5 if coloured else 1.0, 'fixture': mat})
 
 
@@ -440,7 +443,7 @@ def decal_wall(zone, mat, axis, fixed, facing, s, zc, w, h):
 def column(zone, x, y, z0, z1, half=24):
     """Square tiled column: black tile base, white tile shaft, steel cap and base ring."""
     B.box((x - half - 2, y - half - 2, z0), (x + half + 2, y + half + 2, z0 + 10), 'rubber_trim', zone, collide=False, nav=False, skip=('bottom',))
-    B.box((x - half, y - half, z0 + 10), (x + half, y + half, z0 + 112), 'tile_black', zone, collide=False, nav=False, skip=('bottom', 'top'))
+    B.box((x - half, y - half, z0 + 10), (x + half, y + half, z0 + 112), 'tile_charcoal', zone, collide=False, nav=False, skip=('bottom', 'top'))
     B.box((x - half - 1.5, y - half - 1.5, z0 + 112), (x + half + 1.5, y + half + 1.5, z0 + 120), 'steel_trim', zone, collide=False, nav=False)
     B.box((x - half, y - half, z0 + 120), (x + half, y + half, z1 - 24), 'tile_white', zone, collide=False, nav=False, skip=('bottom', 'top'))
     B.box((x - half - 4, y - half - 4, z1 - 24), (x + half + 4, y + half + 4, z1), 'steel_trim', zone, collide=False, nav=False, skip=('top',))
@@ -488,7 +491,7 @@ def ceiling_grid(zone, x0, y0, x1, y1, z, step_x=None, step_y=None, depth=20, ma
             B.box((x0, y - 7, z - depth), (x1, y + 7, z), mat, zone, collide=False, nav=False); y += step_y
 
 
-def pilasters(zone, axis, fixed, facing, s0, s1, zf, zc, step=320, avoid=(), lower='tile_black', upper='tile_white'):
+def pilasters(zone, axis, fixed, facing, s0, s1, zf, zc, step=320, avoid=(), lower='tile_charcoal', upper='tile_white'):
     """Tiled pilasters with a steel capital and a rubber base every `step` along a wall, skipping `avoid` (s, half)."""
     out = []
     s = s0 + step / 2
@@ -527,7 +530,7 @@ def ad_frame(zone, axis, fixed, facing, s, zc, k):
         for a, b, z0, z1 in ((s - w / 2 - 8, s - w / 2, zc - h / 2 - 8, zc + h / 2 + 8), (s + w / 2, s + w / 2 + 8, zc - h / 2 - 8, zc + h / 2 + 8),
                              (s - w / 2, s + w / 2, zc - h / 2 - 8, zc - h / 2), (s - w / 2, s + w / 2, zc + h / 2, zc + h / 2 + 8)):
             B.slab_y(a, b, fixed, z0, z1, 3, 'steel_trim', zone, facing, collide=False, nav=False)
-    ad_ = ART_HOOKS.key('ad_panel_broken') if zone.startswith('stair') else None     # stairs: the broken lit ad panel
+    ad_ = ART_HOOKS.key('ad_panel_broken') if (zone.startswith('stair') and os.environ.get('IWZ_AD_BROKEN') == '1') else None   # NOT_PROVEN lit
     sign(zone, ad_ or ADS[k % len(ADS)], axis, fixed, facing, s, zc, 96, 144, frame=False, depth=0.6)
 
 
@@ -615,7 +618,9 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     for k in range(n_steps):
         sk0, sk1 = s_a + k * run, s_a + (k + 1) * run
         zt = z_lo + (k + 1) * rise
-        rect(sk0, sk1, zt, 'stair_tread', False)
+        rect(sk0, sk1, zt, 'conc_floor', False)                                   # g26: concrete tread (stock tread art read all yellow)
+        ns2_ = sk0 + d * 3 if d > 0 else sk0 - 3
+        rect(min(sk0, ns2_), max(sk0, ns2_), zt + 0.2, 'steel_trim', False)           # nosing
         ns_ = sk0 + d * 4 if d > 0 else sk0 - 4
         if k in (0, n_steps - 1):
             rect(min(sk0, ns_), max(sk0, ns_), zt + 0.3, 'yellow_grip', False)     # tactile nosing: top and bottom step only
@@ -658,7 +663,7 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
             for sa, sb in segs:
                 za, zb = zline(sa), zline(sb)
                 # stringer covering the step/wall junction, then tile bands parallel to the slope
-                lower, upper = ('tile_green', 'tile_cream') if style == 'metro_cream' else ('tile_black', 'tile_white')
+                lower, upper = ('tile_green', 'tile_cream') if style == 'metro_cream' else ('tile_charcoal', 'tile_white')
                 for lo_off, hi_off, mat in ((-rise - 2, 12, 'rubber_trim'), (12, 112, lower), (112, 120, 'steel_trim'),
                                             (120, head - 20, upper), (head - 20, head, 'molding')):
                     B.wall_sloped(zone, wax, cfix, facing, sa, sb, za + lo_off, zb + lo_off, za + hi_off, zb + hi_off, mat)
@@ -2251,8 +2256,11 @@ for zone, zd in ZONES.items():
 open(os.path.join(out, 'lighting.txt'), 'w', newline='\n').write('\n'.join(light_lines) + '\n')
 # reflection probe rooms for the compiler (IWZ_PROBES=neutral): one per zone, its box and ambient colour; kept apart from
 # lighting.txt because a reused bake brings its own lighting.txt (thousands of chart rooms)
+_pc = os.path.join(HERE, 'probe_colours.json')
+PROBE_RGB = json.load(open(_pc))['zones'] if os.path.isfile(_pc) and os.environ.get('IWZ_PROBE_MEASURED', '1') == '1' else {}
 open(os.path.join(out, 'probes.txt'), 'w', newline='\n').write(''.join(
-    'room %d %d %d %d %d %d %.3f %.3f %.3f %.2f\n' % (*zd['box'], *zd['probe']) for zd in ZONES.values()))
+    'room %d %d %d %d %d %d %.3f %.3f %.3f %.2f\n' % (*zd['box'], *(PROBE_RGB.get(zn, zd['probe'][:3])), zd['probe'][3])
+    for zn, zd in ZONES.items()))
 
 # ============================================================================ level script with generated tables
 gsc = open(os.path.join(HERE, 'cp_iwz2.gsc')).read()
