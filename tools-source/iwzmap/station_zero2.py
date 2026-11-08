@@ -787,7 +787,12 @@ DECOR = []         # script_model map entities (stock models placed at load)
 # train agent v4 delivery (coordinator 2026-11-08): IWZ_TRAIN_PROPS = JSON list of ported props placed with their clip
 # boxes (place_ported); the models it names replace the stand-ins below (G-2 genset, period wall fittings, BO3 props)
 PORTED = {e_['model'] for e_ in json.load(open(os.environ['IWZ_TRAIN_PROPS']))} if os.environ.get('IWZ_TRAIN_PROPS') else set()
-G2 = {'origin': (3200, 2850, -320), 'yaw': 0}     # genset model space: footprint x -112..162, y -52..52, front -y
+# (coordinator 2026-11-08 offline check) the room's middle (x 3004..3196) is the walking lane between the corridor arch
+# and the control-room door, so the G-2 stands free in the east bay, centred on it (bay x 3196..3800 -> footprint
+# x 3351..3645), long side parallel to the long walls, front (-y) and its switchgear facing the power switch on the
+# south wall; >= 100 clear on every side (sz2_artlint hero-clear)
+G2 = {'origin': (3469, 2793, -320), 'yaw': 0}     # genset model space: footprint x -112..162, y -52..52 (clip -118..176, -58..56), front -y
+G2_CLIP = ((-118, -58), (176, 56))
 G2_ANCHORS = {'breaker_tripped': (131, 23.0, 58), 'lockout_tag': (131, 22.8, 54.5), 'label_plate': (136, 25.9, 76),
               'cabinet_front_use_spot': (136, -10, 0), 'exhaust_flange_top': (-48, 0, 101), 'engine_bed_stencil': (-58, -30.06, 31)}
 
@@ -1915,9 +1920,12 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
             decor(Zc, 'lab_desk_02', x0_ + dx_, y0_ + 40, -320, 90, (48, 16, 18))
     if 'iwz_g2_genset' not in PORTED:
         decor(Zg, 'clk_defend_generator_solo' if KIT else 'zom_machinery_generator_portable_01', GEN[0], GEN[1], -304, 0)
-    decor(Zg, 'equipment_oil_barrel_military_01', 3700, 2700, -320, 15, (14, 14, 22))   # the fire FX (gen_barrel_fire) burns in this drum
+    decor(Zg, 'equipment_oil_barrel_military_01', 3700, 3040, -320, 15, (14, 14, 22))   # the fire FX (gen_barrel_fire) burns in this drum ((g27) clear of the G-2)
     # a portable set on the floor beside the plinth (the audio layout's generator hum and power cue anchor on it)
-    decor(Zg, 'zom_machinery_generator_portable_01', GEN[0] + 170, GEN[1] - 110, -320, 30, (44, 28, 34))
+    if 'iwz_g2_genset' in PORTED:          # (g27) out of the G-2's bay, by the lockers (audio anchor: decor model name)
+        decor(Zg, 'zom_machinery_generator_portable_01', 2780, 3020, -320, 30, (44, 28, 34))
+    else:
+        decor(Zg, 'zom_machinery_generator_portable_01', GEN[0] + 170, GEN[1] - 110, -320, 30, (44, 28, 34))
     # ticket hall: soda + token machines on the east wall, mobile ticket booth, pedestrian barriers at the street exit,
     # rubble and trash at the collapsed street stairs
     pass                                        # (g26) Spaceland soda fountain removed
@@ -2792,6 +2800,17 @@ if KIT:
             break
 # interaction check views (lead g24 review: doors, buys and paths must stay lit in a darker map): one view per
 # interaction struct, from open floor 110 units in front of it, aimed at it; sz2_mood.py measures the centre window
+if 'iwz_g2_genset' in PORTED:
+    # (coordinator 2026-11-08) G-2 hero views: from the corridor arch, from the power switch, close on the tripped
+    # breaker and its lockout tag
+    def _aim(cam, tgt):
+        fz_ = floor_z_at(cam[0], cam[1])
+        dx_, dy_ = tgt[0] - cam[0], tgt[1] - cam[1]
+        return (cam[0], cam[1], fz_, round(math.degrees(math.atan2(dy_, dx_)) % 360, 1),
+                round(-math.degrees(math.atan2(tgt[2] - (fz_ + 60), math.hypot(dx_, dy_))), 1))
+    _gc = (G2['origin'][0] + 29, G2['origin'][1], -280)
+    _br = g2_world(G2_ANCHORS['breaker_tripped'])
+    VIEWS['g2'] = [_aim((3080, 2440), _gc), _aim((3470, 2470), (_br[0], _br[1], -270)), _aim((_br[0] - 10, G2['origin'][1] + G2_CLIP[0][1] - 40), _br)]
 VIEWS['interact'] = []
 for it in layout['interactions']:
     ox_, oy_, oz_ = it['origin']
@@ -2948,6 +2967,8 @@ for it_ in layout['interactions']:
 layout['light_groups'] = {g_: sum(1 for l_ in LIGHTS if l_.get('group') == g_) for g_ in ('emergency', 'power', 'flicker')}
 if 'iwz_g2_genset' in PORTED:
     layout['genset'] = {'model': 'iwz_g2_genset', 'origin': list(G2['origin']), 'yaw': G2['yaw'],
+                        'footprint': [[G2['origin'][0] + G2_CLIP[0][0], G2['origin'][1] + G2_CLIP[0][1]],
+                                      [G2['origin'][0] + G2_CLIP[1][0], G2['origin'][1] + G2_CLIP[1][1]]],
                         'anchors': {k_: list(g2_world(v_)) for k_, v_ in G2_ANCHORS.items()}}
 layout.update({'stairs': STAIRS, 'throats': THROATS, 'conduits': CONDUITS, 'junctions': JUNCTIONS, 'signals': SIGNALS, 'thresholds': THRESHOLDS,
                'pipe_chases': PIPE_CHASES, 'fx_placed': FX_PLACED, 'leaks': LEAKS, 'wheel_lamps': WHEEL_LAMPS,

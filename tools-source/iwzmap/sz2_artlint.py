@@ -51,6 +51,9 @@ Rules (lead / owner review of g24):
   decor-rail       a decor model (catalog bounds, else its clip) through a railing / handrail / window frame
   stair-soffit     a stair flight without side walls and without a stringer on its open side(s) (wells: the pit
                    side; review C / train agent: black wedges under the well stairs)
+  hero-clear       (coordinator 2026-11-08) the hero generator (layout genset) with less than 48 clear around its footprint
+                   (decor, ported props, spawners, wall fittings), inside the corridor-arch / control-door lane
+                   (x 3004..3196), or a walk-path segment crossing it
   stacked          a decor model standing on top of another decor model's footprint (review C interact_10: a crate on
                    a turnstile); with --catalog / --kit the model bounds are used, else the clip boxes
 Exit status 1 when any rule fails.
@@ -198,6 +201,31 @@ def g27_rules(lay, quads, fails, bounds):
             fails.append('fx-fixture %s (%s) at %s: no lit fixture within 24' % (e['name'], e['kind'], o))
         if e['kind'].startswith('drips') and not any(abs(o[0] - l['origin'][0]) <= 48 and abs(o[1] - l['origin'][1]) <= 48 for l in leaks):
             fails.append('fx-source %s (%s) at %s: no leak (ceiling stain + puddle)' % (e['name'], e['kind'], o))
+    # hero-clear
+    gs = lay.get('genset')
+    if gs and gs.get('footprint'):
+        (gx0, gy0), (gx1, gy1) = gs['footprint']
+        if gx0 < 3196 and gx1 > 3004:
+            fails.append('hero-clear genset footprint x %g..%g blocks the arch / control-door lane x 3004..3196' % (gx0, gx1))
+        for d in lay.get('decor', []):
+            if d['model'] == gs['model']:
+                continue
+            bx = model_box(d, bounds)
+            if bx is None:
+                tp = next((p for p in (lay.get('train_spec') or {}).get('props', []) if p['model'] == d['model'] and p['origin'] == list(d['origin'])), None)
+                bx = ((d['origin'][0] - 16, d['origin'][1] - 16, d['origin'][2]), (d['origin'][0] + 16, d['origin'][1] + 16, d['origin'][2] + 40)) if tp else None
+            if bx and bx[1][0] > gx0 - 48 and bx[0][0] < gx1 + 48 and bx[1][1] > gy0 - 48 and bx[0][1] < gy1 + 48 and bx[0][2] < -200:
+                fails.append('hero-clear %s at %s within 48 of the genset footprint' % (d['model'], d['origin']))
+        for sp in lay.get('spawners', []):
+            x, y = sp['origin'][:2]
+            if gx0 - 48 < x < gx1 + 48 and gy0 - 48 < y < gy1 + 48:
+                fails.append('hero-clear spawner %s at %s within 48 of the genset' % (sp['zone'], sp['origin']))
+        w = lay.get('walk', [])
+        for p, q in zip(w, w[1:]):
+            for k in range(41):
+                x = p[0] + (q[0] - p[0]) * k / 40; y = p[1] + (q[1] - p[1]) * k / 40
+                if gx0 - 16 < x < gx1 + 16 and gy0 - 16 < y < gy1 + 16 and abs(p[2] - gs['origin'][2]) < 40:
+                    fails.append('hero-clear walk segment %s -> %s crosses the genset' % (p, q)); break
     # decor-rail / stacked
     rails = [g for g in geo if g['name'] in ('rail', 'handrail', 'window_frame')]
     boxes = []
