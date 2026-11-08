@@ -19,6 +19,7 @@ records (`iw7-paris-server`: `ops/iwzmap/`, `tests/fixtures/iwzmap_*`,
 | `hkcm.py`, `hkcm_write.py`, `hkpack.py` | Havok hk_2014 compressed mesh collision (scale 1/32) |
 | `assemble.py` | zone sources for buildzone (level script, content tables, csv) |
 | `cp_iwz.gsc` | level script: agents, spawn volumes, interactions, door barrier |
+| `art/` (package) | in-map 2D art: procedural grime/water/blood masks and decals, typeset clock/board/diagram/notices/posters, sign ageing, TGA+mipped DDS writer (see art/README.md) |
 | `build_art.py`, `make_art.py` | map browser art zone `<map>_art.ff`: 2D list/vote images and the theater poster model, made from engine renders |
 | `lightmap_read.py` | decodes the template lightmap atlas to pick per-room texels |
 | `tome_read.py` | reads an Umbra format-20 tome header |
