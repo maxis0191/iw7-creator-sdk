@@ -1,0 +1,37 @@
+# Station Zero ambient FX (tools-source/iwzmap/fx/fx_place.py). <name> <alias|vfx path> <x> <y> <z> [key=value ...]
+# Aliases: tools-source/iwzmap/fx/fx_catalog.json. Aliases with "import" need build-sz2.ps1 -FxImport (fx_import.py).
+# Coordinates: g24 layout (zones in layout.json).
+
+# ticket hall: dust motes in the lamp light, a lamp beam, a bulb glow
+hall_motes        motes             -1000 3800  200
+hall_beam         light_beam        -1000 3400  300
+hall_cone         light_cone        -600  3400  300
+hall_bulb         bulb_glow         -600  4200  290   mode=flicker:1.5-5
+
+# platform A: a leaking ceiling seam over the deck, low fog along the track pit
+pa_leak           drips_line        300   1900  0     region=96 region_dz=-290
+pa_pit_fog        fog_tunnel        -1000 1400  -384
+pa_pit_fog_e      fog_low_bright    1000  1400  -384
+
+# service tunnel: ground fog, steam from a floor grate, falling ceiling dust
+tunnel_fog        fog_tunnel        -3420 1900  -384
+tunnel_steam      steam_grate       -3420 2250  -384
+tunnel_dust       dust_fall         -3000 1500  -90
+tunnel_leak       drips_line        -3420 1700  -90   region=96 region_dz=-280
+tunnel_beam       light_beam        -3400 2300  -110
+tunnel_glow       bulb_glow         -3100 1400  -112  mode=flicker:1.5-5
+
+# maintenance corridor: steam jet from the wall pipe
+corr_steam        steam_pipe        2664  1700  -150  angles=0,90,0
+
+# generator room: exhaust, haze, burning barrel, embers, sparking panel
+gen_exhaust       generator_idle    3360  2800  -150
+gen_haze          smoke_hang        3100  2950  -250
+gen_barrel_fire   fire_trash        3700  2700  -278
+gen_embers        embers            3600  2760  -260
+gen_panel_sparks  sparks            2615  2650  -265
+
+# stair A: debris dust shaken from the ceiling; platform B: moths round the lamp; control room: haze
+stair_dustfall    dust_fall         -600  2800  280
+pb_moths          moths             -2550 3000  -80
+ctrl_mist         mist              3100  3700  -300
