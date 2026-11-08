@@ -20,7 +20,7 @@ param(
   [string]$FxImport='',                                                                               # fx\fx_import.py: foreign-zone vfx '<zone>:<vfx>,...'
   [string[]]$FxDumps=@(),                                                                             # '<zone>=<vfx dump root>;<kit dump root>;<techsets dump root>'
   [string]$FxReport='',
-  [switch]$Darkness,                                                                                  # darknessdd_darkness.py: darkness + flashlight modules (generator IWZ_DARK=1)
+  [switch]$Darkness,                                                                                  # darkness\add_darkness.py: darkness + flashlight modules (generator IWZ_DARK=1)
   [string]$FxNcsSkip='',                                                                             # experiment: imported effects left out of the level effect list
   [switch]$ReuseCompile)                                                                              # keep the previous iwzcompile output of the same -Src (dump\<map>)
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
@@ -84,7 +84,7 @@ if($KitModels -or $KitJson){
 }
 if($Darkness){
   # darkness module + weapon flashlight (darkness agent): rawfiles after the level script row
-  python -I "$S\darknessdd_darkness.py" "$W\zone_source\$Map.csv" "$W\zonetool\$Map" $Map
+  python -I "$S\darkness\add_darkness.py" "$W\zone_source\$Map.csv" "$W\zonetool\$Map" $Map
   if($LASTEXITCODE){ throw 'add_darkness failed' }
 }
 if($FxImport){
