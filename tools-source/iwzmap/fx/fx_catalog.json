@@ -325,6 +325,33 @@
    "region": 96,
    "region_dz": 48,
    "status": "untested"
+  },
+  "spark_flash": {
+   "fx": "vfx/iw7/_requests/coop/vfx_zb_thu_sparks",
+   "kind": "electrical spark burst that lights its surroundings (emits light)",
+   "mode": "interval:3-8",
+   "region": 96,
+   "settle": 0.4,
+   "status": "untested"
+  },
+  "smoke_burst": {
+   "fx": "vfx/iw7/_requests/coop/vfx_zb_thu_smk_ground",
+   "kind": "ground smoke burst",
+   "mode": "loop",
+   "angles": [
+    270,
+    0,
+    0
+   ],
+   "region": 128,
+   "status": "untested"
+  },
+  "emergency_glow": {
+   "fx": "vfx/iw7/core/zombie/weapon/shredder/zmb_part_glow_red",
+   "kind": "red emergency lamp glow",
+   "mode": "loop",
+   "region": 48,
+   "status": "untested"
   }
  }
 }
