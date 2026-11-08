@@ -164,39 +164,11 @@ def sign_grime_overlay(w=1024, h=1024, seed=4704):
     return _rgba(rgb, a)
 
 
-def decal_blood_feathered(size=512, seed=4705):
-    """A drag smear running bottom -> top: a pooled stain at the bottom that is smeared upward, the trail made of
-    thickness variations ALONG the drag (cloth/limb drag marks), thinning and going translucent toward its end; dried
-    darker rims where it is thick, a few satellite drops. Not gory. Feathered alpha, 0 at every border."""
-    sh = (size, size)
-    yy, xx = np.mgrid[0:size, 0:size].astype(np.float32) / size
-    cx = 0.5 + 0.07 * np.sin((yy - 0.1) * 3.2) - 0.05 * (0.8 - yy)
-    t = N.smoothstep(0.78, 0.1, yy)                  # 0 at the pool, 1 at the far end
-    wv = N.fbm((size, 1), seed + 8, 4, base=6.0 / size)[:, 0][:, None]          # irregular width along the drag
-    half_w = (0.12 * (1 - 0.55 * t) + 0.02) * (0.6 + 0.8 * wv)
-    lateral = (xx - cx) / half_w
-    edge_noise = (N.fbm(sh, seed + 2, 4, base=0.012) - 0.5) * 0.45
-    trail_cover = N.smoothstep(1.0, 0.85, np.abs(lateral) + edge_noise)
-    trail_cover = trail_cover * N.smoothstep(0.86, 0.74, yy)
-    fibres = N.warp(N.spectral(sh, 2.0, seed, aniso=(18.0, 1.0)), seed + 1, amount=2, scale=0.01)
-    # thickness: drag fibres, fading with t; the end feathers out by thickness, not by spikes
-    thickness = trail_cover * (0.25 + 0.75 * fibres) * (1 - t) ** 0.8
-    thickness = thickness * N.smoothstep(0.0, 0.25, 1 - t + edge_noise * 0.3)
-    py, px = 0.78, 0.53
-    pd = np.sqrt(((xx - px) / 0.15) ** 2 + ((yy - py) / 0.11) ** 2)
-    pool_cover = N.smoothstep(1.0, 0.92, pd + (N.fbm(sh, seed + 3, 4, base=0.01) - 0.5) * 0.5)
-    pool = pool_cover * (0.65 + 0.35 * N.fbm(sh, seed + 7, 4, base=0.02))
-    drops = N.blobs(sh, seed + 4, 12, size * 0.003, size * 0.009, irregular=0.15, wrap=False, rough_base=0.05)
-    drops = (drops > 0.5).astype(np.float32) * 0.8 * N.smoothstep(0.3, 0.15, np.abs(xx - 0.52)) * N.smoothstep(0.5, 0.7, yy)
-    thick = np.clip(np.maximum(np.maximum(thickness, pool), drops), 0, 1)
-    thick = ndimage.gaussian_filter(thick, 0.8)
-    body = ndimage.gaussian_filter(thick, size * 0.01)
-    rim = np.clip(thick - body, 0, 1) * 1.6 * N.smoothstep(0.3, 0.6, body)
-    rgb = _mix(BLOOD_DRY, BLOOD_WET, np.clip(body * 1.2, 0, 1) * (0.7 + 0.3 * N.fbm(sh, seed + 6, 3, base=0.01)))
-    rgb = rgb * (1 - 0.35 * np.clip(rim, 0, 1)[..., None])
-    a = np.clip(N.smoothstep(0.02, 0.45, thick) * 0.92 + rim * 0.1, 0, 0.94)
-    a = a * N.border_falloff(sh, size * 0.06, seed + 5, wobble=size * 0.02)
-    return _rgba(rgb, a)
+def decal_blood_feathered(size=512, seed=4812):
+    """Kept for existing references: the body drag trail (see blood.py; the old single-blob smear was rejected in
+    the coordinator's g25 review)."""
+    from .blood import blood_drag_trail
+    return blood_drag_trail(size, seed)
 
 
 def decal_grime_feathered(size=512, seed=4706):

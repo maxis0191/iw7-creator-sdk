@@ -236,18 +236,39 @@ def departure_board_suspended(w=1024, h=256, seed=4752, rows=BOARD_ROWS, clock=I
             d.rectangle([x, y, x + cw, y + chh], fill=(8, 8, 9))
             d.line([(x + cw * 0.15, y + chh / 2), (x + cw * 0.85, y + chh / 2)], fill=(70, 70, 70), width=S)
             return
+        def glyph(c):
+            g = Image.new('L', (int(cw), int(chh)), 0)
+            ImageDraw.Draw(g).text((cw / 2, chh / 2 + S), c, font=flap_font, fill=255, anchor='mm')
+            return g
+
+        col = (238, 232, 214)
+        if state == 'stuck' and ch.strip():
+            # mechanical fault: the drum stopped mid-step from ch to the next card. The lower half still shows the
+            # bottom of ch; the next card's upper leaf has dropped but not seated: it hangs 1.5 px low and 1 px
+            # right, a little darker (tilted away from the light), with a dark gap above it and a hard split line.
+            nxt = chr(ord(ch) + 1) if ch.isalpha() and ch != 'Z' else 'A'
+            half = int(chh / 2)
+            lower = glyph(ch).crop((0, half, int(cw), int(chh)))
+            im.paste(Image.new('RGB', lower.size, col), (int(x), int(y) + half), lower)
+            dy, dx = int(2.0 * S), int(1.0 * S)
+            leaf_h = int(half * 0.86)                     # tilted toward the viewer: foreshortened
+            top_y = int(y) + half + dy - leaf_h
+            d.rectangle([x, y, x + cw, top_y], fill=(6, 6, 7))                          # gap behind the unseated leaf
+            # shadow the hanging leaf casts on the lower card
+            for k in range(int(5 * S)):
+                v = int(28 - 20 * (1 - k / (5 * S)))
+                d.line([(x, y + half + dy + k), (x + cw, y + half + dy + k)], fill=(v, v, v + 2))
+            im.paste(Image.new('RGB', (lower.width, lower.height - dy - int(5 * S)), col),
+                     (int(x), int(y) + half + dy + int(5 * S)),
+                     lower.crop((0, dy + int(5 * S), lower.width, lower.height)))
+            d.rectangle([x + dx, top_y, x + cw, y + half + dy], fill=(30, 30, 34))    # the leaf itself
+            upper = glyph(nxt).crop((0, 0, int(cw) - dx, half)).resize((int(cw) - dx, leaf_h), Image.LANCZOS)
+            im.paste(Image.new('RGB', upper.size, (196, 191, 178)), (int(x) + dx, top_y), upper)
+            d.line([(x + dx, y + half + dy), (x + cw, y + half + dy)], fill=(120, 120, 126), width=int(1.2 * S))  # leaf edge
+            d.rectangle([x, y, x + cw, y + chh], outline=(10, 10, 12), width=S)
+            return
         if ch.strip():
-            layer = Image.new('L', (int(cw), int(chh)), 0)
-            ImageDraw.Draw(layer).text((cw / 2, chh / 2 + S), ch, font=flap_font, fill=255, anchor='mm')
-            col = (238, 232, 214)
-            if state == 'stuck':     # upper half shows the next card turning: squashed and darker
-                upper = layer.crop((0, 0, int(cw), int(chh / 2))).resize((int(cw), int(chh * 0.22)))
-                lower = layer.crop((0, int(chh / 2), int(cw), int(chh)))
-                layer = Image.new('L', (int(cw), int(chh)), 0)
-                layer.paste(lower, (0, int(chh / 2)))
-                layer.paste(upper, (0, int(chh / 2 - chh * 0.22)))
-                d.rectangle([x, y, x + cw, y + chh / 2 - chh * 0.22], fill=(10, 10, 11))
-                col = (200, 196, 182)
+            layer = glyph(ch)
             im.paste(Image.new('RGB', layer.size, col), (int(x), int(y)), layer)
         d.line([(x, y + chh / 2), (x + cw, y + chh / 2)], fill=(6, 6, 7), width=int(1.6 * S))
         d.rectangle([x, y, x + cw, y + chh], outline=(10, 10, 12), width=S)
@@ -260,7 +281,9 @@ def departure_board_suspended(w=1024, h=256, seed=4752, rows=BOARD_ROWS, clock=I
             continue
         flap(cx + i * 24 * S, pad + 5 * S, ch, cw=22 * S, chh=head_h - 10 * S)
     y = y_lab + 16 * S
-    stuck = (1, 3, 9)          # row, column group, char index
+    # row, column group, char index: the E of SERVICE, stuck between E and F (top of F over the bottom of E: a visible
+    # mechanical fault that still reads as E, never as a misspelling)
+    stuck = (1, 3, 1)
     missing = (2, 1, 11)
     for ri, row in enumerate(rows):
         for ci, ((name, n), text) in enumerate(zip(cols, row)):
@@ -304,7 +327,7 @@ def evac_signal_diagram(w=1024, h=512, seed=4753):
     def P2(x, y):
         return (px0 + (x + 3800) / 7800 * (px1 - px0), py1 - (y - 1000) / 3600 * (py1 - py0))
 
-    def room(x0, y0, x1, y1, label, fill=(44, 58, 56), hatch=False, lab_col=LINE, size=10, at=None):
+    def room(x0, y0, x1, y1, label, fill=(44, 58, 56), hatch=False, lab_col=LINE, size=13, at=None):
         a, b = P2(x0, y1), P2(x1, y0)
         d.rectangle([a[0], a[1], b[0], b[1]], fill=fill, outline=LINE, width=int(1.5 * S))
         if hatch:
@@ -320,10 +343,10 @@ def evac_signal_diagram(w=1024, h=512, seed=4753):
                 d.text((lx, cy + i * size * S * 1.2), ln, font=fz, fill=lab_col, anchor='mm')
 
     room(-1200, 3200, 400, 4400, 'TICKET HALL')
-    room(-800, 2400, -400, 3200, 'STAIR\nA', size=9, at=(-500, 2950))
-    room(-1600, 3240, -1200, 3560, 'STAIR B', size=7, at=(-1400, 3490))
+    room(-800, 2400, -400, 3200, 'STAIR\nA', size=11, at=(-500, 2950))
+    room(-1600, 3240, -1200, 3560, 'STAIR B', size=9, at=(-1400, 3490))
     room(-2400, 1600, 2400, 2400, 'PLATFORM A', at=(1100, 2200))
-    room(2400, 1680, 3200, 1920, 'MAINT.', size=8)
+    room(2400, 1680, 3200, 1920, 'MAINT.', size=10)
     room(2960, 1920, 3200, 2400, '', size=8)
     room(2600, 2400, 3800, 3200, 'GENERATOR\nROOM')
     room(2600, 3200, 3600, 4000, 'SIGNAL\nCONTROL', fill=(58, 52, 40), lab_col=(255, 214, 120))
@@ -335,7 +358,7 @@ def evac_signal_diagram(w=1024, h=512, seed=4753):
     d.rectangle([a[0], a[1] - 2.5 * S, b[0], a[1] + 2.5 * S], fill=LINE)
     tun_a, tun_b = P2(-3600, 1200), P2(-2400, 1600)
     d.rectangle([tun_a[0], tun_b[1], tun_b[0], tun_a[1]], outline=LINE, width=int(1.5 * S))
-    d.text((P2(-3000, 1300)), 'SERVICE TUNNEL', font=P.font('din', 9 * S, 'SemiBold'), fill=LINE, anchor='mm')
+    d.text((P2(-3000, 1300)), 'SERVICE TUNNEL', font=P.font('din', 12 * S, 'SemiBold'), fill=LINE, anchor='mm')
     bs = P2(-3600, ty)
     d.rectangle([bs[0] - 2 * S, bs[1] - 9 * S, bs[0] + 3 * S, bs[1] + 9 * S], fill=RED)          # buffer stop
     # the old station's disused road (dashed)
@@ -348,7 +371,7 @@ def evac_signal_diagram(w=1024, h=512, seed=4753):
         d.line([(p[0], p[1] - 6 * S), (p[0], p[1] + 6 * S)], fill=(14, 18, 18), width=int(2 * S))
     for i, x in enumerate((-3000, -1800, -600, 600, 1800, 2900, 3700)):
         p = P2(x, ty)
-        d.text((p[0], p[1] + 12 * S), 'Z%d' % (10 + i), font=P.font('din', 8 * S, 'SemiBold'), fill=(180, 186, 176), anchor='mm')
+        d.text((p[0], p[1] + 12 * S), 'Z%d' % (10 + i), font=P.font('din', 10 * S, 'SemiBold'), fill=(180, 186, 176), anchor='mm')
     # train 047 held at platform A: amber occupied section lamps and a train describer box
     for x in np.arange(-1150, 1150, 140):
         p = P2(x, ty)
@@ -367,7 +390,7 @@ def evac_signal_diagram(w=1024, h=512, seed=4753):
         lx = p[0] + 16 * S
         d.ellipse([lx - 6 * S, sy - 6 * S, lx + 6 * S, sy + 6 * S], fill=(255, 40, 30), outline=(20, 10, 10), width=S)
         gd.ellipse([lx - 12 * S, sy - 12 * S, lx + 12 * S, sy + 12 * S], fill=200)
-        d.text((lx, sy + side * 13 * S), 'S%d' % (i + 1), font=P.font('din', 8 * S, 'Bold'), fill=(230, 210, 200), anchor='mm')
+        d.text((lx, sy + side * 13 * S), 'S%d' % (i + 1), font=P.font('din', 10 * S, 'Bold'), fill=(230, 210, 200), anchor='mm')
     # evacuation routes: green arrows toward the street exits from the ticket hall
     G = (70, 200, 100)
 
@@ -390,11 +413,11 @@ def evac_signal_diagram(w=1024, h=512, seed=4753):
     d.text(ex, 'EXIT', font=P.font('din', 10 * S, 'Bold'), fill=(10, 30, 14), anchor='mm')
     yah = P2(3350, 3800)
     d.ellipse([yah[0] - 5 * S, yah[1] - 5 * S, yah[0] + 5 * S, yah[1] + 5 * S], fill=RED, outline=WHITE, width=S)
-    d.text((yah[0] - 8 * S, yah[1]), 'YOU ARE HERE', font=P.font('din', 8 * S, 'Bold'), fill=(255, 214, 120), anchor='rm')
+    d.text((yah[0] - 8 * S, yah[1]), 'YOU ARE HERE', font=P.font('din', 10 * S, 'Bold'), fill=(255, 214, 120), anchor='rm')
     # legend panel
     lx0 = W - 236 * S
     d.rectangle([lx0, title_h + 16 * S, W - 14 * S, H - 18 * S], fill=(26, 34, 33), outline=LINE, width=S)
-    lf = P.font('din', 11 * S, 'SemiBold')
+    lf = P.font('din', 12 * S, 'SemiBold')
     hf = P.font('din', 12 * S, 'Bold')
     y = title_h + 30 * S
     d.text((lx0 + 12 * S, y), 'KEY', font=hf, fill=YELLOW, anchor='lm')
@@ -423,11 +446,11 @@ def evac_signal_diagram(w=1024, h=512, seed=4753):
         y += 24 * S
     y += 6 * S
     notes = ['IN AN EMERGENCY ALL SIGNALS', 'RETURN TO DANGER.', 'DO NOT CLEAR A SIGNAL WITHOUT', 'THE AUTHORITY OF CONTROL.']
-    nf = P.font('din', 9 * S, 'SemiBold')
+    nf = P.font('din', 11 * S, 'SemiBold')
     for n in notes:
         d.text((lx0 + 12 * S, y), n, font=nf, fill=(200, 196, 182), anchor='lm')
-        y += 13 * S
-    d.text((lx0 + 12 * S, H - 30 * S), 'DIAGRAM SZ-02  REV. 4', font=P.font('din', 9 * S, 'Bold'), fill=(160, 160, 150),
+        y += 15 * S
+    d.text((lx0 + 12 * S, H - 30 * S), 'DIAGRAM SZ-02  REV. 4', font=P.font('din', 11 * S, 'Bold'), fill=(160, 160, 150),
            anchor='lm')
     glow = glow.filter(ImageFilter.GaussianBlur(8 * S))
     im = Image.composite(Image.new('RGB', (W, H), (255, 70, 50)), im,
