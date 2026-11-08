@@ -47,6 +47,12 @@ def main():
     al = [fn(128)[..., 3] > 0.3 for fn in blood.VARIANTS.values()]
     ious = [float((x & y).sum()) / max(1.0, float((x | y).sum())) for i, x in enumerate(al) for y in al[i + 1:]]
     check(max(ious) < 0.5, 'blood variants have distinct silhouettes (max IoU %.2f)' % max(ious))
+    # stamp legibility (in-engine review: QUARANTINE read as QUAPANTINE): distressing must not eat letter cores
+    from . import notices
+    ink, clean = notices.stamp_masks(4750, 'QUARANTINE', 32, 10, sub='ZONE A  -  23:47')
+    core = clean > 0.9
+    held = float((ink[core] >= 0.6).mean())
+    check(held >= 0.97, 'stamp letter cores keep their ink (%.3f of core pixels >= 0.6)' % held)
     # clock: alpha 0 in the corners, opaque in the centre
     ck = boards.clock_face_stopped(128)
     check(ck[0, 0, 3] == 0 and ck[64, 64, 3] > 0.99, 'clock face is a disc (corner alpha 0, centre opaque)')

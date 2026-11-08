@@ -46,28 +46,50 @@ def scribble(doc, x, y, w, seed, colour=(0.12, 0.14, 0.32), h=12):
     doc.line([(x + w * 0.05, y + h * 0.9), (x + w * 0.6, y + h * 0.75), (x + w * 0.95, y + h * 0.95)], colour, width=0.8)
 
 
-def stamp(rgb, seed, text, cx, cy, size, angle_deg, colour=STAMP_RED, strength=0.75, box=True, sub=None):
-    """Rubber stamp: uneven ink, gaps where the stamp did not touch, slight blur; rotated."""
-    h, w = rgb.shape[:2]
+def stamp_masks(seed, text, size, angle_deg, box=True, sub=None):
+    """Rubber-stamp ink coverage, split so the distressing never breaks a letterform: the frame gets full
+    'did not touch' gaps; the letters keep a solid core (ink density never below 0.8) and are distressed only on a
+    thin band along their edges. Returns (ink, clean_text) at final scale, clean_text being the undistressed glyphs
+    (used by the legibility test)."""
     S = 3
-    f = P.font('din', int(size * S), 'Bold Condensed')
+    f = P.font('din', int(size * S), 'Bold')          # full width: condensed letters (R/P/B) close up at 2 m
     tw = f.getlength(text)
     pad = size * S * 0.35
     W2 = int(tw + pad * 2)
     H2 = int(size * S * (1.6 if sub else 1.35))
-    im = Image.new('L', (W2, H2), 0)
-    d = ImageDraw.Draw(im)
+    txt = Image.new('L', (W2, H2), 0)
+    frm = Image.new('L', (W2, H2), 0)
+    ImageDraw.Draw(txt).text((W2 / 2, H2 * (0.42 if sub else 0.5)), text, font=f, fill=255, anchor='mm')
     if box:
-        d.rectangle([2, 2, W2 - 3, H2 - 3], outline=255, width=int(size * S * 0.09))
-    d.text((W2 / 2, H2 * (0.42 if sub else 0.5)), text, font=f, fill=255, anchor='mm')
+        ImageDraw.Draw(frm).rectangle([2, 2, W2 - 3, H2 - 3], outline=255, width=int(size * S * 0.09))
     if sub:
-        d.text((W2 / 2, H2 * 0.82), sub, font=P.font('din', int(size * S * 0.3), 'Bold'), fill=255, anchor='mm')
-    im = im.rotate(angle_deg, resample=Image.BICUBIC, expand=True)
-    im = im.resize((max(1, im.width // S), max(1, im.height // S)), Image.LANCZOS)
-    m = np.asarray(im, np.float32) / 255
+        ImageDraw.Draw(txt).text((W2 / 2, H2 * 0.82), sub, font=P.font('din', int(size * S * 0.4), 'Bold'), fill=255,
+                                 anchor='mm')
+
+    def final(im):
+        im = im.rotate(angle_deg, resample=Image.BICUBIC, expand=True)
+        return np.asarray(im.resize((max(1, im.width // S), max(1, im.height // S)), Image.LANCZOS), np.float32) / 255
+
+    t, fr = final(txt), final(frm)
+    sh = t.shape
+    # frame: heavy, patchy contact
+    touch = N.smoothstep(0.25, 0.6, N.fbm(sh, seed, 4, base=0.03)) * (0.7 + 0.3 * N.spectral(sh, 0.8, seed + 1))
+    fr = fr * np.clip(touch * 1.3, 0, 1)
+    # letters: solid core, uneven ink density 0.8..1, ragged only on a 1 px edge band
+    core = ndimage.grey_erosion(t, size=(3, 3))
+    edge = np.clip(t - core, 0, 1)
+    rough = N.smoothstep(0.35, 0.65, N.spectral(sh, 0.6, seed + 2))
+    density = 0.8 + 0.2 * N.fbm(sh, seed + 3, 3, base=0.05)
+    letters = (core + edge * rough) * density
+    return np.clip(np.maximum(letters, fr), 0, 1), t
+
+
+def stamp(rgb, seed, text, cx, cy, size, angle_deg, colour=STAMP_RED, strength=0.85, box=True, sub=None):
+    """Rubber stamp composited with multiply ink (see stamp_masks); rotated."""
+    h, w = rgb.shape[:2]
+    m, _ = stamp_masks(seed, text, size, angle_deg, box, sub)
+    m = m * strength
     mh, mw = m.shape
-    touch = N.smoothstep(0.25, 0.6, N.fbm((mh, mw), seed, 4, base=0.03)) * (0.7 + 0.3 * N.spectral((mh, mw), 0.8, seed + 1))
-    m = m * np.clip(touch * 1.3, 0, 1) * strength
     out = rgb.copy()
     x0, y0 = int(cx - mw / 2), int(cy - mh / 2)
     xa, ya, xb, yb = max(0, x0), max(0, y0), min(w, x0 + mw), min(h, y0 + mh)
@@ -214,7 +236,7 @@ def notice_quarantine(w=512, h=768, seed=2348):
              anchor='mm')
     pap = P.paper(w, h, seed, (0.95, 0.94, 0.90))
     rgb = doc.render(pap, seed, uneven=0.1)
-    rgb = stamp(rgb, seed + 2, 'QUARANTINE', 330, 640, 40, 12, strength=0.85, sub='ZONE A  ·  23:47')
+    rgb = stamp(rgb, seed + 2, 'QUARANTINE', 350, 636, 32, 10, strength=0.85, sub='ZONE A  ·  23:47')
     rgb = P.yellow(rgb, seed + 3, 0.22, 0.3)
     rgb = P.fold(rgb, seed + 4, 0.5, True, 0.2)
     rgb = P.fold(rgb, seed + 5, 0.33, True, 0.12)
