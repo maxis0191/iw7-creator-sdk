@@ -17,6 +17,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mapgen, hkcm_write
 import brushkit as bk
 import sz2_materials as MT
+import sz2_art_hooks as ART_HOOKS
+ART_HOOKS.register()       # art drop-ins (sz2_art_hooks.py): present images become materials, missing ones change nothing
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GALLERY = os.environ.get('IWZ_GALLERY') == '1'
@@ -358,6 +360,8 @@ def sign(zone, key, axis, fixed, facing, s, zc, width, height=None, frame=True, 
     if 'u' in flip: uv = [(1 - u, v) for u, v in uv]
     if 'v' in flip: uv = [(u, 1 - v) for u, v in uv]
     B.quad(key, zone, pts, n=n, uvs=uv, collide=False)
+    if frame and ART_HOOKS.key('sign_grime_overlay'):
+        B.quad(ART_HOOKS.key('sign_grime_overlay'), zone, [tuple(c + nc * 0.2 for c, nc in zip(p_, n)) for p_ in pts], n=n, uvs=uv, collide=False)
     SIGNS.append({'zone': zone, 'image': key, 'center': ((a + b) / 2 if axis == 'x' else fixed, fixed if axis == 'x' else (a + b) / 2, zc),
                   'axis': axis, 'facing': facing, 'size': (width, height), 'off': off, 'hanging': not frame and depth == 0.0})
 
@@ -389,7 +393,11 @@ def decal_fit(mat, w, h, rot=False):
     return w2, w2 * ih / iw
 
 
+ART_DECAL_SWAP = {'blood_pool': 'decal_blood_feathered', 'floor_stain': 'decal_grime_feathered'}
+
+
 def decal_floor(zone, mat, x, y, z, w, h, rot=False):
+    mat = ART_HOOKS.key(ART_DECAL_SWAP.get(mat, '')) or mat
     w, h = decal_fit(mat, w, h, rot)
     x0, x1, y0, y1 = x - w / 2, x + w / 2, y - h / 2, y + h / 2
     uv = [(0, 1), (1, 1), (1, 0), (0, 0)]
@@ -489,7 +497,7 @@ def pilasters(zone, axis, fixed, facing, s0, s1, zf, zc, step=320, avoid=(), low
     return out
 
 
-ADS = ['poster_lasttrain', 'poster_mindgap', 'poster_station_zero']
+ADS = ['poster_lasttrain', 'poster_mindgap', 'poster_station_zero'] + [k_ for k_ in [ART_HOOKS.key('poster_illustration_2')] if k_]
 
 
 def ad_frame(zone, axis, fixed, facing, s, zc, k):
@@ -505,7 +513,8 @@ def ad_frame(zone, axis, fixed, facing, s, zc, k):
         for a, b, z0, z1 in ((s - w / 2 - 8, s - w / 2, zc - h / 2 - 8, zc + h / 2 + 8), (s + w / 2, s + w / 2 + 8, zc - h / 2 - 8, zc + h / 2 + 8),
                              (s - w / 2, s + w / 2, zc - h / 2 - 8, zc - h / 2), (s - w / 2, s + w / 2, zc + h / 2, zc + h / 2 + 8)):
             B.slab_y(a, b, fixed, z0, z1, 3, 'steel_trim', zone, facing, collide=False, nav=False)
-    sign(zone, ADS[k % len(ADS)], axis, fixed, facing, s, zc, 96, 144, frame=False, depth=0.6)
+    ad_ = ART_HOOKS.key('ad_panel_broken') if zone.startswith('stair') else None     # stairs: the broken lit ad panel
+    sign(zone, ad_ or ADS[k % len(ADS)], axis, fixed, facing, s, zc, 96, 144, frame=False, depth=0.6)
 
 
 def wall_niche(zone, axis, fixed, facing, s, z0, w=96, h=72):
@@ -974,7 +983,7 @@ for y_ in (3650,):
 # signal desks (boxes, until the kit) and the network map board
 for x0_, y0_ in DESKS:      # (g25) stock lab desks (decor block) instead of box desks; collision for the pair
     B.collision_box((x0_ + 12, y0_ + 24, -320), (x0_ + 228, y0_ + 56, -285))
-decal_wall(Z, 'map_board', 'y', 3600, -1, 3600, -180, 320, 160)
+decal_wall(Z, ART_HOOKS.key('evac_signal_diagram') or 'map_board', 'y', 3600, -1, 3600, -180, 320, 160)   # Station Zero evacuation / signal diagram when delivered
 sign(Z, 'sign_network_map', 'x', 4000, -1, 2800, -170, 256, 128)
 B.wall_plane(Z, 'x', 4150, -1, 2976, 3232, -320, -112, 'rollup', collide=False)
 ceiling_grid(Z, 2600, 3200, 3600, 4000, -32, step_y=250, depth=16, mat='steel_trim')
@@ -1555,6 +1564,46 @@ os.makedirs(sys.argv[2], exist_ok=True)
 tpl, out = sys.argv[1], sys.argv[2]
 
 # nav cells: one z per 32-unit cell from the region list (first region wins), minus solid blockers
+# art drop-ins at fixed spots (sz2_art_hooks.py; each line is skipped while its image is missing)
+ART_PLACE = [
+    # name, kind, zone, axis, fixed, facing, s, zc, w, h    (kind: wall decal | sign = framed-less poster quad)
+    ('clock_face_stopped', 'wall', 'ticket_hall', 'x', 4400, -1, -300, 240, 64, 64),
+    ('clock_face_stopped', 'wall', 'platform_a', 'x', 2400, -1, 256, -110, 64, 64),
+    ('clock_face_stopped', 'wall', 'control_room', 'x', 4000, -1, 2800, -120, 56, 56),
+    ('clock_face_stopped', 'wall', 'generator_room', 'x', 3184, -1, 2800, -100, 56, 56),
+    ('departure_board_suspended', 'sign', 'ticket_hall', 'y', 400, -1, 3800, 200, 256, 64),
+    ('notice_closed_layers', 'wall', 'platform_b', 'x', 3400, -1, -2700, -250, 96, 96),
+    ('notice_closed_layers', 'wall', 'platform_b', 'x', 3400, -1, -3200, -250, 96, 96),
+    ('notice_quarantine', 'sign', 'ticket_hall', 'x', 4400, -1, -480, 130, 64, 96),
+    ('notice_quarantine', 'sign', 'platform_a', 'x', 2400, -1, 700, -230, 64, 96),
+    ('notice_do_not_restart', 'sign', 'maint_corridor', 'x', 1680, +1, 2800, -220, 64, 96),
+    ('poster_missing_1', 'sign', 'ticket_hall', 'y', -1200, +1, 3500, 130, 64, 96),
+    ('poster_missing_2', 'sign', 'ticket_hall', 'y', -1200, +1, 3580, 130, 64, 96),
+    ('poster_missing_3', 'sign', 'ticket_hall', 'y', -1200, +1, 3660, 130, 64, 96),
+    ('poster_missing', 'sign', 'ticket_hall', 'y', -1200, +1, 3580, 130, 64, 96),
+    ('junction_grime', 'wall', 'ticket_hall', 'x', 4400, -1, -1000, 24, 256, 64),
+    ('junction_grime', 'wall', 'ticket_hall', 'x', 4400, -1, -700, 24, 256, 64),
+    ('junction_grime', 'wall', 'ticket_hall', 'x', 3200, +1, -1000, 24, 256, 64),
+    ('junction_grime', 'wall', 'ticket_hall', 'x', 3200, +1, 200, 24, 256, 64),
+    ('water_streak', 'wall', 'ticket_hall', 'y', -1200, +1, 4000, 230, 48, 192),
+    ('water_streak', 'wall', 'platform_a', 'x', 2400, -1, -800, -150, 48, 192),
+    ('water_streak', 'wall', 'platform_b', 'x', 3400, -1, -2450, -150, 48, 192),
+]
+_placed = set()
+for n_, kind_, zn_, ax_, fx_, fc_, s_, zc_, w_, h_ in ART_PLACE:
+    k_ = ART_HOOKS.key(n_)
+    if not k_ or (n_ == 'poster_missing' and ART_HOOKS.key('poster_missing_2')):
+        continue
+    if kind_ == 'sign':
+        sign(zn_, k_, ax_, fx_, fc_, s_, zc_, w_, h_, frame=False, depth=0.6)
+    else:
+        decal_wall(zn_, k_, ax_, fx_, fc_, s_, zc_, w_, h_)
+    _placed.add(n_)
+if ART_HOOKS.key('grime_mask_floor'):     # generator room diamond plate: one large non-repeating grime / oil mask
+    decal_floor('generator_room', ART_HOOKS.key('grime_mask_floor'), 3200, 2790, -320, 760, 760)
+    _placed.add('grime_mask_floor')
+ART_HOOK_REPORT = {'available': sorted(ART_HOOKS.AVAILABLE), 'placed': sorted(_placed)}
+
 cells, owner, corner_z = {}, {}, {}
 for r in REGIONS:
     x0, y0, x1, y1 = r['rect']
@@ -2154,6 +2203,7 @@ layout['decals'] = DECALS
 layout['sign_view_list'] = SIGN_VIEW_LIST
 layout['walk'] = WALK
 layout['track_spec'] = TRACK_SPEC
+layout['art_hooks'] = ART_HOOK_REPORT
 layout['walkcap'] = [{'name': n, 'origin': [x, y, z], 'yaw': yw} for n, x, y, z, yw in WALKCAP]
 layout['gallery'] = {'materials': GALLERY_ITEMS, 'texels': GALLERY_TEXELS, 'views': GALLERY_VIEWS}
 for e_ in ents:      # named placed models (quest, relays, shutter, lever) for sz2_propcheck.py
