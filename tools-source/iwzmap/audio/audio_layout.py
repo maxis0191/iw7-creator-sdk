@@ -235,7 +235,7 @@ def soundscape(spec, layout, zones, bank_aliases, audio_zones=None):
         p = point(e, layout, zones, errors, label, need_zone=False)
         if p:
             far.append({'alias': e['alias'], 'zone': e.get('zone') or 'outside', 'origin': p, 'random': e['wait'],
-                        'note': e.get('note', '')})
+                        'radius': e.get('radius', 2500), 'note': e.get('note', '')})
     for i, e in enumerate(sc.get('loops', [])):
         label = 'loop %d %s' % (i, e['alias'])
         known(e['alias'], label)
@@ -352,8 +352,8 @@ def gsc(result, mapname, source):
     out.append('    emitters = [];')
     for e in result['emitters']:
         if e['random']:
-            out.append('    emitters[emitters.size] = %s::ambience_emitter( "%s", %s, 1, %s, %s ); // %s' % (
-                mod, e['alias'], vec(e['origin']), e['random'][0], e['random'][1], e['zone']))
+            out.append('    emitters[emitters.size] = %s::ambience_emitter( "%s", %s, 1, %s, %s, %g ); // %s' % (
+                mod, e['alias'], vec(e['origin']), e['random'][0], e['random'][1], e.get('radius', 2500), e['zone']))
         else:
             out.append('    emitters[emitters.size] = %s::ambience_emitter( "%s", %s ); // %s' % (mod, e['alias'], vec(e['origin']), e['zone']))
     bed = '"%s"' % result['default_bed'] if result['default_bed'] else 'undefined'

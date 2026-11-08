@@ -37,7 +37,7 @@ class LayoutTest(unittest.TestCase):
         self.assertEqual(r['loops'], {'hall': 2, 'pit': 1})
         text = audio_layout.gsc(r, 'cp_x', 'layout.json')
         self.assertIn('ambience_zone( "pit", ( 0, 1000, -400 ), ( 1000, 1400, -80 ), "bed_b" );', text)
-        self.assertIn('scripts\\cp\\maps\\cp_x\\cp_x_audio::ambience_emitter( "creak", ( 500, 250, 100 ), 1, 5, 9 );', text)
+        self.assertIn('scripts\\cp\\maps\\cp_x\\cp_x_audio::ambience_emitter( "creak", ( 500, 250, 100 ), 1, 5, 9, 2500 );', text)
         self.assertIn('song_ee_init( ( 200, 1200, -213 ), ( 0, 90, 0 ) );', text)
         self.assertIn('ambience_init( emitters, "bed_a", zones );', text)
 

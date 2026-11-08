@@ -750,8 +750,8 @@
       "comment": "objects: crackle of a flickering tube, fired on the lamp model swap (Shaolin light flicker, BO3 flicker static)",
       "template": "emt_metal_groan_med",
       "set": {
-        "vol_min": 0.3,
-        "vol_max": 0.3,
+        "vol_min": 0.2,
+        "vol_max": 0.2,
         "vol_mod": "emitter",
         "dist_min": 40.0,
         "dist_max": 650.0,

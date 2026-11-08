@@ -389,11 +389,37 @@ def manifest_refs(manifest_path):
     """{alias: [flac paths]} from an iwz_audio_bank.py manifest."""
     with open(manifest_path) as f:
         man = json.load(f)
-    refs = {}
+    refs, root = {}, os.path.dirname(os.path.abspath(manifest_path))
     for a in man['aliases']:
-        if a.get('dest') and os.path.isfile(a['dest']) and a['dest'] not in refs.setdefault(a['alias'], []):
-            refs[a['alias']].append(a['dest'])
+        dest = a.get('dest') and os.path.join(root, a['dest'])
+        if dest and os.path.isfile(dest) and dest not in refs.setdefault(a['alias'], []):
+            refs[a['alias']].append(dest)
     return refs
+
+
+def alias_pitch(manifest_path):
+    """{alias: (pitch_min, pitch_max)} from the bank's aliases csv beside the manifest (sound/*.aliases.csv)."""
+    import csv
+    import glob
+    out = {}
+    root = os.path.dirname(os.path.abspath(manifest_path))
+    for path in glob.glob(os.path.join(root, 'sound', '*.aliases.csv')):
+        with open(path, newline='', encoding='utf-8', errors='replace') as f:
+            for r in csv.DictReader(f):
+                try:
+                    lo, hi = float(r['pitch_min']), float(r['pitch_max'])
+                except (KeyError, ValueError):
+                    continue
+                a, b = out.get(r['Name'], (lo, hi))
+                out[r['Name']] = (min(a, lo), max(b, hi))
+    return out
+
+
+def repitch(x, pitch):
+    """x played at `pitch` (shorter and higher when pitch > 1), linear interpolation of the mono signal."""
+    y = mono(x)
+    n = max(2, int(round(len(y) / pitch)))
+    return np.interp(np.linspace(0, len(y) - 1, n), np.arange(len(y)), y).astype(np.float32)
 
 
 def scape(args):
@@ -418,6 +444,8 @@ def scape(args):
     clock = (q - int(audio['start_qpc'])) / fq - int(mark['t']) / 1000.0
     report['gsc_to_capture_offset_s'] = clock
     refs = manifest_refs(args.manifest)
+    pitches = alias_pitch(args.manifest)
+    per_alias = {}
     cache = {}
 
     def ref(path):
@@ -454,22 +482,34 @@ def scape(args):
             row['zone'] = zone['zone']
             row['distance'] = float(np.linalg.norm(np.array(p) + [0, 0, 60] - np.array(s)))
         best = None
-        for path in refs.get(e.get('alias'), []):
-            r = ref(path)
-            looped = e.get('kind') == 'loop' or len(r) > 12 * RATE
-            if looped:
-                if t + 1.0 > len(rec) / RATE:
+        alias = e.get('alias')
+        far_away = row.get('distance', 0) > args.max_distance
+        crowded = per_alias.get(alias, 0) >= args.per_alias
+        if far_away or crowded or (not row.get('zone') and e.get('kind') not in ('intro', 'lonely')):
+            report['events'].append(row)          # out of earshot, enough samples, or outside every window
+            continue
+        per_alias[alias] = per_alias.get(alias, 0) + 1
+        lo, hi = pitches.get(alias, (1.0, 1.0))
+        steps = [lo] if hi - lo < 0.005 else list(np.arange(lo, hi + 1e-6, 0.02))
+        for path in refs.get(alias, []):
+            r0 = ref(path)
+            for pitch in steps:
+                r = r0 if abs(pitch - 1.0) < 1e-6 else repitch(r0, pitch)
+                if e.get('kind') == 'loop':
+                    if t + 1.0 > len(rec) / RATE:
+                        continue
+                    m = match(np.concatenate([mono(r), mono(r)]), rec, t + 1.0, 2.0)
+                elif len(r) > 8 * RATE:
+                    m = match(r, rec, t + 0.5, 6.0)      # long one-shots (stings): a window inside the clip
+                else:
+                    m = match(r, rec, max(0.0, t - 0.25), min(len(r) / RATE + 1.0, 8.0))
+                if 'error' in m:
                     continue
-                win_start = t + 1.0
-                m = match(np.concatenate([r, r]), rec, win_start, 2.0)
-            else:
-                m = match(r, rec, max(0.0, t - 0.25), min(len(r) / RATE + 1.0, 8.0))
-            if 'error' in m:
-                continue
-            if best is None or m['xcorr_peak'] > best['xcorr_peak']:
-                best = dict(m, ref=path)
+                if best is None or m['xcorr_peak'] > best['xcorr_peak']:
+                    best = dict(m, ref=path, pitch=float(pitch))
         if best:
             row.update({'xcorr': best['xcorr_peak'], 'xcorr_second': best.get('xcorr_second'), 'spectral_r': best['spectral_r'],
+                        'pitch': best.get('pitch'),
                         'gain_db': best['gain_db'], 'level_dbfs': best['rec_rms_dbfs'], 'ref': best['ref'],
                         'delay_s': best['rec_start_s'] - t})
         report['events'].append(row)
@@ -539,6 +579,8 @@ def main(argv=None):
     p.add_argument('--manifest', required=True, help='iwz_audio_bank.py iwz_audio_manifest.json (alias -> audio files)')
     p.add_argument('--out', required=True, help='folder: report.json and the per-zone listening WAVs')
     p.add_argument('--sample-min', type=float, default=30.0, help='windows at least this long are saved as WAV')
+    p.add_argument('--max-distance', type=float, default=2500.0, help='events farther from the player are not matched')
+    p.add_argument('--per-alias', type=int, default=10, help='match at most this many events of one alias')
     args = ap.parse_args(argv)
     if args.cmd == 'scape':
         result = scape(args)

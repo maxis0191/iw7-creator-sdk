@@ -454,7 +454,8 @@
           150,
           300
         ],
-        "note": "a train coming up the west tunnel that never arrives"
+        "note": "a train coming up the west tunnel that never arrives",
+        "radius": 15000
       },
       {
         "alias": "amb_iwz_phantom_train",
@@ -467,7 +468,8 @@
           170,
           320
         ],
-        "note": "and from the east portal"
+        "note": "and from the east portal",
+        "radius": 15000
       },
       {
         "alias": "amb_iwz_phantom_horn",
@@ -480,7 +482,8 @@
           120,
           260
         ],
-        "note": "a horn very far away"
+        "note": "a horn very far away",
+        "radius": 15000
       },
       {
         "alias": "amb_iwz_phantom_horn",
@@ -492,7 +495,8 @@
         "wait": [
           140,
           280
-        ]
+        ],
+        "radius": 15000
       },
       {
         "alias": "amb_iwz_spark",
@@ -502,7 +506,8 @@
           28
         ],
         "zone": "maint_corridor",
-        "note": "broken panel"
+        "note": "broken panel",
+        "radius": 1400
       },
       {
         "alias": "amb_iwz_spark",
@@ -511,7 +516,8 @@
           12,
           30
         ],
-        "zone": "maint_corridor"
+        "zone": "maint_corridor",
+        "radius": 1400
       },
       {
         "alias": "amb_iwz_spark",
@@ -520,7 +526,8 @@
           14,
           34
         ],
-        "zone": "platform_a"
+        "zone": "platform_a",
+        "radius": 1400
       },
       {
         "alias": "amb_iwz_spark",
@@ -529,7 +536,8 @@
           12,
           30
         ],
-        "zone": "generator_room"
+        "zone": "generator_room",
+        "radius": 1400
       },
       {
         "alias": "amb_iwz_spark",
@@ -538,7 +546,8 @@
           15,
           40
         ],
-        "zone": "service_tunnel"
+        "zone": "service_tunnel",
+        "radius": 1400
       },
       {
         "alias": "amb_iwz_tv_static",
@@ -548,7 +557,8 @@
           32
         ],
         "zone": "control_room",
-        "note": "dead CRTs catching a channel"
+        "note": "dead CRTs catching a channel",
+        "radius": 1400
       },
       {
         "alias": "amb_iwz_tv_static",
@@ -557,7 +567,8 @@
           16,
           36
         ],
-        "zone": "control_room"
+        "zone": "control_room",
+        "radius": 1400
       },
       {
         "alias": "amb_iwz_tv_static",
@@ -566,7 +577,8 @@
           12,
           30
         ],
-        "zone": "control_room"
+        "zone": "control_room",
+        "radius": 1400
       }
     ],
     "loops": [
@@ -806,6 +818,7 @@
       "zones": [
         "service_tunnel",
         "platform_b",
+        "stair_a",
         "stair_b",
         "maint_corridor",
         "platform_a"

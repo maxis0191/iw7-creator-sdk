@@ -427,7 +427,9 @@ ambience_zone_at( origin )
     return undefined;
 }
 
-ambience_emitter( alias, origin, random, min_wait, max_wait )
+// radius (random emitters): the one-shot plays only while a living player is within radius (out of earshot it
+// would only take a voice: run s1 heard clicks when far one-shots crowded the 3D channels)
+ambience_emitter( alias, origin, random, min_wait, max_wait, radius )
 {
     e = spawnstruct();
     e.alias = alias;
@@ -435,6 +437,7 @@ ambience_emitter( alias, origin, random, min_wait, max_wait )
     e.random = iwz_opt( random, 0 );
     e.min_wait = iwz_opt( min_wait, 6 );
     e.max_wait = iwz_opt( max_wait, 18 );
+    e.radius = iwz_opt( radius, 2500 );
     return e;
 }
 
@@ -446,6 +449,9 @@ iwz_ambience_random( e )
     for (;;)
     {
         iwz_scape_wait( e.min_wait, e.max_wait );
+        if ( !iwz_scape_player_near( e.origin, e.radius ) )
+            continue;
+
         playsoundatpos( e.origin, e.alias );
         iwz_scape_log( "random", e.alias, e.origin );
     }
@@ -793,7 +799,7 @@ iwz_scape_flicker_lamp( alias )
             return;
 
         m = self.model;
-        if ( m != last && gettime() - last_t > 700 )
+        if ( m != last && gettime() - last_t > 700 && iwz_scape_player_near( self.origin, 900 ) )
         {
             playsoundatpos( self.origin, alias );
             iwz_scape_log( "flicker", alias, self.origin );
