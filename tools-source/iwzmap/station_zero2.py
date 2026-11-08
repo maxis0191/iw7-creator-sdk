@@ -784,6 +784,18 @@ SIGNS = []
 PROPS = []         # static models from the asset kit: {'zone', 'model', 'origin', 'angles', 'scale', 'collision'}
 DECOR = []         # script_model map entities (stock models placed at load)
 
+# train agent v4 delivery (coordinator 2026-11-08): IWZ_TRAIN_PROPS = JSON list of ported props placed with their clip
+# boxes (place_ported); the models it names replace the stand-ins below (G-2 genset, period wall fittings, BO3 props)
+PORTED = {e_['model'] for e_ in json.load(open(os.environ['IWZ_TRAIN_PROPS']))} if os.environ.get('IWZ_TRAIN_PROPS') else set()
+G2 = {'origin': (3200, 2850, -320), 'yaw': 0}     # genset model space: footprint x -112..162, y -52..52, front -y
+G2_ANCHORS = {'breaker_tripped': (131, 23.0, 58), 'lockout_tag': (131, 22.8, 54.5), 'label_plate': (136, 25.9, 76),
+              'cabinet_front_use_spot': (136, -10, 0), 'exhaust_flange_top': (-48, 0, 101), 'engine_bed_stencil': (-58, -30.06, 31)}
+
+
+def g2_world(a):
+    return (G2['origin'][0] + a[0], G2['origin'][1] + a[1], G2['origin'][2] + a[2])      # yaw 0
+
+
 # ============================================================================ g27 detail helpers (coordinator 2026-11-08 open list)
 THROATS = []       # dark tunnel sections: {'zone', 'x0', 'x1', 'y0', 'y1', 'zf', 'zs', 'r', 'end'} (layout 'throats')
 RUBBLE = []        # rubble decor requests (decor() is defined with the kit block further down)
@@ -935,7 +947,7 @@ x = -1168
 # east half: railing with a service gate
 # (g27, artlint decor-rail) the railing ran through the three east turnstiles (x 130..250): it now closes only the
 # gaps booth -> first turnstile and last turnstile -> east wall
-rail_run(Z, 'x', -20, 112, TURN_Y, 0, h=40)
+rail_run(Z, 'x', -20 if 'iwz_zm_zod_ticket_booth' not in PORTED else 0, 112, TURN_Y, 0, h=40)     # from the booth's east side
 rail_run(Z, 'x', 328, 400, TURN_Y, 0, h=40)
 # street exit (north): collapsed stairs up to rubble, zombie entry
 room(Z, 'street', (-304, 4400, 112, 4600), 0, 320, 'metro', 'tile_floor', CEIL_STAIR, skip=('south',))
@@ -1207,8 +1219,13 @@ for x in (2800, 3200, 3600):
         strip_light(Z, x - 48, y - 8, x + 48, y + 8, 8, mat='lamp_warm')
 # generator plinth + housing (box placeholder until the kit model), control panel for relay 3
 GEN = (3300, 2800)
-B.box((GEN[0] - 120, GEN[1] - 72, -320), (GEN[0] + 120, GEN[1] + 72, -304), 'conc_painted', Z)
-B.collision_box((GEN[0] - 100, GEN[1] - 50, -304), (GEN[0] + 100, GEN[1] + 50, -206))     # kit generator body (decor below)
+if 'iwz_g2_genset' not in PORTED:
+    B.box((GEN[0] - 120, GEN[1] - 72, -320), (GEN[0] + 120, GEN[1] + 72, -304), 'conc_painted', Z)
+    B.collision_box((GEN[0] - 100, GEN[1] - 50, -304), (GEN[0] + 100, GEN[1] + 50, -206))     # kit generator body (decor below)
+# (g27) with the G-2 genset (train agent v4) the hero is its model on its own stained plinth at G2 (clip boxes from the
+# port); hazard markings and the floor-grid gap follow its footprint
+GEN_FOOT = ((G2['origin'][0] - 112, G2['origin'][1] - 52), (G2['origin'][0] + 162, G2['origin'][1] + 52)) if 'iwz_g2_genset' in PORTED else \
+    ((GEN[0] - 120, GEN[1] - 72), (GEN[0] + 120, GEN[1] + 72))
 sign(Z, 'sign_signal_control', 'x', 3184, -1, 3100, -70, 192)
 decal_floor(Z, 'blood:spatter', 2900, 2700, -320, 88, 88, rot=True)
 for x_ in range(2700, 3800, 300):
@@ -1219,7 +1236,8 @@ for x_ in range(2700, 3800, 300):
 for y_ in (2500, 3100):
     for x_, f_ in ((2600, 1), (3800, -1)):
         B.slab_y(y_ - 10, y_ + 10, x_, -320, 32, 10, 'ibeam', Z, f_, collide=False, nav=False)
-floor_grid(Z, 2600, 2400, 3800, 3184, -320, 'beam_yellow', step=400, w=10, border=16, skip=((3170, 2720, 3430, 2880),))
+floor_grid(Z, 2600, 2400, 3800, 3184, -320, 'beam_yellow', step=400, w=10, border=16,
+           skip=((GEN_FOOT[0][0] - 50, GEN_FOOT[0][1] - 50, GEN_FOOT[1][0] + 50, GEN_FOOT[1][1] + 50),))
 drains(Z, [(2800, 2800), (3600, 2600)], -320)
 region('generator', Z, (2600, 2400, 3800, 3184), -320)
 
@@ -1508,9 +1526,10 @@ if os.environ.get('IWZ_ART5', '1') == '1':
         else:      # electrical_control_box_03 at (2605, 2950, -200), yaw 0
             JUNCTIONS.append({'zone': Zg5, 'mins': [2605, y_ - 13.7, -200], 'maxs': [2619.4, y_ + 11.2, -161.7]})
         conduit(Zg5, (2604, y_, -170), (2604, y_, 32), w=4)
-    gx_, gy_ = GEN
-    for (x0_, y0_, x1_, y1_) in ((gx_ - 150, gy_ - 100, gx_ + 150, gy_ - 92), (gx_ - 150, gy_ + 92, gx_ + 150, gy_ + 100),
-                                 (gx_ - 150, gy_ - 92, gx_ - 142, gy_ + 92), (gx_ + 142, gy_ - 92, gx_ + 150, gy_ + 92)):
+    (fx0_, fy0_), (fx1_, fy1_) = GEN_FOOT                 # hazard band 24..32 out from the generator footprint
+    fx0_, fy0_, fx1_, fy1_ = fx0_ - 32, fy0_ - 32, fx1_ + 32, fy1_ + 32
+    for (x0_, y0_, x1_, y1_) in ((fx0_, fy0_, fx1_, fy0_ + 8), (fx0_, fy1_ - 8, fx1_, fy1_),
+                                 (fx0_, fy0_ + 8, fx0_ + 8, fy1_ - 8), (fx1_ - 8, fy0_ + 8, fx1_, fy1_ - 8)):
         B.quad('beam_yellow', Zg5, [(x0_, y0_, -319.6), (x1_, y0_, -319.6), (x1_, y1_, -319.6), (x0_, y1_, -319.6)], n=(0, 0, 1), collide=False)
     for x_, y_ in ((2900, 2700), (3600, 2950)):
         B.box((x_ - 1, y_ - 1, -60), (x_ + 1, y_ + 1, 32), 'metal_black', Zg5, collide=False, nav=False)       # chain
@@ -1813,7 +1832,8 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
                        (250, 'cp_disco_subway_turnstyle_animated'), (310, 'cp_disco_subway_turnstyle_missing_arm')):
             decor('ticket_hall', m_, x_, 3700, 0, 90, (18, 16, 23))
         # generator room: a second generator unit and oil drums; corridor drum
-        decor('generator_room', 'clk_defend_generator_solo', 3300, 3080, -320, 0, (47, 21, 21))
+        if 'iwz_g2_genset' not in PORTED:
+            decor('generator_room', 'clk_defend_generator_solo', 3300, 3080, -320, 0, (47, 21, 21))
         for x_, y_, a_ in ((3500, 2560, 0), (3540, 2590, 40), (3150, 1730, 15)):
             decor('generator_room' if y_ > 2400 else 'maint_corridor', 'equipment_oil_barrel_military_01', x_, y_, -320, a_, (14, 14, 22))
         # old platform: loose planks by the rubble
@@ -1880,8 +1900,10 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     # (g25) stock / kit replacements for the generated box objects
     pass                                                                           # (g26) no Spaceland soda machine
     for x_ in (3585, 3735):                                                        # were box control panels (relay 3)
-        decor(Zg, 'electrical_control_panel_01', x_, 3172, -320, 270, (20, 10, 40))
-    decor(Zh, 'zmb_mobile_ticket_booth', -64, 3700, 0, 270, (43, 18, 23))
+        if 'iwz_fuse_box' not in PORTED:
+            decor(Zg, 'electrical_control_panel_01', x_, 3172, -320, 270, (20, 10, 40))
+    if 'iwz_zm_zod_ticket_booth' not in PORTED:
+        decor(Zh, 'zmb_mobile_ticket_booth', -64, 3700, 0, 270, (43, 18, 23))
     for x_ in (-1130, -1050, -970, -890, -810, -730, -650, -570, -490, -410, -330):
         if KIT:
             decor(Zh, 'cp_disco_subway_turnstyle_animated' if x_ != -650 else 'cp_disco_subway_turnstyle_missing_arm', x_, 3700, 0, 90, (18, 16, 23))
@@ -1891,7 +1913,8 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     for x0_, y0_ in DESKS:
         for dx_ in (60, 180):
             decor(Zc, 'lab_desk_02', x0_ + dx_, y0_ + 40, -320, 90, (48, 16, 18))
-    decor(Zg, 'clk_defend_generator_solo' if KIT else 'zom_machinery_generator_portable_01', GEN[0], GEN[1], -304, 0)
+    if 'iwz_g2_genset' not in PORTED:
+        decor(Zg, 'clk_defend_generator_solo' if KIT else 'zom_machinery_generator_portable_01', GEN[0], GEN[1], -304, 0)
     decor(Zg, 'equipment_oil_barrel_military_01', 3700, 2700, -320, 15, (14, 14, 22))   # the fire FX (gen_barrel_fire) burns in this drum
     # a portable set on the floor beside the plinth (the audio layout's generator hum and power cue anchor on it)
     decor(Zg, 'zom_machinery_generator_portable_01', GEN[0] + 170, GEN[1] - 110, -320, 30, (44, 28, 34))
@@ -1900,7 +1923,8 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     pass                                        # (g26) Spaceland soda fountain removed
     for y_ in (3880, 3920):
         pass                                    # (g26) Spaceland token machines removed
-    decor(Zh, 'zmb_mobile_ticket_booth', -1170, 3640, 0, 0, (18, 43, 23))     # clear of the west-wall posters
+    if 'iwz_machine_vending_food' not in PORTED:
+        decor(Zh, 'zmb_mobile_ticket_booth', -1170, 3640, 0, 0, (18, 43, 23))     # clear of the west-wall posters
     decor(Zh, 'barrier_pedestrian_01', -230, 4380, 0, 0, (40, 6, 20))
     decor(Zh, 'debris_concrete_rubble_pile_01_dark', 40, 4440, 0, 200)
     decor(Zh, 'com_trashbag2_black', -1140, 4360, 0, 30, (16, 16, 20))
@@ -1927,7 +1951,8 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zp, 'com_debris_paper_iw6_02', 900, 1900, -320, 60)
     decor(Zp, 'office_paper_stack01_iw6', -900, 2360, -320, 0)
     # generator room: control panel and wall pipes on the walls, air handler, emergency shutoff
-    decor(Zg, 'electrical_control_panel_01', 2602, 2650, -320, 0, (11, 22, 41))
+    if 'iwz_fuse_box' not in PORTED:
+        decor(Zg, 'electrical_control_panel_01', 2602, 2650, -320, 0, (11, 22, 41))
     decor(Zg, 'wall_mounted_pipes_01', 3796, 2600, -320, 180)
     decor(Zg, 'electrical_industrial_air_vent_box_01', 3600, 2480, -320, 0, (100, 50, 49))
     decor(Zg, 'emergency_shutoff_sm_panel_01', 3460, 2402, -260, 90)
@@ -1972,7 +1997,8 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zb, 'com_debris_paper_iw6_02', -2900, 2900, -384, 120)
     # ---- art pass 2 ----
     # generator room: kit generator (air handler body on the plinth, control panel, fuse boxes, red pipe runs)
-    decor(Zg, 'electrical_control_panel_01', GEN[0] - 150, GEN[1] - 60, -320, 0, (11, 22, 41))
+    if 'iwz_g2_genset' not in PORTED:      # the G-2 carries its own switchgear cabinet
+        decor(Zg, 'electrical_control_panel_01', GEN[0] - 150, GEN[1] - 60, -320, 0, (11, 22, 41))
     decor(Zg, 'fac_sort_machine_fuse_box_set_01', 3000, 3182, -320, 180, (18, 7, 37))
     decor(Zg, 'fac_sort_machine_fuse_box_set_01', 3800 - 2, 3050, -320, 90, (7, 18, 37))
     decor(Zg, 'misc_wall_mounted_fan_01', 2602, 3000, -150, 0)
@@ -2010,7 +2036,8 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         decor(Zp, 'electrical_control_box_03', x_, 1201, -300, 90)
     for x_ in (-2000, -560, 900, 2100):
         decor(Zp, 'duct_metal_rectangle_vent', x_, 1201, -350, 90)
-    decor(Zp, 'electrical_control_panel_01', -2398, 2100, -320, 0, (11, 22, 41))
+    if 'iwz_fire_hose_cabinet' not in PORTED:
+        decor(Zp, 'electrical_control_panel_01', -2398, 2100, -320, 0, (11, 22, 41))
     decor(Zp, 'emergency_shutoff_sm_panel_01', -2398, 1680, -280, 0)
     decor(Zp, 'electrical_control_box_03', 2398, 2200, -280, 180)
     decor(Zp, 'trashbin_01_iw6', -290, 2365, -320, 0, (17, 17, 24))
@@ -2919,6 +2946,9 @@ for it_ in layout['interactions']:
             'cue': it_['kind']}
     LIGHTS.append(cue_)
 layout['light_groups'] = {g_: sum(1 for l_ in LIGHTS if l_.get('group') == g_) for g_ in ('emergency', 'power', 'flicker')}
+if 'iwz_g2_genset' in PORTED:
+    layout['genset'] = {'model': 'iwz_g2_genset', 'origin': list(G2['origin']), 'yaw': G2['yaw'],
+                        'anchors': {k_: list(g2_world(v_)) for k_, v_ in G2_ANCHORS.items()}}
 layout.update({'stairs': STAIRS, 'throats': THROATS, 'conduits': CONDUITS, 'junctions': JUNCTIONS, 'signals': SIGNALS, 'thresholds': THRESHOLDS,
                'pipe_chases': PIPE_CHASES, 'fx_placed': FX_PLACED, 'leaks': LEAKS, 'wheel_lamps': WHEEL_LAMPS,
                'openings': [{k_: o_[k_] for k_ in ('name', 'kind', 'axis', 'walls', 'a', 'b', 'z0', 'z1')} for o_ in OPENINGS]})

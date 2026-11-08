@@ -37,9 +37,10 @@ gen_embers        embers            3600  2760  -260
 gen_panel_sparks  sparks            2615  2650  -265
 gen_panel_flash   spark_flash       2630  2650  -250  stage=dark
 # (g27) gen_emerg         emergency_glow    2624  2800  -120  stage=dark
-gen_start_flash   spark_flash       3300  2800  -170  stage=poweron mode=interval:0.4-1.2 for=6 view=3300,2540,-320,90,15
-gen_start_smoke   smoke_burst       3300  2830  -320  stage=poweron for=12 view=3300,2540,-320,90,0
-gen_exhaust       generator_idle    3300  2800  -150  stage=lit view=3300,2540,-320,90,20
+# (g27) on the G-2 genset anchors (train agent v4: tripped breaker (131, 23, 58), exhaust flange top (-48, 0, 101), origin (3200, 2850, -320))
+gen_start_flash   spark_flash       3331  2873  -262  stage=poweron mode=interval:0.4-1.2 for=6 view=3260,2600,-320,90,8
+gen_start_smoke   smoke_burst       3152  2850  -300  stage=poweron for=12 view=3160,2580,-320,90,0
+gen_exhaust       generator_idle    3152  2850  -219  stage=lit view=3160,2580,-320,90,20
 
 # platform B and control room: emergency glows while dark; control room haze
 # (g27) pb_emerg          emergency_glow    -2900 3376  -150  stage=dark
