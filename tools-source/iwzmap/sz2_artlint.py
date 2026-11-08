@@ -56,7 +56,7 @@ TONE_OK = {'park_token_machine', 'zmb_spaceland_zombie_spawn_window_01'}   # tok
 FAKE_OBJECTS = ('turnstile', 'desk', 'console', 'booth', 'kiosk', 'generator', 'hvac', 'buffer')
 MOUNTED = ('pipe', 'sign', 'lamp', 'light', 'panel', 'locker', 'cabinet', 'fan', 'loudspeaker', 'control_box', 'shutoff',
            'fuse_box', 'vent', 'wires')
-MOUNTED_FREE = ('standing', 'traffic', 'sign_clock', 'pardon_our_dust')   # floor-standing despite the name; clocks hang
+MOUNTED_FREE = ('standing', 'traffic', 'sign_clock', 'pardon_our_dust', 'barricade')   # floor-standing despite the name; clocks hang
 GRIP = {'yellow_grip'}
 
 

@@ -285,7 +285,8 @@ SPACE_ZONE = {'hall': 'ticket_hall', 'street': 'ticket_hall', 'stair_a': 'stair_
 
 # ============================================================================ helpers for details
 STRIP_COUNT = {}
-DIM_STRONG = {'maint_corridor', 'service_tunnel', 'generator_room', 'stair_b'}
+CEIL_STAIR = os.environ.get('IWZ_CEIL_STAIR', 'ceil_tiles')    # g26: rough plaster tile (was the glossy ceil_tile)
+DIM_STRONG = {'maint_corridor', 'service_tunnel', 'generator_room', 'stair_b', 'platform_a', 'ticket_hall'}
 POOL_STRIP, POOL_WALL = 288, 224          # g26: tighter pools (was 384 / 320)
 DIM = os.environ.get('IWZ_DIM', '1') == '1'     # g25 mood pass: half the fluorescents are dead, in clusters
 
@@ -531,7 +532,11 @@ def ad_frame(zone, axis, fixed, facing, s, zc, k):
                              (s - w / 2, s + w / 2, zc - h / 2 - 8, zc - h / 2), (s - w / 2, s + w / 2, zc + h / 2, zc + h / 2 + 8)):
             B.slab_y(a, b, fixed, z0, z1, 3, 'steel_trim', zone, facing, collide=False, nav=False)
     ad_ = ART_HOOKS.key('ad_panel_broken') if (zone.startswith('stair') and os.environ.get('IWZ_AD_BROKEN') == '1') else None   # NOT_PROVEN lit
-    sign(zone, ad_ or ADS[k % len(ADS)], axis, fixed, facing, s, zc, 96, 144, frame=False, depth=0.6)
+    pool_ = ADS + [k_ for k_ in (ART_HOOKS.key('poster_missing_a'), ART_HOOKS.key('notice_quarantine'), ART_HOOKS.key('poster_missing_c')) if k_]
+    if k % 4 == 3 and not ad_:
+        decal_wall(zone, ART_HOOKS.key('junction_grime') or 'wall_stain', axis, fixed + facing * 0.4, facing, s, zc, 96, 144)   # torn-off ad: ghost outline
+        return
+    sign(zone, ad_ or pool_[(k * 7 + 3) % len(pool_)], axis, fixed, facing, s, zc, 96, 144, frame=False, depth=0.6)
 
 
 def wall_niche(zone, axis, fixed, facing, s, z0, w=96, h=72):
@@ -691,7 +696,7 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
         nrm = bk.norm(bk.cross(bk.sub(pts[1], pts[0]), bk.sub(pts[3], pts[0])))
         if nrm[2] > 0:
             pts = [pts[1], pts[0], pts[3], pts[2]]
-        B.quad('ceil_tile', zone, pts, tone='dark')
+        B.quad(CEIL_STAIR, zone, pts, tone='dark')
     return zline, (r0, r1)
 
 
@@ -711,7 +716,7 @@ DECOR = []         # script_model map entities (stock models placed at load)
 
 # ---------------------------------------------------------------- 1 ticket hall  (-1200,3200)-(400,4400), z 0..320
 Z = 'ticket_hall'
-room(Z, 'hall', (-1200, 3200, 400, 4400), 0, 320, 'metro', 'checker', 'ceil_tile', skip=())
+room(Z, 'hall', (-1200, 3200, 400, 4400), 0, 320, 'metro', 'checker', CEIL_STAIR, skip=())
 # ceiling: coffers made of steel beams every 400 + fluorescent strips
 for x in range(-1200 + 400, 400, 400):
     B.box((x - 8, 3200, 296), (x + 8, 4400, 320), 'ibeam', Z, collide=False, nav=False)
@@ -729,7 +734,7 @@ x = -1168
 rail_run(Z, 'x', 96, 260, TURN_Y, 0, h=40)
 rail_run(Z, 'x', 340, 400, TURN_Y, 0, h=40)
 # street exit (north): collapsed stairs up to rubble, zombie entry
-room(Z, 'street', (-304, 4400, 112, 4600), 0, 320, 'metro', 'tile_floor', 'ceil_tile', skip=('south',))
+room(Z, 'street', (-304, 4400, 112, 4600), 0, 320, 'metro', 'tile_floor', CEIL_STAIR, skip=('south',))
 for k in range(6):
     B.box((-304, 4448 + k * 24, 0), (112, 4600, 16 * (k + 1)), {'top': 'stair_tread', 'side': 'conc_painted'}, Z, collide=True, nav=True)
 strip_light(Z, -160, 4500, -40, 4516, 320)
@@ -922,8 +927,8 @@ for a_, b_ in zip(_pil, _pil[1:]):
 floor(Z, 'tile_black', -2400, 2368, 2400, 2400, DECK_Z + 0.3, collide=False)
 for x_ in (-1792, -1280, -768, -256, 256, 768, 1280, 1792):
     for (a_, b_, c_, d_) in ((x_ - 56, 1944, x_ + 56, 1960), (x_ - 56, 2040, x_ + 56, 2056), (x_ - 56, 1960, x_ - 40, 2040), (x_ + 40, 1960, x_ + 56, 2040)):
-        floor(Z, 'tile_black', a_, b_, c_, d_, DECK_Z + 0.3, collide=False)
-drains(Z, [(x_, 2200) for x_ in (-2048, -1536, -1024, -512, 0, 512, 1024, 1536)], DECK_Z)
+        floor(Z, 'tile_charcoal', a_, b_, c_, d_, DECK_Z + 0.3, collide=False)
+drains(Z, [(-1536, 2200), (1024, 2200)], DECK_Z)
 B.quad('stair_tread', Z, [(-2192, EDGE_Y + 48, DECK_Z + 0.3), (1904, EDGE_Y + 48, DECK_Z + 0.3), (1904, EDGE_Y + 64, DECK_Z + 0.3), (-2192, EDGE_Y + 64, DECK_Z + 0.3)], n=(0, 0, 1), collide=False)
 B.quad('stair_tread', Z, [(2112, EDGE_Y + 48, DECK_Z + 0.3), (2400, EDGE_Y + 48, DECK_Z + 0.3), (2400, EDGE_Y + 64, DECK_Z + 0.3), (2112, EDGE_Y + 64, DECK_Z + 0.3)], n=(0, 0, 1), collide=False)
 if not TRAIN:
@@ -1293,8 +1298,8 @@ BENCH = 'cp_disco_worn_subway_bench' if KIT else 'furniture_park_bench_01_blue'
 BENCH_CLIP = ((96, 20, 20), (20, 96, 20)) if KIT else ((48, 16, 20), (16, 48, 20))
 
 
-def decor(zone, model, x, y, z, yaw=0, clip=None):
-    DECOR.append({'zone': zone, 'model': model, 'origin': (x, y, z), 'yaw': yaw, 'clip': clip})
+def decor(zone, model, x, y, z, yaw=0, clip=None, targetname=None):
+    DECOR.append({'zone': zone, 'model': model, 'origin': (x, y, z), 'yaw': yaw, 'clip': clip, 'targetname': targetname})
     if clip:
         hx, hy, hz = clip
         B.collision_box((x - hx, y - hy, z), (x + hx, y + hy, z + 2 * hz))
@@ -1491,7 +1496,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     # require,techsets_cp_disco|cp_final in the zone csv, a route not built yet: they are guarded behind IWZ_KIT_DISCO.
     Zh, Zp, Zg, Zc, Zm, Zt, Zb = 'ticket_hall', 'platform_a', 'generator_room', 'control_room', 'maint_corridor', 'service_tunnel', 'platform_b'
     # (g25) stock / kit replacements for the generated box objects
-    decor(Zh, 'soda_machine_zmb', 370, 4220, 0, 180, (14, 18, 20))                  # was a red box "vending machine"
+    pass                                                                           # (g26) no Spaceland soda machine
     for x_ in (3585, 3735):                                                        # were box control panels (relay 3)
         decor(Zg, 'electrical_control_panel_01', x_, 3172, -320, 270, (20, 10, 40))
     decor(Zh, 'zmb_mobile_ticket_booth', -64, 3700, 0, 270, (43, 18, 23))
@@ -1505,13 +1510,14 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         for dx_ in (60, 180):
             decor(Zc, 'lab_desk_02', x0_ + dx_, y0_ + 40, -320, 90, (48, 16, 18))
     decor(Zg, 'clk_defend_generator_solo' if KIT else 'zom_machinery_generator_portable_01', GEN[0], GEN[1], -304, 0)
+    decor(Zg, 'equipment_oil_barrel_military_01', 3700, 2700, -320, 15, (14, 14, 22))   # the fire FX (gen_barrel_fire) burns in this drum
     # a portable set on the floor beside the plinth (the audio layout's generator hum and power cue anchor on it)
     decor(Zg, 'zom_machinery_generator_portable_01', GEN[0] + 170, GEN[1] - 110, -320, 30, (44, 28, 34))
     # ticket hall: soda + token machines on the east wall, mobile ticket booth, pedestrian barriers at the street exit,
     # rubble and trash at the collapsed street stairs
-    decor(Zh, 'soda_machine_zmb', 384, 4050, 0, 180, (14, 18, 20))
+    pass                                        # (g26) Spaceland soda fountain removed
     for y_ in (3880, 3920):
-        decor(Zh, 'park_token_machine', 388, y_, 0, 180, (12, 12, 32))
+        pass                                    # (g26) Spaceland token machines removed
     decor(Zh, 'zmb_mobile_ticket_booth', -1170, 3640, 0, 0, (18, 43, 23))     # clear of the west-wall posters
     decor(Zh, 'barrier_pedestrian_01', -230, 4380, 0, 0, (40, 6, 20))
     decor(Zh, 'debris_concrete_rubble_pile_01_dark', 40, 4440, 0, 200)
@@ -1520,7 +1526,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zh, 'com_debris_paper_iw6_02', -300, 3450, 0, 25)
     decor(Zh, 'traffic_cone_sml_01', -200, 4330, 0, 20)
     decor(Zh, 'traffic_cone_sml_01', 10, 4335, 0, 70)
-    decor(Zh, 'pardon_our_dust_sign', -60, 4430, 0, 270)
+    pass                                        # (g26) Spaceland astronaut standee removed
     decor(Zh, BENCH, -1150, 4000, 0, 180, BENCH_CLIP[1])
     decor(Zh, BENCH, 350, 3520, 0, 0, BENCH_CLIP[1])
     decor('service_tunnel', 'debris_concrete_rubble_pile_01_dark', -2900, 1250, -384, 60)
@@ -1549,7 +1555,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         decor(Zc, 'chair_folding_iw6', x0_ + 120, y0_ - 40, -320, 90, (12, 11, 19))
         decor(Zc, 'sdf_console_control_panel_08', x0_ + 120, y0_ + 30, -284, 270)
     decor(Zc, 'com_tv2_testpattern', 3460, 3592, -250, 270)
-    decor(Zc, 'zmb_frequency_device_radio', 2700, 3592, -250, 270)
+    decor(Zc, 'zmb_frequency_device_radio', DESKS[0][0] + 200, DESKS[0][1] + 40, -285, 270)     # on a desk (was floating)
     for x_ in (2640, 2680):
         decor(Zc, 'furniture_filing_cabinet', x_, 3990, -320, 270, (17, 8, 17))
     # clutter pass (lead 2026-11-07, contact sheet g18: service wing reads empty): crates, scrap and tanks along walls,
@@ -1576,7 +1582,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     # service tunnel: cones and a construction sign at the buffer stop, tarp on the wall
     for x_, y_ in ((-3400, 1262), (-3370, 1290), (-3420, 1300)):     # beside the walkway, not in the track bed
         decor(Zt, 'traffic_cone_sml_01', x_, y_, -384, 0, (8, 8, 14))
-    decor(Zt, 'pardon_our_dust_sign', -3240, 1300, -384, 0, (24, 14, 42))
+    pass                                        # (g26) Spaceland standee removed
     decor(Zt, 'dns_fence_tarp_01', -3598, 2100, -360, 90)
     # old platform: trash bags, cardboard, paper
     decor(Zb, 'com_trashbag2_black', -3550, 3350, -384, 0, (16, 16, 20))
@@ -1614,7 +1620,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
                 decor(Zb, 'zmb_spaceland_zombie_spawn_window_01', x_ + dx_, 3394, z_, 0)
     decor(Zb, 'debris_concrete_rubble_pile_01_dark', -3450, 2700, -384, 40)
     decor(Zb, 'debris_concrete_rubble_pile_01_dark', -2250, 3300, -384, 160)
-    decor(Zb, 'pardon_our_dust_sign', -2700, 2680, -384, 270, (24, 14, 42))
+    pass                                        # (g26) Spaceland standee removed
     for x_, y_ in ((-2780, 2700), (-2620, 2700)):
         decor(Zb, 'traffic_cone_sml_01', x_, y_, -384, 0, (8, 8, 14))
     decor(Zb, 'barrier_pedestrian_01', -3100, 2680, -384, 0, (40, 6, 20))
@@ -2126,6 +2132,31 @@ for o in OPENINGS:
 _pa = OP['a_control_pap']
 door_blockers('iwz_pap_shutter', 'x', 4008, _pa['a'], _pa['b'], _pa['z0'], _pa['z1'])
 layout['blockers'] = BLOCKERS
+DOOR_DRESS = []
+if KIT and os.environ.get('IWZ_DOOR_DRESS', '1') == '1':
+    for o in OPENINGS:
+        if o['kind'] != 'door' or o['name'] == 'd_platform_tunnel':      # the tunnel door spans the trackbed channel
+            continue
+        p_ = sorted(o['walls'].values())
+        mid_, half_ = (p_[0] + p_[1]) / 2, (p_[1] - p_[0]) / 2 + 10
+        a_, b_, z0_, z1_ = o['a'], o['b'], o['z0'], o['z1']
+        tn_ = 'iwz_doordress_' + o['scriptable']
+        zn_ = o['zones'][0]
+        for side_ in (-1, 1):
+            f_ = mid_ + side_ * half_
+            c_ = (a_ + b_) / 2
+            for k_, off_ in enumerate((-50, 50)):        # two street barricades at the foot (98 wide each)
+                xy_ = (c_ + off_, f_) if o['axis'] == 'x' else (f_, c_ + off_)
+                decor(zn_, 'cp_disco_street_barricade', xy_[0], xy_[1], z0_, 0 if o['axis'] == 'y' else 90, targetname=tn_)
+            z_ = z0_ + 84
+            k_ = 0
+            while z_ < z1_ - 6:                          # boarding planks above them, alternating offsets
+                for off_ in (-48, 48):
+                    xy_ = (c_ + off_ + (8 if k_ % 2 else -8), f_) if o['axis'] == 'x' else (f_, c_ + off_ + (8 if k_ % 2 else -8))
+                    decor(zn_, 'p7_zm_der_plank_wood_2x12x96', xy_[0], xy_[1], z_, (0 if o['axis'] == 'x' else 90) + (3 if k_ % 2 else -2), targetname=tn_)
+                z_ += 13; k_ += 1
+        DOOR_DRESS.append({'door': o['name'], 'blockers': o['scriptable'], 'dressing': tn_})
+layout['door_dress'] = DOOR_DRESS
 # power
 istruct('generator', POWER['origin'], POWER['yaw'], parameters='power_all', target='iwz_power_switch')
 ents.append(ent(classname='script_model', targetname='iwz_power_switch', model=POWER['switch_model'], noteworthy='-pitch',
@@ -2217,10 +2248,13 @@ for d in DECOR:
         continue     # kit crash bisect: one imported model per build
     if os.environ.get('IWZ_KIT_BASELINE') == '1' and d['model'] in KIT_MODELS:
         continue     # kit proof baseline: the same map (placements, clips, views) without the imported models
-    if SMODELS and d['model'] not in KIT_MODELS and d['model'] not in SMODEL_NO_DONOR and (SMODEL_STOCK is None or d['model'] in SMODEL_STOCK):
+    if SMODELS and not d.get('targetname') and d['model'] not in KIT_MODELS and d['model'] not in SMODEL_NO_DONOR and (SMODEL_STOCK is None or d['model'] in SMODEL_STOCK):
         x_, y_, z_ = d['origin']
         smodel_lines.append('%s %g %g %g 0 %g 0 1' % (d['model'], x_, y_, z_, d.get('yaw', 0)))
         d['static'] = True
+        continue
+    if d.get('targetname'):
+        ents.append(ent(classname='script_model', targetname=d['targetname'], model=d['model'], origin=fmt(d['origin']), angles='0 %g 0' % d.get('yaw', 0)))
         continue
     ents.append(ent(classname='script_model', model=d['model'], origin=fmt(d['origin']), angles='0 %g 0' % d.get('yaw', 0)))
 if smodel_lines:
@@ -2234,7 +2268,7 @@ if os.environ.get('IWZ_LIGHTS') == '1':
         if fx in ('lamp_red', 'lamp_green'):
             r_, g_, b_ = (1.0, 0.12, 0.06) if fx == 'lamp_red' else (0.12, 1.0, 0.25)
             x_, y_, z_ = l['origin']
-            light_txt.append('omni %g %g %g %.2f %.2f %.2f 6000 72' % (x_, y_, z_, r_, g_, b_))
+            light_txt.append('omni %g %g %g %.2f %.2f %.2f 2500 44' % (x_, y_, z_, r_, g_, b_))     # g26: was 6000 / 72 (wash)
     # the EE bear on the luggage rack reads dark against the lit car ceiling (audio agent): a small warm fill light
     # in the aisle just below the rack, its radius limited to the bear
     if not TRAIN:      # the hidden bear (in the car) gets no fill light

@@ -65,6 +65,7 @@ main()
     level thread iwz_third_rail();
     level thread iwz_ambient_fx();
     level thread iwz_flicker();
+    level thread iwz_door_dressing();
     level thread iwz_report();
     //@AUDIO@
 }
@@ -528,4 +529,35 @@ iwz_flicker_lamp()
             level.iwz_flicker_toggles++;
         }
     }
+}
+
+
+// door dressing (g26): barricades and boarding planks in front of each closed door's blocker brushes; they go when the
+// door's blockers are gone (the stock purchase deletes them)
+iwz_door_dressing()
+{
+    level endon( "game_ended" );
+    wait 2;
+    groups = [];
+    foreach ( m in getentarray( "script_model", "classname" ) )
+    {
+        if ( !isdefined( m.targetname ) || getsubstr( m.targetname, 0, 14 ) != "iwz_doordress_" )
+            continue;
+        groups[m.targetname] = 1;
+    }
+    foreach ( name, unused in groups )
+        level thread iwz_door_dressing_watch( name, getsubstr( name, 14 ) );
+}
+
+iwz_door_dressing_watch( name, blockers )
+{
+    level endon( "game_ended" );
+    for ( ;; )
+    {
+        if ( getentarray( blockers, "targetname" ).size == 0 )
+            break;
+        wait 0.5;
+    }
+    foreach ( m in getentarray( name, "targetname" ) )
+        m delete();
 }
