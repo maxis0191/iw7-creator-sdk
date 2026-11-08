@@ -54,3 +54,20 @@ Measurement: `python dk_measure.py <run dir> --frames 'dk_pre_*' --pair dk_pre_c
 
 Audio: `level.iwz_light_banks_external = 1`, `iwz_light_bank_on, <zone>`, `iwz_power_lights_done` (agreed in
 `iwz-stage2\darkness\NOTES.md`). Flashlight click: `amb_iwz_flashlight_click` (played only when the bank has it).
+
+## Engine proof (private local runner)
+
+`dk_proof_fixture.gsc` (staged as the runner fixture; launch args in `dk_proof_fixture.args.txt`, mode
+`paris_iwz_mode dkprobe6`): flashlight on / off / weapon switch, dark views, the FX agent's effect views, 4 and 8
+players (bots), zombies walking into the light, the power-on transition every 0.25 s, the same views lit, fxperf phases
+(1 dark, 2 dark 4p, 3 dark 8p, 4 transition, 5 lit, 6 lit 4p, 7 lit 8p). Frames are `iwzdk_*.bmp` (the runner only
+collects `iwz*`). Then `dk_measure.py <run> --perf <fxperf> --phases ... --sheet`.
+
+## Findings that shaped the route (engine runs dk2 .. dk7, darkness\NOTES.md)
+
+- IW7 auto exposure undoes a dark bake: the dark vision (tonemapAuto 0) is required, and it must be applied under a
+  stock vision name of the template (cp_zmb_int_basement) and re-applied after spawn: custom names did not apply.
+- `killfxontag` + `playfxontag` of the same effect on the same tag soon after stays dark: the module rotates six
+  identical copies; after a weapon switch the light is re-attached 0.8 s later (the new weapon's tag).
+- The cp_disco train front light (brightness 1.5 .. 4) works as a flashlight; a brightness-40 copy renders nothing.
+- `setlightintensity` on compiler-named lights in the extended scriptable range switches them (bank frames).
