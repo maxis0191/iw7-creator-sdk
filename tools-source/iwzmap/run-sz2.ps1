@@ -31,10 +31,10 @@ for($k=0;$k -lt $Tries;$k++){
     $r = & "$Server\ops\iwzmap\Test-IWZMapLocal.ps1" -SourcePackage $SourcePackage -GameRoot $GameRoot -OutputRoot $out -UsermapDir $UsermapDir -Map cp_iwz -Fixture $Fixture -ExtraArgs $extra -Seconds $Seconds -InjectDll $InjectDll
     $r
     $j = Get-Content (Join-Path $out 'result.local.json') -Raw | ConvertFrom-Json
-    if($j.Error -match 'Resource busy|Heavy job already reserved|occupied|wait before heavy admission|wait for its owner|Unowned local image|Unattached lab process|Resource lease not found|Child identity unavailable|Reserved process identity unavailable'){ Remove-Item $out -Recurse -Force; Start-Sleep 10; continue }
+    if($j.Error -match 'Resource busy|Heavy job already reserved|occupied|wait before heavy admission|wait for its owner|Unowned local image|Unattached lab process|Resource lease not found|Child identity unavailable|Reserved process identity unavailable|Reserved child is still alive|Heavy child may still be alive'){ Remove-Item $out -Recurse -Force; Start-Sleep 10; continue }
     break
   } catch {
-    if($_.Exception.Message -match 'Resource busy|Heavy job already reserved|occupied|wait before heavy admission|wait for its owner|Unowned local image|Unattached lab process|Resource lease not found|Child identity unavailable|Reserved process identity unavailable'){ if(Test-Path $out){ Remove-Item $out -Recurse -Force }; Start-Sleep 10; continue }
+    if($_.Exception.Message -match 'Resource busy|Heavy job already reserved|occupied|wait before heavy admission|wait for its owner|Unowned local image|Unattached lab process|Resource lease not found|Child identity unavailable|Reserved process identity unavailable|Reserved child is still alive|Heavy child may still be alive'){ if(Test-Path $out){ Remove-Item $out -Recurse -Force }; Start-Sleep 10; continue }
     throw
   }
 }
