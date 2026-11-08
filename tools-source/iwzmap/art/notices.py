@@ -80,7 +80,8 @@ def stamp_masks(seed, text, size, angle_deg, box=True, sub=None):
     edge = np.clip(t - core, 0, 1)
     rough = N.smoothstep(0.35, 0.65, N.spectral(sh, 0.6, seed + 2))
     density = 0.8 + 0.2 * N.fbm(sh, seed + 3, 3, base=0.05)
-    letters = (core + edge * rough) * density
+    near = ndimage.grey_dilation(core, size=(3, 3)) > 0.5          # strokes thick enough to have a core
+    letters = np.where(near, core + edge * rough, t) * density   # thin strokes (sub-line) stay whole
     return np.clip(np.maximum(letters, fr), 0, 1), t
 
 

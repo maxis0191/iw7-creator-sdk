@@ -50,9 +50,14 @@ def main():
     # stamp legibility (in-engine review: QUARANTINE read as QUAPANTINE): distressing must not eat letter cores
     from . import notices
     ink, clean = notices.stamp_masks(4750, 'QUARANTINE', 32, 10, sub='ZONE A  -  23:47')
-    core = clean > 0.9
+    from scipy import ndimage as _nd
+    core = _nd.grey_erosion(clean, size=(3, 3)) > 0.9
     held = float((ink[core] >= 0.6).mean())
     check(held >= 0.97, 'stamp letter cores keep their ink (%.3f of core pixels >= 0.6)' % held)
+    # thin strokes (no core, e.g. the ZONE A sub-line) are never roughened: they must keep their ink
+    thin = (clean > 0.5) & ~(_nd.grey_dilation(_nd.grey_erosion(clean, size=(3, 3)), size=(3, 3)) > 0.5)
+    cover = float((ink[thin] >= 0.4).mean())
+    check(cover >= 0.95, 'stamp thin strokes keep their ink (%.3f of pixels >= 0.4)' % cover)
     # clock: alpha 0 in the corners, opaque in the centre
     ck = boards.clock_face_stopped(128)
     check(ck[0, 0, 3] == 0 and ck[64, 64, 3] > 0.99, 'clock face is a disc (corner alpha 0, centre opaque)')
