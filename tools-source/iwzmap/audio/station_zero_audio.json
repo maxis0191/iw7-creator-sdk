@@ -822,11 +822,11 @@
     },
     {
       "name": "amb_iwz_gen_start",
-      "comment": "objects: generator power-up surge (Shaolin electric trap power up)",
+      "comment": "objects: generator power-up surge (Shaolin electric trap power up); run s3: full-scale peaks at 250..400 units, lowered 0.5 -> 0.32",
       "template": "emt_metal_groan_med",
       "set": {
-        "vol_min": 0.5,
-        "vol_max": 0.5,
+        "vol_min": 0.32,
+        "vol_max": 0.32,
         "vol_mod": "emitter",
         "dist_min": 200.0,
         "dist_max": 2200.0,

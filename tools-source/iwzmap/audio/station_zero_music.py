@@ -50,12 +50,13 @@ def load(path):
 
 
 def write_flac(path, x):
+    """16-bit FLAC with fixed 1024-frame blocks: the only block size the IW7 sound banks play."""
     x = np.clip(np.asarray(x, np.float64), -1.0, 1.0)
     if x.ndim == 1:
         x = x[:, None]
     pcm = (x * 32767.0).astype('<i2').tobytes()
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 's16le', '-ar', str(R), '-ac', str(x.shape[1]), '-i', '-',
-                    '-c:a', 'flac', '-sample_fmt', 's16', path], input=pcm, check=True)
+                    '-c:a', 'flac', '-sample_fmt', 's16', '-frame_size', '1024', path], input=pcm, check=True)
 
 
 def write_wav(path, x):
