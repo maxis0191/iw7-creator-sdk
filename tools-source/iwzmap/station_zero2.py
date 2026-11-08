@@ -748,25 +748,35 @@ region('stair_a', Z, (-800, 2416, -400, 3184), lambda x, y: zl_a(y))
 Z = 'platform_a'
 DECK_Z, PIT_Z, PCEIL = -320, -384, 0
 WELLS = {'well_w': (-2400, 1600, -2192, 1760, -1), 'well_e': (1904, 1600, 2112, 1760, +1)}   # x0,y0,x1,y1, descent dir
+# IWZ_TRAIN=1 (train agent, iwz-stage2/train): the hero car stands at the platform, so the platform edge comes forward
+# to EDGE_Y (car side y 1552 at track centre 1488 + BO3 mp_metro edge panel 9 deep + 5 gap); the deck overhangs the
+# trackbed channel by 34 (under-platform clearance), the panel covers the face from the ballast top to the deck
+TRAIN = os.environ.get('IWZ_TRAIN') == '1'
+EDGE_Y = int(os.environ.get('IWZ_TRAIN_EDGE_Y', 1566)) if TRAIN else 1600
 WELL_LAND, WELL_STEPS = 64, 6      # QA g24: zombies stalled at the foot (16-unit risers, players passed): 10.7-unit risers, same slope
 # deck floor (minus the stairwells), coping and yellow safety strip at the edge
 deck_x = [(-2400, -2192), (-2192, 1904), (1904, 2112), (2112, 2400)]
 floor(Z, 'conc_tiles', -2400, 1760, 2400, 2400, DECK_Z)
-floor(Z, 'conc_tiles', -2192, 1648, 1904, 1760, DECK_Z)
-floor(Z, 'conc_tiles', 2112, 1648, 2400, 1760, DECK_Z)
-floor(Z, 'yellow_grip', -2192, 1624, 1904, 1648, DECK_Z)
-floor(Z, 'yellow_grip', 2112, 1624, 2400, 1648, DECK_Z)
-floor(Z, 'conc_painted', -2192, 1600, 1904, 1624, DECK_Z)
-floor(Z, 'conc_painted', 2112, 1600, 2400, 1624, DECK_Z)
+floor(Z, 'conc_tiles', -2192, EDGE_Y + 48, 1904, 1760, DECK_Z)
+floor(Z, 'conc_tiles', 2112, EDGE_Y + 48, 2400, 1760, DECK_Z)
+floor(Z, 'yellow_grip', -2192, EDGE_Y + 24, 1904, EDGE_Y + 48, DECK_Z)
+floor(Z, 'yellow_grip', 2112, EDGE_Y + 24, 2400, EDGE_Y + 48, DECK_Z)
+floor(Z, 'conc_painted', -2192, EDGE_Y, 1904, EDGE_Y + 24, DECK_Z)
+floor(Z, 'conc_painted', 2112, EDGE_Y, 2400, EDGE_Y + 24, DECK_Z)
 for x_ in range(-2112, 2400, 384):
-    floor(Z, 'conc_trim_floor', x_ - 5, 1760, x_ + 5, 2368, DECK_Z + 0.25, collide=False)       # expansion joint
+    floor(Z, 'conc_trim_floor', x_ - 5, EDGE_Y + 64 if TRAIN else 1760, x_ + 5, 2368, DECK_Z + 0.25, collide=False)       # expansion joint (train: across the whole deck)
 for x_, y_, w_, h_ in ((-1700, 1980, 160, 120), (-860, 2140, 200, 140), (-120, 1880, 150, 110), (620, 2060, 220, 150),
                        (1380, 1920, 170, 130), (2050, 2200, 150, 120)):
     decal_floor(Z, 'floor_stain', x_, y_, DECK_Z + 0.4, w_, h_)
 # platform edge face (deck to pit) with a coping lip
 for x0_, x1_ in ((-2192, 1904), (2112, 2400)):
-    B.wall_plane(Z, 'x', 1600, -1, x0_, x1_, PIT_Z, DECK_Z, 'conc_dark')
-    B.box((x0_, 1596, DECK_Z - 6), (x1_, 1600, DECK_Z), 'conc_painted', Z, collide=False, nav=False)
+    B.wall_plane(Z, 'x', EDGE_Y, -1, x0_, x1_, PIT_Z, DECK_Z, 'conc_dark')
+    if not TRAIN:       # (train) the mp_metro edge panels carry the coping
+        B.box((x0_, EDGE_Y - 4, DECK_Z - 6), (x1_, EDGE_Y, DECK_Z), 'conc_painted', Z, collide=False, nav=False)
+if TRAIN:
+    # side faces of the deck overhang beside the two stairwells (the pit stays open in front of a well's foot)
+    for xs_, fc_ in ((-2192, -1), (1904, +1), (2112, -1)):
+        B.wall_plane(Z, 'y', xs_, fc_, EDGE_Y, 1600, PIT_Z, DECK_Z, 'conc_dark')
 # stairwells into the pit (4 steps), railing on the deck side
 for wname, (wx0, wy0, wx1, wy1, ddir) in WELLS.items():
     if ddir < 0:   # descends westwards: low end at wx0
@@ -831,7 +841,7 @@ TRACK_Y0, TRACK_Y1 = 1392, 1584
 TRACK_CY = (TRACK_Y0 + TRACK_Y1) / 2
 GAUGE = 56.5                                   # standard gauge, inner rail faces (1 unit = 1 inch)
 RAIL_Y = (TRACK_CY - GAUGE / 2, TRACK_CY + GAUGE / 2)
-THIRD_Y = TRACK_CY - 60                        # conductor rail on the far side from the platform (trap line, gsc)
+THIRD_Y = TRACK_CY - (57.11 if TRAIN else 60)    # conductor rail on the far side from the platform (trap line, gsc); train kit: its rail line
 TRACK_SPEC = {'channels': [], 'gauge': GAUGE, 'centre_y': TRACK_CY, 'rail_y': list(RAIL_Y), 'third_rail_y': THIRD_Y,
               'floor_z': -384, 'owner': 'train agent (iwz-stage2\\train): rails, ties, third rail, buffer stop, car, platform edges',
               'note': 'clean channel; the level draws only its floor (dark concrete with a centred ballast strip)'}
@@ -855,6 +865,11 @@ for x_, y_ in ((-1900, 1320), (-260, 1290), (1100, 1330), (2050, 1300)):
 # The hero train is the stock cp_disco subway car (kit, IWZ_KIT), parked at the platform with see-through windows.
 # The EE bear sits on the platform floor by the train doors, next to abandoned luggage (child left behind).
 TEDDY_SPOT = (180, 1700, DECK_Z)
+if TRAIN:
+    # coordinator 2026-11-08: the bear was out in the open on the platform. It now rests on the hero car's floor at the
+    # far track-side dressing anchor (car-local 220, -40; floor = rail top -356.31 + 33.3), below the window line and
+    # behind a duffel bag seen from the door bay (x 142..230): a hint-sound hunt, not visible from the walkway.
+    TEDDY_SPOT = (520, 1448, -356.31 + 33.3)
 # signs, posters, map on the platform walls
 for x in (-1536, 0, 1536):
     sign(Z, 'sign_station_zero', 'x', 1200, +1, x, -150, 384)     # track wall, readable from the deck
@@ -886,12 +901,13 @@ for x_ in (-1792, -1280, -768, -256, 256, 768, 1280, 1792):
     for (a_, b_, c_, d_) in ((x_ - 56, 1944, x_ + 56, 1960), (x_ - 56, 2040, x_ + 56, 2056), (x_ - 56, 1960, x_ - 40, 2040), (x_ + 40, 1960, x_ + 56, 2040)):
         floor(Z, 'tile_black', a_, b_, c_, d_, DECK_Z + 0.3, collide=False)
 drains(Z, [(x_, 2200) for x_ in (-2048, -1536, -1024, -512, 0, 512, 1024, 1536)], DECK_Z)
-B.quad('stair_tread', Z, [(-2192, 1648, DECK_Z + 0.3), (1904, 1648, DECK_Z + 0.3), (1904, 1664, DECK_Z + 0.3), (-2192, 1664, DECK_Z + 0.3)], n=(0, 0, 1), collide=False)
-B.quad('stair_tread', Z, [(2112, 1648, DECK_Z + 0.3), (2400, 1648, DECK_Z + 0.3), (2400, 1664, DECK_Z + 0.3), (2112, 1664, DECK_Z + 0.3)], n=(0, 0, 1), collide=False)
-for x0_, x1_ in ((-2192, 1904), (2112, 2400)):
-    B.box((x0_, 1588, DECK_Z - 8), (x1_, 1600, DECK_Z), {'side': 'conc_painted', 'bottom': 'conc_dark', 'top': 'conc_painted'}, Z, collide=False, nav=False)
-for x_ in (-1800, -1100, 600, 1300):
-    wall_niche(Z, 'x', 1600, -1, x_, PIT_Z, w=96, h=56)
+B.quad('stair_tread', Z, [(-2192, EDGE_Y + 48, DECK_Z + 0.3), (1904, EDGE_Y + 48, DECK_Z + 0.3), (1904, EDGE_Y + 64, DECK_Z + 0.3), (-2192, EDGE_Y + 64, DECK_Z + 0.3)], n=(0, 0, 1), collide=False)
+B.quad('stair_tread', Z, [(2112, EDGE_Y + 48, DECK_Z + 0.3), (2400, EDGE_Y + 48, DECK_Z + 0.3), (2400, EDGE_Y + 64, DECK_Z + 0.3), (2112, EDGE_Y + 64, DECK_Z + 0.3)], n=(0, 0, 1), collide=False)
+if not TRAIN:
+    for x0_, x1_ in ((-2192, 1904), (2112, 2400)):
+        B.box((x0_, 1588, DECK_Z - 8), (x1_, 1600, DECK_Z), {'side': 'conc_painted', 'bottom': 'conc_dark', 'top': 'conc_painted'}, Z, collide=False, nav=False)
+    for x_ in (-1800, -1100, 600, 1300):
+        wall_niche(Z, 'x', 1600, -1, x_, PIT_Z, w=96, h=56)
 drains(Z, [(-1500, 1300), (-700, 1300), (900, 1300), (1700, 1300)], PIT_Z)
 # tunnel portals at both pit ends (concrete arch frame) with signal lights
 for xw_, fc_ in ((-2400, +1), (2400, -1)):
@@ -903,9 +919,14 @@ for xw_, fc_ in ((-2400, +1), (2400, -1)):
         wall_lamp(Z, 'y', xw_ + fc_ * 14, fc_, y_, -142, mat=lamp_, w=8, h=8)
 ceiling_grid(Z, -2400, 1200, 2400, 2400, PCEIL, step_y=400, depth=28)
 region('deck', Z, (-2400, 1760, 2400, 2400), DECK_Z, (16, 0, 16, 16))
-region('deck_mid', Z, (-2192, 1600, 1904, 1760), DECK_Z, (0, 0, 0, 0))
-region('deck_east', Z, (2112, 1600, 2400, 1760), DECK_Z, (0, 0, 16, 0))
+region('deck_mid', Z, (-2192, EDGE_Y, 1904, 1760), DECK_Z, (0, 0, 0, 0))
+region('deck_east', Z, (2112, EDGE_Y, 2400, 1760), DECK_Z, (0, 0, 16, 0))
 region('pit', Z, (-2400, 1200, 2400, 1600), PIT_Z, (0, 16, 0, 16))
+if TRAIN:
+    # no pit cells under the deck overhang (y EDGE_Y..1600 behind the edge face); in front of the stairwells' feet the
+    # pit still reaches the old face line, so the pit -> well routes are unchanged
+    for x0_, x1_ in ((-2192, 1904), (2112, 2400)):
+        B.blockers.append((x0_, EDGE_Y, x1_, 1600, PIT_Z, DECK_Z))
 
 for a, b_ in (('deck', 'deck_mid'), ('deck', 'deck_east'), ('deck', 'well_w'), ('deck', 'well_e'), ('deck_mid', 'well_w'),
               ('deck_mid', 'well_e'), ('deck_east', 'well_e'), ('pit', 'well_w'), ('pit', 'well_e')):
@@ -1256,6 +1277,78 @@ def decor(zone, model, x, y, z, yaw=0, clip=None):
         B.collision_box((x - hx, y - hy, z), (x + hx, y + hy, z + 2 * hz))
 
 
+# ============================================================================ hero train + track kit (train agent)
+# Models from x64-zt-extensions env-model ports (iwz-stage2/train/port/{banzai,kit}), imported by kit_import (zone
+# "train"). Kit stack on the channel bed (z -384): ballast top -368, rail base -362.99, rail top -356.31 (= car
+# origin), car floor -323 (deck -320). Rails TRACK_CY -/+ 29.61 (gauge 56.5), third rail TRACK_CY - 57.11, its top
+# 3.5 above the rail top. Placement spec and evidence: the train agent's report.
+TRAIN_SEG = 256
+TRAIN_BED = -384
+TRAIN_BALLAST_Z = TRAIN_BED + 16
+TRAIN_RAIL_TOP = TRAIN_BALLAST_Z + 5.01 + 6.68
+TRAIN_CARS = [(300, 0)]          # (car centre x, yaw): one BO3 mp_banzai car, its open door bay faces the platform (+y)
+if os.environ.get('IWZ_TRAIN_CARS') == '2':
+    TRAIN_CARS = [(300, 0), (-234, 0)]
+TRAIN_CAR_HALF = (268, 66.5, 95)  # nav cut half extents (x, y, z/2 above the rail top); detailed clip from the port's boxes
+TRAIN_DOOR_X = (-158, -70)       # the car's open +y door bay, car-local x
+TRAIN_FLOOR = 33.3               # car floor above its origin (rail top)
+TRAIN_SPEC = {}
+
+
+def train_kit():
+    """Track segments in the platform pit and the service tunnel, buffer stop, hero car(s) with clip boxes and an
+    interior flicker lamp, mp_metro platform edge panels along EDGE_Y. TRAIN_SPEC goes to layout.json."""
+    cy = TRACK_CY
+    bz = TRAIN_BALLAST_Z
+    segs = [('platform_a', x) for x in range(-2400, 2400, TRAIN_SEG)] + \
+           [('service_tunnel', -2400 - TRAIN_SEG * k) for k in range(1, 6)]
+    for zone, x0 in segs:
+        decor(zone, 'iwz_track_256', x0, cy, bz, 0)
+    # ballast prism top: walkable 16 above the bed (a step); the bed nav stays (zombies step onto it)
+    for x0, x1 in ((-2400, 2410), (-3600, -2400)):
+        B.collision_box((x0, cy - 62, TRAIN_BED), (x1, cy + 62, bz), nav=False)
+    # buffer stop at the tunnel's west end, buffer heads facing the platform (+x)
+    decor('service_tunnel', 'iwz_track_buffer_stop', -3560, cy, bz, 0)
+    B.collision_box((-3560, cy - 52, bz), (-3488, cy + 52, bz + 48))
+    # platform edge panels (BO3 mp_metro, 128 / 64 long, 9 deep, 48 tall; back face on EDGE_Y, top at the deck)
+    for x0, x1 in ((-2192, 1904), (2112, 2400)):
+        x = x0
+        while x < x1:
+            w = 128 if x1 - x >= 96 else 64
+            decor('platform_a', 'iwz_platform_edge_%d' % w, x + w / 2, EDGE_Y - 5, DECK_Z - 48, 0)
+            x += w
+    cars = []
+    boxes_path = os.environ.get('IWZ_TRAIN_CAR_BOXES', '')
+    boxes = json.load(open(boxes_path))['boxes'] if boxes_path and os.path.isfile(boxes_path) else []
+    for cx, yaw in TRAIN_CARS:
+        oz = TRAIN_RAIL_TOP
+        decor('platform_a', 'iwz_t7e_subway_car_a', cx, cy, oz, yaw)
+        hx, hy, hz = TRAIN_CAR_HALF
+        B.blockers.append((cx - hx, cy - hy, cx + hx, cy + hy, oz, oz + 2 * hz))     # nav cut only
+        c, s_ = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+        for (a, b) in boxes:     # model-space clip boxes (players, bullets); yaw 0 / 180 keep them axis aligned
+            xs = sorted((cx + c * a[0] - s_ * a[1], cx + c * b[0] - s_ * b[1]))
+            ys = sorted((cy + s_ * a[0] + c * a[1], cy + s_ * b[0] + c * b[1]))
+            B.collision_box((xs[0], ys[0], oz + a[2]), (xs[1], ys[1], oz + b[2]), nav=False)
+        # interior: a flickering ceiling fluorescent (BO3 subway fixture, lit / unlit swap) and a broken one, and a
+        # weak cold light pool under the lit one
+        fz = oz + TRAIN_FLOOR + 118
+        FLICKER.append({'zone': 'platform_a', 'origin': (cx - 120, cy, fz), 'yaw': 90,
+                        'models': ('iwz_fluo_subway_on', 'iwz_fluo_subway_off')})
+        decor('platform_a', 'iwz_fluo_subway_broken', cx + 120, cy, fz, 90)
+        LIGHTS.append({'zone': 'platform_a', 'origin': (cx - 120, cy, fz - 20), 'type': 'omni', 'color': (0.78, 0.9, 1.0),
+                       'radius': 220, 'intensity': 0.35, 'fixture': 'train_interior'})
+        cars.append({'model': 'iwz_t7e_subway_car_a', 'origin': [cx, cy, oz], 'yaw': yaw,
+                     'door_bay_world_x': sorted([cx + TRAIN_DOOR_X[0] * c, cx + TRAIN_DOOR_X[1] * c]),
+                     'floor_z': oz + TRAIN_FLOOR, 'nav_half': list(TRAIN_CAR_HALF),
+                     'dressing_anchors': [[cx + dx, cy + dy, oz + TRAIN_FLOOR] for dx, dy in
+                                          ((-200, 40), (-200, -40), (-20, 45), (60, -45), (150, 40), (220, -40))]})
+    TRAIN_SPEC.update({'edge_y': EDGE_Y, 'ballast_top_z': bz, 'rail_top_z': TRAIN_RAIL_TOP,
+                       'rail_y': [cy - 29.61, cy + 29.61], 'third_rail_y': cy - 57.11,
+                       'third_rail_top_z': TRAIN_RAIL_TOP + 3.5, 'segments': [list(s_) for s_ in segs],
+                       'buffer': [-3560, cy, bz], 'cars': cars})
+
+
 if os.environ.get('IWZ_NO_DECOR') != '1':
     decor('ticket_hall', 'trashbin_01_iw6', -1100, 4340, 0, 0, (16, 16, 24))
     decor('ticket_hall', 'trashbin_01_iw6', 360, 4100, 0, 0, (16, 16, 24))
@@ -1287,6 +1380,9 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         # parked stock subway train at the dead end of the track pit (static, scriptable mover dropped by kit_import;
         # 780 long along x after yaw 90); its clip box also cuts the pit navmesh, ~100 units stay free on each side
         pass        # (g25) hero car: train agent (TRACK_SPEC); the cp_disco kit car is no longer placed
+    if TRAIN:
+        train_kit()
+        decor('platform_a', 'misc_zom_duffelbag_03', TEDDY_SPOT[0] - 34, TEDDY_SPOT[1] + 12, TEDDY_SPOT[2], 70, (16, 13, 8))
         # ticket hall fare line east of the booth: three turnstiles and a broken one
         for x_, m_ in ((130, 'cp_disco_subway_turnstyle_animated'), (190, 'cp_disco_subway_turnstyle_animated'),
                        (250, 'cp_disco_subway_turnstyle_animated'), (310, 'cp_disco_subway_turnstyle_missing_arm')):
@@ -1336,7 +1432,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
             dec_(zn_, 'clk_emergency_light', x_, y_, z_, yaw_)
             LIGHTS.append({'zone': zn_, 'origin': (x_, y_, z_ - 10), 'type': 'omni', 'color': col_, 'radius': 160, 'intensity': 0.6,
                            'fixture': 'emergency'})
-        KIT_MODELS.update(d['model'] for d in DECOR if d['model'].startswith(('cp_disco_', 'cp_final_', 'clk_defend', 'equipment_oil_barrel', 'p7_zm_der_plank')) or d['model'] in STORY_KIT)
+        KIT_MODELS.update(d['model'] for d in DECOR if d['model'].startswith(('cp_disco_', 'cp_final_', 'clk_defend', 'equipment_oil_barrel', 'p7_zm_der_plank', 'iwz_')) or d['model'] in STORY_KIT)
     # asset kit (assets/kit/kit_final.json, lead 2026-11-07): free cp_zmb models only. The cp_disco / cp_final models need
     # require,techsets_cp_disco|cp_final in the zone csv, a route not built yet: they are guarded behind IWZ_KIT_DISCO.
     Zh, Zp, Zg, Zc, Zm, Zt, Zb = 'ticket_hall', 'platform_a', 'generator_room', 'control_room', 'maint_corridor', 'service_tunnel', 'platform_b'
@@ -1674,7 +1770,7 @@ SPAWNERS = [   # >= 48 from walls/props, inside the zone volume, on the navmesh 
     ('control_room', 2700, 3900, -320, 'ground', 315), ('control_room', 3500, 3900, -320, 'ground', 225),
     ('control_room', 3100, 3800, -32, 'ceiling', 270), ('control_room', 2648, 3650, -320, 'wall', 0),
     ('service_tunnel', -3500, 1300, -384, 'ground', 0), ('service_tunnel', -2700, 1300, -384, 'ground', 180),
-    ('service_tunnel', -3400, 2400, -384, 'ground', 270), ('service_tunnel', -3100, 1500, -384, 'ground', 270),
+    ('service_tunnel', -3400, 2400, -384, 'ground', 270), ('service_tunnel', -3100, 1500 if not TRAIN else 1330, -384, 'ground', 270),
     ('service_tunnel', -3552, 1900, -384, 'wall', 0), ('service_tunnel', -3000, 1264, -384, 'wall', 90),
     ('platform_b', -3500, 2700, -384, 'ground', 45), ('platform_b', -2150, 2700, -384, 'ground', 135),
     ('platform_b', -3552, 3300, -384, 'wall', 0), ('platform_b', -2700, 3330, -384, 'ground', 270),
@@ -1728,7 +1824,7 @@ QUEST = {   # Pack-a-Punch relays (gameplay agent: logic), trap and EE spots (da
     'pap_shutter': {'zone': 'control_room', 'origin': (3104, 4010, -320), 'yaw': 270, 'size': (256, 208)},
     'trap_third_rail_fusebox': {'zone': 'platform_a', 'origin': (-768, 1975, -300), 'yaw': 270, 'model_yaw': 180},
     'trap_third_rail_volume': {'zone': 'platform_a', 'box': (-2400, 1200, -384, 2600, 1600, -350)},
-    'teddy_bear': {'zone': 'platform_a', 'origin': TEDDY_SPOT, 'yaw': 90, 'note': 'on the luggage rack above the seat x -264..-136, facing into the car'},
+    'teddy_bear': {'zone': 'platform_a', 'origin': TEDDY_SPOT, 'yaw': 90, 'note': 'hero car floor, far track-side anchor, behind a duffel bag' if TRAIN else 'platform floor by the luggage'},
 }
 
 ws = mapgen.stock_worldspawn(os.path.join(tpl, 'maps/cp/cp_zmb.d3dbsp.ents'))
@@ -1945,8 +2041,12 @@ for tn in ('hidden_room_portal', 'center_portal', 'fast_travel_tube_start', 'fas
     ents.append(ent(classname='script_model', targetname=tn, model='tag_origin', origin='0 0 -3000', angles='0 0 0'))
 ents.append(ent(classname='script_struct', targetname='hidden_room_spot', origin='0 0 -3000', angles='0 0 0'))
 for f_ in FLICKER:    # flickering fluorescent: the lit model, swapped with the unlit one by the level script
-    ents.append(ent(classname='script_model', targetname='iwz_flicker', model='mp_dart_lightfluo_on', origin=fmt(f_['origin']),
-                    angles='0 %g 0' % f_['yaw']))
+    on_, off_ = f_.get('models', ('mp_dart_lightfluo_on', 'mp_dart_lightfluo'))
+    kw_ = {'noteworthy': on_ + '|' + off_} if 'models' in f_ else {}
+    ents.append(ent(classname='script_model', targetname='iwz_flicker', model=on_, origin=fmt(f_['origin']),
+                    angles='0 %g 0' % f_['yaw'], **kw_))
+    if 'models' in f_:
+        ents.append(ent(classname='script_model', model=off_, origin='0 0 -3000', angles='0 0 0'))
 for m_ in ('icbm_electricpanel9_on', 'beacon_light_plasticcase_red_off', 'mp_dart_lightfluo'):      # swapped models: keep them loaded
     ents.append(ent(classname='script_model', model=m_, origin='0 0 -3000', angles='0 0 0'))
 # PaP shutter: two rolling steel gates (stock gate_warehouse_refinery_01, 156 x 12 x 186, origin at its corner) in the
@@ -2002,8 +2102,9 @@ if os.environ.get('IWZ_LIGHTS') == '1':
             light_txt.append('omni %g %g %g %.2f %.2f %.2f 6000 72' % (x_, y_, z_, r_, g_, b_))
     # the EE bear on the luggage rack reads dark against the lit car ceiling (audio agent): a small warm fill light
     # in the aisle just below the rack, its radius limited to the bear
-    bx_, by_, bz_ = TEDDY_SPOT
-    light_txt.append('omni %g %g %g 1.00 0.85 0.65 20000 110' % (bx_, by_ + 40, bz_ - 20))
+    if not TRAIN:      # the hidden bear (in the car) gets no fill light
+        bx_, by_, bz_ = TEDDY_SPOT
+        light_txt.append('omni %g %g %g 1.00 0.85 0.65 20000 110' % (bx_, by_ + 40, bz_ - 20))
     open(os.path.join(out, 'lights.txt'), 'w', newline='\n').write('\n'.join(light_txt) + '\n')
     # group of each lights.txt line (signal lamps: emergency; the bear fill light: power)
     json.dump({'lines': [{'line': k_, 'group': 'power' if t_.endswith(' 20000 110') else 'emergency'}
@@ -2039,6 +2140,7 @@ if os.environ.get('IWZ_AUDIO') == '1':     # audio module added by build-sz2.ps1
 tb = QUEST['trap_third_rail_volume']['box']
 gsc = gsc.replace('//@TRAPMIN@', '( %g, %g, %g )' % tb[:3]).replace('//@TRAPMAX@', '( %g, %g, %g )' % tb[3:])
 gsc = gsc.replace('//@TRAPRAILY@', '%g' % THIRD_Y)
+gsc = gsc.replace('//@TRAPRAILZ@', '%g' % ((-356.31 + 3.5) if TRAIN else (PIT_Z + 12)))   # train kit third rail top / old bed line
 open(os.path.join(out, 'cp_iwz.gsc'), 'w', newline='\n').write(gsc)
 
 # ============================================================================ capture views, walk path, summaries
@@ -2208,6 +2310,7 @@ layout['sign_view_list'] = SIGN_VIEW_LIST
 layout['walk'] = WALK
 layout['track_spec'] = TRACK_SPEC
 layout['art_hooks'] = ART_HOOK_REPORT
+layout['train_spec'] = TRAIN_SPEC
 layout['walkcap'] = [{'name': n, 'origin': [x, y, z], 'yaw': yw} for n, x, y, z, yw in WALKCAP]
 layout['gallery'] = {'materials': GALLERY_ITEMS, 'texels': GALLERY_TEXELS, 'views': GALLERY_VIEWS}
 for e_ in ents:      # named placed models (quest, relays, shutter, lever) for sz2_propcheck.py

@@ -124,17 +124,21 @@
     {
       "zone": "platform_a",
       "alias": "emt_small_metal_creak",
-      "at": "quest:teddy_bear",
+      "at": [
+        300,
+        1488,
+        -300
+      ],
       "offset": [
-        320,
         0,
-        40
+        0,
+        0
       ],
       "random": [
         6,
         15
       ],
-      "note": "the parked carriage"
+      "note": "the hero car (was: bear + 320)"
     },
     {
       "zone": "maint_corridor",
@@ -818,20 +822,20 @@
       "radius": 180
     },
     "train": {
-      "comment": "parked carriage on the track: generator CAR box x -416..352, y 1428..1596, floor -320 (deck)",
+      "comment": "hero car (train agent, IWZ_TRAIN): origin (300, 1488, -356.31) yaw 0, nav half extents (268, 66.5, 95), floor -323, platform door bay x 142..230 (level builder re-anchor 2026-11-08)",
       "box": [
-        -416,
-        1428,
+        32,
+        1421.5,
         -330,
-        352,
-        1596,
-        -180
+        568,
+        1554.5,
+        -166
       ],
       "tick": {
         "alias": "amb_iwz_train_tick_lp",
         "at": [
-          -30,
-          1512,
+          300,
+          1488,
           -342
         ]
       },
@@ -839,13 +843,13 @@
         "alias": "amb_iwz_train_hiss",
         "at": [
           [
-            -300,
-            1512,
+            100,
+            1488,
             -350
           ],
           [
-            250,
-            1512,
+            500,
+            1488,
             -350
           ]
         ],
@@ -857,8 +861,8 @@
       "chime": {
         "alias": "amb_iwz_train_chime",
         "at": [
-          0,
-          1590,
+          186,
+          1556,
           -250
         ]
       }

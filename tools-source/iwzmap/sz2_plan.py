@@ -97,6 +97,17 @@ for s in layout['spawners']:
             dx_, dy_, dz_ = d['origin']
             if abs(x - dx_) < cl[0] + 24 and abs(y - dy_) < cl[1] + 24 and abs(z - dz_) < 2 * cl[2] + 40:
                 fails.append('spawner %s (%g %g) inside the clip of %s at (%g %g)' % (s['zone'], x, y, d['model'], dx_, dy_))
+    # train kit (layout train_spec): a ground spawner on the bed inside a ballast prism (y +- 62 of the track centre,
+    # bed .. ballast top, solid) spawns its zombie into the ballast; on a car's nav box, into the car
+    ts_ = layout.get('train_spec') or {}
+    if ts_ and s['kind'] != 'ceiling':
+        cy_ = (layout.get('track_spec') or {}).get('centre_y')
+        for ch_ in (layout.get('track_spec') or {}).get('channels', []):
+            if cy_ is not None and ch_['x0'] <= x <= ch_['x1'] and abs(y - cy_) < 62 + 16 and z < ts_.get('ballast_top_z', -368) + 1:
+                fails.append('spawner %s (%g %g %g) inside the ballast of the %s channel' % (s['zone'], x, y, z, ch_['zone']))
+        for c_ in ts_.get('cars', []):
+            if all(abs((x, y)[k] - c_['origin'][k]) < c_['nav_half'][k] + 24 for k in range(2)):
+                fails.append('spawner %s (%g %g) inside the hero car footprint' % (s['zone'], x, y))
 for it in layout['interactions']:
     x, y, z = it['origin']
     if cell_at(x, y, None) is None:

@@ -335,6 +335,7 @@ iwz_third_rail()
     level.iwz_trap_min = //@TRAPMIN@;
     level.iwz_trap_max = //@TRAPMAX@;
     level.iwz_trap_rail_y = //@TRAPRAILY@;
+    level.iwz_trap_rail_z = //@TRAPRAILZ@;       // conductor rail top (arcs and sparks run along it)
     wait 1;
     level.iwz_trap_use = spawn( "script_model", box.origin + anglestoforward( box.angles ) * 12 + ( 0, 0, 36 ) );
     use = level.iwz_trap_use;
@@ -376,8 +377,8 @@ iwz_third_rail_run( owner, seconds )
         {
             for ( x = lo[0] + 128; x < hi[0]; x += 384 )
             {
-                playfx( level._effect["iwz_rail_arc"], ( x, level.iwz_trap_rail_y, lo[2] + 12 ) );
-                playfx( level._effect["iwz_rail_spark"], ( x + 192, level.iwz_trap_rail_y, lo[2] + 10 ) );
+                playfx( level._effect["iwz_rail_arc"], ( x, level.iwz_trap_rail_y, level.iwz_trap_rail_z ) );
+                playfx( level._effect["iwz_rail_spark"], ( x + 192, level.iwz_trap_rail_y, level.iwz_trap_rail_z - 2 ) );
             }
             next_fx = gettime() + 1200;
         }
@@ -492,15 +493,27 @@ iwz_flicker_lamp()
 {
     level endon( "game_ended" );
     level.iwz_flicker_toggles = 0;
+    // lit / unlit model pair: script_noteworthy "<lit>|<unlit>" (train agent's car fixtures), else the stock pair
+    m_on = "mp_dart_lightfluo_on";
+    m_off = "mp_dart_lightfluo";
+    if ( isdefined( self.script_noteworthy ) && self.script_noteworthy != "" )
+    {
+        pair = strtok( self.script_noteworthy, "|" );
+        if ( pair.size == 2 )
+        {
+            m_on = pair[0];
+            m_off = pair[1];
+        }
+    }
     for ( ;; )
     {
         t = getdvarint( "paris_iwz_flickertest" );
         if ( t == 1 || t == 2 )
         {
             if ( t == 1 )
-                self setmodel( "mp_dart_lightfluo_on" );
+                self setmodel( m_on );
             else
-                self setmodel( "mp_dart_lightfluo" );
+                self setmodel( m_off );
             wait 0.1;
             continue;
         }
@@ -508,9 +521,9 @@ iwz_flicker_lamp()
         n = randomintrange( 2, 5 );
         for ( i = 0; i < n; i++ )
         {
-            self setmodel( "mp_dart_lightfluo" );
+            self setmodel( m_off );
             wait randomfloatrange( 0.05, 0.15 );
-            self setmodel( "mp_dart_lightfluo_on" );
+            self setmodel( m_on );
             wait randomfloatrange( 0.05, 0.2 );
             level.iwz_flicker_toggles++;
         }
