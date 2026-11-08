@@ -606,7 +606,9 @@ iwz_scape_log( kind, alias, origin )
 }
 
 // a random wait of min..max seconds of soundscape time: test runs speed every soundscape timer up with dvar
-// paris_iwz_scape_rate (> 1); the rate is read every half second, so a change applies at once
+// paris_iwz_scape_rate (> 1); the rate is read every half second, so a change applies at once.
+// Test dvar paris_iwz_scape_hold 1 stops soundscape time (no one-shot, PA, phone, hiss or silence swell starts)
+// so a witness can play each alias alone; production leaves it unset.
 iwz_scape_wait( min_wait, max_wait )
 {
     target = randomfloatrange( min_wait, max_wait );
@@ -614,6 +616,9 @@ iwz_scape_wait( min_wait, max_wait )
     while ( elapsed < target )
     {
         wait 0.5;
+        if ( getdvarint( "paris_iwz_scape_hold" ) )
+            continue;
+
         r = getdvarfloat( "paris_iwz_scape_rate" );
         if ( r < 1 )
             r = 1;
@@ -799,7 +804,7 @@ iwz_scape_flicker_lamp( alias )
             return;
 
         m = self.model;
-        if ( m != last && gettime() - last_t > 700 && iwz_scape_player_near( self.origin, 900 ) )
+        if ( m != last && gettime() - last_t > 700 && iwz_scape_player_near( self.origin, 900 ) && !getdvarint( "paris_iwz_scape_hold" ) )
         {
             playsoundatpos( self.origin, alias );
             iwz_scape_log( "flicker", alias, self.origin );
@@ -992,7 +997,7 @@ iwz_scape_lonely_player( s )
     for (;;)
     {
         wait 1;
-        if ( !isalive( self ) || !self iwz_scape_alone( s ) )
+        if ( !isalive( self ) || getdvarint( "paris_iwz_scape_hold" ) || !self iwz_scape_alone( s ) )
             continue;
 
         self.iwz_silence_until = gettime() + int( s.silence * 1000 );

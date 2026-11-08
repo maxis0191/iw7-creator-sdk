@@ -483,9 +483,15 @@ def scape(args):
             row['distance'] = float(np.linalg.norm(np.array(p) + [0, 0, 60] - np.array(s)))
         best = None
         alias = e.get('alias')
+        if row.get('zone') and 3.0 <= t < len(rec) / RATE - 3.0:
+            # onset witness, independent of the reference match: the loudest 100 ms within 3 s after the logged
+            # call against the median 100 ms level of the 3 s before it (a one-shot that really sounded rises)
+            before = loudness(rec[int((t - 3.0) * RATE):int((t - 0.1) * RATE)])
+            after = loudness(rec[int(t * RATE):int((t + 3.0) * RATE)])
+            row['rise_db'] = after['peak100ms_dbfs'] - before['median_dbfs']
         far_away = row.get('distance', 0) > args.max_distance
         crowded = per_alias.get(alias, 0) >= args.per_alias
-        if far_away or crowded or (not row.get('zone') and e.get('kind') not in ('intro', 'lonely')):
+        if far_away or crowded or (not row.get('zone') and e.get('kind') not in ('intro', 'lonely', 'solo_2d')):
             report['events'].append(row)          # out of earshot, enough samples, or outside every window
             continue
         per_alias[alias] = per_alias.get(alias, 0) + 1
@@ -495,7 +501,7 @@ def scape(args):
             r0 = ref(path)
             for pitch in steps:
                 r = r0 if abs(pitch - 1.0) < 1e-6 else repitch(r0, pitch)
-                if e.get('kind') == 'loop':
+                if e.get('kind') in ('loop', 'solo_loop'):
                     if t + 1.0 > len(rec) / RATE:
                         continue
                     m = match(np.concatenate([mono(r), mono(r)]), rec, t + 1.0, 2.0)
