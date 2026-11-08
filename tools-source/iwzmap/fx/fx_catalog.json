@@ -7,14 +7,16 @@
    "kind": "dust motes in light",
    "mode": "loop",
    "region": 96,
-   "status": "untested"
+   "status": "FAIL: glitter not visible in cp_iwz nor stock cp_zmb",
+   "evidence": "iwz-stage2/fx/analysis/probe2-g24"
   },
   "dust_motes_md": {
    "fx": "vfx/iw7/core/zombie/vfx_zmb_dust_motes_md",
    "kind": "dust motes",
    "mode": "loop",
    "region": 96,
-   "status": "untested"
+   "status": "FAIL: particle cloud, never draws in the generated map (probe2/probe3)",
+   "evidence": "iwz-stage2/fx/analysis/probe3-g24"
   },
   "drips": {
    "fx": "vfx/iw7/core/zombie/environment/vfx_zmb_drips_parent",
@@ -22,7 +24,8 @@
    "mode": "loop",
    "region": 64,
    "region_dz": -60,
-   "status": "untested"
+   "status": "FAIL: not visible at 170 u (stock either)",
+   "evidence": "iwz-stage2/fx/analysis/probe2-g24"
   },
   "water_drip": {
    "fx": "vfx/iw7/core/zombie/vfx_zmb_water_drip",
@@ -30,47 +33,53 @@
    "mode": "loop",
    "region": 48,
    "region_dz": -40,
-   "status": "untested"
+   "status": "FAIL: not visible at 170 u",
+   "evidence": "iwz-stage2/fx/analysis/probe2-g24"
   },
   "fog_low_dark": {
    "fx": "vfx/iw7/core/zombie/environment/vfx_knee_high_fog_dark",
    "kind": "knee-high ground fog",
    "mode": "loop",
    "region": 160,
-   "status": "untested"
+   "status": "FAIL: placeholder material gfx_test01",
+   "evidence": "iwz-stage2/fx/analysis/probe1-g24"
   },
   "fog_low_bright": {
    "fx": "vfx/iw7/core/zombie/environment/vfx_knee_high_fog_bright",
    "kind": "knee-high ground fog",
    "mode": "loop",
    "region": 160,
-   "status": "untested"
+   "status": "PROVEN_LOCAL",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "fog_tunnel": {
    "fx": "vfx/iw7/_requests/coop/vfx_zmb_grd_fog_tunnel",
    "kind": "tunnel ground fog",
    "mode": "loop",
    "region": 160,
-   "status": "untested"
+   "status": "PROVEN_LOCAL",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "fog_ground_dark": {
    "fx": "vfx/iw7/_requests/coop/vfx_zmb_grd_fog_dar",
    "kind": "ground fog",
    "mode": "loop",
    "region": 160,
-   "status": "untested"
+   "status": "renders (probe2, 4-5% of region)",
+   "evidence": "iwz-stage2/fx/analysis/probe2-g24"
   },
   "smoke_hang": {
    "fx": "vfx/iw7/core/zombie/vfx_zmb_smk_ambient_hang_med",
    "kind": "hanging smoke / haze",
    "mode": "loop",
    "region": 128,
-   "status": "untested",
+   "status": "PROVEN_LOCAL",
    "angles": [
     270,
     0,
     0
-   ]
+   ],
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "smoke_hang_lrg": {
    "fx": "vfx/iw7/core/zombie/vfx_zmb_smk_ambient_hang_lrg",
@@ -89,7 +98,8 @@
    "kind": "generator exhaust smoke",
    "mode": "loop",
    "region": 64,
-   "status": "untested"
+   "status": "PROVEN_LOCAL",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "genbox_loop": {
    "fx": "vfx/iw7/core/zombie/vfx_zmb_genbox_loop",
@@ -109,12 +119,13 @@
    "mode": "loop",
    "region": 128,
    "region_dz": -64,
-   "status": "untested",
+   "status": "PROVEN_LOCAL faint (sparse test, ~130 px at 200 u in the bright hall)",
    "angles": [
     300,
     180,
     180
-   ]
+   ],
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "light_wedge": {
    "fx": "vfx/iw7/core/zombie/vfx_zmb_light_wedge_01",
@@ -135,7 +146,8 @@
    "mode": "interval:0.8-2.5",
    "region": 48,
    "settle": 0.4,
-   "status": "untested"
+   "status": "PROVEN_LOCAL (sparks + smoke puff, no light)",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "sparks_robot": {
    "fx": "vfx/iw7/core/zombie/vfx_zmb_spark_robot",
@@ -143,7 +155,8 @@
    "mode": "interval:0.8-2.5",
    "region": 48,
    "settle": 0.4,
-   "status": "untested"
+   "status": "renders (probe2), no light",
+   "evidence": "iwz-stage2/fx/analysis/probe2-g24"
   },
   "shock_arc": {
    "fx": "vfx/iw7/_requests/coop/vfx_mini_grey_shock_arc",
@@ -181,14 +194,16 @@
    "region": 96,
    "region_dz": -80,
    "settle": 0.6,
-   "status": "untested"
+   "status": "PROVEN_LOCAL in the tunnel (burst); stair placement FAIL (camera)",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "fire_trash": {
    "fx": "vfx/iw7/core/zombie/vfx_zmb_fire_trash_01",
    "kind": "small fire / embers",
    "mode": "loop",
    "region": 64,
-   "status": "untested"
+   "status": "PROVEN_LOCAL",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "ground_fire": {
    "fx": "vfx/iw7/core/zombie/robot/vfx_ground_fire_linger",
@@ -202,14 +217,16 @@
    "kind": "strobe / flicker glow",
    "mode": "loop",
    "region": 64,
-   "status": "untested"
+   "status": "emits light (whole scene changes, probe2)",
+   "evidence": "iwz-stage2/fx/analysis/probe2-g24"
   },
   "moths": {
    "fx": "vfx/iw7/core/zombie/environment/vfx_zb_moth_b",
    "kind": "moths around a lamp",
    "mode": "loop",
    "region": 64,
-   "status": "untested"
+   "status": "FAIL in platform B (16 px); renders in probe2 at 170 u",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx2-a (FF 85259BDF)"
   },
   "steam_pipe": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_broken_pipe_steam",
@@ -217,7 +234,8 @@
    "kind": "steam jet from a broken pipe",
    "mode": "loop",
    "region": 96,
-   "status": "untested"
+   "status": "PROVEN_LOCAL",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "steam_grate": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_grate_steam_01",
@@ -226,7 +244,8 @@
    "mode": "loop",
    "region": 96,
    "region_dz": 48,
-   "status": "untested"
+   "status": "PROVEN_LOCAL faint",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "steam_sewer": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_sewer_grate_steam",
@@ -243,7 +262,8 @@
    "kind": "leaking seam: drips with floor splash",
    "mode": "loop",
    "region": 96,
-   "status": "untested"
+   "status": "FAIL: too thin to measure at 200+ units (5-36 px)",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "drips_circle": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_water_drips_circle",
@@ -268,7 +288,8 @@
    "kind": "dust motes (sprites, not a particle cloud)",
    "mode": "loop",
    "region": 128,
-   "status": "untested"
+   "status": "PROVEN_LOCAL",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "motes_bright": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_amb_motes_bright",
@@ -290,7 +311,8 @@
     0,
     0
    ],
-   "status": "untested"
+   "status": "FAIL: streetlight_cone under thresholds (25-97 px)",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx2-a (FF 85259BDF)"
   },
   "bulb_glow": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_incandescent_lf",
@@ -298,7 +320,8 @@
    "kind": "bulb glow / lens flare",
    "mode": "loop",
    "region": 48,
-   "status": "untested"
+   "status": "FAIL: incandescent_lf draws nothing (0 px)",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx2-a (FF 85259BDF)"
   },
   "embers": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_zb_spark_a",
@@ -307,7 +330,8 @@
    "mode": "loop",
    "region": 96,
    "region_dz": 32,
-   "status": "untested"
+   "status": "PROVEN_LOCAL",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "mist": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_light_mist",
@@ -315,7 +339,8 @@
    "kind": "light mist / haze",
    "mode": "loop",
    "region": 160,
-   "status": "untested"
+   "status": "PROVEN_LOCAL (rendered without an ncs entry)",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "pipe_smoke": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_pipe_smoke",
@@ -332,7 +357,8 @@
    "mode": "interval:3-8",
    "region": 96,
    "settle": 0.4,
-   "status": "untested"
+   "status": "PROVEN_LOCAL, emits light (surroundings change; probe2/probe4/fx3)",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "smoke_burst": {
    "fx": "vfx/iw7/_requests/coop/vfx_zb_thu_smk_ground",
@@ -344,14 +370,16 @@
     0
    ],
    "region": 128,
-   "status": "untested"
+   "status": "PROVEN_LOCAL",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "emergency_glow": {
    "fx": "vfx/iw7/core/zombie/weapon/shredder/zmb_part_glow_red",
    "kind": "red emergency lamp glow",
    "mode": "loop",
    "region": 48,
-   "status": "untested"
+   "status": "PROVEN_LOCAL in the control room; 2 of 3 placements under threshold (next to a lit lamp / far)",
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   }
  }
 }
