@@ -91,3 +91,35 @@ referenced, not copied; other techsets are embedded from the techsets dump (`.te
 `.vertexdecl`, shader `.cso`). Do not `require` extra map techset zones: two of them next to the template's nine hung
 ZoneTool. Scriptable movers (the subway train's) are dropped from a patched `.xmb` copy (`--keep-scriptable` keeps
 them and then needs the scriptable dump and its dependencies).
+
+## Ambient FX (fx/)
+
+Stock IW7 effects render in a usermap through the ordinary script route (`loadfx` in `main()`, then
+`spawnfx` + `triggerfx( ent, -4 )` for looping ambience, `playfx` for bursts). Every cp_zmb effect is already in the FF
+(assemble.py copies the stock zone rows). What matters: the effect must be in the level effect list
+(`netconststrings/ncs_efx_level.json`, IW7 registers effects through it), placed with the stock createfx angles, and
+be a top-level effect (child effects such as `vfx_zmb_drips`, `vfx_zb_trash_a_ch` are spawned by their parents).
+Particle-cloud effects (techset `particle_cloud_*`, e.g. `vfx_zmb_dust_motes_md`) do not draw in a generated map:
+use sprite effects (the cp_disco `vfx_amb_motes` import) for motes.
+
+```powershell
+# fx.txt: <name> <alias|vfx path> <x> <y> <z> [angles=p,y,r] [mode=loop|interval:a-b|retrigger:s|flicker:a-b|oneshot]
+#         [delay=s] [view=x,y,z,yaw,pitch] [region=r] [region_dz=dz] [zone=z]       (aliases: fx/fx_catalog.json)
+python -I fx\fx_place.py <fx.txt> <src> --list-imports               # foreign effects the file needs
+python -I fx\fx_place.py <fx.txt> <src> --ncs <ncs_efx_level.json> [--ncs <imported list>] `
+  --fixture-out <src>\fxproof.gsc --manifest-out <src>\fx_manifest.json   # patches <src>\cp_iwz.gsc (iwz_fx module)
+# foreign effects (cp_disco steam, drips, motes, beams...): dump once, then build with the import
+zonetool -dumpzonetypes cp_disco vfx,particlesimanimation,netconststrings
+.\build-sz2.ps1 ... -FxImport 'cp_disco:vfx/iw7/levels/cp_disco/amb/vfx_grate_steam_01,...' `
+  -FxDumps 'cp_disco=<vfx dump>;<kit dump>;<techsets_cp_disco dump>'
+# proof: private run with the generated fixture (+set paris_iwz_mode fxproof +set paris_iwz_fxproof 1
+#        +set paris_iwz_fxonly -2 +set paris_iwz_fxphase 0) and the fxperf DLL (IW7_FXPERF=<file>), then
+python -I fx\fx_proof.py <run> <src>\fx_manifest.json <out> --perf <fxperf file>
+```
+
+fx_proof.py: per effect, same camera, frames with the effect held off (off0, off1) and running (on0..on4 over 4 s);
+the luma is box-blurred 7x7 first (IW7 film grain changes ~10% of single pixels between any two frames); PASS when
+the changed fraction inside the projected effect region is >= 0.4%, >= 4x the off/off noise and >= 3x the change
+outside the region; ANIMATED when consecutive on frames also change in the region. Frame time: the fxperf DLL hooks
+DXGI Present and buckets present-to-present intervals by the dvar `paris_iwz_fxphase` (2k+1 effect k off, 2k+2 on,
+200/201 every effect off/on at the zone views). In a match the module starts every effect once and never polls.
