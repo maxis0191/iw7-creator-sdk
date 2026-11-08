@@ -234,9 +234,9 @@ def main(argv=None):
     load = ['    level._effect["%s"] = loadfx( "%s" );' % (key[p], p) for p in ids]
     table = []
     for k, e in enumerate(fx):
-        table.append('    level.iwz_fx[level.iwz_fx.size] = iwz_fx_def( "%s", "%s", %s, %s, %s, "%s", %g, %g, %g, "%s", %g );'
+        table.append('    level.iwz_fx[level.iwz_fx.size] = iwz_fx_def( "%s", "%s", %s, %s, %s, "%s", %g, %g, %g, "%s", %g, "%s" );'
                      % (e['name'], key[e['fx']], gsc_vec(e['origin']), gsc_vec(e['forward']), gsc_vec(e['up']), e['mode'],
-                        e['delay'], e['min'], e['max'], e['stage'], e['dur']))
+                        e['delay'], e['min'], e['max'], e['stage'], e['dur'], e['zone'] or ''))
     module = open(os.path.join(HERE, 'iwz_fx.gsc')).read().replace('//@FXTABLE@', '\n'.join(table))
 
     gp = os.path.join(a.src, 'cp_iwz.gsc')

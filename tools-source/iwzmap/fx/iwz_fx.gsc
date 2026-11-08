@@ -55,7 +55,11 @@ iwz_fx_main()
     }
 }
 
-// power stage switch: the stock generator sets the level flag "power_on" (Spaceland power system)
+// power stage switch: the stock generator sets the level flag "power_on" (Spaceland power system); poweron effects
+// start at once. When the darkness lighting script drives the lights bank by bank (level.iwz_light_banks_external;
+// contract in iwz-stage2 darkness NOTES: level notify "iwz_light_bank_on", <zone> per bank, then
+// "iwz_power_lights_done"), the dark effects of a zone stop and its lit effects start with that zone's bank;
+// otherwise every zone switches at power on.
 iwz_fx_power()
 {
     level endon( "game_ended" );
@@ -65,17 +69,61 @@ iwz_fx_power()
     n = 0;
     foreach ( f in level.iwz_fx )
     {
-        if ( f.stage == "dark" )
-            iwz_fx_stop( f );
-        else if ( f.stage == "lit" || f.stage == "poweron" )
+        if ( f.stage == "poweron" )
         {
             iwz_fx_start( f );
             n++;
-            if ( f.stage == "poweron" && f.dur > 0 )
+            if ( f.dur > 0 )
                 level thread iwz_fx_stop_after( f, f.dur );
         }
     }
+    if ( isdefined( level.iwz_light_banks_external ) && level.iwz_light_banks_external )
+    {
+        level thread iwz_fx_banks_done();
+        for ( ;; )
+        {
+            level waittill( "iwz_light_bank_on", zone );
+            if ( zone == "_iwz_fx_done" )
+                break;
+            n += iwz_fx_bank( zone );
+        }
+    }
+    else
+        n += iwz_fx_bank( undefined );
     print( "[IWZ level] FX_POWER started=" + n );
+}
+
+// after the last bank: zones without a light bank switch too
+iwz_fx_banks_done()
+{
+    level endon( "game_ended" );
+    level waittill( "iwz_power_lights_done" );
+    wait 0.05;
+    level notify( "iwz_light_bank_on", "_iwz_fx_done" );
+    iwz_fx_bank( undefined );
+}
+
+// switch the stage effects of one zone (undefined: every zone not switched yet); returns the number started
+iwz_fx_bank( zone )
+{
+    n = 0;
+    foreach ( f in level.iwz_fx )
+    {
+        if ( isdefined( f.switched ) || ( isdefined( zone ) && f.zone != zone ) )
+            continue;
+        if ( f.stage == "dark" )
+        {
+            iwz_fx_stop( f );
+            f.switched = 1;
+        }
+        else if ( f.stage == "lit" )
+        {
+            iwz_fx_start( f );
+            f.switched = 1;
+            n++;
+        }
+    }
+    return n;
 }
 
 iwz_fx_stop_after( f, t )
@@ -85,9 +133,10 @@ iwz_fx_stop_after( f, t )
     iwz_fx_stop( f );
 }
 
-iwz_fx_def( name, key, origin, fwd, up, mode, delay, a, b, stage, dur )
+iwz_fx_def( name, key, origin, fwd, up, mode, delay, a, b, stage, dur, zone )
 {
     f = spawnstruct();
+    f.zone = zone;
     f.stage = stage;
     f.dur = dur;
     f.name = name;
