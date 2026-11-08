@@ -1665,7 +1665,9 @@ def train_kit():
     segs = [('platform_a', x) for x in range(-2400, int(TRAIN_TRACK_EAST_X), TRAIN_SEG)] + \
            [('service_tunnel', -2400 - TRAIN_SEG * k) for k in range(1, 6)]
     for zone, x0 in segs:
-        decor(zone, 'iwz_track_256', x0, cy, bz, 0)
+        # the westmost tunnel segment (behind the buffer stop) carries the third rail only from x0 + 200 with an end ramp
+        # (train kit v4 iwz_track_256_3r_from200): no conductor past the buffer
+        decor(zone, 'iwz_track_256_3r_from200' if x0 == min(x_ for _, x_ in segs) else 'iwz_track_256', x0, cy, bz, 0)
     # ballast prism: flat top y +-BALLAST_TOP_HALF at the ballast top, shoulders sloping to the bed at +-BALLAST_FOOT_HALF
     # (QA g25t: a vertical 16-unit face could be stepped down but not climbed, by players or zombies)
     for x0, x1 in ((-2400, 2590), (-3600, -2400)):
@@ -1741,6 +1743,26 @@ def train_kit():
                        'buffer': [-3560, cy, bz], 'cars': cars})
 
 
+def place_ported(spec_path):
+    """Ported / authored kit models (x64-zt-extensions env-model) with the port's clip boxes: a JSON list of
+    {"zone", "model", "origin": [x, y, z], "yaw": 0/90/180/270, "boxes": <port collision json>, "nav": true}. The model
+    goes in as decor (script_model, kit_import zone "train"); its model-space boxes, turned by the yaw (right angles keep
+    them axis aligned), become world collision (players, bullets) and, with nav, cut the navmesh."""
+    placed = []
+    for e in json.load(open(spec_path)):
+        x, y, z = e['origin']
+        yaw = int(round(float(e.get('yaw', 0)))) % 360
+        decor(e['zone'], e['model'], x, y, z, yaw)
+        c, s_ = round(math.cos(math.radians(yaw))), round(math.sin(math.radians(yaw)))
+        boxes = json.load(open(e['boxes']))['boxes'] if e.get('boxes') and os.path.isfile(e['boxes']) else []
+        for (a, b) in boxes:
+            xs = sorted((x + c * a[0] - s_ * a[1], x + c * b[0] - s_ * b[1]))
+            ys = sorted((y + s_ * a[0] + c * a[1], y + s_ * b[0] + c * b[1]))
+            B.collision_box((xs[0], ys[0], z + a[2]), (xs[1], ys[1], z + b[2]), nav=bool(e.get('nav', True)))
+        placed.append({'model': e['model'], 'origin': [x, y, z], 'yaw': yaw, 'boxes': len(boxes)})
+    return placed
+
+
 if os.environ.get('IWZ_NO_DECOR') != '1':
     for zn_, x_, y_, z_, a_ in RUBBLE:            # (g27) tunnel collapses (rubble_end)
         decor(zn_, 'debris_concrete_rubble_pile_01_dark', x_, y_, z_, a_)
@@ -1774,6 +1796,10 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         # parked stock subway train at the dead end of the track pit (static, scriptable mover dropped by kit_import;
         # 780 long along x after yaw 90); its clip box also cuts the pit navmesh, ~100 units stay free on each side
         pass        # (g25) hero car: train agent (TRACK_SPEC); the cp_disco kit car is no longer placed
+    if os.environ.get('IWZ_TRAIN_PROPS'):
+        # train agent's ported props with their clip boxes (genset G-2, period wall fittings, BO3 props)
+        layout_props_ = place_ported(os.environ['IWZ_TRAIN_PROPS'])
+        TRAIN_SPEC['props'] = layout_props_
     if TRAIN:
         train_kit()
         _anc = TRAIN_SPEC['cars'][0]['dressing_anchors'][5]          # far track-side anchor of the hero car
