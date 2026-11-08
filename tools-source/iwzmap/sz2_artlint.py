@@ -89,6 +89,10 @@ def main():
     fails = []
     spec = lay.get('track_spec') or {}
     channels = spec.get('channels', [])
+    # train kit (IWZ_TRAIN, train agent): the platform edge comes forward to train_spec.edge_y over the channel (deck
+    # overhang); the channel ends there, and the kit's own models (iwz_*) are the track, car and edge, not intruders
+    tspec = lay.get('train_spec') or {}
+    env_channels = [dict(ch, y1=min(ch['y1'], tspec['edge_y'] + EDGE)) for ch in channels] if tspec.get('edge_y') else channels
     for ch in channels:
         if abs(ch['centre_y'] - (ch['y0'] + ch['y1']) / 2) > 0.5:
             fails.append('trackbed %s channel off-centre: centre %g, middle %g' % (ch['zone'], ch['centre_y'], (ch['y0'] + ch['y1']) / 2))
@@ -140,7 +144,7 @@ def main():
         if mat in VEHICLE_MATS:
             fails.append('fake-vehicle material %s in %s at %s' % (mat, zone, pts[0]))
         xs = [p[0] for p in pts]; ys = [p[1] for p in pts]; zs = [p[2] for p in pts]
-        for ch in channels:
+        for ch in env_channels:
             if max(xs) > ch['x0'] + EDGE and min(xs) < ch['x1'] - EDGE and max(ys) > ch['y0'] + EDGE and min(ys) < ch['y1'] - EDGE \
                     and max(zs) > ch['z'] + 0.5 and min(zs) < ch['z'] + ENVELOPE and not (n[2] > 0.9 and max(zs) <= ch['z'] + 1):
                 fails.append('trackbed %s (%s) inside the %s channel at %s' % (mat, zone, ch['zone'], [round(c) for c in pts[0]]))
@@ -151,7 +155,7 @@ def main():
                 fails.append('floor-streak %s %gx%g in %s at %s' % (mat, round(w), round(h), zone, [round(c) for c in pts[0]]))
     for d in lay.get('decor', []):
         x, y, z = d['origin']
-        for ch in channels:
+        for ch in (env_channels if not (tspec and d['model'].startswith('iwz_')) else []):
             hx, hy = (d.get('clip') or (0, 0, 0))[:2]
             if x + hx > ch['x0'] + EDGE and x - hx < ch['x1'] - EDGE and y + hy > ch['y0'] + EDGE and y - hy < ch['y1'] - EDGE and ch['z'] - 1 <= z <= ch['z'] + ENVELOPE:
                 fails.append('trackbed decor %s at (%g %g %g) inside the %s channel' % (d['model'], x, y, z, ch['zone']))

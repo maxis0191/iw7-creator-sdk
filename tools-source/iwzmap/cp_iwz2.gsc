@@ -492,15 +492,27 @@ iwz_flicker_lamp()
 {
     level endon( "game_ended" );
     level.iwz_flicker_toggles = 0;
+    // lit / unlit model pair: script_noteworthy "<lit>|<unlit>" (train agent's car fixtures), else the stock pair
+    m_on = "mp_dart_lightfluo_on";
+    m_off = "mp_dart_lightfluo";
+    if ( isdefined( self.script_noteworthy ) && self.script_noteworthy != "" )
+    {
+        pair = strtok( self.script_noteworthy, "|" );
+        if ( pair.size == 2 )
+        {
+            m_on = pair[0];
+            m_off = pair[1];
+        }
+    }
     for ( ;; )
     {
         t = getdvarint( "paris_iwz_flickertest" );
         if ( t == 1 || t == 2 )
         {
             if ( t == 1 )
-                self setmodel( "mp_dart_lightfluo_on" );
+                self setmodel( m_on );
             else
-                self setmodel( "mp_dart_lightfluo" );
+                self setmodel( m_off );
             wait 0.1;
             continue;
         }
@@ -508,9 +520,9 @@ iwz_flicker_lamp()
         n = randomintrange( 2, 5 );
         for ( i = 0; i < n; i++ )
         {
-            self setmodel( "mp_dart_lightfluo" );
+            self setmodel( m_off );
             wait randomfloatrange( 0.05, 0.15 );
-            self setmodel( "mp_dart_lightfluo_on" );
+            self setmodel( m_on );
             wait randomfloatrange( 0.05, 0.2 );
             level.iwz_flicker_toggles++;
         }
