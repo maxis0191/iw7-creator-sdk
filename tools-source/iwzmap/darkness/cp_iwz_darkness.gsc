@@ -256,21 +256,26 @@ iwz_dark_zone_of( o )
     return best;
 }
 
-// the dark vision: the whole level and every player (late joiners at spawn) until the first light bank; the stock
-// intro sets the naked vision back to "" after the intro, so it is applied again after that
+// the dark vision: the whole level and every player (late joiners at spawn) until the first light bank. Stock
+// spawn / intro code resets naked visions after our first calls (run dk5-d5: the init-time call had no effect, a
+// later call did), so the vision is re-applied every 3 s until the power (a same-name re-apply is a no-op change)
 iwz_dark_vision_hold()
 {
     level endon( "game_ended" );
     level endon( "iwz_dark_vision_off" );
-    visionsetnaked( level.iwz_dark_vision, 0 );
     level thread iwz_dark_vision_players();
-    while ( !scripts\engine\utility::flag_exist( "introscreen_over" ) )
-        wait 0.1;
-    scripts\engine\utility::flag_wait( "introscreen_over" );
-    for ( i = 0; i < 4; i++ )
+    for ( ;; )
     {
         visionsetnaked( level.iwz_dark_vision, 0 );
-        wait 2;
+        if ( isdefined( level.players ) )
+        {
+            foreach ( p in level.players )
+            {
+                if ( isdefined( p ) && isalive( p ) )
+                    p visionsetnakedforplayer( level.iwz_dark_vision, 0 );
+            }
+        }
+        wait 3;
     }
 }
 
@@ -292,6 +297,7 @@ iwz_dark_vision_player()
     for ( ;; )
     {
         self waittill( "spawned_player" );
+        wait 1;
         self visionsetnakedforplayer( level.iwz_dark_vision, 0 );
     }
 }

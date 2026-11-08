@@ -67,6 +67,16 @@ def main(argv=None):
             rel = 'vision/%s.vision' % name
             open(os.path.join(root, *rel.split('/')), 'w', newline='\n', encoding='latin1').write(txt)
             rows.append('rawfile,' + rel)
+        # --lit "key=value;...": the map's own (lit, auto exposure) vision, e.g. volumetricSpotBrightness=0.2 (run
+        # dk5-d5: the power spots lit the vision fog into a white haze on the platform and the stairs)
+        if '--lit' in argv:
+            txt = base
+            for kv in argv[argv.index('--lit') + 1].split(';'):
+                if '=' in kv:
+                    k, v = kv.split('=', 1)
+                    txt = re.sub(r'(?m)^%s ".*"$' % re.escape(k), '%s "%s"' % (k, v), txt)
+            os.remove(vis)                         # may be a hardlink into the stock dump
+            open(vis, 'w', newline='\n', encoding='latin1').write(txt)
     else:
         print('no %s: dark vision not made' % vis)
     lines = open(csvp).read().splitlines()

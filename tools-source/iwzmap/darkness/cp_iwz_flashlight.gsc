@@ -11,10 +11,12 @@
 
 init()
 {
-    // three identical copies of the light: after a kill, the same effect played again on the same tag stays dark
-    // for a while (runs dk3 / dk4: every re-attach within seconds of a kill failed), so each attach uses the next copy
-    level.iwz_fl_worlds = [ loadfx( "vfx/iwz/vfx_iwz_flashlight_world" ), loadfx( "vfx/iwz/vfx_iwz_flashlight_world_b" ),
-        loadfx( "vfx/iwz/vfx_iwz_flashlight_world_c" ) ];
+    // six identical copies of the light: after a kill, the same effect played again on the same tag stays dark
+    // for a while (runs dk3 / dk4: every re-attach within seconds of a kill failed; dk5: three copies cycled by a
+    // weapon switch's two notifies hit a recently killed one), so each attach takes the copy killed longest ago
+    level.iwz_fl_worlds = [];
+    foreach ( s in [ "", "_b", "_c", "_d", "_e", "_f" ] )
+        level.iwz_fl_worlds[level.iwz_fl_worlds.size] = loadfx( "vfx/iwz/vfx_iwz_flashlight_world" + s );
     level.iwz_fl_world = level.iwz_fl_worlds[0];
     level.iwz_fl_view = loadfx( "vfx/iwz/vfx_iwz_flashlight_view" );
     if ( !isdefined( level.iwz_fl_tag ) )
@@ -108,10 +110,21 @@ iwz_fl_attach( click )
     if ( !scripts\engine\utility::is_true( self.iwz_fl_enabled ) || !isalive( self ) )
         return;
     tag = level.iwz_fl_tag;
-    if ( !isdefined( self.iwz_fl_k ) )
-        self.iwz_fl_k = -1;
-    self.iwz_fl_k = ( self.iwz_fl_k + 1 ) % level.iwz_fl_worlds.size;
-    self.iwz_fl_fx = level.iwz_fl_worlds[self.iwz_fl_k];
+    if ( !isdefined( self.iwz_fl_killed ) )
+        self.iwz_fl_killed = [];
+    best = 0;
+    for ( k = 0; k < level.iwz_fl_worlds.size; k++ )
+    {
+        if ( !isdefined( self.iwz_fl_killed[k] ) )
+        {
+            best = k;
+            break;
+        }
+        if ( self.iwz_fl_killed[k] < self.iwz_fl_killed[best] )
+            best = k;
+    }
+    self.iwz_fl_k = best;
+    self.iwz_fl_fx = level.iwz_fl_worlds[best];
     w = self getcurrentweapon();
     if ( !isdefined( w ) || w == "none" )
         tag = "tag_eye";        // no weapon (fists / perk drinking / afterlife hands): light from the eye
@@ -146,6 +159,8 @@ iwz_fl_detach()
         killfxontag( self.iwz_fl_fx, self, tag );
     }
     self.iwz_fl_on = 0;
+    if ( isdefined( self.iwz_fl_k ) )
+        self.iwz_fl_killed[self.iwz_fl_k] = gettime();
     iwz_fl_log( "OFF " + self.name );
 }
 
