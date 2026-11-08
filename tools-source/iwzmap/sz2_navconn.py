@@ -70,6 +70,29 @@ def main():
     comps_sorted = sorted(range(len(comps)), key=lambda c: -len(comps[c]))
     main_c = comps_sorted[0]
     fails, notes = [], []
+    # seams: the engine connects nav areas whose edges coincide; every edge-sharing pair must be a designed link
+    # (same region or adjacent regions) with edge corners within --step, else it is a path into a wall or a cliff
+    adj = set(frozenset(a_) for a_ in plan.get('adj', []))
+    corners = {(c[0], c[1]): c[2] for c in plan.get('cell_corners', [])}
+
+    def ecorn(k, e):
+        z_ = cells[k][0]
+        c_ = corners.get(k, (z_, z_, z_, z_))
+        return {0: (c_[0], c_[1]), 1: (c_[1], c_[2]), 2: (c_[3], c_[2]), 3: (c_[0], c_[3])}[e]
+    seams = []
+    for (i, j) in cells:
+        for e, nb in ((1, (i + 1, j)), (2, (i, j + 1))):
+            if nb not in cells:
+                continue
+            ra, rb = cells[(i, j)][1], cells[nb][1]
+            linked = ra == rb or frozenset((ra, rb)) in adj
+            ha, hb = ecorn((i, j), e), ecorn(nb, (e + 2) % 4)
+            if not linked or abs(ha[0] - hb[0]) > a.step or abs(ha[1] - hb[1]) > a.step:
+                seams.append('%s|%s at (%d, %d) heights %s / %s' % (ra, rb, (i + 0.5) * CELL, (j + 0.5) * CELL, ha, hb))
+    for s_ in seams[:10]:
+        fails.append('nav seam ' + s_)
+    if len(seams) > 10:
+        fails.append('... %d nav seams in total' % len(seams))
     for c in comps_sorted[1:]:
         m = comps[c]
         zones = collections.Counter(region_zone.get(cells[k][1], cells[k][1]) for k in m)
@@ -98,6 +121,7 @@ def main():
 
     routes = [('pit', 'deck', ('pit', 'well_w', 'deck_mid', 'deck')), ('pit', 'deck', ('pit', 'well_e', 'deck_mid', 'deck_east', 'deck')),
               ('hall', 'deck', None), ('tunnel_a', 'deck', None)]
+    routes += [('deck', r_, None) for r_ in sorted(set(v[1] for v in cells.values())) if r_.startswith('car_aisle')]   # hero car: zombies enter
     rres = {}
     for ra, rb, via in routes:
         if ra not in region_zone or rb not in region_zone:

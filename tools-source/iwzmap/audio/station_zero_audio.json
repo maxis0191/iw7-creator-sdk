@@ -1,0 +1,1224 @@
+{
+  "bank": "cp_iwz.all",
+  "zone": "cp_iwz",
+  "template_aliases": [
+    "${IW7_DUMP}/cp_zmb/sound/cp_zmb.all.aliases.csv",
+    "${IW7_SND_DUMP}/cp_disco/sound/cp_disco.all.aliases.csv",
+    "${IW7_SND_DUMP}/cp_final/sound/cp_final.all.aliases.csv",
+    "${IW7_SND_DUMP}/common_cp/sound/common_cp.all.aliases.csv"
+  ],
+  "stock_banks": [
+    "${GAME}/cp_zmb.sabl",
+    "${GAME}/code_post_gfx.sabs",
+    "${GAME}/cp_disco.sabl",
+    "${GAME}/cp_disco.sabs",
+    "${GAME}/cp_final.sabl",
+    "${GAME}/cp_final.sabs",
+    "${GAME}/common_cp.sabl",
+    "${GAME}/common_cp.sabs"
+  ],
+  "aliases": [
+    {
+      "name": "mus_iwz_abracadavre",
+      "comment": "hidden song: BO3 zm_cosmodrome mus_abracadavre_intro (all/mus/zm/dlc5/ee_final_mixes/abracadavre.flac, 6:05, 48 kHz stereo); stock wave-music row (music_lr, streamed, 2D)",
+      "template": "mus_zombies_newwave",
+      "source": "${BO3_EXPORT}/iwz-audio-cosmo/bo3/sounds/all/mus/zm/dlc5/ee_final_mixes/abracadavre.flac",
+      "file": "iwz\\mus\\abracadavre",
+      "set": {
+        "vol_min": 0.5,
+        "vol_max": 0.5,
+        "MusicContent": "music"
+      }
+    },
+    {
+      "name": "zmb_iwz_ee_hint_lp",
+      "comment": "hidden-song hint loop: BO3 zmb_ee_mus_lp / zmb_egg_loop (all/zmb/egg/meteor_loop.flac, the BO1 meteor hum, 7.8 s mono); stock 3D ambient-emitter row, looping, 100-550 units",
+      "template": "emt_light_hum_lp_03",
+      "source": "${BO3_EXPORT}/iwz-audio-common-egg/bo3/sounds/all/zmb/egg/meteor_loop.flac",
+      "file": "iwz\\egg\\meteor_loop",
+      "set": {
+        "vol_min": 0.5,
+        "vol_max": 0.5,
+        "dist_min": 100.0,
+        "dist_max": 550.0,
+        "volumefalloffcurve": "default",
+        "loop": "looping",
+        "pitch_min": 1.0,
+        "pitch_max": 1.0
+      }
+    },
+    {
+      "name": "zmb_iwz_ee_activate",
+      "comment": "activation sting (Station Zero, station_zero_music.py): a reversed music-box tine swelling into one flat tine a fourth below; stock 3D one-shot row; the song itself stays Abracadavre",
+      "template": "rollercoaster_sign_up",
+      "source": "${MUSIC}/ee_activate.flac",
+      "file": "iwz\\egg\\sz_ee_activate",
+      "set": {
+        "vol_min": 0.55,
+        "vol_max": 0.55,
+        "dist_min": 150.0,
+        "dist_max": 1200.0,
+        "volumefalloffcurve": "default",
+        "pitch_min": 1.0,
+        "pitch_max": 1.0
+      }
+    },
+    {
+      "name": "amb_cp_zmb_basement_lr",
+      "comment": "2D room tone bed (Spaceland basement), streamed loop",
+      "source": "stock"
+    },
+    {
+      "name": "emt_appliance_hum_lp_01",
+      "comment": "electrical hum emitter (generator, fuse boxes)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_light_hum_lp_01",
+      "comment": "fluorescent light hum emitter",
+      "source": "stock"
+    },
+    {
+      "name": "emt_water_drip_lp",
+      "comment": "water drips emitter (tunnels, platform)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_small_metal_creak",
+      "comment": "random metal creak one-shots (6 variants)",
+      "source": "stock"
+    },
+    {
+      "name": "amb_iwz_train_rumble_dist",
+      "comment": "distant train rumble: stock coaster_engine_low trolley loop, script volume replaced by a fixed level and a wide 3D falloff; run s2: the loudest layer of the service tunnel (a dead zone), so lowered and closer falloff start",
+      "template": "coaster_engine_low",
+      "source": "stock",
+      "set": {
+        "vol_min": 0.2,
+        "vol_max": 0.2,
+        "dist_min": 250.0,
+        "dist_max": 4000.0,
+        "volumefalloffcurve": "default"
+      }
+    },
+    {
+      "name": "amb_cp_zmb_ice_cave_lr",
+      "comment": "2D room tone bed (Spaceland ice cave: low cavern wind) for the platforms and the service tunnel, streamed loop",
+      "source": "stock"
+    },
+    {
+      "name": "emt_light_hum_lp_02",
+      "comment": "fluorescent light hum emitter (variant 2)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_light_hum_lp_03",
+      "comment": "fluorescent light hum emitter (variant 3, unoccluded)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_appliance_hum_lp_02",
+      "comment": "electrical hum emitter (pipes, corridor)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_appliance_hum_lp_03",
+      "comment": "electrical hum emitter (generator, 550 units)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_wispy_wind_paper_lp_01",
+      "comment": "draught with paper rustle (collapsed street stairs)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_cp_zmb_wind_omin_01_lp",
+      "comment": "interior wind (boarded windows, old station)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_metal_groan_med",
+      "comment": "random distant metal groans (service tunnel)",
+      "source": "stock"
+    },
+    {
+      "name": "emt_spark_burst",
+      "comment": "random spark bursts (fuse boxes, generator)",
+      "source": "stock"
+    },
+    {
+      "name": "amb_iwz_bed_station",
+      "comment": "station bed: 24 s seamless loop of the Spaceland basement tone + 2 s re-trigger overlap (26 s, loaded, nonlooping); per-player 2D bed re-triggered by the module (playlocalsound refuses looping aliases with a script runtime error and the engine sound-zone bed stays silent in a usermap: runs b4/f3/f5 with developer_script 1)",
+      "template": "amb_cp_zmb_basement_lr",
+      "source": "stock",
+      "file": "iwz/amb/bed_station",
+      "loop_seconds": 24,
+      "set": {
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "retrigger_overlap": 2
+    },
+    {
+      "name": "amb_iwz_bed_cave",
+      "comment": "cave bed: 24 s seamless loop of the Spaceland ice-cave tone + 2 s re-trigger overlap (26 s, loaded, nonlooping); per-player 2D bed re-triggered by the module (playlocalsound refuses looping aliases with a script runtime error and the engine sound-zone bed stays silent in a usermap: runs b4/f3/f5 with developer_script 1)",
+      "template": "amb_cp_zmb_ice_cave_lr",
+      "source": "stock",
+      "file": "iwz/amb/bed_cave",
+      "loop_seconds": 24,
+      "set": {
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "retrigger_overlap": 2
+    },
+    {
+      "name": "mus_zombies_newwave",
+      "comment": "round start: Station Zero cue \"something just changed\" (station_zero_music.py: reversed PA chime swell cut to silence + sub thud + tuned metal / static stutter + half-speed chime / breath + bent horn); stock wave loop plays it by name",
+      "template": "mus_zombies_newwave",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "type": "streamed"
+      },
+      "variants": [
+        {
+          "source": "${MUSIC}/round_start_0.flac",
+          "file": "iwz/mus/sz_round_start_0"
+        },
+        {
+          "source": "${MUSIC}/round_start_1.flac",
+          "file": "iwz/mus/sz_round_start_1"
+        },
+        {
+          "source": "${MUSIC}/round_start_2.flac",
+          "file": "iwz/mus/sz_round_start_2"
+        }
+      ]
+    },
+    {
+      "name": "mus_zombies_eventwave_start",
+      "comment": "special wave start: Station Zero cue (sub thud, horn bent down, static stutter, tuned metal cluster)",
+      "template": "mus_zombies_newwave",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "type": "streamed"
+      },
+      "variants": [
+        {
+          "source": "${MUSIC}/event_start_0.flac",
+          "file": "iwz/mus/sz_event_start_0"
+        },
+        {
+          "source": "${MUSIC}/event_start_1.flac",
+          "file": "iwz/mus/sz_event_start_1"
+        }
+      ]
+    },
+    {
+      "name": "mus_zombies_endwave",
+      "comment": "round end: Station Zero sigh (breath out, sinking music box / falling slowed chime / decaying metal cluster over a dissolving drone)",
+      "template": "mus_zombies_newwave",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "type": "streamed"
+      },
+      "variants": [
+        {
+          "source": "${MUSIC}/round_end_0.flac",
+          "file": "iwz/mus/sz_round_end_0"
+        },
+        {
+          "source": "${MUSIC}/round_end_1.flac",
+          "file": "iwz/mus/sz_round_end_1"
+        },
+        {
+          "source": "${MUSIC}/round_end_2.flac",
+          "file": "iwz/mus/sz_round_end_2"
+        }
+      ]
+    },
+    {
+      "name": "mus_zombies_eventwave_end",
+      "comment": "special wave end: the chime motif backwards over a drone, breath out",
+      "template": "mus_zombies_newwave",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "type": "streamed"
+      },
+      "variants": [
+        {
+          "source": "${MUSIC}/event_end_0.flac",
+          "file": "iwz/mus/sz_event_end_0"
+        }
+      ]
+    },
+    {
+      "name": "mus_zombies_gameover",
+      "comment": "game over: the music box winds down, its last note never comes; one far flat chime",
+      "template": "mus_zombies_newwave",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "type": "streamed"
+      },
+      "variants": [
+        {
+          "source": "${MUSIC}/gameover.flac",
+          "file": "iwz/mus/sz_gameover"
+        }
+      ]
+    },
+    {
+      "name": "mus_iwz_intro",
+      "comment": "match start (module, at introscreen_over, 15 s so it ends before the first round-start cue): PA chime cut by static, silence, music box through walls, drone, bent horn, reversed chime",
+      "template": "mus_zombies_newwave",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "type": "streamed"
+      },
+      "variants": [
+        {
+          "source": "${MUSIC}/intro.flac",
+          "file": "iwz/mus/sz_intro"
+        }
+      ]
+    },
+    {
+      "name": "mus_iwz_power",
+      "comment": "power-on (module power sequence, to every player): the PA chime plays as designed once, then each strike flatter and slower over a tritone drone; eerie, not triumphant",
+      "template": "mus_zombies_newwave",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "type": "streamed"
+      },
+      "variants": [
+        {
+          "source": "${MUSIC}/power_on.flac",
+          "file": "iwz/mus/sz_power_on"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_creak",
+      "comment": "soundscape: distant metal creaks and groans of the sealed station (Spaceland / Shaolin stock groans, BO3 deep metal stress)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.3,
+        "vol_max": 0.3,
+        "vol_mod": "emitter",
+        "dist_min": 300.0,
+        "dist_max": 3000.0,
+        "pitch_min": 0.85,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "stock": "emt_dist_med_metal_groan"
+        },
+        {
+          "stock": "emt_metal_groan_med"
+        },
+        {
+          "stock": "emt_wood_creak_ster"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/rattles/metal/deep/metal_deep_00.flac",
+          "file": "iwz/scape/creak_metal_deep_00",
+          "set": {
+            "vol_min": 0.16,
+            "vol_max": 0.16
+          }
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/rattles/metal/deep/metal_deep_01.flac",
+          "file": "iwz/scape/creak_metal_deep_01",
+          "set": {
+            "vol_min": 0.16,
+            "vol_max": 0.16
+          }
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/rattles/metal/deep/metal_deep_02.flac",
+          "file": "iwz/scape/creak_metal_deep_02",
+          "set": {
+            "vol_min": 0.16,
+            "vol_max": 0.16
+          }
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/rattles/metal/deep/metal_deep_05.flac",
+          "file": "iwz/scape/creak_metal_deep_05",
+          "set": {
+            "vol_min": 0.16,
+            "vol_max": 0.16
+          }
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/rattles/metal/deep/metal_deep_07.flac",
+          "file": "iwz/scape/creak_metal_deep_07",
+          "set": {
+            "vol_min": 0.16,
+            "vol_max": 0.16
+          }
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_drip",
+      "comment": "soundscape: single water drips and leaks (BO3 water rattles)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.22,
+        "vol_max": 0.22,
+        "vol_mod": "emitter",
+        "dist_min": 60.0,
+        "dist_max": 700.0,
+        "pitch_min": 0.9,
+        "pitch_max": 1.12,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/rattles/water/water_00.flac",
+          "file": "iwz/scape/drip_water_00"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/rattles/water/water_01.flac",
+          "file": "iwz/scape/drip_water_01"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/rattles/water/water_02.flac",
+          "file": "iwz/scape/drip_water_02"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/rattles/water/water_03.flac",
+          "file": "iwz/scape/drip_water_03"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_gust",
+      "comment": "soundscape: far-off tunnel wind gusts (BO3 metal gusts, BO3 zm_factory long cold gusts)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.34,
+        "vol_max": 0.34,
+        "vol_mod": "emitter",
+        "dist_min": 400.0,
+        "dist_max": 4200.0,
+        "pitch_min": 0.9,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/environment/wind/gusts/metal_gust/gust_00.flac",
+          "file": "iwz/scape/gust_gust_00"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/environment/wind/gusts/metal_gust/gust_02.flac",
+          "file": "iwz/scape/gust_gust_02"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/environment/wind/gusts/metal_gust/gust_04.flac",
+          "file": "iwz/scape/gust_gust_04"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/environment/wind/gusts/metal_gust/gust_06.flac",
+          "file": "iwz/scape/gust_gust_06"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-pa/bo3/sounds/all/amb/environment/wind/gusts/cold/long/wind_gust_long_01.flac",
+          "file": "iwz/scape/gust_wind_gust_long_01"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-pa/bo3/sounds/all/amb/environment/wind/gusts/cold/long/wind_gust_long_04.flac",
+          "file": "iwz/scape/gust_wind_gust_long_04"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-pa/bo3/sounds/all/amb/environment/wind/gusts/cold/long/wind_gust_long_06.flac",
+          "file": "iwz/scape/gust_wind_gust_long_06"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_phantom_train",
+      "comment": "soundscape: a train approaching deep in the tunnel that never arrives (Shaolin Shuffle subway trap approach)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.5,
+        "vol_max": 0.5,
+        "vol_mod": "emitter",
+        "dist_min": 800.0,
+        "dist_max": 6000.0,
+        "pitch_min": 0.92,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "stock": "train_trap_approach_tunnel"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_phantom_horn",
+      "comment": "soundscape: a train horn very far away (Shaolin Shuffle subway horn, BO3 distant train horn)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.36,
+        "vol_max": 0.36,
+        "vol_mod": "emitter",
+        "dist_min": 1500.0,
+        "dist_max": 9000.0,
+        "pitch_min": 0.86,
+        "pitch_max": 0.98,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "stock": "train_trap_horn_blast"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-conduit/bo3/sounds/all/evt/cp_zurich/train/amb_train_horn_distant.flac",
+          "file": "iwz/scape/horn_amb_train_horn_distant"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_moan",
+      "comment": "soundscape: distant indistinct moans (BO3 zombie ambient vocals, Spaceland groan emitter), pitched down",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.2,
+        "vol_max": 0.2,
+        "vol_mod": "emitter",
+        "dist_min": 300.0,
+        "dist_max": 2600.0,
+        "pitch_min": 0.78,
+        "pitch_max": 0.9,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "stock": "emt_zmb_groan"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/zmb/ai/standard/vox/amb/amb_00.flac",
+          "file": "iwz/scape/moan_amb_00"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/zmb/ai/standard/vox/amb/amb_01.flac",
+          "file": "iwz/scape/moan_amb_01"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/zmb/ai/standard/vox/amb/amb_02.flac",
+          "file": "iwz/scape/moan_amb_02"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/zmb/ai/standard/vox/amb/amb_03.flac",
+          "file": "iwz/scape/moan_amb_03"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/zmb/ai/standard/vox/amb/amb_04.flac",
+          "file": "iwz/scape/moan_amb_04"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/zmb/ai/standard/vox/amb/amb_05.flac",
+          "file": "iwz/scape/moan_amb_05"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_debris",
+      "comment": "soundscape: debris settling (Shaolin rock debris, BO3 small rock and sand on metal)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.28,
+        "vol_max": 0.28,
+        "vol_mod": "emitter",
+        "dist_min": 150.0,
+        "dist_max": 1600.0,
+        "pitch_min": 0.9,
+        "pitch_max": 1.1,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "stock": "emt_med_rock_debris"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/debris/rock/small/rock_small_00.flac",
+          "file": "iwz/scape/debris_rock_small_00"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/debris/rock/small/rock_small_02.flac",
+          "file": "iwz/scape/debris_rock_small_02"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/debris/rock/small/rock_small_04.flac",
+          "file": "iwz/scape/debris_rock_small_04"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/debris/rock/small/rock_small_06.flac",
+          "file": "iwz/scape/debris_rock_small_06"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/debris/metal_sand/amb_sand_on_metal_00.flac",
+          "file": "iwz/scape/debris_amb_sand_on_metal_00"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/debris/metal_sand/amb_sand_on_metal_03.flac",
+          "file": "iwz/scape/debris_amb_sand_on_metal_03"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/material_movement/debris/metal_sand/amb_sand_on_metal_05.flac",
+          "file": "iwz/scape/debris_amb_sand_on_metal_05"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_rats_lp",
+      "comment": "soundscape: rats skittering (Shaolin Shuffle rat scurry loop; the module plays short bursts)",
+      "template": "emt_light_hum_lp_01",
+      "set": {
+        "vol_min": 0.26,
+        "vol_max": 0.26,
+        "vol_mod": "emitter",
+        "dist_min": 50.0,
+        "dist_max": 700.0,
+        "pitch_min": 0.95,
+        "pitch_max": 1.1,
+        "type": "loaded",
+        "loop": "looping"
+      },
+      "variants": [
+        {
+          "stock": "rat_scurry_follow_lp"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_pa_00",
+      "comment": "station PA: broken announcement 0 (soundscape_dsp.py pa: BO3 zm_island facility PA line, horn band, static from BO3 zm_factory pa_buzz); the module plays the same clip on every speaker",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "vol_mod": "emitter",
+        "dist_min": 300.0,
+        "dist_max": 3200.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${DSP}/pa/pa_00.flac",
+          "file": "iwz/scape/pa_00"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_pa_01",
+      "comment": "station PA: broken announcement 1 (soundscape_dsp.py pa: BO3 zm_island facility PA line, horn band, static from BO3 zm_factory pa_buzz); the module plays the same clip on every speaker",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "vol_mod": "emitter",
+        "dist_min": 300.0,
+        "dist_max": 3200.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${DSP}/pa/pa_01.flac",
+          "file": "iwz/scape/pa_01"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_pa_02",
+      "comment": "station PA: broken announcement 2 (soundscape_dsp.py pa: BO3 zm_island facility PA line, horn band, static from BO3 zm_factory pa_buzz); the module plays the same clip on every speaker",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "vol_mod": "emitter",
+        "dist_min": 300.0,
+        "dist_max": 3200.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${DSP}/pa/pa_02.flac",
+          "file": "iwz/scape/pa_02"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_pa_03",
+      "comment": "station PA: broken announcement 3 (soundscape_dsp.py pa: BO3 zm_island facility PA line, horn band, static from BO3 zm_factory pa_buzz); the module plays the same clip on every speaker",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "vol_mod": "emitter",
+        "dist_min": 300.0,
+        "dist_max": 3200.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${DSP}/pa/pa_03.flac",
+          "file": "iwz/scape/pa_03"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_pa_04",
+      "comment": "station PA: broken announcement 4 (soundscape_dsp.py pa: BO3 zm_island facility PA line, horn band, static from BO3 zm_factory pa_buzz); the module plays the same clip on every speaker",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "vol_mod": "emitter",
+        "dist_min": 300.0,
+        "dist_max": 3200.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${DSP}/pa/pa_04.flac",
+          "file": "iwz/scape/pa_04"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_pa_05",
+      "comment": "station PA: broken announcement 5 (soundscape_dsp.py pa: BO3 zm_island facility PA line, horn band, static from BO3 zm_factory pa_buzz); the module plays the same clip on every speaker",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "vol_mod": "emitter",
+        "dist_min": 300.0,
+        "dist_max": 3200.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${DSP}/pa/pa_05.flac",
+          "file": "iwz/scape/pa_05"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_fluor_lp",
+      "comment": "objects: fluorescent tube buzz (BO3 fluorescent light loop)",
+      "template": "emt_light_hum_lp_01",
+      "set": {
+        "vol_min": 0.22,
+        "vol_max": 0.22,
+        "vol_mod": "emitter",
+        "dist_min": 40.0,
+        "dist_max": 340.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/lights/flourescent/fluorescent_light.flac",
+          "file": "iwz/scape/fluor_fluorescent_light"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_flicker",
+      "comment": "objects: crackle of a flickering tube, fired on the lamp model swap (Shaolin light flicker, BO3 flicker static)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.2,
+        "vol_max": 0.2,
+        "vol_mod": "emitter",
+        "dist_min": 40.0,
+        "dist_max": 650.0,
+        "pitch_min": 0.95,
+        "pitch_max": 1.05,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "stock": "emt_light_flicker",
+          "set": {
+            "pitch_min": 1.0,
+            "pitch_max": 1.2
+          }
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-genesis/bo3/sounds/all/amb/lights/_flicker_light_effect/static/amb_flicker_light_effect_static_00.flac",
+          "file": "iwz/scape/flicker_amb_flicker_light_effect_static_00"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-genesis/bo3/sounds/all/amb/lights/_flicker_light_effect/static/amb_flicker_light_effect_static_01.flac",
+          "file": "iwz/scape/flicker_amb_flicker_light_effect_static_01"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-genesis/bo3/sounds/all/amb/lights/_flicker_light_effect/static/amb_flicker_light_effect_static_02.flac",
+          "file": "iwz/scape/flicker_amb_flicker_light_effect_static_02"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-genesis/bo3/sounds/all/amb/lights/_flicker_light_effect/static/amb_flicker_light_effect_static_03.flac",
+          "file": "iwz/scape/flicker_amb_flicker_light_effect_static_03"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-genesis/bo3/sounds/all/amb/lights/_flicker_light_effect/static/amb_flicker_light_effect_static_04.flac",
+          "file": "iwz/scape/flicker_amb_flicker_light_effect_static_04"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-genesis/bo3/sounds/all/amb/lights/_flicker_light_effect/static/amb_flicker_light_effect_static_05.flac",
+          "file": "iwz/scape/flicker_amb_flicker_light_effect_static_05"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_gen_lp",
+      "comment": "objects: generator hum after power-on (Beast from Beyond portable generator loop)",
+      "template": "emt_light_hum_lp_01",
+      "set": {
+        "vol_min": 0.34,
+        "vol_max": 0.34,
+        "vol_mod": "emitter",
+        "dist_min": 60.0,
+        "dist_max": 950.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "stock": "alien_fence_gen_lp"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_gen_start",
+      "comment": "objects: generator power-up surge (Shaolin electric trap power up); run s3: full-scale peaks at 250..400 units, lowered 0.5 -> 0.32",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.32,
+        "vol_max": 0.32,
+        "vol_mod": "emitter",
+        "dist_min": 200.0,
+        "dist_max": 2200.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "stock": "disco_gen_electric_trap_power_up"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_spark",
+      "comment": "objects: sparks at broken panels (BO3 short power arcs, Spaceland spark burst)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.28,
+        "vol_max": 0.28,
+        "vol_mod": "emitter",
+        "dist_min": 50.0,
+        "dist_max": 900.0,
+        "pitch_min": 0.9,
+        "pitch_max": 1.1,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "stock": "emt_spark_burst"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/industrial/power/arcs/short/arc_00.flac",
+          "file": "iwz/scape/spark_arc_00"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/industrial/power/arcs/short/arc_01.flac",
+          "file": "iwz/scape/spark_arc_01"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/industrial/power/arcs/short/arc_02.flac",
+          "file": "iwz/scape/spark_arc_02"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/industrial/power/arcs/short/arc_03.flac",
+          "file": "iwz/scape/spark_arc_03"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/industrial/power/arcs/short/arc_04.flac",
+          "file": "iwz/scape/spark_arc_04"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/industrial/power/arcs/short/arc_05.flac",
+          "file": "iwz/scape/spark_arc_05"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_phone_ring",
+      "comment": "objects: the ticket-booth phone ringing (Shaolin Shuffle payphone ring)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.3,
+        "vol_max": 0.3,
+        "vol_mod": "emitter",
+        "dist_min": 100.0,
+        "dist_max": 1700.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "stock": "payphone_npc_ring_oneshot"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_phone_hangup",
+      "comment": "objects: the receiver put down when a player comes near (Shaolin payphone hang-up)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.34,
+        "vol_max": 0.34,
+        "vol_mod": "emitter",
+        "dist_min": 80.0,
+        "dist_max": 900.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "stock": "payphone_npc_end_hangup_receiver"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_radio_lp",
+      "comment": "objects: a radio faintly playing in the control room (BO3 zm_genesis creepy car radio)",
+      "template": "emt_light_hum_lp_01",
+      "set": {
+        "vol_min": 0.22,
+        "vol_max": 0.22,
+        "vol_mod": "emitter",
+        "dist_min": 40.0,
+        "dist_max": 750.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "streamed"
+      },
+      "variants": [
+        {
+          "source": "${BO3SS}/iwz-soundscape-genesis/bo3/sounds/all/zmb/level/zm_genesis/car_radio/amb_creepy_car_radio.flac",
+          "file": "iwz/scape/radio_amb_creepy_car_radio"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_tv_static",
+      "comment": "objects: dead CRT monitors in the control room catching a channel (Shaolin backstory TV)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.18,
+        "vol_max": 0.18,
+        "vol_mod": "emitter",
+        "dist_min": 40.0,
+        "dist_max": 520.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded",
+        "channel": "amb_elm_unres_3d"
+      },
+      "variants": [
+        {
+          "stock": "disco_backstory_tv_channel"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_train_tick_lp",
+      "comment": "train: cooling engine ticking under the parked carriage (BO3 engine cool down loop)",
+      "template": "emt_light_hum_lp_01",
+      "set": {
+        "vol_min": 1.0,
+        "vol_max": 1.0,
+        "vol_mod": "emitter",
+        "dist_min": 30.0,
+        "dist_max": 520.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${BO3SS}/iwz-soundscape-redwood/bo3/sounds/all/dst/generic/metal/cooldown/loop/engine_cool_down_00.flac",
+          "file": "iwz/scape/train_engine_cool_down_00"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_train_hiss",
+      "comment": "train: air brake hiss once in a while (BO3 steam hiss and sputter)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.3,
+        "vol_max": 0.3,
+        "vol_mod": "emitter",
+        "dist_min": 100.0,
+        "dist_max": 1700.0,
+        "pitch_min": 0.9,
+        "pitch_max": 1.05,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/pfx/steam/hiss/steam_hiss_00.flac",
+          "file": "iwz/scape/train_steam_hiss_00"
+        },
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/industrial/steam/sputter/sputter_00.flac",
+          "file": "iwz/scape/train_sputter_00"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_train_chime",
+      "comment": "train: door chime the first time a player boards (soundscape_dsp.py chime from BO3 copper chime strikes)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.4,
+        "vol_max": 0.4,
+        "vol_mod": "emitter",
+        "dist_min": 50.0,
+        "dist_max": 900.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${DSP}/chime/door_chime.flac",
+          "file": "iwz/scape/train_door_chime"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_lonely",
+      "comment": "silence: low swell under the dropped room tone when a player is alone (BO3 low frequency swell)",
+      "template": "mus_zombies_newwave",
+      "set": {
+        "vol_min": 0.3,
+        "vol_max": 0.3,
+        "type": "loaded"
+      },
+      "variants": [
+        {
+          "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/lfe/dew/evt_dew_80.flac",
+          "file": "iwz/scape/lonely_evt_dew_80"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_breaker",
+      "comment": "power-on: a big breaker clacks shut (stock Final Reckoning / Shaolin fuse box close)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.6,
+        "vol_max": 0.6,
+        "vol_mod": "emitter",
+        "dist_min": 200.0,
+        "dist_max": 2600.0,
+        "pitch_min": 0.85,
+        "pitch_max": 0.95,
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "variants": [
+        {
+          "stock": "zmb_venx_fuse_box_close"
+        },
+        {
+          "stock": "disco_pap_fuse_box_close"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_relay",
+      "comment": "power-on: a light bank relay thunk (stock Shaolin power_buy_large_light_turn_on, 5 variants)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.5,
+        "vol_max": 0.5,
+        "vol_mod": "emitter",
+        "dist_min": 300.0,
+        "dist_max": 3000.0,
+        "pitch_min": 0.9,
+        "pitch_max": 1.0,
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "variants": [
+        {
+          "stock": "power_buy_large_light_turn_on"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_tube_strike",
+      "comment": "power-on: fluorescent tubes striking, ping and buzz (stock Shaolin power_buy_group_florescents_turn_on)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "vol_mod": "emitter",
+        "dist_min": 150.0,
+        "dist_max": 1800.0,
+        "pitch_min": 0.95,
+        "pitch_max": 1.05,
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "variants": [
+        {
+          "stock": "power_buy_group_florescents_turn_on"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_pa_boot",
+      "comment": "power-on: PA speakers crackle to life (stock common_cp pa_speaker_power_on, 3 variants)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.5,
+        "vol_max": 0.5,
+        "vol_mod": "emitter",
+        "dist_min": 200.0,
+        "dist_max": 3000.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "variants": [
+        {
+          "stock": "pa_speaker_power_on"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_stalk_step",
+      "comment": "dark phase: something walking behind the player (stock common_cp zmb_walk, zombie steps on concrete, 15 variants, pitched down)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.45,
+        "vol_max": 0.45,
+        "vol_mod": "emitter",
+        "dist_min": 60.0,
+        "dist_max": 900.0,
+        "pitch_min": 0.84,
+        "pitch_max": 0.94,
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "variants": [
+        {
+          "stock": "zmb_walk"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_flashlight_click",
+      "comment": "flashlight toggle for the darkness module (stock Shaolin light switch click, pitched up)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.35,
+        "vol_max": 0.35,
+        "vol_mod": "emitter",
+        "dist_min": 20.0,
+        "dist_max": 500.0,
+        "pitch_min": 1.35,
+        "pitch_max": 1.45,
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "variants": [
+        {
+          "stock": "disco_pap_room_button_press"
+        }
+      ]
+    }
+  ],
+  "zones": {
+    "comment": "sound zones (bed, reverb, mix, filter, occlusion) copied from Spaceland's zone table; the zone named after the map is the level's default zone; the module switches a player's zone by area",
+    "defs": "${IW7_DUMP}/cp_zmb/sound",
+    "defs_bank": "cp_zmb.all",
+    "rows": [
+      {
+        "name": "cp_iwz",
+        "copy": "cp_zmb_basement_lg_room",
+        "ambience": "amb_iwz_bed_station"
+      },
+      {
+        "name": "iwz_station",
+        "copy": "cp_zmb_basement_lg_room",
+        "ambience": "amb_iwz_bed_station"
+      },
+      {
+        "name": "iwz_stairs",
+        "copy": "cp_zmb_basement_med_hallway",
+        "ambience": "amb_iwz_bed_station"
+      },
+      {
+        "name": "iwz_service",
+        "copy": "cp_zmb_basement_med_room",
+        "ambience": "amb_iwz_bed_station"
+      },
+      {
+        "name": "iwz_platform",
+        "copy": "cp_zmb_ice_cave_lg_room",
+        "ambience": "amb_iwz_bed_cave"
+      },
+      {
+        "name": "iwz_tunnel",
+        "copy": "cp_zmb_ice_cave_med_hallway",
+        "ambience": "amb_iwz_bed_cave"
+      },
+      {
+        "name": "iwz_quiet",
+        "copy": "cp_zmb_wave_mix",
+        "comment": "no bed (test baselines, scripted silences)"
+      }
+    ]
+  }
+}

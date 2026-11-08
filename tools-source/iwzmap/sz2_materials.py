@@ -164,6 +164,7 @@ custom_tint('lamp_red', 'lamp_red', EMISSIVE_BASE, (1.0, 0.06, 0.04, 1.0), emiss
 custom_tint('lamp_green', 'lamp_green', EMISSIVE_BASE, (0.1, 1.0, 0.2, 1.0), emissive=(1.6, 0, 0, 0))
 # tinted stock surfaces
 custom_tint('tile_green', 'tile_green', 'dt_tile_ceramic_white', (0.42, 0.62, 0.45, 1.0), su=64)
+custom_tint('tile_charcoal', 'tile_charcoal', 'dt_tile_ceramic_white', (0.24, 0.25, 0.26, 1.0), su=64)   # g26: lower wall bands
 custom_tint('tile_cream', 'tile_cream', 'dt_tile_ceramic_white', (1.0, 0.93, 0.78, 1.0), su=64)
 custom_tint('metal_silver', 'metal_silver', 'metal_painted_wall_panel_04', (0.82, 0.85, 0.9, 1.0), su=128)
 custom_tint('carriage_red', 'carriage_red', 'metal_painted_red_01', (0.75, 0.08, 0.06, 1.0), su=128)

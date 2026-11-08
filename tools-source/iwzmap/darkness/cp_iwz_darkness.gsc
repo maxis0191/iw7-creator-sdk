@@ -86,6 +86,16 @@ init()
     {
         m.iwz_off = level.iwz_dark_fixture_off;
         m.iwz_on = level.iwz_dark_fixture_on;
+        // level flicker lamps may carry their own "<lit>|<unlit>" pair (train agent's car fixtures)
+        if ( isdefined( m.script_noteworthy ) && m.script_noteworthy != "" )
+        {
+            pair = strtok( m.script_noteworthy, "|" );
+            if ( pair.size >= 2 )
+            {
+                m.iwz_on = pair[0];
+                m.iwz_off = pair[1];
+            }
+        }
         m setmodel( m.iwz_off );
     }
     iwz_dark_log( "INIT lights=" + level.iwz_dark_lights.size + " banks=" + level.iwz_dark_banks.size + " fixtures=" +
@@ -224,20 +234,20 @@ iwz_dark_flicker_lamp()
         if ( !isdefined( best.iwz_fixtures ) )
             best.iwz_fixtures = [];
         best.iwz_fixtures[best.iwz_fixtures.size] = self;
-        self setmodel( level.iwz_dark_fixture_on );
+        self setmodel( self.iwz_on );
         return;
     }
     // no light of its own: model-only flicker (as the level script did)
-    self setmodel( level.iwz_dark_fixture_on );
+    self setmodel( self.iwz_on );
     for ( ;; )
     {
         wait( randomfloatrange( 1.5, 5.0 ) );
         n = randomintrange( 2, 6 );
         for ( i = 0; i < n; i++ )
         {
-            self setmodel( level.iwz_dark_fixture_off );
+            self setmodel( self.iwz_off );
             wait( randomfloatrange( 0.04, 0.12 ) );
-            self setmodel( level.iwz_dark_fixture_on );
+            self setmodel( self.iwz_on );
             wait( randomfloatrange( 0.05, 0.2 ) );
         }
     }
