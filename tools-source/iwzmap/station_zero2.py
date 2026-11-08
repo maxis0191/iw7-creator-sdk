@@ -1585,11 +1585,11 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zb, 'ind_debris_metal_scrap_04', -3300, 3000, -384, 20)
     # kit handrail end posts at both ends of both stair handrails
     for x_ in (-794, -406):
-        decor('stair_a', 'barrier_handrail_end_01', x_, 2440, -320, 0)
-        decor('stair_a', 'barrier_handrail_end_01', x_, 3096, 0, 180)
+        decor('stair_a', 'barrier_handrail_end_01', x_, 2440, -320, 0, (4, 14, 18))
+        decor('stair_a', 'barrier_handrail_end_01', x_, 3096, 0, 180, (4, 14, 18))
     for y_ in (3110, 3394):
-        decor('stair_b', 'barrier_handrail_end_01', -2040, y_, -384, 90)
-        decor('stair_b', 'barrier_handrail_end_01', -1288, y_, 0, 270)
+        decor('stair_b', 'barrier_handrail_end_01', -2040, y_, -384, 90, (14, 4, 18))
+        decor('stair_b', 'barrier_handrail_end_01', -1288, y_, 0, 270, (14, 4, 18))
     # bare-wall fills (sz2_density.py --debug)
     for x_ in (-2300, -1790, -1150, -380, 260, 1020, 1700, 2250):              # track wall boxes and vents
         decor(Zp, 'electrical_control_box_03', x_, 1201, -300, 90)
@@ -1761,6 +1761,79 @@ def link(a, b):
     return oa == ob or frozenset((oa, ob)) in ADJ
 
 
+# ---------------------------------------------------------------- nav seams (QA g25: zombies stood still at the pit
+# side of both stairwells and at the stair A top-west corner while the offline graph was connected). The engine
+# connects nav areas whose edges coincide, not only the areas the generator links: a pit cell beside the open side of
+# a stairwell ramp (25..60 higher), a pit cell under the platform edge (64 lower than the deck) and a hall cell beside
+# the stair A landing behind the wall (same height, no door) all became paths into a wall or a cliff, and flat cells
+# 16 apart (the train ballast) can be descended but not climbed. Rules:
+#   1. train ballast cells sit at the ballast top; the cess cells beside them get a sloped edge up to it (climbable);
+#   2. every remaining pair of edge-sharing cells is either linked by design with matching edge corners (step <= 18)
+#      or separated: the lower cell (on a tie, the cell of the larger region) is removed, leaving a 32-unit nav gap.
+def cell_corners(k):
+    z_ = cells[k]
+    return corner_z.get(k, (z_, z_, z_, z_))
+
+
+def edge_heights(k, e):
+    c_ = cell_corners(k)        # corners x0y0, x1y0, x1y1, x0y1; edges 0 south (c0-c1), 1 east (c1-c2), 2 north (c2-c3), 3 west (c3-c0)
+    return {0: (c_[0], c_[1]), 1: (c_[1], c_[2]), 2: (c_[3], c_[2]), 3: (c_[0], c_[3])}[e]
+
+
+if TRAIN and TRAIN_SPEC.get('channels_ballast', True):
+    _bz, _cy = TRAIN_BALLAST_Z, TRACK_CY
+    _chans = [(-2400, 2410), (-3600, -2400)]
+    _ballast = set(k for k in cells if any(x0 <= (k[0] + 0.5) * CELL <= x1 for x0, x1 in _chans) and abs((k[1] + 0.5) * CELL - _cy) <= 62
+                   and abs(cells[k] - PIT_Z) < 1)
+    for k in _ballast:
+        cells[k] = _bz
+        corner_z.pop(k, None)
+    for k in list(cells):
+        if k in _ballast or abs(cells[k] - PIT_Z) >= 1 or k in corner_z:
+            continue
+        i_, j_ = k
+        c_ = [PIT_Z] * 4
+        if (i_, j_ - 1) in _ballast: c_[0] = c_[1] = _bz
+        if (i_ + 1, j_) in _ballast: c_[1] = c_[2] = _bz
+        if (i_, j_ + 1) in _ballast: c_[2] = c_[3] = _bz
+        if (i_ - 1, j_) in _ballast: c_[3] = c_[0] = _bz
+        if any(v != PIT_Z for v in c_):
+            corner_z[k] = tuple(c_)
+    NAV_SEAM_REPORT = {'ballast_cells': len(_ballast)}
+else:
+    NAV_SEAM_REPORT = {'ballast_cells': 0}
+_region_size = {}
+for k_, o_ in owner.items():
+    _region_size[o_] = _region_size.get(o_, 0) + 1
+_removed = {}
+for _pass in range(4):
+    drop = set()
+    for k in sorted(cells):
+        if k in drop:
+            continue
+        i_, j_ = k
+        for e, nb in ((1, (i_ + 1, j_)), (2, (i_, j_ + 1))):
+            if nb not in cells or nb in drop:
+                continue
+            ha, hb = edge_heights(k, e), edge_heights(nb, (e + 2) % 4)
+            ok = link(k, nb) and abs(ha[0] - hb[0]) <= 18 and abs(ha[1] - hb[1]) <= 18 and abs(cells[k] - cells[nb]) <= 18
+            if ok:
+                continue
+            za, zb = sum(ha) / 2, sum(hb) / 2
+            if abs(za - zb) > 0.5:
+                lo = k if za < zb else nb
+            else:
+                lo = k if _region_size.get(owner[k], 0) >= _region_size.get(owner[nb], 0) else nb
+            drop.add(lo)
+            why = '%s|%s' % tuple(sorted((owner[k], owner[nb])))
+            _removed[why] = _removed.get(why, 0) + 1
+    if not drop:
+        break
+    for k in drop:
+        cells.pop(k, None); owner.pop(k, None); corner_z.pop(k, None)
+NAV_SEAM_REPORT['removed'] = _removed
+print('nav seams: ballast cells %d, separated %s' % (NAV_SEAM_REPORT['ballast_cells'], ', '.join('%s %d' % kv for kv in sorted(_removed.items()))))
+
 nav, nareas = mapgen.nav_graph(cells, CELL, link, corner_z)
 open(os.path.join(out, 'navgraph.bin'), 'wb').write(nav)
 REGION_ZONE = {r['name']: r['zone'] for r in REGIONS}
@@ -1800,9 +1873,9 @@ SPAWNERS = [   # >= 48 from walls/props, inside the zone volume, on the navmesh 
     ('control_room', 2680, 3300, -320, 'ground', 45), ('control_room', 3520, 3300, -320, 'ground', 135),
     ('control_room', 2700, 3900, -320, 'ground', 315), ('control_room', 3500, 3900, -320, 'ground', 225),
     ('control_room', 3100, 3800, -32, 'ceiling', 270), ('control_room', 2648, 3650, -320, 'wall', 0),
-    ('service_tunnel', -3500, 1300, -384, 'ground', 0), ('service_tunnel', -2700, 1300, -384, 'ground', 180),
-    ('service_tunnel', -3400, 2400, -384, 'ground', 270), ('service_tunnel', -3100, 1500 if not TRAIN else 1330, -384, 'ground', 270),
-    ('service_tunnel', -3552, 1900, -384, 'wall', 0), ('service_tunnel', -3000, 1264, -384, 'wall', 90),
+    ('service_tunnel', -3500 if not TRAIN else -3450, 1300 if not TRAIN else 1760, -384, 'ground', 0), ('service_tunnel', -2700, 1300, -384, 'ground', 180),
+    ('service_tunnel', -3400, 2400, -384, 'ground', 270), ('service_tunnel', -3100 if not TRAIN else -3300, 1500 if not TRAIN else 2000, -384, 'ground', 270),
+    ('service_tunnel', -3552, 1900, -384, 'wall', 0), ('service_tunnel', -3000, 1264, -384, 'wall', 90) if not TRAIN else ('service_tunnel', -3220, 2250, -384, 'wall', 180),
     ('platform_b', -3500, 2700, -384, 'ground', 45), ('platform_b', -2150, 2700, -384, 'ground', 135),
     ('platform_b', -3552, 3300, -384, 'wall', 0), ('platform_b', -2700, 3330, -384, 'ground', 270),
     ('platform_b', -2900, 2700, -384, 'ground', 90), ('platform_b', -2800, 3000, -32, 'ceiling', 270),
@@ -2370,7 +2443,9 @@ layout['light_groups'] = {g_: sum(1 for l_ in LIGHTS if l_.get('group') == g_) f
 json.dump(layout, open(os.path.join(out, 'layout.json'), 'w'), indent=1, default=list)
 json.dump({'custom': MT.CUSTOM, 'used': sorted(B.used)}, open(os.path.join(out, 'custom_materials.json'), 'w'), indent=1)
 plan = {'regions': [{'name': r['name'], 'zone': r['zone'], 'rect': r['rect']} for r in REGIONS], 'adj': [sorted(a) for a in ADJ],
-        'cells': [[i, j, z, owner[(i, j)]] for (i, j), z in cells.items()], 'blockers': B.blockers,
+        'cells': [[i, j, z, owner[(i, j)]] for (i, j), z in cells.items()],
+        'cell_corners': [[i, j, list(c_)] for (i, j), c_ in corner_z.items() if (i, j) in cells],
+        'nav_seams': NAV_SEAM_REPORT, 'blockers': B.blockers,
         'col_tris': len(B.mesh.col), 'bounds': wb}
 json.dump(plan, open(os.path.join(out, 'plan.json'), 'w'))
 json.dump({'quads': B.records}, open(os.path.join(out, 'surfaces.json'), 'w'))
