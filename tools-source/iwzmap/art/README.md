@@ -8,6 +8,7 @@ fonts come from `C:\Windows\Fonts` (override with `IWZ_FONT_DIR`). Run from `too
 | `noise.py` | Tileable FFT spectral noise, fBm, domain warp, wrap-aware blobs, gravity flow streaks, border falloff, a seam metric |
 | `masks.py` | Grime mask for floors (tileable multiply), junction grime strip, water streak, sign grime overlay, feathered blood and grime decals |
 | `paper.py` | `Doc`: ink layers typeset from real fonts at 3x, composited by multiply onto synthesized paper. Ageing: yellowing, folds, water stains, foxing, grime, handling dirt, torn edges, tape, staples, photocopy, halftone |
+| `blood.py` | Four blood decals with distinct physics: hand smear, body drag, impact spatter, dried pool |
 | `boards.py` | Stopped station clock (with glass cracks), split-flap departure board, signal and evacuation diagram (from level coordinates) |
 | `notices.py` | Layered torn notices, evacuation/quarantine order, generator lock-out with shift roster, missing-person flyers, cracked lit ad panel, film poster composition with roundel paint-over |
 | `age.py` | Ages a folder of `*_c.tga` signs with the overlay synthesized at each sign's own size |

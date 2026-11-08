@@ -18,7 +18,7 @@ import time
 import numpy as np
 from PIL import Image
 
-from . import age, boards, masks, notices, texio
+from . import age, blood, boards, masks, notices, texio
 
 DECAL_BASE = 'wall_stain_01_dec'          # w_l_sm_ndw_blend_i0c0: colour + alpha blend, lit (stock cp_zmb)
 OPAQUE_BASE = 'zombies_theater_poster01'  # w_l_sm_replace_i0c0: the base of every shipped sign/poster
@@ -58,8 +58,16 @@ def assets(sel):
          'wall decal below a ceiling crack (crack = top edge)'),
         ('sign_grime_overlay', lambda: masks.sign_grime_overlay(), 'procedural', True, None,
          'ageing overlay for sign art (art.age applies it at each sign size)'),
-        ('decal_blood_feathered', lambda: masks.decal_blood_feathered(), 'procedural', True, DECAL_BASE,
-         'floor drag smear (pool at the bottom, drag toward the top)'),
+        ('decal_blood_feathered', lambda: masks.decal_blood_feathered(), 'procedural (alias of decal_blood_drag)',
+         True, DECAL_BASE, 'kept name: same image as decal_blood_drag'),
+        ('decal_blood_hand_smear', lambda: blood.blood_hand_smear(), 'procedural: contact print + finger streaks with '
+         'edge ridges', True, DECAL_BASE, 'wall: a bloody hand slid down (print at the top)'),
+        ('decal_blood_drag', lambda: blood.blood_drag_trail(), 'procedural: tapering band with directional cloth '
+         'striations and lift skips', True, DECAL_BASE, 'floor: body drag (start lower left, end upper right)'),
+        ('decal_blood_spatter', lambda: blood.blood_spatter(), 'procedural: crown stain, satellites elongating with '
+         'distance, tails away from the source, mist', True, DECAL_BASE, 'floor or wall impact spatter'),
+        ('decal_blood_pool', lambda: blood.blood_dried_pool(), 'procedural: lobed outline, coagulated dark rim, '
+         'Voronoi shrinkage cracks, serum halo', True, DECAL_BASE, 'floor: dried pool'),
         ('decal_grime_feathered', lambda: masks.decal_grime_feathered(), 'procedural', True, DECAL_BASE,
          'floor grime patch'),
     ]
