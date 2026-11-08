@@ -67,6 +67,16 @@ def main(argv=None):
             rel = 'vision/%s.vision' % name
             open(os.path.join(root, *rel.split('/')), 'w', newline='\n', encoding='latin1').write(txt)
             rows.append('rawfile,' + rel)
+        # --dark-alias <stock vision>: the dark vision's text also under that stock name (default cp_zmb_int_basement,
+        # the name cp_iwz_darkness.gsc applies; custom names did not apply from the start in runs dk4 / dk6)
+        alias = argv[argv.index('--dark-alias') + 1] if '--dark-alias' in argv else 'cp_zmb_int_basement'
+        dark_txt = open(os.path.join(root, 'vision', '%s_dark.vision' % m), encoding='latin1').read()
+        av = os.path.join(root, 'vision', alias + '.vision')
+        if os.path.exists(av):
+            os.remove(av)
+        open(av, 'w', newline=chr(10), encoding='latin1').write(dark_txt)
+        if 'rawfile,vision/%s.vision' % alias not in open(csvp).read():
+            rows.append('rawfile,vision/%s.vision' % alias)
         # --lit "key=value;...": the map's own (lit, auto exposure) vision, e.g. volumetricSpotBrightness=0.2 (run
         # dk5-d5: the power spots lit the vision fog into a white haze on the platform and the stairs)
         if '--lit' in argv:

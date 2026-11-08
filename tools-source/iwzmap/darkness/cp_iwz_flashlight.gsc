@@ -81,8 +81,12 @@ iwz_fl_life()
     for ( ;; )
     {
         ev = self scripts\engine\utility::waittill_any_return( "weapon_change", "iwz_fl_refresh", "iwz_fl_toggle", "revive", "last_stand" );
-        // the new weapon model is attached a frame after the notify
-        wait 0.1;
+        // weapon_change fires as the switch starts: the new weapon model (and its tag_flash) replaces the old one
+        // later (run dk6: a light attached 0.1 s after the notify died with the lowered weapon)
+        if ( ev == "weapon_change" || ev == "last_stand" || ev == "revive" )
+            wait 0.8;
+        else
+            wait 0.1;
         if ( !isalive( self ) )
             continue;
         self iwz_fl_attach( ev != "iwz_fl_toggle" );

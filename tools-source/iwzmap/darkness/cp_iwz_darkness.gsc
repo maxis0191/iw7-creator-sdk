@@ -26,7 +26,10 @@ init()
     level.iwz_dark_banks = [];
     // fixed-exposure vision until power (vision/<map>_dark.vision, add_darkness.py): IW7 auto exposure would
     // otherwise brighten the dark bake back to a lit look (run dk2-d2); stock per-player restores use the override
-    level.iwz_dark_vision = getdvar( "mapname" ) + "_dark";
+    // the dark content is also written under the template's spare stock vision name cp_zmb_int_basement
+    // (add_darkness.py --dark-alias): in runs dk4 / dk6 a custom vision name set from the start never applied, while
+    // stock names applied at once (dk5) - so the stock name carries the dark vision
+    level.iwz_dark_vision = "cp_zmb_int_basement";
     if ( getdvar( "paris_iwz_dark_vision" ) != "" )
         level.iwz_dark_vision = getdvar( "paris_iwz_dark_vision" );
     level.vision_set_override = level.iwz_dark_vision;
