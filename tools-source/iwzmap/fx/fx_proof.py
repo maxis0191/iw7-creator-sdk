@@ -134,9 +134,11 @@ def main(argv=None):
         s_noise = int(((np.abs(R1 - R0) > 0.1) & region).sum())
         s_on = [int(((np.abs(luma(x, 0) - R0) > 0.1) & region).sum()) for x in ons]
         s_out = [int(((np.abs(luma(x, 0) - R0) > 0.1) & ~region).sum()) for x in ons]
-        si = int(np.argmax(s_on))
         area_in, area_out = max(1, int(region.sum())), max(1, int((~region).sum()))
-        sparse = s_on[si] >= 20 and s_on[si] >= 5 * (s_noise + 2) and s_on[si] / area_in >= 3 * s_out[si] / area_out
+        # any on frame (a spark burst or a passing drip is in some frames only; other effects' lingering particles
+        # outside the region can spoil a single frame)
+        sparse = any(s_on[i] >= 20 and s_on[i] >= 5 * (s_noise + 2) and s_on[i] / area_in >= 3 * s_out[i] / area_out
+                     for i in range(len(s_on)))
         renders = cover or sparse
         animated = t_in >= 3 * n_in + 0.002
         dl = float((Ls[best] - L0)[region].mean())

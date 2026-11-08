@@ -6,6 +6,8 @@
 //   oneshot    playfx once
 //   flicker    looping effect switched off/on in short stutters every randomfloatrange( min, max ) seconds (a dying
 //              lamp's glow; same rhythm as iwz_flicker's lamp models)
+// Stages (fx.txt stage=): always, dark (until the level flag power_on), lit (from power on), poweron (from power on
+// for f.dur seconds: generator start-up burst).
 // Private proof runs only (dvar paris_iwz_fxproof set by the fixture command line): paris_iwz_fxonly selects the
 // running effects (-1 all, -2 none, k only effect k), polled every 0.1 s. A normal match never polls.
 iwz_fx_main()
@@ -16,9 +18,18 @@ iwz_fx_main()
     wait 1;
     if ( getdvar( "paris_iwz_fxproof" ) == "" )
     {
+        // stages: always + dark run from the start; at power on dark stops, lit starts, poweron plays for its time
+        n = 0;
         foreach ( f in level.iwz_fx )
-            iwz_fx_start( f );
-        print( "[IWZ level] FX_ON " + level.iwz_fx.size );
+        {
+            if ( f.stage == "always" || f.stage == "dark" )
+            {
+                iwz_fx_start( f );
+                n++;
+            }
+        }
+        print( "[IWZ level] FX_ON " + n + " of " + level.iwz_fx.size );
+        level thread iwz_fx_power();
         return;
     }
     state = -99;
@@ -44,9 +55,41 @@ iwz_fx_main()
     }
 }
 
-iwz_fx_def( name, key, origin, fwd, up, mode, delay, a, b )
+// power stage switch: the stock generator sets the level flag "power_on" (Spaceland power system)
+iwz_fx_power()
+{
+    level endon( "game_ended" );
+    while ( !scripts\engine\utility::flag_exist( "power_on" ) )
+        wait 0.5;
+    scripts\engine\utility::flag_wait( "power_on" );
+    n = 0;
+    foreach ( f in level.iwz_fx )
+    {
+        if ( f.stage == "dark" )
+            iwz_fx_stop( f );
+        else if ( f.stage == "lit" || f.stage == "poweron" )
+        {
+            iwz_fx_start( f );
+            n++;
+            if ( f.stage == "poweron" && f.dur > 0 )
+                level thread iwz_fx_stop_after( f, f.dur );
+        }
+    }
+    print( "[IWZ level] FX_POWER started=" + n );
+}
+
+iwz_fx_stop_after( f, t )
+{
+    level endon( "game_ended" );
+    wait t;
+    iwz_fx_stop( f );
+}
+
+iwz_fx_def( name, key, origin, fwd, up, mode, delay, a, b, stage, dur )
 {
     f = spawnstruct();
+    f.stage = stage;
+    f.dur = dur;
     f.name = name;
     f.key = key;
     f.origin = origin;

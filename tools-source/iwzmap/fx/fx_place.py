@@ -24,6 +24,10 @@ fx.txt: one effect per line, '#' starts a comment, fields separated by blanks:
   region=<r>                 proof region half size in units (default from the catalog, else 64)
   region_dz=<dz>             proof region centre offset from the origin along z (drips: below the ceiling point)
   zone=<zone>                layout zone (default: the zone box containing the origin)
+  stage=always|dark|lit|poweron   power stage (level flag "power_on" from the stock generator): always runs from the
+                             start; dark runs until power on; lit starts at power on; poweron starts at power on and
+                             stops after for=<s> seconds (generator start-up burst). Proof runs ignore the stage.
+  for=<s>                    poweron: seconds before the effect is stopped (0: keeps running)
 
 Only effects of the level NetConstStrings list (`ncs_efx_level`, plus lists given with --ncs, e.g. one written by
 fx_import.py) can be registered: IW7 resolves loadfx/playfx through that list. A name outside it is an error here.
@@ -54,7 +58,8 @@ def parse_fx_txt(path, catalog):
         e = {'name': name, 'alias': fx if cat else None, 'fx': cat.get('fx', fx), 'origin': [float(v) for v in q[2:5]],
              'angles': cat.get('angles', [0, 0, 0]), 'mode': cat.get('mode', 'loop'), 'delay': cat.get('delay', -4 if cat.get('mode', 'loop') == 'loop' else 0),
              'region': cat.get('region', 64), 'settle': cat.get('settle', 2.5), 'view': None, 'zone': None, 'line': no,
-             'kind': cat.get('kind', ''), 'region_dz': cat.get('region_dz', 0)}
+             'kind': cat.get('kind', ''), 'region_dz': cat.get('region_dz', 0),
+             'stage': cat.get('stage', 'always'), 'dur': cat.get('for', 0.0)}
         for kv in q[5:]:
             if '=' not in kv:
                 raise SystemExit('%s:%d: expected key=value, got %r' % (path, no, kv))
@@ -71,6 +76,12 @@ def parse_fx_txt(path, catalog):
                 e['region'] = float(v)
             elif k == 'zone':
                 e['zone'] = v
+            elif k == 'stage':
+                if v not in ('always', 'dark', 'lit', 'poweron'):
+                    raise SystemExit('%s:%d: stage must be always|dark|lit|poweron' % (path, no))
+                e['stage'] = v
+            elif k == 'for':
+                e['dur'] = float(v)
             elif k == 'region_dz':
                 e['region_dz'] = float(v)
             elif k == 'settle':
@@ -223,9 +234,9 @@ def main(argv=None):
     load = ['    level._effect["%s"] = loadfx( "%s" );' % (key[p], p) for p in ids]
     table = []
     for k, e in enumerate(fx):
-        table.append('    level.iwz_fx[level.iwz_fx.size] = iwz_fx_def( "%s", "%s", %s, %s, %s, "%s", %g, %g, %g );'
+        table.append('    level.iwz_fx[level.iwz_fx.size] = iwz_fx_def( "%s", "%s", %s, %s, %s, "%s", %g, %g, %g, "%s", %g );'
                      % (e['name'], key[e['fx']], gsc_vec(e['origin']), gsc_vec(e['forward']), gsc_vec(e['up']), e['mode'],
-                        e['delay'], e['min'], e['max']))
+                        e['delay'], e['min'], e['max'], e['stage'], e['dur']))
     module = open(os.path.join(HERE, 'iwz_fx.gsc')).read().replace('//@FXTABLE@', '\n'.join(table))
 
     gp = os.path.join(a.src, 'cp_iwz.gsc')
@@ -243,7 +254,7 @@ def main(argv=None):
 
     man = {'schema': 'iwzmap.fx/1', 'src': os.path.abspath(a.src), 'fx': [
         {k: e[k] for k in ('name', 'alias', 'fx', 'origin', 'angles', 'forward', 'up', 'mode', 'delay', 'min', 'max', 'zone',
-                           'views', 'region', 'region_dz', 'settle', 'kind')} for e in fx]}
+                           'views', 'region', 'region_dz', 'settle', 'kind', 'stage', 'dur')} for e in fx]}
     fixture = None
     if a.fixture_out:
         views = []
