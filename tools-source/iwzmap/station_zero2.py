@@ -1370,7 +1370,9 @@ def train_kit():
     segs = [('platform_a', x) for x in range(-2400, int(TRAIN_TRACK_EAST_X), TRAIN_SEG)] + \
            [('service_tunnel', -2400 - TRAIN_SEG * k) for k in range(1, 6)]
     for zone, x0 in segs:
-        decor(zone, 'iwz_track_256', x0, cy, bz, 0)
+        # the westmost tunnel segment (behind the buffer stop) carries the third rail only from x0 + 200 with an end ramp
+        # (train kit v4 iwz_track_256_3r_from200): no conductor past the buffer
+        decor(zone, 'iwz_track_256_3r_from200' if x0 == min(x_ for _, x_ in segs) else 'iwz_track_256', x0, cy, bz, 0)
     # ballast prism: flat top y +-BALLAST_TOP_HALF at the ballast top, shoulders sloping to the bed at +-BALLAST_FOOT_HALF
     # (QA g25t: a vertical 16-unit face could be stepped down but not climbed, by players or zombies)
     for x0, x1 in ((-2400, 2590), (-3600, -2400)):
