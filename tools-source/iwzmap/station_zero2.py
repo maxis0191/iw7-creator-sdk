@@ -1319,7 +1319,11 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
                                             ('platform_a', 1500, 2396, -150, 270, (1.0, 0.45, 0.1)),
                                             ('platform_a', -1500, 2396, -150, 270, (1.0, 0.25, 0.08)),
                                             ('control_room', 3596, 3600, -100, 180, (1.0, 0.25, 0.08)),
-                                            ('platform_b', -2900, 3396, -150, 270, (1.0, 0.45, 0.1))):
+                                            ('platform_b', -2900, 3396, -150, 270, (1.0, 0.45, 0.1)),
+                                            # route to the power switch: hall -> stair_a -> platform_a east -> maint door
+                                            ('ticket_hall', -380, 3204, 250, 90, (1.0, 0.25, 0.08)),
+                                            ('platform_a', 2396, 1960, -150, 180, (1.0, 0.25, 0.08)),
+                                            ('platform_a', 2396, 1640, -150, 180, (1.0, 0.25, 0.08))):
             dec_(zn_, 'clk_emergency_light', x_, y_, z_, yaw_)
             LIGHTS.append({'zone': zn_, 'origin': (x_, y_, z_ - 10), 'type': 'omni', 'color': col_, 'radius': 160, 'intensity': 0.6,
                            'fixture': 'emergency'})
@@ -1952,6 +1956,9 @@ if os.environ.get('IWZ_LIGHTS') == '1':
     bx_, by_, bz_ = TEDDY_SPOT
     light_txt.append('omni %g %g %g 1.00 0.85 0.65 20000 110' % (bx_, by_ + 40, bz_ - 20))
     open(os.path.join(out, 'lights.txt'), 'w', newline='\n').write('\n'.join(light_txt) + '\n')
+    # group of each lights.txt line (signal lamps: emergency; the bear fill light: power)
+    json.dump({'lines': [{'line': k_, 'group': 'power' if t_.endswith(' 20000 110') else 'emergency'}
+                         for k_, t_ in enumerate(light_txt)]}, open(os.path.join(out, 'lights_groups.json'), 'w'), indent=1)
 open(os.path.join(out, 'scriptables.txt'), 'w', newline='\n').write('\n'.join(relocations) + '\n')
 open(os.path.join(out, 'ents.txt'), 'w', newline='\n').write(mapgen.ents_text(ws, ents))
 
@@ -2156,6 +2163,22 @@ for e_ in ents:      # named placed models (quest, relays, shutter, lever) for s
         a_ = [float(v) for v in d_.get(K['angles'], '0 0 0').split()]
         if o_[2] > -2000:
             MODELS.append({'zone': None, 'model': d_[K['model']], 'origin': o_, 'yaw': a_[1], 'targetname': d_[K['targetname']]})
+# light groups (darkness design, coordinator 2026-11-08): 'emergency' lamps and cues stay on in the dark bake,
+# 'power' lights come on with the power switch, 'flicker' lamps flicker after power-on. The darkness agent's build
+# step bakes the dark state and generates the power lights from these records.
+for l_ in LIGHTS:
+    fx_ = l_.get('fixture', '')
+    l_['group'] = ('emergency' if fx_ in ('emergency', 'lamp_red', 'lamp_green', 'hint_glow') else
+                   'flicker' if fx_ == 'flicker' else 'power')
+# faint cues in the dark: a small amber glow at every buy, door, perk, wheel, PaP and the power switch
+for it_ in layout['interactions']:
+    ox_, oy_, oz_ = it_['origin']
+    cue_ = {'zone': it_.get('zone') or it_.get('area') or '', 'origin': (ox_, oy_, oz_ + 40), 'type': 'omni',
+            'color': (1.0, 0.55, 0.2), 'radius': 72 if it_['kind'] != 'generator' else 140,
+            'intensity': 0.25 if it_['kind'] != 'generator' else 0.6, 'fixture': 'hint_glow', 'group': 'emergency',
+            'cue': it_['kind']}
+    LIGHTS.append(cue_)
+layout['light_groups'] = {g_: sum(1 for l_ in LIGHTS if l_.get('group') == g_) for g_ in ('emergency', 'power', 'flicker')}
 json.dump(layout, open(os.path.join(out, 'layout.json'), 'w'), indent=1, default=list)
 json.dump({'custom': MT.CUSTOM, 'used': sorted(B.used)}, open(os.path.join(out, 'custom_materials.json'), 'w'), indent=1)
 plan = {'regions': [{'name': r['name'], 'zone': r['zone'], 'rect': r['rect']} for r in REGIONS], 'adj': [sorted(a) for a in ADJ],
