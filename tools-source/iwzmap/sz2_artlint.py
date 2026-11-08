@@ -70,7 +70,7 @@ def box_overlap(a0, a1, b0, b1):
 def decor_box(d):
     x, y, z = d['origin']
     cx, cy, cz = d.get('clip') or (0, 0, 0)
-    return (x - cx / 2, y - cy / 2, z), (x + cx / 2, y + cy / 2, z + cz)
+    return (x - cx, y - cy, z), (x + cx, y + cy, z + 2 * cz)     # clip = half extents (decor() in the generator)
 
 
 def main():

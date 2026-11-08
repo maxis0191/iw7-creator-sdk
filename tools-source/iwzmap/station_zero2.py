@@ -730,6 +730,7 @@ region('stair_a', Z, (-800, 2416, -400, 3184), lambda x, y: zl_a(y))
 Z = 'platform_a'
 DECK_Z, PIT_Z, PCEIL = -320, -384, 0
 WELLS = {'well_w': (-2400, 1600, -2192, 1760, -1), 'well_e': (1904, 1600, 2112, 1760, +1)}   # x0,y0,x1,y1, descent dir
+WELL_LAND, WELL_STEPS = 64, 6      # QA g24: zombies stalled at the foot (16-unit risers, players passed): 10.7-unit risers, same slope
 # deck floor (minus the stairwells), coping and yellow safety strip at the edge
 deck_x = [(-2400, -2192), (-2192, 1904), (1904, 2112), (2112, 2400)]
 floor(Z, 'conc_tiles', -2400, 1760, 2400, 2400, DECK_Z)
@@ -746,10 +747,10 @@ for x0_, x1_ in ((-2192, 1904), (2112, 2400)):
 # stairwells into the pit (4 steps), railing on the deck side
 for wname, (wx0, wy0, wx1, wy1, ddir) in WELLS.items():
     if ddir < 0:   # descends westwards: low end at wx0
-        zl, _ = straight_stair(Z, wname, 'x', wx0, wx1, wy0, wy1, PIT_Z, DECK_Z, 64, 0.0001, 4, side_walls=False, ceiling=False)
+        zl, _ = straight_stair(Z, wname, 'x', wx0, wx1, wy0, wy1, PIT_Z, DECK_Z, WELL_LAND, 0.0001, WELL_STEPS, side_walls=False, ceiling=False)
         lo, hi = wx0, wx1
     else:
-        zl, _ = straight_stair(Z, wname, 'x', wx1, wx0, wy0, wy1, PIT_Z, DECK_Z, 64, 0.0001, 4, side_walls=False, ceiling=False)
+        zl, _ = straight_stair(Z, wname, 'x', wx1, wx0, wy0, wy1, PIT_Z, DECK_Z, WELL_LAND, 0.0001, WELL_STEPS, side_walls=False, ceiling=False)
         lo, hi = wx1, wx0
     # well side face at wy1 (facing south into the well) from the stair line up to the deck
     segs = [(min(wx0, wx1), max(wx0, wx1))]
@@ -1336,7 +1337,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         decor(Zh, 'debris_concrete_rubble_pile_01_dark', x_, y_, 0, a_)
     for x0_, y0_ in DESKS:
         for dx_ in (60, 180):
-            decor(Zc, 'lab_desk_02', x0_ + dx_, y0_ + 40, -320, 90, (96, 32, 35))
+            decor(Zc, 'lab_desk_02', x0_ + dx_, y0_ + 40, -320, 90, (48, 16, 18))
     decor(Zg, 'clk_defend_generator_solo' if KIT else 'zom_machinery_generator_portable_01', GEN[0], GEN[1], -304, 0)
     # a portable set on the floor beside the plinth (the audio layout's generator hum and power cue anchor on it)
     decor(Zg, 'zom_machinery_generator_portable_01', GEN[0] + 170, GEN[1] - 110, -320, 30, (44, 28, 34))
@@ -1346,7 +1347,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     for y_ in (3880, 3920):
         decor(Zh, 'park_token_machine', 388, y_, 0, 180, (12, 12, 32))
     decor(Zh, 'zmb_mobile_ticket_booth', -1170, 3640, 0, 0, (18, 43, 23))     # clear of the west-wall posters
-    decor(Zh, 'barrier_pedestrian_01', -230, 4380, 0, 0)
+    decor(Zh, 'barrier_pedestrian_01', -230, 4380, 0, 0, (40, 6, 20))
     decor(Zh, 'debris_concrete_rubble_pile_01_dark', 40, 4440, 0, 200)
     decor(Zh, 'com_trashbag2_black', -1140, 4360, 0, 30, (16, 16, 20))
     decor(Zh, 'p7_box_cardboard_a_closed', -1080, 4370, 0, 70, (16, 16, 15))
@@ -1357,7 +1358,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zh, BENCH, -1150, 4000, 0, 180, BENCH_CLIP[1])
     decor(Zh, BENCH, 350, 3520, 0, 0, BENCH_CLIP[1])
     decor('service_tunnel', 'debris_concrete_rubble_pile_01_dark', -2900, 1250, -384, 60)
-    decor('service_tunnel', 'com_junktire', -3560, 2050, -384, 30)
+    decor('service_tunnel', 'com_junktire', -3560, 2050, -384, 30, (14, 14, 6))
     decor('generator_room', 'electrical_control_box_03', 2700, 2405, -200, 90)
     decor('generator_room', 'electrical_control_box_03', 3300, 2405, -200, 90)
     decor('generator_room', 'electrical_control_box_03', 2605, 2950, -200, 0)
@@ -1433,7 +1434,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zm, 'ammo_crate_01_dust', 3110, 1700, -320, 0, (18, 30, 15))
     decor(Zm, 'p7_box_cardboard_a_closed', 3150, 1790, -320, 20, (16, 21, 15))
     # service tunnel: work lights (lights table entries below), struts, junk, rubble, cones
-    decor(Zt, 'com_junktire', -2840, 1240, -372, 30)
+    decor(Zt, 'com_junktire', -2840, 1240, -372, 30, (14, 14, 6))
     decor(Zt, 'ind_debris_metal_scrap_04', -3150, 1245, -384, 70)
     decor(Zt, 'debris_concrete_rubble_pile_01_dark', -3500, 2500, -384, 20)
     for y_ in (1700, 2000, 2300):
@@ -1450,7 +1451,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zb, 'pardon_our_dust_sign', -2700, 2680, -384, 270, (24, 14, 42))
     for x_, y_ in ((-2780, 2700), (-2620, 2700)):
         decor(Zb, 'traffic_cone_sml_01', x_, y_, -384, 0, (8, 8, 14))
-    decor(Zb, 'barrier_pedestrian_01', -3100, 2680, -384, 0)
+    decor(Zb, 'barrier_pedestrian_01', -3100, 2680, -384, 0, (40, 6, 20))
     decor(Zb, 'ind_debris_metal_scrap_04', -3300, 3000, -384, 20)
     # kit handrail end posts at both ends of both stair handrails
     for x_ in (-794, -406):
@@ -1469,7 +1470,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zp, 'electrical_control_box_03', 2398, 2200, -280, 180)
     decor(Zp, 'trashbin_01_iw6', -290, 2365, -320, 0, (17, 17, 24))
     decor(Zp, 'sign_clock_04', 528, 2398, -130, 0)
-    decor(Zp, 'trashbin_01_iw6', 1280, 2365, -320, 0, (11, 13, 22))
+    decor(Zp, 'trashbin_01_iw6', 1430, 2365, -320, 0, (11, 13, 22))
     decor(Zb, 'com_trashbag2_black', -2110, 2800, -384, 0, (16, 16, 20))
     decor(Zb, 'sign_clock_04', -2066, 2950, -150, 180)
     decor(Zt, 'electrical_control_box_03', -2550, 1583, -290, 270)
