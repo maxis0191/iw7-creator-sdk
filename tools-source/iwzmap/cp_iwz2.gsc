@@ -505,6 +505,14 @@ iwz_flicker_lamp()
             m_off = pair[1];
         }
     }
+    // darkness design: a flicker lamp is an unlit tube until the power is on (the flickertest dvar overrides)
+    if ( !getdvarint( "paris_iwz_flickertest" ) )
+    {
+        self setmodel( m_off );
+        while ( !scripts\engine\utility::flag_exist( "power_on" ) )
+            wait 0.5;
+        scripts\engine\utility::flag_wait( "power_on" );
+    }
     for ( ;; )
     {
         t = getdvarint( "paris_iwz_flickertest" );

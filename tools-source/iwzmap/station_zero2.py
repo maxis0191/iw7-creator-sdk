@@ -1310,8 +1310,20 @@ TRAIN_BED = -384
 TRAIN_BALLAST_Z = TRAIN_BED + 16
 TRAIN_RAIL_TOP = TRAIN_BALLAST_Z + 5.01 + 6.68
 TRAIN_CARS = [(300, 0)]          # (car centre x, yaw): one BO3 mp_banzai car, its open door bay faces the platform (+y)
-if os.environ.get('IWZ_TRAIN_CARS') == '2':
-    TRAIN_CARS = [(300, 0), (-234, 0)]
+TRAIN_CAR_PITCH = 534            # coupled car spacing: car length 533 (coupler faces at +-266.5) + 1
+# IWZ_TRAIN_CARS=N (1..3): a consist of N coupled cars. Without IWZ_TRAIN_CONSIST_END_X the first car stays at x 300
+# and the others couple on to its west; with it, the consist's east coupler face is at that x (beyond the pit's east end
+# when the level opens a tunnel there: the last car stands partly inside the tunnel mouth) and the cars run westward.
+# The first car (cars[0] in train_spec) is the hero car (x 300, or the westmost of an END_X consist): lit interior,
+# the dressing anchors the level uses.
+_n_cars = max(1, min(3, int(os.environ.get('IWZ_TRAIN_CARS', '1') or 1)))
+if os.environ.get('IWZ_TRAIN_CONSIST_END_X'):
+    _east = float(os.environ['IWZ_TRAIN_CONSIST_END_X']) - 266.5
+    TRAIN_CARS = sorted((_east - TRAIN_CAR_PITCH * k, 0) for k in range(_n_cars))
+else:
+    TRAIN_CARS = [(300 - TRAIN_CAR_PITCH * k, 0) for k in range(_n_cars)]      # cars[0] stays the x 300 hero car
+# east end of the track (256-unit segments from x -2400): the pit channel ends at 2410; a tunnel opened past it needs more
+TRAIN_TRACK_EAST_X = float(os.environ.get('IWZ_TRAIN_TRACK_EAST_X', '2400') or 2400)
 TRAIN_CAR_HALF = (268, 66.5, 95)  # nav cut half extents (x, y, z/2 above the rail top); detailed clip from the port's boxes
 TRAIN_DOOR_X = (-158, -70)       # the car's open +y door bay, car-local x
 TRAIN_FLOOR = 33.3               # car floor above its origin (rail top)
@@ -1336,7 +1348,7 @@ def train_kit():
     interior flicker lamp, mp_metro platform edge panels along EDGE_Y. TRAIN_SPEC goes to layout.json."""
     cy = TRACK_CY
     bz = TRAIN_BALLAST_Z
-    segs = [('platform_a', x) for x in range(-2400, 2400, TRAIN_SEG)] + \
+    segs = [('platform_a', x) for x in range(-2400, int(TRAIN_TRACK_EAST_X), TRAIN_SEG)] + \
            [('service_tunnel', -2400 - TRAIN_SEG * k) for k in range(1, 6)]
     for zone, x0 in segs:
         decor(zone, 'iwz_track_256', x0, cy, bz, 0)
@@ -1368,30 +1380,42 @@ def train_kit():
         d0_, d1_ = sorted((cx + TRAIN_DOOR_X[0], cx + TRAIN_DOOR_X[1]))
         top_ = oz + 2 * hz
         B.blockers.append((cx - hx, cy - hy, cx + hx, cy + hy, TRAIN_BED, fz_ - 2))                  # no bed / ballast nav under the car
-        B.blockers.append((cx - hx, cy - hy, cx + hx, cy - TRAIN_AISLE, fz_, top_))                   # track-side seats and wall
-        B.blockers.append((cx - hx, cy + TRAIN_AISLE, d0_, cy + hy, fz_, top_))                      # platform side, west of the door bay
-        B.blockers.append((d1_, cy + TRAIN_AISLE, cx + hx, cy + hy, fz_, top_))                      # platform side, east of the door bay
-        B.blockers.append((cx - hx, cy - TRAIN_AISLE, cx - TRAIN_AISLE_END, cy + TRAIN_AISLE, fz_, top_))   # end bulkheads
-        B.blockers.append((cx + TRAIN_AISLE_END, cy - TRAIN_AISLE, cx + hx, cy + TRAIN_AISLE, fz_, top_))
-        an_ = 'car_aisle_%d' % len(cars)
-        dn_ = 'car_door_%d' % len(cars)
-        region(an_, 'platform_a', (cx - TRAIN_AISLE_END, cy - 16, cx + TRAIN_AISLE_END, cy + 16), fz_, (0, 0, 0, 0))
-        region(dn_, 'platform_a', (d0_, cy + 16, d1_, EDGE_Y), fz_, (0, 0, 0, 0))
-        adjacent(an_, dn_)
-        adjacent(dn_, 'deck_mid')
+        if cars:
+            # consist cars after the hero: dressing only, no walkable interior (a door bay may face a tunnel wall)
+            B.blockers.append((cx - hx, cy - hy, cx + hx, cy + hy, fz_, top_))
+        else:
+            B.blockers.append((cx - hx, cy - hy, cx + hx, cy - TRAIN_AISLE, fz_, top_))                   # track-side seats and wall
+            B.blockers.append((cx - hx, cy + TRAIN_AISLE, d0_, cy + hy, fz_, top_))                      # platform side, west of the door bay
+            B.blockers.append((d1_, cy + TRAIN_AISLE, cx + hx, cy + hy, fz_, top_))                      # platform side, east of the door bay
+            B.blockers.append((cx - hx, cy - TRAIN_AISLE, cx - TRAIN_AISLE_END, cy + TRAIN_AISLE, fz_, top_))   # end bulkheads
+            B.blockers.append((cx + TRAIN_AISLE_END, cy - TRAIN_AISLE, cx + hx, cy + TRAIN_AISLE, fz_, top_))
+            an_ = 'car_aisle_%d' % len(cars)
+            dn_ = 'car_door_%d' % len(cars)
+            region(an_, 'platform_a', (cx - TRAIN_AISLE_END, cy - 16, cx + TRAIN_AISLE_END, cy + 16), fz_, (0, 0, 0, 0))
+            region(dn_, 'platform_a', (d0_, cy + 16, d1_, EDGE_Y), fz_, (0, 0, 0, 0))
+            adjacent(an_, dn_)
+            adjacent(dn_, 'deck_mid')
         c, s_ = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
         for (a, b) in boxes:     # model-space clip boxes (players, bullets); yaw 0 / 180 keep them axis aligned
             xs = sorted((cx + c * a[0] - s_ * a[1], cx + c * b[0] - s_ * b[1]))
             ys = sorted((cy + s_ * a[0] + c * a[1], cy + s_ * b[0] + c * b[1]))
             B.collision_box((xs[0], ys[0], oz + a[2]), (xs[1], ys[1], oz + b[2]), nav=False)
-        # interior: a flickering ceiling fluorescent (BO3 subway fixture, lit / unlit swap) and a broken one, and a
-        # weak cold light pool under the lit one
+        # interior (darkness design): dark before power; after power the hero car (cars[0]) gets dim emergency light
+        # (warm, group 'power') and one flickering fluorescent tube (BO3 subway fixture lit / unlit swap, its light in
+        # group 'flicker'); a broken fixture beside it. The other cars of a consist stay dark (broken fixtures only).
         fz = oz + TRAIN_FLOOR + 118
-        FLICKER.append({'zone': 'platform_a', 'origin': (cx - 120, cy, fz), 'yaw': 90,
-                        'models': ('iwz_fluo_subway_on', 'iwz_fluo_subway_off')})
+        if not cars:
+            FLICKER.append({'zone': 'platform_a', 'origin': (cx - 120, cy, fz), 'yaw': 90,
+                            'models': ('iwz_fluo_subway_on', 'iwz_fluo_subway_off')})
+            LIGHTS.append({'zone': 'platform_a', 'origin': (cx - 120, cy, fz - 20), 'type': 'omni',
+                           'color': (0.85, 0.92, 1.0), 'radius': 170, 'intensity': 0.22, 'fixture': 'flicker',
+                           'train': 'tube'})
+            LIGHTS.append({'zone': 'platform_a', 'origin': (cx + 60, cy, fz - 30), 'type': 'omni',
+                           'color': (1.0, 0.82, 0.6), 'radius': 260, 'intensity': 0.1, 'fixture': 'train_interior',
+                           'train': 'emergency'})
+        else:
+            decor('platform_a', 'iwz_fluo_subway_broken', cx - 120, cy, fz, 90)
         decor('platform_a', 'iwz_fluo_subway_broken', cx + 120, cy, fz, 90)
-        LIGHTS.append({'zone': 'platform_a', 'origin': (cx - 120, cy, fz - 20), 'type': 'omni', 'color': (0.78, 0.9, 1.0),
-                       'radius': 220, 'intensity': 0.35, 'fixture': 'train_interior'})
         cars.append({'model': 'iwz_t7e_subway_car_a', 'origin': [cx, cy, oz], 'yaw': yaw,
                      'door_bay_world_x': sorted([cx + TRAIN_DOOR_X[0] * c, cx + TRAIN_DOOR_X[1] * c]),
                      'floor_z': oz + TRAIN_FLOOR, 'nav_half': list(TRAIN_CAR_HALF),
