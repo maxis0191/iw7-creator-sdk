@@ -125,7 +125,7 @@
       "zone": "platform_a",
       "alias": "emt_small_metal_creak",
       "at": [
-        300,
+        1205.5,
         1488,
         -300
       ],
@@ -138,7 +138,7 @@
         6,
         15
       ],
-      "note": "the hero car (was: bear + 320)"
+      "note": "the hero car (consist v3)"
     },
     {
       "zone": "maint_corridor",
@@ -822,19 +822,19 @@
       "radius": 180
     },
     "train": {
-      "comment": "hero car (train agent, IWZ_TRAIN): origin (300, 1488, -356.31) yaw 0, nav half extents (268, 66.5, 95), floor -323, platform door bay x 142..230 (level builder re-anchor 2026-11-08)",
+      "comment": "hero consist (train v3, 3 cars, IWZ_TRAIN_CONSIST_END_X 2540): hero car centre x 1205.5 (westmost), cars at 1739.5 and 2273.5, y 1488, floor -323, hero door bay x 1047.5..1135.5",
       "box": [
-        32,
+        937,
         1421.5,
         -330,
-        568,
+        2540,
         1554.5,
         -166
       ],
       "tick": {
         "alias": "amb_iwz_train_tick_lp",
         "at": [
-          300,
+          1205.5,
           1488,
           -342
         ]
@@ -843,12 +843,12 @@
         "alias": "amb_iwz_train_hiss",
         "at": [
           [
-            100,
+            1005,
             1488,
             -350
           ],
           [
-            500,
+            1940,
             1488,
             -350
           ]
@@ -861,7 +861,7 @@
       "chime": {
         "alias": "amb_iwz_train_chime",
         "at": [
-          186,
+          1091.5,
           1556,
           -250
         ]

@@ -11,8 +11,6 @@ hall_emerg_s      emergency_glow    -380  3224  250   stage=dark
 # platform A: leaking ceiling over the deck, low fog in the trackbed channel (centre y 1488), emergency glows on the
 # back wall and by the maintenance door (route to the power switch)
 pa_leak           drips_line        300   1900  0     region=96 region_dz=-290
-pa_pit_fog        fog_tunnel        -1000 1488  -384
-pa_pit_fog_e      fog_low_bright    1000  1488  -384
 pa_emerg_w        emergency_glow    -1500 2376  -150  stage=dark
 pa_emerg_door     emergency_glow    2376  1960  -150  stage=dark
 

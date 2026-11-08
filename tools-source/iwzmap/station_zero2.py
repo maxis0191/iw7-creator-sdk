@@ -841,7 +841,7 @@ for wname, (wx0, wy0, wx1, wy1, ddir) in WELLS.items():
     B.wall_plane(Z, 'y', xs[1], -1, wy0, wy1, PIT_Z, DECK_Z, 'conc_dark')
     region(wname, Z, (xs[0], wy0, xs[1], wy1), (lambda f: (lambda x, y: f(x)))(zl), (16 if ddir < 0 else 0, 0, 0 if ddir < 0 else 16, 16))
 # pit floor (track bed) and track wall
-floor(Z, 'conc_dark', -2400, 1200, 2400, 1600, PIT_Z, tone='dark')
+floor(Z, 'conc_floor', -2400, 1200, 2400, 1600, PIT_Z, tone='dark')
 wall(Z, 'pit', 'x', 1200, +1, -2400, 2400, PIT_Z, PCEIL, 'track')        # track wall (south)
 # platform north wall and ceiling
 wall(Z, 'platform_deck', 'x', 2400, -1, -2400, 2400, DECK_Z, PCEIL, 'metro')
@@ -865,12 +865,13 @@ B.wall_plane(Z, 'y', 2400, -1, 1584, 1600, PIT_Z, PCEIL, 'tile_white')
 B.wall_plane(Z, 'y', 2400, -1, 1216, 1584, -128, PCEIL, 'tile_white')
 B.box((2392, 1200, -144), (2400, 1600, -120), 'conc_painted', Z, collide=False, nav=False)
 room(Z, 'recess', (2400, 1216, 2592, 1584), PIT_Z, -128, 'tunnel', 'conc_dark', 'conc_dark', skip=('west',))
-B.wall_plane(Z, 'y', 2560, -1, 1216, 1584, PIT_Z, -128, 'grate', collide=False)
-B.wall_plane(Z, 'y', 2410, -1, 1216, 1584, PIT_Z, -128, 'grate', collide=False)
+if not TRAIN:
+    B.wall_plane(Z, 'y', 2560, -1, 1216, 1584, PIT_Z, -128, 'grate', collide=False)
+    B.wall_plane(Z, 'y', 2410, -1, 1216, 1584, PIT_Z, -128, 'grate', collide=False)
 B.collision_quad([(2410, 1216, PIT_Z), (2410, 1584, PIT_Z), (2410, 1584, -128), (2410, 1216, -128)], n=(-1, 0, 0))
 geo_prop('recess_grate', Z, (2556, 1216, PIT_Z), (2564, 1584, -128))
 B.wall_plane(Z, 'y', 2591, -1, 1216, 1584, PIT_Z, -128, 'conc_dark', collide=False)
-floor(Z, 'conc_dark', 2400, 1216, 2592, 1584, PIT_Z, tone='dark')
+floor(Z, 'conc_floor', 2400, 1216, 2592, 1584, PIT_Z, tone='dark')
 # columns every 512 on the deck
 COLS = [-1792, -1280, -768, -256, 256, 768, 1280, 1792]
 for x in COLS:
@@ -896,7 +897,7 @@ def track(zone, x0, x1):
     TRACK_SPEC['channels'].append({'zone': zone, 'x0': x0, 'x1': x1, 'y0': TRACK_Y0, 'y1': TRACK_Y1, 'z': PIT_Z, 'centre_y': TRACK_CY})
 
 
-track(Z, -2400, 2406)
+track(Z, -2400, 2406 if not TRAIN else 2588)      # train: the channel runs into the east tunnel mouth (consist)
 # pit cess (south of the channel): slab joints every 384 units and oil / water stains (sz2_flatness)
 for x_ in range(-2208, 2400, 384):
     floor(Z, 'conc_trim_floor', x_ - 4, 1216, x_ + 4, 1388, PIT_Z + 0.25, collide=False)
@@ -1372,7 +1373,7 @@ def train_kit():
         decor(zone, 'iwz_track_256', x0, cy, bz, 0)
     # ballast prism: flat top y +-BALLAST_TOP_HALF at the ballast top, shoulders sloping to the bed at +-BALLAST_FOOT_HALF
     # (QA g25t: a vertical 16-unit face could be stepped down but not climbed, by players or zombies)
-    for x0, x1 in ((-2400, 2410), (-3600, -2400)):
+    for x0, x1 in ((-2400, 2590), (-3600, -2400)):
         t0, t1, f0, f1 = cy - BALLAST_TOP_HALF, cy + BALLAST_TOP_HALF, cy - BALLAST_FOOT_HALF, cy + BALLAST_FOOT_HALF
         B.collision_quad([(x0, t0, bz), (x1, t0, bz), (x1, t1, bz), (x0, t1, bz)], n=(0, 0, 1))
         B.collision_quad([(x0, f0, TRAIN_BED), (x1, f0, TRAIN_BED), (x1, t0, bz), (x0, t0, bz)], n=(0, -0.45, 0.89))
@@ -1478,7 +1479,12 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         pass        # (g25) hero car: train agent (TRACK_SPEC); the cp_disco kit car is no longer placed
     if TRAIN:
         train_kit()
+        _anc = TRAIN_SPEC['cars'][0]['dressing_anchors'][5]          # far track-side anchor of the hero car
+        TEDDY_SPOT = (_anc[0], _anc[1], _anc[2])
         decor('platform_a', 'misc_zom_duffelbag_03', TEDDY_SPOT[0] - 34, TEDDY_SPOT[1] + 12, TEDDY_SPOT[2], 70, (16, 13, 8))
+        # Platform B: the sealed, disused trackbed along its north side (train kit, rusted rails, silted ballast)
+        for x_ in range(-3500, -2200, TRAIN_SEG):
+            decor('platform_b', 'iwz_track_256_disused', x_, 3300, -384, 0)
         # ticket hall fare line east of the booth: three turnstiles and a broken one
         for x_, m_ in ((130, 'cp_disco_subway_turnstyle_animated'), (190, 'cp_disco_subway_turnstyle_animated'),
                        (250, 'cp_disco_subway_turnstyle_animated'), (310, 'cp_disco_subway_turnstyle_missing_arm')):
@@ -1861,7 +1867,7 @@ def edge_heights(k, e):
 
 if TRAIN:
     # nav follows the ballast prism profile (flat top, 32-unit shoulders): centre and corner heights from ballast_z
-    _chans = [(-2400, 2410), (-3600, -2400)]
+    _chans = [(-2400, 2590), (-3600, -2400)]
     _nb = 0
     for k in list(cells):
         cx_, cy_ = (k[0] + 0.5) * CELL, (k[1] + 0.5) * CELL
