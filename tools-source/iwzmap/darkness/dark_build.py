@@ -36,6 +36,9 @@ def main(argv=None):
     ap.add_argument('--ceiling-fov', type=float, default=150.0)
     ap.add_argument('--shadow-per-zone', type=int, default=1, help='brightest N power lights per zone cast shadows')
     ap.add_argument('--power-emissive', type=float, default=0.0, help='emissive of power fixture materials in the dark bake')
+    ap.add_argument('--cue-scale', type=float, default=1.0,
+                    help='intensity scale of the amber interaction cues in the dark bake (run dk9: 1.0 lit the door / perk '
+                         'areas almost like a lamp under the dark exposure; 0.4 suggested, not engine-tested)')
     a = ap.parse_args(argv)
 
     lay = json.load(open(os.path.join(a.src, 'layout.json')))
@@ -48,7 +51,12 @@ def main(argv=None):
 
     # ---- dark bake input
     dark = dict(lit)
-    dark['lights'] = [b for l, b in zip(L, lit['lights']) if l.get('group') == 'emergency' and float(l.get('intensity', 0)) > 0]
+    dark['lights'] = []
+    for l, b in zip(L, lit['lights']):
+        if l.get('group') == 'emergency' and float(l.get('intensity', 0)) > 0:
+            if l.get('fixture') == 'hint_glow' and a.cue_scale != 1.0:
+                b = dict(b, intensity=float(b['intensity']) * a.cue_scale)
+            dark['lights'].append(b)
     dark['ambient'] = dict(lit.get('ambient', {}), color=[a.ambient, a.ambient, a.ambient * 1.1])
     em = dict(lit.get('emissive', {}))
     for m in list(em):
