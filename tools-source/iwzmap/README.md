@@ -123,3 +123,14 @@ the changed fraction inside the projected effect region is >= 0.4%, >= 4x the of
 outside the region; ANIMATED when consecutive on frames also change in the region. Frame time: the fxperf DLL hooks
 DXGI Present and buckets present-to-present intervals by the dvar `paris_iwz_fxphase` (2k+1 effect k off, 2k+2 on,
 200/201 every effect off/on at the zone views). In a match the module starts every effect once and never polls.
+
+Power stages (`stage=` in fx.txt): `always`, `dark` (until the stock `power_on` flag), `lit` (from power on),
+`poweron` (start-up burst for `for=<s>` seconds). With `level.iwz_light_banks_external` (darkness lighting script) the
+dark/lit switch follows each zone's light bank (`iwz_light_bank_on`, <zone>; `iwz_power_lights_done`). Proof runs
+ignore stages (every effect is tested on its own) and hold the flickering lamps (`paris_iwz_flickertest 1`).
+Engine findings (runs in iwz-stage2\fx): sprite effects render; GPU particle clouds (`particle_cloud_*` techsets,
+`vfx_zmb_dust_motes_md`) and `vfx_knee_high_fog_dark` (placeholder material `gfx_test01`) never draw;
+`vfx_zb_thu_sparks` and `vfx_zmb_light_strobe_01` emit light (the surroundings brighten); thin drips
+(`vfx_water_drips_line`, `vfx_zmb_drips_parent`) stay below the measurement threshold at 200+ units; the effect list
+entry is not required for an imported effect (`vfx_light_mist` rendered without it). fx_place refuses effect origins
+more than 96 units from any walkable plan cell (inside a wall or the void).
