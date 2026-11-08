@@ -6,9 +6,9 @@
 The flashlight effects themselves (vfx/iwz/vfx_iwz_flashlight_*) are made by make_vfx_light.py and imported with
 fx/fx_import.py (`--dump iwz=<make_vfx_light out root> --fx iwz:vfx/iwz/vfx_iwz_flashlight_world,...`).
 
-usage: add_darkness.py <zone_source csv> <asset root (zonetool/<map>)> <map>
+usage: add_darkness.py <zone_source csv> <asset root (zonetool/<map>)> <map> [--dark-exposure 8] [--exposures 4,6]
 """
-import os, shutil, sys
+import os, re, shutil, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -26,6 +26,22 @@ def main(argv=None):
         src = src.replace('scripts\\cp\\maps\\cp_iwz\\cp_iwz_', 'scripts\\cp\\maps\\%s\\%s_' % (m, m))
         open(dst, 'w', newline='\n', encoding='utf-8').write(src)
         rows.append('rawfile,' + rel)
+    # dark vision set: the map's own vision with auto exposure off and a fixed exposure, so the engine's eye
+    # adaptation does not brighten the dark bake back to a lit look (engine run dk2-d2: with auto exposure the dark
+    # hall rendered at median luma 0.26). Extra exposures for calibration runs: --exposures 4,6,8
+    vis = os.path.join(root, 'vision', '%s.vision' % m)
+    exposures = [e for e in (argv[argv.index('--exposures') + 1].split(',') if '--exposures' in argv else []) if e]
+    dark_ev = argv[argv.index('--dark-exposure') + 1] if '--dark-exposure' in argv else '8'
+    if os.path.exists(vis):
+        base = open(vis, encoding='latin1').read()
+        for name, ev in [('%s_dark' % m, dark_ev)] + [('%s_dark_e%s' % (m, e.replace('.', 'p')), e) for e in exposures]:
+            txt = re.sub(r'(?m)^tonemapAuto ".*"$', 'tonemapAuto "0"', base)
+            txt = re.sub(r'(?m)^tonemapExposure ".*"$', 'tonemapExposure "%s"' % ev, txt)
+            rel = 'vision/%s.vision' % name
+            open(os.path.join(root, *rel.split('/')), 'w', newline='\n', encoding='latin1').write(txt)
+            rows.append('rawfile,' + rel)
+    else:
+        print('no %s: dark vision not made' % vis)
     lines = open(csvp).read().splitlines()
     level_row = 'rawfile,scripts/cp/maps/%s/%s.gsc' % (m, m)
     if level_row not in lines:

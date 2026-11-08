@@ -22,6 +22,7 @@ init()
     if ( !isdefined( level.iwz_fl_after_power ) )
         level.iwz_fl_after_power = "on";
     level.iwz_fl_click = "amb_iwz_flashlight_click";
+    iwz_fl_log( "LOAD world=" + level.iwz_fl_world + " view=" + level.iwz_fl_view );
     level thread iwz_fl_connect();
     level thread iwz_fl_power();
 }

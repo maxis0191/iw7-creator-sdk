@@ -24,6 +24,13 @@ init()
     level.iwz_dark_fixture_on = "mp_dart_lightfluo_on";
     level.iwz_dark_lights = [];
     level.iwz_dark_banks = [];
+    // fixed-exposure vision until power (vision/<map>_dark.vision, add_darkness.py): IW7 auto exposure would
+    // otherwise brighten the dark bake back to a lit look (run dk2-d2); stock per-player restores use the override
+    level.iwz_dark_vision = getdvar( "mapname" ) + "_dark";
+    if ( getdvar( "paris_iwz_dark_vision" ) != "" )
+        level.iwz_dark_vision = getdvar( "paris_iwz_dark_vision" );
+    level.vision_set_override = level.iwz_dark_vision;
+    level thread iwz_dark_vision_hold();
     foreach ( l in getentarray( "iwz_power", "targetname" ) )
     {
         p = strtok( l.script_noteworthy, "|" );
@@ -128,6 +135,11 @@ iwz_dark_power()
         if ( !isdefined( level.iwz_dark_banks[b] ) || !level.iwz_dark_banks[b].size )
             continue;
         zone = level.iwz_dark_banks[b][0].iwz_zone;
+        if ( b == 0 || !isdefined( level.iwz_dark_released ) )
+        {
+            level.iwz_dark_released = 1;
+            level thread iwz_dark_vision_release( 5.0 );
+        }
         level notify( "iwz_light_bank_on", zone );
         iwz_dark_log( "BANK " + b + " " + zone + " lights=" + level.iwz_dark_banks[b].size );
         foreach ( l in level.iwz_dark_banks[b] )
@@ -242,4 +254,58 @@ iwz_dark_zone_of( o )
         }
     }
     return best;
+}
+
+// the dark vision: the whole level and every player (late joiners at spawn) until the first light bank; the stock
+// intro sets the naked vision back to "" after the intro, so it is applied again after that
+iwz_dark_vision_hold()
+{
+    level endon( "game_ended" );
+    level endon( "iwz_dark_vision_off" );
+    visionsetnaked( level.iwz_dark_vision, 0 );
+    level thread iwz_dark_vision_players();
+    while ( !scripts\engine\utility::flag_exist( "introscreen_over" ) )
+        wait 0.1;
+    scripts\engine\utility::flag_wait( "introscreen_over" );
+    for ( i = 0; i < 4; i++ )
+    {
+        visionsetnaked( level.iwz_dark_vision, 0 );
+        wait 2;
+    }
+}
+
+iwz_dark_vision_players()
+{
+    level endon( "game_ended" );
+    level endon( "iwz_dark_vision_off" );
+    for ( ;; )
+    {
+        level waittill( "connected", p );
+        p thread iwz_dark_vision_player();
+    }
+}
+
+iwz_dark_vision_player()
+{
+    self endon( "disconnect" );
+    level endon( "iwz_dark_vision_off" );
+    for ( ;; )
+    {
+        self waittill( "spawned_player" );
+        self visionsetnakedforplayer( level.iwz_dark_vision, 0 );
+    }
+}
+
+// power: the eyes adapt again (auto exposure) while the banks come on
+iwz_dark_vision_release( t )
+{
+    level notify( "iwz_dark_vision_off" );
+    level.vision_set_override = undefined;
+    visionsetnaked( "", t );
+    foreach ( p in level.players )
+    {
+        if ( isdefined( p ) )
+            p visionsetnakedforplayer( "", t );
+    }
+    iwz_dark_log( "VISION_RELEASE " + t );
 }
