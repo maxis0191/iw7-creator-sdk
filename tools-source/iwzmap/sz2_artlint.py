@@ -37,9 +37,23 @@ Rules (lead / owner review of g24):
   decal-aspect     a stock decal (layout decals) whose w/h differs from its image aspect by more than 15% (review C)
   colour-cast      a baked coloured light (channel spread > 0.4) without a fixture or with a radius over 192
                    (reviews A9/B: red, green, pink and mustard casts with no visible source)
+  (g27, coordinator 2026-11-08 open list; layout keys written by station_zero2.py)
+  track-end        a trackbed channel end that meets neither a door spanning the channel, a buffer stop, a tunnel
+                   collapse (rubble_end) nor a bricked mouth within 64 (review B: track ends at flat portal planes)
+  conduit-end      a conduit / cable / pipe run (layout conduits) whose end meets no surface perpendicular to it (an end
+                   wall, ceiling, beam, frame), no junction box and no collapse (review C: conduits ending in mid-air)
+  pipe-foot        a wall pipe model whose pipes run down to the floor without a pipe chase over their feet (review C
+                   maint_corridor_2: pipes stopped open on the floor)
+  rail-return      a stair handrail line without a wall return at both ends (review C flk_0_off: rail cut open)
+  threshold        a door / arch opening without a threshold plate across its wall gap (review C interact_5)
+  fx-fixture       a glow / flare sprite FX (layout fx_placed) without a lit fixture within 24 (review C: violet halos)
+  fx-source        a drip FX without its leak (ceiling stain + puddle) (review C: blue streaks in mid-air)
+  decor-rail       a decor model (catalog bounds, else its clip) through a railing / handrail / window frame
+  stacked          a decor model standing on top of another decor model's footprint (review C interact_10: a crate on
+                   a turnstile); with --catalog / --kit the model bounds are used, else the clip boxes
 Exit status 1 when any rule fails.
 """
-import argparse, json, os, sys
+import argparse, json, math, os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -54,7 +68,11 @@ TRAIN_OK = {'cp_disco_subway_train_bsp2xmodel'}
 EDGE = 4.0           # trackbed: wall trims up to 4 units proud of a channel side or end wall belong to the wall
 ENVELOPE = 170.0     # trackbed: car kinematic envelope above the bed (cable trays and ceiling ribs above it are fine)
 TONE_BANNED = ('park_', 'spaceland', 'zmb_wood_support', '_ride_', 'ride_car', 'racin', 'astrocade', 'kepler')
-TONE_OK = {'park_token_machine', 'zmb_spaceland_zombie_spawn_window_01'}   # token machine fits a hall; spawn window is gameplay
+TONE_OK = {'park_token_machine'}   # token machine fits a hall ((g27) the spawn-window frames are Spaceland trim: no exception)
+GLOW_FX = ('emergency_glow', 'glow', 'flare')       # sprite FX that need a lit fixture
+PIPE_TO_FLOOR = {'wall_mounted_pipes_01'}
+STACK_OK = ('train', 'iwz_', 'newspaper', 'cup_', 'mug', 'candle', 'paper', 'debris', 'rubble', 'zom_duffel', 'backpack',
+            'zmb_tv_crt', 'console', 'radio', 'computer', 'testpattern', 'plank', 'biohazard')     # dressing that sits on things
 FAKE_OBJECTS = ('turnstile', 'desk', 'console', 'booth', 'kiosk', 'generator', 'hvac', 'buffer')
 MOUNTED = ('pipe', 'sign', 'lamp', 'light', 'panel', 'locker', 'cabinet', 'fan', 'loudspeaker', 'control_box', 'shutoff',
            'fuse_box', 'vent', 'wires')
@@ -82,10 +100,136 @@ def decor_box(d):
     return (x - cx, y - cy, z), (x + cx, y + cy, z + 2 * cz)     # clip = half extents (decor() in the generator)
 
 
+def model_box(d, bounds):
+    """World AABB of a placed decor model: catalog bounds rotated by its yaw, else its clip box, else None."""
+    b = bounds.get(d['model'])
+    x, y, z = d['origin']
+    if b:
+        c, s = math.cos(math.radians(d.get('yaw', 0))), math.sin(math.radians(d.get('yaw', 0)))
+        xs, ys = [], []
+        for lx in (b['mins'][0], b['maxs'][0]):
+            for ly in (b['mins'][1], b['maxs'][1]):
+                xs.append(x + c * lx - s * ly); ys.append(y + s * lx + c * ly)
+        return (min(xs), min(ys), z + b['mins'][2]), (max(xs), max(ys), z + b['maxs'][2])
+    if d.get('clip'):
+        return decor_box(d)
+    return None
+
+
+def on_surface(p, axis, quads, slack=3.0):
+    """p meets a world quad whose normal lies along `axis` (the run's own direction): an end wall, ceiling, beam face."""
+    for zone, mat, pts, n in quads:
+        if abs(n[axis]) < 0.9:
+            continue
+        plane = sum(pts[0][k] * n[k] for k in range(3))
+        if abs(sum(p[k] * n[k] for k in range(3)) - plane) > slack:
+            continue
+        if all(min(q[k] for q in pts) - slack <= p[k] <= max(q[k] for q in pts) + slack for k in range(3) if k != axis):
+            return True
+    return False
+
+
+def in_box(p, mn, mx, slack=4.0):
+    return all(mn[k] - slack <= p[k] <= mx[k] + slack for k in range(3))
+
+
+def g27_rules(lay, quads, fails, bounds):
+    geo = lay.get('geo_props', [])
+    # track-end
+    spec = lay.get('track_spec') or {}
+    tspec = lay.get('train_spec') or {}
+    ends_ok = [g for g in geo if g['name'] in ('rubble_end', 'bricked_mouth')]
+    for ch in spec.get('channels', []):
+        for xe in (ch['x0'], ch['x1']):
+            ok = any(o['kind'] == 'door' and o['axis'] == 'y' and any(abs(w - xe) <= 64 for w in o['walls'].values())
+                     and o['a'] <= ch['y0'] + 1 and o['b'] >= ch['y1'] - 1 for o in lay.get('openings', []))
+            ok = ok or bool(tspec.get('buffer') and abs(tspec['buffer'][0] - xe) <= 64)
+            ok = ok or any(g['mins'][0] - 64 <= xe <= g['maxs'][0] + 64 and g['mins'][1] <= ch['centre_y'] <= g['maxs'][1] for g in ends_ok)
+            if not ok:
+                fails.append('track-end %s channel end x %g meets no door, buffer stop or collapse' % (ch['zone'], xe))
+    # conduit-end
+    juncs = [(j['mins'], j['maxs']) for j in lay.get('junctions', [])] + \
+            [(g['mins'], g['maxs']) for g in geo if g['name'] in ('rubble_end', 'throat_cap', 'pipe_chase', 'window_frame', 'bricked_mouth')]
+    runs = [([min(c['p0'][k], c['p1'][k]) - (c.get('w', 4) / 2 if k != c['axis'] else 0) for k in range(3)],
+             [max(c['p0'][k], c['p1'][k]) + (c.get('w', 4) / 2 if k != c['axis'] else 0) for k in range(3)], c) for c in lay.get('conduits', [])]
+    for cd in lay.get('conduits', []):
+        for p in (cd['p0'], cd['p1']):
+            if any(in_box(p, mn, mx) for mn, mx in juncs) or on_surface(p, cd['axis'], quads, 3.0 + cd.get('w', 4) / 2):
+                continue
+            if any(c is not cd and c['axis'] != cd['axis'] and in_box(p, mn, mx, 1.0) for mn, mx, c in runs):      # an elbow into the next run
+                continue
+            fails.append('conduit-end %s run %s..%s: end %s in mid-air' % (cd['zone'], [round(c) for c in cd['p0']], [round(c) for c in cd['p1']],
+                                                                           [round(c) for c in p]))
+    # pipe-foot
+    chases = lay.get('pipe_chases', [])
+    for d in lay.get('decor', []):
+        if d['model'] in PIPE_TO_FLOOR and not any(in_box(d['origin'], c['mins'], c['maxs'], 8) for c in chases):
+            fails.append('pipe-foot %s at %s has no pipe chase over its feet' % (d['model'], d['origin']))
+    # rail-return
+    lines = {}
+    for g in geo:
+        if g['name'] == 'handrail':
+            ax = 0 if (g['maxs'][0] - g['mins'][0]) < (g['maxs'][1] - g['mins'][1]) else 1      # the fixed coordinate axis
+            lines.setdefault((g['zone'], ax, round((g['mins'][ax] + g['maxs'][ax]) / 2)), []).append(g)
+    rets = [g for g in geo if g['name'] == 'rail_return']
+    for (zone, ax, c), gs in lines.items():
+        sa = 1 - ax
+        lo = min(g['mins'][sa] for g in gs); hi = max(g['maxs'][sa] for g in gs)
+        for se in (lo, hi):
+            if not any(r['zone'] == zone and r['mins'][sa] - 6 <= se <= r['maxs'][sa] + 6 and r['mins'][ax] - 8 <= c <= r['maxs'][ax] + 8 for r in rets):
+                fails.append('rail-return %s handrail at %s %g: no wall return at %g' % (zone, 'xy'[ax], c, se))
+    # threshold
+    ths = {t['name'] for t in lay.get('thresholds', [])}
+    for o in lay.get('openings', []):
+        if o['kind'] in ('door', 'arch') and o['name'] != 'd_platform_tunnel' and o['name'] not in ths:
+            fails.append('threshold %s has no threshold plate' % o['name'])
+    # fx-fixture / fx-source
+    lit = [l['origin'] for l in lay.get('lights', []) if l.get('fixture') and l.get('intensity', 1) > 0]
+    leaks = lay.get('leaks', [])
+    for e in lay.get('fx_placed', []):
+        o = e['origin']
+        if any(g in e['kind'] for g in GLOW_FX) and not any(sum((o[k] - p[k]) ** 2 for k in range(3)) ** 0.5 <= 24 for p in lit):
+            fails.append('fx-fixture %s (%s) at %s: no lit fixture within 24' % (e['name'], e['kind'], o))
+        if e['kind'].startswith('drips') and not any(abs(o[0] - l['origin'][0]) <= 48 and abs(o[1] - l['origin'][1]) <= 48 for l in leaks):
+            fails.append('fx-source %s (%s) at %s: no leak (ceiling stain + puddle)' % (e['name'], e['kind'], o))
+    # decor-rail / stacked
+    rails = [g for g in geo if g['name'] in ('rail', 'handrail', 'window_frame')]
+    boxes = []
+    for d in lay.get('decor', []):
+        bx = model_box(d, bounds)
+        if bx:
+            boxes.append((d, bx))
+    for d, (mn, mx) in boxes:
+        if 'train' in d['model'] or d['model'].startswith('iwz_'):
+            continue
+        for g in rails:
+            if box_overlap(mn, mx, [v + 1 for v in g['mins']], [v - 1 for v in g['maxs']]) > 0:
+                fails.append('decor-rail %s at %s through the %s at %s' % (d['model'], d['origin'], g['name'], [round(v) for v in g['mins']]))
+                break
+    for d, (mn, mx) in boxes:
+        if any(t in d['model'] for t in STACK_OK):
+            continue
+        for e, (emn, emx) in boxes:
+            if e is d or any(t in e['model'] for t in STACK_OK) or emx[2] - emn[2] < 6:
+                continue
+            if emn[2] + 6 < mn[2] <= emx[2] + 4:            # d's base is on or just above e's top half
+                ox = min(mx[0], emx[0]) - max(mn[0], emn[0]); oy = min(mx[1], emx[1]) - max(mn[1], emn[1])
+                if ox > 0 and oy > 0 and ox * oy > 0.3 * min((mx[0] - mn[0]) * (mx[1] - mn[1]), (emx[0] - emn[0]) * (emx[1] - emn[1])):
+                    fails.append('stacked %s at %s stands on %s at %s' % (d['model'], d['origin'], e['model'], e['origin']))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('src'); ap.add_argument('--json')
+    ap.add_argument('--catalog', help='asset catalog.json (model bounds) for decor-rail / stacked')
+    ap.add_argument('--kit', help='kit_final.json (kit model bounds)')
     a = ap.parse_args()
+    bounds = {}
+    for path_ in (a.catalog, a.kit):
+        if path_ and os.path.isfile(path_):
+            for m_ in json.load(open(path_))['models']:
+                if m_.get('bounds'):
+                    bounds.setdefault(m_['name'], m_['bounds'])
     quads = json.load(open(os.path.join(a.src, 'surfaces.json')))['quads']
     lay = json.load(open(os.path.join(a.src, 'layout.json')))
     fails = []
@@ -217,6 +361,7 @@ def main():
             d0, d1 = decor_box(d)
             if box_overlap(s0, s1, d0, d1) > 0:
                 fails.append('intersect sign %s at %s with %s %s' % (da['image'], c, d['model'], d['origin']))
+    g27_rules(lay, quads, fails, bounds)
     import collections
     for r, c in collections.Counter(f.split()[0] for f in fails).most_common():
         print('ARTLINT rule %-14s %d' % (r, c))

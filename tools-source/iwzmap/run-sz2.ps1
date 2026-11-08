@@ -5,6 +5,9 @@ param(
   [string]$Fixture,                                           # views/walk: the generated iwzmap_sz2_local.gsc; gameplay: the gameplay fixture
   [string]$Only='',                                           # views: capture only names containing this text
   [string]$Part='0/1',                                        # walkcap: part k/n of the walkthrough positions
+  [string]$Ab='',                                             # views: A/B commands ("cmd|cmd"): each view captured as is and as <name>_b after them
+  [string]$AbReset='',                                        # views: commands run after each B capture
+  [string]$DvarProbe='',                                      # dvar names ("a|b|c") printed with their value at spawn ([IWZ local] DVAR)
   [int]$Seconds=420,
   [string]$Runs='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\level\runs',
   [string]$Server='C:\Users\ezvalo\Documents\IW7-Paris-Server\.claude\worktrees\custom-zombies-map-iwz-26cd2d',
@@ -18,11 +21,13 @@ $ErrorActionPreference='Stop'
 $out=Join-Path $Runs $Tag
 $extra='+set vid_width 1920 +set vid_height 1080 +set r_mode 1920x1080 +set cg_fov 65'
 switch($Mode){
-  'views'    { $extra+=' +set paris_iwz_mode views +set paris_iwz_noweapons 1 +set paris_iwz_fxhold 1 +set paris_iwz_cmds "cg_draw2D 0"'; if($Only){ $extra+=" +set paris_iwz_only $Only" } }
+  'views'    { $extra+=' +set paris_iwz_mode views +set paris_iwz_noweapons 1 +set paris_iwz_fxhold 1 +set paris_iwz_cmds "cg_draw2D 0"'; if($Only){ $extra+=" +set paris_iwz_only $Only" }
+               if($Ab){ $extra+=" +set paris_iwz_ab `"$Ab`"" }; if($AbReset){ $extra+=" +set paris_iwz_ab_reset `"$AbReset`"" } }
   'walk'     { $extra+=' +set paris_iwz_mode walk' }
   'walkcap'  { $extra+=" +set paris_iwz_mode walkcap +set paris_iwz_noweapons 1 +set paris_iwz_wc_part $Part" + ' +set paris_iwz_cmds "cg_draw2D 0"' }
   'gameplay' { $extra+=' +set paris_iwz_gameplay 1 +set paris_iwz_autouse 1 +set developer_script 1' }
 }
+if($DvarProbe){ $extra+=" +set paris_iwz_dvarprobe `"$DvarProbe`"" }
 for($k=0;$k -lt $Tries;$k++){
   $main=(Resolve-Path $GameRoot).Path
   $busy=@(Get-CimInstance Win32_Process|Where-Object {$_.ExecutablePath -and $_.ExecutablePath.StartsWith($main+'\',[StringComparison]::OrdinalIgnoreCase)}).Count

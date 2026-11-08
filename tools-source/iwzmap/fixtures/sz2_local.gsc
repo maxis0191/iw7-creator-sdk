@@ -6,6 +6,10 @@
 //          steps and check with engine traces: the step is not blocked (playerphysicstrace), there is floor under it
 //          (bullettrace down), no horizontal ray escapes the world (8 bullettraces + 4 playerphysicstraces), there is
 //          a ceiling; zone volumes contain their probe points. Every failure is printed as [IWZ local] WALKFAIL.
+// Options (g27): paris_iwz_dvarprobe "a|b|c" prints [IWZ local] DVAR name=..; value=..; exists=.. for each name (an
+//          IW7 dvar is found by the hash of its name: a wrong name reads empty); views mode with paris_iwz_ab "cmd|cmd"
+//          captures every view twice: iwzv_<name> as is, then iwzv_<name>_b after the commands (A/B), then runs
+//          paris_iwz_ab_reset "cmd|cmd".
 
 init()
 {
@@ -31,6 +35,15 @@ iwz_main()
         for ( i = 0; i < cmds.size; i++ )
             executecommand( cmds[i] );
         wait 1;
+    }
+    if ( getdvar( "paris_iwz_dvarprobe" ) != "" )
+    {
+        names = strtok( getdvar( "paris_iwz_dvarprobe" ), "|" );
+        for ( i = 0; i < names.size; i++ )
+        {
+            v = getdvar( names[i] );
+            print( "[IWZ local] DVAR name=" + names[i] + "; value=" + v + "; exists=" + ( v != "" ) );
+        }
     }
     mode = getdvar( "paris_iwz_mode" );
     if ( mode == "views" )
@@ -103,6 +116,29 @@ iwz_views( player )
         executecommand( "capture_frame iwzv_" + v.name );
         wait 1;
         print( "[IWZ local] VIEW name=" + v.name + "; origin=" + player.origin + "; ground=" + player isonground() + "; angles=" + player getplayerangles() );
+        if ( getdvar( "paris_iwz_ab" ) != "" )
+        {
+            ab = strtok( getdvar( "paris_iwz_ab" ), "|" );
+            for ( k = 0; k < ab.size; k++ )
+                executecommand( ab[k] );
+            wait 2;
+            if ( getdvar( "paris_iwz_dvarprobe" ) != "" )      // did the B commands take (cheat-protected dvars refuse with sv_cheats 0)
+            {
+                names = strtok( getdvar( "paris_iwz_dvarprobe" ), "|" );
+                for ( k = 0; k < names.size; k++ )
+                    print( "[IWZ local] DVAR_B name=" + names[k] + "; value=" + getdvar( names[k] ) );
+            }
+            executecommand( "capture_frame iwzv_" + v.name + "_b" );
+            wait 1;
+            print( "[IWZ local] VIEW_B name=" + v.name + "_b; cmds=" + getdvar( "paris_iwz_ab" ) );
+            if ( getdvar( "paris_iwz_ab_reset" ) != "" )
+            {
+                ab = strtok( getdvar( "paris_iwz_ab_reset" ), "|" );
+                for ( k = 0; k < ab.size; k++ )
+                    executecommand( ab[k] );
+                wait 1;
+            }
+        }
     }
 }
 

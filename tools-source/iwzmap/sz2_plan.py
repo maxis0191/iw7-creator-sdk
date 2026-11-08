@@ -6,6 +6,7 @@ Checks (exit code 1 on failure):
   - spawners, starts, walk waypoints, dog spawners lie on nav cells of the right zone (within one cell)
   - consecutive walk waypoints are connected over nav links
   - nav links never rise more than 18 units
+  - (g27) a wall spawner's vent sits on flat floor (nav heights within 48 of it equal): not on a stair slope
 Writes a top-down plan (cells coloured by height, blockers, openings, spawners, interactions, walk path).
 """
 import collections, json, math, os, sys
@@ -97,6 +98,13 @@ for s in layout['spawners']:
             dx_, dy_, dz_ = d['origin']
             if abs(x - dx_) < cl[0] + 24 and abs(y - dy_) < cl[1] + 24 and abs(z - dz_) < 2 * cl[2] + 40:
                 fails.append('spawner %s (%g %g) inside the clip of %s at (%g %g)' % (s['zone'], x, y, d['model'], dx_, dy_))
+    # (g27, review C stair_b_0 / stair_a_1) a wall spawner's vent is a flat rectangle at the floor: every nav cell
+    # within 48 of the spawner must have the same height, otherwise the vent sits on a stair slope (black triangle plate)
+    if s['kind'] == 'wall':
+        hs_ = {cells[(i_, j_)][0] for i_ in range(int(math.floor((x - 48) / CELL)), int(math.floor((x + 48) / CELL)) + 1)
+               for j_ in range(int(math.floor((y - 48) / CELL)), int(math.floor((y + 48) / CELL)) + 1) if (i_, j_) in cells}
+        if hs_ and max(hs_) - min(hs_) > 1:
+            fails.append('spawner %s wall vent (%g %g) not on flat floor (nav heights %g..%g: stair slope)' % (s['zone'], x, y, min(hs_), max(hs_)))
     # train kit (layout train_spec): a ground spawner on the bed inside a ballast prism (y +- 62 of the track centre,
     # bed .. ballast top, solid) spawns its zombie into the ballast; on a car's nav box, into the car
     ts_ = layout.get('train_spec') or {}
