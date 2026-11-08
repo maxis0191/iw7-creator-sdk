@@ -11,7 +11,11 @@
 
 init()
 {
-    level.iwz_fl_world = loadfx( "vfx/iwz/vfx_iwz_flashlight_world" );
+    // three identical copies of the light: after a kill, the same effect played again on the same tag stays dark
+    // for a while (runs dk3 / dk4: every re-attach within seconds of a kill failed), so each attach uses the next copy
+    level.iwz_fl_worlds = [ loadfx( "vfx/iwz/vfx_iwz_flashlight_world" ), loadfx( "vfx/iwz/vfx_iwz_flashlight_world_b" ),
+        loadfx( "vfx/iwz/vfx_iwz_flashlight_world_c" ) ];
+    level.iwz_fl_world = level.iwz_fl_worlds[0];
     level.iwz_fl_view = loadfx( "vfx/iwz/vfx_iwz_flashlight_view" );
     if ( !isdefined( level.iwz_fl_tag ) )
         level.iwz_fl_tag = "tag_flash";
@@ -104,19 +108,23 @@ iwz_fl_attach( click )
     if ( !scripts\engine\utility::is_true( self.iwz_fl_enabled ) || !isalive( self ) )
         return;
     tag = level.iwz_fl_tag;
+    if ( !isdefined( self.iwz_fl_k ) )
+        self.iwz_fl_k = -1;
+    self.iwz_fl_k = ( self.iwz_fl_k + 1 ) % level.iwz_fl_worlds.size;
+    self.iwz_fl_fx = level.iwz_fl_worlds[self.iwz_fl_k];
     w = self getcurrentweapon();
     if ( !isdefined( w ) || w == "none" )
         tag = "tag_eye";        // no weapon (fists / perk drinking / afterlife hands): light from the eye
     self.iwz_fl_tag_used = tag;
     if ( !level.iwz_fl_split )
-        playfxontag( level.iwz_fl_world, self, tag );
+        playfxontag( self.iwz_fl_fx, self, tag );
     else
     {
         playfxontagforclients( level.iwz_fl_view, self, level.iwz_fl_view_tag, self );
         foreach ( q in level.players )
         {
             if ( isdefined( q ) && q != self )
-                playfxontagforclients( level.iwz_fl_world, self, tag, q );
+                playfxontagforclients( self.iwz_fl_fx, self, tag, q );
         }
     }
     self.iwz_fl_on = 1;
@@ -131,11 +139,11 @@ iwz_fl_detach()
         return;
     tag = self.iwz_fl_tag_used;
     if ( !level.iwz_fl_split )
-        killfxontag( level.iwz_fl_world, self, tag );
+        killfxontag( self.iwz_fl_fx, self, tag );
     else
     {
         killfxontag( level.iwz_fl_view, self, level.iwz_fl_view_tag );
-        killfxontag( level.iwz_fl_world, self, tag );
+        killfxontag( self.iwz_fl_fx, self, tag );
     }
     self.iwz_fl_on = 0;
     iwz_fl_log( "OFF " + self.name );

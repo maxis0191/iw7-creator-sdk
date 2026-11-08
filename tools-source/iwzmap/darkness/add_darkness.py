@@ -55,6 +55,15 @@ def main(argv=None):
                     txt = re.sub(r'(?m)^%s ".*"$' % re.escape(k), '%s "%s"' % (k, v), txt)
                 else:
                     txt += '%s "%s"\n' % (k, v)
+            # --alias "<existing vision>=<variant>,...": the variant's text also replaces a stock vision of the zone
+            # (test of whether only names known to the template map can be applied)
+            if '--alias' in argv:
+                for pair in argv[argv.index('--alias') + 1].split(','):
+                    if '=' in pair and name == '%s_dark_%s' % (m, pair.split('=', 1)[1]):
+                        dst_v = os.path.join(root, 'vision', pair.split('=', 1)[0] + '.vision')
+                        if os.path.exists(dst_v):
+                            os.remove(dst_v)       # may be a hardlink into the stock dump: never write through it
+                        open(dst_v, 'w', newline='\n', encoding='latin1').write(txt)
             rel = 'vision/%s.vision' % name
             open(os.path.join(root, *rel.split('/')), 'w', newline='\n', encoding='latin1').write(txt)
             rows.append('rawfile,' + rel)
