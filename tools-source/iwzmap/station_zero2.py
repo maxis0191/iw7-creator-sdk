@@ -286,6 +286,12 @@ STRIP_COUNT = {}
 DIM = os.environ.get('IWZ_DIM', '1') == '1'     # g25 mood pass: half the fluorescents are dead, in clusters
 
 
+# IWZ_DARK=1 (darkness module, darkness/README.md): power fittings get a dark diffuser in the world and an unlit /
+# lit fixture model pair (script_model iwz_power_fixture) that cp_iwz_darkness.gsc swaps when their bank comes on
+DARK = os.environ.get('IWZ_DARK') == '1'
+POWER_FIXTURES = []
+
+
 def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=6, dead=False):
     """Ceiling fluorescent fitting: a steel housing with an emissive diffuser underneath (dead: dark diffuser, no light)."""
     k_ = STRIP_COUNT[zone] = STRIP_COUNT.get(zone, -1) + 1
@@ -297,12 +303,19 @@ def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=6, dead=False):
         dead = True
     if dead:
         mat = 'panel_dark'
+    quad_mat = 'panel_dark' if DARK and mat in ('lamp_cool', 'lamp_warm') else mat
     B.box((x0 - 3, y0 - 3, z - depth), (x1 + 3, y1 + 3, z), {'side': 'steel_trim', 'top': 'steel_trim'}, zone,
           collide=False, nav=False, skip=('bottom',))
-    B.quad(mat, zone, [(x0, y1, z - depth - 0.5), (x1, y1, z - depth - 0.5), (x1, y0, z - depth - 0.5), (x0, y0, z - depth - 0.5)],
+    B.quad(quad_mat, zone, [(x0, y1, z - depth - 0.5), (x1, y1, z - depth - 0.5), (x1, y0, z - depth - 0.5), (x0, y0, z - depth - 0.5)],
            n=(0, 0, -1), uvs=[(0, 0), (1, 0), (1, 1), (0, 1)], collide=False)
     if dead:
         return
+    if DARK and mat in ('lamp_cool', 'lamp_warm'):
+        # a world emissive material glows whatever the light does, so the diffuser above is the dark panel and the
+        # lit look comes from the fitting model swapped at power-on
+        # same hang as the level's flicker lamps (mp_dart_lightfluo origin 17 below the ceiling)
+        POWER_FIXTURES.append({'zone': zone, 'origin': ((x0 + x1) / 2, (y0 + y1) / 2, z - 17),
+                               'yaw': 0 if abs(x1 - x0) >= abs(y1 - y0) else 90, 'off': 'mp_dart_lightfluo', 'on': 'mp_dart_lightfluo_on'})
     coloured = mat not in ('lamp_cool', 'lamp_warm', 'light_panel')
     LIGHTS.append({'zone': zone, 'origin': ((x0 + x1) / 2, (y0 + y1) / 2, z - depth - 4), 'type': 'omni',
                    'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 96 if coloured else 384,
@@ -311,17 +324,25 @@ def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=6, dead=False):
 
 def wall_lamp(zone, axis, fixed, facing, s, z, mat='lamp_warm', w=24, h=12):
     """Wall bulkhead lamp: emissive face on a short steel box."""
+    face_mat = mat
+    if DARK and mat in ('lamp_cool', 'lamp_warm'):
+        face_mat = 'panel_dark'
+        if axis == 'x':
+            fo, fyaw = (s, fixed + facing * 6, z + h / 2), (90 if facing > 0 else 270)
+        else:
+            fo, fyaw = (fixed + facing * 6, s, z + h / 2), (0 if facing > 0 else 180)
+        POWER_FIXTURES.append({'zone': zone, 'origin': fo, 'yaw': fyaw, 'off': 'clk_wall_light_01', 'on': 'clk_wall_light_01_on'})
     if axis == 'x':
         B.slab_x(s - w / 2 - 3, s + w / 2 + 3, fixed, z - 3, z + h + 3, 5, 'steel_trim', zone, facing, collide=False, nav=False)
         y = fixed + facing * 5.5
         pts = [(s + w / 2 * facing, y, z), (s - w / 2 * facing, y, z), (s - w / 2 * facing, y, z + h), (s + w / 2 * facing, y, z + h)]
-        B.quad(mat, zone, pts, n=(0, facing, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
+        B.quad(face_mat, zone, pts, n=(0, facing, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
         o = (s, fixed + facing * 12, z + h / 2)
     else:
         B.slab_y(s - w / 2 - 3, s + w / 2 + 3, fixed, z - 3, z + h + 3, 5, 'steel_trim', zone, facing, collide=False, nav=False)
         x = fixed + facing * 5.5
         pts = [(x, s - w / 2 * facing, z), (x, s + w / 2 * facing, z), (x, s + w / 2 * facing, z + h), (x, s - w / 2 * facing, z + h)]
-        B.quad(mat, zone, pts, n=(facing, 0, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
+        B.quad(face_mat, zone, pts, n=(facing, 0, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
         o = (fixed + facing * 12, s, z + h / 2)
     coloured = mat not in ('lamp_cool', 'lamp_warm', 'light_panel')
     LIGHTS.append({'zone': zone, 'origin': o, 'type': 'omni', 'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 96 if coloured else 320,
@@ -1898,7 +1919,11 @@ ents.append(ent(classname='script_struct', targetname='hidden_room_spot', origin
 for f_ in FLICKER:    # flickering fluorescent: the lit model, swapped with the unlit one by the level script
     ents.append(ent(classname='script_model', targetname='iwz_flicker', model='mp_dart_lightfluo_on', origin=fmt(f_['origin']),
                     angles='0 %g 0' % f_['yaw']))
-for m_ in ('icbm_electricpanel9_on', 'beacon_light_plasticcase_red_off', 'mp_dart_lightfluo'):      # swapped models: keep them loaded
+for f_ in POWER_FIXTURES:    # IWZ_DARK: power fittings, unlit until their bank comes on (cp_iwz_darkness.gsc)
+    ents.append(ent(classname='script_model', targetname='iwz_power_fixture', model=f_['off'], origin=fmt(f_['origin']),
+                    angles='0 %g 0' % f_['yaw'], noteworthy='%s|%s|%s' % (f_['zone'], f_['off'], f_['on'])))
+for m_ in (('icbm_electricpanel9_on', 'beacon_light_plasticcase_red_off', 'mp_dart_lightfluo') +
+           (('mp_dart_lightfluo_on', 'clk_wall_light_01', 'clk_wall_light_01_on') if DARK else ())):      # swapped models: keep them loaded
     ents.append(ent(classname='script_model', model=m_, origin='0 0 -3000', angles='0 0 0'))
 # PaP shutter: two rolling steel gates (stock gate_warehouse_refinery_01, 156 x 12 x 186, origin at its corner) in the
 # arch between the control room and the PaP alcove, raised by the relay quest; collision from door blockers below
@@ -1981,6 +2006,9 @@ gsc = gsc.replace('//@WHEEL@', '"%s"' % WHEELS[0][3])
 gsc = gsc.replace('//@FXLOAD@', chr(10).join('    level._effect["iwz_fx_%d"] = loadfx( "%s" );' % (k, f['fx']) for k, f in enumerate(FX)))
 gsc = gsc.replace('//@FXPLACE@', chr(10).join('    fx[fx.size] = iwz_fx( "iwz_fx_%d", ( %g, %g, %g ), %d );' % (k, *f['origin'], 1 if f['repeat'] else 0)
                                          for k, f in enumerate(FX)))
+if DARK:     # darkness module + flashlight added by darkness/add_darkness.py (build step of the darkness build)
+    gsc = gsc.replace('//@DARK@', r'level thread scripts\cp\maps\cp_iwz\cp_iwz_darkness::init();' + chr(10) +
+                      r'    level thread scripts\cp\maps\cp_iwz\cp_iwz_flashlight::init();')
 if os.environ.get('IWZ_AUDIO') == '1':     # audio module added by build-sz2.ps1 -AudioSdk (audio agent's add_audio.py)
     gsc = gsc.replace('//@AUDIO@', r'level thread scripts\cp\maps\cp_iwz\cp_iwz_audio_layout::init();')
 tb = QUEST['trap_third_rail_volume']['box']
@@ -2147,6 +2175,7 @@ layout['views'] = VIEWS
 layout['sign_views'] = SIGN_VIEWS
 layout['fx'] = FX
 layout['flicker'] = FLICKER
+layout['power_fixtures'] = POWER_FIXTURES
 layout['kit_models'] = sorted(m for m in KIT_MODELS if not os.environ.get('IWZ_KIT_ONLY') or m == os.environ['IWZ_KIT_ONLY'])
 layout['flicker_views'] = FLK_VIEWS
 layout['fx_views'] = FX_VIEWS

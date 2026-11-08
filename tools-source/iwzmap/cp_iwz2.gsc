@@ -64,6 +64,7 @@ main()
     level thread iwz_pap_quest();
     level thread iwz_third_rail();
     level thread iwz_ambient_fx();
+    //@DARK@
     level thread iwz_flicker();
     level thread iwz_report();
     //@AUDIO@
@@ -482,6 +483,8 @@ iwz_flicker()
 {
     level endon( "game_ended" );
     wait 1;
+    if ( isdefined( level.iwz_dark ) )
+        return;     // darkness module: the lamps are dead until power, then flicker with their light
     lamps = getentarray( "iwz_flicker", "targetname" );
     foreach ( l in lamps )
         l thread iwz_flicker_lamp();

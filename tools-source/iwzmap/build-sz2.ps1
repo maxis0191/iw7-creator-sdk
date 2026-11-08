@@ -17,6 +17,11 @@ param(
   [string[]]$KitDumps=@(),                                                                            # '<zone>=<dump root>;<techsets dump root>' (zonetool -dumpzonetypes <zone> xmodel,xmodelsurfs,material,image,physicsasset,physicsfxshape; zonetool -dumpzone techsets_<zone>)
   [string[]]$KitRuntimeCsv=@(),                                                                       # extra csvs of runtime techset zones (techsets_common)
   [string]$KitReport='',
+  [string]$FxImport='',                                                                               # fx\fx_import.py: foreign-zone vfx '<zone>:<vfx>,...'
+  [string[]]$FxDumps=@(),                                                                             # '<zone>=<vfx dump root>;<kit dump root>;<techsets dump root>'
+  [string]$FxReport='',
+  [switch]$Darkness,                                                                                  # darknessdd_darkness.py: darkness + flashlight modules (generator IWZ_DARK=1)
+  [string]$FxNcsSkip='',                                                                             # experiment: imported effects left out of the level effect list
   [switch]$ReuseCompile)                                                                              # keep the previous iwzcompile output of the same -Src (dump\<map>)
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
@@ -76,6 +81,21 @@ if($KitModels -or $KitJson){
   foreach($rcsv in @($KitRuntimeCsv)){ if($rcsv -and (Test-Path $rcsv)){ $ka+=@("--runtime-csv",$rcsv) } }
   python -I "$S\kit_import.py" @ka
   if($LASTEXITCODE){ throw 'kit_import failed' }
+}
+if($Darkness){
+  # darkness module + weapon flashlight (darkness agent): rawfiles after the level script row
+  python -I "$S\darknessdd_darkness.py" "$W\zone_source\$Map.csv" "$W\zonetool\$Map" $Map
+  if($LASTEXITCODE){ throw 'add_darkness failed' }
+}
+if($FxImport){
+  # foreign-zone effects: link the vfx + children + materials/images/techsets, add vfx rows, append the names to the
+  # level effect list (netconststrings/ncs_efx_level.json): IW7 registers effects only through that list
+  $fa=@($W,$Map,'--fx',$FxImport); foreach($fd in $FxDumps){ $fa+=@('--dump',$fd) }
+  foreach($td in [IO.Directory]::GetDirectories($D,'techsets_*')){ $rcsv=Join-Path $td ((Split-Path $td -Leaf)+".csv"); if(Test-Path $rcsv){ $fa+=@('--runtime-csv',$rcsv) } }
+  if($FxReport){ $fa+=@('--report',$FxReport) }
+  if($FxNcsSkip){ $fa+=@('--ncs-skip',$FxNcsSkip) }
+  python -I "$S\fx\fx_import.py" @fa
+  if($LASTEXITCODE){ throw 'fx_import failed' }
 }
 $null = New-Item -ItemType Directory -Force "$W\zonetool\$Map\techsets\ps"
 if(!(Test-Path "$W\zonetool\$Map\techsets\ps\null.hlsl.cso")){ [IO.File]::WriteAllBytes("$W\zonetool\$Map\techsets\ps\null.hlsl.cso",[byte[]]@()) }
