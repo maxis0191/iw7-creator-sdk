@@ -20,7 +20,8 @@ NAMES = ['clock_face_stopped', 'departure_board_suspended', 'evac_signal_diagram
          'notice_do_not_restart', 'poster_missing', 'poster_missing_1', 'poster_missing_2', 'poster_missing_3',
          'poster_missing_a', 'poster_missing_b', 'poster_missing_c', 'poster_station_zero_v2', 'ad_panel_broken',
          'grime_mask_floor', 'junction_grime', 'water_streak', 'sign_grime_overlay', 'decal_blood_feathered',
-         'decal_grime_feathered', 'poster_illustration_2']
+         'decal_grime_feathered', 'poster_illustration_2',
+         'decal_blood_hand_smear', 'decal_blood_drag', 'decal_blood_spatter', 'decal_blood_pool']   # art c10c5ad blood set
 KIND = {'departure_board_suspended': 'poster', 'evac_signal_diagram': 'poster', 'notice_quarantine': 'poster',
         'notice_do_not_restart': 'poster', 'poster_missing': 'poster', 'poster_missing_1': 'poster', 'poster_missing_2': 'poster',
         'poster_missing_3': 'poster', 'ad_panel_broken': 'poster', 'poster_illustration_2': 'poster',

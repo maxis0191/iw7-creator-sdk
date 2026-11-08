@@ -402,7 +402,9 @@ BLOOD_COUNT = [0]
 
 
 def decal_floor(zone, mat, x, y, z, w, h, rot=False, mirror=False):
-    if mat == 'blood_pool' and ART_HOOKS.BLOOD_VARIANTS:
+    if mat.startswith('blood:'):            # blood:<variant> -> art decal_blood_<variant>, else the stock pool
+        mat = ART_HOOKS.key('decal_blood_' + mat[6:]) or 'blood_pool'
+    elif mat == 'blood_pool' and ART_HOOKS.BLOOD_VARIANTS:
         k_ = BLOOD_COUNT[0]; BLOOD_COUNT[0] += 1
         n_ = len(ART_HOOKS.BLOOD_VARIANTS)
         mat = ART_HOOKS.BLOOD_VARIANTS[k_ % n_]
@@ -735,7 +737,11 @@ sign(Z, 'poster_mindgap', 'y', -1200, +1, 4150, 120, 96, 144)
 sign(Z, 'poster_lasttrain', 'x', 3200, +1, -200, 120, 96, 144)
 sign(Z, 'poster_lasttrain', 'y', 400, -1, 3620, 120, 96, 144)
 decal_wall(Z, 'leak_stain', 'x', 4400, -1, 300, 200, 128, 220)
-decal_floor(Z, 'blood_pool', -500, 3450, 0, 96, 96)
+# blood, used sparingly and as one story (art c10c5ad): a body was dragged from the broken turnstile (x -650) to the
+# stair A door, a hand slid down that door's frame
+for k_, (x_, y_) in enumerate(((-650, 3610), (-628, 3500), (-606, 3390), (-590, 3290))):
+    decal_floor(Z, 'blood:drag', x_, y_, 0, 104, 104, rot=bool(k_ % 2), mirror=bool(k_ // 2))
+decal_wall(Z, ART_HOOKS.key('decal_blood_hand_smear') or 'blood_pool', 'x', 3200, +1, -731, 64, 44, 44)   # beside the door frame (frame x -706..-696)
 floor_grid(Z, -1200, 3200, 400, 4400, 0, 'tile_black', step=400, skip=((-1168, 3660, -240, 3740), (-224, 3600, 96, 3800)))
 drains(Z, [(-1000, 3400), (200, 3400), (-1000, 4250), (200, 4250)], 0)
 ceiling_grid(Z, -1200, 3200, 400, 4400, 320, step_y=400, depth=24)
@@ -896,7 +902,7 @@ for x, p in ((-768, 'poster_lasttrain'), (512, 'poster_mindgap'), (-2048, 'poste
 sign(Z, 'sign_staff_only', 'y', 2400, -1, 1800, -90, 192)
 for x in (-1900, -400, 900, 2000):
     decal_wall(Z, 'leak_stain', 'x', 2400, -1, x, -120, 96, 180)
-decal_floor(Z, 'blood_pool', 600, 2200, DECK_Z, 96, 96)
+decal_floor(Z, 'blood:pool', 600, 2200, DECK_Z, 96, 96, mirror=True)
 # nav regions: deck (minus wells), coping strip, pit (around the car underframe), recess
 _sign_s = [-1536, -1024, 0, 1024]
 _avoid = [(s_, 170) for s_ in _sign_s] + [(s_, 60) for s_ in (-1280, 256, 1792, -768, 768, 528)] + [(600, 90), (1100, 90), (2300, 120)]
@@ -980,7 +986,7 @@ GEN = (3300, 2800)
 B.box((GEN[0] - 120, GEN[1] - 72, -320), (GEN[0] + 120, GEN[1] + 72, -304), 'conc_painted', Z)
 B.collision_box((GEN[0] - 100, GEN[1] - 50, -304), (GEN[0] + 100, GEN[1] + 50, -206))     # kit generator body (decor below)
 sign(Z, 'sign_signal_control', 'x', 3184, -1, 3100, -70, 192)
-decal_floor(Z, 'blood_pool', 2900, 2700, -320, 96, 96)
+decal_floor(Z, 'blood:spatter', 2900, 2700, -320, 88, 88, rot=True)
 for x_ in range(2700, 3800, 300):
     for y_, f_ in ((2400, 1), (3184, -1)):
         if not (3000 <= x_ <= 3200 and y_ == 3184) and not (3000 <= x_ <= 3200 and y_ == 2400):
@@ -1267,8 +1273,8 @@ if os.environ.get('IWZ_STORY', '1') == '1':
                             (-3100, 1300, -384, 'service_tunnel'), (-2900, 3200, -384, 'platform_b')):
         decal_floor(zn_, 'water_stain', x_, y_, z_, 120, 96)     # 'puddle' (rvl) renders opaque grey: sz2_materials NOTES
     # blood, sparingly: by the train doors and in the tunnel
-    decal_floor('platform_a', 'blood_pool', -150, 1640, DECK_Z, 96, 96)
-    decal_floor('service_tunnel', 'blood_pool', -3380, 2380, -384, 96, 96)
+    decal_floor('platform_a', 'blood:spatter', -150, 1640 + (EDGE_Y - 1600), DECK_Z, 80, 80, mirror=True)
+    decal_floor('service_tunnel', 'blood:pool', -3380, 2380, -384, 96, 96, rot=True, mirror=True)
 
 
 # ---------------------------------------------------------------- stock decor models (rc1-proven), clip boxes block nav
