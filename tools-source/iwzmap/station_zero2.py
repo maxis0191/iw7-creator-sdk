@@ -2018,6 +2018,10 @@ for zone, zd in ZONES.items():
     r, g, b, up = zd['probe']
     light_lines.append('room %d %d %d %d %d %d %.3f %.3f %.3f %.2f' % (x0 - 64, y0 - 64, z0 - 64, x1 + 64, y1 + 64, z1 + 64, r, g, b, up))
 open(os.path.join(out, 'lighting.txt'), 'w', newline='\n').write('\n'.join(light_lines) + '\n')
+# reflection probe rooms for the compiler (IWZ_PROBES=neutral): one per zone, its box and ambient colour; kept apart from
+# lighting.txt because a reused bake brings its own lighting.txt (thousands of chart rooms)
+open(os.path.join(out, 'probes.txt'), 'w', newline='\n').write(''.join(
+    'room %d %d %d %d %d %d %.3f %.3f %.3f %.2f\n' % (*zd['box'], *zd['probe']) for zd in ZONES.values()))
 
 # ============================================================================ level script with generated tables
 gsc = open(os.path.join(HERE, 'cp_iwz2.gsc')).read()
