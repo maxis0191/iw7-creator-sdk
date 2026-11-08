@@ -60,8 +60,10 @@ train_main()
     }
     train_traces();
     train_views( player );
+    player unlink();
     train_walk( player );
     train_perf( player );
+    player unlink();
     print( "[IWZ train] DONE" );
 }
 
@@ -84,7 +86,13 @@ train_views( player )
     for ( i = 0; i < views.size; i++ )
     {
         v = strtok( views[i], "," );
+        player unlink();
         player setorigin( ( float( v[1] ), float( v[2] ), float( v[3] ) ) );
+        // hold the player at the view point (no fall where the kit has no clip, e.g. inside a spawned car)
+        if ( !isdefined( level.train_anchor ) )
+            level.train_anchor = spawn( "script_origin", player.origin );
+        level.train_anchor.origin = ( float( v[1] ), float( v[2] ), float( v[3] ) );
+        player playerlinkto( level.train_anchor );
         player setplayerangles( ( float( v[5] ), float( v[4] ), 0 ) );
         player freezecontrols( 1 );
         player takeallweapons();
