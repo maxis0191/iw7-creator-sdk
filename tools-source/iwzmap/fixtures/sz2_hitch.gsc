@@ -52,7 +52,7 @@ iwz_hitch()
     iwz_hitch_phase( 0 );
     wait 10;
     // the car fills the view from the deck (car x 32..568, y 1421..1555; deck at y 1800)
-    player setorigin( ( 300, 1820, -320 ) );
+    player setorigin( ( 1205, 1820, -320 ) );
     player setplayerangles( ( 5, 270, 0 ) );
     iwz_hitch_phase( 1 );
     wait 10;
@@ -62,7 +62,7 @@ iwz_hitch()
     iwz_hitch_phase( 2 );
     iwz_hitch_door( player, 0 );
     wait 10;
-    player setorigin( ( 300, 1820, -320 ) );
+    player setorigin( ( 1205, 1820, -320 ) );
     player setplayerangles( ( 5, 270, 0 ) );
     iwz_hitch_phase( 3 );
     wait 8;
