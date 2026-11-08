@@ -94,8 +94,14 @@ iwz_fl_death_watch()
 // (re)attach: kill this player's copies first so a refresh never doubles the light
 iwz_fl_attach( click )
 {
-    self iwz_fl_detach();
-    if ( !scripts\engine\utility::is_true( self.iwz_fl_enabled ) )
+    // a kill and a play of the same effect on the same tag in one server frame cancel each other (run dk3-d3: every
+    // re-attach after a weapon change left the player without a light): kill, wait a frame, then play
+    if ( scripts\engine\utility::is_true( self.iwz_fl_on ) )
+    {
+        self iwz_fl_detach();
+        wait 0.1;
+    }
+    if ( !scripts\engine\utility::is_true( self.iwz_fl_enabled ) || !isalive( self ) )
         return;
     tag = level.iwz_fl_tag;
     w = self getcurrentweapon();

@@ -29,14 +29,32 @@ def main(argv=None):
     # dark vision set: the map's own vision with auto exposure off and a fixed exposure, so the engine's eye
     # adaptation does not brighten the dark bake back to a lit look (engine run dk2-d2: with auto exposure the dark
     # hall rendered at median luma 0.26). Extra exposures for calibration runs: --exposures 4,6,8
+    # The dark vision's keys: --dark "key=value;key=value" (default: auto exposure off). Calibration variants:
+    # --variants "name:key=value;key=value|name2:..." -> vision/<map>_dark_<name>.vision. (Run dk3-d3: with
+    # tonemapAuto 0, tonemapExposure 2..14 rendered the same image, so exposure is not that key alone.)
     vis = os.path.join(root, 'vision', '%s.vision' % m)
     exposures = [e for e in (argv[argv.index('--exposures') + 1].split(',') if '--exposures' in argv else []) if e]
     dark_ev = argv[argv.index('--dark-exposure') + 1] if '--dark-exposure' in argv else '8'
+    dark_keys = argv[argv.index('--dark') + 1] if '--dark' in argv else 'tonemapAuto=0;tonemapExposure=%s' % dark_ev
+    variants = [('%s_dark' % m, dark_keys)]
+    variants += [('%s_dark_e%s' % (m, e.replace('.', 'p')), 'tonemapAuto=0;tonemapExposure=%s' % e) for e in exposures]
+    if '--variants' in argv:
+        for v in argv[argv.index('--variants') + 1].split('|'):
+            if ':' in v:
+                n, keys = v.split(':', 1)
+                variants.append(('%s_dark_%s' % (m, n), keys))
     if os.path.exists(vis):
         base = open(vis, encoding='latin1').read()
-        for name, ev in [('%s_dark' % m, dark_ev)] + [('%s_dark_e%s' % (m, e.replace('.', 'p')), e) for e in exposures]:
-            txt = re.sub(r'(?m)^tonemapAuto ".*"$', 'tonemapAuto "0"', base)
-            txt = re.sub(r'(?m)^tonemapExposure ".*"$', 'tonemapExposure "%s"' % ev, txt)
+        for name, keys in variants:
+            txt = base
+            for kv in keys.split(';'):
+                if '=' not in kv:
+                    continue
+                k, v = kv.split('=', 1)
+                if re.search(r'(?m)^%s ".*"$' % re.escape(k), txt):
+                    txt = re.sub(r'(?m)^%s ".*"$' % re.escape(k), '%s "%s"' % (k, v), txt)
+                else:
+                    txt += '%s "%s"\n' % (k, v)
             rel = 'vision/%s.vision' % name
             open(os.path.join(root, *rel.split('/')), 'w', newline='\n', encoding='latin1').write(txt)
             rows.append('rawfile,' + rel)
