@@ -65,8 +65,10 @@ collects `iwz*`). Then `dk_measure.py <run> --perf <fxperf> --phases ... --sheet
 
 ## Findings that shaped the route (engine runs dk2 .. dk7, darkness\NOTES.md)
 
-- IW7 auto exposure undoes a dark bake: the dark vision (tonemapAuto 0) is required, and it must be applied under a
-  stock vision name of the template (cp_zmb_int_basement) and re-applied after spawn: custom names did not apply.
+- IW7 auto exposure undoes a dark bake: the dark vision is required. With tonemapAuto 0 the exposure key is
+  tonemapMaxExposure (stock cp_zmb_bw uses -10; tonemapExposure has no effect). add_darkness writes it as
+  <map>_dark and under the template's spare stock name cp_zmb_int_basement; the module applies it 8 s and 14 s after
+  each spawn (init-time calls are reset by stock spawn code). Use `--dark tonemapAuto=0;tonemapMaxExposure=-3`.
 - `killfxontag` + `playfxontag` of the same effect on the same tag soon after stays dark: the module rotates six
   identical copies; after a weapon switch the light is re-attached 0.8 s later (the new weapon's tag).
 - The cp_disco train front light (brightness 1.5 .. 4) works as a flashlight; a brightness-40 copy renders nothing.
