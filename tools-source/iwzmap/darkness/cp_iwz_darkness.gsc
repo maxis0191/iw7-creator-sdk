@@ -259,27 +259,16 @@ iwz_dark_zone_of( o )
     return best;
 }
 
-// the dark vision: the whole level and every player (late joiners at spawn) until the first light bank. Stock
-// spawn / intro code resets naked visions after our first calls (run dk5-d5: the init-time call had no effect, a
-// later call did), so the vision is re-applied every 3 s until the power (a same-name re-apply is a no-op change)
+// the dark vision for the whole level and every player until the first light bank. Engine runs: the probe's
+// one-off call 8 s after spawn applied at once (dk5), while init-time calls (dk2-dk4) and a re-apply every 3 s from
+// map start (dk6, dk7) never darkened the view. So: one level call at init, then per player 8 s and 14 s after each
+// spawn (after the stock spawn / intro vision resets), the same calls as the proven probe.
 iwz_dark_vision_hold()
 {
     level endon( "game_ended" );
     level endon( "iwz_dark_vision_off" );
+    visionsetnaked( level.iwz_dark_vision, 0 );
     level thread iwz_dark_vision_players();
-    for ( ;; )
-    {
-        visionsetnaked( level.iwz_dark_vision, 0 );
-        if ( isdefined( level.players ) )
-        {
-            foreach ( p in level.players )
-            {
-                if ( isdefined( p ) && isalive( p ) )
-                    p visionsetnakedforplayer( level.iwz_dark_vision, 0 );
-            }
-        }
-        wait 3;
-    }
 }
 
 iwz_dark_vision_players()
@@ -300,8 +289,7 @@ iwz_dark_vision_player()
     for ( ;; )
     {
         self waittill( "spawned_player" );
-        wait 1;
-        self visionsetnakedforplayer( level.iwz_dark_vision, 0 );
+        self thread iwz_dark_vision_apply();
     }
 }
 
@@ -317,4 +305,18 @@ iwz_dark_vision_release( t )
             p visionsetnakedforplayer( "", t );
     }
     iwz_dark_log( "VISION_RELEASE " + t );
+}
+
+iwz_dark_vision_apply()
+{
+    self endon( "disconnect" );
+    self endon( "spawned_player" );
+    level endon( "iwz_dark_vision_off" );
+    foreach ( t in [ 8, 6 ] )
+    {
+        wait t;
+        visionsetnaked( level.iwz_dark_vision, 0 );
+        self visionsetnakedforplayer( level.iwz_dark_vision, 0 );
+        iwz_dark_log( "VISION_APPLY " + self.name + " " + level.iwz_dark_vision );
+    }
 }
