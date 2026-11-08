@@ -135,3 +135,20 @@ Runs f4..f12 (level g11 world rebuilt with this module and bank; developer_scrip
   reaches the usercmd. Song and activation sound found in the capture after a real-key activation.
 - Zone beds: see `iwz-stage2/audio/NOTES.md` (runs f7, f9, f11): station / cave bed identified per area by
   cross-correlation with the source clip, zone switches audible as a change of bed.
+
+## Music, dark phase and power-on (2026-11-08)
+- `station_zero_music.py` builds every music cue of the map (intro, round start x3, round end x3, special start
+  x2, special end, game over, `mus_iwz_power`, the activation sting `zmb_iwz_ee_activate`) from stock recordings
+  plus synthesis: the station PA chime (one stock copper-chime strike on 0 / -5 / +2 semitones) as a corrupted
+  leitmotif, a synthesized music box through walls, beating drones, the trolley rumble an octave down, a train horn
+  bent down, metal rattles through comb resonators, breath-like noise swells and hard silences. Deterministic
+  (seed); writes `cues.json` (what each cue is made of). FLAC must use fixed 1024-frame blocks: the engine plays
+  nothing else (the ext bank tool now re-encodes other block sizes).
+- Phases on the stock `power_on` flag: before it no tube buzz, light / appliance hums, sparks, CRT, flicker crackle
+  or PA; creaks, drips, moans, debris come more often (`soundscape_scatter` phase / dark rate) and
+  `soundscape_stalk` plays a few footsteps behind a player. `soundscape_bank` + `soundscape_power`: spin-up, two
+  breakers, hum and the power cue, then the light banks one by one (relay thunk, tube strikes, that bank's loops),
+  then the PA boot and a garbled announcement. External lighting leader: `level.iwz_light_banks_external = 1`,
+  `level notify( "iwz_light_bank_on", <zone> )` per bank, `iwz_power_lights_done` after the last.
+- `music_find.py`: every occurrence of every cue in a capture (normalized cross-correlation) beside the run marks;
+  in-game witness: fixture `iwzmap_soundscape.gsc` mode 4 (rounds in the dark, power, direct cues, endgame).
