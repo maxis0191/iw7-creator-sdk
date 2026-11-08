@@ -1,0 +1,45 @@
+# Station Zero ambient FX for the g25 layout (level builder; from the FX agent's station_zero_fx.txt, g24 coordinates
+# moved). <name> <alias|vfx path> <x> <y> <z> [key=value ...]. Stages: always | dark (until power_on) | lit | poweron.
+# Emergency glows sit beside the battery emergency lamps of the generator (clk_emergency_light, group emergency).
+
+# ticket hall: motes always; the lamp light cone only once the lamps are on
+hall_motes        motes             -1000 3800  200
+hall_cone         light_cone        -600  3400  300   stage=lit
+hall_emerg_w      emergency_glow    -1176 3500  250   stage=dark
+hall_emerg_s      emergency_glow    -380  3224  250   stage=dark
+
+# platform A: leaking ceiling over the deck, low fog in the trackbed channel (centre y 1488), emergency glows on the
+# back wall and by the maintenance door (route to the power switch)
+pa_leak           drips_line        300   1900  0     region=96 region_dz=-290
+pa_pit_fog        fog_tunnel        -1000 1488  -384
+pa_pit_fog_e      fog_low_bright    1000  1488  -384
+pa_emerg_w        emergency_glow    -1500 2376  -150  stage=dark
+pa_emerg_door     emergency_glow    2376  1960  -150  stage=dark
+
+# service tunnel: ground fog, grate steam, falling ceiling dust, emergency glows by the lamps
+tunnel_fog        fog_tunnel        -3420 1900  -384
+tunnel_steam      steam_grate       -3420 2250  -384
+tunnel_dust       dust_fall         -3000 1300  -90
+tunnel_emerg      emergency_glow    -2700 1240  -150  stage=dark
+tunnel_emerg_b    emergency_glow    -3576 2400  -150  stage=dark
+
+# maintenance corridor: steam jet from the wall pipe, emergency glow
+corr_steam        steam_pipe        2664  1700  -150  angles=0,90,0
+corr_emerg        emergency_glow    2900  1896  -140  stage=dark
+
+# generator room (generator unit on the plinth at 3300 2800): haze, burning barrel, embers, sparking panel (flashes
+# while dark), at power on: spark flashes and a smoke burst at the generator, then the running exhaust
+gen_haze          smoke_hang        3100  2950  -250
+gen_barrel_fire   fire_trash        3700  2700  -278
+gen_embers        embers            3600  2760  -260
+gen_panel_sparks  sparks            2615  2650  -265
+gen_panel_flash   spark_flash       2630  2650  -250  stage=dark
+gen_emerg         emergency_glow    2624  2800  -120  stage=dark
+gen_start_flash   spark_flash       3300  2800  -170  stage=poweron mode=interval:0.4-1.2 for=6 view=3300,2540,-320,90,15
+gen_start_smoke   smoke_burst       3300  2830  -320  stage=poweron for=12 view=3300,2540,-320,90,0
+gen_exhaust       generator_idle    3300  2800  -150  stage=lit view=3300,2540,-320,90,20
+
+# platform B and control room: emergency glows while dark; control room haze
+pb_emerg          emergency_glow    -2900 3376  -150  stage=dark
+ctrl_emerg        emergency_glow    3576  3600  -100  stage=dark
+ctrl_mist         mist              3100  3700  -300
