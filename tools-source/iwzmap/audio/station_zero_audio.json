@@ -87,13 +87,13 @@
     },
     {
       "name": "amb_iwz_train_rumble_dist",
-      "comment": "distant train rumble: stock coaster_engine_low trolley loop, script volume replaced by a fixed level and a wide 3D falloff",
+      "comment": "distant train rumble: stock coaster_engine_low trolley loop, script volume replaced by a fixed level and a wide 3D falloff; run s2: the loudest layer of the service tunnel (a dead zone), so lowered and closer falloff start",
       "template": "coaster_engine_low",
       "source": "stock",
       "set": {
-        "vol_min": 0.35,
-        "vol_max": 0.35,
-        "dist_min": 600.0,
+        "vol_min": 0.2,
+        "vol_max": 0.2,
+        "dist_min": 250.0,
         "dist_max": 4000.0,
         "volumefalloffcurve": "default"
       }
