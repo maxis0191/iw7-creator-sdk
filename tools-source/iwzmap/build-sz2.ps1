@@ -24,7 +24,7 @@ $ErrorActionPreference='Stop'
 $S=$PSScriptRoot; $W=$Work; $D=$TemplateDump
 function Invoke-Zt([string[]]$a,[int]$t){
   for($k=0;$k -lt $Tries;$k++){
-    try { return (& "$S\zt.ps1" -Work $W -ZtArgs $a -TimeoutSec $t -Owner 'IWZ Station Zero v2 level build') }
+    try { return (& "$S\zt.ps1" -Work $W -ZtArgs $a -TimeoutSec $t -Owner $(if($env:IWZ_BUILD_OWNER){$env:IWZ_BUILD_OWNER}else{'IWZ Station Zero v2 level build'})) }
     catch { if($_.Exception.Message -match 'Resource busy|Heavy job already reserved|busy|wait before heavy admission|wait for its owner'){ Start-Sleep 15; continue }; throw }
   }
   throw 'resource lease not obtained'

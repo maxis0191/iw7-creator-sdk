@@ -5,7 +5,8 @@ from per-zone dumps into zonetool/<map>/:
   xmodel/<name>.xmb (+ its <name>_lod*.hkx physics LOD data), the xsurface files, physicsasset / physicsfxshape files,
   and for every material the zone does not already carry: materials/<m>.json, its techset state and constant buffer
   files (techsets/state/<techset>/<m>.*, techsets/constantbuffer/<techset>/<m>.*) and the image headers
-  (images/<img>.iw7Image; the pixels stay in the base game's imagefile*.pak and stream from there).
+  (images/<img>.iw7Image; the pixels stay in the base game's imagefile*.pak and stream from there), or for ported /
+  authored models (x64-zt-extensions tools-source/asset-bridge/env-model) images/<img>.dds whose pixels are embedded.
 It then adds `xmodel,<name>` rows before the world rows of zone_source/<map>.csv (ZoneTool pulls materials, surfaces,
 images and techsets as dependencies).
 
@@ -302,9 +303,15 @@ def main(argv=None):
                 if ('image', img) in have:
                     rep['images']['shared'] += 1; continue
                 ip = find(zone, os.path.join('images', img + '.iw7Image'))
-                if not ip:
-                    missing.append('image:' + img); continue
-                add(ip, os.path.join('images', img + '.iw7Image'))
+                if ip:
+                    add(ip, os.path.join('images', img + '.iw7Image'))
+                else:
+                    # ported / authored models (x64-zt-extensions env-model): the pixels are embedded from a .dds
+                    ip = find(zone, os.path.join('images', img + '.dds'))
+                    if not ip:
+                        missing.append('image:' + img); continue
+                    add(ip, os.path.join('images', img + '.dds'))
+                    rep['images']['embedded'] = rep['images'].get('embedded', 0) + 1
                 rep['images']['new'] += 1; rep['images']['bytes'] += os.path.getsize(ip)
         rep['models'][name] = info
         rows.append('xmodel,' + name)
