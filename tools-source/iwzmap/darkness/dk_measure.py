@@ -52,8 +52,17 @@ def measure(path, wm_spec):
          'pool_frac': round(float(pool.sum()) / valid.sum(), 4), 'threshold': round(thr, 4)}
     if pool.sum() > 50:
         ys, xs = np.nonzero(pool)
+        r.update(pool_clip=round(float((y[pool] > 0.98).mean()), 4), pool_median=round(float(np.median(y[pool])), 4))
         r.update(pool_mean=round(float(y[pool].mean()), 4), pool_p90=round(float(np.percentile(y[pool], 90)), 4),
                  pool_cx=round(float(xs.mean()) / w - 0.5, 3), pool_cy=round(float(ys.mean()) / h - 0.5, 3))
+    # haze: a fog veil lifts the dark end and flattens local contrast (upper two thirds: no weapon, no floor at feet)
+    top = y[: int(h * 2 / 3)]
+    bs = 16
+    hh, ww = (top.shape[0] // bs) * bs, (top.shape[1] // bs) * bs
+    blocks = top[:hh, :ww].reshape(hh // bs, bs, ww // bs, bs).swapaxes(1, 2).reshape(-1, bs * bs)
+    r['veil_p5'] = round(float(np.percentile(top, 5)), 4)
+    r['local_contrast'] = round(float(blocks.std(axis=1).mean()), 4)
+    r['clip_frac'] = round(float((y[valid] > 0.98).mean()), 5)
     if out.sum():
         o = y[out]
         r.update(out_median=round(float(np.median(o)), 4), out_p10=round(float(np.percentile(o, 10)), 4),
@@ -77,8 +86,9 @@ def main(argv=None):
     for f in files:
         r, y = measure(f, a.weapon_mask)
         res.append(r); lum[os.path.basename(f)[:-4]] = y
-        print('%-36s med %.3f pool %.3f@%.3f out %s contrast %s cx %s' % (r['frame'], r['median'], r['pool_frac'],
-              r.get('pool_mean', 0), r.get('out_median', '-'), r.get('contrast', '-'), r.get('pool_cx', '-')))
+        print('%-36s med %.3f pool %.3f@%.3f clip %s out %s contrast %s cx %s veil %.3f lc %.4f' % (r['frame'], r['median'], r['pool_frac'],
+              r.get('pool_mean', 0), r.get('pool_clip', '-'), r.get('out_median', '-'), r.get('contrast', '-'), r.get('pool_cx', '-'),
+              r['veil_p5'], r['local_contrast']))
     pairs = []
     for p in a.pair:
         x, z = p.split(':')
