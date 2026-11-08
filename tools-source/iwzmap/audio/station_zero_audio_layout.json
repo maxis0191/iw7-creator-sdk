@@ -42,7 +42,8 @@
         0,
         -12
       ],
-      "note": "fluorescent, centre of the hall"
+      "note": "fluorescent, centre of the hall",
+      "bank": "ticket_hall"
     },
     {
       "zone": "ticket_hall",
@@ -52,7 +53,8 @@
         0,
         0,
         -12
-      ]
+      ],
+      "bank": "ticket_hall"
     },
     {
       "zone": "ticket_hall",
@@ -77,7 +79,8 @@
         0,
         0,
         -12
-      ]
+      ],
+      "bank": "stair_a"
     },
     {
       "zone": "platform_a",
@@ -115,7 +118,8 @@
         0,
         0,
         -12
-      ]
+      ],
+      "bank": "platform_a"
     },
     {
       "zone": "platform_a",
@@ -136,7 +140,8 @@
       "zone": "maint_corridor",
       "alias": "emt_appliance_hum_lp_02",
       "at": "zone:0.4,0.1,180",
-      "note": "pipes"
+      "note": "pipes",
+      "bank": "power"
     },
     {
       "zone": "maint_corridor",
@@ -145,7 +150,8 @@
       "random": [
         15,
         40
-      ]
+      ],
+      "bank": "power"
     },
     {
       "zone": "generator_room",
@@ -156,7 +162,8 @@
         0,
         40
       ],
-      "note": "generator"
+      "note": "generator",
+      "bank": "power"
     },
     {
       "zone": "generator_room",
@@ -167,7 +174,8 @@
         40,
         0
       ],
-      "note": "power switch"
+      "note": "power switch",
+      "bank": "power"
     },
     {
       "zone": "generator_room",
@@ -181,13 +189,15 @@
       "random": [
         12,
         30
-      ]
+      ],
+      "bank": "power"
     },
     {
       "zone": "control_room",
       "alias": "emt_appliance_hum_lp_01",
       "at": "zone:0.5,0.4,40",
-      "note": "signal desks, CRTs"
+      "note": "signal desks, CRTs",
+      "bank": "power"
     },
     {
       "zone": "control_room",
@@ -197,7 +207,8 @@
         0,
         0,
         -12
-      ]
+      ],
+      "bank": "control_room"
     },
     {
       "zone": "service_tunnel",
@@ -257,7 +268,8 @@
         0,
         0,
         -12
-      ]
+      ],
+      "bank": "stair_b"
     }
   ],
   "song_ee": {
@@ -283,7 +295,8 @@
           500,
           1400
         ],
-        "note": "metal of the platforms and tunnel settling"
+        "note": "metal of the platforms and tunnel settling",
+        "dark": 1.5
       },
       {
         "alias": "amb_iwz_creak",
@@ -299,7 +312,8 @@
         "dist": [
           400,
           1200
-        ]
+        ],
+        "dark": 1.5
       },
       {
         "alias": "amb_iwz_creak",
@@ -315,7 +329,8 @@
         "dist": [
           300,
           900
-        ]
+        ],
+        "dark": 1.5
       },
       {
         "alias": "amb_iwz_drip",
@@ -332,7 +347,8 @@
           150,
           600
         ],
-        "note": "leaks over the track bed"
+        "note": "leaks over the track bed",
+        "dark": 1.3
       },
       {
         "alias": "amb_iwz_drip",
@@ -346,7 +362,8 @@
         "dist": [
           100,
           450
-        ]
+        ],
+        "dark": 1.3
       },
       {
         "alias": "amb_iwz_gust",
@@ -383,7 +400,8 @@
           900,
           2200
         ],
-        "note": "something moving far away"
+        "note": "something moving far away",
+        "dark": 1.8
       },
       {
         "alias": "amb_iwz_moan",
@@ -399,7 +417,8 @@
         "dist": [
           600,
           1200
-        ]
+        ],
+        "dark": 1.8
       },
       {
         "alias": "amb_iwz_debris",
@@ -421,7 +440,8 @@
         "dist": [
           200,
           900
-        ]
+        ],
+        "dark": 1.3
       },
       {
         "alias": "amb_iwz_rats_lp",
@@ -439,7 +459,8 @@
           150,
           500
         ],
-        "burst": 3.0
+        "burst": 3.0,
+        "dark": 1.2
       }
     ],
     "far": [
@@ -507,7 +528,8 @@
         ],
         "zone": "maint_corridor",
         "note": "broken panel",
-        "radius": 1400
+        "radius": 1400,
+        "bank": "power"
       },
       {
         "alias": "amb_iwz_spark",
@@ -517,7 +539,8 @@
           30
         ],
         "zone": "maint_corridor",
-        "radius": 1400
+        "radius": 1400,
+        "bank": "power"
       },
       {
         "alias": "amb_iwz_spark",
@@ -527,7 +550,8 @@
           34
         ],
         "zone": "platform_a",
-        "radius": 1400
+        "radius": 1400,
+        "bank": "power"
       },
       {
         "alias": "amb_iwz_spark",
@@ -537,7 +561,8 @@
           30
         ],
         "zone": "generator_room",
-        "radius": 1400
+        "radius": 1400,
+        "bank": "power"
       },
       {
         "alias": "amb_iwz_spark",
@@ -547,7 +572,8 @@
           40
         ],
         "zone": "service_tunnel",
-        "radius": 1400
+        "radius": 1400,
+        "bank": "power"
       },
       {
         "alias": "amb_iwz_tv_static",
@@ -558,7 +584,8 @@
         ],
         "zone": "control_room",
         "note": "dead CRTs catching a channel",
-        "radius": 1400
+        "radius": 1400,
+        "bank": "power"
       },
       {
         "alias": "amb_iwz_tv_static",
@@ -568,7 +595,8 @@
           36
         ],
         "zone": "control_room",
-        "radius": 1400
+        "radius": 1400,
+        "bank": "power"
       },
       {
         "alias": "amb_iwz_tv_static",
@@ -578,7 +606,8 @@
           30
         ],
         "zone": "control_room",
-        "radius": 1400
+        "radius": 1400,
+        "bank": "power"
       }
     ],
     "loops": [
@@ -600,7 +629,8 @@
           0,
           0,
           -12
-        ]
+        ],
+        "bank": "ticket_hall"
       },
       {
         "alias": "amb_iwz_fluor_lp",
@@ -610,7 +640,8 @@
           0,
           0,
           -12
-        ]
+        ],
+        "bank": "ticket_hall"
       },
       {
         "alias": "amb_iwz_fluor_lp",
@@ -620,7 +651,8 @@
           0,
           0,
           -12
-        ]
+        ],
+        "bank": "ticket_hall"
       },
       {
         "alias": "amb_iwz_fluor_lp",
@@ -630,7 +662,8 @@
           0,
           0,
           -12
-        ]
+        ],
+        "bank": "platform_a"
       },
       {
         "alias": "amb_iwz_fluor_lp",
@@ -640,7 +673,8 @@
           0,
           0,
           -12
-        ]
+        ],
+        "bank": "platform_a"
       },
       {
         "alias": "amb_iwz_fluor_lp",
@@ -650,7 +684,8 @@
           0,
           0,
           -12
-        ]
+        ],
+        "bank": "platform_a"
       },
       {
         "alias": "amb_iwz_fluor_lp",
@@ -660,7 +695,8 @@
           0,
           0,
           -12
-        ]
+        ],
+        "bank": "stair_a"
       },
       {
         "alias": "amb_iwz_fluor_lp",
@@ -670,7 +706,8 @@
           0,
           0,
           -12
-        ]
+        ],
+        "bank": "stair_b"
       },
       {
         "alias": "amb_iwz_fluor_lp",
@@ -680,7 +717,8 @@
           0,
           0,
           -12
-        ]
+        ],
+        "bank": "control_room"
       }
     ],
     "pa": {
@@ -743,7 +781,25 @@
             40
           ]
         }
-      ]
+      ],
+      "breaker": "amb_iwz_breaker",
+      "relay": "amb_iwz_relay",
+      "strike": "amb_iwz_tube_strike",
+      "pa_boot": "amb_iwz_pa_boot",
+      "pa_line": "amb_iwz_pa_00",
+      "music": "mus_iwz_power",
+      "banks": [
+        "generator_room",
+        "maint_corridor",
+        "control_room",
+        "platform_a",
+        "stair_a",
+        "ticket_hall",
+        "stair_b",
+        "platform_b",
+        "service_tunnel"
+      ],
+      "comment": "power-on transition: spin-up, two breakers, hum, light banks from the generator outward (relay + tube strikes; each bank releases its tube buzz), mus_iwz_power, PA boot crackle + garbled \"main power on\""
     },
     "phone": {
       "ring": "amb_iwz_phone_ring",
@@ -826,6 +882,19 @@
     },
     "intro": {
       "alias": "mus_iwz_intro"
+    },
+    "stalk": {
+      "comment": "dark phase only: a few slow footsteps (and sometimes a debris drag) 220..520 units behind a player, every 70..160 s",
+      "step": "amb_iwz_stalk_step",
+      "drag": "amb_iwz_debris",
+      "wait": [
+        70,
+        160
+      ],
+      "dist": [
+        220,
+        520
+      ]
     }
   }
 }

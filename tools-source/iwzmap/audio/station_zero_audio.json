@@ -4,7 +4,8 @@
   "template_aliases": [
     "${IW7_DUMP}/cp_zmb/sound/cp_zmb.all.aliases.csv",
     "${IW7_SND_DUMP}/cp_disco/sound/cp_disco.all.aliases.csv",
-    "${IW7_SND_DUMP}/cp_final/sound/cp_final.all.aliases.csv"
+    "${IW7_SND_DUMP}/cp_final/sound/cp_final.all.aliases.csv",
+    "${IW7_SND_DUMP}/common_cp/sound/common_cp.all.aliases.csv"
   ],
   "stock_banks": [
     "${GAME}/cp_zmb.sabl",
@@ -12,7 +13,9 @@
     "${GAME}/cp_disco.sabl",
     "${GAME}/cp_disco.sabs",
     "${GAME}/cp_final.sabl",
-    "${GAME}/cp_final.sabs"
+    "${GAME}/cp_final.sabs",
+    "${GAME}/common_cp.sabl",
+    "${GAME}/common_cp.sabs"
   ],
   "aliases": [
     {
@@ -46,10 +49,10 @@
     },
     {
       "name": "zmb_iwz_ee_activate",
-      "comment": "activation: BO3 zmb_ee_mus_activate / zmb_egg_activate (all/zmb/egg/meteor_affirm.flac, 1.4 s mono); stock 3D one-shot row",
+      "comment": "activation sting (Station Zero, station_zero_music.py): a reversed music-box tine swelling into one flat tine a fourth below; stock 3D one-shot row; the song itself stays Abracadavre",
       "template": "rollercoaster_sign_up",
-      "source": "${BO3_EXPORT}/iwz-audio-common-egg/bo3/sounds/all/zmb/egg/meteor_affirm.flac",
-      "file": "iwz\\egg\\meteor_affirm",
+      "source": "${MUSIC}/ee_activate.flac",
+      "file": "iwz\\egg\\sz_ee_activate",
       "set": {
         "vol_min": 0.55,
         "vol_max": 0.55,
@@ -171,7 +174,7 @@
     },
     {
       "name": "mus_zombies_newwave",
-      "comment": "round start: BO1/BO3 Ascension round start stings (Station Zero identity, the hidden song is Abracadavre); stock wave loop / end game play it by name; no rear pair",
+      "comment": "round start: Station Zero cue \"something just changed\" (station_zero_music.py: reversed PA chime swell cut to silence + sub thud + tuned metal / static stutter + half-speed chime / breath + bent horn); stock wave loop plays it by name",
       "template": "mus_zombies_newwave",
       "set": {
         "vol_min": 0.42,
@@ -180,22 +183,22 @@
       },
       "variants": [
         {
-          "source": "${BO3SS}/iwz-soundscape-cosmo/bo3/sounds/all/mus/zm/cosmodrome/starts/mus_cosmo_round_start_00_v2_mas.flac",
-          "file": "iwz/mus/round_start_mus_cosmo_round_start_00_v2_mas"
+          "source": "${MUSIC}/round_start_0.flac",
+          "file": "iwz/mus/sz_round_start_0"
         },
         {
-          "source": "${BO3SS}/iwz-soundscape-cosmo/bo3/sounds/all/mus/zm/cosmodrome/starts/mus_cosmo_round_start_01_mas.flac",
-          "file": "iwz/mus/round_start_mus_cosmo_round_start_01_mas"
+          "source": "${MUSIC}/round_start_1.flac",
+          "file": "iwz/mus/sz_round_start_1"
         },
         {
-          "source": "${BO3SS}/iwz-soundscape-cosmo/bo3/sounds/all/mus/zm/cosmodrome/starts/mus_cosmo_round_start_02_mas.flac",
-          "file": "iwz/mus/round_start_mus_cosmo_round_start_02_mas"
+          "source": "${MUSIC}/round_start_2.flac",
+          "file": "iwz/mus/sz_round_start_2"
         }
       ]
     },
     {
       "name": "mus_zombies_eventwave_start",
-      "comment": "special wave start: the Ascension round start stings; stock wave loop / end game play it by name; no rear pair",
+      "comment": "special wave start: Station Zero cue (sub thud, horn bent down, static stutter, tuned metal cluster)",
       "template": "mus_zombies_newwave",
       "set": {
         "vol_min": 0.42,
@@ -204,22 +207,18 @@
       },
       "variants": [
         {
-          "source": "${BO3SS}/iwz-soundscape-cosmo/bo3/sounds/all/mus/zm/cosmodrome/starts/mus_cosmo_round_start_00_v2_mas.flac",
-          "file": "iwz/mus/round_start_mus_cosmo_round_start_00_v2_mas"
+          "source": "${MUSIC}/event_start_0.flac",
+          "file": "iwz/mus/sz_event_start_0"
         },
         {
-          "source": "${BO3SS}/iwz-soundscape-cosmo/bo3/sounds/all/mus/zm/cosmodrome/starts/mus_cosmo_round_start_01_mas.flac",
-          "file": "iwz/mus/round_start_mus_cosmo_round_start_01_mas"
-        },
-        {
-          "source": "${BO3SS}/iwz-soundscape-cosmo/bo3/sounds/all/mus/zm/cosmodrome/starts/mus_cosmo_round_start_02_mas.flac",
-          "file": "iwz/mus/round_start_mus_cosmo_round_start_02_mas"
+          "source": "${MUSIC}/event_start_1.flac",
+          "file": "iwz/mus/sz_event_start_1"
         }
       ]
     },
     {
       "name": "mus_zombies_endwave",
-      "comment": "round end: Ascension round end stings; stock wave loop / end game play it by name; no rear pair",
+      "comment": "round end: Station Zero sigh (breath out, sinking music box / falling slowed chime / decaying metal cluster over a dissolving drone)",
       "template": "mus_zombies_newwave",
       "set": {
         "vol_min": 0.42,
@@ -228,22 +227,22 @@
       },
       "variants": [
         {
-          "source": "${BO3SS}/iwz-soundscape-cosmo/bo3/sounds/all/mus/zm/cosmodrome/ends/mus_cosmo_round_end_00_mas.flac",
-          "file": "iwz/mus/round_end_mus_cosmo_round_end_00_mas"
+          "source": "${MUSIC}/round_end_0.flac",
+          "file": "iwz/mus/sz_round_end_0"
         },
         {
-          "source": "${BO3SS}/iwz-soundscape-cosmo/bo3/sounds/all/mus/zm/cosmodrome/ends/mus_cosmo_round_end_01_mas.flac",
-          "file": "iwz/mus/round_end_mus_cosmo_round_end_01_mas"
+          "source": "${MUSIC}/round_end_1.flac",
+          "file": "iwz/mus/sz_round_end_1"
         },
         {
-          "source": "${BO3SS}/iwz-soundscape-cosmo/bo3/sounds/all/mus/zm/cosmodrome/ends/mus_cosmo_round_end_02_v2_mas.flac",
-          "file": "iwz/mus/round_end_mus_cosmo_round_end_02_v2_mas"
+          "source": "${MUSIC}/round_end_2.flac",
+          "file": "iwz/mus/sz_round_end_2"
         }
       ]
     },
     {
       "name": "mus_zombies_eventwave_end",
-      "comment": "special wave end: the Ascension round end stings; stock wave loop / end game play it by name; no rear pair",
+      "comment": "special wave end: the chime motif backwards over a drone, breath out",
       "template": "mus_zombies_newwave",
       "set": {
         "vol_min": 0.42,
@@ -252,22 +251,14 @@
       },
       "variants": [
         {
-          "source": "${BO3SS}/iwz-soundscape-cosmo/bo3/sounds/all/mus/zm/cosmodrome/ends/mus_cosmo_round_end_00_mas.flac",
-          "file": "iwz/mus/round_end_mus_cosmo_round_end_00_mas"
-        },
-        {
-          "source": "${BO3SS}/iwz-soundscape-cosmo/bo3/sounds/all/mus/zm/cosmodrome/ends/mus_cosmo_round_end_01_mas.flac",
-          "file": "iwz/mus/round_end_mus_cosmo_round_end_01_mas"
-        },
-        {
-          "source": "${BO3SS}/iwz-soundscape-cosmo/bo3/sounds/all/mus/zm/cosmodrome/ends/mus_cosmo_round_end_02_v2_mas.flac",
-          "file": "iwz/mus/round_end_mus_cosmo_round_end_02_v2_mas"
+          "source": "${MUSIC}/event_end_0.flac",
+          "file": "iwz/mus/sz_event_end_0"
         }
       ]
     },
     {
       "name": "mus_zombies_gameover",
-      "comment": "game over: Ascension game over; stock wave loop / end game play it by name; no rear pair",
+      "comment": "game over: the music box winds down, its last note never comes; one far flat chime",
       "template": "mus_zombies_newwave",
       "set": {
         "vol_min": 0.42,
@@ -276,14 +267,14 @@
       },
       "variants": [
         {
-          "source": "${BO3SS}/iwz-soundscape-patch/bo3/sounds/all/mus/zm/cosmodrome/mus_gameover.flac",
-          "file": "iwz/mus/gameover_mus_gameover"
+          "source": "${MUSIC}/gameover.flac",
+          "file": "iwz/mus/sz_gameover"
         }
       ]
     },
     {
       "name": "mus_iwz_intro",
-      "comment": "match start: intro sting played once per player by the module (Ascension round start 03, first 11 s faded by soundscape_dsp.py trim, so it ends before the first round-start sting)",
+      "comment": "match start (module, at introscreen_over, 15 s so it ends before the first round-start cue): PA chime cut by static, silence, music box through walls, drone, bent horn, reversed chime",
       "template": "mus_zombies_newwave",
       "set": {
         "vol_min": 0.42,
@@ -292,8 +283,24 @@
       },
       "variants": [
         {
-          "source": "${DSP}/intro/intro_sting.flac",
-          "file": "iwz/mus/intro_sting"
+          "source": "${MUSIC}/intro.flac",
+          "file": "iwz/mus/sz_intro"
+        }
+      ]
+    },
+    {
+      "name": "mus_iwz_power",
+      "comment": "power-on (module power sequence, to every player): the PA chime plays as designed once, then each strike flatter and slower over a tritone drone; eerie, not triumphant",
+      "template": "mus_zombies_newwave",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "type": "streamed"
+      },
+      "variants": [
+        {
+          "source": "${MUSIC}/power_on.flac",
+          "file": "iwz/mus/sz_power_on"
         }
       ]
     },
@@ -1039,6 +1046,135 @@
         {
           "source": "${BO3SS}/iwz-soundscape-common/bo3/sounds/all/amb/lfe/dew/evt_dew_80.flac",
           "file": "iwz/scape/lonely_evt_dew_80"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_breaker",
+      "comment": "power-on: a big breaker clacks shut (stock Final Reckoning / Shaolin fuse box close)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.6,
+        "vol_max": 0.6,
+        "vol_mod": "emitter",
+        "dist_min": 200.0,
+        "dist_max": 2600.0,
+        "pitch_min": 0.85,
+        "pitch_max": 0.95,
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "variants": [
+        {
+          "stock": "zmb_venx_fuse_box_close"
+        },
+        {
+          "stock": "disco_pap_fuse_box_close"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_relay",
+      "comment": "power-on: a light bank relay thunk (stock Shaolin power_buy_large_light_turn_on, 5 variants)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.5,
+        "vol_max": 0.5,
+        "vol_mod": "emitter",
+        "dist_min": 300.0,
+        "dist_max": 3000.0,
+        "pitch_min": 0.9,
+        "pitch_max": 1.0,
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "variants": [
+        {
+          "stock": "power_buy_large_light_turn_on"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_tube_strike",
+      "comment": "power-on: fluorescent tubes striking, ping and buzz (stock Shaolin power_buy_group_florescents_turn_on)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.42,
+        "vol_max": 0.42,
+        "vol_mod": "emitter",
+        "dist_min": 150.0,
+        "dist_max": 1800.0,
+        "pitch_min": 0.95,
+        "pitch_max": 1.05,
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "variants": [
+        {
+          "stock": "power_buy_group_florescents_turn_on"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_pa_boot",
+      "comment": "power-on: PA speakers crackle to life (stock common_cp pa_speaker_power_on, 3 variants)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.5,
+        "vol_max": 0.5,
+        "vol_mod": "emitter",
+        "dist_min": 200.0,
+        "dist_max": 3000.0,
+        "pitch_min": 1.0,
+        "pitch_max": 1.0,
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "variants": [
+        {
+          "stock": "pa_speaker_power_on"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_stalk_step",
+      "comment": "dark phase: something walking behind the player (stock common_cp zmb_walk, zombie steps on concrete, 15 variants, pitched down)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.45,
+        "vol_max": 0.45,
+        "vol_mod": "emitter",
+        "dist_min": 60.0,
+        "dist_max": 900.0,
+        "pitch_min": 0.84,
+        "pitch_max": 0.94,
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "variants": [
+        {
+          "stock": "zmb_walk"
+        }
+      ]
+    },
+    {
+      "name": "amb_iwz_flashlight_click",
+      "comment": "flashlight toggle for the darkness module (stock Shaolin light switch click, pitched up)",
+      "template": "emt_metal_groan_med",
+      "set": {
+        "vol_min": 0.35,
+        "vol_max": 0.35,
+        "vol_mod": "emitter",
+        "dist_min": 20.0,
+        "dist_max": 500.0,
+        "pitch_min": 1.35,
+        "pitch_max": 1.45,
+        "type": "loaded",
+        "loop": "nonlooping"
+      },
+      "variants": [
+        {
+          "stock": "disco_pap_room_button_press"
         }
       ]
     }

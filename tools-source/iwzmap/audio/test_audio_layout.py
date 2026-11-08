@@ -93,7 +93,7 @@ class SoundscapeTest(unittest.TestCase):
         self.assertEqual(r['errors'], [])
         self.assertEqual(r['far'][0]['origin'], [-3000.0, 0.0, 0.0])          # outside every zone: allowed for far
         text = '\n'.join(audio_layout.gsc_calls(r['calls'], 'm'))
-        self.assertIn('m::soundscape_scatter( "creak", [ ( 0, 0, -16 ), ( 0, 1000, -400 ) ], [ ( 1000, 1000, 320 ), ( 1000, 1400, -80 ) ], 5, 9, 100, 400, 0 );', text)
+        self.assertIn('m::soundscape_scatter( "creak", [ ( 0, 0, -16 ), ( 0, 1000, -400 ) ], [ ( 1000, 1000, 320 ), ( 1000, 1400, -80 ) ], 5, 9, 100, 400, 0, "any", 1 );', text)
         self.assertIn('m::soundscape_loop( "hum", ( 100, 1100, -364 ) );', text)
         self.assertIn('m::soundscape_phone( ( 500, 500, 300 ), "creak", "hum", 30, 60, 150 );', text)
         self.assertIn('m::soundscape_intro( "bed_a" );', text)

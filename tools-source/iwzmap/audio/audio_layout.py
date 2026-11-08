@@ -156,7 +156,8 @@ def plan(layout, spec, bank_aliases, audio_zones=()):
                 errors.append('%s in %s: random wait needs 0 < min < max' % (e['alias'], zone))
         else:
             loops[zone] = loops.get(zone, 0) + 1
-        emitters.append({'alias': e['alias'], 'zone': zone, 'origin': p, 'random': rnd, 'note': e.get('note', '')})
+        emitters.append({'alias': e['alias'], 'zone': zone, 'origin': p, 'random': rnd, 'note': e.get('note', ''),
+                         'bank': e.get('bank')})
     for zone, n in loops.items():
         if n > limit_zone:
             errors.append('zone %s has %d looping emitters (limit %d)' % (zone, n, limit_zone))
@@ -225,9 +226,12 @@ def soundscape(spec, layout, zones, bank_aliases, audio_zones=None):
         b = boxes(e['zones'], label)
         if not (0 <= e['dist'][0] < e['dist'][1]):
             errors.append('%s: dist needs 0 <= near < far' % label)
+        phase = e.get('phase', 'any')
+        if phase not in ('any', 'dark', 'lit'):
+            errors.append('%s: phase must be any, dark or lit' % label)
         calls.append({'fn': 'soundscape_scatter', 'alias': e['alias'], 'mins': [list(x[0]) for x in b],
                       'maxs': [list(x[1]) for x in b], 'wait': e['wait'], 'dist': e['dist'], 'burst': e.get('burst', 0),
-                      'zones': e['zones']})
+                      'phase': phase, 'dark': e.get('dark', 1), 'zones': e['zones']})
     for i, e in enumerate(sc.get('far', [])):
         label = 'far %d %s' % (i, e['alias'])
         known(e['alias'], label)
@@ -235,13 +239,14 @@ def soundscape(spec, layout, zones, bank_aliases, audio_zones=None):
         p = point(e, layout, zones, errors, label, need_zone=False)
         if p:
             far.append({'alias': e['alias'], 'zone': e.get('zone') or 'outside', 'origin': p, 'random': e['wait'],
-                        'radius': e.get('radius', 2500), 'note': e.get('note', '')})
+                        'radius': e.get('radius', 2500), 'note': e.get('note', ''), 'bank': e.get('bank')})
     for i, e in enumerate(sc.get('loops', [])):
         label = 'loop %d %s' % (i, e['alias'])
         known(e['alias'], label)
         p = point(e, layout, zones, errors, label)
         if p:
-            calls.append({'fn': 'soundscape_loop', 'alias': e['alias'], 'origin': p, 'zone': e.get('zone')})
+            calls.append({'fn': 'soundscape_loop', 'alias': e['alias'], 'origin': p, 'zone': e.get('zone'),
+                          'bank': e.get('bank')})
     if sc.get('pa'):
         e = sc['pa']
         for a in e['aliases']:
@@ -254,10 +259,30 @@ def soundscape(spec, layout, zones, bank_aliases, audio_zones=None):
         calls.append({'fn': 'soundscape_flicker', 'alias': sc['flicker']['alias'], 'targetname': sc['flicker'].get('targetname', 'iwz_flicker')})
     if sc.get('power'):
         e = sc['power']
-        known(e['hum'], 'power')
-        known(e['surge'], 'power')
+        for k in ('hum', 'surge', 'breaker', 'relay', 'strike', 'pa_boot', 'pa_line', 'music'):
+            if e.get(k):
+                known(e[k], 'power ' + k)
         pts = [point(x, layout, zones, errors, 'power %d' % i) for i, x in enumerate(e['at'])]
-        calls.append({'fn': 'soundscape_power', 'hum': e['hum'], 'surge': e['surge'], 'origins': [x for x in pts if x]})
+        # light banks, in the order they come on: up to three lights of each zone, evenly spread
+        for zone in e.get('banks', []):
+            lights = [l for l in layout.get('lights', []) if l.get('zone') == zone]
+            if zone not in zones or not lights:
+                errors.append('power bank %s: no such zone or no lights in it' % zone)
+                continue
+            n = min(3, len(lights))
+            pick = [lights[int(round(i * (len(lights) - 1) / max(1, n - 1)))] for i in range(n)]
+            calls.append({'fn': 'soundscape_bank', 'name': zone, 'origins': [[float(v) for v in l['origin']] for l in pick]})
+        calls.append({'fn': 'soundscape_power', 'hum': e['hum'], 'surge': e['surge'], 'origins': [x for x in pts if x],
+                      'breaker': e.get('breaker', ''), 'relay': e.get('relay', ''), 'strike': e.get('strike', ''),
+                      'pa_boot': e.get('pa_boot', ''), 'pa_line': e.get('pa_line', ''), 'music': e.get('music', '')})
+    if sc.get('stalk'):
+        e = sc['stalk']
+        known(e['step'], 'stalk')
+        if e.get('drag'):
+            known(e['drag'], 'stalk drag')
+        wait_ok(e['wait'], 'stalk')
+        calls.append({'fn': 'soundscape_stalk', 'step': e['step'], 'drag': e.get('drag', ''), 'wait': e['wait'],
+                      'dist': e['dist']})
     if sc.get('phone'):
         e = sc['phone']
         known(e['ring'], 'phone')
@@ -312,16 +337,22 @@ def gsc_calls(calls, mod):
     for c in calls:
         fn = c['fn']
         if fn == 'soundscape_scatter':
-            args = [c['alias'], c['mins'], c['maxs'], c['wait'][0], c['wait'][1], c['dist'][0], c['dist'][1], c['burst']]
+            args = [c['alias'], c['mins'], c['maxs'], c['wait'][0], c['wait'][1], c['dist'][0], c['dist'][1], c['burst'],
+                    c.get('phase', 'any'), c.get('dark', 1)]
             note = ' // ' + ', '.join(c['zones'])
         elif fn == 'soundscape_loop':
-            args, note = [c['alias'], c['origin']], ' // ' + (c.get('zone') or '')
+            args, note = [c['alias'], c['origin']] + ([c['bank']] if c.get('bank') else []), ' // ' + (c.get('zone') or '')
+        elif fn == 'soundscape_bank':
+            args, note = [c['name'], c['origins']], ''
+        elif fn == 'soundscape_stalk':
+            args, note = [c['step'], c['drag'], c['wait'][0], c['wait'][1], c['dist'][0], c['dist'][1]], ''
         elif fn == 'soundscape_pa':
             args, note = [c['aliases'], c['speakers'], c['wait'][0], c['wait'][1]], ''
         elif fn == 'soundscape_flicker':
             args, note = [c['alias'], c['targetname']], ''
         elif fn == 'soundscape_power':
-            args, note = [c['hum'], c['surge'], c['origins']], ''
+            args, note = [c['hum'], c['surge'], c['origins'], c.get('breaker', ''), c.get('relay', ''), c.get('strike', ''),
+                          c.get('pa_boot', ''), c.get('pa_line', ''), c.get('music', '')], ''
         elif fn == 'soundscape_phone':
             args, note = [c['origin'], c['ring'], c['hangup'], c['wait'][0], c['wait'][1], c['radius']], ''
         elif fn == 'soundscape_train':
@@ -351,9 +382,13 @@ def gsc(result, mapname, source):
         out.append('    zones[zones.size] = %s::ambience_zone( "%s", %s, %s, %s );' % (mod, z['zone'], vec(z['mins']), vec(z['maxs']), bed))
     out.append('    emitters = [];')
     for e in result['emitters']:
+        bank = ', "%s"' % e['bank'] if e.get('bank') else ''
         if e['random']:
-            out.append('    emitters[emitters.size] = %s::ambience_emitter( "%s", %s, 1, %s, %s, %g ); // %s' % (
-                mod, e['alias'], vec(e['origin']), e['random'][0], e['random'][1], e.get('radius', 2500), e['zone']))
+            out.append('    emitters[emitters.size] = %s::ambience_emitter( "%s", %s, 1, %s, %s, %g%s ); // %s' % (
+                mod, e['alias'], vec(e['origin']), e['random'][0], e['random'][1], e.get('radius', 2500), bank, e['zone']))
+        elif bank:
+            out.append('    emitters[emitters.size] = %s::ambience_emitter( "%s", %s, 0, 0, 0, 0%s ); // %s' % (
+                mod, e['alias'], vec(e['origin']), bank, e['zone']))
         else:
             out.append('    emitters[emitters.size] = %s::ambience_emitter( "%s", %s ); // %s' % (mod, e['alias'], vec(e['origin']), e['zone']))
     bed = '"%s"' % result['default_bed'] if result['default_bed'] else 'undefined'

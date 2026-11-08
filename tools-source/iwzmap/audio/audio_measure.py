@@ -372,7 +372,10 @@ def write_wav(path, x, rate=RATE):
 
 
 def loudness(seg, rate=RATE):
-    """Levels of a window: RMS, 250 ms block median / 10th / 90th percentile, 100 ms peak block, true peak (dBFS)."""
+    """Levels of a window: RMS, 250 ms block median / 10th / 90th percentile, 100 ms peak block, true peak (dBFS).
+    An empty window (past the end of the capture) reads -200 everywhere."""
+    if len(seg) == 0:
+        return {k: -200.0 for k in ('rms_dbfs', 'median_dbfs', 'p10_dbfs', 'p90_dbfs', 'peak100ms_dbfs', 'true_peak_dbfs')}
     x = mono(seg)
     def blocks(n):
         n = int(n * rate)

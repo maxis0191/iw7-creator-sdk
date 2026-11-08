@@ -313,8 +313,11 @@ ambience_init( emitters, bed, zones )
             }
 
             ent = spawn( "script_origin", e.origin );
-            ent playloopsound( e.alias );
             level.iwz_ambience[level.iwz_ambience.size] = ent;
+            if ( isdefined( e.bank ) )
+                ent thread iwz_scape_loop_on_bank( e.alias, e.bank );
+            else
+                ent playloopsound( e.alias );
         }
     }
 
@@ -429,7 +432,9 @@ ambience_zone_at( origin )
 
 // radius (random emitters): the one-shot plays only while a living player is within radius (out of earshot it
 // would only take a voice: run s1 heard clicks when far one-shots crowded the 3D channels)
-ambience_emitter( alias, origin, random, min_wait, max_wait, radius )
+// bank: electric sources stay silent in the dark: "power" = from the power flag on, a zone name = from the moment
+// that zone's light bank comes on (iwz_scape_bank_wait)
+ambience_emitter( alias, origin, random, min_wait, max_wait, radius, bank )
 {
     e = spawnstruct();
     e.alias = alias;
@@ -438,13 +443,26 @@ ambience_emitter( alias, origin, random, min_wait, max_wait, radius )
     e.min_wait = iwz_opt( min_wait, 6 );
     e.max_wait = iwz_opt( max_wait, 18 );
     e.radius = iwz_opt( radius, 2500 );
+    if ( isdefined( bank ) && bank != "" )
+        e.bank = bank;
     return e;
+}
+
+iwz_scape_loop_on_bank( alias, bank )
+{
+    level endon( "game_ended" );
+    self endon( "death" );
+    iwz_scape_bank_wait( bank );
+    self playloopsound( alias );
+    iwz_scape_log( "bank_loop", alias, self.origin );
 }
 
 iwz_ambience_random( e )
 {
     level endon( "game_ended" );
     level endon( "iwz_ambience_stop" );
+    if ( isdefined( e.bank ) )
+        iwz_scape_bank_wait( e.bank );
 
     for (;;)
     {
@@ -605,6 +623,35 @@ iwz_scape_log( kind, alias, origin )
     print( "[IWZ audio] SCAPE kind=" + kind + " alias=" + alias + " at=" + int( origin[0] ) + "," + int( origin[1] ) + "," + int( origin[2] ) + " t=" + gettime() );
 }
 
+// power state: the stock "power_on" flag (cp_iwz.gsc sets it at the generator); before it the station is dark
+iwz_scape_powered()
+{
+    return scripts\engine\utility::flag_exist( "power_on" ) && scripts\engine\utility::flag( "power_on" );
+}
+
+iwz_scape_power_wait()
+{
+    while ( !scripts\engine\utility::flag_exist( "power_on" ) )
+        wait 0.5;
+
+    scripts\engine\utility::flag_wait( "power_on" );
+}
+
+// "power": the power flag; a zone name: that zone's light bank is on (the power sequence, or the lighting
+// script through level notify "iwz_light_bank_on", <zone>)
+iwz_scape_bank_wait( bank )
+{
+    if ( !isdefined( bank ) || bank == "" )
+        return;
+
+    iwz_scape_power_wait();
+    if ( bank == "power" )
+        return;
+
+    while ( !isdefined( level.iwz_scape_bank_on ) || !isdefined( level.iwz_scape_bank_on[bank] ) )
+        wait 0.1;
+}
+
 // a random wait of min..max seconds of soundscape time: test runs speed every soundscape timer up with dvar
 // paris_iwz_scape_rate (> 1); the rate is read every half second, so a change applies at once.
 // Test dvar paris_iwz_scape_hold 1 stops soundscape time (no one-shot, PA, phone, hiss or silence swell starts)
@@ -649,7 +696,8 @@ iwz_scape_inside( p, mins, maxs )
 // sparse randomized one-shots around a player who stands in one of the boxes: every min..max seconds, at a random
 // point near..far units from that player inside the same boxes (heights 20..140 above the player). burst > 0: the
 // alias is a loop played on a temporary origin for burst/2..burst seconds (rats).
-soundscape_scatter( alias, mins, maxs, min_wait, max_wait, near, far, burst )
+// phase: "dark" only before power, "lit" only after, "any" both; dark > 1: that many times more often in the dark
+soundscape_scatter( alias, mins, maxs, min_wait, max_wait, near, far, burst, phase, dark )
 {
     s = spawnstruct();
     s.alias = alias;
@@ -660,6 +708,8 @@ soundscape_scatter( alias, mins, maxs, min_wait, max_wait, near, far, burst )
     s.near = near;
     s.far = far;
     s.burst = iwz_opt( burst, 0 );
+    s.phase = iwz_opt( phase, "any" );
+    s.dark = iwz_opt( dark, 1 );
     level thread iwz_scape_scatter( s );
 }
 
@@ -674,11 +724,25 @@ iwz_scape_scatter( s )
         return;
     }
 
+    if ( s.phase == "lit" )
+        iwz_scape_power_wait();
+
     iwz_scape_wait( 0, s.max_wait );
 
     for (;;)
     {
-        iwz_scape_wait( s.min_wait, s.max_wait );
+        powered = iwz_scape_powered();
+        if ( s.phase == "dark" && powered )
+            return;
+
+        if ( !powered && s.dark > 1 )
+            iwz_scape_wait( s.min_wait / s.dark, s.max_wait / s.dark );
+        else
+            iwz_scape_wait( s.min_wait, s.max_wait );
+
+        if ( s.phase == "dark" && iwz_scape_powered() )
+            return;
+
         listeners = [];
         foreach ( p in iwz_scape_players() )
         {
@@ -730,8 +794,9 @@ iwz_scape_scatter( s )
     }
 }
 
-// a looping object sound (radio, generator, fluorescent tube) on its own origin
-soundscape_loop( alias, origin )
+// a looping object sound (radio, generator, fluorescent tube) on its own origin; bank: see iwz_scape_bank_wait
+// (dead tubes stay silent until their bank lights)
+soundscape_loop( alias, origin, bank )
 {
     if ( !soundexists( alias ) )
     {
@@ -740,6 +805,12 @@ soundscape_loop( alias, origin )
     }
 
     ent = spawn( "script_origin", origin );
+    if ( isdefined( bank ) && bank != "" )
+    {
+        ent thread iwz_scape_loop_on_bank( alias, bank );
+        return ent;
+    }
+
     ent playloopsound( alias );
     iwz_scape_log( "loop", alias, origin );
     return ent;
@@ -756,6 +827,11 @@ iwz_scape_pa( aliases, speakers, min_wait, max_wait )
 {
     level endon( "game_ended" );
     level endon( "iwz_ambience_stop" );
+    level.iwz_scape_pa_speakers = speakers;
+    // dead in the dark: the power sequence boots it (crackle + garbled announcement), then it turns intermittent
+    while ( !isdefined( level.iwz_scape_pa_live ) )
+        wait 0.5;
+
     iwz_scape_wait( min_wait * 0.3, min_wait );
 
     for (;;)
@@ -804,7 +880,7 @@ iwz_scape_flicker_lamp( alias )
             return;
 
         m = self.model;
-        if ( m != last && gettime() - last_t > 700 && iwz_scape_player_near( self.origin, 900 ) && !getdvarint( "paris_iwz_scape_hold" ) )
+        if ( m != last && gettime() - last_t > 700 && iwz_scape_powered() && iwz_scape_player_near( self.origin, 900 ) && !getdvarint( "paris_iwz_scape_hold" ) )
         {
             playsoundatpos( self.origin, alias );
             iwz_scape_log( "flicker", alias, self.origin );
@@ -815,28 +891,201 @@ iwz_scape_flicker_lamp( alias )
     }
 }
 
-// generator: power-up surge, then the hum, once the stock power flag is set
-soundscape_power( hum_alias, surge_alias, origins )
+// a light bank for the power sequence: the zone name and up to three light positions (relay at their centre,
+// tube strikes at each); registered in order, the sequence lights them one after the other
+soundscape_bank( name, origins )
 {
-    level thread iwz_scape_power( hum_alias, surge_alias, origins );
+    if ( !isdefined( level.iwz_scape_banks ) )
+        level.iwz_scape_banks = [];
+
+    b = spawnstruct();
+    b.name = name;
+    b.origins = origins;
+    c = ( 0, 0, 0 );
+    foreach ( o in origins )
+        c += o;
+    b.centre = c / origins.size;
+    level.iwz_scape_banks[level.iwz_scape_banks.size] = b;
 }
 
-iwz_scape_power( hum_alias, surge_alias, origins )
+// power-on: generator spin-up, two breakers, the hum, then the light banks one by one (relay thunk + tubes
+// striking; each lit bank releases its tube buzz and electric emitters), the eerie power cue to every player,
+// and the PA crackling to life with a garbled announcement before it turns intermittent.
+// Lighting coordination: if the lighting script sets level.iwz_light_banks_external = 1 before power, the
+// banks are lit on its notifies (level notify( "iwz_light_bank_on", <zone> )); otherwise this sequence leads
+// and notifies "iwz_audio_light_bank", <zone> for the lights to follow.
+soundscape_power( hum_alias, surge_alias, origins, breaker_alias, relay_alias, strike_alias, pa_boot_alias, pa_line_alias, music_alias )
+{
+    p = spawnstruct();
+    p.hum = hum_alias;
+    p.surge = surge_alias;
+    p.origins = origins;
+    p.breaker = breaker_alias;
+    p.relay = relay_alias;
+    p.strike = strike_alias;
+    p.pa_boot = pa_boot_alias;
+    p.pa_line = pa_line_alias;
+    p.music = music_alias;
+    level thread iwz_scape_power( p );
+}
+
+iwz_scape_play( alias, origin, kind )
+{
+    if ( !isdefined( alias ) || !soundexists( alias ) )
+        return;
+
+    playsoundatpos( origin, alias );
+    iwz_scape_log( kind, alias, origin );
+}
+
+iwz_scape_power( p )
 {
     level endon( "game_ended" );
-    while ( !scripts\engine\utility::flag_exist( "power_on" ) )
-        wait 0.5;
+    if ( !isdefined( level.iwz_scape_bank_on ) )
+        level.iwz_scape_bank_on = [];
 
-    scripts\engine\utility::flag_wait( "power_on" );
-    if ( soundexists( surge_alias ) )
+    iwz_scape_power_wait();
+    iwz_scape_play( p.surge, p.origins[0], "power" );
+    wait 0.9;
+    iwz_scape_play( p.breaker, p.origins[0], "breaker" );
+    wait 0.55;
+    iwz_scape_play( p.breaker, p.origins[p.origins.size - 1], "breaker" );
+    wait 0.3;
+    foreach ( o in p.origins )
+        soundscape_loop( p.hum, o );
+
+    if ( isdefined( p.music ) && soundexists( p.music ) )
     {
-        playsoundatpos( origins[0], surge_alias );
-        iwz_scape_log( "power", surge_alias, origins[0] );
+        foreach ( pl in iwz_scape_players() )
+        {
+            pl playlocalsound( p.music );
+            iwz_scape_log( "power_music", p.music, pl.origin );
+        }
     }
 
-    wait 1.5;
-    foreach ( o in origins )
-        soundscape_loop( hum_alias, o );
+    wait 0.9;
+    if ( isdefined( level.iwz_scape_banks ) )
+    {
+        if ( scripts\engine\utility::is_true( level.iwz_light_banks_external ) )
+            level thread iwz_scape_banks_external( p );
+        else
+        {
+            foreach ( b in level.iwz_scape_banks )
+            {
+                iwz_scape_bank_light( p, b );
+                wait( randomfloatrange( 0.8, 1.3 ) );
+            }
+        }
+    }
+
+    wait 0.8;
+    speakers = level.iwz_scape_pa_speakers;
+    if ( isdefined( speakers ) )
+    {
+        foreach ( sp in speakers )
+        {
+            iwz_scape_play( p.pa_boot, sp, "pa_boot" );
+            wait 0.05;
+        }
+
+        wait 0.9;
+        if ( isdefined( p.pa_line ) && soundexists( p.pa_line ) )
+        {
+            iwz_scape_log( "pa", p.pa_line, speakers[0] );
+            foreach ( sp in speakers )
+            {
+                playsoundatpos( sp, p.pa_line );
+                wait 0.07;
+            }
+        }
+    }
+
+    level.iwz_scape_pa_live = 1;
+}
+
+iwz_scape_bank_light( p, b )
+{
+    if ( isdefined( level.iwz_scape_bank_on[b.name] ) )
+        return;
+
+    iwz_scape_play( p.relay, b.centre, "relay" );
+    wait 0.12;
+    foreach ( o in b.origins )
+    {
+        iwz_scape_play( p.strike, o, "strike" );
+        wait( randomfloatrange( 0.06, 0.2 ) );
+    }
+
+    level.iwz_scape_bank_on[b.name] = 1;
+    level notify( "iwz_audio_light_bank", b.name );
+}
+
+iwz_scape_banks_external( p )
+{
+    level endon( "game_ended" );
+    for ( ;; )
+    {
+        level waittill( "iwz_light_bank_on", name );
+        foreach ( b in level.iwz_scape_banks )
+        {
+            if ( b.name == name )
+                iwz_scape_bank_light( p, b );
+        }
+    }
+}
+
+// something moving in the dark: before power, now and then a few slow footsteps (and a drag of debris) a few
+// metres behind a player, out of the flashlight cone; sparse (min..max seconds between visits)
+soundscape_stalk( step_alias, drag_alias, min_wait, max_wait, near, far )
+{
+    s = spawnstruct();
+    s.step = step_alias;
+    s.drag = drag_alias;
+    s.min_wait = min_wait;
+    s.max_wait = max_wait;
+    s.near = near;
+    s.far = far;
+    level thread iwz_scape_stalk( s );
+}
+
+iwz_scape_stalk( s )
+{
+    level endon( "game_ended" );
+    if ( !soundexists( s.step ) )
+        return;
+
+    iwz_scape_wait( s.min_wait * 0.5, s.min_wait );
+    for ( ;; )
+    {
+        if ( iwz_scape_powered() )
+            return;
+
+        players = iwz_scape_players();
+        if ( players.size )
+        {
+            p = players[randomint( players.size )];
+            yaw = p.angles[1] + 180 + randomfloatrange( -55, 55 );
+            d = randomfloatrange( s.near, s.far );
+            at = p.origin + ( cos( yaw ) * d, sin( yaw ) * d, 8 );
+            side = ( cos( yaw + 90 ), sin( yaw + 90 ), 0 );
+            if ( randomint( 2 ) )
+                side = side * -1;
+
+            n = randomintrange( 2, 6 );
+            iwz_scape_log( "stalk", s.step, at );
+            for ( i = 0; i < n; i++ )
+            {
+                playsoundatpos( at, s.step );
+                at += side * randomfloatrange( 22, 34 );
+                wait( randomfloatrange( 0.55, 0.85 ) );
+            }
+
+            if ( isdefined( s.drag ) && soundexists( s.drag ) && randomint( 100 ) < 40 )
+                iwz_scape_play( s.drag, at, "stalk_drag" );
+        }
+
+        iwz_scape_wait( s.min_wait, s.max_wait );
+    }
 }
 
 // the ticket-booth phone: rings now and then; a player coming within radius hangs it up (receiver click)
