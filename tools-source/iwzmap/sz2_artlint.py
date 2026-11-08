@@ -27,6 +27,8 @@ Rules (lead / owner review of g24):
   intersect        two decor clip boxes overlapping by more than 30% of the smaller one, or a sign overlapping a
                    decor clip box (review A7: board through a crate, signs on lamps and pipes)
   sign-dupe        the same sign image twice within 600 units in one zone (review A8: stacked duplicate signs)
+  art-trim         (review C g25t) a frameless art plane less than 3.4 off its wall (behind the trims / moldings), or
+                   overlapping a pilaster on the same wall (the pilaster cuts it)
   trackbed         (layout track_spec, coordinator 2026-11-08) any level surface other than the bed floor inside a
                    trackbed channel volume (channel x/y less 4 units at its walls, 0.5..170 above the bed = car envelope: walls, piers, ribs, generated rails,
                    ties, beams, buffers), any decor inside a channel, a channel whose centre is not the middle of its
@@ -185,6 +187,23 @@ def main():
             if ov > 0.3 * min(va, vb) and 'train' not in da['model'] + db['model']:
                 fails.append('intersect %s %s and %s %s' % (da['model'], da['origin'], db['model'], db['origin']))
     signs = lay.get('signs', [])
+    pils = [g for g in lay.get('geo_props', []) if g['name'] == 'pilaster']
+    for sg in signs:
+        if sg.get('hanging'):
+            continue
+        c = sg['center']; hw, hh = sg['size'][0] / 2, sg['size'][1] / 2
+        is_art = sg['image'].startswith('art_') or sg['image'].startswith('poster') or sg['image'].startswith('notice')
+        if is_art and sg.get('off', 9) < 3.4:
+            fails.append('art-trim %s at %s only %.1f off the wall (behind the trim)' % (sg['image'], c, sg.get('off', 0)))
+        for g in pils:
+            if sg['axis'] == 'x':
+                same = abs((g['mins'][1] + g['maxs'][1]) / 2 - (c[1] - sg['facing'] * sg.get('off', 0))) < 12
+                ov = c[0] - hw < g['maxs'][0] and c[0] + hw > g['mins'][0]
+            else:
+                same = abs((g['mins'][0] + g['maxs'][0]) / 2 - (c[0] - sg['facing'] * sg.get('off', 0))) < 12
+                ov = c[1] - hw < g['maxs'][1] and c[1] + hw > g['mins'][1]
+            if same and ov and c[2] - hh < g['maxs'][2] and c[2] + hh > g['mins'][2]:
+                fails.append('art-trim %s at %s overlaps a pilaster' % (sg['image'], c))
     for i, da in enumerate(signs):
         for db in signs[i + 1:]:
             if da['image'] == db['image'] and da['zone'] == db['zone'] and not (da.get('hanging') and db.get('hanging') and

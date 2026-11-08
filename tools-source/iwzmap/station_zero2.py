@@ -285,6 +285,7 @@ SPACE_ZONE = {'hall': 'ticket_hall', 'street': 'ticket_hall', 'stair_a': 'stair_
 
 # ============================================================================ helpers for details
 STRIP_COUNT = {}
+ART_PROUD = 3.6                     # frameless art planes stand this far off the wall (trims 1.5, moldings 3)
 CEIL_STAIR = os.environ.get('IWZ_CEIL_STAIR', 'ceil_tiles')    # g26: rough plaster tile (was the glossy ceil_tile)
 DIM_STRONG = {'maint_corridor', 'service_tunnel', 'generator_room', 'stair_b', 'platform_a', 'ticket_hall'}
 POOL_STRIP, POOL_WALL = 288, 224          # g26: tighter pools (was 384 / 320)
@@ -338,6 +339,18 @@ def sign(zone, key, axis, fixed, facing, s, zc, width, height=None, frame=True, 
     """Custom image sign on its own quad in front of a wall, with a thin steel frame. s: centre along the wall."""
     if height is None:
         height = width / 4.0
+    if depth > 0:      # every wall sign / poster / notice stands proud of the trims and clear of pilasters
+        depth = max(depth, ART_PROUD - 0.5)
+        pil_ = [g_ for g_ in GEO_PROPS if g_['name'] == 'pilaster' and g_['zone'] == zone and
+                abs(((g_['mins'][1] + g_['maxs'][1]) / 2 if axis == 'x' else (g_['mins'][0] + g_['maxs'][0]) / 2) - fixed) < 12]
+        spans_ = [((g_['mins'][0], g_['maxs'][0]) if axis == 'x' else (g_['mins'][1], g_['maxs'][1])) for g_ in pil_]
+        def clash_(c_):
+            return any(c_ - width / 2 - 6 < q1 and c_ + width / 2 + 6 > q0 for q0, q1 in spans_)
+        if clash_(s):
+            for d_ in sorted(range(-320, 321, 8), key=abs):
+                if not clash_(s + d_):
+                    s += d_
+                    break
     a, b, z0, z1 = s - width / 2, s + width / 2, zc - height / 2, zc + height / 2
     off = depth + 0.5
     if axis == 'x':
@@ -625,7 +638,7 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
         zt = z_lo + (k + 1) * rise
         rect(sk0, sk1, zt, 'conc_floor', False)                                   # g26: concrete tread (stock tread art read all yellow)
         ns2_ = sk0 + d * 3 if d > 0 else sk0 - 3
-        rect(min(sk0, ns2_), max(sk0, ns2_), zt + 0.2, 'steel_trim', False)           # nosing
+        rect(min(sk0, ns2_), max(sk0, ns2_), zt + 0.2, 'beam_yellow', False)          # narrow yellow paint nosing
         ns_ = sk0 + d * 4 if d > 0 else sk0 - 4
         if k in (0, n_steps - 1):
             rect(min(sk0, ns_), max(sk0, ns_), zt + 0.3, 'yellow_grip', False)     # tactile nosing: top and bottom step only
@@ -634,7 +647,7 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
         pts = [P(sk0, c0, zt - rise), P(sk0, c1, zt - rise), P(sk0, c1, zt), P(sk0, c0, zt)]
         if bk.dot(bk.cross(bk.sub(pts[1], pts[0]), bk.sub(pts[3], pts[0])), n) < 0:
             pts = [pts[1], pts[0], pts[3], pts[2]]
-        B.quad('rubber_trim', zone, pts, n=n, collide=False)
+        B.quad('conc_floor', zone, pts, n=n, collide=False)            # riser: tread material
     # collision: nosing line z(s) = z_lo + rise + (s - s_a) * rise / run, from s_a - run (z_lo) to s_b - run (z_hi)
     r0, r1 = s_a - run, s_b - run
 
@@ -1011,7 +1024,7 @@ region('generator', Z, (2600, 2400, 3800, 3184), -320)
 
 # ---------------------------------------------------------------- 6 control room (2600,3200)-(3600,4000), -320..-32 + PaP alcove
 Z = 'control_room'
-room(Z, 'control', (2600, 3200, 3600, 4000), -320, -32, 'control_neutral', 'metal_floor', 'deck_black')     # art pass 5: floor / wainscot / ceiling values apart
+room(Z, 'control', (2600, 3200, 3600, 4000), -320, -32, 'control_neutral', 'conc_floor', 'deck_black')     # art pass 5: floor / wainscot / ceiling values apart
 room(Z, 'pap_alcove', (2976, 4016, 3232, 4160), -320, -112, 'control', 'diamond', 'conc_dark', skip=('south',))
 # reveal of the alcove opening through the 16-unit control-room wall: lintel underside and side reveals (sz2_seams:
 # the void showed between the wall face and the alcove ceiling)
@@ -1032,7 +1045,7 @@ for y_ in (3650,):
 # signal desks (boxes, until the kit) and the network map board
 for x0_, y0_ in DESKS:      # (g25) stock lab desks (decor block) instead of box desks; collision for the pair
     B.collision_box((x0_ + 12, y0_ + 24, -320), (x0_ + 228, y0_ + 56, -285))
-decal_wall(Z, ART_HOOKS.key('evac_signal_diagram') or 'map_board', 'y', 3600, -1, 3600, -180, 320, 160)   # Station Zero evacuation / signal diagram when delivered
+decal_wall(Z, ART_HOOKS.key('evac_signal_diagram') or 'map_board', 'y', 3600 - 3.2, -1, 3600, -140, 320, 160)   # above the desk monitors, proud of the trim   # Station Zero evacuation / signal diagram when delivered
 sign(Z, 'sign_network_map', 'x', 4000, -1, 2800, -170, 256, 128)
 B.wall_plane(Z, 'x', 4150, -1, 2976, 3232, -320, -112, 'rollup', collide=False)
 ceiling_grid(Z, 2600, 3200, 3600, 4000, -32, step_y=250, depth=16, mat='steel_trim')
@@ -1112,7 +1125,7 @@ decal_floor(Z, 'floor_stain', -2900, 3100, -384, 192, 160)
 pilasters(Z, 'x', 2600, +1, -3600, -2064, -384, -32, step=384, avoid=((-2900, 200), (-3400, 170)), lower='wood_green', upper='brick_white')
 pilasters(Z, 'x', 3400, -1, -3600, -2064, -384, -32, step=384, avoid=((-3400, 110), (-3000, 110), (-2600, 110), (-2300, 80)), lower='wood_green', upper='brick_white')
 ceiling_grid(Z, -3600, 2600, -2064, 3400, -32, step_y=400, depth=24)
-floor_grid(Z, -3600, 2600, -2064, 3400, -384, 'wood_trim', step=384, w=12, border=24, skip=((-3480, 3200, -3300, 3380), (-2560, 2700, -2320, 2830)))
+floor_grid(Z, -3600, 2600, -2064, 3400, -384, 'conc_trim_floor', step=384, w=12, border=24, skip=((-3480, 3200, -3300, 3380), (-2560, 2700, -2320, 2830)))
 drains(Z, [(-3300, 2700), (-2400, 3200)], -384)
 flicker_lamp(Z, -2550, 3000, -57)
 flicker_lamp(Z, -3050, 3000, -57)
@@ -1273,7 +1286,7 @@ if os.environ.get('IWZ_STORY', '1') == '1':
     cx_, cy_ = -760, 4250
     B.quad('conc_dark', 'ticket_hall', [(cx_ - 70, cy_ + 60, 319.4), (cx_ + 70, cy_ + 60, 319.4), (cx_ + 70, cy_ - 60, 319.4), (cx_ - 70, cy_ - 60, 319.4)],
            n=(0, 0, -1), collide=False)
-    for zz_, mat_, nz_ in ((0, 'ceil_tile', 1), (-6, 'conc_dark', -1)):
+    for zz_, mat_, nz_ in ((0, CEIL_STAIR, 1), (-6, 'conc_dark', -1)):
         pts_ = [(cx_ - 70, cy_ - 50, 4 + zz_), (cx_ + 60, cy_ - 50, 4 + zz_), (cx_ + 60, cy_ + 60, 300 + zz_), (cx_ - 70, cy_ + 60, 300 + zz_)]
         B.quad(mat_, 'ticket_hall', pts_ if nz_ > 0 else pts_[::-1], n=(0, -0.95 * nz_, 0.3 * nz_), collide=False)
     B.collision_box((cx_ - 70, cy_ - 50, 0), (cx_ + 60, cy_ + 60, 120))
@@ -1528,7 +1541,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zh, 'traffic_cone_sml_01', 10, 4335, 0, 70)
     pass                                        # (g26) Spaceland astronaut standee removed
     decor(Zh, BENCH, -1150, 4000, 0, 180, BENCH_CLIP[1])
-    decor(Zh, BENCH, 350, 3520, 0, 0, BENCH_CLIP[1])
+    decor(Zh, BENCH, 350, 3780, 0, 0, BENCH_CLIP[1])           # clear of the Up'N Atoms perk at y 3460
     decor('service_tunnel', 'debris_concrete_rubble_pile_01_dark', -2900, 1250, -384, 60)
     decor('service_tunnel', 'com_junktire', -3560, 2050, -384, 30, (14, 14, 6))
     decor('generator_room', 'electrical_control_box_03', 2700, 2405, -200, 90)
