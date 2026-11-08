@@ -11,7 +11,10 @@ Per FX:
   noise_in / noise_out   fraction of pixels whose blurred luma (7x7 box, film grain) changed > thr between off0 and off1 (inside / outside region)
   change_in / change_out max over on frames of the fraction changed > thr against off0
   temporal_in            mean fraction changed > thr between consecutive on frames inside the region
-  RENDERS  change_in >= 0.004, change_in >= 4 x noise_in + 0.002, change_in >= 3 x change_out
+  RENDERS  coverage test: change_in >= 0.004, change_in >= 4 x noise_in + 0.002, change_in >= 3 x change_out
+           or sparse test (embers, sparks, drips): unblurred |diff| > 0.1 pixels in the region >= 20, >= 5 x (off/off
+           count + 2), and their density inside >= 3 x the density outside
+  region_frac: share of the frame the region covers (near 1: the outside comparison carries little weight)
   ANIMATED temporal_in >= 3 x noise_in + 0.002 (moving particles; a static glow / decal-like FX can render without it)
 Frame time: phases 2k+1 (FX off) / 2k+2 (FX on) of the fxperf summary; 200 / 201 = every FX off / on at the zone views.
 Writes <out>/fxproof.json, <out>/fx_<k>_<name>.jpg (off | on | mask: red = changed in region, blue = changed outside),
@@ -124,10 +127,22 @@ def main(argv=None):
         n_in, n_out = frac(noise, region), frac(noise, ~region)
         c_in, c_out = ch_in[best], ch_out[best]
         t_in = float(np.mean(temporal)) if temporal else 0.0
-        renders = c_in >= 0.004 and c_in >= 4 * n_in + 0.002 and c_in >= 3 * c_out
+        cover = c_in >= 0.004 and c_in >= 4 * n_in + 0.002 and c_in >= 3 * c_out
+        # sparse particles (embers, sparks, drips, thin beams): few pixels, but each changes strongly. Unblurred luma,
+        # |diff| > 0.1: count in the region on the on frames vs the off0/off1 pair, density inside vs outside
+        R0, R1 = luma(off0, 0), luma(off1, 0)
+        s_noise = int(((np.abs(R1 - R0) > 0.1) & region).sum())
+        s_on = [int(((np.abs(luma(x, 0) - R0) > 0.1) & region).sum()) for x in ons]
+        s_out = [int(((np.abs(luma(x, 0) - R0) > 0.1) & ~region).sum()) for x in ons]
+        si = int(np.argmax(s_on))
+        area_in, area_out = max(1, int(region.sum())), max(1, int((~region).sum()))
+        sparse = s_on[si] >= 20 and s_on[si] >= 5 * (s_noise + 2) and s_on[si] / area_in >= 3 * s_out[si] / area_out
+        renders = cover or sparse
         animated = t_in >= 3 * n_in + 0.002
         dl = float((Ls[best] - L0)[region].mean())
-        r.update({'region_px': [x0, y0, x1, y1], 'noise_in': round(n_in, 5), 'noise_out': round(n_out, 5),
+        r.update({'region_frac': round(area_in / float(h * w), 3), 'test': 'coverage' if cover else ('sparse' if sparse else ''),
+                  'strong_noise_in': s_noise, 'strong_on_in': s_on, 'strong_on_out': s_out,
+                  'region_px': [x0, y0, x1, y1], 'noise_in': round(n_in, 5), 'noise_out': round(n_out, 5),
                   'change_in': round(c_in, 5), 'change_out': round(c_out, 5), 'change_in_frames': [round(v, 5) for v in ch_in],
                   'temporal_in': round(t_in, 5), 'mean_luma_delta_in': round(dl, 4), 'best_on': best,
                   'renders': bool(renders), 'animated': bool(animated),
@@ -169,9 +184,9 @@ def main(argv=None):
     n = sum(1 for r in res['fx'] if r.get('result') == 'PASS')
     for r in res['fx']:
         fm = r.get('frame_ms', {})
-        print('%2d %-14s %-46s %-8s in=%s noise=%s out=%s temporal=%s anim=%s dms=%s' % (
-            r['k'], r['name'], r['fx'].split('/')[-1], r['result'], r.get('change_in'), r.get('noise_in'), r.get('change_out'),
-            r.get('temporal_in'), r.get('animated'), fm.get('delta_mean_ms')))
+        print('%2d %-16s %-36s %-5s %-8s in=%s noise=%s out=%s strong=%s/%s anim=%s regfrac=%s dms=%s' % (
+            r['k'], r['name'], r['fx'].split('/')[-1], r['result'], r.get('test'), r.get('change_in'), r.get('noise_in'), r.get('change_out'),
+            max(r.get('strong_on_in') or [0]), r.get('strong_noise_in'), r.get('animated'), r.get('region_frac'), fm.get('delta_mean_ms')))
     print('FXPROOF %d/%d render; all-FX frame time %s' % (n, len(res['fx']), res['perf_all'] or 'n/a'))
     return 0
 

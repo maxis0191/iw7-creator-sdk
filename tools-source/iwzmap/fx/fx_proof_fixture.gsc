@@ -2,7 +2,7 @@
 // custom_scripts/cp/iwzmap_local.gsc. Command line: +set paris_iwz_mode fxproof +set paris_iwz_fxproof 1
 // +set paris_iwz_fxonly -2 [+set paris_iwz_fxphase 0] [+set paris_iwz_fxsel "0,3,5"].
 // For every FX k: camera from the first candidate with a clear sight line (floor found by a downward trace), then
-//   frame-time phase 2k+1 (FX off, 3 s, no capture), frames iwzf_<k>_off0/off1, FX k on, frames on0..on4 at
+//   4 s settle (live particles of the previous effect), frame-time phase 2k+1 (FX off, 3 s, no capture), frames iwzf_<k>_off0/off1, FX k on, frames on0..on4 at
 //   +0.4/1.0/1.8/2.8/4.0 s, frame-time phase 2k+2 (FX on, 3 s, no capture), FX off.
 // Then per zone view: phase 200 (every FX off, 3 s) and phase 201 (every FX on, 3 s).
 // Prints [IWZ local] FXPROOF lines (camera, angles, sight line) for fx_proof.py.
@@ -108,7 +108,8 @@ iwz_fxp_main()
         iwz_fxp_quiet();
         setdvar( "paris_iwz_fxonly", -2 );
         iwz_fxp_go( player, best );
-        wait 1;
+        // live particles of the previous effect (fire, smoke) outlast its entity: let them die before the off frames
+        wait 4;
         setdvar( "paris_iwz_fxphase", 2 * k + 1 );
         wait 3;
         setdvar( "paris_iwz_fxphase", 0 );

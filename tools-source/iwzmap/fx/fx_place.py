@@ -115,26 +115,61 @@ def zone_of(p, zones):
     return None
 
 
-def candidate_views(e, zones):
-    """up to 6 cameras in the FX zone box, 200..340 units away, eye looking at the region centre"""
-    z = e['zone']
-    b = zones[z]['box'] if z in zones else None
+class Walk:
+    """walkable floor cells of the generator plan (plan.json 'cells': [ix, iy, floor z, region], 32-unit grid)"""
+    def __init__(self, src):
+        self.cells = {}
+        p = os.path.join(src, 'plan.json')
+        if os.path.isfile(p):
+            for ix, iy, z, _r in json.load(open(p)).get('cells', []):
+                self.cells.setdefault((ix, iy), []).append(z)
+
+    def floors(self, x, y):
+        return self.cells.get((int(math.floor(x / 32.0)), int(math.floor(y / 32.0))), [])
+
+    def floor_below(self, x, y, z):
+        f = [v for v in self.floors(x, y) if v <= z + 8]
+        return max(f) if f else None
+
+    def near(self, x, y, r=96):
+        return any(self.floors(x + dx, y + dy) for dx in (-r, 0, r) for dy in (-r, 0, r))
+
+    def clear_2d(self, a, b, step=16.0, stop=64.0):
+        """every point of the segment a-b (plan view) over a walkable cell, up to `stop` units before b (effects
+        sit on walls, pipes and props, whose own cells are not walkable)"""
+        L = math.hypot(b[0] - a[0], b[1] - a[1])
+        n = max(1, int(max(0.0, L - stop) / step))
+        return all(self.floors(a[0] + (b[0] - a[0]) * (t * step / L), a[1] + (b[1] - a[1]) * (t * step / L)) for t in range(n + 1))
+
+
+def candidate_views(e, zones, walk):
+    """up to 6 cameras standing on walkable plan cells with a walkable plan-view line to the FX, 2.2..3.5 region
+    sizes away (at least 200 units), eye looking at the region centre"""
     o = e['origin']
     c = (o[0], o[1], o[2] + e['region_dz'])
-    floor = b[2] + 16 if b else o[2] - 60
+    z = e['zone']
+    b = zones[z]['box'] if z in zones else None
     outv = []
-    for dist in (240, 320, 200):
-        for k in range(8):
-            yaw = k * 45.0
+    base = max(200.0, 2.2 * float(e['region']))
+    for dist in (base, base * 1.35, base * 1.7, 160.0):
+        for k in range(16):
+            yaw = k * 22.5
             cx, cy = c[0] - dist * math.cos(math.radians(yaw)), c[1] - dist * math.sin(math.radians(yaw))
-            if b and not (b[0] + 48 <= cx <= b[3] - 48 and b[1] + 48 <= cy <= b[4] - 48):
-                continue
+            if walk.cells:
+                floor = walk.floor_below(cx, cy, max(o[2], c[2]) + 64)
+                if floor is None or not walk.clear_2d((cx, cy), (o[0], o[1])):
+                    continue
+            else:
+                if b and not (b[0] + 48 <= cx <= b[3] - 48 and b[1] + 48 <= cy <= b[4] - 48):
+                    continue
+                floor = b[2] + 16 if b else o[2] - 60
             eye = floor + 60
-            pitch = -math.degrees(math.atan2(c[2] - eye, dist))
-            pitch = max(-45.0, min(45.0, pitch))
+            pitch = max(-45.0, min(45.0, -math.degrees(math.atan2(c[2] - eye, dist))))
             outv.append([round(cx, 1), round(cy, 1), round(floor, 1), yaw, round(pitch, 2)])
         if len(outv) >= 6:
             break
+    # prefer the flattest views (the effect near the screen centre line, less floor/ceiling filling the frame)
+    outv.sort(key=lambda v: abs(v[4]))
     return outv[:6]
 
 
@@ -150,6 +185,7 @@ def main(argv=None):
     ap.add_argument('--fixture-out', default='')
     ap.add_argument('--manifest-out', default='')
     ap.add_argument('--allow-unlisted', default='', help='comma list of effects allowed outside the --ncs lists (experiments)')
+    ap.add_argument('--allow-outside', action='store_true', help='keep FX whose origin is away from the walkable plan')
     ap.add_argument('--list-imports', action='store_true', help='print the <zone>:<fx> list fx_import.py needs for this fx.txt and exit')
     ap.add_argument('--dry-run', action='store_true')
     a = ap.parse_args(argv)
@@ -168,13 +204,20 @@ def main(argv=None):
     bad = [e for e in fx if ncs and e['fx'] not in ncs and e['fx'] not in allow]
     if bad:
         raise SystemExit('not in the level FX list (ncs_efx): %s' % ', '.join('%s=%s' % (e['name'], e['fx']) for e in bad))
+    walk = Walk(a.src)
+    outside = []
     for e in fx:
         e['zone'] = e['zone'] or zone_of(e['origin'], zones)
         e['forward'], e['up'] = vec_fwd_up(e['angles'])
-        e['views'] = [e['view']] if e['view'] else candidate_views(e, zones)
+        if walk.cells and not walk.near(e['origin'][0], e['origin'][1]):
+            outside.append(e['name'])
+        e['views'] = [e['view']] if e['view'] else candidate_views(e, zones, walk)
         if not e['views']:
             raise SystemExit('%s: no proof camera fits zone %s; give view=' % (e['name'], e['zone']))
 
+    if outside and not a.allow_outside:
+        raise SystemExit('FX origin more than 96 units from any walkable plan cell (inside a wall or the void?): %s '
+                         '(--allow-outside to keep)' % ', '.join(outside))
     ids = sorted(set(e['fx'] for e in fx))
     key = {p: 'iwz_amb_%d' % i for i, p in enumerate(ids)}
     load = ['    level._effect["%s"] = loadfx( "%s" );' % (key[p], p) for p in ids]
