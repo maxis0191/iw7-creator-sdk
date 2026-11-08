@@ -93,7 +93,7 @@ OPENINGS = [
      'a': 3004, 'b': 3196, 'z0': -320, 'z1': -96, 'cost': 1250, 'zones': ('generator_room', 'control_room'),
      'scriptable': 'pf7_auto237', 'sign': 'sign_signal_control'},
     {'name': 'd_platform_tunnel', 'kind': 'door', 'axis': 'y', 'walls': {'pit': -2400, 'tunnel_a': -2416},
-     'a': 1384, 'b': 1576, 'z0': -384, 'z1': -160, 'cost': 1000, 'zones': ('platform_a', 'service_tunnel'),
+     'a': 1392, 'b': 1584, 'z0': -384, 'z1': -160, 'cost': 1000, 'zones': ('platform_a', 'service_tunnel'),
      'scriptable': 'pf7_auto238', 'sign': 'sign_to_old_station'},
     {'name': 'o_tunnel_bend', 'kind': 'open', 'axis': 'x', 'walls': {'tunnel_a': 1584, 'tunnel_b': 1584},
      'a': -3600, 'b': -3216, 'z0': -384, 'z1': -96},
@@ -714,8 +714,6 @@ sign(Z, 'poster_mindgap', 'y', -1200, +1, 4150, 120, 96, 144)
 sign(Z, 'poster_lasttrain', 'x', 3200, +1, -200, 120, 96, 144)
 sign(Z, 'poster_lasttrain', 'y', 400, -1, 3620, 120, 96, 144)
 decal_wall(Z, 'leak_stain', 'x', 4400, -1, 300, 200, 128, 220)
-# vending machine (east wall): red cabinet with a lit front panel
-B.box((340, 4180, 0), (400, 4260, 152), {'side': 'metal_red', 'top': 'steel_trim', 'west': 'light_panel'}, Z)
 decal_floor(Z, 'blood_pool', -500, 3450, 0, 96, 96)
 floor_grid(Z, -1200, 3200, 400, 4400, 0, 'tile_black', step=400, skip=((-1168, 3660, -240, 3740), (-224, 3600, 96, 3800)))
 drains(Z, [(-1000, 3400), (200, 3400), (-1000, 4250), (200, 4250)], 0)
@@ -818,32 +816,32 @@ COLS = [-1792, -1280, -768, -256, 256, 768, 1280, 1792]
 for x in COLS:
     column(Z, x, 2000, DECK_Z, PCEIL)
 # track: sleepers, two running rails, third rail on insulators (pit, tunnel, recess)
-RAIL_Y = (1484, 1540)
-THIRD_Y = 1436
+# Trackbed channel (both the platform_a pit and the service tunnel): y 1392..1584, centre 1488, floor PIT_Z. The tunnel
+# door d_platform_tunnel spans exactly this channel; no wall, pier or rib stands inside it (sz2_artlint trackbed rule).
+TRACK_Y0, TRACK_Y1 = 1392, 1584
+TRACK_CY = (TRACK_Y0 + TRACK_Y1) / 2
+GAUGE = 56.5                                   # standard gauge, inner rail faces (1 unit = 1 inch)
+RAIL_Y = (TRACK_CY - GAUGE / 2, TRACK_CY + GAUGE / 2)
+THIRD_Y = TRACK_CY - 60                        # conductor rail on the far side from the platform (trap line, gsc)
+TRACK_SPEC = {'channels': [], 'gauge': GAUGE, 'centre_y': TRACK_CY, 'rail_y': list(RAIL_Y), 'third_rail_y': THIRD_Y,
+              'floor_z': -384, 'owner': 'train agent (iwz-stage2\\train): rails, ties, third rail, buffer stop, car, platform edges',
+              'note': 'clean channel; the level draws only its floor (dark concrete with a centred ballast strip)'}
 
 
 def track(zone, x0, x1):
-    # ballast bed under the sleepers and rails
-    B.quad('ballast', zone, [(x0, 1450, PIT_Z + 0.5), (x1, 1450, PIT_Z + 0.5), (x1, 1574, PIT_Z + 0.5), (x0, 1574, PIT_Z + 0.5)], n=(0, 0, 1), collide=False)
-    B.quad('ballast', zone, [(x0, 1420, PIT_Z + 0.4), (x1, 1420, PIT_Z + 0.4), (x1, 1452, PIT_Z + 0.4), (x0, 1452, PIT_Z + 0.4)], n=(0, 0, 1), collide=False)
-    xs = x0 + 16
-    while xs < x1 - 16:     # concrete sleepers, bedded: only their top 1.5 units show above the ballast
-        B.box((xs - 5, 1460, PIT_Z + 1), (xs + 5, 1564, PIT_Z + 3.5), {'top': 'conc_dark', 'side': 'conc_dark'}, zone, collide=False, nav=False, skip=('bottom',))
-        xs += 30
-    B.quad('ballast', zone, [(x0, 1452, PIT_Z + 2), (x1, 1452, PIT_Z + 2), (x1, 1572, PIT_Z + 2), (x0, 1572, PIT_Z + 2)], n=(0, 0, 1), collide=False)
-    for ry in RAIL_Y:       # flat-bottom rail: foot, web, head
-        B.box((x0, ry - 3, PIT_Z + 3.5), (x1, ry + 3, PIT_Z + 4.5), 'ibeam_bare', zone, collide=False, nav=False, skip=('bottom',))
-        B.box((x0, ry - 0.8, PIT_Z + 4.5), (x1, ry + 0.8, PIT_Z + 8.5), 'ibeam_bare', zone, collide=False, nav=False, skip=('bottom', 'top'))
-        B.box((x0, ry - 1.6, PIT_Z + 8.5), (x1, ry + 1.6, PIT_Z + 10.5), {'side': 'ibeam_bare', 'top': 'chrome_trim'}, zone, collide=False, nav=False, skip=('bottom',))
-    xs = x0 + 64
-    while xs < x1 - 32:
-        B.box((xs - 3, THIRD_Y - 3, PIT_Z), (xs + 3, THIRD_Y + 3, PIT_Z + 5), 'metal_black', zone, collide=False, nav=False, skip=('bottom',))
-        xs += 128
-    B.box((x0, THIRD_Y - 2, PIT_Z + 5), (x1, THIRD_Y + 2, PIT_Z + 9), {'side': 'ibeam_bare', 'top': 'chrome_trim'}, zone, collide=False, nav=False, skip=('bottom',))
+    """Clean trackbed channel x0..x1 (no rails / ties / beams: the train agent's kit). A ballast strip centred on the
+    channel shows where the track goes; TRACK_SPEC records the channel for the placement spec and the lint."""
+    B.quad('ballast', zone, [(x0, TRACK_CY - 64, PIT_Z + 0.4), (x1, TRACK_CY - 64, PIT_Z + 0.4), (x1, TRACK_CY + 64, PIT_Z + 0.4),
+                             (x0, TRACK_CY + 64, PIT_Z + 0.4)], n=(0, 0, 1), collide=False)
+    TRACK_SPEC['channels'].append({'zone': zone, 'x0': x0, 'x1': x1, 'y0': TRACK_Y0, 'y1': TRACK_Y1, 'z': PIT_Z, 'centre_y': TRACK_CY})
 
 
-track(Z, -2400, 2592)
-B.box((-2400, 1404, PIT_Z), (2400, 1420, PIT_Z + 10), {'side': 'conc_painted', 'top': 'conc_painted'}, Z, collide=False, nav=False)   # cess curb
+track(Z, -2400, 2406)
+# pit cess (south of the channel): slab joints every 384 units and oil / water stains (sz2_flatness)
+for x_ in range(-2208, 2400, 384):
+    floor(Z, 'conc_trim_floor', x_ - 4, 1216, x_ + 4, 1388, PIT_Z + 0.25, collide=False)
+for x_, y_ in ((-1900, 1320), (-260, 1290), (1100, 1330), (2050, 1300)):
+    decal_floor(Z, 'floor_stain', x_, y_, PIT_Z + 0.4, 110, 220)
 # (g25) the generated box carriage is gone (owner review g24: grey boxes with red tops and flat black window holes).
 # The hero train is the stock cp_disco subway car (kit, IWZ_KIT), parked at the platform with see-through windows.
 # The EE bear sits on the platform floor by the train doors, next to abandoned luggage (child left behind).
@@ -889,9 +887,9 @@ drains(Z, [(-1500, 1300), (-700, 1300), (900, 1300), (1700, 1300)], PIT_Z)
 # tunnel portals at both pit ends (concrete arch frame) with signal lights
 for xw_, fc_ in ((-2400, +1), (2400, -1)):
     B.slab_y(1200, 1232, xw_, PIT_Z, -96, 10, 'conc_painted', Z, fc_, collide=False, nav=False)
-    B.slab_y(1568, 1600, xw_, PIT_Z, -96, 10, 'conc_painted', Z, fc_, collide=False, nav=False)
+    B.slab_y(1584, 1600, xw_, PIT_Z, -96, 10, 'conc_painted', Z, fc_, collide=False, nav=False)     # clear of the channel
     B.slab_y(1200, 1600, xw_, -96, -72, 12, 'conc_painted', Z, fc_, collide=False, nav=False)
-    for y_, lamp_ in ((1220, 'lamp_red'), (1580, 'lamp_green')):
+    for y_, lamp_ in ((1220, 'lamp_red'), (1592, 'lamp_green')):
         B.box((xw_ + fc_ * 10 - 4, y_ - 6, -150), (xw_ + fc_ * 10 + 4, y_ + 6, -118), 'metal_black', Z, collide=False, nav=False)
         wall_lamp(Z, 'y', xw_ + fc_ * 14, fc_, y_, -142, mat=lamp_, w=8, h=8)
 ceiling_grid(Z, -2400, 1200, 2400, 2400, PCEIL, step_y=400, depth=28)
@@ -939,8 +937,6 @@ for x in (2800, 3200, 3600):
 GEN = (3300, 2800)
 B.box((GEN[0] - 120, GEN[1] - 72, -320), (GEN[0] + 120, GEN[1] + 72, -304), 'conc_painted', Z)
 B.collision_box((GEN[0] - 100, GEN[1] - 50, -304), (GEN[0] + 100, GEN[1] + 50, -206))     # kit generator body (decor below)
-B.box((3560, 3120, -320), (3760, 3184, -260), {'side': 'panel_dark', 'top': 'steel_trim'}, Z)       # control panel
-B.box((3560, 3168, -260), (3760, 3184, -200), {'side': 'panel_dark', 'top': 'steel_trim'}, Z)
 sign(Z, 'sign_signal_control', 'x', 3184, -1, 3100, -70, 192)
 decal_floor(Z, 'blood_pool', 2900, 2700, -320, 96, 96)
 for x_ in range(2700, 3800, 300):
@@ -1008,14 +1004,6 @@ tunnel_room('tunnel_a', (-3600, 1216, -2416, 1584), ('north',))
 wall(Z, 'tunnel_a', 'x', 1584, -1, -3216, -2416, -384, -96, 'tunnel')
 tunnel_room('tunnel_b', (-3600, 1584, -3216, 2584), ('south',))
 track(Z, -3540, -2416)
-# buffer stop: two steel posts with raking braces, a buffer beam and two spring buffers in line with the rails
-for ry_ in RAIL_Y:
-    B.box((-3596, ry_ - 5, -384), (-3584, ry_ + 5, -320), 'ibeam', Z, collide=False, nav=False)
-    for k_ in range(4):
-        B.box((-3584 + 10 * k_, ry_ - 3, -384 + 14 * k_), (-3574 + 10 * k_, ry_ + 3, -372 + 14 * k_), 'ibeam', Z, collide=False, nav=False)
-    B.box((-3584, ry_ - 7, -352), (-3566, ry_ + 7, -340), 'steel_trim', Z, collide=False, nav=False)                  # buffer
-B.box((-3586, 1460, -356), (-3578, 1564, -336), {'side': 'metal_red', 'top': 'steel_trim'}, Z, collide=False, nav=False)  # buffer beam
-B.collision_box((-3596, 1460, -384), (-3566, 1564, -320))
 for x in range(-3400, -2416, 400):
     wall_lamp(Z, 'x', 1216, +1, x, -170, mat='lamp_warm', w=12, h=10)
 for y in range(1800, 2584, 400):
@@ -1156,7 +1144,6 @@ if os.environ.get('IWZ_ARCH4', '1') == '1':
     # service tunnel: lining rings (the ceiling ribs continue down both walls), a painted safety line
     Zt_ = 'service_tunnel'
     wall_ribs(Zt_, 'x', 1216, +1, range(-3500, -2416, 320), -384, -96, w=12, depth=10)
-    wall_ribs(Zt_, 'x', 1584, -1, [x_ for x_ in range(-3500, -2416, 320) if x_ > -3216], -384, -96, w=12, depth=10)
     wall_ribs(Zt_, 'y', -3600, +1, range(1700, 2584, 320), -384, -96, w=12, depth=10)
     wall_ribs(Zt_, 'y', -3216, -1, range(1700, 2584, 320), -384, -96, w=12, depth=10, avoid=[(2100, 70)])
     wall_band(Zt_, 'x', 1216, +1, -3600, -2416, -384, -360, 'conc_painted')
@@ -1193,7 +1180,7 @@ if os.environ.get('IWZ_ART5', '1') == '1':
     Zt5 = 'service_tunnel'
     for y_, f_ in ((1216, 1), (1584, -1)):
         x0_ = -3600 if f_ > 0 else -3216
-        for k_, zz_ in enumerate((-250, -262)):
+        for k_, zz_ in enumerate((-250, -262) if f_ > 0 else (-150, -162)):
             yy_ = y_ + f_ * (6 + 6 * k_)
             B.box((x0_, yy_ - 2.5, zz_ - 2.5), (-2416, yy_ + 2.5, zz_ + 2.5), 'metal_black' if k_ else 'metal_red', Zt5, collide=False, nav=False)
     for x_, f_ in ((-3600, 1), (-3216, -1)):
@@ -1290,10 +1277,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     if KIT:
         # parked stock subway train at the dead end of the track pit (static, scriptable mover dropped by kit_import;
         # 780 long along x after yaw 90); its clip box also cuts the pit navmesh, ~100 units stay free on each side
-        decor('platform_a', 'cp_disco_subway_train_bsp2xmodel', -32, 1400, -378, 90, (390, 93, 105))
-        for x_ in (-280, -32, 216):
-            LIGHTS.append({'zone': 'platform_a', 'origin': (x_, 1400, -250), 'type': 'omni', 'color': (0.75, 0.85, 1.0), 'radius': 150,
-                           'intensity': 0.45, 'fixture': 'train_interior'})
+        pass        # (g25) hero car: train agent (TRACK_SPEC); the cp_disco kit car is no longer placed
         # ticket hall fare line east of the booth: three turnstiles and a broken one
         for x_, m_ in ((130, 'cp_disco_subway_turnstyle_animated'), (190, 'cp_disco_subway_turnstyle_animated'),
                        (250, 'cp_disco_subway_turnstyle_animated'), (310, 'cp_disco_subway_turnstyle_missing_arm')):
@@ -1344,6 +1328,9 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     # require,techsets_cp_disco|cp_final in the zone csv, a route not built yet: they are guarded behind IWZ_KIT_DISCO.
     Zh, Zp, Zg, Zc, Zm, Zt, Zb = 'ticket_hall', 'platform_a', 'generator_room', 'control_room', 'maint_corridor', 'service_tunnel', 'platform_b'
     # (g25) stock / kit replacements for the generated box objects
+    decor(Zh, 'soda_machine_zmb', 370, 4220, 0, 180, (14, 18, 20))                  # was a red box "vending machine"
+    for x_ in (3585, 3735):                                                        # were box control panels (relay 3)
+        decor(Zg, 'electrical_control_panel_01', x_, 3172, -320, 270, (20, 10, 40))
     decor(Zh, 'zmb_mobile_ticket_booth', -64, 3700, 0, 270, (43, 18, 23))
     for x_ in (-1130, -1050, -970, -890, -810, -730, -650, -570, -490, -410, -330):
         if KIT:
@@ -1684,7 +1671,7 @@ PAP = {'origin': (3104, 4100, -320), 'yaw': 270, 'zone': 'control_room'}
 QUEST = {   # Pack-a-Punch relays (gameplay agent: logic), trap and EE spots (data only)
     'relay_1': {'zone': 'platform_a', 'origin': (768, 2027, -300), 'yaw': 90, 'model_yaw': 0},          # column north face
     'relay_2': {'zone': 'platform_b', 'origin': (-3390, 3211, -340), 'yaw': 90, 'model_yaw': 0},        # old booth wall
-    'relay_3': {'zone': 'generator_room', 'origin': (3660, 3167, -260), 'yaw': 270, 'model_yaw': 180},  # control panel
+    'relay_3': {'zone': 'generator_room', 'origin': (3660, 3180, -260), 'yaw': 270, 'model_yaw': 180},  # wall between the stock control panels
     'pap_shutter': {'zone': 'control_room', 'origin': (3104, 4010, -320), 'yaw': 270, 'size': (256, 208)},
     'trap_third_rail_fusebox': {'zone': 'platform_a', 'origin': (-768, 1975, -300), 'yaw': 270, 'model_yaw': 180},
     'trap_third_rail_volume': {'zone': 'platform_a', 'box': (-2400, 1200, -384, 2600, 1600, -350)},
@@ -2159,6 +2146,7 @@ layout['fx_views'] = FX_VIEWS
 layout['decals'] = DECALS
 layout['sign_view_list'] = SIGN_VIEW_LIST
 layout['walk'] = WALK
+layout['track_spec'] = TRACK_SPEC
 layout['walkcap'] = [{'name': n, 'origin': [x, y, z], 'yaw': yw} for n, x, y, z, yw in WALKCAP]
 layout['gallery'] = {'materials': GALLERY_ITEMS, 'texels': GALLERY_TEXELS, 'views': GALLERY_VIEWS}
 for e_ in ents:      # named placed models (quest, relays, shutter, lever) for sz2_propcheck.py

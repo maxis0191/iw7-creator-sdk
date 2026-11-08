@@ -27,6 +27,10 @@ Rules (lead / owner review of g24):
   intersect        two decor clip boxes overlapping by more than 30% of the smaller one, or a sign overlapping a
                    decor clip box (review A7: board through a crate, signs on lamps and pipes)
   sign-dupe        the same sign image twice within 600 units in one zone (review A8: stacked duplicate signs)
+  trackbed         (layout track_spec, coordinator 2026-11-08) any level surface other than the bed floor inside a
+                   trackbed channel volume (channel x/y less 4 units at its walls, 0.5..170 above the bed = car envelope: walls, piers, ribs, generated rails,
+                   ties, beams, buffers), any decor inside a channel, a channel whose centre is not the middle of its
+                   y range, rails not symmetric about the centre, or a tunnel door not spanning the channel
   stair-tactile    tactile paving on more than two tread heights of one stair (review C: all-yellow treads)
   decal-aspect     a stock decal (layout decals) whose w/h differs from its image aspect by more than 15% (review C)
   colour-cast      a baked coloured light (channel spread > 0.4) without a fixture or with a radius over 192
@@ -45,6 +49,8 @@ BED_OK = {'wood_planks', 'ballast', 'ibeam_bare', 'chrome_trim', 'metal_black', 
           'drip_stain', 'top_stain', 'vent', 'conc_dark'}
 VEHICLE_MATS = {'metal_silver', 'carriage_red', 'seat_blue'}
 TRAIN_OK = {'cp_disco_subway_train_bsp2xmodel'}
+EDGE = 4.0           # trackbed: wall trims up to 4 units proud of a channel side or end wall belong to the wall
+ENVELOPE = 170.0     # trackbed: car kinematic envelope above the bed (cable trays and ceiling ribs above it are fine)
 TONE_BANNED = ('park_', 'spaceland', 'zmb_wood_support', '_ride_', 'ride_car', 'racin', 'astrocade', 'kepler')
 TONE_OK = {'park_token_machine', 'zmb_spaceland_zombie_spawn_window_01'}   # token machine fits a hall; spawn window is gameplay
 FAKE_OBJECTS = ('turnstile', 'desk', 'console', 'booth', 'kiosk', 'generator', 'hvac', 'buffer')
@@ -81,6 +87,18 @@ def main():
     quads = json.load(open(os.path.join(a.src, 'surfaces.json')))['quads']
     lay = json.load(open(os.path.join(a.src, 'layout.json')))
     fails = []
+    spec = lay.get('track_spec') or {}
+    channels = spec.get('channels', [])
+    for ch in channels:
+        if abs(ch['centre_y'] - (ch['y0'] + ch['y1']) / 2) > 0.5:
+            fails.append('trackbed %s channel off-centre: centre %g, middle %g' % (ch['zone'], ch['centre_y'], (ch['y0'] + ch['y1']) / 2))
+    if spec.get('rail_y') and abs(sum(spec['rail_y']) / 2 - spec.get('centre_y', 0)) > 0.5:
+        fails.append('trackbed rails not centred: %s about %s' % (spec['rail_y'], spec.get('centre_y')))
+    for dr in lay.get('doors', []):
+        if dr.get('name') == 'd_platform_tunnel' and channels:
+            a_, b_ = dr.get('a'), dr.get('b')
+            if a_ is not None and (abs(a_ - channels[0]['y0']) > 0.5 or abs(b_ - channels[0]['y1']) > 0.5):
+                fails.append('trackbed: tunnel door %s..%s does not span the channel %s..%s' % (a_, b_, channels[0]['y0'], channels[0]['y1']))
     grip_treads = {}
     for zone, mat, pts, n in quads:
         if mat == 'yellow_grip' and n[2] > 0.9 and zone.startswith('stair'):
@@ -122,10 +140,10 @@ def main():
         if mat in VEHICLE_MATS:
             fails.append('fake-vehicle material %s in %s at %s' % (mat, zone, pts[0]))
         xs = [p[0] for p in pts]; ys = [p[1] for p in pts]; zs = [p[2] for p in pts]
-        for x0, x1, zb in PITS:
-            if min(xs) >= x0 - 1 and max(xs) <= x1 + 1 and min(ys) >= BED_Y[0] and max(ys) <= BED_Y[1] and min(zs) >= zb - 1 \
-                    and max(zs) <= zb + 40 and mat not in BED_OK:
-                fails.append('track-bed %s (%s) at %s' % (mat, zone, [round(c) for c in pts[0]]))
+        for ch in channels:
+            if max(xs) > ch['x0'] + EDGE and min(xs) < ch['x1'] - EDGE and max(ys) > ch['y0'] + EDGE and min(ys) < ch['y1'] - EDGE \
+                    and max(zs) > ch['z'] + 0.5 and min(zs) < ch['z'] + ENVELOPE and not (n[2] > 0.9 and max(zs) <= ch['z'] + 1):
+                fails.append('trackbed %s (%s) inside the %s channel at %s' % (mat, zone, ch['zone'], [round(c) for c in pts[0]]))
         if n[2] > 0.9 and any(abs(zs[0] - f) < 3 for f in (0, -320, -384)):      # walkable floor planes only
             w = max(xs) - min(xs); h = max(ys) - min(ys)
             if 6 <= min(w, h) < 16 and max(w, h) > 256 and m.get('su', 0) >= 64 and not m.get('trim') and mat not in ('stair_tread', 'yellow_grip', 'steel_trim', 'rubber_trim', 'wood_trim', 'beam_yellow', 'ibeam') \
@@ -133,9 +151,10 @@ def main():
                 fails.append('floor-streak %s %gx%g in %s at %s' % (mat, round(w), round(h), zone, [round(c) for c in pts[0]]))
     for d in lay.get('decor', []):
         x, y, z = d['origin']
-        for x0, x1, zb in PITS:
-            if x0 <= x <= x1 and BED_Y[0] <= y <= BED_Y[1] and zb - 1 <= z <= zb + 40 and d['model'] not in TRAIN_OK:
-                fails.append('track-bed decor %s at (%g %g %g)' % (d['model'], x, y, z))
+        for ch in channels:
+            hx, hy = (d.get('clip') or (0, 0, 0))[:2]
+            if x + hx > ch['x0'] + EDGE and x - hx < ch['x1'] - EDGE and y + hy > ch['y0'] + EDGE and y - hy < ch['y1'] - EDGE and ch['z'] - 1 <= z <= ch['z'] + ENVELOPE:
+                fails.append('trackbed decor %s at (%g %g %g) inside the %s channel' % (d['model'], x, y, z, ch['zone']))
         if d['model'] in ('fake_train', 'box_train', 'box_carriage'):
             fails.append('fake-vehicle decor %s' % d['model'])
         if d['model'] not in TONE_OK and any(t in d['model'] for t in TONE_BANNED):
