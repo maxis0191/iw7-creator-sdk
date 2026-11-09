@@ -1799,9 +1799,18 @@ def train_kit():
                            'train': 'emergency'})
         else:
             decor('platform_a', 'iwz_fluo_subway_broken', cx - 120, cy, fz, 90)
+            # g27 review: every car carries a dim battery emergency light after power, so the consist pulls the eye
+            LIGHTS.append({'zone': 'platform_a', 'origin': (cx, cy, fz - 30), 'type': 'omni',
+                           'color': (1.0, 0.82, 0.6), 'radius': 220, 'intensity': 0.08, 'fixture': 'train_interior',
+                           'train': 'emergency'})
         decor('platform_a', 'iwz_fluo_subway_broken', cx + 120, cy, fz, 90)
+        db_ = sorted([cx + TRAIN_DOOR_X[0] * c, cx + TRAIN_DOOR_X[1] * c])
         cars.append({'model': 'iwz_t7e_subway_car_a', 'origin': [cx, cy, oz], 'yaw': yaw,
-                     'door_bay_world_x': sorted([cx + TRAIN_DOOR_X[0] * c, cx + TRAIN_DOOR_X[1] * c]),
+                     'door_bay_world_x': db_,
+                     # open-door cordon (level dressing): two posts on the deck in front of the door bay, tape between
+                     'cordon': {'posts': [[db_[0] - 8, EDGE_Y + 16, DECK_Z], [db_[1] + 8, EDGE_Y + 16, DECK_Z]],
+                                'tape_z': [DECK_Z + 38, DECK_Z + 20],
+                                'door_sill': [db_[0], db_[1], cy + 64, oz + TRAIN_FLOOR]},
                      'floor_z': oz + TRAIN_FLOOR, 'nav_half': list(TRAIN_CAR_HALF),
                      'dressing_anchors': [[cx + dx, cy + dy, oz + TRAIN_FLOOR] for dx, dy in
                                           ((-200, 40), (-200, -40), (-20, 45), (60, -45), (150, 40), (220, -40))]})
