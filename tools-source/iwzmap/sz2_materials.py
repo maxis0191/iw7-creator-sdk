@@ -174,7 +174,7 @@ custom_tint('lamp_warm', 'lamp_warm', EMISSIVE_BASE, (1.0, 0.82, 0.62, 1.0), emi
 custom_tint('lamp_red', 'lamp_red', EMISSIVE_BASE, (1.0, 0.06, 0.04, 1.0), emissive=(1.8, 0, 0, 0))
 custom_tint('lamp_green', 'lamp_green', EMISSIVE_BASE, (0.1, 1.0, 0.2, 1.0), emissive=(1.6, 0, 0, 0))
 # tinted stock surfaces
-custom_tint('tile_green', 'tile_green', 'dt_tile_ceramic_white', (0.42, 0.62, 0.45, 1.0), su=64)
+custom_tint('tile_green', 'tile_green', 'dt_tile_ceramic_white', (0.36, 0.47, 0.40, 1.0), su=64, consts={'reflectionRa': (8096, 0, 0, 0)})     # (g27e item 7: lime cast on stair B; matte)
 custom_tint('tile_charcoal', 'tile_charcoal', 'dt_tile_ceramic_white', (0.24, 0.25, 0.26, 1.0), su=64)   # g26: lower wall bands
 custom_tint('tile_cream', 'tile_cream', 'dt_tile_ceramic_white', (1.0, 0.93, 0.78, 1.0), su=64)
 custom_tint('metal_silver', 'metal_silver', 'metal_painted_wall_panel_04', (0.82, 0.85, 0.9, 1.0), su=128)
