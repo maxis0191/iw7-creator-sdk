@@ -11,7 +11,8 @@
 // Every attach spawns a NEW carrier: the same effect replayed on the same entity / tag soon after a kill stays dark
 // (runs dk3 / dk4), a fresh entity never has that state. Off = carrier deleted.
 // Life: on at every spawn (late join, return from the afterlife / self-revive spawn), off at death and disconnect.
-// After power-on: kept (level.iwz_fl_after_power = "on", default) or switched off once the lights are done ("off").
+// After power-on (level.iwz_fl_after_power): "dim" (default) swaps every light to vfx/iwz/vfx_iwz_flashlight_lit (the
+// same light at ~30 % brightness) once the station lights are done, "on" keeps it, "off" switches it off.
 // Private test dvars: paris_iwz_fl_mode (overrides the mode), paris_iwz_dark_debug 1 (prints).
 
 init()
@@ -21,6 +22,7 @@ init()
     foreach ( s in [ "", "_b", "_c", "_d", "_e", "_f" ] )
         level.iwz_fl_worlds[level.iwz_fl_worlds.size] = loadfx( "vfx/iwz/vfx_iwz_flashlight_world" + s );
     level.iwz_fl_world = level.iwz_fl_worlds[0];
+    level.iwz_fl_world_lit = loadfx( "vfx/iwz/vfx_iwz_flashlight_lit" );
     if ( !isdefined( level.iwz_fl_mode ) )
         level.iwz_fl_mode = "link";
     if ( getdvar( "paris_iwz_fl_mode" ) != "" )
@@ -33,7 +35,7 @@ init()
         level.iwz_fl_link_offset = ( 24, -4, -6 );  // forward, left, up from the eye: ahead of the viewmodel hands (at
                                                     // forward 6 it lit the hands and the body shadowed it, run dk10)
     if ( !isdefined( level.iwz_fl_after_power ) )
-        level.iwz_fl_after_power = "on";
+        level.iwz_fl_after_power = "dim";
     level.iwz_fl_click = "amb_iwz_flashlight_click";
     iwz_fl_log( "LOAD world=" + level.iwz_fl_world + " mode=" + level.iwz_fl_mode );
     level thread iwz_fl_connect();
@@ -98,7 +100,7 @@ iwz_fl_life()
     self iwz_fl_attach( 1 );
     for ( ;; )
     {
-        ev = self scripts\engine\utility::waittill_any_return( "weapon_change", "iwz_fl_refresh", "iwz_fl_toggle", "revive", "last_stand" );
+        ev = self scripts\engine\utility::waittill_any_return( "weapon_change", "iwz_fl_refresh", "iwz_fl_toggle", "revive", "last_stand", "iwz_fl_swap" );
         if ( ev == "weapon_change" || ev == "last_stand" || ev == "revive" )
         {
             // only the weapon-tag carrier depends on the weapon model: the new model replaces the old one later
@@ -106,11 +108,17 @@ iwz_fl_life()
                 continue;
             wait 0.8;
         }
+        else if ( ev == "iwz_fl_swap" )
+        {
+            // another effect for a light that is on (the dim lit-state copy after power-on): no click
+            if ( !scripts\engine\utility::is_true( self.iwz_fl_on ) )
+                continue;
+        }
         else
             wait 0.1;
         if ( !isalive( self ) )
             continue;
-        self iwz_fl_attach( ev != "iwz_fl_toggle" );
+        self iwz_fl_attach( ev != "iwz_fl_toggle" && ev != "iwz_fl_swap" );
     }
 }
 
@@ -230,15 +238,27 @@ iwz_fl_dispose()
     self delete();
 }
 
-// after the station lights are on: keep the flashlights (default) or switch them off once
+// after the station lights are on: dim the flashlights (default; link / follow carriers), keep them, or switch them off
 iwz_fl_power()
 {
     level endon( "game_ended" );
-    if ( level.iwz_fl_after_power != "off" )
+    if ( level.iwz_fl_after_power == "on" )
         return;
     while ( !scripts\engine\utility::flag_exist( "iwz_power_lights_done" ) )
         wait 0.5;
     scripts\engine\utility::flag_wait( "iwz_power_lights_done" );
+    if ( level.iwz_fl_after_power == "dim" )
+    {
+        // later spawns (late join, afterlife return) attach the dim copy too
+        level.iwz_fl_world = level.iwz_fl_world_lit;
+        foreach ( p in level.players )
+        {
+            if ( isdefined( p ) )
+                p notify( "iwz_fl_swap" );
+        }
+        iwz_fl_log( "DIM after power" );
+        return;
+    }
     foreach ( p in level.players )
     {
         if ( !isdefined( p ) )
