@@ -23,17 +23,16 @@ init()
     level.iwz_dark_fixture_off = "mp_dart_lightfluo";
     level.iwz_dark_fixture_on = "mp_dart_lightfluo_on";
     level.iwz_dark_lights = [];
-    // Station Zero lit balance against the baked g27 views (runs dk17 / dk19, auto exposure): the stairs, platform A,
-    // control room and ticket hall burn next to their fittings, the maintenance corridor and tunnel stay dim
+    // Station Zero lit balance against the baked g27 views (runs dk17 / dk19 / dk23): the stairs, platform A, control
+    // room and ticket hall burn next to their fittings -> lowered. Raising the dim corridors does nothing under auto
+    // exposure (dk21 / dk23: x2 / x3 left their medians unchanged), so they stay at 1.
     if ( !isdefined( level.iwz_dark_zone_default ) && level.script == "cp_iwz" )
     {
         level.iwz_dark_zone_default = [];
-        level.iwz_dark_zone_default["stair_a"] = 0.12;
-        level.iwz_dark_zone_default["platform_a"] = 0.28;
-        level.iwz_dark_zone_default["control_room"] = 0.22;
-        level.iwz_dark_zone_default["ticket_hall"] = 0.6;
-        level.iwz_dark_zone_default["maint_corridor"] = 3.0;
-        level.iwz_dark_zone_default["service_tunnel"] = 2.0;
+        level.iwz_dark_zone_default["stair_a"] = 0.2;
+        level.iwz_dark_zone_default["platform_a"] = 0.4;
+        level.iwz_dark_zone_default["control_room"] = 0.4;
+        level.iwz_dark_zone_default["ticket_hall"] = 0.8;
     }
     level.iwz_dark_banks = [];
     // fixed-exposure vision until power (vision/<map>_dark.vision, add_darkness.py): IW7 auto exposure would
