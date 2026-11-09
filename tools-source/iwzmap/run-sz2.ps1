@@ -14,8 +14,8 @@ param(
   [int]$Seconds=420,
   [string]$Runs='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\level\runs',
   [string]$Server='C:\Users\ezvalo\Documents\IW7-Paris-Server\.claude\worktrees\custom-zombies-map-iwz-26cd2d',
-  [string]$SourcePackage='C:\Users\ezvalo\AppData\Local\Temp\claude\ffc8c2fd82d25eb3\3d781a32-1ec5-4875-9f47-5fae74b66b77\scratchpad\srcpkg-a',
-  [string]$InjectDll='C:\Users\ezvalo\AppData\Local\Temp\claude\ffc8c2fd82d25eb3\3d781a32-1ec5-4875-9f47-5fae74b66b77\scratchpad\errjournal\iw7_error_journal.dll',
+  [string]$SourcePackage='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\srcpkg-shared',
+  [string]$InjectDll='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\level\tools\bin\iw7_error_journal.dll',
   [string]$GameRoot='C:\Users\ezvalo\Desktop\iw_game_files',
   [int]$Tries=60)
 # Short leased private local session of Station Zero v2 through the server's local runner (sv_lanOnly, random password,
