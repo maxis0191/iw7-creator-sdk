@@ -165,6 +165,10 @@ for _c in ('pistol', 'smg', 'rifle', 'shotgun', 'pistol_500', 'smg_1250', 'rifle
     if os.path.exists(_t):
         custom_image('chalk_' + _c, 'chalk_%s_c' % _c, _t, base='wall_stain_01_dec')
         MATERIALS['chalk_' + _c]['collide'] = False
+# (g27e, review g27d item 15) G-2 soot bloom: the lit alpha blend decal route of the wall blood (art/soot.py)
+if os.path.exists(os.path.join(ART, 'story', 'decal_soot_bloom_c.tga')):
+    custom_image('decal_soot_bloom', 'decal_soot_bloom_c', os.path.join(ART, 'story', 'decal_soot_bloom_c.tga'), base='wall_stain_01_dec')
+    MATERIALS['decal_soot_bloom']['collide'] = False
 for _p in ('poster_mindgap', 'poster_lasttrain', 'poster_station_zero'):
     custom_image(_p, _p + '_c', os.path.join(ART, 'out', _p + '_c.tga'))
 
