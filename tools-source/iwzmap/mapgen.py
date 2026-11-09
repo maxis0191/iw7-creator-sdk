@@ -17,6 +17,7 @@ class Mesh:
         self.materials = []
         self.by_mat = {}      # material -> (verts, indices)
         self.col = []         # collision triangles (game units)
+        self.col_tag = {}     # collision triangle index -> surface-table tag (default: the encoder's tag)
 
     def mat(self, name):
         if name not in self.by_mat:

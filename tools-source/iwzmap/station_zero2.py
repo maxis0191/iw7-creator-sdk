@@ -653,6 +653,15 @@ def rail_run(zone, axis, s0, s1, c, z, h=36, post=96, mat='steel_trim', collide=
             B.collision_box((c - 2, s0, z), (c + 2, s1, z + h + 3))
 
 
+# (stock-stair study 2026-11-09) the template's surface table (cp_zmb HavokPhysicsShapeList, 475 entries of
+# contents / surface flags; physicscontents bit order from the binary's name table) gives cp_zmb's stairs as: a
+# player + monster clip sheet over the nosings (contents 0x31640 = canshootclip|vehicleclip|itemclip|ainosight|
+# clipshot|playerclip|monsterclip, surface 0x2c40a0 concrete + nodraw|nomarks|nocastshadow, slope 24-26 degrees),
+# risers 7-10 high (solid, 0x1) and treads clipshot|missileclip only (0x2080) under it; nav on the clip sheet.
+# IWZ_STAIR_STYLE=stock builds that variant (A/B against g27c in QA's harness); default 'g27' is unchanged.
+STAIR_STYLE = os.environ.get('IWZ_STAIR_STYLE', 'g27')
+TAG_SOLID, TAG_STAIR_CLIP, TAG_RISER, TAG_TREAD = 382, 411, 387, 402
+STOCK_RISE = 8.0
 STAIRS = []        # (g27) every stair flight: zone, space, open sides and their stringers (artlint stair-soffit)
 
 
@@ -661,6 +670,9 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     """Stair along `axis` from lo_end (z_lo) to hi_end (z_hi); lo_end/hi_end are the end wall planes (either order).
     Render: treads and risers. Collision: low landing, smooth ramp through the nosings, high landing.
     Walls: banded side walls parallel to the slope; ceiling `head` above the nosing line."""
+    if STAIR_STYLE == 'stock':     # ~8-unit risers, treads no shallower than 16 (artlint floor-streak)
+        n_steps = max(n_steps, min(int(round(abs(z_hi - z_lo) / STOCK_RISE)),
+                                   int((abs(hi_end - lo_end) - land_lo - land_hi) // 16)))
     d = 1 if hi_end > lo_end else -1
     s_a = lo_end + d * land_lo                  # first riser
     s_b = hi_end - d * land_hi                  # top landing edge
@@ -707,13 +719,15 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     # collision: nosing line z(s) = z_lo + rise + (s - s_a) * rise / run, from s_a - run (z_lo) to s_b - run (z_hi)
     r0, r1 = s_a - run, s_b - run
 
-    def cq(sa, sb, za, zb):
+    stock_ = STAIR_STYLE == 'stock'
+
+    def cq(sa, sb, za, zb, tag=None):
         pts = [P(sa, c0, za), P(sb, c0, zb), P(sb, c1, zb), P(sa, c1, za)]
-        B.collision_quad(pts, n=(0, 0, 1))
+        B.collision_quad(pts, n=(0, 0, 1), tag=tag)
     # (g27c) exactly the g27 stair collision again: g27b (ramp on top of a first riser, 10.7 risers) and g27n (two-
     # sided ramp and risers, 10.7 risers) both broke the climbs QA had passing on g27 (stair A 8/8)
     cq(lo_end, r0, z_lo, z_lo)
-    cq(r0, r1, z_lo, z_hi)
+    cq(r0, r1, z_lo, z_hi, tag=TAG_STAIR_CLIP if stock_ else None)
     cq(r1, hi_end, z_hi, z_hi)
     cq(r0, s_a, z_lo, z_lo)
     # zombies (scripted agents) do not climb the smooth ramp: solid steps under it (treads at their true height,
@@ -723,10 +737,13 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     for k in range(n_steps):
         sk0, sk1 = s_a + k * run, s_a + (k + 1) * run
         zt = z_lo + (k + 1) * rise
-        B.collision_quad([P(sk0, c0, zt - rise), P(sk0, c1, zt - rise), P(sk0, c1, zt), P(sk0, c0, zt)], n=rn)
+        B.collision_quad([P(sk0, c0, zt - rise), P(sk0, c1, zt - rise), P(sk0, c1, zt), P(sk0, c0, zt)], n=rn,
+                         tag=TAG_RISER if stock_ else None)
         if k < n_steps - 1:
-            cq(sk0, sk1, zt, zt)
+            cq(sk0, sk1, zt, zt, tag=TAG_TREAD if stock_ else None)
     STAIRS[-1]['ramp_from'] = [r0, z_lo]
+    STAIRS[-1]['style'] = STAIR_STYLE
+    STAIRS[-1]['steps'] = n_steps
 
     def zline(s):
         t = (s - r0) / (r1 - r0)
@@ -2529,7 +2546,8 @@ for _sc, (wx_, wy_, wz_), wyaw_, wzone_ in WHEELS:
 nv, ni, ns, wb = mapgen.write_world(B.mesh, os.path.join(out, 'world.bin'))
 col = [tuple(tuple(c * mapgen.HAVOK_SCALE for c in p) for p in t) for t in B.mesh.col]
 blob, info = hkcm_write.encode(col, os.path.join(tpl, 'maps/cp/cp_zmb.d3dbsp.colmap.hkx'), tag=382,
-                               max_tris=int(os.environ.get('IWZ_MAX_TRIS', '127')))
+                               max_tris=int(os.environ.get('IWZ_MAX_TRIS', '127')),
+                               tags=[B.mesh.col_tag.get(i_, 382) for i_ in range(len(col))])
 open(os.path.join(out, 'colmap.hkx'), 'wb').write(blob)
 
 for zone, x, y, z, kind, yaw in SPAWNERS:
