@@ -703,7 +703,7 @@ def rail_run(zone, axis, s0, s1, c, z, h=36, post=96, mat='steel_trim', collide=
 STAIR_STYLE = os.environ.get('IWZ_STAIR_STYLE', 'g27')
 TAG_SOLID, TAG_STAIR_CLIP, TAG_RISER, TAG_TREAD = 382, 411, 387, 402
 STOCK_RISE = 8.0
-WELL_SOLID = os.environ.get('IWZ_WELL_SOLID', '1') == '1'     # (g27e) solid well steps, see straight_stair
+WELL_SOLID = os.environ.get('IWZ_WELL_SOLID', '0') == '1'     # (g27e) solid well steps: OFF, the g27dw probe got 0/10 and agents fell under the deck (NOTES PAUSED 2026-11-09)
 STAIRS = []        # (g27) every stair flight: zone, space, open sides and their stringers (artlint stair-soffit)
 
 
