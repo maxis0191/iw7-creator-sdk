@@ -1,8 +1,8 @@
 param([Parameter(Mandatory)][string]$Tag, [switch]$ReuseBake, [string]$BakeFrom='', [switch]$ReuseCompile, [int]$Rays=256,
-# Reference copy (darkness agent): the exact build used for d12 (run dk15-d12). Paths are this machine's; the level
+# Reference copy (darkness agent): the darkness build as used for d13r (runs dk16 / dk17); d12 = the delivery of dk15. Paths are this machine's; the level
 # builder takes the darkness steps into its own build-g.ps1 (README "Integration").
       [string]$Ambient='0.025', [string]$Scale='1400', [string]$RadiusScale='1.8', [string]$CueScale='0.35', [string]$FlBright='1.0',
-      [switch]$TestVfx)
+      [string]$FlFov='32', [string]$FlInner='12', [string]$Alt='', [switch]$TestVfx)
 # Darkness build on the level builder's current source (g27 flags of level\tools\chain-g27.sh: -SkipPick -Bake
 # --texel 6 --ambient 0.012 -Train -NeutralProbes -Fx -Audio -NavObstacles -Lights -Smodels -Kit), with:
 #   generator IWZ_DARK=1 (SDK codex/iwzmap-darkness = sz2 + darkness), dark split of the layout lights (dark_build.py:
@@ -25,7 +25,10 @@ $src="$DK\src_$Tag"; $um="$DK\um_$Tag"
 # cone (run dk14). Default -3; ride = -2, main = -2.5 for the final sweep. Lit: veilStrength 0 (veiling glare = the white haze
 # around the hot power spots, dk10 / dk13); alien = lit + veil 0 (= default lit), ghost_path = lit + veil 0 + auto
 # exposure bias -1 (lit sweep).
-$DarkArgs='--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --variants ea2:tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-2|ea25:tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-2.5|lita:fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=1|litb:fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=1;tonemapAutoExposureAdjust=-1 --alias cp_zmb_int_triton_ride=ea2,cp_zmb_int_triton_main=ea25,cp_zmb_alien=lita,cp_zmb_ghost_path=litb --lit fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0'
+# (d13) lit-state candidates (coordinator review of dk15: lit blown out): manual exposure 0 / -1 / -2 and auto with
+# bias -0.5, all with the lit keys and fast adaptation, under the spare stock names (probe 8 lit sweep on the g27 views).
+$LK='fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=1'
+$DarkArgs="--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --variants lm0:$LK;tonemapAuto=0;tonemapExposureAdjust=0|lm1:$LK;tonemapAuto=0;tonemapExposureAdjust=-1|lm2:$LK;tonemapAuto=0;tonemapExposureAdjust=-2|la05:$LK;tonemapAutoExposureAdjust=-0.5 --alias cp_zmb_int_triton_ride=lm0,cp_zmb_int_triton_main=lm1,cp_zmb_alien=lm2,cp_zmb_ghost_path=la05 --lit fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0"
 if($env:IWZ_DARK_ARGS){ $DarkArgs=$env:IWZ_DARK_ARGS }
 foreach($v in 'IWZ_LIGHTS','IWZ_SMODELS','IWZ_KIT','IWZ_KIT_MATERIAL_MAP','IWZ_KIT_BASELINE','IWZ_AUDIO','IWZ_DARK','IWZ_TRAIN','IWZ_TRAIN_CAR_BOXES','IWZ_TRAIN_PROPS','IWZ_PROBES','IWZ_PROBES_SCALE','IWZ_FX_TXT'){ Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
 $env:IWZ_DARK='1'; $env:IWZ_LIGHTS='1'; $env:IWZ_SMODELS='1'; $env:IWZ_DOUBLE_SIDED='1'
@@ -44,7 +47,7 @@ if($LASTEXITCODE -ne 0){ "WARNING artlint failed: $DK\artlint_$Tag.json" }
 python -I "$S\sz2_navconn.py" $src --json "$DK\navconn_$Tag.json" | Select-Object -Last 2
 if($LASTEXITCODE -ne 0){ throw 'nav connectivity failed' }
 & $PY -I "$B\layout_lights.py" $src "$DK\lights_full_$Tag.json" --texel 6 --ambient 0.012
-& $PY -I "$S\darkness\dark_build.py" $src "$DK\lights_full_$Tag.json" "$DK\lights_$Tag.json" --ambient $Ambient --scale $Scale --radius-scale $RadiusScale --cue-scale $CueScale
+& $PY -I "$S\darkness\dark_build.py" $src "$DK\lights_full_$Tag.json" "$DK\lights_$Tag.json" --ambient $Ambient --scale $Scale --radius-scale $RadiusScale --cue-scale $CueScale @(if($Alt){'--alt',$Alt})
 if($LASTEXITCODE){ throw 'dark_build failed' }
 $build="$src`_lm"
 if($ReuseBake){
@@ -69,11 +72,23 @@ $V="$DK\vfxsrc"; $FD="$DK\..\fx\ztwork\dump"
 $TL="$FD\cp_disco\particlesystem\vfx\iw7\levels\cp_disco\subway_train\vfx_train_front_light_ch.iw7VFX"
 $fxMine=@()
 foreach($sfx in '','_b','_c','_d','_e','_f'){
-  & $PY -I "$S\darkness\make_vfx_light.py" $TL $V "vfx/iwz/vfx_iwz_flashlight_world$sfx" --fov 32 --inner 12 --radius 900 --color 1,0.92,0.80 --brightness $FlBright --shadow 1 --near 8 --life 100000 | Out-Null
+  & $PY -I "$S\darkness\make_vfx_light.py" $TL $V "vfx/iwz/vfx_iwz_flashlight_world$sfx" --fov $FlFov --inner $FlInner --radius 900 --color 1,0.92,0.80 --brightness $FlBright --shadow 1 --near 8 --life 100000 | Out-Null
   $fxMine+="iwz:vfx/iwz/vfx_iwz_flashlight_world$sfx"
 }
+# lit state: the module swaps to this ~30 % copy once the station lights are done (level.iwz_fl_after_power "dim")
+$litB=[string]([math]::Round([double]$FlBright*0.3,2))
+& $PY -I "$S\darkness\make_vfx_light.py" $TL $V "vfx/iwz/vfx_iwz_flashlight_lit" --fov $FlFov --inner $FlInner --radius 900 --color 1,0.92,0.80 --brightness $litB --shadow 1 --near 8 --life 100000 | Out-Null
+$fxMine+="iwz:vfx/iwz/vfx_iwz_flashlight_lit"
 if($TestVfx){
-  foreach($b in '1.0','3.0'){ $n="vfx/iwz/vfx_iwz_fl_b$($b -replace '\.','')"; & $PY -I "$S\darkness\make_vfx_light.py" $TL $V $n --fov 32 --inner 12 --radius 900 --color 1,0.92,0.80 --brightness $b --shadow 1 --near 8 --life 100000 | Out-Null; $fxMine+="iwz:$n" }
+  # (d13) penumbra / brightness variants played through the module (probe 8 swaps level.iwz_fl_world):
+  # a = old geometry 32/12 brighter, b = wide soft 40/2, c = b without the shadow map, d = 56/0 brighter
+  # (loop variable $fv: PowerShell names are case-insensitive, $v would overwrite the vfx root $V)
+  foreach($fv in @(@('a','32','12','3.5','1'),@('b','40','2','3.5','1'),@('c','40','2','3.5','0'),@('d','56','0','4.5','1'))){
+    $n="vfx/iwz/vfx_iwz_flv_$($fv[0])"; $vf=$fv[1]; $vi=$fv[2]; $vb=$fv[3]; $vs=$fv[4]
+    & $PY -I "$S\darkness\make_vfx_light.py" $TL $V $n --fov $vf --inner $vi --radius 900 --color 1,0.92,0.80 --brightness $vb --shadow $vs --near 8 --life 100000 | Out-Null
+    if($LASTEXITCODE){ throw "make_vfx_light failed for $n" }
+    $fxMine+="iwz:$n"
+  }
 }
 $A=@{KeepSubmodels=$true; NavObstacles=$true; Darkness=$true; DarkArgs=$DarkArgs; FxReport="$um.fx_import.json"
      AudioSdk="$S\audio"; AudioBank='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\audio\build\src15'; AudioModels='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\audio\build\src'}
