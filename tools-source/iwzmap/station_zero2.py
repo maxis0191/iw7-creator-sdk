@@ -680,6 +680,9 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
             cs_, fs_ = (c0, -1) if side_ == 'c0' else (c1, +1)
             nn_ = (0, fs_, 0) if axis == 'x' else (fs_, 0, 0)
             B.quad('conc_dark', zone, [P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=nn_, collide=False)
+            # (g27, QA g26c: east well climb stalled at (1936, 1692, -355), under the flight) solid, both faces
+            B.collision_quad([P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=nn_)
+            B.collision_quad([P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=tuple(-c for c in nn_))
     STAIRS.append({'zone': zone, 'space': space, 'side_walls': side_walls, 'stringers': list(stringers), 'axis': axis,
                    'span': sorted((lo_end, hi_end)), 'c': [c0, c1], 'z': [z_lo, z_hi]})
     # collision: nosing line z(s) = z_lo + rise + (s - s_a) * rise / run, from s_a - run (z_lo) to s_b - run (z_hi)
@@ -1348,7 +1351,11 @@ floor_grid(Z, -3600, 1216, -2416, 1584, -384, 'steel_trim', step=400, w=10, bord
 floor_grid(Z, -3600, 1584, -3216, 2584, -384, 'steel_trim', step=400, w=10, border=10)
 flicker_lamp(Z, -3100, 1400, -97)
 flicker_lamp(Z, -3400, 2300, -97, 90)
-region('tunnel_a', Z, (-3600, 1216, -2416, 1584), -384, (16, 16, 16, 0))
+# (g27, QA g26c: zombies piled up and died at (-3231, 1600), the player was blocked there) tunnel_a's north side is open
+# only west of the tunnel_b corner: east of x -3216 it is a wall, so the cells there keep 16 off it (they straddled the
+# wall with margin 0), and no cell sits on the corner itself
+region('tunnel_a', Z, (-3600, 1216, -3232, 1584), -384, (16, 16, 0, 0))
+region('tunnel_a', Z, (-3232, 1216, -2416, 1584), -384, (0, 16, 16, 16))
 region('tunnel_b', Z, (-3600, 1584, -3216, 2584), -384, (16, 0, 16, 16))
 adjacent('tunnel_a', 'tunnel_b')
 
@@ -2511,7 +2518,9 @@ for o in OPENINGS:
     for sp, other_zone in ((spaces[0], zb), (spaces[1], za)):
         w = o['walls'][sp]
         side = -1 if w == p[0] else 1      # this space lies below (-1) or above (+1) the door plane
-        off = plane + side * 40
+        # (g27, QA g26c: a real F press found no interaction) the door dressing's barricades stand 18 off the door plane
+        # and 28 deep (front face at 46), so the struct at 40 sat inside them: it stands 70 out, clear in front
+        off = plane + side * (70 if KIT and os.environ.get('IWZ_DOOR_DRESS', '1') == '1' and o['name'] != 'd_platform_tunnel' else 40)
         org = (mid, off, o['z0'] + 24) if o['axis'] == 'x' else (off, mid, o['z0'] + 24)
         yaw = (90 if side < 0 else 270) if o['axis'] == 'x' else (0 if side < 0 else 180)
         istruct('debris_%d' % o['cost'], org, yaw, area=other_zone, target=o['scriptable'])
@@ -2592,8 +2601,14 @@ if KIT and os.environ.get('IWZ_DOOR_DRESS', '1') == '1':
             f_ = mid_ + side_ * half_
             c_ = (a_ + b_) / 2
             for k_, off_ in enumerate((-50, 50)):        # two street barricades at the foot (98 wide each)
+                # (g27) the model's origin is not its centre (catalog bounds x -30..26, y -88.5..9.5: centre (-2, -39.5));
+                # it stood 39.5 off along the door, one barricade half inside the jamb
+                yaw_ = 0 if o['axis'] == 'y' else 90
+                cl_ = (-2.0, -39.47)
+                dx_ = cl_[0] * math.cos(math.radians(yaw_)) - cl_[1] * math.sin(math.radians(yaw_))
+                dy_ = cl_[0] * math.sin(math.radians(yaw_)) + cl_[1] * math.cos(math.radians(yaw_))
                 xy_ = (c_ + off_, f_) if o['axis'] == 'x' else (f_, c_ + off_)
-                decor(zn_, 'cp_disco_street_barricade', xy_[0], xy_[1], z0_, 0 if o['axis'] == 'y' else 90, targetname=tn_)
+                decor(zn_, 'cp_disco_street_barricade', round(xy_[0] - dx_, 2), round(xy_[1] - dy_, 2), z0_, yaw_, targetname=tn_)
             z_ = z0_ + 84
             k_ = 0
             while z_ < z1_ - 6:                          # boarding planks above them, alternating offsets
@@ -2975,11 +2990,25 @@ layout.update({'stairs': STAIRS, 'throats': THROATS, 'conduits': CONDUITS, 'junc
                'openings': [{k_: o_[k_] for k_ in ('name', 'kind', 'axis', 'walls', 'a', 'b', 'z0', 'z1')} for o_ in OPENINGS]})
 json.dump(layout, open(os.path.join(out, 'layout.json'), 'w'), indent=1, default=list)
 json.dump({'custom': MT.CUSTOM, 'used': sorted(B.used)}, open(os.path.join(out, 'custom_materials.json'), 'w'), indent=1)
+# (g27) vertical collision triangles as 2D segments (x0, y0, x1, y1, zmin, zmax) for sz2_plan's straddle check
+COL_WALLS = []
+for t_ in B.mesh.col:
+    (ax_, ay_, az_), (bx_, by_, bz_), (cx_, cy_, cz_) = t_
+    nx_ = (by_ - ay_) * (cz_ - az_) - (bz_ - az_) * (cy_ - ay_)
+    ny_ = (bz_ - az_) * (cx_ - ax_) - (bx_ - ax_) * (cz_ - az_)
+    nz_ = (bx_ - ax_) * (cy_ - ay_) - (by_ - ay_) * (cx_ - ax_)
+    ln_ = (nx_ * nx_ + ny_ * ny_ + nz_ * nz_) ** 0.5
+    if ln_ < 1e-6 or abs(nz_) / ln_ > 0.2:
+        continue
+    pts_ = sorted({(round(ax_, 1), round(ay_, 1)), (round(bx_, 1), round(by_, 1)), (round(cx_, 1), round(cy_, 1))})
+    if len(pts_) < 2:
+        continue
+    COL_WALLS.append([pts_[0][0], pts_[0][1], pts_[-1][0], pts_[-1][1], round(min(az_, bz_, cz_), 1), round(max(az_, bz_, cz_), 1)])
 plan = {'regions': [{'name': r['name'], 'zone': r['zone'], 'rect': r['rect']} for r in REGIONS], 'adj': [sorted(a) for a in ADJ],
         'cells': [[i, j, z, owner[(i, j)]] for (i, j), z in cells.items()],
         'cell_corners': [[i, j, list(c_)] for (i, j), c_ in corner_z.items() if (i, j) in cells],
         'nav_seams': NAV_SEAM_REPORT, 'blockers': B.blockers,
-        'col_tris': len(B.mesh.col), 'bounds': wb}
+        'col_tris': len(B.mesh.col), 'bounds': wb, 'col_walls': COL_WALLS}
 json.dump(plan, open(os.path.join(out, 'plan.json'), 'w'))
 json.dump({'quads': B.records}, open(os.path.join(out, 'surfaces.json'), 'w'))
 print('verts', nv, 'indices', ni, 'surfaces', ns, 'quads', B.quads, 'trim_quads', B.trim_quads, 'bounds', wb, 'collision', info, 'nav areas', nareas,

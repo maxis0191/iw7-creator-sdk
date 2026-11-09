@@ -7,6 +7,9 @@ Checks (exit code 1 on failure):
   - consecutive walk waypoints are connected over nav links
   - nav links never rise more than 18 units
   - (g27) a wall spawner's vent sits on flat floor (nav heights within 48 of it equal): not on a stair slope
+  - (g27, QA g26c tunnel corner) no nav cell straddles vertical collision: a wall segment crossing the cell's inner
+    square (2 in from its edges) that rises from below 24 to above 40 over the cell's floor (players blocked /
+    zombies stuck there; wall fittings mounted 48 up do not count)
 Writes a top-down plan (cells coloured by height, blockers, openings, spawners, interactions, walk path).
 """
 import collections, json, math, os, sys
@@ -116,6 +119,38 @@ for s in layout['spawners']:
         for c_ in ts_.get('cars', []):
             if all(abs((x, y)[k] - c_['origin'][k]) < c_['nav_half'][k] + 24 for k in range(2)):
                 fails.append('spawner %s (%g %g) inside the hero car footprint' % (s['zone'], x, y))
+def seg_hits_box(x0, y0, x1, y1, bx0, by0, bx1, by1):
+    # Liang-Barsky clip of the segment against the box
+    t0, t1 = 0.0, 1.0
+    dx, dy = x1 - x0, y1 - y0
+    for p, q in ((-dx, x0 - bx0), (dx, bx1 - x0), (-dy, y0 - by0), (dy, by1 - y0)):
+        if abs(p) < 1e-9:
+            if q < 0:
+                return False
+            continue
+        r = q / p
+        if p < 0:
+            t0 = max(t0, r)
+        else:
+            t1 = min(t1, r)
+        if t0 > t1:
+            return False
+    return True
+
+
+straddle = {}
+walls_by = collections.defaultdict(list)
+for w in plan.get('col_walls', []):
+    for i in range(int(math.floor(min(w[0], w[2]) / CELL)), int(math.floor(max(w[0], w[2]) / CELL)) + 1):
+        for j in range(int(math.floor(min(w[1], w[3]) / CELL)), int(math.floor(max(w[1], w[3]) / CELL)) + 1):
+            walls_by[(i, j)].append(w)
+for (i, j), (z, o) in cells.items():
+    for w in walls_by.get((i, j), []):
+        if w[4] < z + 24 and w[5] > z + 40 and seg_hits_box(w[0], w[1], w[2], w[3], i * CELL + 2, j * CELL + 2, (i + 1) * CELL - 2, (j + 1) * CELL - 2):
+            straddle[(i, j)] = (o, w)
+            break
+for (i, j), (o, w) in sorted(straddle.items()):
+    fails.append('cell %s (%d %d) straddles collision %s' % (o, (i + 0.5) * CELL, (j + 0.5) * CELL, w))
 for it in layout['interactions']:
     x, y, z = it['origin']
     if cell_at(x, y, None) is None:

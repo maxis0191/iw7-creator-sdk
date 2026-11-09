@@ -560,12 +560,21 @@ iwz_door_dressing()
 iwz_door_dressing_watch( name, blockers )
 {
     level endon( "game_ended" );
+    // (g27, QA g26c) the stock purchase only makes the blocker brushes non-solid, it never deletes them: the door is
+    // open when the debris purchase hook (iwz_debris_bought) has flagged its target; blockers gone stays a fallback
     for ( ;; )
     {
+        if ( isdefined( level.iwz_door_open ) && isdefined( level.iwz_door_open[blockers] ) )
+            break;
         if ( getentarray( blockers, "targetname" ).size == 0 )
             break;
-        wait 0.5;
+        wait 0.25;
     }
+    n = 0;
     foreach ( m in getentarray( name, "targetname" ) )
+    {
         m delete();
+        n++;
+    }
+    print( "[IWZ level] DOOR_DRESSING_REMOVED " + blockers + " models=" + n );
 }

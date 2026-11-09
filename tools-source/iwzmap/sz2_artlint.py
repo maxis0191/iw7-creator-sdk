@@ -51,6 +51,8 @@ Rules (lead / owner review of g24):
   decor-rail       a decor model (catalog bounds, else its clip) through a railing / handrail / window frame
   stair-soffit     a stair flight without side walls and without a stringer on its open side(s) (wells: the pit
                    side; review C / train agent: black wedges under the well stairs)
+  door-reach       a door's purchase struct inside or within 8 of that door's barricade dressing (QA g26c: F found no
+                   interaction)
   hero-clear       (coordinator 2026-11-08) the hero generator (layout genset) with less than 48 clear around its footprint
                    (decor, ported props, spawners, wall fittings), inside the corridor-arch / control-door lane
                    (x 3004..3196), or a walk-path segment crossing it
@@ -201,6 +203,18 @@ def g27_rules(lay, quads, fails, bounds):
             fails.append('fx-fixture %s (%s) at %s: no lit fixture within 24' % (e['name'], e['kind'], o))
         if e['kind'].startswith('drips') and not any(abs(o[0] - l['origin'][0]) <= 48 and abs(o[1] - l['origin'][1]) <= 48 for l in leaks):
             fails.append('fx-source %s (%s) at %s: no leak (ceiling stain + puddle)' % (e['name'], e['kind'], o))
+    # door-reach (QA g26c: a real F press found no interaction): a door's debris interaction struct must stand clear
+    # in front of that door's dressing (barricades / planks), not inside or behind it
+    for it in lay.get('interactions', []):
+        if not str(it.get('kind', '')).startswith('debris') or not it.get('target'):
+            continue
+        for d in lay.get('decor', []):
+            if d.get('targetname') != 'iwz_doordress_' + it['target']:
+                continue
+            bx = model_box(d, bounds)
+            if bx and in_box(it['origin'], bx[0], bx[1], 8):
+                fails.append('door-reach %s struct at %s inside / at the dressing %s at %s' % (it['target'], it['origin'], d['model'], d['origin']))
+                break
     # hero-clear
     gs = lay.get('genset')
     if gs and gs.get('footprint'):
