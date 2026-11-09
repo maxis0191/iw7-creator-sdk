@@ -1004,7 +1004,7 @@ def rubble_end(zone, xw, face, y0, y1, zf, zs, r):
     for fy, d, dz, a in ((0.3, 60, 24, 80), (0.62, 70, 26, 250), (0.45, 40, 52, 140), (0.2, 30, 70, 30), (0.75, 34, 74, 300)):
         y_ = y0 + w * fy
         top_ = max([(zt_ - zf) * (lean_ - d) / (lean_ - 4) for ya_, yb_, lean_, zt_ in slabs_ if ya_ + 8 <= y_ <= yb_ - 8 and d < lean_] + [0])
-        RUBBLE.append((zone, xw + face * d, y_, zf + max(0, min(dz, top_ - 4)), a))
+        RUBBLE.append((zone, xw + face * (d + 40), y_, zf, a))     # (g27e, g27d fix proof: still floating) on the floor
     geo_prop('rubble_end', zone, (min(xw, xw + face * 160), y0, zf), (max(xw, xw + face * 160), y1, zs + r))
 
 # ---------------------------------------------------------------- 1 ticket hall  (-1200,3200)-(400,4400), z 0..320
@@ -1038,7 +1038,7 @@ sign(Z, 'sign_network_map', 'y', 400, -1, 3950, 170, 256, 128)
 sign(Z, 'sign_to_platforms', 'x', 3200, +1, -600, 268, 256)
 sign(Z, 'sign_to_old_station', 'y', -1200, +1, 3304, 268, 192)
 sign(Z, 'poster_station_zero', 'y', -1200, +1, 3900, 120, 96, 144)
-sign(Z, 'poster_mindgap', 'y', -1200, +1, 4150, 120, 96, 144)
+sign(Z, 'poster_mindgap', 'y', -1200, +1, 4300, 120, 96, 144)     # (g27e, g27d sign_5: was 4150, over the revolver chalk at 4100)
 sign(Z, 'poster_lasttrain', 'x', 3200, +1, -200, 120, 96, 144)
 # (g27d item 17) the second Last Train poster here z-fought the departure board: removed
 decal_wall(Z, 'leak_stain', 'x', 4400, -1, 300, 200, 128, 220)
@@ -1096,8 +1096,11 @@ for x_ in range(-2112, 2400, 384):
     if TRAIN and any(w_[0] - 5 < x_ < w_[2] + 5 for w_ in WELLS.values()):
         y0_ = 1760                                      # (g27) not across a stairwell (the strip floated over the well)
     floor(Z, 'conc_trim_floor', x_ - 5, y0_, x_ + 5, 2368, DECK_Z + 0.25, collide=False)       # expansion joint (train: across the whole deck)
-for x_, y_, w_, h_ in ((-1700, 1980, 160, 120), (-860, 2140, 200, 140), (-120, 1880, 150, 110), (620, 2060, 220, 150),
-                       (1380, 1920, 170, 130), (2050, 2200, 150, 120)):
+# (g27e, g27d fix proof I9: the floor_stain multiply decal (dirt_water_stain_01) renders as a hard dark rectangle on
+# the deck tiles in platform_a_1 / _2; the bake is even there) no floor stains on the platform deck
+PA_DECK_STAINS = os.environ.get('IWZ_PA_DECK_STAINS', '0') == '1'
+for x_, y_, w_, h_ in (((-1700, 1980, 160, 120), (-860, 2140, 200, 140), (-120, 1880, 150, 110), (620, 2060, 220, 150),
+                        (1380, 1920, 170, 130), (2050, 2200, 150, 120)) if PA_DECK_STAINS else ()):
     decal_floor(Z, 'floor_stain', x_, y_, DECK_Z + 0.4, w_, h_)
 # platform edge face (deck to pit) with a coping lip
 for x0_, x1_ in ((-2192, 1904), (2112, 2400)):
