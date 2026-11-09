@@ -16,9 +16,14 @@ Reusable for any generated IWZ usermap whose layout lights carry light groups.
   per zone ordered from the power switch outwards, 0.8..1.3 s apart; each bank notifies
   `iwz_light_bank_on, <zone>` (audio relay thunk / tube strikes) and its tubes strike with 2..4 stutters; fixture
   models swap unlit -> lit; `flicker` lights keep stuttering light + model together; flag `iwz_power_lights_done`.
-- **Flashlight** (`cp_iwz_flashlight.gsc`): a particle spot light (`PARTICLE_MODULE_INIT_LIGHT_SPOT`) bolted to each
-  player's weapon tag with `playfxontag`, so every client sees every player's light; re-attached after weapon
-  changes, last stand, revive, spawn (late join, afterlife return); killed at death.
+- **Dark look**: the map's own vision with manual exposure (`tonemapAuto 0`, `tonemapExposureAdjust -3`,
+  `tonemapAdaptSpeed 1`) written under the spare stock name `cp_zmb_int_basement`, applied by the module 8 s and 14 s
+  after each spawn; released to the lit map vision over 5 s at the first bank.
+- **Lit look**: the map vision with `fogMaxOpacity 0.03`, volumetrics 0 and `veilStrength 0` (no white haze).
+- **Flashlight** (`cp_iwz_flashlight.gsc`): a particle spot light (`PARTICLE_MODULE_INIT_LIGHT_SPOT`, life 100000 s)
+  played with `playfxontag` on a fresh tag_origin carrier linked to the player's `tag_eye` (24 forward), so every
+  client sees every player's light and it survives weapon switches, Pack-a-Punch and last stand without re-attach;
+  re-attached at every spawn (late join, afterlife / self-revive return); killed and disposed at death / disconnect.
 
 ## Files
 
@@ -30,7 +35,24 @@ Reusable for any generated IWZ usermap whose layout lights carry light groups.
 | `add_darkness.py` | adds both modules as rawfiles to the assembled zone (`build-sz2.ps1 -Darkness`) |
 | `vfx_read.py` | reader of ZoneTool `.iw7VFX` dumps (emitters, states, modules, light parameters); `--spot` lists light effects |
 | `make_vfx_light.py` | new light effect from a stock one: fov, inner fov, radius, colour, brightness, shadows, rename |
-| `dk_measure.py` | frame metrics: pool (flashlight) area / luma / centroid, outside median, pair deltas, fxperf phases |
+| `dk_measure.py` | frame metrics: pool (flashlight) area / luma / centroid, outside median, haze (veil_p5, local contrast), clipping, pair deltas, fxperf phases |
+| `build-g-dark.ps1` | the exact Station Zero darkness build used for d12 (level builder's g27 flags + the darkness steps; this machine's paths) |
+| `dk_proof_fixture.gsc` / `.args.txt` | private runner proof fixture (probe 8) and its launch args |
+
+## Integration into the level build (Station Zero g27c, delivered as d12)
+
+1. Generator with `IWZ_DARK=1` (dark diffusers, `iwz_power_fixture` models, `//@DARK@` init calls).
+2. `bake\layout_lights.py <src> lights_full.json --texel 6 --ambient 0.012`, then
+   `darkness\dark_build.py <src> lights_full.json lights_dark.json --ambient 0.025 --scale 840 --radius-scale 1.8 --cue-scale 0.35`
+   and bake `lights_dark.json` (not the lit list).
+3. Six flashlight copies `vfx/iwz/vfx_iwz_flashlight_world{,_b,_c,_d,_e,_f}` from the cp_disco train front light:
+   `make_vfx_light.py ... --fov 32 --inner 12 --radius 900 --color 1,0.92,0.80 --brightness 2 --shadow 1 --near 8 --life 100000`,
+   passed to build-sz2 as `-FxImport iwz:<name>,...` with `-FxDumps iwz=<vfx root>`.
+4. `build-sz2.ps1 -Darkness -DarkArgs '--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --lit fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0'`
+   (d12 also carried test variants under spare stock names: not needed in a release).
+5. ZoneTool from x64-zt `codex/iwzmap-darkness` (named scriptable lights; 96ee83a includes door-brushmodels 1a8323f).
+Tuning: platform darkness `tonemapExposureAdjust` -3 / -2.5 / -2 = 0.9 / 1.5 / 2.0 % (hall 2.8 / 3.7 / 5.3 %);
+flashlight pool brightness `--brightness`.
 
 ## Build (any map)
 
