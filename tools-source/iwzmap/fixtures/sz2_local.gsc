@@ -247,8 +247,12 @@ iwz_stairprobe( player )
         label = t[0];
         src = ( float( t[1] ), float( t[2] ), float( t[3] ) );
         goal = ( float( t[4] ), float( t[5] ), float( t[6] ) );
-        iwz_sp_navgrid( label, float( t[7] ), float( t[8] ), src[2], goal[2] );
-        iwz_sp_case( player, label, src, goal );
+        count = 1;
+        if ( t.size > 9 )
+            count = int( t[9] );
+        if ( count == 1 )
+            iwz_sp_navgrid( label, float( t[7] ), float( t[8] ), src[2], goal[2] );
+        iwz_sp_case( player, label, src, goal, count );
     }
 }
 
@@ -281,7 +285,7 @@ iwz_sp_navgrid( label, cx, cy, z0, z1 )
     }
 }
 
-iwz_sp_case( player, label, src, goal )
+iwz_sp_case( player, label, src, goal, count )
 {
     if ( isdefined( level.spawned_enemies ) )
         foreach ( e in level.spawned_enemies )
@@ -313,50 +317,90 @@ iwz_sp_case( player, label, src, goal )
         print( "[IWZ local] SP_END case=" + label + " result=no_spawner" );
         return;
     }
-    z = best scripts\cp\zombies\zombies_spawning::spawn_wave_enemy( "generic_zombie", 1 );
-    if ( !isdefined( z ) )
+    // natural start when the spawner is at the source (its own emergence), else placed on the navmesh at the source
+    place = distance( best.origin, src ) > 96;
+    zs = [];
+    for ( n = 0; n < count; n++ )
+    {
+        z = best scripts\cp\zombies\zombies_spawning::spawn_wave_enemy( "generic_zombie", 1 );
+        if ( !isdefined( z ) )
+        {
+            wait 0.5;
+            continue;
+        }
+        z.is_reserved = 1;
+        level.current_num_spawned_enemies--;
+        z.sp_n = n;
+        z thread iwz_sp_death( label + "#" + n );
+        zs[zs.size] = z;
+        if ( place )
+        {
+            deadline = gettime() + 8000;
+            while ( isalive( z ) && isdefined( z.hasplayedvignetteanim ) && !z.hasplayedvignetteanim && gettime() < deadline )
+                wait 0.1;
+            if ( isalive( z ) )
+                z setorigin( getclosestpointonnavmesh( src + ( ( n % 3 ) * 12 - 12, int( n / 3 ) * 12 - 6, 0 ) ), 1 );
+        }
+        wait 0.8;
+    }
+    if ( zs.size == 0 )
     {
         print( "[IWZ local] SP_END case=" + label + " result=no_zombie" );
         return;
     }
-    z.is_reserved = 1;
-    level.current_num_spawned_enemies--;
-    deadline = gettime() + 8000;
-    while ( isalive( z ) && isdefined( z.hasplayedvignetteanim ) && !z.hasplayedvignetteanim && gettime() < deadline )
-        wait 0.1;
-    if ( isalive( z ) )
-        z setorigin( getclosestpointonnavmesh( src ), 1 );
-    if ( isalive( z ) )
-        iwz_sp_aitrace( z, label, src, goal );
-    z thread iwz_sp_death( label );
+    if ( isalive( zs[0] ) && count == 1 )
+        iwz_sp_aitrace( zs[0], label, src, goal );
     start = gettime();
-    last = z.origin;
-    result = "timeout";
-    while ( gettime() - start < 40000 )
+    last = [];
+    foreach ( z in zs )
+        last[last.size] = z.origin;
+    reached = 0;
+    died = 0;
+    done = [];
+    while ( gettime() - start < 45000 )
     {
         wait 0.25;
-        if ( !isalive( z ) )
+        open = 0;
+        for ( k = 0; k < zs.size; k++ )
         {
-            result = "died";
-            break;
+            if ( isdefined( done[k] ) )
+                continue;
+            z = zs[k];
+            if ( !isdefined( z ) || !isalive( z ) )      // a deleted entity reads undefined
+            {
+                done[k] = 1;
+                died++;
+                print( "[IWZ local] SP_GONE case=" + label + " n=" + k + " t=" + ( gettime() - start ) + " last=" + last[k] );
+                continue;
+            }
+            d = distance( z.origin, player.origin );
+            if ( d < 64 )
+            {
+                done[k] = 1;
+                reached++;
+                print( "[IWZ local] SP_REACH case=" + label + " n=" + k + " t=" + ( gettime() - start ) );
+                z dodamage( z.health + 1000, z.origin, z, z, "MOD_SUICIDE" );
+                continue;
+            }
+            open++;
+            if ( k == 0 || ( gettime() - start ) % 1000 < 250 )
+            {
+                q = getclosestpointonnavmesh( z.origin );
+                off = -999;
+                if ( isdefined( q ) )
+                    off = z.origin[2] - q[2];
+                print( "[IWZ local] SP_T case=" + label + " n=" + k + " t=" + ( gettime() - start ) + " pos=" + z.origin + " speed=" + int( distance( z.origin, last[k] ) * 4 )
+                    + " dist=" + int( d ) + " nav=" + q + " nav_off=" + off );
+            }
+            last[k] = z.origin;
         }
-        q = getclosestpointonnavmesh( z.origin );
-        off = -999;
-        if ( isdefined( q ) )
-            off = z.origin[2] - q[2];
-        d = distance( z.origin, player.origin );
-        print( "[IWZ local] SP_T case=" + label + " t=" + ( gettime() - start ) + " pos=" + z.origin + " speed=" + int( distance( z.origin, last ) * 4 )
-            + " dz=" + int( ( z.origin[2] - last[2] ) * 4 ) + " dist=" + int( d ) + " nav=" + q + " nav_off=" + off );
-        last = z.origin;
-        if ( d < 64 )
-        {
-            result = "reached";
+        if ( open == 0 )
             break;
-        }
     }
-    print( "[IWZ local] SP_END case=" + label + " result=" + result + " ms=" + ( gettime() - start ) + " spawner=" + best.origin );
-    if ( isalive( z ) )
-        z dodamage( z.health + 1000, z.origin, z, z, "MOD_SUICIDE" );
+    print( "[IWZ local] SP_END case=" + label + " result=" + reached + "/" + zs.size + " reached died=" + died + " ms=" + ( gettime() - start ) + " spawner=" + best.origin + " placed=" + place );
+    foreach ( z in zs )
+        if ( isalive( z ) )
+            z dodamage( z.health + 1000, z.origin, z, z, "MOD_SUICIDE" );
     player freezecontrols( 0 );
     wait 1;
 }
