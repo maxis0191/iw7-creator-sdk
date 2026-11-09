@@ -1903,6 +1903,17 @@ def train_kit():
                      'floor_z': oz + TRAIN_FLOOR, 'nav_half': list(TRAIN_CAR_HALF),
                      'dressing_anchors': [[cx + dx, cy + dy, oz + TRAIN_FLOOR] for dx, dy in
                                           ((-200, 40), (-200, -40), (-20, 45), (60, -45), (150, 40), (220, -40))]})
+        # (g27d) draw the cordon: yellow posts on weighted feet, red / pale tapes at the two heights, both faces
+        cd_ = cars[-1]['cordon']
+        for px_, py_, pz_ in cd_['posts']:
+            B.box((px_ - 2, py_ - 2, pz_), (px_ + 2, py_ + 2, pz_ + 42), 'beam_yellow', 'platform_a', collide=False, nav=False)
+            B.box((px_ - 6, py_ - 6, pz_), (px_ + 6, py_ + 6, pz_ + 2), 'metal_black', 'platform_a', collide=False, nav=False)
+            geo_prop('cordon_post', 'platform_a', (px_ - 6, py_ - 6, pz_), (px_ + 6, py_ + 6, pz_ + 42))
+        (ax_, ay_, _), (bx_, by_, _) = cd_['posts']
+        for zt_, m_ in zip(cd_['tape_z'], ('metal_red', 'chrome_trim')):
+            pts_ = [(ax_, ay_, zt_ - 3), (bx_, by_, zt_ - 3), (bx_, by_, zt_), (ax_, ay_, zt_)]
+            B.quad(m_, 'platform_a', pts_, collide=False)
+            B.quad(m_, 'platform_a', [pts_[1], pts_[0], pts_[3], pts_[2]], collide=False)
     TRAIN_SPEC.update({'edge_y': EDGE_Y, 'ballast_top_z': bz, 'rail_top_z': TRAIN_RAIL_TOP,
                        'rail_y': [cy - 29.61, cy + 29.61], 'third_rail_y': cy - 57.11,
                        'third_rail_top_z': TRAIN_RAIL_TOP + 3.5, 'segments': [list(s_) for s_ in segs],
@@ -1986,8 +1997,15 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         TEDDY_SPOT = (_anc[0], _anc[1], _anc[2])
         decor('platform_a', 'misc_zom_duffelbag_03', TEDDY_SPOT[0] - 34, TEDDY_SPOT[1] + 12, TEDDY_SPOT[2], 70, (16, 13, 8))
         # Platform B: the sealed, disused trackbed along its north side (train kit, rusted rails, silted ballast)
-        for x_ in range(-3592, -2400, TRAIN_SEG):          # (g27) from under the bricked tunnel mouth on the west wall
-            decor('platform_b', 'iwz_track_256_disused', x_, 3300, -384, 0)
+        # (g27d, item 13 + train agent kit_v5) in the sunk bed (bed -408, segment origin = ballast top 16 above it): the
+        # last segment is the end piece (ballast slopes down, rails stop short), a sleeper-stack buffer at x0_end + 214
+        segs_pb_ = list(range(-3592, -2400, TRAIN_SEG))
+        pb_end_ = os.environ.get('IWZ_PB_TRACK_END', '1') == '1'
+        for x_ in segs_pb_:
+            decor('platform_b', 'iwz_track_256_disused_end' if (pb_end_ and x_ == segs_pb_[-1]) else 'iwz_track_256_disused', x_, 3300, -392, 0)
+        if pb_end_:
+            decor('platform_b', 'iwz_buffer_sleepers', segs_pb_[-1] + 214, 3300, -392, 0)
+            B.collision_box((segs_pb_[-1] + 210, 3230, -392), (segs_pb_[-1] + 258, 3354, -334), nav=False)
         # ticket hall fare line east of the booth: three turnstiles and a broken one
         for x_, m_ in ((130, 'cp_disco_subway_turnstyle_animated'), (190, 'cp_disco_subway_turnstyle_animated'),
                        (250, 'cp_disco_subway_turnstyle_animated'), (310, 'cp_disco_subway_turnstyle_missing_arm')):
@@ -2120,7 +2138,13 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     if 'iwz_fuse_box' not in PORTED:
         decor(Zg, 'electrical_control_panel_01', 2602, 2650, -320, 0, (11, 22, 41))
     decor(Zg, 'wall_mounted_pipes_01', 3796, 2600, -320, 180)
-    decor(Zg, 'electrical_industrial_air_vent_box_01', 3600, 2480, -320, 0, (100, 50, 49))
+    # (g27d, review BLOQUANT 7: the "G-2 cooler" with the grey triangle was this stock vent box, train agent e8 A/B)
+    # the G-2 remote radiator (train\port\genset_v5): model x -32..32, y -16..20, 74 high, front -y; yaw 270 faces
+    # the genset with its hoses towards it
+    if 'iwz_g2_radiator' in PORTED:
+        pass        # placed with its clip boxes by place_ported (level\props_g27d.json)
+    else:
+        decor(Zg, 'electrical_industrial_air_vent_box_01', 3600, 2480, -320, 0, (100, 50, 49))
     decor(Zg, 'emergency_shutoff_sm_panel_01', 3460, 2402, -260, 90)
     decor(Zg, 'equipment_old_computer', 3760, 2950, -276, 180)
     # control room: desks with test-pattern monitors, chairs, radio, filing cabinets
@@ -2345,7 +2369,7 @@ if 'story_clock_big' in MT.MATERIALS:
 # DO NOT OPERATE tag on the tripped breaker (model anchor lockout_tag), a scorch under the exhaust end
 if 'iwz_g2_genset' in PORTED and 'story_danger_g2' in MT.MATERIALS:
     (gx0_, gy0_), (gx1_, gy1_) = GEN_FOOT
-    cx0_, cy0_, cx1_, cy1_ = gx0_ - 60, gy0_ - 60, gx1_ + 60, gy1_ + 60
+    cx0_, cy0_, cx1_, cy1_ = gx0_ - 60, gy0_ - 60, max(gx1_ + 60, 3744), gy1_ + 60     # (g27d) round the radiator too
     for px_, py_ in ((cx0_, cy0_), (cx1_, cy0_), (cx1_, cy1_), (cx0_, cy1_), ((cx0_ + cx1_) / 2, cy0_), ((cx0_ + cx1_) / 2, cy1_)):
         B.box((px_ - 2, py_ - 2, -320), (px_ + 2, py_ + 2, -280), 'beam_yellow', 'generator_room', collide=False, nav=False)
         B.box((px_ - 6, py_ - 6, -320), (px_ + 6, py_ + 6, -318), 'metal_black', 'generator_room', collide=False, nav=False)
@@ -2968,10 +2992,20 @@ for zone, zd in ZONES.items():
 open(os.path.join(out, 'lighting.txt'), 'w', newline='\n').write('\n'.join(light_lines) + '\n')
 # reflection probe rooms for the compiler (IWZ_PROBES=neutral): one per zone, its box and ambient colour; kept apart from
 # lighting.txt because a reused bake brings its own lighting.txt (thousands of chart rooms)
+# (g27d, g27c fix proof I10 / review minor "blue light wedges": surfaces on a zone box face (the walls) and the east
+# pit tunnel beyond platform_a's box had no neutral probe and took a bluish fallback) every probe box is padded 48 and
+# platform_a's runs on to the east tunnel end
+def _probe_box(zn, b):
+    x0, y0, z0, x1, y1, z1 = b
+    if zn == 'platform_a':
+        x1 = max(x1, EAST_END + 16)
+    return (x0 - 48, y0 - 48, z0 - 48, x1 + 48, y1 + 48, z1 + 48)
+
+
 _pc = os.path.join(HERE, 'probe_colours.json')
 PROBE_RGB = json.load(open(_pc))['zones'] if os.path.isfile(_pc) and os.environ.get('IWZ_PROBE_MEASURED', '1') == '1' else {}
 open(os.path.join(out, 'probes.txt'), 'w', newline='\n').write(''.join(
-    'room %d %d %d %d %d %d %.3f %.3f %.3f %.2f\n' % (*zd['box'], *(PROBE_RGB.get(zn, zd['probe'][:3])), zd['probe'][3])
+    'room %d %d %d %d %d %d %.3f %.3f %.3f %.2f\n' % (*_probe_box(zn, zd['box']), *(PROBE_RGB.get(zn, zd['probe'][:3])), zd['probe'][3])
     for zn, zd in ZONES.items()))
 
 # ============================================================================ level script with generated tables

@@ -85,6 +85,7 @@ BED_OK = {'wood_planks', 'ballast', 'ibeam_bare', 'chrome_trim', 'metal_black', 
           'drip_stain', 'top_stain', 'vent', 'conc_dark'}
 VEHICLE_MATS = {'metal_silver', 'carriage_red', 'seat_blue'}
 TRAIN_OK = {'cp_disco_subway_train_bsp2xmodel'}
+HERO_PARTS = {'iwz_g2_radiator'}   # (g27d) the G-2's own remote radiator stands by it on purpose (train agent spec)
 DARK_DECALS = {'art_decal_grime_feathered'}
 EDGE = 4.0           # trackbed: wall trims up to 4 units proud of a channel side or end wall belong to the wall
 ENVELOPE = 170.0     # trackbed: car kinematic envelope above the bed (cable trays and ceiling ribs above it are fine)
@@ -343,7 +344,7 @@ def g27_rules(lay, quads, fails, bounds):
         if gx0 < 3196 and gx1 > 3004:
             fails.append('hero-clear genset footprint x %g..%g blocks the arch / control-door lane x 3004..3196' % (gx0, gx1))
         for d in lay.get('decor', []):
-            if d['model'] == gs['model']:
+            if d['model'] == gs['model'] or d['model'] in HERO_PARTS:
                 continue
             bx = model_box(d, bounds)
             if bx is None:
