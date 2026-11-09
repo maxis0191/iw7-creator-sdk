@@ -707,17 +707,13 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     # collision: nosing line z(s) = z_lo + rise + (s - s_a) * rise / run, from s_a - run (z_lo) to s_b - run (z_hi)
     r0, r1 = s_a - run, s_b - run
 
-    def cq(sa, sb, za, zb, both=False):
+    def cq(sa, sb, za, zb):
         pts = [P(sa, c0, za), P(sb, c0, zb), P(sb, c1, zb), P(sa, c1, za)]
         B.collision_quad(pts, n=(0, 0, 1))
-        if both:
-            B.collision_quad(pts, n=(0, 0, -1))
-    # (g27b QA: zombies from below stopped and died at the foot of stairs A and B: the flight began with a 10.7
-    # vertical riser at floor level and agents keep their height, they only follow a slope they are already on.)
-    # Back to the g27 foot: the ramp starts at floor level one run before the first riser, so an agent walks onto it;
-    # it stays two-sided so nothing slides under its front edge.
+    # (g27c) exactly the g27 stair collision again: g27b (ramp on top of a first riser, 10.7 risers) and g27n (two-
+    # sided ramp and risers, 10.7 risers) both broke the climbs QA had passing on g27 (stair A 8/8)
     cq(lo_end, r0, z_lo, z_lo)
-    cq(r0, r1, z_lo, z_hi, both=True)
+    cq(r0, r1, z_lo, z_hi)
     cq(r1, hi_end, z_hi, z_hi)
     cq(r0, s_a, z_lo, z_lo)
     # zombies (scripted agents) do not climb the smooth ramp: solid steps under it (treads at their true height,
@@ -727,9 +723,7 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     for k in range(n_steps):
         sk0, sk1 = s_a + k * run, s_a + (k + 1) * run
         zt = z_lo + (k + 1) * rise
-        rq_ = [P(sk0, c0, zt - rise), P(sk0, c1, zt - rise), P(sk0, c1, zt), P(sk0, c0, zt)]
-        B.collision_quad(rq_, n=rn)
-        B.collision_quad(rq_, n=tuple(-c for c in rn))
+        B.collision_quad([P(sk0, c0, zt - rise), P(sk0, c1, zt - rise), P(sk0, c1, zt), P(sk0, c0, zt)], n=rn)
         if k < n_steps - 1:
             cq(sk0, sk1, zt, zt)
     STAIRS[-1]['ramp_from'] = [r0, z_lo]
@@ -1018,7 +1012,7 @@ adjacent('hall', 'street')
 Z = 'stair_a'
 # (g27b, QA g27 stair B climb / G3 stair A crowd stalls) risers 10.7 (were 16 on A, 16.7 on B: the zombies'
 # step-up limit), same slope and nosing line, as the pit wells since g25
-zl_a, _ = straight_stair(Z, 'stair_a', 'y', 2416, 3184, -800, -400, -320, 0, 64, 64, 30)
+zl_a, _ = straight_stair(Z, 'stair_a', 'y', 2416, 3184, -800, -400, -320, 0, 64, 64, 20)     # (g27c) g27 risers again
 wall(Z, 'stair_a', 'x', 3184, -1, -800, -400, 0, 288, 'metro')       # top end wall (door to the hall)
 wall(Z, 'stair_a', 'x', 2416, +1, -800, -400, -320, -32, 'metro')    # bottom end wall (arch to the platform)
 sign(Z, 'sign_to_platforms', 'x', 3184, -1, -600, 262, 192)
@@ -1465,7 +1459,7 @@ region('platform_b', Z, (-3600, 2600, -2064, 3400), -384)
 
 # ---------------------------------------------------------------- 9 stair_b (-2048,3104)-(-1216,3400): -384 -> 0 rising east
 Z = 'stair_b'
-zl_b, _ = straight_stair(Z, 'stair_b', 'x', -2048, -1216, 3104, 3400, -384, 0, 48, 48, 36, style='metro_cream')     # (g27b) risers 10.7
+zl_b, _ = straight_stair(Z, 'stair_b', 'x', -2048, -1216, 3104, 3400, -384, 0, 48, 48, 23, style='metro_cream')     # (g27c) g27 risers again
 wall(Z, 'stair_b', 'y', -2048, +1, 3104, 3400, -384, -96, 'metro_cream')
 wall(Z, 'stair_b', 'y', -1216, -1, 3104, 3400, 0, 288, 'metro_cream')
 for x in (-1900, -1650, -1400):
@@ -2334,7 +2328,8 @@ for _pass in range(4):
             # (g27b engine stair probe: the climbing zombie left the pit sideways into the lower third of a well flight,
             # 8-18 above the pit along the flight's open side, and ended under the treads) a link between two regions
             # must be level (6); only inside one region (a flight, the ballast slopes) may an edge step up to 18
-            tol_ = 18 if owner[k] == owner[nb] else 6
+            pair_ = {owner[k], owner[nb]}
+            tol_ = 2 if ('pit' in pair_ and pair_ & {'well_w', 'well_e'}) else 18
             ok = link(k, nb) and abs(ha[0] - hb[0]) <= tol_ and abs(ha[1] - hb[1]) <= tol_ and abs(cells[k] - cells[nb]) <= tol_
             if ok:
                 continue

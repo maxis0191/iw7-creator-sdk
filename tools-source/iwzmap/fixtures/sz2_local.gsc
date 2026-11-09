@@ -331,7 +331,6 @@ iwz_sp_case( player, label, src, goal, count )
         z.is_reserved = 1;
         level.current_num_spawned_enemies--;
         z.sp_n = n;
-        z.sp_done = 0;
         z thread iwz_sp_death( label + "#" + n );
         zs[zs.size] = z;
         if ( place )
@@ -357,25 +356,27 @@ iwz_sp_case( player, label, src, goal, count )
         last[last.size] = z.origin;
     reached = 0;
     died = 0;
-    while ( gettime() - start < 60000 )
+    done = [];
+    while ( gettime() - start < 45000 )
     {
         wait 0.25;
         open = 0;
         for ( k = 0; k < zs.size; k++ )
         {
-            z = zs[k];
-            if ( z.sp_done )
+            if ( isdefined( done[k] ) )
                 continue;
-            if ( !isalive( z ) )
+            z = zs[k];
+            if ( !isdefined( z ) || !isalive( z ) )      // a deleted entity reads undefined
             {
-                z.sp_done = 1;
+                done[k] = 1;
                 died++;
+                print( "[IWZ local] SP_GONE case=" + label + " n=" + k + " t=" + ( gettime() - start ) + " last=" + last[k] );
                 continue;
             }
             d = distance( z.origin, player.origin );
             if ( d < 64 )
             {
-                z.sp_done = 1;
+                done[k] = 1;
                 reached++;
                 print( "[IWZ local] SP_REACH case=" + label + " n=" + k + " t=" + ( gettime() - start ) );
                 z dodamage( z.health + 1000, z.origin, z, z, "MOD_SUICIDE" );
