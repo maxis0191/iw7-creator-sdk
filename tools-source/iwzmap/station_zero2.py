@@ -687,6 +687,7 @@ def rail_run(zone, axis, s0, s1, c, z, h=36, post=96, mat='steel_trim', collide=
 STAIR_STYLE = os.environ.get('IWZ_STAIR_STYLE', 'g27')
 TAG_SOLID, TAG_STAIR_CLIP, TAG_RISER, TAG_TREAD = 382, 411, 387, 402
 STOCK_RISE = 8.0
+WELL_SOLID = os.environ.get('IWZ_WELL_SOLID', '1') == '1'     # (g27e) solid well steps, see straight_stair
 STAIRS = []        # (g27) every stair flight: zone, space, open sides and their stringers (artlint stair-soffit)
 
 
@@ -766,6 +767,21 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
                          tag=TAG_RISER if stock_ else None)
         if k < n_steps - 1:
             cq(sk0, sk1, zt, zt, tag=TAG_TREAD if stock_ else None)
+    # (g27e, QA g27d far-goal well climbs: west 1/5, east 3/5, the zombies die at the same spot three-quarters up, below
+    # the flight surface) the well flights were hollow under the treads, with no floor under the flight beyond its first
+    # step: an agent that slipped under the one-sided sheets fell into that void. Stairs A / B (passing 40/40, 30/30)
+    # sit in closed shafts. Each well step is now a closed solid block from the pit floor to its tread (all faces, both
+    # sides of the stringer face) and the flight has a floor at z_lo, so there is no space below the walking surface.
+    if stringers and WELL_SOLID:
+        lo_, hi_ = sorted((s_a, s_b))
+        B.collision_quad([P(lo_, c0, z_lo), P(hi_, c0, z_lo), P(hi_, c1, z_lo), P(lo_, c1, z_lo)], n=(0, 0, 1))
+        for k in range(n_steps):
+            sk0, sk1 = s_a + k * run, s_a + (k + 1) * run
+            zt = z_lo + (k + 1) * rise
+            a_, b_ = sorted((sk0, sk1))
+            mn_, mx_ = (P(a_, c0, z_lo), P(b_, c1, zt))
+            B.collision_box(tuple(min(u, v) for u, v in zip(mn_, mx_)), tuple(max(u, v) for u, v in zip(mn_, mx_)), nav=False)
+        STAIRS[-1]['solid'] = True
     STAIRS[-1]['ramp_from'] = [r0, z_lo]
     STAIRS[-1]['style'] = STAIR_STYLE
     STAIRS[-1]['steps'] = n_steps
