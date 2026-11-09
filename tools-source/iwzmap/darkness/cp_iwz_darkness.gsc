@@ -131,6 +131,21 @@ iwz_dark_scale()
 // per-zone balance of the lit state (level.iwz_dark_zone_scale[zone] = factor, set by the level script / this
 // module's default table; private test dvar paris_iwz_dark_zones "zone:pct,zone:pct"). The dynamic power lights have
 // no bounce light, so zones are balanced against the baked lit reference views (run dk19).
+// fill lights (dark_build --zone-fill, kind "fill") take "fill_<zone>" / "fill" keys; the zone key scales the lamps
+iwz_dark_light_scale( l )
+{
+    if ( isdefined( l.iwz_kind ) && l.iwz_kind == "fill" )
+    {
+        iwz_dark_zone_scale( undefined );
+        if ( isdefined( level.iwz_dark_zone_scale["fill_" + l.iwz_zone] ) )
+            return level.iwz_dark_zone_scale["fill_" + l.iwz_zone];
+        if ( isdefined( level.iwz_dark_zone_scale["fill"] ) )
+            return level.iwz_dark_zone_scale["fill"];
+        return 1.0;
+    }
+    return iwz_dark_zone_scale( l.iwz_zone );
+}
+
 iwz_dark_zone_scale( zone )
 {
     if ( !isdefined( level.iwz_dark_zone_scale ) )
@@ -155,7 +170,7 @@ iwz_dark_zone_scale( zone )
 iwz_dark_set( l, on )
 {
     if ( on )
-        l setlightintensity( l.iwz_on * iwz_dark_scale() * iwz_dark_zone_scale( l.iwz_zone ) );
+        l setlightintensity( l.iwz_on * iwz_dark_scale() * iwz_dark_light_scale( l ) );
     else
         l setlightintensity( 0 );
     if ( isdefined( l.iwz_fixtures ) )
