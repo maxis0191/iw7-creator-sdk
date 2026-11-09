@@ -183,6 +183,7 @@ custom_tint('panel_wall_red', 'panel_wall_red', 'metal_painted_wall_panel_04', (
 custom_tint('panel_dark_red', 'panel_dark_red', 'metal_panel_dark_01', (1.0, 0.5, 0.46, 1.0), su=128)
 custom_tint('ceil_red', 'ceil_red', 'ceiling_tile_01', (1.0, 0.62, 0.58, 1.0), su=96)
 custom_tint('seat_blue', 'seat_blue', 'fac_rubber_mat_black', (0.25, 0.35, 0.8, 1.0), su=64)
+custom_tint('conc_warm', 'conc_warm', 'concrete_01', (1.0, 0.93, 0.84, 1.0), su=256)     # (g27e) cess / pit floor: matte, a touch warm against the faint cool cast
 
 
 def material_rows():

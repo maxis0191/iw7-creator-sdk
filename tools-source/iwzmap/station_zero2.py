@@ -326,7 +326,7 @@ STRIP_DROP = 20
 DIM = os.environ.get('IWZ_DIM', '1') == '1'     # g25 mood pass: half the fluorescents are dead, in clusters
 
 
-def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=6, dead=False):
+def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=2, dead=False):
     """Ceiling fluorescent fitting: a steel housing with an emissive diffuser underneath (dead: dark diffuser, no light)."""
     k_ = STRIP_COUNT[zone] = STRIP_COUNT.get(zone, -1) + 1
     dimmed = DIM and not dead and mat in ('lamp_cool', 'lamp_warm') and (
@@ -338,7 +338,8 @@ def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=6, dead=False):
         dead = True
     if dead:
         mat = 'panel_dark'
-    B.box((x0 - 3, y0 - 3, z - depth), (x1 + 3, y1 + 3, z), {'side': 'steel_trim', 'top': 'steel_trim'}, zone,
+    # (g27e, g27d fix proof I15: the 6-deep housing with a 3-unit lip shadowed the ceiling round each strip light)
+    B.box((x0 - 1, y0 - 1, z - depth), (x1 + 1, y1 + 1, z), {'side': 'steel_trim', 'top': 'steel_trim'}, zone,
           collide=False, nav=False, skip=('bottom',))
     B.quad(mat, zone, [(x0, y1, z - depth - 0.5), (x1, y1, z - depth - 0.5), (x1, y0, z - depth - 0.5), (x0, y0, z - depth - 0.5)],
            n=(0, 0, -1), uvs=[(0, 0), (1, 0), (1, 1), (0, 1)], collide=False)
@@ -1069,7 +1070,7 @@ sign(Z, 'sign_to_platforms', 'x', 3184, -1, -600, 262, 192)
 strip_light(Z, -640, 3120, -560, 3136, 288)
 for y in (2600, 2800, 3000):
     zc = zl_a(y) + 288
-    strip_light(Z, -616, y - 8, -584, y + 8, zc, depth=4)
+    strip_light(Z, -616, y - 8, -584, y + 8, zc, depth=2)
 region('stair_a', Z, (-800, 2416, -400, 3184), lambda x, y: zl_a(y))
 
 # ---------------------------------------------------------------- 3 platform_a: deck (y 1600..2400, z -320), pit (y 1200..1600, z -384)
@@ -1136,7 +1137,7 @@ for wname, (wx0, wy0, wx1, wy1, ddir) in WELLS.items():
     B.wall_plane(Z, 'y', xs[1], -1, wy0, wy1, PIT_Z, DECK_Z, 'conc_dark')
     region(wname, Z, (xs[0], wy0, xs[1], wy1), (lambda f: (lambda x, y: f(x)))(zl), (16 if ddir < 0 else 0, 0, 0 if ddir < 0 else 16, 16))
 # pit floor (track bed) and track wall
-floor(Z, 'conc', -2400, 1200, 2400, 1600, PIT_Z, tone='dark')     # (g27d item 10: the polished floor mirrored the navy cars: matte concrete)
+floor(Z, 'conc_warm', -2400, 1200, 2400, 1600, PIT_Z, tone='dark')     # (g27d item 10: the polished floor mirrored the navy cars: matte concrete)
 wall(Z, 'pit', 'x', 1200, +1, -2400, 2400, PIT_Z, PCEIL, 'track')        # track wall (south)
 # platform north wall and ceiling
 wall(Z, 'platform_deck', 'x', 2400, -1, -2400, 2400, DECK_Z, PCEIL, 'metro')
@@ -1167,7 +1168,7 @@ room(Z, 'recess', (2400, 1216, EAST_END, 1584), PIT_Z, -128, 'tunnel', 'conc_dar
 tunnel_throat(Z, 2400, EAST_END, 1216, 1584, PIT_Z, -184, 48, -128, caps=('x0',))
 rubble_end(Z, EAST_END, -1, 1216, 1584, PIT_Z, -184, 48)
 B.collision_quad([(2410, 1216, PIT_Z), (2410, 1584, PIT_Z), (2410, 1584, -128), (2410, 1216, -128)], n=(-1, 0, 0))
-floor(Z, 'conc', 2400, 1216, EAST_END, 1584, PIT_Z, tone='dark')     # (g27d item 10: the polished floor mirrored the navy cars: matte concrete)
+floor(Z, 'conc_warm', 2400, 1216, EAST_END, 1584, PIT_Z, tone='dark')     # (g27d item 10: the polished floor mirrored the navy cars: matte concrete)
 signal_head(Z, 2720, 1300, PIT_Z, -1, collide=False)                # facing the platform, on the cess beside the track
 for x_ in (2620, 2860):                                             # dead bulkhead lamps on the track-side wall
     wall_lamp(Z, 'x', 1216, +1, x_, -240, mat='lamp_warm', w=16, h=10, dead=True)
@@ -1535,7 +1536,7 @@ zl_b, _ = straight_stair(Z, 'stair_b', 'x', -2048, -1216, 3104, 3400, -384, 0, 4
 wall(Z, 'stair_b', 'y', -2048, +1, 3104, 3400, -384, -96, 'metro_cream')
 wall(Z, 'stair_b', 'y', -1216, -1, 3104, 3400, 0, 288, 'metro_cream')
 for x in (-1900, -1650, -1400):
-    strip_light(Z, x - 8, 3236, x + 8, 3268, zl_b(x) + 288, depth=4)
+    strip_light(Z, x - 8, 3236, x + 8, 3268, zl_b(x) + 288, depth=2)
 # (g27) no 'to old station' sign at the foot of stair B: it hung inside the arch to platform B (artlint in-opening)
 region('stair_b', Z, (-2048, 3104, -1216, 3400), lambda x, y: zl_b(x))
 
@@ -1719,7 +1720,7 @@ if os.environ.get('IWZ_STORY', '1') == '1':
         decal_floor(zn_, 'water_stain', x_, y_, z_, 120, 96)     # 'puddle' (rvl) renders opaque grey: sz2_materials NOTES
     # blood, sparingly: by the train doors and in the tunnel
     decal_floor('platform_a', 'blood:spatter', -150, 1640 + (EDGE_Y - 1600), DECK_Z, 80, 80, mirror=True)
-    decal_floor('service_tunnel', 'blood:pool', -3380, 2380, -384, 96, 96, rot=True, mirror=True)
+    decal_floor('service_tunnel', 'blood:feathered' if ART_HOOKS.key('decal_blood_feathered') else 'blood:pool', -3380, 2380, -384, 72, 72, rot=True, mirror=True)     # (g27e: the pool read saturated / veined)
 
 
 # ---------------------------------------------------------------- stock decor models (rc1-proven), clip boxes block nav
