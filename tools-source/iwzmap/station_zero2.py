@@ -986,7 +986,9 @@ adjacent('hall', 'street')
 
 # ---------------------------------------------------------------- 2 stair_a  (-800,2416)-(-400,3184), 0 -> -320 south
 Z = 'stair_a'
-zl_a, _ = straight_stair(Z, 'stair_a', 'y', 2416, 3184, -800, -400, -320, 0, 64, 64, 20)
+# (g27b, QA g27 stair B climb / G3 stair A crowd stalls) risers 10.7 (were 16 on A, 16.7 on B: the zombies'
+# step-up limit), same slope and nosing line, as the pit wells since g25
+zl_a, _ = straight_stair(Z, 'stair_a', 'y', 2416, 3184, -800, -400, -320, 0, 64, 64, 30)
 wall(Z, 'stair_a', 'x', 3184, -1, -800, -400, 0, 288, 'metro')       # top end wall (door to the hall)
 wall(Z, 'stair_a', 'x', 2416, +1, -800, -400, -320, -32, 'metro')    # bottom end wall (arch to the platform)
 sign(Z, 'sign_to_platforms', 'x', 3184, -1, -600, 262, 192)
@@ -1357,9 +1359,9 @@ flicker_lamp(Z, -3400, 2300, -97, 90)
 # (g27, QA g26c: zombies piled up and died at (-3231, 1600), the player was blocked there) tunnel_a's north side is open
 # only west of the tunnel_b corner: east of x -3216 it is a wall, so the cells there keep 16 off it (they straddled the
 # wall with margin 0), and no cell sits on the corner itself
-region('tunnel_a', Z, (-3600, 1216, -3232, 1584), -384, (16, 16, 0, 0))
-region('tunnel_a', Z, (-3232, 1216, -2416, 1584), -384, (0, 16, 16, 16))
-region('tunnel_b', Z, (-3600, 1584, -3216, 2584), -384, (16, 0, 16, 16))
+region('tunnel_a', Z, (-3600, 1216, -3232, 1584), -384, (32, 32, 0, 0))
+region('tunnel_a', Z, (-3232, 1216, -2416, 1584), -384, (0, 32, 16, 32))     # (g27b) polygons 16 off the walls; east 16: the tunnel door portal
+region('tunnel_b', Z, (-3600, 1584, -3216, 2584), -384, (32, 0, 32, 16))     # (g27b) 16 off the side walls (north: the arch portal)
 adjacent('tunnel_a', 'tunnel_b')
 
 # ---------------------------------------------------------------- 8 platform_b (-3600,2616)-(-2064,3400), -384..-32
@@ -1420,7 +1422,7 @@ region('platform_b', Z, (-3600, 2600, -2064, 3400), -384)
 
 # ---------------------------------------------------------------- 9 stair_b (-2048,3104)-(-1216,3400): -384 -> 0 rising east
 Z = 'stair_b'
-zl_b, _ = straight_stair(Z, 'stair_b', 'x', -2048, -1216, 3104, 3400, -384, 0, 48, 48, 23, style='metro_cream')
+zl_b, _ = straight_stair(Z, 'stair_b', 'x', -2048, -1216, 3104, 3400, -384, 0, 48, 48, 36, style='metro_cream')     # (g27b) risers 10.7
 wall(Z, 'stair_b', 'y', -2048, +1, 3104, 3400, -384, -96, 'metro_cream')
 wall(Z, 'stair_b', 'y', -1216, -1, 3104, 3400, 0, 288, 'metro_cream')
 for x in (-1900, -1650, -1400):
@@ -1789,10 +1791,20 @@ def place_ported(spec_path):
         decor(e['zone'], e['model'], x, y, z, yaw)
         c, s_ = round(math.cos(math.radians(yaw))), round(math.sin(math.radians(yaw)))
         boxes = json.load(open(e['boxes']))['boxes'] if e.get('boxes') and os.path.isfile(e['boxes']) else []
+        u_ = []
         for (a, b) in boxes:
             xs = sorted((x + c * a[0] - s_ * a[1], x + c * b[0] - s_ * b[1]))
             ys = sorted((y + s_ * a[0] + c * a[1], y + s_ * b[0] + c * b[1]))
-            B.collision_box((xs[0], ys[0], z + a[2]), (xs[1], ys[1], z + b[2]), nav=bool(e.get('nav', True)))
+            B.collision_box((xs[0], ys[0], z + a[2]), (xs[1], ys[1], z + b[2]), nav=False)
+            u_.append((xs[0], ys[0], z + a[2], xs[1], ys[1], z + b[2]))
+        # (g27b, QA g27: navmesh under the suitcase, within 12 of the wall fittings) one nav cut over the whole
+        # footprint plus 8 (the voxel clip boxes left nav cells between them); a wall fitting ("wall") cuts down to
+        # the floor below it, so the nav keeps its depth clear
+        if u_ and e.get('nav', True):
+            pad_ = float(e.get('nav_pad', 8))
+            z0_ = min(v[2] for v in u_)
+            B.blockers.append((min(v[0] for v in u_) - pad_, min(v[1] for v in u_) - pad_, max(v[3] for v in u_) + pad_,
+                               max(v[4] for v in u_) + pad_, (z - 80) if e.get('wall') else z0_, max(v[5] for v in u_)))
         placed.append({'model': e['model'], 'origin': [x, y, z], 'yaw': yaw, 'boxes': len(boxes)})
     return placed
 

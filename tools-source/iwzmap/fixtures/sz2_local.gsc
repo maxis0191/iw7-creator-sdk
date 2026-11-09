@@ -55,6 +55,8 @@ iwz_main()
         iwz_walk( player );
     else if ( mode == "walkcap" )
         iwz_walkcap( player );
+    else if ( mode == "stairprobe" )
+        iwz_stairprobe( player );
     print( "[IWZ local] DONE" );
 }
 
@@ -217,6 +219,153 @@ iwz_open_doors( player )
         wait 0.2;
     }
     print( "[IWZ local] DOORS opened=" + opened );
+}
+
+// (g27b, QA g27: zombie climbs die mid-stair) stair probe: paris_iwz_sp = "label sx sy sz gx gy gz cx cy;..." per case.
+// The player waits at g, a stock-spawned zombie is placed on the navmesh at s and walks to him. Every 0.25 s:
+// SP_T origin, speed from the last sample, distance to the player, navmesh point under it and its offset. Before each
+// case the navmesh is sampled on a 9 x 9 grid (16 apart) around c: SP_NAV sample -> navmesh point, clearance above it
+// (playerphysicstrace 2 -> 72 up), path distance to the next sample east / north (getpathdist; -1 = no path).
+// SP_END / SP_DEATH: how the case ended (reach, death with attacker / means, timeout).
+iwz_stairprobe( player )
+{
+    iwz_open_doors( player );
+    wait 2;
+    cases = strtok( getdvar( "paris_iwz_sp" ), ";" );
+    for ( c = 0; c < cases.size; c++ )
+    {
+        t = strtok( cases[c], " " );
+        if ( t.size < 9 )
+            continue;
+        label = t[0];
+        src = ( float( t[1] ), float( t[2] ), float( t[3] ) );
+        goal = ( float( t[4] ), float( t[5] ), float( t[6] ) );
+        iwz_sp_navgrid( label, float( t[7] ), float( t[8] ), src[2], goal[2] );
+        iwz_sp_case( player, label, src, goal );
+    }
+}
+
+iwz_sp_navgrid( label, cx, cy, z0, z1 )
+{
+    zm = ( z0 + z1 ) / 2;
+    for ( i = -4; i <= 4; i++ )
+    {
+        for ( j = -4; j <= 4; j++ )
+        {
+            p = ( cx + i * 16, cy + j * 16, zm );
+            q = getclosestpointonnavmesh( p );
+            if ( !isdefined( q ) )
+            {
+                print( "[IWZ local] SP_NAV case=" + label + " at=" + p + " nav=none" );
+                continue;
+            }
+            up = playerphysicstrace( q + ( 0, 0, 2 ), q + ( 0, 0, 72 ) );
+            qe = getclosestpointonnavmesh( p + ( 16, 0, 0 ) );
+            qn = getclosestpointonnavmesh( p + ( 0, 16, 0 ) );
+            de = -2;
+            dn = -2;
+            if ( isdefined( qe ) )
+                de = getpathdist( q, qe );
+            if ( isdefined( qn ) )
+                dn = getpathdist( q, qn );
+            print( "[IWZ local] SP_NAV case=" + label + " at=" + p + " nav=" + q + " clear=" + ( up[2] - q[2] ) + " path_e=" + de + " path_n=" + dn );
+        }
+        wait 0.05;
+    }
+}
+
+iwz_sp_case( player, label, src, goal )
+{
+    if ( isdefined( level.spawned_enemies ) )
+        foreach ( e in level.spawned_enemies )
+            if ( isalive( e ) )
+                e dodamage( e.health + 1000, e.origin, e, e, "MOD_SUICIDE" );
+    wait 0.3;
+    player setorigin( goal + ( 0, 0, 4 ) );
+    player setvelocity( ( 0, 0, 0 ) );
+    player freezecontrols( 1 );
+    player.ignoreme = 0;
+    best = undefined;
+    bd = 999999;
+    foreach ( vname, v in level.spawn_volume_array )
+    {
+        if ( !isdefined( v.spawners ) )
+            continue;
+        foreach ( sp in v.spawners )
+        {
+            d = distance( sp.origin, src );
+            if ( d < bd )
+            {
+                bd = d;
+                best = sp;
+            }
+        }
+    }
+    if ( !isdefined( best ) )
+    {
+        print( "[IWZ local] SP_END case=" + label + " result=no_spawner" );
+        return;
+    }
+    z = best scripts\cp\zombies\zombies_spawning::spawn_wave_enemy( "generic_zombie", 1 );
+    if ( !isdefined( z ) )
+    {
+        print( "[IWZ local] SP_END case=" + label + " result=no_zombie" );
+        return;
+    }
+    z.is_reserved = 1;
+    level.current_num_spawned_enemies--;
+    deadline = gettime() + 8000;
+    while ( isalive( z ) && isdefined( z.hasplayedvignetteanim ) && !z.hasplayedvignetteanim && gettime() < deadline )
+        wait 0.1;
+    if ( isalive( z ) )
+        z setorigin( getclosestpointonnavmesh( src ), 1 );
+    z thread iwz_sp_death( label );
+    start = gettime();
+    last = z.origin;
+    result = "timeout";
+    while ( gettime() - start < 40000 )
+    {
+        wait 0.25;
+        if ( !isalive( z ) )
+        {
+            result = "died";
+            break;
+        }
+        q = getclosestpointonnavmesh( z.origin );
+        off = -999;
+        if ( isdefined( q ) )
+            off = z.origin[2] - q[2];
+        d = distance( z.origin, player.origin );
+        print( "[IWZ local] SP_T case=" + label + " t=" + ( gettime() - start ) + " pos=" + z.origin + " speed=" + int( distance( z.origin, last ) * 4 )
+            + " dz=" + int( ( z.origin[2] - last[2] ) * 4 ) + " dist=" + int( d ) + " nav=" + q + " nav_off=" + off );
+        last = z.origin;
+        if ( d < 64 )
+        {
+            result = "reached";
+            break;
+        }
+    }
+    print( "[IWZ local] SP_END case=" + label + " result=" + result + " ms=" + ( gettime() - start ) + " spawner=" + best.origin );
+    if ( isalive( z ) )
+        z dodamage( z.health + 1000, z.origin, z, z, "MOD_SUICIDE" );
+    player freezecontrols( 0 );
+    wait 1;
+}
+
+iwz_sp_death( label )
+{
+    p = self.origin;
+    self waittill( "death", attacker, mod );
+    who = "none";
+    if ( isdefined( attacker ) )
+    {
+        who = "other";
+        if ( attacker == self )
+            who = "self";
+        else if ( isplayer( attacker ) )
+            who = "player";
+    }
+    print( "[IWZ local] SP_DEATH case=" + label + " at=" + self.origin + " attacker=" + who + " mod=" + mod );
 }
 
 iwz_walk( player )
