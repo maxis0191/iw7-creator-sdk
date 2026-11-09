@@ -232,6 +232,23 @@ dk_main()
         wait 0.8;
     }
     level.iwz_fl_world = level.iwz_fl_worlds[0];
+    // (d14) the module light without and with its halo cone (soft edge)
+    if ( isdefined( level.iwz_fl_halo ) )
+    {
+        foreach ( hv in [ 0, 1 ] )
+        {
+            level.iwz_fl_halo = hv;
+            dk_fl( player, 1 );
+            wait 1.6;
+            dk_cap( player, "flh" + hv );
+            player setplayerangles( ( w.pitch + 25, w.yaw, 0 ) );
+            wait 0.6;
+            dk_cap( player, "flh" + hv + "_floor" );
+            player setplayerangles( ( w.pitch, w.yaw, 0 ) );
+            dk_fl( player, 0 );
+            wait 0.8;
+        }
+    }
     dk_cap( player, "flv_off2" );
     dk_fl( player, 1 );
     wait 0.5;
@@ -248,6 +265,8 @@ dk_main()
             dk_fltest( player, cams[0] );
         if ( getdvar( "paris_iwz_dkvsweep" ) != "" )
             dk_vsweep( player, cams );
+        if ( getdvarint( "paris_iwz_dkc2" ) )
+            dk_client2( player, cams );
         if ( getdvarint( "paris_iwz_dkdown" ) )
             dk_down( player, cams[0] );
         if ( getdvarint( "paris_iwz_dklit" ) )
@@ -570,7 +589,7 @@ dk_vsweep( player, cams )
 dk_client2( host, cams )
 {
     c2 = undefined;
-    for ( k = 0; k < 180 && !isdefined( c2 ); k++ )
+    for ( k = 0; k < 300 && !isdefined( c2 ); k++ )
     {
         foreach ( p in level.players )
         {
@@ -582,7 +601,7 @@ dk_client2( host, cams )
     }
     if ( !isdefined( c2 ) )
     {
-        print( "[IWZ local] CLIENT2 none after 90 s players=" + level.players.size );
+        print( "[IWZ local] CLIENT2 none after 150 s players=" + level.players.size );
         dk_log( "CLIENT2 none players=" + level.players.size );
         return;
     }
@@ -676,6 +695,44 @@ dk_litcheck( player )
         dk_place( player, sub[0].origin, sub[0].yaw, sub[0].pitch );
         wait 1;
         dk_cap( player, "drift_a_" + sub[0].name );
+    }
+    // per-zone power-light presets (run dk19): paris_iwz_dkzonepresets "zone:pct,zone:pct,...|..." (zones not listed
+    // stay 100), each under the lit vision paris_iwz_dkzonevision ("" = the map's own); frames zp<k>_<view>
+    if ( lx && getdvar( "paris_iwz_dkzonepresets" ) != "" )
+    {
+        zv = getdvar( "paris_iwz_dkzonevision" );
+        if ( zv != "" )
+            dk_vision( player, zv );
+        presets = strtok( getdvar( "paris_iwz_dkzonepresets" ), "|" );
+        for ( k = 0; k < presets.size; k++ )
+        {
+            zs = [];
+            pv = zv;
+            foreach ( part in strtok( presets[k], "," ) )
+            {
+                kv = strtok( part, ":" );
+                if ( kv[0] == "v" )
+                    pv = kv[1];
+                else
+                    zs[kv[0]] = float( kv[1] ) / 100;
+            }
+            // per-preset lit vision ("v:<name>", "v:map" = the map's own)
+            if ( pv == "map" )
+                dk_vision( player, "" );
+            else if ( pv != "" )
+                dk_vision( player, pv );
+            foreach ( l in level.iwz_dark_lights )
+            {
+                s = 1.0;
+                if ( isdefined( zs[l.iwz_zone] ) )
+                    s = zs[l.iwz_zone];
+                l setlightintensity( l.iwz_on * s );
+            }
+            dk_log( "ZONEPRESET " + k + " " + presets[k] );
+            dk_lit_sub( player, sub, "zp" + k + "_" );
+        }
+        dk_log( "ZONEPRESETS done" );
+        return;
     }
     foreach ( c in cams )
     {

@@ -1,8 +1,8 @@
 param([Parameter(Mandatory)][string]$Tag, [switch]$ReuseBake, [string]$BakeFrom='', [switch]$ReuseCompile, [int]$Rays=256,
-# Reference copy (darkness agent): the darkness build as used for d13r (runs dk16 / dk17); d12 = the delivery of dk15. Paths are this machine's; the level
+# Reference copy (darkness agent): the darkness build as used for d14 (-ReuseBake -BakeFrom d13r -TestVfx -Scale 840 -FlBright 3.5 -FlFov 40 -FlInner 2). Paths are this machine's; the level
 # builder takes the darkness steps into its own build-g.ps1 (README "Integration").
       [string]$Ambient='0.025', [string]$Scale='1400', [string]$RadiusScale='1.8', [string]$CueScale='0.35', [string]$FlBright='1.0',
-      [string]$FlFov='32', [string]$FlInner='12', [string]$Alt='', [switch]$TestVfx)
+      [string]$FlFov='32', [string]$FlInner='12', [string]$FlHaloFov='64', [string]$FlHaloScale='0.25', [string]$Alt='', [switch]$TestVfx)
 # Darkness build on the level builder's current source (g27 flags of level\tools\chain-g27.sh: -SkipPick -Bake
 # --texel 6 --ambient 0.012 -Train -NeutralProbes -Fx -Audio -NavObstacles -Lights -Smodels -Kit), with:
 #   generator IWZ_DARK=1 (SDK codex/iwzmap-darkness = sz2 + darkness), dark split of the layout lights (dark_build.py:
@@ -79,6 +79,14 @@ foreach($sfx in '','_b','_c','_d','_e','_f'){
 $litB=[string]([math]::Round([double]$FlBright*0.3,2))
 & $PY -I "$S\darkness\make_vfx_light.py" $TL $V "vfx/iwz/vfx_iwz_flashlight_lit" --fov $FlFov --inner $FlInner --radius 900 --color 1,0.92,0.80 --brightness $litB --shadow 1 --near 8 --life 100000 | Out-Null
 $fxMine+="iwz:vfx/iwz/vfx_iwz_flashlight_lit"
+# halo (d14): a wide dim unshadowed cone played on the same carrier - the soft edge the inner cone angle cannot give
+$haloB=[string]([math]::Round([double]$FlBright*[double]$FlHaloScale,2)); $haloLitB=[string]([math]::Round([double]$haloB*0.3,2))
+foreach($h in @(@('vfx/iwz/vfx_iwz_flashlight_halo',$haloB),@('vfx/iwz/vfx_iwz_flashlight_halo_lit',$haloLitB))){
+  $hn=$h[0]; $hb=$h[1]
+  & $PY -I "$S\darkness\make_vfx_light.py" $TL $V $hn --fov $FlHaloFov --inner 0 --radius 700 --color 1,0.92,0.80 --brightness $hb --shadow 0 --near 8 --life 100000 | Out-Null
+  if($LASTEXITCODE){ throw "make_vfx_light failed for $hn" }
+  $fxMine+="iwz:$hn"
+}
 if($TestVfx){
   # (d13) penumbra / brightness variants played through the module (probe 8 swaps level.iwz_fl_world):
   # a = old geometry 32/12 brighter, b = wide soft 40/2, c = b without the shadow map, d = 56/0 brighter
