@@ -2697,11 +2697,15 @@ for _sc, (wx_, wy_, wz_), wyaw_, wzone_ in WHEELS:
 WALL_BUY_CHALK = {'iw7_revolver_zm': ('pistol', 'y', -1200, +1), 'iw7_ump45_zml': ('smg', 'y', -800, +1),
                   'iw7_m4_zm': ('rifle', 'x', 2400, -1), 'iw7_sonic_zmr': ('shotgun', 'y', 3800, -1),
                   'iw7_m1c_zm': ('rifle', 'x', 2600, +1)}
+# live prices from the g27d capture ([IWZ local] COST, level.interactions[weapon].cost): the board carries its price
+WALL_BUY_PRICE = {'iw7_revolver_zm': 500, 'iw7_ump45_zml': 1250, 'iw7_m4_zm': 1500, 'iw7_sonic_zmr': 750, 'iw7_m1c_zm': 500}
 for weapon, wm, origin, yaw, zone in WALL_BUYS:
     ch_ = WALL_BUY_CHALK.get(weapon)
     if ch_ and 'chalk_' + ch_[0] in MT.MATERIALS:
         cls_, ax_, fx_, fc_ = ch_
-        decal_wall(zone, 'chalk_' + cls_, ax_, fx_, fc_, origin[0] if ax_ == 'x' else origin[1], origin[2] + 4, 80, 40)
+        key_ = 'chalk_%s_%d' % (cls_, WALL_BUY_PRICE.get(weapon, 0))
+        key_ = key_ if key_ in MT.MATERIALS else 'chalk_' + cls_
+        decal_wall(zone, key_, ax_, fx_, fc_, origin[0] if ax_ == 'x' else origin[1], origin[2] + 4, 80, 40)
 # render world and collision (after the entry-point vents, which are drawn from the spawner table)
 nv, ni, ns, wb = mapgen.write_world(B.mesh, os.path.join(out, 'world.bin'))
 col = [tuple(tuple(c * mapgen.HAVOK_SCALE for c in p) for p in t) for t in B.mesh.col]

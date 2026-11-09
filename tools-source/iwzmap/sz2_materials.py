@@ -160,7 +160,7 @@ for _s in STORY:
     if os.path.exists(os.path.join(ART, 'story', _s + '_c.tga')):
         custom_image(_s, _s + '_c', os.path.join(ART, 'story', _s + '_c.tga'))
 # (g27d, review item 20) wall-buy chalk outlines (art/chalk_outlines.py): blended decals, only when delivered
-for _c in ('pistol', 'smg', 'rifle', 'shotgun'):
+for _c in ('pistol', 'smg', 'rifle', 'shotgun', 'pistol_500', 'smg_1250', 'rifle_500', 'rifle_1500', 'shotgun_750'):
     _t = os.path.join(ART, 'chalk', 'chalk_%s_c.tga' % _c)
     if os.path.exists(_t):
         custom_image('chalk_' + _c, 'chalk_%s_c' % _c, _t, base='wall_stain_01_dec')
