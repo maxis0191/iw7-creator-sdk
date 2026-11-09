@@ -559,7 +559,7 @@
       },
       {
         "alias": "amb_iwz_spark",
-        "at": "decor:iwz_fuse_box@generator_room#1",
+        "at": "decor:iwz_fuse_box@generator_room",
         "wait": [
           12,
           30
@@ -780,9 +780,9 @@
           "at": "decor:iwz_g2_genset@generator_room",
           "zone": "generator_room",
           "offset": [
+            -40,
             0,
-            0,
-            40
+            60
           ]
         }
       ],
