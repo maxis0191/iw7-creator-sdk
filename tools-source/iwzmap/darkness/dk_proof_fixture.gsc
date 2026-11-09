@@ -672,6 +672,13 @@ dk_litcheck( player )
         // the g27 lit views are weaponless and without a flashlight
         dk_fl( player, 0 );
         player takeallweapons();
+        // a lit vision for the whole check (fast adaptation, so each view settles: run dk21 showed the map vision's
+        // tonemapAdaptSpeed 0.01 makes every frame depend on the views before it)
+        if ( getdvar( "paris_iwz_dklitvision" ) != "" )
+        {
+            dk_vision( player, getdvar( "paris_iwz_dklitvision" ) );
+            wait 2;
+        }
     }
     cams = dk_cams_of( "paris_iwz_dklitcams" );
     // long view lists are split over paris_iwz_dklitcams2 / 3 (dvar length)
