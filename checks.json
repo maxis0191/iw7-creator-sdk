@@ -28,6 +28,19 @@
       ]
     },
     {
+      "id": "tools-source-iwzmap-tests",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/iwzmap/tests",
+        "-v"
+      ]
+    },
+    {
       "id": "community_distribution_test",
       "command": [
         "python",
