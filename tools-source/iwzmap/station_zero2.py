@@ -1392,9 +1392,12 @@ flicker_lamp(Z, -3400, 2300, -97, 90)
 # (g27, QA g26c: zombies piled up and died at (-3231, 1600), the player was blocked there) tunnel_a's north side is open
 # only west of the tunnel_b corner: east of x -3216 it is a wall, so the cells there keep 16 off it (they straddled the
 # wall with margin 0), and no cell sits on the corner itself
-region('tunnel_a', Z, (-3600, 1216, -3232, 1584), -384, (32, 32, 0, 0))
-region('tunnel_a', Z, (-3232, 1216, -2416, 1584), -384, (0, 32, 16, 32))     # (g27b) polygons 16 off the walls; east 16: the tunnel door portal
-region('tunnel_b', Z, (-3600, 1584, -3216, 2584), -384, (32, 0, 32, 16))     # (g27b) 16 off the side walls (north: the arch portal)
+# (QA g27b: the player still stopped at (-3231, 1620..1634) and (-3210 / -2899, 1568): no stray collision there, the
+# collision traces are the tunnel walls 15-16 away, i.e. the player's own radius; the walk legs follow the nav
+# edges, which were 16 off the walls) margins 48: nav polygon edges 32 off the tunnel walls
+region('tunnel_a', Z, (-3600, 1216, -3232, 1584), -384, (48, 48, 0, 0))
+region('tunnel_a', Z, (-3232, 1216, -2416, 1584), -384, (0, 48, 16, 48))     # east 16: the tunnel door portal
+region('tunnel_b', Z, (-3600, 1584, -3216, 2584), -384, (48, 0, 48, 16))     # 32 off the side walls (north: the arch portal)
 adjacent('tunnel_a', 'tunnel_b')
 
 # ---------------------------------------------------------------- 8 platform_b (-3600,2616)-(-2064,3400), -384..-32
@@ -2394,7 +2397,7 @@ SPAWNERS = [   # >= 48 from walls/props, inside the zone volume, on the navmesh 
     ('control_room', 3100, 3800, -32, 'ceiling', 270), ('control_room', 2648, 3650, -320, 'wall', 0),
     ('service_tunnel', -3500 if not TRAIN else -3450, 1300 if not TRAIN else 1760, -384, 'ground', 0), ('service_tunnel', -2700, 1300, -384, 'ground', 180),
     ('service_tunnel', -3400, 2400, -384, 'ground', 270), ('service_tunnel', -3100 if not TRAIN else -3300, 1500 if not TRAIN else 2000, -384, 'ground', 270),
-    ('service_tunnel', -3552, 1900, -384, 'wall', 0), ('service_tunnel', -3000, 1264, -384, 'wall', 90) if not TRAIN else ('service_tunnel', -3220, 2250, -384, 'wall', 180),
+    ('service_tunnel', -3552, 1900, -384, 'wall', 0), ('service_tunnel', -3000, 1264, -384, 'wall', 90) if not TRAIN else ('service_tunnel', -3264, 2250, -384, 'wall', 180),
     ('platform_b', -3500, 2700, -384, 'ground', 45), ('platform_b', -2150, 2700, -384, 'ground', 135),
     ('platform_b', -3552, 3300, -384, 'wall', 0), ('platform_b', -2700, 3330, -384, 'ground', 270),
     ('platform_b', -2900, 2700, -384, 'ground', 90), ('platform_b', -2800, 3000, -32, 'ceiling', 270),
