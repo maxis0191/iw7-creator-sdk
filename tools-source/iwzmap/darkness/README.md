@@ -39,20 +39,25 @@ Reusable for any generated IWZ usermap whose layout lights carry light groups.
 | `build-g-dark.ps1` | the exact Station Zero darkness build used for d12 (level builder's g27 flags + the darkness steps; this machine's paths) |
 | `dk_proof_fixture.gsc` / `.args.txt` | private runner proof fixture (probe 8) and its launch args |
 
-## Integration into the level build (Station Zero g27c, delivered as d12)
+## Integration into the level build (Station Zero g27d, delivered as d15)
 
 1. Generator with `IWZ_DARK=1` (dark diffusers, `iwz_power_fixture` models, `//@DARK@` init calls).
 2. `bake\layout_lights.py <src> lights_full.json --texel 6 --ambient 0.012`, then
    `darkness\dark_build.py <src> lights_full.json lights_dark.json --ambient 0.025 --scale 840 --radius-scale 1.8 --cue-scale 0.35`
    and bake `lights_dark.json` (not the lit list).
-3. Six flashlight copies `vfx/iwz/vfx_iwz_flashlight_world{,_b,_c,_d,_e,_f}` from the cp_disco train front light:
-   `make_vfx_light.py ... --fov 32 --inner 12 --radius 900 --color 1,0.92,0.80 --brightness 2 --shadow 1 --near 8 --life 100000`,
-   passed to build-sz2 as `-FxImport iwz:<name>,...` with `-FxDumps iwz=<vfx root>`.
-4. `build-sz2.ps1 -Darkness -DarkArgs '--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --lit fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0'`
-   (d12 also carried test variants under spare stock names: not needed in a release).
+3. Flashlight effects from the cp_disco train front light (`make_vfx_light.py ... --radius 900 --color 1,0.92,0.80
+   --near 8 --life 100000`): six copies `vfx/iwz/vfx_iwz_flashlight_world{,_b,_c,_d,_e,_f}` (`--fov 40 --inner 2
+   --brightness 3.5 --shadow 1`), `vfx_iwz_flashlight_lit` (brightness 1.05), `vfx_iwz_flashlight_halo` (`--fov 64
+   --inner 0 --brightness 0.88 --shadow 0`, radius 700) and `vfx_iwz_flashlight_halo_lit` (0.26); passed to build-sz2
+   as `-FxImport iwz:<name>,...` with `-FxDumps iwz=<vfx root>`.
+4. `build-sz2.ps1 -Darkness -DarkArgs '--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --lit fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3'`
+   (d15 also carried two lit variants under spare stock names for the verification bracket: not needed in a release).
 5. ZoneTool from x64-zt `codex/iwzmap-darkness` (named scriptable lights; 96ee83a includes door-brushmodels 1a8323f).
+6. The module's Station Zero zone table (`level.iwz_dark_zone_default`, cp_iwz only) and the FX agent's dark FX file
+   (`fx\station_zero_fx_dark.txt` + its self-lit variants) as in `build-g-dark.ps1 -TrainSet g27d`.
 Tuning: platform darkness `tonemapExposureAdjust` -3 / -2.5 / -2 = 0.9 / 1.5 / 2.0 % (hall 2.8 / 3.7 / 5.3 %);
-flashlight pool brightness `--brightness`.
+flashlight pool brightness `--brightness`; lit balance `level.iwz_dark_zone_default` (lowering hot zones works,
+raising dim ones does not under auto exposure).
 
 ## Build (any map)
 

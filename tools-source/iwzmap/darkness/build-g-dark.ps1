@@ -1,8 +1,8 @@
 param([Parameter(Mandatory)][string]$Tag, [switch]$ReuseBake, [string]$BakeFrom='', [switch]$ReuseCompile, [int]$Rays=256,
-# Reference copy (darkness agent): the darkness build as used for d14 (-ReuseBake -BakeFrom d13r -TestVfx -Scale 840 -FlBright 3.5 -FlFov 40 -FlInner 2). Paths are this machine's; the level
-# builder takes the darkness steps into its own build-g.ps1 (README "Integration").
+# Reference copy (darkness agent): the darkness build as used for d15 (-TestVfx -Scale 840 -FlBright 3.5 -FlFov 40 -FlInner 2
+# -TrainSet g27d -FxTxt <sdk>\fx\station_zero_fx_dark.txt). Paths are this machine's; see README "Integration".
       [string]$Ambient='0.025', [string]$Scale='1400', [string]$RadiusScale='1.8', [string]$CueScale='0.35', [string]$FlBright='1.0',
-      [string]$FlFov='32', [string]$FlInner='12', [string]$FlHaloFov='64', [string]$FlHaloScale='0.25', [string]$Alt='', [switch]$TestVfx)
+      [string]$FlFov='32', [string]$FlInner='12', [string]$FlHaloFov='64', [string]$FlHaloScale='0.25', [string]$Alt='', [ValidateSet('g27','g27d')][string]$TrainSet='g27', [string]$FxTxt='', [switch]$TestVfx)
 # Darkness build on the level builder's current source (g27 flags of level\tools\chain-g27.sh: -SkipPick -Bake
 # --texel 6 --ambient 0.012 -Train -NeutralProbes -Fx -Audio -NavObstacles -Lights -Smodels -Kit), with:
 #   generator IWZ_DARK=1 (SDK codex/iwzmap-darkness = sz2 + darkness), dark split of the layout lights (dark_build.py:
@@ -27,18 +27,25 @@ $src="$DK\src_$Tag"; $um="$DK\um_$Tag"
 # exposure bias -1 (lit sweep).
 # (d13) lit-state candidates (coordinator review of dk15: lit blown out): manual exposure 0 / -1 / -2 and auto with
 # bias -0.5, all with the lit keys and fast adaptation, under the spare stock names (probe 8 lit sweep on the g27 views).
-$LK='fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=1'
-$DarkArgs="--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --variants lm0:$LK;tonemapAuto=0;tonemapExposureAdjust=0|lm1:$LK;tonemapAuto=0;tonemapExposureAdjust=-1|lm2:$LK;tonemapAuto=0;tonemapExposureAdjust=-2|la05:$LK;tonemapAutoExposureAdjust=-0.5 --alias cp_zmb_int_triton_ride=lm0,cp_zmb_int_triton_main=lm1,cp_zmb_alien=lm2,cp_zmb_ghost_path=la05 --lit fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0"
+# (d15) lit = the map vision, auto exposure without bias, tonemapAdaptSpeed 0.3 (the stock 0.01 made every view depend
+# on the previous ones, run dk21; 1 snaps); variants on spare stock names for the verification bracket: ride = bias
+# +0.3, main = bias -0.3 (same adaptation)
+$LK='fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3'
+$DarkArgs="--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --variants lp3:$LK;tonemapAutoExposureAdjust=0.3|lm3:$LK;tonemapAutoExposureAdjust=-0.3 --alias cp_zmb_int_triton_ride=lp3,cp_zmb_int_triton_main=lm3 --lit $LK"
 if($env:IWZ_DARK_ARGS){ $DarkArgs=$env:IWZ_DARK_ARGS }
 foreach($v in 'IWZ_LIGHTS','IWZ_SMODELS','IWZ_KIT','IWZ_KIT_MATERIAL_MAP','IWZ_KIT_BASELINE','IWZ_AUDIO','IWZ_DARK','IWZ_TRAIN','IWZ_TRAIN_CAR_BOXES','IWZ_TRAIN_PROPS','IWZ_PROBES','IWZ_PROBES_SCALE','IWZ_FX_TXT'){ Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
 $env:IWZ_DARK='1'; $env:IWZ_LIGHTS='1'; $env:IWZ_SMODELS='1'; $env:IWZ_DOUBLE_SIDED='1'
 $env:IWZ_KIT='1'; $env:IWZ_KIT_MATERIAL_MAP='mopw/glass_opaque_02=m/clk_glass_grunge_mild'
-$TP=@("$DK\..\train\port\banzai_v3","$DK\..\train\port\kit_v4","$DK\..\train\port\genset","$DK\..\train\port\props_v4") | ForEach-Object { [IO.Path]::GetFullPath($_) }
+# train set as the level builder's build-g.ps1 -TrainSet: g27 (g27..g27c) or g27d (banzai_v4, kit_v5, genset_v5,
+# props_v4) with props_g27d.json
+if($TrainSet -eq 'g27'){ $TP=@("$DK\..\train\port\banzai_v3","$DK\..\train\port\kit_v4","$DK\..\train\port\genset","$DK\..\train\port\props_v4"); $TProps="$L\props_g27.json" }
+else { $TP=@("$DK\..\train\port\banzai_v4","$DK\..\train\port\kit_v5","$DK\..\train\port\genset_v5","$DK\..\train\port\props_v4"); $TProps="$L\props_g27d.json" }
+$TP=$TP | ForEach-Object { [IO.Path]::GetFullPath($_) }
 $env:IWZ_TRAIN='1'; $env:IWZ_TRAIN_CARS='3'; $env:IWZ_TRAIN_CONSIST_END_X='2540'; $env:IWZ_TRAIN_TRACK_EAST_X='2848'
-$env:IWZ_TRAIN_CAR_BOXES="$($TP[0])\collision\iwz_t7e_subway_car_a.json"; $env:IWZ_TRAIN_PROPS="$L\props_g27.json"
+$env:IWZ_TRAIN_CAR_BOXES="$($TP[0])\collision\iwz_t7e_subway_car_a.json"; $env:IWZ_TRAIN_PROPS=$TProps
 $env:IWZ_PROBES='neutral'
 $env:IWZ_AUDIO='1'
-$FxTxt="$S\fx\station_zero_fx_g25.txt"; $env:IWZ_FX_TXT=$FxTxt
+if(-not $FxTxt){ $FxTxt="$S\fx\station_zero_fx_g25.txt" }; $env:IWZ_FX_TXT=$FxTxt
 python -I "$S\station_zero2.py" "$D\cp_zmb" $src | Select-Object -Last 1
 python -I "$S\sz2_plan.py" $src | Select-Object -Last 1
 $AS='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\assets'
@@ -105,7 +112,9 @@ if($ReuseCompile){ $A['ReuseCompile']=$true }
 $km=@((Get-Content "$src\layout.json" -Raw | ConvertFrom-Json).kit_models | Where-Object { -not $_.StartsWith('iwz_') })
 $KD='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\kitimport\ztwork\dump'
 $A['KitDumps']=@("cp_disco=$KD\cp_disco;$KD\techsets_cp_disco","cp_final=$KD\cp_final;$KD\techsets_cp_final")
-foreach($p in $TP){ foreach($f in Get-ChildItem "$p\xmodel\*.xmb"){ $km+=('train:'+$f.BaseName) } }
+# (as the level build since g27) only the port models the generator places (layout decor)
+$placed=@((Get-Content "$src\layout.json" -Raw | ConvertFrom-Json).decor | ForEach-Object { $_.model } | Select-Object -Unique)
+foreach($p in $TP){ foreach($f in Get-ChildItem "$p\xmodel\*.xmb"){ if($placed -contains $f.BaseName){ $km+=('train:'+$f.BaseName) } } }
 $A['KitDumps']+=("train=$($TP -join ';')")
 $A['KitReport']="$um.kit_import.json"
 # ambient FX (level builder's g25 placement: emergency glow sprites already disabled there)
@@ -113,16 +122,28 @@ $LD2="$L\ztwork\dump"
 $imp=(python -I "$S\fx\fx_place.py" $FxTxt $build --list-imports | Select-Object -Last 1).Trim()
 $ncs=@('--ncs',"$D\cp_zmb\netconststrings\ncs_efx_level.json")
 $fxd="cp_disco=$FD\cp_disco;$KD\cp_disco;$LD2\techsets_cp_disco"
+# (g27d, as the level build) self-lit "dark" FX variants named by the FX catalog (fx_variant.py), imported as zone iwzv
+$VR="$DK\fxvariants\$Tag"; if(Test-Path $VR){ Remove-Item $VR -Recurse -Force }
+$vroots="$FD\cp_disco;$KD\cp_disco;$LD2\techsets_cp_disco;$D\cp_zmb;$D\techsets_cp_zmb;$D\techsets_global_cp;$D\techsets_common_cp;$D\techsets_global;$D\techsets_common_mp;$D\techsets_global_mp"
+if(Test-Path "$S\fx\fx_catalog.json"){
+  $fxcat=(Get-Content "$S\fx\fx_catalog.json" -Raw | ConvertFrom-Json).fx
+  foreach($pv in $fxcat.PSObject.Properties){ if($pv.Value.variant -and ($imp -match [regex]::Escape(($pv.Value.variant.of -split '/')[-1] + $pv.Value.variant.suffix))){
+    python -I "$S\fx\fx_variant.py" --dump $vroots --fx $pv.Value.variant.of --out $VR --tint $pv.Value.variant.tint --suffix $pv.Value.variant.suffix --techsets 'C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\fx\techsets_all.txt' --report "$VR.$($pv.Name).json" | Select-Object -Last 1
+    if($LASTEXITCODE){ throw "fx_variant failed for $($pv.Name)" }
+  } }
+}
+$fxv="iwzv=$VR;$vroots"
 if($imp){
-  python -I "$S\fx\fx_import.py" $W 'cp_iwz' --fx $imp --dump $fxd --ncs-out "$DK\ncs_$Tag.json" --report "$DK\fx_import_dry_$Tag.json" --dry-run | Select-Object -Last 1
+  python -I "$S\fx\fx_import.py" $W 'cp_iwz' --fx $imp --dump $fxd --dump $fxv --ncs-out "$DK\ncs_$Tag.json" --report "$DK\fx_import_dry_$Tag.json" --dry-run | Select-Object -Last 1
   $dry=Get-Content "$DK\fx_import_dry_$Tag.json" -Raw | ConvertFrom-Json
+  if(@($dry.missing).Count){ throw "fx_import dry run: missing $($dry.missing -join ', ')" }
   if(@($dry.kitModels).Count){ $km+=@($dry.kitModels) }
   $ncs=@('--ncs',"$DK\ncs_$Tag.json")
 }
 python -I "$S\fx\fx_place.py" $FxTxt $build @ncs --fixture-out "$build\fxproof.gsc" --manifest-out "$build\fx_manifest.json" | Select-Object -Last 2
 if($LASTEXITCODE){ throw 'fx_place failed' }
 $A['FxImport']=((@($imp) + $fxMine) | Where-Object { $_ }) -join ','
-$A['FxDumps']=@($fxd,"iwz=$V")
+$A['FxDumps']=@($fxd,$fxv,"iwz=$V")
 $A['KitModels']=($km | Select-Object -Unique) -join ','
 # the darkness zonetool must carry the merged door-brushmodels compiler (neutral probes 1a8323f): wait for its build
 for($i=0;$i -lt 720 -and -not (Select-String -Path "$DK\build-zt2.log" -Pattern '^exit 0' -Quiet -ErrorAction SilentlyContinue);$i++){ Start-Sleep 30 }
