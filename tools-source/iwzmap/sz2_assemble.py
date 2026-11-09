@@ -19,6 +19,8 @@ for key, c in spec.items():
             const['literal'] = [float(v) for v in c['tint']]
         if const['name'] == 'emissivePara' and c.get('emissive'):
             const['literal'] = [float(v) for v in c['emissive']]
+        if const['name'] in (c.get('consts') or {}):      # any other named constant (e.g. reflectionRa, SSR)
+            const['literal'] = [float(v) for v in c['consts'][const['name']]]
     if c.get('image'):
         colour = [t for t in m['textureTable'] if t['semantic'] == 2]
         assert len(colour) == 1, (key, 'expected one colour texture in', c['base'])

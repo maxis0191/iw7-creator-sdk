@@ -92,11 +92,15 @@ class Builder:
         self.used[mat] = self.used.get(mat, 0) + 1
         self.quads += 1
 
-    def collision_quad(self, pts, n=None):
-        """Collision triangles of a quad; with `n` the winding is turned to face n (bullet traces are one-sided)."""
+    def collision_quad(self, pts, n=None, tag=None):
+        """Collision triangles of a quad; with `n` the winding is turned to face n (bullet traces are one-sided).
+        tag: surface-table index of the collision template (contents + surface flags); None = the map default."""
         p0, p1, p2, p3 = pts
         if n is not None and dot(cross(sub(p1, p0), sub(p3, p0)), n) < 0:
             p0, p1, p2, p3 = p1, p0, p3, p2
+        if tag is not None:
+            self.mesh.col_tag[len(self.mesh.col)] = tag
+            self.mesh.col_tag[len(self.mesh.col) + 1] = tag
         self.mesh.col += [(p0, p1, p2), (p0, p2, p3)]
 
     def collision_box(self, mn, mx, nav=True):

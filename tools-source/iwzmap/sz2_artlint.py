@@ -52,6 +52,11 @@ Rules (lead / owner review of g24):
   in-opening       (lead g27 stair_a_2: a black-backed ad frame, a pilaster and a clock stood inside the stair A arch,
                    unchanged since g24) a wall sign / poster, a pilaster / rib or a wall-mounted model within 24 of a
                    wall plane inside one of that wall's openings (layout openings, span +-10, below the opening top)
+  sign-overlap     (review g27 item 17: a poster z-fought through the departure board, missing posters overlapped a frame,
+                   a pilaster hid the network map) two wall signs / posters on the same wall plane overlapping, or a wall
+                   sign behind a pilaster / rib / ad frame standing proud of the same wall
+  sign-repeat      (review g27 item 17: "The Last Train" five times) one poster / notice image placed more than 3 times
+                   (wayfinding signs sign_* and story plates excepted)
   dark-image       (needs --catalog / --kit for models) a placed model whose catalog / kit entry has no colour image, missing images, or a kit preview mean
                    luma under 0.03; a custom image material (art, signs) whose colour image has mean luma under 0.03
   floating-floor   an up-facing deck-level surface over an open stairwell (other than the stair's own treads)
@@ -80,6 +85,8 @@ BED_OK = {'wood_planks', 'ballast', 'ibeam_bare', 'chrome_trim', 'metal_black', 
           'drip_stain', 'top_stain', 'vent', 'conc_dark'}
 VEHICLE_MATS = {'metal_silver', 'carriage_red', 'seat_blue'}
 TRAIN_OK = {'cp_disco_subway_train_bsp2xmodel'}
+HERO_PARTS = {'iwz_g2_radiator'}   # (g27d) the G-2's own remote radiator stands by it on purpose (train agent spec)
+DARK_DECALS = {'art_decal_grime_feathered'}
 EDGE = 4.0           # trackbed: wall trims up to 4 units proud of a channel side or end wall belong to the wall
 ENVELOPE = 170.0     # trackbed: car kinematic envelope above the bed (cable trays and ceiling ribs above it are fine)
 TONE_BANNED = ('park_', 'spaceland', 'zmb_wood_support', '_ride_', 'ride_car', 'racin', 'astrocade', 'kepler')
@@ -213,6 +220,52 @@ def g27_rules(lay, quads, fails, bounds):
         o = opening_at(sg['axis'], plane, sc - hw, sc + hw, c[2] - hh, c[2] + hh)
         if o:
             fails.append('in-opening sign %s at %s inside opening %s' % (sg['image'], [round(v) for v in c], o))
+    # (g27d, BLOQUANT 2: the white block behind the stair B barricade was a wall spawner's vent grille drawn inside
+    # the door opening) in-opening for wall-spawner vents (vent plane 48 behind the spawner, 56 wide, 4..44 up)
+    for sp in lay.get('spawners', []):
+        if sp.get('kind') != 'wall':
+            continue
+        x, y, z = sp['origin']
+        fx, fy = round(math.cos(math.radians(sp.get('yaw', 0)))), round(math.sin(math.radians(sp.get('yaw', 0))))
+        z = z or 0
+        o = opening_at('y', x - fx * 48, y - 28, y + 28, z + 4, z + 44) if fx else opening_at('x', y - fy * 48, x - 28, x + 28, z + 4, z + 44)
+        if o:
+            fails.append('in-opening spawner vent at %s inside opening %s' % ([round(v) for v in sp['origin']], o))
+    # sign-overlap / sign-repeat (g27d)
+    walls_ = [sg for sg in lay.get('signs', []) if not sg.get('hanging')]
+    def span_(sg):
+        c = sg['center']; hw, hh = sg['size'][0] / 2, sg['size'][1] / 2
+        plane = c[1] - sg['facing'] * sg.get('off', 0) if sg['axis'] == 'x' else c[0] - sg['facing'] * sg.get('off', 0)
+        sc = c[0] if sg['axis'] == 'x' else c[1]
+        return plane, sc - hw, sc + hw, c[2] - hh, c[2] + hh
+    for i, a_ in enumerate(walls_):
+        pa, a0, a1, az0, az1 = span_(a_)
+        for b_ in walls_[i + 1:]:
+            if b_['axis'] != a_['axis'] or b_['facing'] != a_['facing']:
+                continue
+            pb, b0, b1, bz0, bz1 = span_(b_)
+            if abs(pa - pb) < 8 and min(a1, b1) - max(a0, b0) > 1 and min(az1, bz1) - max(az0, bz0) > 1:
+                fails.append('sign-overlap %s at %s and %s at %s' % (a_['image'], [round(v) for v in a_['center']], b_['image'], [round(v) for v in b_['center']]))
+        for g in lay.get('geo_props', []):
+            if g['name'] not in ('pilaster', 'rib', 'ad_frame'):
+                continue
+            k_ = 1 if a_['axis'] == 'x' else 0
+            if not (g['mins'][k_] - 2 <= pa <= g['maxs'][k_] + 2 or abs(g['mins'][k_] - pa) < 12 or abs(g['maxs'][k_] - pa) < 12):
+                continue
+            s_ = 0 if a_['axis'] == 'x' else 1
+            proud_ = max(abs(g['mins'][k_] - pa), abs(g['maxs'][k_] - pa))
+            if g['name'] == 'ad_frame' and abs((g['mins'][s_] + g['maxs'][s_]) / 2 - (a0 + a1) / 2) < 2 and abs((g['mins'][2] + g['maxs'][2]) / 2 - (az0 + az1) / 2) < 2:
+                continue        # the frame's own poster
+            if proud_ > a_.get('off', 0) + 0.5 and min(a1, g['maxs'][s_]) - max(a0, g['mins'][s_]) > 1 and min(az1, g['maxs'][2]) - max(az0, g['mins'][2]) > 1:
+                fails.append('sign-overlap %s at %s behind a %s at %s' % (a_['image'], [round(v) for v in a_['center']], g['name'], [round(v) for v in g['mins']]))
+    reps_ = {}
+    for sg in lay.get('signs', []):
+        im_ = sg['image']
+        if not im_.startswith(('sign_', 'story_')):
+            reps_[im_] = reps_.get(im_, 0) + 1
+    for im_, n_ in sorted(reps_.items()):
+        if n_ > 3:
+            fails.append('sign-repeat %s placed %d times (max 3)' % (im_, n_))
     for g in geo:
         if g['name'] not in ('pilaster', 'rib'):
             continue
@@ -291,7 +344,7 @@ def g27_rules(lay, quads, fails, bounds):
         if gx0 < 3196 and gx1 > 3004:
             fails.append('hero-clear genset footprint x %g..%g blocks the arch / control-door lane x 3004..3196' % (gx0, gx1))
         for d in lay.get('decor', []):
-            if d['model'] == gs['model']:
+            if d['model'] == gs['model'] or d['model'] in HERO_PARTS:
                 continue
             bx = model_box(d, bounds)
             if bx is None:
@@ -437,6 +490,8 @@ def main():
         m = SM.MATERIALS.get(mat, {})
         if zone != 'gallery':
             boxes.append(([min(p[i] for p in pts) for i in range(3)], [max(p[i] for p in pts) for i in range(3)]))
+        if mat in DARK_DECALS and n[2] > 0.9:      # (g27c fixproof I9) renders as hard-edged black floor parallelograms
+            fails.append('dark-decal %s on a floor in %s at %s' % (mat, zone, [round(c) for c in pts[0]]))
         if mat == 'black' and zone != 'gallery':
             fails.append('void-black in %s at %s' % (zone, [round(c) for c in pts[0]]))
         if mat in GRIP and n[2] < 0.9:
@@ -450,7 +505,10 @@ def main():
         if mat in VEHICLE_MATS:
             fails.append('fake-vehicle material %s in %s at %s' % (mat, zone, pts[0]))
         xs = [p[0] for p in pts]; ys = [p[1] for p in pts]; zs = [p[2] for p in pts]
-        for ch in env_channels:
+        # (g27d) plates on a car body (run number, headsign): within a car's nav box are car dressing, not trackbed
+        on_car = any(all(abs(v - c_['origin'][0]) <= c_['nav_half'][0] for v in xs) and all(abs(v - c_['origin'][1]) <= c_['nav_half'][1] for v in ys)
+                     and min(zs) >= c_['origin'][2] - 1 for c_ in tspec.get('cars', [])) if tspec and m.get('custom') and str(mat).startswith('story_') else False
+        for ch in (env_channels if not on_car else []):
             if max(xs) > ch['x0'] + EDGE and min(xs) < ch['x1'] - EDGE and max(ys) > ch['y0'] + EDGE and min(ys) < ch['y1'] - EDGE \
                     and max(zs) > ch['z'] + 0.5 and min(zs) < ch['z'] + ENVELOPE and not (n[2] > 0.9 and max(zs) <= ch['z'] + 1):
                 fails.append('trackbed %s (%s) inside the %s channel at %s' % (mat, zone, ch['zone'], [round(c) for c in pts[0]]))

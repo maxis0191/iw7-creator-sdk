@@ -55,6 +55,7 @@ iwz_main()
             iwz_open_doors( player );
             wait 3;
         }
+        iwz_log_wallbuy_costs();
         iwz_views( player );
         iwz_fx_views( player );
     }
@@ -642,4 +643,21 @@ iwz_probe( zone, x, y, z )
     p.zone = zone;
     p.origin = ( x, y, z );
     return p;
+}
+
+// (g27d, review item 20) the wall-buy chalk boards carry a blank price line: log the live interaction cost of every
+// wall buy ([IWZ local] COST weapon=<script_noteworthy>; cost=<n>) so the boards can be written with the real price
+iwz_log_wallbuy_costs()
+{
+    structs = scripts\engine\utility::getstructarray( "interaction", "targetname" );
+    foreach ( s in structs )
+    {
+        if ( !isdefined( s.name ) || s.name != "wall_buy" || !isdefined( s.script_noteworthy ) )
+            continue;
+        w = strtok( s.script_noteworthy, "+" )[0];
+        c = -1;
+        if ( isdefined( level.interactions ) && isdefined( level.interactions[w] ) && isdefined( level.interactions[w].cost ) )
+            c = level.interactions[w].cost;
+        print( "[IWZ local] COST weapon=" + w + "; cost=" + c + "; origin=" + s.origin );
+    }
 }

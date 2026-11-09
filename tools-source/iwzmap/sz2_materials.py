@@ -145,8 +145,8 @@ def custom_image(key, image_name, tga, base=POSTER_BASE, tint=None):
     MATERIALS[key] = {'path': 'w/iwz_' + image_name, 'su': 1.0, 'sv': 1.0, 'verified': 'NOT_PROVEN', 'custom': True}
 
 
-def custom_tint(key, name, base, tint, emissive=None, su=64):
-    CUSTOM[key] = {'path': 'w/iwz_' + name, 'base': base, 'tint': tint, 'emissive': emissive}
+def custom_tint(key, name, base, tint, emissive=None, su=64, consts=None):
+    CUSTOM[key] = {'path': 'w/iwz_' + name, 'base': base, 'tint': tint, 'emissive': emissive, 'consts': consts}
     MATERIALS[key] = {'path': 'w/iwz_' + name, 'su': float(su), 'sv': float(su), 'verified': 'NOT_PROVEN', 'custom': True}
 
 
@@ -154,12 +154,23 @@ SIGNS = ['sign_station_zero', 'sign_station_zero_plain', 'sign_old_station', 'si
          'sign_to_old_station', 'sign_staff_only', 'sign_signal_control', 'sign_generator', 'sign_network_map']
 for _s in SIGNS:
     custom_image(_s, _s + '_c', os.path.join(ART, 'signs', _s + '_c.tga'))
+# (g27d, review item 16: story at eye level) procedural story plates (art/story_plates.py), only when delivered
+STORY = ['story_run_047', 'story_headsign_2347', 'story_danger_g2', 'story_lockout_tag', 'story_clock_big']
+for _s in STORY:
+    if os.path.exists(os.path.join(ART, 'story', _s + '_c.tga')):
+        custom_image(_s, _s + '_c', os.path.join(ART, 'story', _s + '_c.tga'))
+# (g27d, review item 20) wall-buy chalk outlines (art/chalk_outlines.py): blended decals, only when delivered
+for _c in ('pistol', 'smg', 'rifle', 'shotgun'):
+    _t = os.path.join(ART, 'chalk', 'chalk_%s_c.tga' % _c)
+    if os.path.exists(_t):
+        custom_image('chalk_' + _c, 'chalk_%s_c' % _c, _t, base='wall_stain_01_dec')
+        MATERIALS['chalk_' + _c]['collide'] = False
 for _p in ('poster_mindgap', 'poster_lasttrain', 'poster_station_zero'):
     custom_image(_p, _p + '_c', os.path.join(ART, 'out', _p + '_c.tga'))
 
 # light fixture faces: the stock emissive panel with our own colour (fluorescent, sodium, emergency red)
 custom_tint('lamp_cool', 'lamp_cool', EMISSIVE_BASE, (0.85, 0.93, 1.0, 1.0), emissive=(1.6, 0, 0, 0))
-custom_tint('lamp_warm', 'lamp_warm', EMISSIVE_BASE, (1.0, 0.58, 0.22, 1.0), emissive=(1.6, 0, 0, 0))
+custom_tint('lamp_warm', 'lamp_warm', EMISSIVE_BASE, (1.0, 0.82, 0.62, 1.0), emissive=(1.6, 0, 0, 0))     # (g27d item 15: was orange 1.0 0.58 0.22)
 custom_tint('lamp_red', 'lamp_red', EMISSIVE_BASE, (1.0, 0.06, 0.04, 1.0), emissive=(1.8, 0, 0, 0))
 custom_tint('lamp_green', 'lamp_green', EMISSIVE_BASE, (0.1, 1.0, 0.2, 1.0), emissive=(1.6, 0, 0, 0))
 # tinted stock surfaces
