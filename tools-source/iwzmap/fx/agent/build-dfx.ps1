@@ -1,7 +1,8 @@
 param([Parameter(Mandatory)][string]$Tag,                  # output fx\src_<Tag>, fx\um_<Tag>
       [string]$Base='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\darkness\src_d12_lm',   # darkness d12 baked source (read only)
       [string]$FxTxt='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\fx\layout\station_zero_fx_dark.txt',
-      [string]$FlBright='2.0', [switch]$ReuseCompile)
+      [string]$FlBright='2.0', [switch]$ReuseCompile,
+      [string]$Ladder='0.5,4')                              # extra tints of every variant (imported for probes, not placed)
 # FX agent build on the darkness agent's d12 source: same world, bake, darkness modules (SDK 3d7ed90 detached worktree
 # sdk-fx-d12, darkness zonetool), flashlight effects regenerated with the d12 parameters into fx\vfxsrc-d, and the FX
 # agent's dark-state fx.txt with self-lit variants (fx_variant.py -> fx\variants\<Tag>, imported as zone iwzv).
@@ -44,9 +45,17 @@ $fxMine+="iwz:vfx/iwz/vfx_iwz_flashlight_lit"
 $cat=(Get-Content "$FXS\fx_catalog.json" -Raw | ConvertFrom-Json).fx
 $VR="$F\variants\$Tag"; if(Test-Path $VR){ Remove-Item $VR -Recurse -Force }
 $roots="$FD\cp_disco;$KD\cp_disco;$LD2\techsets_cp_disco;$D\cp_zmb;$D\techsets_cp_zmb;$D\techsets_global_cp;$D\techsets_common_cp;$D\techsets_global;$D\techsets_common_mp;$D\techsets_global_mp"
+# the placed tint (catalog) plus a ladder of other tints (imported for the probes, not placed): the dark vision is
+# manual exposure -3 (x1/8), so a self-lit sprite needs a tint near or above 1 to read
+$ladderFx=@()
 foreach($p in $cat.PSObject.Properties){ if($p.Value.variant){
-  python -I "$FXS\fx_variant.py" --dump $roots --fx $p.Value.variant.of --out $VR --tint $p.Value.variant.tint --techsets "$F\techsets_all.txt" --report "$VR.$($p.Name).json"
-  if($LASTEXITCODE){ throw "fx_variant failed for $($p.Name)" }
+  $tints=@([string]$p.Value.variant.tint) + ($Ladder -split ',' | Where-Object { $_ })
+  foreach($t in ($tints | Select-Object -Unique)){
+    $sfx='_d'+[string][int][math]::Round([double]$t*10)
+    python -I "$FXS\fx_variant.py" --dump $roots --fx $p.Value.variant.of --out $VR --tint $t --suffix $sfx --techsets "$F\techsets_all.txt" --report "$VR.$($p.Name)$sfx.json" | Select-Object -First 1
+    if($LASTEXITCODE){ throw "fx_variant failed for $($p.Name)" }
+    $ladderFx+=('iwzv:vfx/iwz/amb/'+($p.Value.variant.of -split '/')[-1]+$sfx)
+  }
 } }
 $A=@{KeepSubmodels=$true; NavObstacles=$true; Darkness=$true; FxReport="$um.fx_import.json"
      AudioSdk="$S\audio"; AudioBank='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\audio\build\src15'; AudioModels='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\audio\build\src'}
@@ -68,7 +77,7 @@ if(@($dry.missing).Count){ throw "fx_import dry run: $($dry.missing -join ', ')"
 if(@($dry.kitModels).Count){ $km+=@($dry.kitModels) }
 python -I "$FXS\fx_place.py" $FxTxt $src --ncs "$F\ncs_$Tag.json" --fixture-out "$src\fxproof.gsc" --manifest-out "$src\fx_manifest.json"
 if($LASTEXITCODE){ throw 'fx_place failed' }
-$A['FxImport']=((@($imp) + $fxMine) | Where-Object { $_ }) -join ','
+$A['FxImport']=((@($imp) + $fxMine + $ladderFx) | Where-Object { $_ } | Select-Object -Unique) -join ','
 $A['FxDumps']=@($fxd,"iwz=$V",$fxv)
 $A['KitModels']=($km | Select-Object -Unique) -join ','
 & "$S\build-sz2.ps1" -Src $src -UmOut $um -Work $W -ZoneToolExe $Z @A

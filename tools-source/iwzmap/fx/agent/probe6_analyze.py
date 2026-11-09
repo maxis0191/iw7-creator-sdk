@@ -12,7 +12,7 @@ os.makedirs(out, exist_ok=True)
 log = open(os.path.join(run, 'client.stdout.log'), errors='replace').read()
 R = 48.0
 rows, tiles = [], []
-for m in re.finditer(r'FXPROBE[678] s=(\d+) name=(\w+) fl=(\d) origin=\(([^)]*)\) cam=\(([^)]*)\) angles=\(([^)]*)\) flon=(\S+)', log):
+for m in re.finditer(r'FXPROBE(?:6|7|8|9|10) s=(\d+) name=(\w+) fl=(\d) origin=\(([^)]*)\) cam=\(([^)]*)\) angles=\(([^)]*)\) flon=(\S+)', log):
     s, name, fl = int(m.group(1)), m.group(2), int(m.group(3))
     o, cam, ang = fxp.vec(m.group(4)), fxp.vec(m.group(5)), fxp.vec(m.group(6))
     tag = '%s_s%d_%s_%s' % (pre, s, name, 'fl' if fl else 'nofl')

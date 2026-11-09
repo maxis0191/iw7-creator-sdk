@@ -235,7 +235,9 @@
    "mode": "loop",
    "region": 96,
    "status": "PROVEN_LOCAL",
-   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)",
+   "dark_status": "lit: reads in the flashlight cone (probe9 5.9 %) and next to baked emergency lamps (proof 1.2-1.5 %)",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx1-a (dark d12 state, FF 6E2AE46B)"
   },
   "steam_grate": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_grate_steam_01",
@@ -245,7 +247,9 @@
    "region": 96,
    "region_dz": 48,
    "status": "PROVEN_LOCAL faint",
-   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)",
+   "dark_status": "lit: reads in the flashlight cone (probe9 10 %, proof 2.1 %)",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx1-a (dark d12 state, FF 6E2AE46B)"
   },
   "steam_sewer": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_sewer_grate_steam",
@@ -382,53 +386,65 @@
    "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
   },
   "motes_dark": {
-   "fx": "vfx/iwz/amb/vfx_amb_motes_dark",
+   "fx": "vfx/iwz/amb/vfx_amb_motes_d15",
    "import": "iwzv",
    "variant": {
     "of": "vfx/iw7/levels/cp_disco/amb/vfx_amb_motes",
-    "tint": 0.12
+    "tint": 1.5,
+    "suffix": "_d15"
    },
    "kind": "dust motes, faint self-lit (dark state)",
    "mode": "loop",
    "region": 96,
-   "status": "untested"
+   "status": "untested",
+   "dark_status": "FAIL dark: nothing at 120-280 u (probe9, proof)",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx1-a (dark d12 state, FF 6E2AE46B)"
   },
   "steam_pipe_dark": {
-   "fx": "vfx/iwz/amb/vfx_broken_pipe_steam_dark",
+   "fx": "vfx/iwz/amb/vfx_broken_pipe_steam_d15",
    "import": "iwzv",
    "variant": {
     "of": "vfx/iw7/levels/cp_disco/amb/vfx_broken_pipe_steam",
-    "tint": 0.12
+    "tint": 1.5,
+    "suffix": "_d15"
    },
    "kind": "pipe steam, faint self-lit (dark state)",
    "mode": "loop",
    "region": 96,
-   "status": "untested"
+   "status": "untested",
+   "dark_status": "PROVEN_LOCAL dark: faint self-lit wisp, no light needed (sparse 484 px; probe9 1.2-2.3 %)",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx1-a (dark d12 state, FF 6E2AE46B)"
   },
   "steam_grate_dark": {
-   "fx": "vfx/iwz/amb/vfx_grate_steam_01_dark",
+   "fx": "vfx/iwz/amb/vfx_grate_steam_01_d15",
    "import": "iwzv",
    "variant": {
     "of": "vfx/iw7/levels/cp_disco/amb/vfx_grate_steam_01",
-    "tint": 0.12
+    "tint": 1.5,
+    "suffix": "_d15"
    },
    "kind": "grate steam, faint self-lit (dark state)",
    "mode": "loop",
    "region": 96,
    "region_dz": 48,
-   "status": "untested"
+   "status": "untested",
+   "dark_status": "weak dark: soft glow in probe9 (3-7 % blurred), proof placement 0.18 % FAIL",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx1-a (dark d12 state, FF 6E2AE46B)"
   },
   "drips_line_dark": {
-   "fx": "vfx/iwz/amb/vfx_water_drips_line_dark",
+   "fx": "vfx/iwz/amb/vfx_water_drips_line_d15",
    "import": "iwzv",
    "variant": {
     "of": "vfx/iw7/levels/cp_disco/amb/vfx_water_drips_line",
-    "tint": 0.35
+    "tint": 1.5,
+    "suffix": "_d15"
    },
    "kind": "leak drips with self-lit glints (dark state)",
    "mode": "loop",
    "region": 96,
-   "status": "untested"
+   "status": "untested",
+   "dark_status": "PROVEN_LOCAL dark, weak: self-lit glints (45 px proof, 35-47 px probe9)",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx1-a (dark d12 state, FF 6E2AE46B)"
   }
  }
 }

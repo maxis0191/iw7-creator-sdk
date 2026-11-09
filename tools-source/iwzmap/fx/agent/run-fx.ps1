@@ -18,7 +18,7 @@ $Pkg='C:\Users\ezvalo\AppData\Local\Temp\claude\ffc8c2fd82d25eb3\3d781a32-1ec5-4
 $Game='C:\Users\ezvalo\Desktop\iw_game_files'
 $out=Join-Path $Runs $Tag
 $t0=Get-Date
-$busyRx='Resource busy|Heavy job already reserved|wait before heavy admission|wait for its owner|Unowned local image|Unattached lab process|Resource lease not found|Child identity unavailable|Reserved process identity unavailable|Base game occupied'
+$busyRx='Resource busy|Heavy job already reserved|wait before heavy admission|wait for its owner|Unowned local image|Unattached lab process|Resource lease not found|Child identity unavailable|Reserved process identity unavailable|Base game occupied|Reserved child is still alive|lease retained'
 while($true){
   $procs=@(Get-CimInstance Win32_Process|Where-Object {$_.ExecutablePath -and $_.ExecutablePath.StartsWith($Game+'\',[StringComparison]::OrdinalIgnoreCase)})
   # other agents' private test clients (copied images) wait; anything else is the owner's game
