@@ -12,7 +12,7 @@ Units: fov = full cone angle in degrees (stored as half angle in radians), radiu
 falloff radius in world units), color = linear rgb 0..1, brightness = the module's brightness.
 
 usage: make_vfx_light.py <template.iw7VFX> <out root> <new name> [--fov 32] [--inner 12] [--radius 800]
-       [--color 1,0.93,0.82] [--brightness 3] [--uv 0] [--shadow 1] [--volumetric 0] [--json report.json]
+       [--color 1,0.93,0.82] [--brightness 3] [--uv 0] [--shadow 1] [--volumetric 0] [--life 100000] [--json report.json]
 """
 import argparse, json, math, os, struct, sys
 
@@ -43,6 +43,9 @@ def main(argv=None):
     ap.add_argument('--tonemap', type=float, default=None)
     ap.add_argument('--soft', type=float, default=None); ap.add_argument('--bias', type=float, default=None)
     ap.add_argument('--area', type=float, default=None)
+    ap.add_argument('--life', type=float, default=None,
+                    help='particle life in seconds (min = max). The stock train light lives 1 s and is not re-spawned: '
+                         'a playfxontag copy goes dark after ~1 s (runs dk3..dk11). Use a long life for a held light.')
     ap.add_argument('--json', default='')
     a = ap.parse_args(argv)
 
@@ -111,6 +114,8 @@ def main(argv=None):
                 changes.append('sizeGraph')
             elif t == 'COLOR_GRAPH' and col:
                 raise SystemExit('template has a COLOR_GRAPH: colour curves are not patched by this tool')
+    if a.life is not None:
+        struct.pack_into('<2f', d, em['off'] + 20, a.life, a.life); changes.append('life')
     tok, s, e = find_name_token(bytes(d))
     new = bytes(d[:s]) + a.name.encode('latin1') + b'\0' + bytes(d[e:])
     path = os.path.join(a.out, 'particlesystem', a.name.replace('/', os.sep) + '.iw7VFX')
