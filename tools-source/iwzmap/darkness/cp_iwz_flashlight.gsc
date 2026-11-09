@@ -1,6 +1,7 @@
 // IWZ flashlight: every player carries a tight warm spot light, seen by every player (the pool on walls, floors and
 // zombies). IW7 has no flashlight builtin: the light is a particle spot light (vfx/iwz/vfx_iwz_flashlight_world, made by
-// darkness/make_vfx_light.py from the stock cp_disco train front light: one LIGHT_SPOT emitter, no sprite) played
+// darkness/make_vfx_light.py from the stock cp_disco train front light: one LIGHT_SPOT emitter, no sprite,
+// particle life raised from 1 s to 100000 s with --life: the stock particle is never re-spawned) played
 // with playfxontag, which every client receives.
 // Carrier (level.iwz_fl_mode):
 //   "link"   (default) a tag_origin script model linked to the player's tag_eye: the light follows the view (head aim)
@@ -29,7 +30,8 @@ init()
     if ( !isdefined( level.iwz_fl_link_tag ) )
         level.iwz_fl_link_tag = "tag_eye";
     if ( !isdefined( level.iwz_fl_link_offset ) )
-        level.iwz_fl_link_offset = ( 6, -4, -6 );   // forward, left, up from the eye: the light sits low and right
+        level.iwz_fl_link_offset = ( 24, -4, -6 );  // forward, left, up from the eye: ahead of the viewmodel hands (at
+                                                    // forward 6 it lit the hands and the body shadowed it, run dk10)
     if ( !isdefined( level.iwz_fl_after_power ) )
         level.iwz_fl_after_power = "on";
     level.iwz_fl_click = "amb_iwz_flashlight_click";
