@@ -698,40 +698,9 @@ dk_litcheck( player )
     }
     // per-zone power-light presets (run dk19): paris_iwz_dkzonepresets "zone:pct,zone:pct,...|..." (zones not listed
     // stay 100), each under the lit vision paris_iwz_dkzonevision ("" = the map's own); frames zp<k>_<view>
-    if ( lx && getdvar( "paris_iwz_dkzonepresets" ) != "" )
+    if ( lx && getdvar( "paris_iwz_dkzonepresets" ) != "" && !getdvarint( "paris_iwz_dkzoneafter" ) )
     {
-        zv = getdvar( "paris_iwz_dkzonevision" );
-        if ( zv != "" )
-            dk_vision( player, zv );
-        presets = strtok( getdvar( "paris_iwz_dkzonepresets" ), "|" );
-        for ( k = 0; k < presets.size; k++ )
-        {
-            zs = [];
-            pv = zv;
-            foreach ( part in strtok( presets[k], "," ) )
-            {
-                kv = strtok( part, ":" );
-                if ( kv[0] == "v" )
-                    pv = kv[1];
-                else
-                    zs[kv[0]] = float( kv[1] ) / 100;
-            }
-            // per-preset lit vision ("v:<name>", "v:map" = the map's own)
-            if ( pv == "map" )
-                dk_vision( player, "" );
-            else if ( pv != "" )
-                dk_vision( player, pv );
-            foreach ( l in level.iwz_dark_lights )
-            {
-                s = 1.0;
-                if ( isdefined( zs[l.iwz_zone] ) )
-                    s = zs[l.iwz_zone];
-                l setlightintensity( l.iwz_on * s );
-            }
-            dk_log( "ZONEPRESET " + k + " " + presets[k] );
-            dk_lit_sub( player, sub, "zp" + k + "_" );
-        }
-        dk_log( "ZONEPRESETS done" );
+        dk_zone_presets( player, sub );
         return;
     }
     foreach ( c in cams )
@@ -745,6 +714,12 @@ dk_litcheck( player )
     dk_place( player, sub[0].origin, sub[0].yaw, sub[0].pitch );
     wait 1.5;
     dk_cap( player, "drift_b_" + sub[0].name );
+    // (d14 verification) the 45 views at the build default first, then the runtime alternatives
+    if ( getdvar( "paris_iwz_dkzonepresets" ) != "" && getdvarint( "paris_iwz_dkzoneafter" ) )
+    {
+        dk_zone_presets( player, sub );
+        return;
+    }
     // the map's own vision applied explicitly (level + player): equal to the released state if the hand-back is exact
     visionsetnaked( level.script, 0 );
     player visionsetnakedforplayer( level.script, 0 );
@@ -807,4 +782,40 @@ dk_lit_sub( player, sub, prefix )
         wait 1.5;
         dk_cap( player, prefix + c.name );
     }
+}
+
+dk_zone_presets( player, sub )
+{
+    zv = getdvar( "paris_iwz_dkzonevision" );
+    if ( zv != "" )
+        dk_vision( player, zv );
+    presets = strtok( getdvar( "paris_iwz_dkzonepresets" ), "|" );
+    for ( k = 0; k < presets.size; k++ )
+    {
+        zs = [];
+        pv = zv;
+        foreach ( part in strtok( presets[k], "," ) )
+        {
+            kv = strtok( part, ":" );
+            if ( kv[0] == "v" )
+                pv = kv[1];
+            else
+                zs[kv[0]] = float( kv[1] ) / 100;
+        }
+        // per-preset lit vision ("v:<name>", "v:map" = the map's own)
+        if ( pv == "map" )
+            dk_vision( player, "" );
+        else if ( pv != "" )
+            dk_vision( player, pv );
+        foreach ( l in level.iwz_dark_lights )
+        {
+            s = 1.0;
+            if ( isdefined( zs[l.iwz_zone] ) )
+                s = zs[l.iwz_zone];
+            l setlightintensity( l.iwz_on * s );
+        }
+        dk_log( "ZONEPRESET " + k + " " + presets[k] );
+        dk_lit_sub( player, sub, "zp" + k + "_" );
+    }
+    dk_log( "ZONEPRESETS done" );
 }
