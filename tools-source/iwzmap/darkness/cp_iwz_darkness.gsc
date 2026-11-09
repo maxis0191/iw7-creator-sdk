@@ -23,6 +23,18 @@ init()
     level.iwz_dark_fixture_off = "mp_dart_lightfluo";
     level.iwz_dark_fixture_on = "mp_dart_lightfluo_on";
     level.iwz_dark_lights = [];
+    // Station Zero lit balance against the baked g27 views (runs dk17 / dk19, auto exposure): the stairs, platform A,
+    // control room and ticket hall burn next to their fittings, the maintenance corridor and tunnel stay dim
+    if ( !isdefined( level.iwz_dark_zone_default ) && level.script == "cp_iwz" )
+    {
+        level.iwz_dark_zone_default = [];
+        level.iwz_dark_zone_default["stair_a"] = 0.12;
+        level.iwz_dark_zone_default["platform_a"] = 0.28;
+        level.iwz_dark_zone_default["control_room"] = 0.22;
+        level.iwz_dark_zone_default["ticket_hall"] = 0.6;
+        level.iwz_dark_zone_default["maint_corridor"] = 3.0;
+        level.iwz_dark_zone_default["service_tunnel"] = 2.0;
+    }
     level.iwz_dark_banks = [];
     // fixed-exposure vision until power (vision/<map>_dark.vision, add_darkness.py): IW7 auto exposure would
     // otherwise brighten the dark bake back to a lit look (run dk2-d2); stock per-player restores use the override
@@ -117,10 +129,34 @@ iwz_dark_scale()
     return s;
 }
 
+// per-zone balance of the lit state (level.iwz_dark_zone_scale[zone] = factor, set by the level script / this
+// module's default table; private test dvar paris_iwz_dark_zones "zone:pct,zone:pct"). The dynamic power lights have
+// no bounce light, so zones are balanced against the baked lit reference views (run dk19).
+iwz_dark_zone_scale( zone )
+{
+    if ( !isdefined( level.iwz_dark_zone_scale ) )
+    {
+        level.iwz_dark_zone_scale = [];
+        if ( isdefined( level.iwz_dark_zone_default ) )
+            level.iwz_dark_zone_scale = level.iwz_dark_zone_default;
+        if ( getdvar( "paris_iwz_dark_zones" ) != "" )
+        {
+            foreach ( part in strtok( getdvar( "paris_iwz_dark_zones" ), "," ) )
+            {
+                kv = strtok( part, ":" );
+                level.iwz_dark_zone_scale[kv[0]] = float( kv[1] ) / 100;
+            }
+        }
+    }
+    if ( isdefined( zone ) && isdefined( level.iwz_dark_zone_scale[zone] ) )
+        return level.iwz_dark_zone_scale[zone];
+    return 1.0;
+}
+
 iwz_dark_set( l, on )
 {
     if ( on )
-        l setlightintensity( l.iwz_on * iwz_dark_scale() );
+        l setlightintensity( l.iwz_on * iwz_dark_scale() * iwz_dark_zone_scale( l.iwz_zone ) );
     else
         l setlightintensity( 0 );
     if ( isdefined( l.iwz_fixtures ) )
