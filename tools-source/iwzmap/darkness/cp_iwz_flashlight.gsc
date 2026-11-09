@@ -4,10 +4,13 @@
 // particle life raised from 1 s to 100000 s with --life: the stock particle is never re-spawned) played
 // with playfxontag, which every client receives.
 // Carrier (level.iwz_fl_mode):
-//   "link"   (default) a tag_origin script model linked to the player's tag_eye: the light follows the view (head aim)
-//            on every client and survives weapon switches, Pack-a-Punch, last stand and revive without re-attaching;
-//   "follow" the same model moved to the eye / view angles every server frame (fallback if a link misbehaves);
-//   "tag"    the effect on the weapon's tag_flash (follows weapon sway / ADS; runs dk6-dk9: lost after a weapon switch).
+//   "follow" (default) a tag_origin script model moved to the eye + offset along the view angles every server frame:
+//            the cone follows view yaw AND pitch (FX agent probe6 / probe9: lit steam, ceiling drips and floor effects
+//            are only lit when the cone points at them), independent of the weapon model (switch, Pack-a-Punch, last
+//            stand, revive need no re-attach);
+//   "link"   the same model linked to the player's tag_eye: smooth, but tag_eye does not pitch with the view (the pool
+//            stays level when looking up / down, runs dk15 / probe6);
+//   "tag"    the effect on the weapon's tag_flash (follows weapon sway / ADS).
 // Every attach spawns a NEW carrier: the same effect replayed on the same entity / tag soon after a kill stays dark
 // (runs dk3 / dk4), a fresh entity never has that state. Off = carrier deleted.
 // Life: on at every spawn (late join, return from the afterlife / self-revive spawn), off at death and disconnect.
@@ -24,7 +27,7 @@ init()
     level.iwz_fl_world = level.iwz_fl_worlds[0];
     level.iwz_fl_world_lit = loadfx( "vfx/iwz/vfx_iwz_flashlight_lit" );
     if ( !isdefined( level.iwz_fl_mode ) )
-        level.iwz_fl_mode = "link";
+        level.iwz_fl_mode = "follow";
     if ( getdvar( "paris_iwz_fl_mode" ) != "" )
         level.iwz_fl_mode = getdvar( "paris_iwz_fl_mode" );
     if ( !isdefined( level.iwz_fl_tag ) )
