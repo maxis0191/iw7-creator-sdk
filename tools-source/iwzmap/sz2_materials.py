@@ -145,8 +145,8 @@ def custom_image(key, image_name, tga, base=POSTER_BASE, tint=None):
     MATERIALS[key] = {'path': 'w/iwz_' + image_name, 'su': 1.0, 'sv': 1.0, 'verified': 'NOT_PROVEN', 'custom': True}
 
 
-def custom_tint(key, name, base, tint, emissive=None, su=64):
-    CUSTOM[key] = {'path': 'w/iwz_' + name, 'base': base, 'tint': tint, 'emissive': emissive}
+def custom_tint(key, name, base, tint, emissive=None, su=64, consts=None):
+    CUSTOM[key] = {'path': 'w/iwz_' + name, 'base': base, 'tint': tint, 'emissive': emissive, 'consts': consts}
     MATERIALS[key] = {'path': 'w/iwz_' + name, 'su': float(su), 'sv': float(su), 'verified': 'NOT_PROVEN', 'custom': True}
 
 

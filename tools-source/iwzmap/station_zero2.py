@@ -457,7 +457,9 @@ def decal_fit(mat, w, h, rot=False):
     return w2, w2 * ih / iw
 
 
-ART_DECAL_SWAP = {'blood_pool': 'decal_blood_feathered', 'floor_stain': 'decal_grime_feathered'}
+# (g27d, review item 9 / g27c fixproof I9: the delivered grime decal renders as hard-edged black floor parallelograms
+# (platform_a_1 / _2): floor stains stay the stock multiply stain (white = no change)
+ART_DECAL_SWAP = {'blood_pool': 'decal_blood_feathered'}
 
 
 BLOOD_COUNT = [0]
@@ -979,8 +981,8 @@ def rubble_end(zone, xw, face, y0, y1, zf, zs, r):
     piles at their foot (decor placed by the kit block)."""
     B.wall_plane(zone, 'y', xw, face, y0, y1, zf, zs + r, 'conc_dark', tone='dark')
     w = y1 - y0
-    for k, (ya, yb, lean, zt) in enumerate(((y0 + 6, y0 + w * 0.45, 70, zs + r * 0.6), (y0 + w * 0.35, y0 + w * 0.8, 96, zs + r - 4),
-                                            (y0 + w * 0.62, y1 - 8, 58, zs + r * 0.3))):
+    slabs_ = ((y0 + 6, y0 + w * 0.45, 70, zs + r * 0.6), (y0 + w * 0.35, y0 + w * 0.8, 96, zs + r - 4), (y0 + w * 0.62, y1 - 8, 58, zs + r * 0.3))
+    for k, (ya, yb, lean, zt) in enumerate(slabs_):
         xb, xt = xw + face * lean, xw + face * 4
         pts = [(xb, ya, zf), (xb, yb, zf), (xt, yb, zt), (xt, ya, zt)]
         if face < 0:
@@ -989,8 +991,12 @@ def rubble_end(zone, xw, face, y0, y1, zf, zs, r):
     for k, (fy, d, a) in enumerate(((0.25, 96, 20), (0.7, 120, 200), (0.48, 150, 110))):
         RUBBLE.append((zone, xw + face * d, y0 + w * fy, zf, a))
     # (g27 review item 14: a flat wall with a small heap) the collapse rises in tiers towards the crown
+    # (g27c fixproof I14: the tiers floated in mid-air) each tier rests on the leaning slab under it: the slab's top at
+    # that distance from the wall (highest slab covering the spot, less 4 for the rubble's base), else the floor
     for fy, d, dz, a in ((0.3, 60, 24, 80), (0.62, 70, 26, 250), (0.45, 40, 52, 140), (0.2, 30, 70, 30), (0.75, 34, 74, 300)):
-        RUBBLE.append((zone, xw + face * d, y0 + w * fy, zf + dz, a))
+        y_ = y0 + w * fy
+        top_ = max([(zt_ - zf) * (lean_ - d) / (lean_ - 4) for ya_, yb_, lean_, zt_ in slabs_ if ya_ + 8 <= y_ <= yb_ - 8 and d < lean_] + [0])
+        RUBBLE.append((zone, xw + face * d, y_, zf + max(0, min(dz, top_ - 4)), a))
     geo_prop('rubble_end', zone, (min(xw, xw + face * 160), y0, zf), (max(xw, xw + face * 160), y1, zs + r))
 
 # ---------------------------------------------------------------- 1 ticket hall  (-1200,3200)-(400,4400), z 0..320
@@ -1487,7 +1493,11 @@ ceiling_grid(Z, -3600, 2600, -2064, 3400, -32, step_y=400, depth=24)
 for x_, y_, w_, h_, m_ in ((-3350, 2760, 200, 150, 'floor_stain'), (-3050, 2900, 160, 120, 'water_stain'), (-2700, 2780, 220, 160, 'floor_stain'),
                           (-2450, 3000, 180, 140, 'floor_stain'), (-2950, 3150, 200, 140, 'floor_stain'), (-3400, 3200, 150, 120, 'water_stain'),
                           (-2300, 2700, 160, 120, 'floor_stain'), (-2650, 3180, 140, 110, 'water_stain')):
-    decal_floor(Z, m_, x_, y_, -384, w_, h_)
+    if m_ == 'floor_stain':     # (g27d) the stock stain image is narrow (1:2): two stains side by side fill the patch
+        for dx_, r_ in ((-w_ / 4, False), (w_ / 4, True)):
+            decal_floor(Z, m_, x_ + dx_, y_, -384, w_ / 2, h_, mirror=r_)
+    else:
+        decal_floor(Z, m_, x_, y_, -384, w_, h_)
 drains(Z, [(-3300, 2700), (-2400, 3200)], -384)
 flicker_lamp(Z, -2550, 3000, -57)
 flicker_lamp(Z, -3050, 3000, -57)
@@ -2324,9 +2334,8 @@ if 'iwz_g2_genset' in PORTED and 'story_danger_g2' in MT.MATERIALS:
         B.quad('story_lockout_tag', 'generator_room', [(tx_ - 1.6, ty_ - 0.6, tz_ - 6.5), (tx_ + 1.6, ty_ - 0.6, tz_ - 6.5), (tx_ + 1.6, ty_ - 0.6, tz_),
                                                        (tx_ - 1.6, ty_ - 0.6, tz_)], n=(0, -1, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
         STORY_PLACED.append(('story_lockout_tag', 'generator_room', (tx_, ty_, tz_ - 3)))
-    if ART_HOOKS.key('decal_grime_feathered'):
-        ex_, ey_, _ = g2_world(G2_ANCHORS['exhaust_flange_top'])
-        decal_floor('generator_room', ART_HOOKS.key('decal_grime_feathered'), gx0_ - 30, ey_, -320, 70, 110)
+    ex_, ey_, _ = g2_world(G2_ANCHORS['exhaust_flange_top'])
+    decal_floor('generator_room', 'floor_stain', gx0_ - 30, ey_, -320, 70, 110)     # scorch: stock multiply stain
 if ART_HOOKS.key('grime_mask_floor'):     # generator room diamond plate: one large non-repeating grime / oil mask
     decal_floor('generator_room', ART_HOOKS.key('grime_mask_floor'), 3200, 2790, -320, 760, 760)
     _placed.add('grime_mask_floor')
@@ -2462,7 +2471,8 @@ STARTS = [(-700, 3880, 0, 270), (-560, 3880, 0, 270), (-420, 3880, 0, 270), (-28
 SPAWNERS = [   # >= 48 from walls/props, inside the zone volume, on the navmesh (sz2_plan.py checks the last two)
     ('ticket_hall', -96, 4416, 0, 'ground', 270), ('ticket_hall', -1120, 4300, 0, 'ground', 315),
     ('ticket_hall', 320, 4320, 0, 'ground', 225), ('ticket_hall', -1100, 3480, 0, 'ground', 45),
-    ('ticket_hall', -1136, 3300, 0, 'wall', 0), ('ticket_hall', 336, 3300, 0, 'wall', 180), ('ticket_hall', -400, 4300, 320, 'ceiling', 270),
+    ('ticket_hall', -1136, 3480, 0, 'wall', 0),     # (g27d, BLOQUANT 2: at y 3300 its vent sat in the stair B door: the white block)
+     ('ticket_hall', 336, 3300, 0, 'wall', 180), ('ticket_hall', -400, 4300, 320, 'ceiling', 270),
     ('stair_a', -600, 2460, -320, 'ground', 90), ('stair_a', -700, 2470, -320, 'ground', 90), ('stair_a', -500, 2470, -320, 'ground', 90),
     ('stair_a', -600, 3150, 0, 'ground', 270), ('stair_a', -470, 3150, 0, 'ground', 270), ('stair_a', -600, 3140, 288, 'ceiling', 270),
     ('platform_a', 2250, 2000, -320, 'ground', 180), ('platform_a', 1150, 1700, -320, 'ground', 90),

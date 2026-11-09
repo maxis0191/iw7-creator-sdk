@@ -85,6 +85,7 @@ BED_OK = {'wood_planks', 'ballast', 'ibeam_bare', 'chrome_trim', 'metal_black', 
           'drip_stain', 'top_stain', 'vent', 'conc_dark'}
 VEHICLE_MATS = {'metal_silver', 'carriage_red', 'seat_blue'}
 TRAIN_OK = {'cp_disco_subway_train_bsp2xmodel'}
+DARK_DECALS = {'art_decal_grime_feathered'}
 EDGE = 4.0           # trackbed: wall trims up to 4 units proud of a channel side or end wall belong to the wall
 ENVELOPE = 170.0     # trackbed: car kinematic envelope above the bed (cable trays and ceiling ribs above it are fine)
 TONE_BANNED = ('park_', 'spaceland', 'zmb_wood_support', '_ride_', 'ride_car', 'racin', 'astrocade', 'kepler')
@@ -218,6 +219,17 @@ def g27_rules(lay, quads, fails, bounds):
         o = opening_at(sg['axis'], plane, sc - hw, sc + hw, c[2] - hh, c[2] + hh)
         if o:
             fails.append('in-opening sign %s at %s inside opening %s' % (sg['image'], [round(v) for v in c], o))
+    # (g27d, BLOQUANT 2: the white block behind the stair B barricade was a wall spawner's vent grille drawn inside
+    # the door opening) in-opening for wall-spawner vents (vent plane 48 behind the spawner, 56 wide, 4..44 up)
+    for sp in lay.get('spawners', []):
+        if sp.get('kind') != 'wall':
+            continue
+        x, y, z = sp['origin']
+        fx, fy = round(math.cos(math.radians(sp.get('yaw', 0)))), round(math.sin(math.radians(sp.get('yaw', 0))))
+        z = z or 0
+        o = opening_at('y', x - fx * 48, y - 28, y + 28, z + 4, z + 44) if fx else opening_at('x', y - fy * 48, x - 28, x + 28, z + 4, z + 44)
+        if o:
+            fails.append('in-opening spawner vent at %s inside opening %s' % ([round(v) for v in sp['origin']], o))
     # sign-overlap / sign-repeat (g27d)
     walls_ = [sg for sg in lay.get('signs', []) if not sg.get('hanging')]
     def span_(sg):
@@ -477,6 +489,8 @@ def main():
         m = SM.MATERIALS.get(mat, {})
         if zone != 'gallery':
             boxes.append(([min(p[i] for p in pts) for i in range(3)], [max(p[i] for p in pts) for i in range(3)]))
+        if mat in DARK_DECALS and n[2] > 0.9:      # (g27c fixproof I9) renders as hard-edged black floor parallelograms
+            fails.append('dark-decal %s on a floor in %s at %s' % (mat, zone, [round(c) for c in pts[0]]))
         if mat == 'black' and zone != 'gallery':
             fails.append('void-black in %s at %s' % (zone, [round(c) for c in pts[0]]))
         if mat in GRIP and n[2] < 0.9:
