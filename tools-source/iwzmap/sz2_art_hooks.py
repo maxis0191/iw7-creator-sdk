@@ -43,7 +43,41 @@ def find(name):
     return hits[0] if hits else None
 
 
+BLOOD_GRADE = os.environ.get('IWZ_BLOOD_GRADE', '1') == '1'
+
+
+def blood_graded(path, name):
+    """(g27d, review item 18: blood read flat saturated red, a marble-veined pool, a pink spray) dried-blood grade of a
+    delivered blood image: luminance mapped onto dark red-brown (no pink highlights, no full-saturation red), the pool's
+    colour softened (its veins), alpha kept. Written to art\\hooks_tga\\<name>_graded_c.tga."""
+    from PIL import Image, ImageFilter
+    out_dir = os.path.join(ART_ROOT, 'hooks_tga')
+    os.makedirs(out_dir, exist_ok=True)
+    out = os.path.join(out_dir, name + '_graded_c.tga')
+    if os.path.exists(out) and os.path.getmtime(out) >= os.path.getmtime(path) and os.path.getmtime(out) >= os.path.getmtime(__file__):
+        return out
+    im = Image.open(path).convert('RGBA')
+    r, g, b, a = im.split()
+    lum = Image.merge('RGB', (r, g, b)).convert('L')
+    if 'pool' in name:
+        lum = lum.filter(ImageFilter.GaussianBlur(max(2, im.size[0] // 64)))
+    # uneven drying: a low-frequency mottle (darker crusted patches) instead of one flat red
+    import random as _r
+    _r.seed(sum(map(ord, name)))
+    n_ = Image.new('L', (8, 8))
+    n_.putdata([_r.randrange(150, 256) for _ in range(64)])
+    mott = n_.resize(im.size, Image.BICUBIC)
+    lum = Image.composite(lum, lum.point(lambda v: v * 0.6), mott)
+    R = lum.point(lambda v: int(26 + 0.36 * v))
+    G = lum.point(lambda v: int(7 + 0.11 * v))
+    Bc = lum.point(lambda v: int(6 + 0.085 * v))
+    Image.merge('RGBA', (R, G, Bc, a)).save(out)
+    return out
+
+
 def tga_of(path, name):
+    if BLOOD_GRADE and name.startswith('decal_blood'):
+        return blood_graded(path, name)
     if path.lower().endswith('.tga'):
         return path
     from PIL import Image

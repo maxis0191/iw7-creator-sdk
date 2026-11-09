@@ -315,6 +315,8 @@ ART_PROUD = 3.6                     # frameless art planes stand this far off th
 CEIL_STAIR = os.environ.get('IWZ_CEIL_STAIR', 'ceil_tiles')    # g26: rough plaster tile (was the glossy ceil_tile)
 DIM_STRONG = {'maint_corridor', 'service_tunnel', 'generator_room', 'stair_b', 'platform_a', 'ticket_hall'}
 POOL_STRIP, POOL_WALL = 288, 224          # g26: tighter pools (was 384 / 320)
+# (g27d, review item 15: pixelated ceiling halos) a lit strip's light hangs 20 under its diffuser (was 4)
+STRIP_DROP = 20
 DIM = os.environ.get('IWZ_DIM', '1') == '1'     # g25 mood pass: half the fluorescents are dead, in clusters
 
 
@@ -337,7 +339,7 @@ def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=6, dead=False):
     if dead:
         return
     coloured = mat not in ('lamp_cool', 'lamp_warm', 'light_panel')
-    LIGHTS.append({'zone': zone, 'origin': ((x0 + x1) / 2, (y0 + y1) / 2, z - depth - 4), 'type': 'omni',
+    LIGHTS.append({'zone': zone, 'origin': ((x0 + x1) / 2, (y0 + y1) / 2, z - depth - STRIP_DROP), 'type': 'omni',
                    'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 96 if coloured else POOL_STRIP,
                    'intensity': 0.5 if coloured else 1.0, 'fixture': mat})
 
@@ -368,23 +370,32 @@ def wall_lamp(zone, axis, fixed, facing, s, z, mat='lamp_warm', w=24, h=12, dead
                    'intensity': 0.5 if coloured else 1.0, 'fixture': mat})
 
 
-def sign(zone, key, axis, fixed, facing, s, zc, width, height=None, frame=True, depth=1.5):
+def sign(zone, key, axis, fixed, facing, s, zc, width, height=None, frame=True, depth=1.5, slide=True):
     """Custom image sign on its own quad in front of a wall, with a thin steel frame. s: centre along the wall."""
     if height is None:
         height = width / 4.0
     if depth > 0:      # every wall sign / poster / notice stands proud of the trims and clear of pilasters
         depth = max(depth, ART_PROUD - 0.5)
-        pil_ = [g_ for g_ in GEO_PROPS if g_['name'] == 'pilaster' and g_['zone'] == zone and
+        pil_ = [g_ for g_ in GEO_PROPS if g_['name'] in ('pilaster', 'ad_frame') and g_['zone'] == zone and
                 abs(((g_['mins'][1] + g_['maxs'][1]) / 2 if axis == 'x' else (g_['mins'][0] + g_['maxs'][0]) / 2) - fixed) < 12]
         spans_ = [((g_['mins'][0], g_['maxs'][0]) if axis == 'x' else (g_['mins'][1], g_['maxs'][1])) for g_ in pil_]
+        # (g27d, review item 17: a poster z-fought through the departure board, missing posters overlapped a frame)
+        # signs already on this wall plane count as obstacles too
+        own_ = [((sg_['center'][0] if axis == 'x' else sg_['center'][1]), sg_['size'][0], sg_['center'][2], sg_['size'][1])
+                for sg_ in SIGNS if sg_['axis'] == axis and sg_['facing'] == facing and not sg_.get('hanging') and
+                abs((sg_['center'][1] if axis == 'x' else sg_['center'][0]) - fixed) < 8]
         def clash_(c_):
             return any(c_ - width / 2 - 6 < q1 and c_ + width / 2 + 6 > q0 for q0, q1 in spans_) or \
+                any(abs(c_ - oc_) < (width + ow_) / 2 + 4 and abs(zc - oz_) < (height + oh_) / 2 + 4 for oc_, ow_, oz_, oh_ in own_) or \
                 bool(wall_opening(axis, fixed, c_ - width / 2 - 6, c_ + width / 2 + 6, zc - height / 2, zc + height / 2))
-        if clash_(s):
+        if slide and clash_(s):      # (g27d) a frame's own poster (slide=False) stays centred in its ad frame
             for d_ in sorted(range(-320, 321, 8), key=abs):
                 if not clash_(s + d_):
                     s += d_
                     break
+            else:                    # (g27d item 17) no free wall within 320: not placed rather than overlapping
+                SIGNS_DROPPED.append({'zone': zone, 'image': key, 'axis': axis, 'fixed': fixed, 's': s, 'zc': zc})
+                return
     a, b, z0, z1 = s - width / 2, s + width / 2, zc - height / 2, zc + height / 2
     off = depth + 0.5
     if axis == 'x':
@@ -570,6 +581,10 @@ def ad_frame(zone, axis, fixed, facing, s, zc, k):
     w, h = 112, 160
     if wall_opening(axis, fixed, s - w / 2 - 8, s + w / 2 + 8, zc - h / 2 - 8, zc + h / 2 + 8):
         return            # (g27) the black-backed frame stood free inside the stair A arch (lead stair_a_2)
+    k_ = 1 if axis == 'x' else 0
+    if any(g_['name'] == 'pilaster' and g_['zone'] == zone and g_['mins'][k_] - 12 < fixed < g_['maxs'][k_] + 12 and
+           g_['mins'][1 - k_] < s + w / 2 + 8 and g_['maxs'][1 - k_] > s - w / 2 - 8 for g_ in GEO_PROPS):
+        return            # (g27d item 17, lint sign-overlap / art-trim: an ad frame built across a pilaster)
     if axis == 'x':
         geo_prop('ad_frame', zone, (s - w / 2 - 8, fixed - 3 if facing < 0 else fixed, zc - h / 2 - 8), (s + w / 2 + 8, fixed if facing < 0 else fixed + 3, zc + h / 2 + 8))
     else:
@@ -589,7 +604,7 @@ def ad_frame(zone, axis, fixed, facing, s, zc, k):
     if k % 4 == 3 and not ad_:
         decal_wall(zone, ART_HOOKS.key('junction_grime') or 'wall_stain', axis, fixed + facing * 0.4, facing, s, zc, 96, 144)   # torn-off ad: ghost outline
         return
-    sign(zone, ad_ or pool_[(k * 7 + 3) % len(pool_)], axis, fixed, facing, s, zc, 96, 144, frame=False, depth=0.6)
+    sign(zone, ad_ or pool_[(k * 7 + 3) % len(pool_)], axis, fixed, facing, s, zc, 96, 144, frame=False, depth=0.6, slide=False)
 
 
 def wall_niche(zone, axis, fixed, facing, s, z0, w=96, h=72):
@@ -822,6 +837,7 @@ def geo_prop(name, zone, mn, mx):
 LIGHT_COLOR = {'lamp_cool': (0.85, 0.93, 1.0), 'lamp_warm': (1.0, 0.86, 0.70), 'lamp_red': (1.0, 0.06, 0.04),
                'lamp_green': (0.1, 1.0, 0.2), 'light_panel': (1, 1, 1)}
 SIGNS = []
+SIGNS_DROPPED = []   # (g27d) signs with no free wall span near their spot (layout signs_dropped)
 PROPS = []         # static models from the asset kit: {'zone', 'model', 'origin', 'angles', 'scale', 'collision'}
 DECOR = []         # script_model map entities (stock models placed at load)
 
@@ -1010,12 +1026,15 @@ sign(Z, 'sign_to_old_station', 'y', -1200, +1, 3304, 268, 192)
 sign(Z, 'poster_station_zero', 'y', -1200, +1, 3900, 120, 96, 144)
 sign(Z, 'poster_mindgap', 'y', -1200, +1, 4150, 120, 96, 144)
 sign(Z, 'poster_lasttrain', 'x', 3200, +1, -200, 120, 96, 144)
-sign(Z, 'poster_lasttrain', 'y', 400, -1, 3620, 120, 96, 144)
+# (g27d item 17) the second Last Train poster here z-fought the departure board: removed
 decal_wall(Z, 'leak_stain', 'x', 4400, -1, 300, 200, 128, 220)
 # blood, used sparingly and as one story (art c10c5ad): a body was dragged from the broken turnstile (x -650) to the
 # stair A door, a hand slid down that door's frame
-for k_, (x_, y_) in enumerate(((-650, 3610), (-628, 3500), (-606, 3390), (-590, 3290))):
-    decal_floor(Z, 'blood:drag', x_, y_, 0, 104, 104, rot=bool(k_ % 2), mirror=bool(k_ // 2))
+# (g27d, review item 18: four copies of one drag image read as a printed row) one drag, then smears / drops of
+# different variants and sizes, uneven spacing, along the same path
+for k_, (v_, x_, y_, w_, r_, m_) in enumerate((('drag', -650, 3610, 104, False, False), ('feathered', -632, 3488, 64, True, False),
+                                                ('drag', -612, 3400, 88, False, True), ('spatter', -596, 3296, 48, True, True))):
+    decal_floor(Z, 'blood:' + v_ if ART_HOOKS.key('decal_blood_' + v_) else 'blood:drag', x_, y_, 0, w_, w_, rot=r_, mirror=m_)
 decal_wall(Z, ART_HOOKS.key('decal_blood_hand_smear') or 'blood_pool', 'x', 3200, +1, -731, 64, 44, 44)   # beside the door frame (frame x -706..-696)
 floor_grid(Z, -1200, 3200, 400, 4400, 0, 'tile_black', step=400, skip=((-1168, 3660, -240, 3740), (-224, 3600, 96, 3800)))
 drains(Z, [(-1000, 3400), (200, 3400), (-1000, 4250), (200, 4250)], 0)
@@ -1189,7 +1208,7 @@ sign(Z, 'sign_northbound', 'x', 2400, -1, 0, -150, 256)
 hanging_sign(Z, 'sign_station_zero_plain', 0, 1880, -84, 256, PCEIL - 28)      # (g25) one, between the wall roundels
 hanging_sign(Z, 'sign_to_old_station', -2250, 1700, -96, 192, PCEIL - 28, axis='y')
 sign(Z, 'sign_network_map', 'x', 2400, -1, -1536, -200, 256, 128)
-for x, p in ((-768, 'poster_lasttrain'), (512, 'poster_mindgap'), (-2048, 'poster_mindgap'), (1792, 'poster_lasttrain')):
+for x, p in ((-768, 'poster_station_zero'), (512, 'poster_mindgap'), (-2048, ART_HOOKS.key('poster_missing_c') or 'poster_station_zero'), (1792, 'poster_station_zero')):     # (g27d item 17: Last Train x5)
     sign(Z, p, 'x', 1200, +1, x, -170, 96, 144)
 sign(Z, 'sign_staff_only', 'y', 2400, -1, 1800, -90, 192)
 for x in (-1900, -400, 900, 2000):
@@ -1736,6 +1755,7 @@ TRAIN_CAR_FLOOR_TOP = 35.9       # top of the car's floor clip boxes above its o
 TRAIN_AISLE = 24                 # aisle lane half width (the port's clip boxes leave y +-26 free above the floor)
 TRAIN_AISLE_END = 224            # aisle ends at the end bulkheads (clip boxes from car-local x +-224)
 TRAIN_SPEC = {}
+STORY_PLACED = []   # (g27d, review item 16) story plates placed: (material, zone, centre)
 BALLAST_TOP_HALF, BALLAST_FOOT_HALF = 62, 94
 
 
@@ -1817,6 +1837,19 @@ def train_kit():
             LIGHTS.append({'zone': 'platform_a', 'origin': (cx - 120, cy, fz - 20), 'type': 'omni',
                            'color': (0.85, 0.92, 1.0), 'radius': 170, 'intensity': 0.22, 'fixture': 'flicker',
                            'train': 'tube'})
+            # (g27d, review item 16) the hero car's west cab end (car-local x -266.5, faces -x down the platform):
+            # run plate 047 on the solid panel under the left window (local y -62..-34, z 36..60) and the 23:47
+            # destination blind on the header over the gangway door (local y -38..42, z 156..168); end-face map from
+            # the port's collision boxes
+            xe_ = cx - 266.5 - 0.6
+            if 'story_run_047' in MT.MATERIALS:
+                B.quad('story_run_047', 'platform_a', [(xe_, cy - 38, oz + 42), (xe_, cy - 58, oz + 42), (xe_, cy - 58, oz + 52),
+                                                       (xe_, cy - 38, oz + 52)], n=(-1, 0, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
+                STORY_PLACED.append(('story_run_047', 'platform_a', (xe_, cy - 48, oz + 47)))
+            if 'story_headsign_2347' in MT.MATERIALS:
+                B.quad('story_headsign_2347', 'platform_a', [(xe_, cy + 38, oz + 157.5), (xe_, cy - 34, oz + 157.5), (xe_, cy - 34, oz + 166.5),
+                                                             (xe_, cy + 38, oz + 166.5)], n=(-1, 0, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
+                STORY_PLACED.append(('story_headsign_2347', 'platform_a', (xe_, cy + 2, oz + 162)))
             LIGHTS.append({'zone': 'platform_a', 'origin': (cx + 60, cy, fz - 30), 'type': 'omni',
                            'color': (1.0, 0.82, 0.6), 'radius': 260, 'intensity': 0.1, 'fixture': 'train_interior',
                            'train': 'emergency'})
@@ -1890,8 +1923,12 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         for dx in (60, 180):
             decor('control_room', 'zmb_tv_crt_01', x0_ + dx, y0_ + 40, -284, 90)
     decor('generator_room', 'mp_dart_workbench_01', 3770, 2950, -320, 0, (16, 44, 22))
-    decor('generator_room', 'dns_locker_set_01', 2780, 3172, -320, 180, (20, 10, 50))
-    decor('generator_room', 'dns_locker_set_01', 2822, 3172, -320, 180, (20, 10, 50))
+    if KIT:     # (g27d, review item 19: white two-door cabinets) worn green subway lockers (cp_disco kit; back at model x 0,
+        for x_ in (2759, 2789, 2819, 2849):    # front +x, 29 wide): yaw 270 faces the room (-y), backs on the north wall
+            decor('generator_room', 'cp_disco_subway_lockers_02', x_, 3183, -320, 270, (14, 10, 37))
+    else:
+        decor('generator_room', 'dns_locker_set_01', 2780, 3172, -320, 180, (20, 10, 50))
+        decor('generator_room', 'dns_locker_set_01', 2822, 3172, -320, 180, (20, 10, 50))
     decor('maint_corridor', 'dns_locker_set_01', 3188, 2100, -320, 90, (10, 20, 50))
     if KIT:
         # parked stock subway train at the dead end of the track pit (static, scriptable mover dropped by kit_import;
@@ -1975,8 +2012,8 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
                 B.quad(lens_, zn_, [(x_ + 9 * fy_, wall_ + fy_ * 5.3, z_ - 12), (x_ - 9 * fy_, wall_ + fy_ * 5.3, z_ - 12),
                                     (x_ - 9 * fy_, wall_ + fy_ * 5.3, z_ - 6), (x_ + 9 * fy_, wall_ + fy_ * 5.3, z_ - 6)],
                        n=(0, fy_, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
-            LIGHTS.append({'zone': zn_, 'origin': (x_ + fx_ * 18, y_ + fy_ * 18, z_ - 14), 'type': 'omni', 'color': col_, 'radius': 128,
-                           'intensity': 0.6, 'fixture': 'emergency', 'housing': True})
+            LIGHTS.append({'zone': zn_, 'origin': (x_ + fx_ * 18, y_ + fy_ * 18, z_ - 14), 'type': 'omni', 'color': col_, 'radius': 112,
+                           'intensity': 0.35, 'fixture': 'emergency', 'housing': True})     # (g27d item 15: orange flood, was 0.6 / 128)
         KIT_MODELS.update(d['model'] for d in DECOR if d['model'].startswith(('cp_disco_', 'cp_final_', 'clk_defend', 'equipment_oil_barrel', 'p7_zm_der_plank', 'iwz_')) or d['model'] in STORY_KIT)
     # asset kit (assets/kit/kit_final.json, lead 2026-11-07): free cp_zmb models only. The cp_disco / cp_final models need
     # require,techsets_cp_disco|cp_final in the zone csv, a route not built yet: they are guarded behind IWZ_KIT_DISCO.
@@ -2218,13 +2255,13 @@ ART_PLACE = [
     ('notice_quarantine', 'sign', 'ticket_hall', 'x', 4400, -1, -480, 130, 64, 96),
     ('notice_quarantine', 'sign', 'platform_a', 'x', 2400, -1, 700, -230, 64, 96),
     ('notice_do_not_restart', 'sign', 'maint_corridor', 'x', 1680, +1, 2800, -220, 64, 96),
-    ('poster_missing_1', 'sign', 'ticket_hall', 'y', -1200, +1, 3500, 130, 64, 96),
-    ('poster_missing_2', 'sign', 'ticket_hall', 'y', -1200, +1, 3580, 130, 64, 96),
-    ('poster_missing_3', 'sign', 'ticket_hall', 'y', -1200, +1, 3660, 130, 64, 96),
-    ('poster_missing', 'sign', 'ticket_hall', 'y', -1200, +1, 3580, 130, 64, 96),
-    ('poster_missing_a', 'sign', 'ticket_hall', 'y', -1200, +1, 3500, 130, 64, 96),
-    ('poster_missing_b', 'sign', 'ticket_hall', 'y', -1200, +1, 3580, 130, 64, 96),
-    ('poster_missing_c', 'sign', 'ticket_hall', 'y', -1200, +1, 3660, 130, 64, 96),
+    ('poster_missing_1', 'sign', 'ticket_hall', 'y', -1200, +1, 3640, 130, 64, 96),     # (g27d item 17: was 3500, over an ad frame)
+    ('poster_missing_2', 'sign', 'ticket_hall', 'y', -1200, +1, 3720, 130, 64, 96),     # (g27d item 17: was 3580, over an ad frame)
+    ('poster_missing_3', 'sign', 'ticket_hall', 'y', -1200, +1, 3800, 130, 64, 96),     # (g27d item 17: was 3660, over an ad frame)
+    ('poster_missing', 'sign', 'ticket_hall', 'y', -1200, +1, 3720, 130, 64, 96),     # (g27d item 17: was 3580, over an ad frame)
+    ('poster_missing_a', 'sign', 'ticket_hall', 'y', -1200, +1, 3640, 130, 64, 96),     # (g27d item 17: was 3500, over an ad frame)
+    ('poster_missing_b', 'sign', 'ticket_hall', 'y', -1200, +1, 3720, 130, 64, 96),     # (g27d item 17: was 3580, over an ad frame)
+    ('poster_missing_c', 'sign', 'ticket_hall', 'y', -1200, +1, 3800, 130, 64, 96),     # (g27d item 17: was 3660, over an ad frame)
     ('poster_missing_b', 'sign', 'control_room', 'y', 2600, +1, 3500, -200, 64, 96),     # Daniel Malone, signal technician
     ('junction_grime', 'wall', 'ticket_hall', 'x', 4400, -1, -1000, 24, 256, 64),
     ('junction_grime', 'wall', 'ticket_hall', 'x', 4400, -1, -700, 24, 256, 64),
@@ -2256,6 +2293,40 @@ if ART_HOOKS.key('clock_face_stopped'):   # a stopped face 0.5 in front of every
         else:
             decal_wall(d_['zone'], ART_HOOKS.key('clock_face_stopped'), 'x', cy_ + ny_ * 3.524 - ny_ * 0.4, ny_, cx_, cz_, 17, 17)
         _placed.add('clock_face_stopped')
+# (g27d, review item 16: story at eye level) a big stopped station clock over the stair A arch on the platform wall
+# (arch x -784..-416, top z -64; wall y 2400 up to the ceiling at 0), at 23:47 like every other clock
+if 'story_clock_big' in MT.MATERIALS:
+    sign('platform_a', 'story_clock_big', 'x', 2400, -1, -600, -34, 52, 52)
+    STORY_PLACED.append(('story_clock_big', 'platform_a', (-600, 2400, -34)))
+# the G-2 is locked out: a red / white cordon on four posts 60 out from its footprint (outside the 48 hero-clear ring,
+# clear of the arch lane x 3004..3196), the DANGER placard on the front (-y) tape facing the power switch, the red
+# DO NOT OPERATE tag on the tripped breaker (model anchor lockout_tag), a scorch under the exhaust end
+if 'iwz_g2_genset' in PORTED and 'story_danger_g2' in MT.MATERIALS:
+    (gx0_, gy0_), (gx1_, gy1_) = GEN_FOOT
+    cx0_, cy0_, cx1_, cy1_ = gx0_ - 60, gy0_ - 60, gx1_ + 60, gy1_ + 60
+    for px_, py_ in ((cx0_, cy0_), (cx1_, cy0_), (cx1_, cy1_), (cx0_, cy1_), ((cx0_ + cx1_) / 2, cy0_), ((cx0_ + cx1_) / 2, cy1_)):
+        B.box((px_ - 2, py_ - 2, -320), (px_ + 2, py_ + 2, -280), 'beam_yellow', 'generator_room', collide=False, nav=False)
+        B.box((px_ - 6, py_ - 6, -320), (px_ + 6, py_ + 6, -318), 'metal_black', 'generator_room', collide=False, nav=False)
+        geo_prop('cordon_post', 'generator_room', (px_ - 6, py_ - 6, -320), (px_ + 6, py_ + 6, -280))
+    for (ax_, ay_), (bx_, by_) in (((cx0_, cy0_), (cx1_, cy0_)), ((cx1_, cy0_), (cx1_, cy1_)), ((cx1_, cy1_), (cx0_, cy1_)), ((cx0_, cy1_), (cx0_, cy0_))):
+        for zt_, m_ in ((-287, 'metal_red'), (-290, 'chrome_trim')):      # tape: red band over a pale band, both faces
+            pts_ = [(ax_, ay_, zt_ - 3), (bx_, by_, zt_ - 3), (bx_, by_, zt_), (ax_, ay_, zt_)]
+            B.quad(m_, 'generator_room', pts_, collide=False)
+            B.quad(m_, 'generator_room', [pts_[1], pts_[0], pts_[3], pts_[2]], collide=False)
+    pcx_ = (cx0_ + cx1_) / 2 - 70
+    B.quad('story_danger_g2', 'generator_room', [(pcx_ - 12, cy0_ - 0.6, -312), (pcx_ + 12, cy0_ - 0.6, -312), (pcx_ + 12, cy0_ - 0.6, -288),
+                                                (pcx_ - 12, cy0_ - 0.6, -288)], n=(0, -1, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
+    B.quad('metal_black', 'generator_room', [(pcx_ + 12.5, cy0_ + 0.2, -312.5), (pcx_ - 12.5, cy0_ + 0.2, -312.5), (pcx_ - 12.5, cy0_ + 0.2, -287.5),
+                                             (pcx_ + 12.5, cy0_ + 0.2, -287.5)], n=(0, 1, 0), collide=False)
+    STORY_PLACED.append(('story_danger_g2', 'generator_room', (pcx_, cy0_, -300)))
+    if 'story_lockout_tag' in MT.MATERIALS:
+        tx_, ty_, tz_ = g2_world(G2_ANCHORS['lockout_tag'])
+        B.quad('story_lockout_tag', 'generator_room', [(tx_ - 1.6, ty_ - 0.6, tz_ - 6.5), (tx_ + 1.6, ty_ - 0.6, tz_ - 6.5), (tx_ + 1.6, ty_ - 0.6, tz_),
+                                                       (tx_ - 1.6, ty_ - 0.6, tz_)], n=(0, -1, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
+        STORY_PLACED.append(('story_lockout_tag', 'generator_room', (tx_, ty_, tz_ - 3)))
+    if ART_HOOKS.key('decal_grime_feathered'):
+        ex_, ey_, _ = g2_world(G2_ANCHORS['exhaust_flange_top'])
+        decal_floor('generator_room', ART_HOOKS.key('decal_grime_feathered'), gx0_ - 30, ey_, -320, 70, 110)
 if ART_HOOKS.key('grime_mask_floor'):     # generator room diamond plate: one large non-repeating grime / oil mask
     decal_floor('generator_room', ART_HOOKS.key('grime_mask_floor'), 3200, 2790, -320, 760, 760)
     _placed.add('grime_mask_floor')
@@ -3051,6 +3122,12 @@ for e_ in ents:      # named placed models (quest, relays, shutter, lever) for s
 # light groups (darkness design, coordinator 2026-11-08): 'emergency' lamps and cues stay on in the dark bake,
 # 'power' lights come on with the power switch, 'flicker' lamps flicker after power-on. The darkness agent's build
 # step bakes the dark state and generates the power lights from these records.
+ZONE_LIGHT_TRIM = {'maint_corridor': 0.3, 'service_tunnel': 0.5, 'generator_room': 0.6, 'ticket_hall': 0.65,
+                   'stair_a': 0.5, 'stair_b': 0.65, 'control_room': 0.85}     # (g27d, review item 15: flat / blown-out zones)
+for l_ in LIGHTS:
+    fx_ = l_.get('fixture', '')
+    if fx_ in ('lamp_cool', 'lamp_warm', 'light_panel', 'work_light') and l_.get('intensity'):
+        l_['intensity'] = round(l_['intensity'] * ZONE_LIGHT_TRIM.get(l_.get('zone', ''), 1.0), 3)
 for l_ in LIGHTS:
     fx_ = l_.get('fixture', '')
     l_['group'] = ('emergency' if fx_ in ('emergency', 'lamp_red', 'lamp_green', 'hint_glow') else
@@ -3069,6 +3146,8 @@ if 'iwz_g2_genset' in PORTED:
                         'footprint': [[G2['origin'][0] + G2_CLIP[0][0], G2['origin'][1] + G2_CLIP[0][1]],
                                       [G2['origin'][0] + G2_CLIP[1][0], G2['origin'][1] + G2_CLIP[1][1]]],
                         'anchors': {k_: list(g2_world(v_)) for k_, v_ in G2_ANCHORS.items()}}
+layout['signs_dropped'] = SIGNS_DROPPED
+layout['story'] = [{'mat': m_, 'zone': z_, 'origin': list(o_)} for m_, z_, o_ in STORY_PLACED]
 layout.update({'stairs': STAIRS, 'throats': THROATS, 'conduits': CONDUITS, 'junctions': JUNCTIONS, 'signals': SIGNALS, 'thresholds': THRESHOLDS,
                'pipe_chases': PIPE_CHASES, 'fx_placed': FX_PLACED, 'leaks': LEAKS, 'wheel_lamps': WHEEL_LAMPS,
                'openings': [{k_: o_[k_] for k_ in ('name', 'kind', 'axis', 'walls', 'a', 'b', 'z0', 'z1')} for o_ in OPENINGS]})
