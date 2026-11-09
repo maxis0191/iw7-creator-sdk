@@ -1215,7 +1215,10 @@ for xw_, fc_ in ((-2400, +1), (2400, -1)):
 ceiling_grid(Z, -2400, 1200, 2400, 2400, PCEIL, step_y=400, depth=28)
 region('deck', Z, (-2400, 1760, 2400, 2400), DECK_Z, (16, 0, 16, 16))
 region('deck_mid', Z, (-2192, EDGE_Y, 1904, 1760), DECK_Z, (0, 0, 0, 0))
-region('deck_east', Z, (2112, EDGE_Y, 2400, 1760), DECK_Z, (0, 0, 16, 0))
+# (g27b engine stair probe) the deck_east cells touched the east well's bottom landing column 64 below them, and the
+# seam rule removed the landing: zombies then entered the flight from the pit side at mid-height and ended under the
+# treads. A 32 margin keeps deck_east one cell off the well end, so the landing stays (as on the west well)
+region('deck_east', Z, (2112, EDGE_Y, 2400, 1760), DECK_Z, (32, 0, 16, 0))
 region('pit', Z, (-2400, 1200, 2400, 1600), PIT_Z, (0, 16, 0, 16))
 if TRAIN:
     # no pit cells under the deck overhang (y EDGE_Y..1600 behind the edge face); in front of the stairwells' feet the
@@ -1652,8 +1655,9 @@ BENCH = 'cp_disco_worn_subway_bench' if KIT else 'furniture_park_bench_01_blue'
 BENCH_CLIP = ((96, 20, 20), (20, 96, 20)) if KIT else ((48, 16, 20), (16, 48, 20))
 
 
-def decor(zone, model, x, y, z, yaw=0, clip=None, targetname=None):
-    DECOR.append({'zone': zone, 'model': model, 'origin': (x, y, z), 'yaw': yaw, 'clip': clip, 'targetname': targetname})
+def decor(zone, model, x, y, z, yaw=0, clip=None, targetname=None, pitch=0, roll=0):
+    DECOR.append({'zone': zone, 'model': model, 'origin': (x, y, z), 'yaw': yaw, 'clip': clip, 'targetname': targetname,
+                  'pitch': pitch, 'roll': roll})
     if clip:
         hx, hy, hz = clip
         B.collision_box((x - hx, y - hy, z), (x + hx, y + hy, z + 2 * hz))
@@ -2315,7 +2319,11 @@ for _pass in range(4):
             if nb not in cells or nb in drop:
                 continue
             ha, hb = edge_heights(k, e), edge_heights(nb, (e + 2) % 4)
-            ok = link(k, nb) and abs(ha[0] - hb[0]) <= 18 and abs(ha[1] - hb[1]) <= 18 and abs(cells[k] - cells[nb]) <= 18
+            # (g27b engine stair probe: the climbing zombie left the pit sideways into the lower third of a well flight,
+            # 8-18 above the pit along the flight's open side, and ended under the treads) a link between two regions
+            # must be level (6); only inside one region (a flight, the ballast slopes) may an edge step up to 18
+            tol_ = 18 if owner[k] == owner[nb] else 6
+            ok = link(k, nb) and abs(ha[0] - hb[0]) <= tol_ and abs(ha[1] - hb[1]) <= tol_ and abs(cells[k] - cells[nb]) <= tol_
             if ok:
                 continue
             za, zb = sum(ha) / 2, sum(hb) / 2
@@ -2656,11 +2664,14 @@ if KIT and os.environ.get('IWZ_DOOR_DRESS', '1') == '1':
                 decor(zn_, 'cp_disco_street_barricade', round(xy_[0] - dx_, 2), round(xy_[1] - dy_, 2), z0_, yaw_, targetname=tn_)
             z_ = z0_ + 84
             k_ = 0
-            while z_ < z1_ - 6:                          # boarding planks above them, alternating offsets
+            z_ = z0_ + 96
+            k_ = 0
+            while z_ < z1_ - 8:                          # (g27 review BLOQUANT 3) boards on edge across the opening
                 for off_ in (-48, 48):
-                    xy_ = (c_ + off_ + (8 if k_ % 2 else -8), f_) if o['axis'] == 'x' else (f_, c_ + off_ + (8 if k_ % 2 else -8))
-                    decor(zn_, 'p7_zm_der_plank_wood_2x12x96', xy_[0], xy_[1], z_, (0 if o['axis'] == 'x' else 90) + (3 if k_ % 2 else -2), targetname=tn_)
-                z_ += 13; k_ += 1
+                    xy_ = (c_ + off_ + (6 if k_ % 2 else -6), f_ + side_ * 1.2) if o['axis'] == 'x' else (f_ + side_ * 1.2, c_ + off_ + (6 if k_ % 2 else -6))
+                    decor(zn_, 'p7_zm_der_plank_wood_2x12x96', xy_[0], xy_[1], z_, 270 if o['axis'] == 'x' else 0, targetname=tn_,
+                          pitch=90, roll=(4 if k_ % 2 else -3))
+                z_ += 30; k_ += 1
         DOOR_DRESS.append({'door': o['name'], 'blockers': o['scriptable'], 'dressing': tn_})
 layout['door_dress'] = DOOR_DRESS
 # power
@@ -2756,13 +2767,14 @@ for d in DECOR:
         continue     # kit proof baseline: the same map (placements, clips, views) without the imported models
     if SMODELS and not d.get('targetname') and d['model'] not in KIT_MODELS and d['model'] not in SMODEL_NO_DONOR and (SMODEL_STOCK is None or d['model'] in SMODEL_STOCK):
         x_, y_, z_ = d['origin']
-        smodel_lines.append('%s %g %g %g 0 %g 0 1' % (d['model'], x_, y_, z_, d.get('yaw', 0)))
+        smodel_lines.append('%s %g %g %g %g %g %g 1' % (d['model'], x_, y_, z_, d.get('pitch', 0), d.get('yaw', 0), d.get('roll', 0)))
         d['static'] = True
         continue
     if d.get('targetname'):
-        ents.append(ent(classname='script_model', targetname=d['targetname'], model=d['model'], origin=fmt(d['origin']), angles='0 %g 0' % d.get('yaw', 0)))
+        ents.append(ent(classname='script_model', targetname=d['targetname'], model=d['model'], origin=fmt(d['origin']),
+                        angles='%g %g %g' % (d.get('pitch', 0), d.get('yaw', 0), d.get('roll', 0))))
         continue
-    ents.append(ent(classname='script_model', model=d['model'], origin=fmt(d['origin']), angles='0 %g 0' % d.get('yaw', 0)))
+    ents.append(ent(classname='script_model', model=d['model'], origin=fmt(d['origin']), angles='%g %g %g' % (d.get('pitch', 0), d.get('yaw', 0), d.get('roll', 0))))
 if smodel_lines:
     open(os.path.join(out, 'smodels.txt'), 'w', newline='\n').write('\n'.join(smodel_lines) + '\n')
 # IWZ_LIGHTS=1: real primary lights (lights.txt) for coloured accents the bake does not carry: the tunnel signal lamps
