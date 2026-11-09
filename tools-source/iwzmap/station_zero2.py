@@ -712,15 +712,14 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
         B.collision_quad(pts, n=(0, 0, 1))
         if both:
             B.collision_quad(pts, n=(0, 0, -1))
-    # (g27b, engine stair probe g27: the climbing zombie walked UNDER the ramp at floor height - nav point 20-40 above
-    # it - and stalled under the flight on the east well, the west well and stair B alike; on the climbs that worked it
-    # mantled onto the flight at the first step). The ramp used to start one run before the first riser at floor
-    # height (r0 = s_a - run), a wedge an agent's capsule slid under, and it was one-sided from below. The ramp now
-    # starts on top of the first riser (s_a, z_lo + rise: the same nosing plane), the first riser is a real vertical
-    # face, and the ramp and every riser are two-sided, so nothing gets inside the flight.
-    cq(lo_end, s_a, z_lo, z_lo)
-    cq(s_a, r1, z_lo + rise, z_hi, both=True)
+    # (g27b QA: zombies from below stopped and died at the foot of stairs A and B: the flight began with a 10.7
+    # vertical riser at floor level and agents keep their height, they only follow a slope they are already on.)
+    # Back to the g27 foot: the ramp starts at floor level one run before the first riser, so an agent walks onto it;
+    # it stays two-sided so nothing slides under its front edge.
+    cq(lo_end, r0, z_lo, z_lo)
+    cq(r0, r1, z_lo, z_hi, both=True)
     cq(r1, hi_end, z_hi, z_hi)
+    cq(r0, s_a, z_lo, z_lo)
     # zombies (scripted agents) do not climb the smooth ramp: solid steps under it (treads at their true height,
     # risers facing down the stair; all on or below the nosing line, so players and downward traces still meet the
     # ramp first) give agents 10.7-unit step-ups, matching the render treads.
@@ -733,7 +732,7 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
         B.collision_quad(rq_, n=tuple(-c for c in rn))
         if k < n_steps - 1:
             cq(sk0, sk1, zt, zt)
-    STAIRS[-1]['ramp_from'] = [s_a, z_lo + rise]
+    STAIRS[-1]['ramp_from'] = [r0, z_lo]
 
     def zline(s):
         t = (s - r0) / (r1 - r0)
