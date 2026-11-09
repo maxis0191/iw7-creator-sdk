@@ -1016,7 +1016,10 @@ floor(Z, 'yellow_grip', 2112, EDGE_Y + 24, 2400, EDGE_Y + 48, DECK_Z)
 floor(Z, 'conc_painted', -2192, EDGE_Y, 1904, EDGE_Y + 24, DECK_Z)
 floor(Z, 'conc_painted', 2112, EDGE_Y, 2400, EDGE_Y + 24, DECK_Z)
 for x_ in range(-2112, 2400, 384):
-    floor(Z, 'conc_trim_floor', x_ - 5, EDGE_Y + 64 if TRAIN else 1760, x_ + 5, 2368, DECK_Z + 0.25, collide=False)       # expansion joint (train: across the whole deck)
+    y0_ = EDGE_Y + 64 if TRAIN else 1760
+    if TRAIN and any(w_[0] - 5 < x_ < w_[2] + 5 for w_ in WELLS.values()):
+        y0_ = 1760                                      # (g27) not across a stairwell (the strip floated over the well)
+    floor(Z, 'conc_trim_floor', x_ - 5, y0_, x_ + 5, 2368, DECK_Z + 0.25, collide=False)       # expansion joint (train: across the whole deck)
 for x_, y_, w_, h_ in ((-1700, 1980, 160, 120), (-860, 2140, 200, 140), (-120, 1880, 150, 110), (620, 2060, 220, 150),
                        (1380, 1920, 170, 130), (2050, 2200, 150, 120)):
     decal_floor(Z, 'floor_stain', x_, y_, DECK_Z + 0.4, w_, h_)

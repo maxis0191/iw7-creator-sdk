@@ -49,6 +49,7 @@ Rules (lead / owner review of g24):
   fx-fixture       a glow / flare sprite FX (layout fx_placed) without a lit fixture within 24 (review C: violet halos)
   fx-source        a drip FX without its leak (ceiling stain + puddle) (review C: blue streaks in mid-air)
   decor-rail       a decor model (catalog bounds, else its clip) through a railing / handrail / window frame
+  floating-floor   an up-facing deck-level surface over an open stairwell (other than the stair's own treads)
   stair-soffit     a stair flight without side walls and without a stringer on its open side(s) (wells: the pit
                    side; review C / train agent: black wedges under the well stairs)
   door-reach       a door's purchase struct inside or within 8 of that door's barricade dressing (QA g26c: F found no
@@ -185,6 +186,20 @@ def g27_rules(lay, quads, fails, bounds):
         for se in (lo, hi):
             if not any(r['zone'] == zone and r['mins'][sa] - 6 <= se <= r['maxs'][sa] + 6 and r['mins'][ax] - 8 <= c <= r['maxs'][ax] + 8 for r in rets):
                 fails.append('rail-return %s handrail at %s %g: no wall return at %g' % (zone, 'xy'[ax], c, se))
+    # floating-floor (g27): an up-facing deck-level surface over an open stairwell (the deck expansion joint crossed the
+    # east well at z -319.75 with nothing under it)
+    STAIR_MATS = {'conc_floor', 'beam_yellow', 'yellow_grip', 'tile_floor', 'stair_tread'}
+    for st in lay.get('stairs', []):
+        if st['side_walls']:
+            continue
+        s0, s1 = st['span']; c0, c1 = sorted(st['c']); ztop = max(st['z'])
+        sa = 0 if st['axis'] == 'x' else 1
+        for zone, mat, pts, n in quads:
+            if n[2] < 0.9 or mat in STAIR_MATS or min(p[2] for p in pts) < ztop - 1 or max(p[2] for p in pts) > ztop + 1:
+                continue
+            lo = [min(p[k] for p in pts) for k in range(2)]; hi = [max(p[k] for p in pts) for k in range(2)]
+            if hi[sa] > s0 + 2 and lo[sa] < s1 - 2 and hi[1 - sa] > c0 + 2 and lo[1 - sa] < c1 - 2:
+                fails.append('floating-floor %s over the open %s stairwell at %s' % (mat, st['space'], [round(c) for c in pts[0]]))
     # stair-soffit (wells: open towards the pit on c0)
     for st in lay.get('stairs', []):
         if not st['side_walls'] and 'c0' not in st['stringers']:
