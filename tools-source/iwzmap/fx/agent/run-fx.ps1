@@ -22,7 +22,9 @@ $busyRx='Resource busy|Heavy job already reserved|wait before heavy admission|wa
 while($true){
   $procs=@(Get-CimInstance Win32_Process|Where-Object {$_.ExecutablePath -and $_.ExecutablePath.StartsWith($Game+'\',[StringComparison]::OrdinalIgnoreCase)})
   # other agents' private test clients (copied images) wait; anything else is the owner's game
-  $foreign=@($procs|Where-Object {$_.Name -notmatch '^iw7-iwzmap-local\.exe$|bo3wpn|-test-client|-lab'})
+  # agents' private clients: renamed lab images, isolated labs, lan-only sessions (2026-11-09: iw7-dj-audio-client.exe
+  # -paris-isolated-lab was taken for the owner's game)
+  $foreign=@($procs|Where-Object {$_.Name -notmatch '^iw7-iwzmap-local\.exe$|bo3wpn|-test-client|-lab' -and $_.CommandLine -notmatch '-paris-isolated-lab|-paris-server-client-test|sv_lanOnly 1'})
   if($foreign.Count){ "OWNER_GAME: base game occupied by $(($foreign|ForEach-Object {"$($_.ProcessId):$($_.Name)"}) -join ','); stopping"; exit 3 }
   if($procs.Count -or ((Get-Date)-$t0).TotalMinutes -gt $MaxWaitMinutes){
     if(((Get-Date)-$t0).TotalMinutes -gt $MaxWaitMinutes){ 'gave up waiting'; exit 4 }

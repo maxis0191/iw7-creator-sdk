@@ -1,4 +1,4 @@
-# Station Zero ambient FX, dark-state version (dfx2) for the darkness builds (d12+, g27 world). From the level builder's
+# Station Zero ambient FX, dark-state version (final, proven on dfx2 = darkness d12 + this file) for the darkness builds (d12+, g27 world). From the level builder's
 # station_zero_fx_g25.txt; lit particle effects (motes, drips, steam: eq_effect_* blend materials) are lit by the baked
 # light grid and disappear in the dark bake, so each gets a faint self-lit variant (fx_variant.py, zone iwzv) for the
 # dark stage and keeps the lit original for the lit stage. Steam next to the baked emergency lamps stays lit (grid).
@@ -11,7 +11,9 @@
 # glow / flare sprite without a lit fixture within 24 units.
 
 # ticket hall: motes always; the lamp light cone only once the lamps are on
-hall_motes        motes             -1000 3800  200
+# (final) stock motes never read in the dark (proof-dfx1/dfx2, probe9/10: lit, self-lit, 120-400 u, cone on/off): lit stage
+# only; the emissive glitter dust shows a few specks in the flashlight beam (probe10 33 px at 250 u): subtle dark-stage dust
+hall_motes        motes             -1000 3800  200   stage=lit
 hall_glitter      dust_motes        -1000 3800  200   stage=dark
 hall_cone         light_cone        -600  3400  300   stage=lit
 # (g27) hall_emerg_w      emergency_glow    -1176 3500  250   stage=dark
@@ -21,7 +23,7 @@ hall_cone         light_cone        -600  3400  300   stage=lit
 # back wall and by the maintenance door (route to the power switch)
 # (dfx2) leak moved beside the platform A emergency lamp (1500, 2396, -160): the lit drips take its baked light
 pa_leak           drips_line        1500  2330  0     region=96 region_dz=-200
-pa_leak_dark      drips_line_dark   1500  2330  0     region=96 region_dz=-200 stage=dark
+# (final) self-lit drip glints not seen at the proof distance (9 px): dropped; the lit leak takes the lamp light (28 px, weak)
 # (g27) pa_emerg_w        emergency_glow    -1500 2376  -150  stage=dark
 # (g27) pa_emerg_door     emergency_glow    2376  1960  -150  stage=dark
 

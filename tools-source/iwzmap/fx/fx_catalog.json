@@ -8,7 +8,9 @@
    "mode": "loop",
    "region": 96,
    "status": "FAIL: glitter not visible in cp_iwz nor stock cp_zmb",
-   "evidence": "iwz-stage2/fx/analysis/probe2-g24"
+   "evidence": "iwz-stage2/fx/analysis/probe2-g24",
+   "dark_status": "dark: faint specks in the flashlight beam (33 px at 250 u), subtle",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx2-a, probe10-dfx2 (dark d12 state, FF 60ACA74D)"
   },
   "dust_motes_md": {
    "fx": "vfx/iw7/core/zombie/vfx_zmb_dust_motes_md",
@@ -236,8 +238,8 @@
    "region": 96,
    "status": "PROVEN_LOCAL",
    "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)",
-   "dark_status": "lit: reads in the flashlight cone (probe9 5.9 %) and next to baked emergency lamps (proof 1.2-1.5 %)",
-   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx1-a (dark d12 state, FF 6E2AE46B)"
+   "dark_status": "dark: reads in the flashlight and beside baked emergency lamps (1.2-1.5 %)",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx2-a, probe10-dfx2 (dark d12 state, FF 60ACA74D)"
   },
   "steam_grate": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_grate_steam_01",
@@ -248,8 +250,8 @@
    "region_dz": 48,
    "status": "PROVEN_LOCAL faint",
    "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)",
-   "dark_status": "lit: reads in the flashlight cone (probe9 10 %, proof 2.1 %)",
-   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx1-a (dark d12 state, FF 6E2AE46B)"
+   "dark_status": "dark: reads in the flashlight (1.4-2.1 %)",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx2-a, probe10-dfx2 (dark d12 state, FF 60ACA74D)"
   },
   "steam_sewer": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_sewer_grate_steam",
@@ -267,7 +269,9 @@
    "mode": "loop",
    "region": 96,
    "status": "FAIL: too thin to measure at 200+ units (5-36 px)",
-   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)",
+   "dark_status": "dark: weak (28 px beside the platform emergency lamp)",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx2-a, probe10-dfx2 (dark d12 state, FF 60ACA74D)"
   },
   "drips_circle": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_water_drips_circle",
@@ -293,7 +297,9 @@
    "mode": "loop",
    "region": 128,
    "status": "PROVEN_LOCAL",
-   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
+   "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)",
+   "dark_status": "FAIL dark (never reads in the dark, 120-400 u, cone on/off); fine lit",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx2-a, probe10-dfx2 (dark d12 state, FF 60ACA74D)"
   },
   "motes_bright": {
    "fx": "vfx/iw7/levels/cp_disco/amb/vfx_amb_motes_bright",
@@ -397,8 +403,8 @@
    "mode": "loop",
    "region": 96,
    "status": "untested",
-   "dark_status": "FAIL dark: nothing at 120-280 u (probe9, proof)",
-   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx1-a (dark d12 state, FF 6E2AE46B)"
+   "dark_status": "FAIL dark (self-lit copies 0.5-4: nothing)",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx2-a, probe10-dfx2 (dark d12 state, FF 60ACA74D)"
   },
   "steam_pipe_dark": {
    "fx": "vfx/iwz/amb/vfx_broken_pipe_steam_d15",
@@ -412,8 +418,8 @@
    "mode": "loop",
    "region": 96,
    "status": "untested",
-   "dark_status": "PROVEN_LOCAL dark: faint self-lit wisp, no light needed (sparse 484 px; probe9 1.2-2.3 %)",
-   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx1-a (dark d12 state, FF 6E2AE46B)"
+   "dark_status": "dark: self-lit wisp (417-484 px)",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx2-a, probe10-dfx2 (dark d12 state, FF 60ACA74D)"
   },
   "steam_grate_dark": {
    "fx": "vfx/iwz/amb/vfx_grate_steam_01_d15",
@@ -443,8 +449,8 @@
    "mode": "loop",
    "region": 96,
    "status": "untested",
-   "dark_status": "PROVEN_LOCAL dark, weak: self-lit glints (45 px proof, 35-47 px probe9)",
-   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx1-a (dark d12 state, FF 6E2AE46B)"
+   "dark_status": "FAIL at proof distance (9 px); glints only close (probe9 35-47 px at 120 u)",
+   "dark_evidence": "iwz-stage2/fx/analysis/proof-dfx2-a, probe10-dfx2 (dark d12 state, FF 60ACA74D)"
   }
  }
 }
