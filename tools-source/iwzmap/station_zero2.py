@@ -129,6 +129,18 @@ def holes_for(space, axis, fixed):
     return out
 
 
+def wall_opening(axis, fixed, s0, s1, z0=-1e9, z1=1e9, tol=24):
+    """(g27, lead stair_a_2: an ad frame, a pilaster and a clock stood inside the stair A arch on the platform wall)
+    the opening of a wall plane within `tol` of `fixed` that overlaps the span s0..s1 at heights z0..z1, else None."""
+    for o in OPENINGS:
+        if o['axis'] != axis or not any(abs(w - fixed) <= tol for w in o['walls'].values()):
+            continue
+        h0, h1 = (-1e9, 1e9) if o['kind'] == 'open' else (o['z0'], o['z1'])
+        if s0 < o['b'] + 10 and s1 > o['a'] - 10 and z0 < h1 + 10 and z1 > h0:
+            return o
+    return None
+
+
 # ============================================================================ wall styles
 def bands(style, zf, zc):
     """(z0, z1, material, protrusion) from floor to ceiling."""
@@ -366,7 +378,8 @@ def sign(zone, key, axis, fixed, facing, s, zc, width, height=None, frame=True, 
                 abs(((g_['mins'][1] + g_['maxs'][1]) / 2 if axis == 'x' else (g_['mins'][0] + g_['maxs'][0]) / 2) - fixed) < 12]
         spans_ = [((g_['mins'][0], g_['maxs'][0]) if axis == 'x' else (g_['mins'][1], g_['maxs'][1])) for g_ in pil_]
         def clash_(c_):
-            return any(c_ - width / 2 - 6 < q1 and c_ + width / 2 + 6 > q0 for q0, q1 in spans_)
+            return any(c_ - width / 2 - 6 < q1 and c_ + width / 2 + 6 > q0 for q0, q1 in spans_) or \
+                bool(wall_opening(axis, fixed, c_ - width / 2 - 6, c_ + width / 2 + 6, zc - height / 2, zc + height / 2))
         if clash_(s):
             for d_ in sorted(range(-320, 321, 8), key=abs):
                 if not clash_(s + d_):
@@ -531,7 +544,7 @@ def pilasters(zone, axis, fixed, facing, s0, s1, zf, zc, step=320, avoid=(), low
     out = []
     s = s0 + step / 2
     while s < s1 - 40:
-        if not any(abs(s - a) < h for a, h in avoid):
+        if not any(abs(s - a) < h for a, h in avoid) and not wall_opening(axis, fixed, s - 22, s + 22, zf, zc):
             if axis == 'x':
                 B.slab_x(s - 18, s + 18, fixed, zf, zf + 112, 8, lower, zone, facing, collide=False, nav=False)
                 B.slab_x(s - 16, s + 16, fixed, zf + 112, zc - 24, 6, upper, zone, facing, collide=False, nav=False)
@@ -555,6 +568,12 @@ ADS = ['poster_lasttrain', 'poster_mindgap', 'poster_station_zero'] + [k_ for k_
 def ad_frame(zone, axis, fixed, facing, s, zc, k):
     """Recessed advertising panel: dark backing, steel frame, a poster."""
     w, h = 112, 160
+    if wall_opening(axis, fixed, s - w / 2 - 8, s + w / 2 + 8, zc - h / 2 - 8, zc + h / 2 + 8):
+        return            # (g27) the black-backed frame stood free inside the stair A arch (lead stair_a_2)
+    if axis == 'x':
+        geo_prop('ad_frame', zone, (s - w / 2 - 8, fixed - 3 if facing < 0 else fixed, zc - h / 2 - 8), (s + w / 2 + 8, fixed if facing < 0 else fixed + 3, zc + h / 2 + 8))
+    else:
+        geo_prop('ad_frame', zone, (fixed - 3 if facing < 0 else fixed, s - w / 2 - 8, zc - h / 2 - 8), (fixed if facing < 0 else fixed + 3, s + w / 2 + 8, zc + h / 2 + 8))
     if axis == 'x':
         B.wall_plane(zone, 'x', fixed + facing * 0.3, facing, s - w / 2, s + w / 2, zc - h / 2, zc + h / 2, 'metal_black', collide=False)
         for a, b, z0, z1 in ((s - w / 2 - 8, s - w / 2, zc - h / 2 - 8, zc + h / 2 + 8), (s + w / 2, s + w / 2 + 8, zc - h / 2 - 8, zc + h / 2 + 8),
@@ -1436,7 +1455,7 @@ wall(Z, 'stair_b', 'y', -2048, +1, 3104, 3400, -384, -96, 'metro_cream')
 wall(Z, 'stair_b', 'y', -1216, -1, 3104, 3400, 0, 288, 'metro_cream')
 for x in (-1900, -1650, -1400):
     strip_light(Z, x - 8, 3236, x + 8, 3268, zl_b(x) + 288, depth=4)
-sign(Z, 'sign_to_old_station', 'y', -2048, +1, 3252, -150, 192)
+# (g27) no 'to old station' sign at the foot of stair B: it hung inside the arch to platform B (artlint in-opening)
 region('stair_b', Z, (-2048, 3104, -1216, 3400), lambda x, y: zl_b(x))
 
 # ---------------------------------------------------------------- art pass 4: wall structure in the service wing
@@ -1897,7 +1916,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         for zn_, x_, y_, z_, yaw_, col_ in (('maint_corridor', 2900, 1916, -140, 270, (1.0, 0.25, 0.08)),
                                             ('maint_corridor', 3196, 2150, -140, 180, (1.0, 0.25, 0.08)),
                                             ('generator_room', 2604, 2800, -120, 0, (1.0, 0.45, 0.1)),
-                                            ('generator_room', 3200, 3180, -120, 270, (1.0, 0.25, 0.08)),
+                                            ('generator_room', 3250, 3180, -120, 270, (1.0, 0.25, 0.08)),     # (g27) off the door frame
                                             ('service_tunnel', -3596, 2400, -150, 0, (1.0, 0.25, 0.08)),
                                             ('service_tunnel', -2700, 1220, -214, 90, (1.0, 0.45, 0.1)),     # under the throat lining
                                             ('ticket_hall', -1196, 3500, 250, 0, (1.0, 0.45, 0.1)),
@@ -1914,7 +1933,9 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
             # (g27, review C generator_room_1: a light pool with a violet halo and a tiny bracket for a fixture) a caged
             # lamp housing with a lit lens behind the kit lamp, the light 18 out from the wall instead of on it
             fx_, fy_ = round(math.cos(math.radians(yaw_))), round(math.sin(math.radians(yaw_)))
-            lens_ = 'lamp_red' if col_[1] < 0.3 else 'lamp_warm'
+            # (g27 capture g2_1: a whitish-violet bloom ring still sat around the red lenses with the glow sprite gone)
+            # red battery lamps get a painted red lens (no emissive: its bloom read violet), the light does the glow
+            lens_ = 'metal_red' if col_[1] < 0.3 else 'lamp_warm'
             if fx_:
                 wall_ = x_ - fx_ * 4
                 B.slab_y(y_ - 13, y_ + 13, wall_, z_ - 14, z_ + 6, 5, 'metal_black', zn_, fx_, collide=False, nav=False)
@@ -1984,7 +2005,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     # platform: PA speakers and clocks on the north wall, trash, paper
     for x_ in (-1536, 0, 1536):
         decor(Zp, 'misc_wall_mounted_loudspeaker_01', x_ + 256, 2398, -110, 270)
-    for x_ in (-768, 768):
+    for x_ in (-370, 768):         # (g27) -768 hung inside the stair A arch (x -784..-416): seen from the stair, its black back
         decor(Zp, 'sign_clock_04', x_, 2398, -120, 0)
     decor(Zp, 'com_trashbag2_black', -2340, 2350, -320, 10, (16, 16, 20))
     decor(Zp, 'com_debris_paper_iw6_02', 900, 1900, -320, 60)
@@ -2024,7 +2045,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zm, 'com_debris_paper_iw6_02', 2650, 1840, -320, 40)
     # maintenance corridor: duct along the ceiling, wall vents, hanging wires
     decor(Zm, 'misc_wall_mounted_fan_01', 3198, 2250, -200, 180)
-    decor(Zm, 'hanging_wires_01', 3080, 2000, -96, 0)
+    pass  # (g27, artlint dark-image: colour image missing from the dump) decor(Zm, 'hanging_wires_01', 3080, 2000, -96, 0)
     # service tunnel: cones and a construction sign at the buffer stop, tarp on the wall
     for x_, y_ in ((-3400, 1262), (-3370, 1290), (-3420, 1300)):     # beside the walkway, not in the track bed
         decor(Zt, 'traffic_cone_sml_01', x_, y_, -384, 0, (8, 8, 14))
@@ -2038,18 +2059,18 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     # generator room: kit generator (air handler body on the plinth, control panel, fuse boxes, red pipe runs)
     if 'iwz_g2_genset' not in PORTED:      # the G-2 carries its own switchgear cabinet
         decor(Zg, 'electrical_control_panel_01', GEN[0] - 150, GEN[1] - 60, -320, 0, (11, 22, 41))
-    decor(Zg, 'fac_sort_machine_fuse_box_set_01', 3000, 3182, -320, 180, (18, 7, 37))
+    decor(Zg, 'fac_sort_machine_fuse_box_set_01', 2940, 3182, -320, 180, (18, 7, 37))     # (g27) was half in the control-room door
     decor(Zg, 'fac_sort_machine_fuse_box_set_01', 3800 - 2, 3050, -320, 90, (7, 18, 37))
     decor(Zg, 'misc_wall_mounted_fan_01', 2602, 3000, -150, 0)
     # maintenance corridor: pipe clusters along both long walls, wall boxes, shutoff panels, fan, ladder, junk
     for x_ in (2560, 2880, 3120):
         decor(Zm, 'electrical_control_box_03', x_, 1681, -280, 90)
-    for x_ in (2650, 3000):
+    for x_ in (2650, 2860):     # (g27) 3000 hung in the open corridor bend (x 2976..3184)
         decor(Zm, 'emergency_shutoff_sm_panel_01', x_, 1918, -230, 270)
     decor(Zm, 'misc_wall_mounted_fan_01', 2850, 1918, -150, 270)
     decor(Zm, 'wall_mounted_pipes_01', 2962, 2150, -320, 180)
     decor(Zm, 'ladder01_large_closed', 3196, 2320, -320, 90)
-    decor(Zm, 'hanging_wires_01', 2700, 1800, -96, 0)
+    pass  # (g27, artlint dark-image: colour image missing from the dump) decor(Zm, 'hanging_wires_01', 2700, 1800, -96, 0)
     decor(Zm, 'ammo_crate_01_dust', 3110, 1700, -320, 0, (18, 30, 15))
     decor(Zm, 'p7_box_cardboard_a_closed', 3150, 1790, -320, 20, (16, 21, 15))
     # service tunnel: work lights (lights table entries below), struts, junk, rubble, cones
