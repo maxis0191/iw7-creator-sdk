@@ -14,15 +14,17 @@ param(
 $ErrorActionPreference='Stop'
 $Runs='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\fx\runs'
 $Server='C:\Users\ezvalo\Documents\IW7-Paris-Server\.claude\worktrees\custom-zombies-map-iwz-26cd2d'
-$Pkg='C:\Users\ezvalo\AppData\Local\Temp\claude\ffc8c2fd82d25eb3\3d781a32-1ec5-4875-9f47-5fae74b66b77\scratchpad\srcpkg-a'
+$Pkg='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\srcpkg-shared'   # read-only runner package (bootstrap.ps1, server de4e30a6)
 $Game='C:\Users\ezvalo\Desktop\iw_game_files'
 $out=Join-Path $Runs $Tag
 $t0=Get-Date
-$busyRx='Resource busy|Heavy job already reserved|wait before heavy admission|wait for its owner|Unowned local image|Unattached lab process|Resource lease not found|Child identity unavailable|Reserved process identity unavailable|Base game occupied'
+$busyRx='Resource busy|Heavy job already reserved|wait before heavy admission|wait for its owner|Unowned local image|Unattached lab process|Resource lease not found|Child identity unavailable|Reserved process identity unavailable|Base game occupied|Reserved child is still alive|lease retained'
 while($true){
   $procs=@(Get-CimInstance Win32_Process|Where-Object {$_.ExecutablePath -and $_.ExecutablePath.StartsWith($Game+'\',[StringComparison]::OrdinalIgnoreCase)})
   # other agents' private test clients (copied images) wait; anything else is the owner's game
-  $foreign=@($procs|Where-Object {$_.Name -notmatch '^iw7-iwzmap-local\.exe$|bo3wpn|-test-client|-lab'})
+  # agents' private clients: renamed lab images, isolated labs, lan-only sessions (2026-11-09: iw7-dj-audio-client.exe
+  # -paris-isolated-lab was taken for the owner's game)
+  $foreign=@($procs|Where-Object {$_.Name -notmatch '^iw7-iwzmap-local\.exe$|bo3wpn|-test-client|-lab' -and $_.CommandLine -notmatch '-paris-isolated-lab|-paris-server-client-test|sv_lanOnly 1'})
   if($foreign.Count){ "OWNER_GAME: base game occupied by $(($foreign|ForEach-Object {"$($_.ProcessId):$($_.Name)"}) -join ','); stopping"; exit 3 }
   if($procs.Count -or ((Get-Date)-$t0).TotalMinutes -gt $MaxWaitMinutes){
     if(((Get-Date)-$t0).TotalMinutes -gt $MaxWaitMinutes){ 'gave up waiting'; exit 4 }

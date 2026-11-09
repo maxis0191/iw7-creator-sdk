@@ -135,3 +135,11 @@ Engine findings (runs in iwz-stage2\fx): sprite effects render; GPU particle clo
 (`vfx_water_drips_line`, `vfx_zmb_drips_parent`) stay below the measurement threshold at 200+ units; the effect list
 entry is not required for an imported effect (`vfx_light_mist` rendered without it). fx_place refuses effect origins
 more than 96 units from any walkable plan cell (inside a wall or the void).
+
+Dark maps (darkness builds: pitch dark before power, flashlight = particle spot light). Lit particle materials
+(`eq_effect_*_blend_*`) take the baked light grid AND dynamic lights: they read inside the flashlight cone and next to
+baked emergency lamps, nowhere else (fx\NOTES.md probe9 / proof-dfx1-a). `fx_variant.py` makes self-lit variants of
+lit stock effects (unlit counterpart techset with the donor's state / constant-buffer files, colour tint) for the dark
+stage; `station_zero_fx_dark.txt` pairs them (`stage=dark`) with the lit originals (`stage=lit`). Prove dark FX with the
+flashlight carrier in "follow" mode (`+set paris_iwz_fl_mode follow`): the "link" carrier does not follow view pitch.
+`vfx_lit.py` (fx/agent) lists the lighting class of every material of an effect.
