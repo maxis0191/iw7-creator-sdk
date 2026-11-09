@@ -49,6 +49,11 @@ Rules (lead / owner review of g24):
   fx-fixture       a glow / flare sprite FX (layout fx_placed) without a lit fixture within 24 (review C: violet halos)
   fx-source        a drip FX without its leak (ceiling stain + puddle) (review C: blue streaks in mid-air)
   decor-rail       a decor model (catalog bounds, else its clip) through a railing / handrail / window frame
+  in-opening       (lead g27 stair_a_2: a black-backed ad frame, a pilaster and a clock stood inside the stair A arch,
+                   unchanged since g24) a wall sign / poster, a pilaster / rib or a wall-mounted model within 24 of a
+                   wall plane inside one of that wall's openings (layout openings, span +-10, below the opening top)
+  dark-image       (needs --catalog / --kit for models) a placed model whose catalog / kit entry has no colour image, missing images, or a kit preview mean
+                   luma under 0.03; a custom image material (art, signs) whose colour image has mean luma under 0.03
   floating-floor   an up-facing deck-level surface over an open stairwell (other than the stair's own treads)
   stair-soffit     a stair flight without side walls and without a stringer on its open side(s) (wells: the pit
                    side; review C / train agent: black wedges under the well stairs)
@@ -66,6 +71,8 @@ import argparse, json, math, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import sz2_materials as SM
+import sz2_art_hooks as ART_HOOKS
+ART_HOOKS.register()       # the art drop-ins become custom image materials, as in the generator (dark-image checks them)
 
 PITS = [(-2400, 2592, -384), (-3540, -2416, -384)]          # track beds: x range, bed height (platform_a pit, tunnel)
 BED_Y = (1464, 1560)
@@ -186,6 +193,53 @@ def g27_rules(lay, quads, fails, bounds):
         for se in (lo, hi):
             if not any(r['zone'] == zone and r['mins'][sa] - 6 <= se <= r['maxs'][sa] + 6 and r['mins'][ax] - 8 <= c <= r['maxs'][ax] + 8 for r in rets):
                 fails.append('rail-return %s handrail at %s %g: no wall return at %g' % (zone, 'xy'[ax], c, se))
+    # in-opening
+    ops = lay.get('openings', [])
+
+    def opening_at(axis, plane, s0, s1, z0, z1, zpad=0):
+        for o in ops:
+            if o['axis'] != axis or not any(abs(w - plane) <= 24 for w in o['walls'].values()):
+                continue
+            h0, h1 = (-1e9, 1e9) if o['kind'] == 'open' else (o['z0'], o['z1'])
+            if s0 < o['b'] + 10 and s1 > o['a'] - 10 and z0 < h1 + zpad and z1 > h0:
+                return o['name']
+        return None
+    for sg in lay.get('signs', []):
+        if sg.get('hanging'):
+            continue
+        c = sg['center']; hw, hh = sg['size'][0] / 2, sg['size'][1] / 2
+        plane = c[1] - sg['facing'] * sg.get('off', 0) if sg['axis'] == 'x' else c[0] - sg['facing'] * sg.get('off', 0)
+        sc = c[0] if sg['axis'] == 'x' else c[1]
+        o = opening_at(sg['axis'], plane, sc - hw, sc + hw, c[2] - hh, c[2] + hh)
+        if o:
+            fails.append('in-opening sign %s at %s inside opening %s' % (sg['image'], [round(v) for v in c], o))
+    for g in geo:
+        if g['name'] not in ('pilaster', 'rib'):
+            continue
+        dx, dy = g['maxs'][0] - g['mins'][0], g['maxs'][1] - g['mins'][1]
+        axis = 'x' if dx > dy else 'y'          # pilaster on a wall along x: thin in y
+        plane = (g['mins'][1] + g['maxs'][1]) / 2 if axis == 'x' else (g['mins'][0] + g['maxs'][0]) / 2
+        s0, s1 = (g['mins'][0], g['maxs'][0]) if axis == 'x' else (g['mins'][1], g['maxs'][1])
+        if dx < 2 * 24 and dy < 2 * 24:          # square-ish: try both axes
+            for ax_, pl_, a_, b_ in (('x', (g['mins'][1] + g['maxs'][1]) / 2, g['mins'][0], g['maxs'][0]),
+                                     ('y', (g['mins'][0] + g['maxs'][0]) / 2, g['mins'][1], g['maxs'][1])):
+                o = opening_at(ax_, pl_, a_, b_, g['mins'][2], g['maxs'][2])
+                if o:
+                    break
+        else:
+            o = opening_at(axis, plane, s0, s1, g['mins'][2], g['maxs'][2])
+        if o:
+            fails.append('in-opening %s at %s inside opening %s' % (g['name'], [round(v) for v in g['mins']], o))
+    for d in lay.get('decor', []):
+        m = d['model']
+        if not any(t in m for t in MOUNTED) or any(t in m for t in ('standing', 'traffic', 'pardon_our_dust', 'barricade')) or d.get('targetname'):
+            continue
+        x, y, z = d['origin']
+        for axis, plane, sc in (('x', y, x), ('y', x, y)):
+            o = opening_at(axis, plane, sc - 8, sc + 8, z, z + 24)
+            if o:
+                fails.append('in-opening decor %s at %s inside opening %s' % (m, d['origin'], o))
+                break
     # floating-floor (g27): an up-facing deck-level surface over an open stairwell (the deck expansion joint crossed the
     # east well at z -319.75 with nothing under it)
     STAIR_MATS = {'conc_floor', 'beam_yellow', 'yellow_grip', 'tile_floor', 'stair_tread'}
@@ -281,6 +335,47 @@ def g27_rules(lay, quads, fails, bounds):
                     fails.append('stacked %s at %s stands on %s at %s' % (d['model'], d['origin'], e['model'], e['origin']))
 
 
+def dark_image_rule(lay, quads, fails, entries):
+    """dark-image: every placed model resolved to its materials' colour images (asset catalog / kit report); every
+    custom image material used by a world quad checked on its source image."""
+    cat, kit = entries['catalog'], entries['kit']
+    if cat or kit:
+        seen = set()
+        for d in lay.get('decor', []):
+            m = d['model']
+            if m in seen or m.startswith('iwz_'):        # ported models: their port report checks the images
+                continue
+            seen.add(m)
+            c, k = cat.get(m), kit.get(m)
+            if c is None and k is None:
+                continue
+            if c is not None:
+                cost = c.get('cost') or {}
+                if not c.get('images') and not c.get('emissive'):
+                    fails.append('dark-image %s has no colour image in the catalog' % m)
+                elif [i_ for i_ in cost.get('missingImages', []) if 'nml' not in i_ and '_n_' not in i_ and not i_.endswith('_n')]:
+                    fails.append('dark-image %s missing colour images %s' % (m, cost['missingImages'][:3]))
+            tex = ((k or {}).get('check') or {}).get('texture') or {}
+            if tex.get('meanLuma') is not None and tex['meanLuma'] < 0.03 * 255:
+                fails.append('dark-image %s kit preview mean luma %.1f / 255' % (m, tex['meanLuma']))
+    used = {mat for zone, mat, pts, n in quads}
+    try:
+        from PIL import Image, ImageStat
+    except Exception:
+        return
+    for key in sorted(used):
+        cu = SM.CUSTOM.get(key) or {}
+        tga = cu.get('tga')
+        if not tga or not os.path.isfile(tga):
+            continue
+        im = Image.open(tga).convert('RGBA')
+        st = ImageStat.Stat(im)
+        alpha = st.mean[3] / 255.0
+        lum = (0.2126 * st.mean[0] + 0.7152 * st.mean[1] + 0.0722 * st.mean[2]) / 255.0
+        if alpha > 0.5 and lum < 0.03:
+            fails.append('dark-image material %s: %s mean luma %.3f' % (key, os.path.basename(tga), lum))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('src'); ap.add_argument('--json')
@@ -288,9 +383,11 @@ def main():
     ap.add_argument('--kit', help='kit_final.json (kit model bounds)')
     a = ap.parse_args()
     bounds = {}
-    for path_ in (a.catalog, a.kit):
+    entries = {'catalog': {}, 'kit': {}}
+    for tag_, path_ in (('catalog', a.catalog), ('kit', a.kit)):
         if path_ and os.path.isfile(path_):
             for m_ in json.load(open(path_))['models']:
+                entries[tag_][m_['name']] = m_
                 if m_.get('bounds'):
                     bounds.setdefault(m_['name'], m_['bounds'])
     quads = json.load(open(os.path.join(a.src, 'surfaces.json')))['quads']
@@ -425,6 +522,7 @@ def main():
             if box_overlap(s0, s1, d0, d1) > 0:
                 fails.append('intersect sign %s at %s with %s %s' % (da['image'], c, d['model'], d['origin']))
     g27_rules(lay, quads, fails, bounds)
+    dark_image_rule(lay, quads, fails, entries)
     import collections
     for r, c in collections.Counter(f.split()[0] for f in fails).most_common():
         print('ARTLINT rule %-14s %d' % (r, c))

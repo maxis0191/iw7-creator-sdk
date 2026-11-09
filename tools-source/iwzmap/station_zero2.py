@@ -129,6 +129,18 @@ def holes_for(space, axis, fixed):
     return out
 
 
+def wall_opening(axis, fixed, s0, s1, z0=-1e9, z1=1e9, tol=24):
+    """(g27, lead stair_a_2: an ad frame, a pilaster and a clock stood inside the stair A arch on the platform wall)
+    the opening of a wall plane within `tol` of `fixed` that overlaps the span s0..s1 at heights z0..z1, else None."""
+    for o in OPENINGS:
+        if o['axis'] != axis or not any(abs(w - fixed) <= tol for w in o['walls'].values()):
+            continue
+        h0, h1 = (-1e9, 1e9) if o['kind'] == 'open' else (o['z0'], o['z1'])
+        if s0 < o['b'] + 10 and s1 > o['a'] - 10 and z0 < h1 + 10 and z1 > h0:
+            return o
+    return None
+
+
 # ============================================================================ wall styles
 def bands(style, zf, zc):
     """(z0, z1, material, protrusion) from floor to ceiling."""
@@ -387,7 +399,8 @@ def sign(zone, key, axis, fixed, facing, s, zc, width, height=None, frame=True, 
                 abs(((g_['mins'][1] + g_['maxs'][1]) / 2 if axis == 'x' else (g_['mins'][0] + g_['maxs'][0]) / 2) - fixed) < 12]
         spans_ = [((g_['mins'][0], g_['maxs'][0]) if axis == 'x' else (g_['mins'][1], g_['maxs'][1])) for g_ in pil_]
         def clash_(c_):
-            return any(c_ - width / 2 - 6 < q1 and c_ + width / 2 + 6 > q0 for q0, q1 in spans_)
+            return any(c_ - width / 2 - 6 < q1 and c_ + width / 2 + 6 > q0 for q0, q1 in spans_) or \
+                bool(wall_opening(axis, fixed, c_ - width / 2 - 6, c_ + width / 2 + 6, zc - height / 2, zc + height / 2))
         if clash_(s):
             for d_ in sorted(range(-320, 321, 8), key=abs):
                 if not clash_(s + d_):
@@ -552,7 +565,7 @@ def pilasters(zone, axis, fixed, facing, s0, s1, zf, zc, step=320, avoid=(), low
     out = []
     s = s0 + step / 2
     while s < s1 - 40:
-        if not any(abs(s - a) < h for a, h in avoid):
+        if not any(abs(s - a) < h for a, h in avoid) and not wall_opening(axis, fixed, s - 22, s + 22, zf, zc):
             if axis == 'x':
                 B.slab_x(s - 18, s + 18, fixed, zf, zf + 112, 8, lower, zone, facing, collide=False, nav=False)
                 B.slab_x(s - 16, s + 16, fixed, zf + 112, zc - 24, 6, upper, zone, facing, collide=False, nav=False)
@@ -576,6 +589,12 @@ ADS = ['poster_lasttrain', 'poster_mindgap', 'poster_station_zero'] + [k_ for k_
 def ad_frame(zone, axis, fixed, facing, s, zc, k):
     """Recessed advertising panel: dark backing, steel frame, a poster."""
     w, h = 112, 160
+    if wall_opening(axis, fixed, s - w / 2 - 8, s + w / 2 + 8, zc - h / 2 - 8, zc + h / 2 + 8):
+        return            # (g27) the black-backed frame stood free inside the stair A arch (lead stair_a_2)
+    if axis == 'x':
+        geo_prop('ad_frame', zone, (s - w / 2 - 8, fixed - 3 if facing < 0 else fixed, zc - h / 2 - 8), (s + w / 2 + 8, fixed if facing < 0 else fixed + 3, zc + h / 2 + 8))
+    else:
+        geo_prop('ad_frame', zone, (fixed - 3 if facing < 0 else fixed, s - w / 2 - 8, zc - h / 2 - 8), (fixed if facing < 0 else fixed + 3, s + w / 2 + 8, zc + h / 2 + 8))
     if axis == 'x':
         B.wall_plane(zone, 'x', fixed + facing * 0.3, facing, s - w / 2, s + w / 2, zc - h / 2, zc + h / 2, 'metal_black', collide=False)
         for a, b, z0, z1 in ((s - w / 2 - 8, s - w / 2, zc - h / 2 - 8, zc + h / 2 + 8), (s + w / 2, s + w / 2 + 8, zc - h / 2 - 8, zc + h / 2 + 8),
@@ -709,24 +728,33 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     # collision: nosing line z(s) = z_lo + rise + (s - s_a) * rise / run, from s_a - run (z_lo) to s_b - run (z_hi)
     r0, r1 = s_a - run, s_b - run
 
-    def cq(sa, sb, za, zb):
+    def cq(sa, sb, za, zb, both=False):
         pts = [P(sa, c0, za), P(sb, c0, zb), P(sb, c1, zb), P(sa, c1, za)]
         B.collision_quad(pts, n=(0, 0, 1))
-    cq(lo_end, r0, z_lo, z_lo)
-    cq(r0, r1, z_lo, z_hi)
+        if both:
+            B.collision_quad(pts, n=(0, 0, -1))
+    # (g27b, engine stair probe g27: the climbing zombie walked UNDER the ramp at floor height - nav point 20-40 above
+    # it - and stalled under the flight on the east well, the west well and stair B alike; on the climbs that worked it
+    # mantled onto the flight at the first step). The ramp used to start one run before the first riser at floor
+    # height (r0 = s_a - run), a wedge an agent's capsule slid under, and it was one-sided from below. The ramp now
+    # starts on top of the first riser (s_a, z_lo + rise: the same nosing plane), the first riser is a real vertical
+    # face, and the ramp and every riser are two-sided, so nothing gets inside the flight.
+    cq(lo_end, s_a, z_lo, z_lo)
+    cq(s_a, r1, z_lo + rise, z_hi, both=True)
     cq(r1, hi_end, z_hi, z_hi)
-    # zombies (scripted agents) do not climb the smooth ramp: they keep their height, pass under its rising face and
-    # fall out of the world (g14/g15 STAIR trails). Solid steps under the ramp (treads at their true height, risers
-    # facing down the stair; all on or below the nosing line, so players and downward traces still meet the ramp first)
-    # give agents 16-unit step-ups, matching the render treads.
-    cq(r0, s_a, z_lo, z_lo)
+    # zombies (scripted agents) do not climb the smooth ramp: solid steps under it (treads at their true height,
+    # risers facing down the stair; all on or below the nosing line, so players and downward traces still meet the
+    # ramp first) give agents 10.7-unit step-ups, matching the render treads.
     rn = (-d, 0, 0) if axis == 'x' else (0, -d, 0)
     for k in range(n_steps):
         sk0, sk1 = s_a + k * run, s_a + (k + 1) * run
         zt = z_lo + (k + 1) * rise
-        B.collision_quad([P(sk0, c0, zt - rise), P(sk0, c1, zt - rise), P(sk0, c1, zt), P(sk0, c0, zt)], n=rn)
+        rq_ = [P(sk0, c0, zt - rise), P(sk0, c1, zt - rise), P(sk0, c1, zt), P(sk0, c0, zt)]
+        B.collision_quad(rq_, n=rn)
+        B.collision_quad(rq_, n=tuple(-c for c in rn))
         if k < n_steps - 1:
             cq(sk0, sk1, zt, zt)
+    STAIRS[-1]['ramp_from'] = [s_a, z_lo + rise]
 
     def zline(s):
         t = (s - r0) / (r1 - r0)
@@ -1007,7 +1035,9 @@ adjacent('hall', 'street')
 
 # ---------------------------------------------------------------- 2 stair_a  (-800,2416)-(-400,3184), 0 -> -320 south
 Z = 'stair_a'
-zl_a, _ = straight_stair(Z, 'stair_a', 'y', 2416, 3184, -800, -400, -320, 0, 64, 64, 20)
+# (g27b, QA g27 stair B climb / G3 stair A crowd stalls) risers 10.7 (were 16 on A, 16.7 on B: the zombies'
+# step-up limit), same slope and nosing line, as the pit wells since g25
+zl_a, _ = straight_stair(Z, 'stair_a', 'y', 2416, 3184, -800, -400, -320, 0, 64, 64, 30)
 wall(Z, 'stair_a', 'x', 3184, -1, -800, -400, 0, 288, 'metro')       # top end wall (door to the hall)
 wall(Z, 'stair_a', 'x', 2416, +1, -800, -400, -320, -32, 'metro')    # bottom end wall (arch to the platform)
 sign(Z, 'sign_to_platforms', 'x', 3184, -1, -600, 262, 192)
@@ -1206,7 +1236,10 @@ for xw_, fc_ in ((-2400, +1), (2400, -1)):
 ceiling_grid(Z, -2400, 1200, 2400, 2400, PCEIL, step_y=400, depth=28)
 region('deck', Z, (-2400, 1760, 2400, 2400), DECK_Z, (16, 0, 16, 16))
 region('deck_mid', Z, (-2192, EDGE_Y, 1904, 1760), DECK_Z, (0, 0, 0, 0))
-region('deck_east', Z, (2112, EDGE_Y, 2400, 1760), DECK_Z, (0, 0, 16, 0))
+# (g27b engine stair probe) the deck_east cells touched the east well's bottom landing column 64 below them, and the
+# seam rule removed the landing: zombies then entered the flight from the pit side at mid-height and ended under the
+# treads. A 32 margin keeps deck_east one cell off the well end, so the landing stays (as on the west well)
+region('deck_east', Z, (2112, EDGE_Y, 2400, 1760), DECK_Z, (32, 0, 16, 0))
 region('pit', Z, (-2400, 1200, 2400, 1600), PIT_Z, (0, 16, 0, 16))
 if TRAIN:
     # no pit cells under the deck overhang (y EDGE_Y..1600 behind the edge face); in front of the stairwells' feet the
@@ -1378,9 +1411,9 @@ flicker_lamp(Z, -3400, 2300, -97, 90)
 # (g27, QA g26c: zombies piled up and died at (-3231, 1600), the player was blocked there) tunnel_a's north side is open
 # only west of the tunnel_b corner: east of x -3216 it is a wall, so the cells there keep 16 off it (they straddled the
 # wall with margin 0), and no cell sits on the corner itself
-region('tunnel_a', Z, (-3600, 1216, -3232, 1584), -384, (16, 16, 0, 0))
-region('tunnel_a', Z, (-3232, 1216, -2416, 1584), -384, (0, 16, 16, 16))
-region('tunnel_b', Z, (-3600, 1584, -3216, 2584), -384, (16, 0, 16, 16))
+region('tunnel_a', Z, (-3600, 1216, -3232, 1584), -384, (32, 32, 0, 0))
+region('tunnel_a', Z, (-3232, 1216, -2416, 1584), -384, (0, 32, 16, 32))     # (g27b) polygons 16 off the walls; east 16: the tunnel door portal
+region('tunnel_b', Z, (-3600, 1584, -3216, 2584), -384, (32, 0, 32, 16))     # (g27b) 16 off the side walls (north: the arch portal)
 adjacent('tunnel_a', 'tunnel_b')
 
 # ---------------------------------------------------------------- 8 platform_b (-3600,2616)-(-2064,3400), -384..-32
@@ -1441,12 +1474,12 @@ region('platform_b', Z, (-3600, 2600, -2064, 3400), -384)
 
 # ---------------------------------------------------------------- 9 stair_b (-2048,3104)-(-1216,3400): -384 -> 0 rising east
 Z = 'stair_b'
-zl_b, _ = straight_stair(Z, 'stair_b', 'x', -2048, -1216, 3104, 3400, -384, 0, 48, 48, 23, style='metro_cream')
+zl_b, _ = straight_stair(Z, 'stair_b', 'x', -2048, -1216, 3104, 3400, -384, 0, 48, 48, 36, style='metro_cream')     # (g27b) risers 10.7
 wall(Z, 'stair_b', 'y', -2048, +1, 3104, 3400, -384, -96, 'metro_cream')
 wall(Z, 'stair_b', 'y', -1216, -1, 3104, 3400, 0, 288, 'metro_cream')
 for x in (-1900, -1650, -1400):
     strip_light(Z, x - 8, 3236, x + 8, 3268, zl_b(x) + 288, depth=4)
-sign(Z, 'sign_to_old_station', 'y', -2048, +1, 3252, -150, 192)
+# (g27) no 'to old station' sign at the foot of stair B: it hung inside the arch to platform B (artlint in-opening)
 region('stair_b', Z, (-2048, 3104, -1216, 3400), lambda x, y: zl_b(x))
 
 # ---------------------------------------------------------------- art pass 4: wall structure in the service wing
@@ -1643,8 +1676,9 @@ BENCH = 'cp_disco_worn_subway_bench' if KIT else 'furniture_park_bench_01_blue'
 BENCH_CLIP = ((96, 20, 20), (20, 96, 20)) if KIT else ((48, 16, 20), (16, 48, 20))
 
 
-def decor(zone, model, x, y, z, yaw=0, clip=None, targetname=None):
-    DECOR.append({'zone': zone, 'model': model, 'origin': (x, y, z), 'yaw': yaw, 'clip': clip, 'targetname': targetname})
+def decor(zone, model, x, y, z, yaw=0, clip=None, targetname=None, pitch=0, roll=0):
+    DECOR.append({'zone': zone, 'model': model, 'origin': (x, y, z), 'yaw': yaw, 'clip': clip, 'targetname': targetname,
+                  'pitch': pitch, 'roll': roll})
     if clip:
         hx, hy, hz = clip
         B.collision_box((x - hx, y - hy, z), (x + hx, y + hy, z + 2 * hz))
@@ -1810,10 +1844,20 @@ def place_ported(spec_path):
         decor(e['zone'], e['model'], x, y, z, yaw)
         c, s_ = round(math.cos(math.radians(yaw))), round(math.sin(math.radians(yaw)))
         boxes = json.load(open(e['boxes']))['boxes'] if e.get('boxes') and os.path.isfile(e['boxes']) else []
+        u_ = []
         for (a, b) in boxes:
             xs = sorted((x + c * a[0] - s_ * a[1], x + c * b[0] - s_ * b[1]))
             ys = sorted((y + s_ * a[0] + c * a[1], y + s_ * b[0] + c * b[1]))
-            B.collision_box((xs[0], ys[0], z + a[2]), (xs[1], ys[1], z + b[2]), nav=bool(e.get('nav', True)))
+            B.collision_box((xs[0], ys[0], z + a[2]), (xs[1], ys[1], z + b[2]), nav=False)
+            u_.append((xs[0], ys[0], z + a[2], xs[1], ys[1], z + b[2]))
+        # (g27b, QA g27: navmesh under the suitcase, within 12 of the wall fittings) one nav cut over the whole
+        # footprint plus 8 (the voxel clip boxes left nav cells between them); a wall fitting ("wall") cuts down to
+        # the floor below it, so the nav keeps its depth clear
+        if u_ and e.get('nav', True):
+            pad_ = float(e.get('nav_pad', 8))
+            z0_ = min(v[2] for v in u_)
+            B.blockers.append((min(v[0] for v in u_) - pad_, min(v[1] for v in u_) - pad_, max(v[3] for v in u_) + pad_,
+                               max(v[4] for v in u_) + pad_, (z - 80) if e.get('wall') else z0_, max(v[5] for v in u_)))
         placed.append({'model': e['model'], 'origin': [x, y, z], 'yaw': yaw, 'boxes': len(boxes)})
     return placed
 
@@ -1897,7 +1941,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         for zn_, x_, y_, z_, yaw_, col_ in (('maint_corridor', 2900, 1916, -140, 270, (1.0, 0.25, 0.08)),
                                             ('maint_corridor', 3196, 2150, -140, 180, (1.0, 0.25, 0.08)),
                                             ('generator_room', 2604, 2800, -120, 0, (1.0, 0.45, 0.1)),
-                                            ('generator_room', 3200, 3180, -120, 270, (1.0, 0.25, 0.08)),
+                                            ('generator_room', 3250, 3180, -120, 270, (1.0, 0.25, 0.08)),     # (g27) off the door frame
                                             ('service_tunnel', -3596, 2400, -150, 0, (1.0, 0.25, 0.08)),
                                             ('service_tunnel', -2700, 1220, -214, 90, (1.0, 0.45, 0.1)),     # under the throat lining
                                             ('ticket_hall', -1196, 3500, 250, 0, (1.0, 0.45, 0.1)),
@@ -1914,7 +1958,9 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
             # (g27, review C generator_room_1: a light pool with a violet halo and a tiny bracket for a fixture) a caged
             # lamp housing with a lit lens behind the kit lamp, the light 18 out from the wall instead of on it
             fx_, fy_ = round(math.cos(math.radians(yaw_))), round(math.sin(math.radians(yaw_)))
-            lens_ = 'lamp_red' if col_[1] < 0.3 else 'lamp_warm'
+            # (g27 capture g2_1: a whitish-violet bloom ring still sat around the red lenses with the glow sprite gone)
+            # red battery lamps get a painted red lens (no emissive: its bloom read violet), the light does the glow
+            lens_ = 'metal_red' if col_[1] < 0.3 else 'lamp_warm'
             if fx_:
                 wall_ = x_ - fx_ * 4
                 B.slab_y(y_ - 13, y_ + 13, wall_, z_ - 14, z_ + 6, 5, 'metal_black', zn_, fx_, collide=False, nav=False)
@@ -1984,7 +2030,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     # platform: PA speakers and clocks on the north wall, trash, paper
     for x_ in (-1536, 0, 1536):
         decor(Zp, 'misc_wall_mounted_loudspeaker_01', x_ + 256, 2398, -110, 270)
-    for x_ in (-768, 768):
+    for x_ in (-370, 768):         # (g27) -768 hung inside the stair A arch (x -784..-416): seen from the stair, its black back
         decor(Zp, 'sign_clock_04', x_, 2398, -120, 0)
     decor(Zp, 'com_trashbag2_black', -2340, 2350, -320, 10, (16, 16, 20))
     decor(Zp, 'com_debris_paper_iw6_02', 900, 1900, -320, 60)
@@ -2024,7 +2070,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zm, 'com_debris_paper_iw6_02', 2650, 1840, -320, 40)
     # maintenance corridor: duct along the ceiling, wall vents, hanging wires
     decor(Zm, 'misc_wall_mounted_fan_01', 3198, 2250, -200, 180)
-    decor(Zm, 'hanging_wires_01', 3080, 2000, -96, 0)
+    pass  # (g27, artlint dark-image: colour image missing from the dump) decor(Zm, 'hanging_wires_01', 3080, 2000, -96, 0)
     # service tunnel: cones and a construction sign at the buffer stop, tarp on the wall
     for x_, y_ in ((-3400, 1262), (-3370, 1290), (-3420, 1300)):     # beside the walkway, not in the track bed
         decor(Zt, 'traffic_cone_sml_01', x_, y_, -384, 0, (8, 8, 14))
@@ -2038,18 +2084,18 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     # generator room: kit generator (air handler body on the plinth, control panel, fuse boxes, red pipe runs)
     if 'iwz_g2_genset' not in PORTED:      # the G-2 carries its own switchgear cabinet
         decor(Zg, 'electrical_control_panel_01', GEN[0] - 150, GEN[1] - 60, -320, 0, (11, 22, 41))
-    decor(Zg, 'fac_sort_machine_fuse_box_set_01', 3000, 3182, -320, 180, (18, 7, 37))
+    decor(Zg, 'fac_sort_machine_fuse_box_set_01', 2940, 3182, -320, 180, (18, 7, 37))     # (g27) was half in the control-room door
     decor(Zg, 'fac_sort_machine_fuse_box_set_01', 3800 - 2, 3050, -320, 90, (7, 18, 37))
     decor(Zg, 'misc_wall_mounted_fan_01', 2602, 3000, -150, 0)
     # maintenance corridor: pipe clusters along both long walls, wall boxes, shutoff panels, fan, ladder, junk
     for x_ in (2560, 2880, 3120):
         decor(Zm, 'electrical_control_box_03', x_, 1681, -280, 90)
-    for x_ in (2650, 3000):
+    for x_ in (2650, 2860):     # (g27) 3000 hung in the open corridor bend (x 2976..3184)
         decor(Zm, 'emergency_shutoff_sm_panel_01', x_, 1918, -230, 270)
     decor(Zm, 'misc_wall_mounted_fan_01', 2850, 1918, -150, 270)
     decor(Zm, 'wall_mounted_pipes_01', 2962, 2150, -320, 180)
     decor(Zm, 'ladder01_large_closed', 3196, 2320, -320, 90)
-    decor(Zm, 'hanging_wires_01', 2700, 1800, -96, 0)
+    pass  # (g27, artlint dark-image: colour image missing from the dump) decor(Zm, 'hanging_wires_01', 2700, 1800, -96, 0)
     decor(Zm, 'ammo_crate_01_dust', 3110, 1700, -320, 0, (18, 30, 15))
     decor(Zm, 'p7_box_cardboard_a_closed', 3150, 1790, -320, 20, (16, 21, 15))
     # service tunnel: work lights (lights table entries below), struts, junk, rubble, cones
@@ -2294,7 +2340,11 @@ for _pass in range(4):
             if nb not in cells or nb in drop:
                 continue
             ha, hb = edge_heights(k, e), edge_heights(nb, (e + 2) % 4)
-            ok = link(k, nb) and abs(ha[0] - hb[0]) <= 18 and abs(ha[1] - hb[1]) <= 18 and abs(cells[k] - cells[nb]) <= 18
+            # (g27b engine stair probe: the climbing zombie left the pit sideways into the lower third of a well flight,
+            # 8-18 above the pit along the flight's open side, and ended under the treads) a link between two regions
+            # must be level (6); only inside one region (a flight, the ballast slopes) may an edge step up to 18
+            tol_ = 18 if owner[k] == owner[nb] else 6
+            ok = link(k, nb) and abs(ha[0] - hb[0]) <= tol_ and abs(ha[1] - hb[1]) <= tol_ and abs(cells[k] - cells[nb]) <= tol_
             if ok:
                 continue
             za, zb = sum(ha) / 2, sum(hb) / 2
@@ -2635,11 +2685,14 @@ if KIT and os.environ.get('IWZ_DOOR_DRESS', '1') == '1':
                 decor(zn_, 'cp_disco_street_barricade', round(xy_[0] - dx_, 2), round(xy_[1] - dy_, 2), z0_, yaw_, targetname=tn_)
             z_ = z0_ + 84
             k_ = 0
-            while z_ < z1_ - 6:                          # boarding planks above them, alternating offsets
+            z_ = z0_ + 96
+            k_ = 0
+            while z_ < z1_ - 8:                          # (g27 review BLOQUANT 3) boards on edge across the opening
                 for off_ in (-48, 48):
-                    xy_ = (c_ + off_ + (8 if k_ % 2 else -8), f_) if o['axis'] == 'x' else (f_, c_ + off_ + (8 if k_ % 2 else -8))
-                    decor(zn_, 'p7_zm_der_plank_wood_2x12x96', xy_[0], xy_[1], z_, (0 if o['axis'] == 'x' else 90) + (3 if k_ % 2 else -2), targetname=tn_)
-                z_ += 13; k_ += 1
+                    xy_ = (c_ + off_ + (6 if k_ % 2 else -6), f_ + side_ * 1.2) if o['axis'] == 'x' else (f_ + side_ * 1.2, c_ + off_ + (6 if k_ % 2 else -6))
+                    decor(zn_, 'p7_zm_der_plank_wood_2x12x96', xy_[0], xy_[1], z_, 270 if o['axis'] == 'x' else 0, targetname=tn_,
+                          pitch=90, roll=(4 if k_ % 2 else -3))
+                z_ += 30; k_ += 1
         DOOR_DRESS.append({'door': o['name'], 'blockers': o['scriptable'], 'dressing': tn_})
 layout['door_dress'] = DOOR_DRESS
 # power
@@ -2739,13 +2792,14 @@ for d in DECOR:
         continue     # kit proof baseline: the same map (placements, clips, views) without the imported models
     if SMODELS and not d.get('targetname') and d['model'] not in KIT_MODELS and d['model'] not in SMODEL_NO_DONOR and (SMODEL_STOCK is None or d['model'] in SMODEL_STOCK):
         x_, y_, z_ = d['origin']
-        smodel_lines.append('%s %g %g %g 0 %g 0 1' % (d['model'], x_, y_, z_, d.get('yaw', 0)))
+        smodel_lines.append('%s %g %g %g %g %g %g 1' % (d['model'], x_, y_, z_, d.get('pitch', 0), d.get('yaw', 0), d.get('roll', 0)))
         d['static'] = True
         continue
     if d.get('targetname'):
-        ents.append(ent(classname='script_model', targetname=d['targetname'], model=d['model'], origin=fmt(d['origin']), angles='0 %g 0' % d.get('yaw', 0)))
+        ents.append(ent(classname='script_model', targetname=d['targetname'], model=d['model'], origin=fmt(d['origin']),
+                        angles='%g %g %g' % (d.get('pitch', 0), d.get('yaw', 0), d.get('roll', 0))))
         continue
-    ents.append(ent(classname='script_model', model=d['model'], origin=fmt(d['origin']), angles='0 %g 0' % d.get('yaw', 0)))
+    ents.append(ent(classname='script_model', model=d['model'], origin=fmt(d['origin']), angles='%g %g %g' % (d.get('pitch', 0), d.get('yaw', 0), d.get('roll', 0))))
 if smodel_lines:
     open(os.path.join(out, 'smodels.txt'), 'w', newline='\n').write('\n'.join(smodel_lines) + '\n')
 # IWZ_LIGHTS=1: real primary lights (lights.txt) for coloured accents the bake does not carry: the tunnel signal lamps

@@ -13,6 +13,9 @@ check errs towards passing partially visible props; a prop is flagged if it is f
 at least 1 % of the frame. The decision uses the central 40 % of the box (the prop itself): with the kit preview's measured
 texture luma (kit_final.json check.texture.meanLuma, engine preview) a median below 35 % of it and below 0.15; without
 a preview a median below 0.08; always more than 45 % of the box below luma 0.05. Writes <out>/propcheck.json and <out>/prop_<name>_<view>.jpg for flagged crops.
+(g27) the walkthrough frames (layout walkcap, iwzv_wc_*) are views as well; ad frames (geo_prop ad_frame) are props.
+Exit status 1 when anything is flagged (capture gate). Wall art inside an opening (the g27 stair A arch panel) is
+caught before the build by sz2_artlint in-opening, and its void in frames by sz2_mood --gate.
 """
 import json, math, os, sys
 import numpy as np
@@ -69,6 +72,8 @@ for zone, vs in layout.get('views', {}).items():
         views.append(('%s_%d' % (zone, k), v))
 for k, v in enumerate(layout.get('sign_view_list', [])):
     views.append(('sign_%d' % k, v))
+for v in layout.get('walkcap', []):        # walkthrough frames: feet origin, the engine adds the eye; pitch 0
+    views.append((v['name'], (v['origin'][0], v['origin'][1], v['origin'][2], v['yaw'], 0)))
 
 frames = {}
 results = {}
@@ -79,6 +84,7 @@ for name, (vx, vy, vz, yaw, pitch) in views:
     if name not in frames:
         frames[name] = np.asarray(Image.open(fn).convert('RGB')).astype(np.float32) / 255.0
     a = frames[name]
+    fmed = float(np.median(0.2126 * a[..., 0] + 0.7152 * a[..., 1] + 0.0722 * a[..., 2]))
     h, w = a.shape[:2]
     cam = (vx, vy, vz + EYE)
     for pi, p in enumerate(props):
@@ -125,3 +131,4 @@ for r in flagged:
     worst = min(r['views'], key=lambda v: v['median'])
     print('FLAG %-40s %-15s median %.3f dark %.2f preview %s view %s' % (r['name'], r['zone'], worst['median'], worst['dark_frac'], worst['preview'], worst['view']))
 print('props %d, seen in frames %d, flagged %d, not in catalog %d' % (len(props), len(seen), len(flagged), len(missing)))
+sys.exit(1 if flagged else 0)

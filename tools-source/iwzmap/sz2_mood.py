@@ -16,8 +16,12 @@ frame's median luma (relative: the engine's auto exposure lifts true black to ~0
 (no texture, unlike a dark but lit surface); a frame fails when more than --void-max of its blocks are such voids
 (0.04; on g24 this flags stair_b_3, stair_a_4, platform_b_2/4, generator_room_1, platform_a_2/3, kit_6, the frames
 the three reviews named).
+Capture gate (lead g27 stair_a_2: the black panel in the stair A arch survived three builds as a list entry): with
+--gate the run exits 2 when any frame has a flat black void over --void-max, or a connected region of 16 x 16 blocks
+with mean luma < --black-abs (0.02) covering more than --black-px pixels (4096), unless the view matches a known dark
+target in mood_dark_ok.json (regex -> reason; e.g. the dark tunnels by design).
 """
-import argparse, glob, json, os, re
+import argparse, glob, json, os, re, sys
 import numpy as np
 from PIL import Image
 
@@ -33,7 +37,11 @@ def main():
     ap.add_argument('--ref'); ap.add_argument('--median', type=float, nargs=2, default=(0.30, 0.40))
     ap.add_argument('--spread-x', type=float, default=2.0); ap.add_argument('--interact-min', type=float, default=0.22)
     ap.add_argument('--void-max', type=float, default=0.04)
+    ap.add_argument('--gate', action='store_true', help='exit 2 on any void / black region outside the known dark targets')
+    ap.add_argument('--black-abs', type=float, default=0.02); ap.add_argument('--black-px', type=int, default=4096)
     a = ap.parse_args()
+    dark_ok = [k_ for k_ in json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mood_dark_ok.json'))) if not k_.startswith('_')]
+    gate = []
     ref = json.load(open(a.ref))['zones'] if a.ref else {}
     zones, inter, voids = {}, [], []
     files = []
@@ -61,6 +69,24 @@ def main():
         flat = float(((vb_.mean(axis=(1, 3)) < 0.3 * float(np.median(l))) & (vb_.std(axis=(1, 3)) < 0.01)).mean())
         if flat > a.void_max:
             voids.append({'view': name, 'flat_black': round(flat, 3)})
+        # absolute black regions: 16 x 16 blocks under black_abs, 4-connected
+        bb_ = l[:h // 16 * 16, :w // 16 * 16].reshape(h // 16, 16, w // 16, 16).mean(axis=(1, 3)) < a.black_abs
+        big = 0
+        seen = np.zeros_like(bb_, dtype=bool)
+        for i0, j0 in zip(*np.nonzero(bb_)):
+            if seen[i0, j0]:
+                continue
+            stack = [(i0, j0)]; seen[i0, j0] = True; n_ = 0
+            while stack:
+                i, j = stack.pop(); n_ += 1
+                for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    p, q = i + di, j + dj
+                    if 0 <= p < bb_.shape[0] and 0 <= q < bb_.shape[1] and bb_[p, q] and not seen[p, q]:
+                        seen[p, q] = True; stack.append((p, q))
+            big = max(big, n_ * 256)
+        ok_ = next((r_ for r_ in dark_ok if re.search(r_, name)), None)
+        if (flat > a.void_max or big > a.black_px) and not ok_:
+            gate.append('%s: flat void %.1f%%, largest black region %d px' % (name, 100 * flat, big))
         zones.setdefault(zone, []).append((l.ravel()[::7], blocks))
     rep = {'zones': {}, 'interact': inter, 'voids': voids, 'fails': []}
     for v_ in voids:
@@ -86,6 +112,13 @@ def main():
     print('interaction views %d, dark %d' % (len(inter), sum(not i['ok'] for i in inter)))
     json.dump(rep, open(a.out, 'w'), indent=1)
     print('mood fails: %s' % ('none' if not rep['fails'] else '; '.join(rep['fails'])))
+    rep['gate'] = gate
+    json.dump(rep, open(a.out, 'w'), indent=1)
+    for g_ in gate:
+        print('CAPTURE GATE FAIL', g_)
+    print('capture gate: %s' % ('FAIL %d frames' % len(gate) if gate else 'ok'))
+    if a.gate and gate:
+        sys.exit(2)
 
 
 if __name__ == '__main__':

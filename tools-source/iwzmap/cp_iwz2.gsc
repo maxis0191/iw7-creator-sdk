@@ -67,6 +67,7 @@ main()
     //@DARK@
     level thread iwz_flicker();
     level thread iwz_door_dressing();
+    level thread iwz_hide_door_blockers();
     level thread iwz_report();
     //@AUDIO@
 }
@@ -545,6 +546,35 @@ iwz_flicker_lamp()
 
 // door dressing (g26): barricades and boarding planks in front of each closed door's blocker brushes; they go when the
 // door's blockers are gone (the stock purchase deletes them)
+// (g27 review BLOQUANT 2: the white placeholder block behind the barricades) the door blockers are template brush
+// sub-models kept for their collision; they also render (a white block in every closed door). Hidden at load: hide()
+// keeps the collision, the stock purchase makes them non-solid as before.
+iwz_hide_door_blockers()
+{
+    wait 0.5;
+    n = 0;
+    foreach ( d in iwz_door_table() )
+    {
+        foreach ( e in getentarray( d.target, "targetname" ) )
+        {
+            if ( isdefined( e.classname ) && e.classname == "script_brushmodel" )
+            {
+                e hide();
+                n++;
+            }
+        }
+    }
+    foreach ( e in getentarray( "iwz_pap_shutter", "targetname" ) )      // the PaP shutter's blockers: the gate models show it
+    {
+        if ( isdefined( e.classname ) && e.classname == "script_brushmodel" )
+        {
+            e hide();
+            n++;
+        }
+    }
+    print( "[IWZ level] DOOR_BLOCKERS_HIDDEN " + n );
+}
+
 iwz_door_dressing()
 {
     level endon( "game_ended" );
