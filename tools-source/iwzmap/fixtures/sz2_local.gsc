@@ -221,7 +221,7 @@ iwz_open_doors( player )
     print( "[IWZ local] DOORS opened=" + opened );
 }
 
-// (g27b, QA g27: zombie climbs die mid-stair) stair probe: paris_iwz_sp = "label sx sy sz gx gy gz cx cy;..." per case.
+// (g27b, QA g27: zombie climbs die mid-stair) stair probe: paris_iwz_sp = "label sx sy sz gx gy gz cx cy/..." per case.
 // The player waits at g, a stock-spawned zombie is placed on the navmesh at s and walks to him. Every 0.25 s:
 // SP_T origin, speed from the last sample, distance to the player, navmesh point under it and its offset. Before each
 // case the navmesh is sampled on a 9 x 9 grid (16 apart) around c: SP_NAV sample -> navmesh point, clearance above it
@@ -231,7 +231,7 @@ iwz_stairprobe( player )
 {
     iwz_open_doors( player );
     wait 2;
-    cases = strtok( getdvar( "paris_iwz_sp" ), ";" );
+    cases = strtok( getdvar( "paris_iwz_sp" ), "/" );     // "/" between cases: ";" would split the console command
     for ( c = 0; c < cases.size; c++ )
     {
         t = strtok( cases[c], " " );

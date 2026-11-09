@@ -8,7 +8,7 @@ param(
   [string]$Ab='',                                             # views: A/B commands ("cmd|cmd"): each view captured as is and as <name>_b after them
   [string]$AbReset='',                                        # views: commands run after each B capture
   [string]$DvarProbe='',
-  [string]$Probe='',                                          # stairprobe: "label sx sy sz gx gy gz cx cy;..." (fixture iwz_stairprobe)                                      # dvar names ("a|b|c") printed with their value at spawn ([IWZ local] DVAR)
+  [string]$Probe='',                                          # stairprobe: "label sx sy sz gx gy gz cx cy/..." (fixture iwz_stairprobe)                                      # dvar names ("a|b|c") printed with their value at spawn ([IWZ local] DVAR)
   [int]$Seconds=420,
   [string]$Runs='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\level\runs',
   [string]$Server='C:\Users\ezvalo\Documents\IW7-Paris-Server\.claude\worktrees\custom-zombies-map-iwz-26cd2d',
