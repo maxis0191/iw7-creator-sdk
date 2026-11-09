@@ -1,4 +1,4 @@
-# Station Zero ambient FX, dark-state version for the darkness builds (d12+, g27 world). From the level builder's
+# Station Zero ambient FX, dark-state version (dfx2) for the darkness builds (d12+, g27 world). From the level builder's
 # station_zero_fx_g25.txt; lit particle effects (motes, drips, steam: eq_effect_* blend materials) are lit by the baked
 # light grid and disappear in the dark bake, so each gets a faint self-lit variant (fx_variant.py, zone iwzv) for the
 # dark stage and keeps the lit original for the lit stage. Steam next to the baked emergency lamps stays lit (grid).
@@ -11,30 +11,31 @@
 # glow / flare sprite without a lit fixture within 24 units.
 
 # ticket hall: motes always; the lamp light cone only once the lamps are on
-hall_motes        motes             -1000 3800  200   stage=lit
-hall_motes_dark   motes_dark        -1000 3800  200   stage=dark
+hall_motes        motes             -1000 3800  200
+hall_glitter      dust_motes        -1000 3800  200   stage=dark
 hall_cone         light_cone        -600  3400  300   stage=lit
 # (g27) hall_emerg_w      emergency_glow    -1176 3500  250   stage=dark
 # (g27) hall_emerg_s      emergency_glow    -380  3224  250   stage=dark
 
 # platform A: leaking ceiling over the deck, low fog in the trackbed channel (centre y 1488), emergency glows on the
 # back wall and by the maintenance door (route to the power switch)
-pa_leak           drips_line        300   1900  0     region=96 region_dz=-290 stage=lit
-pa_leak_dark      drips_line_dark   300   1900  0     region=96 region_dz=-290 stage=dark
+# (dfx2) leak moved beside the platform A emergency lamp (1500, 2396, -160): the lit drips take its baked light
+pa_leak           drips_line        1500  2330  0     region=96 region_dz=-200
+pa_leak_dark      drips_line_dark   1500  2330  0     region=96 region_dz=-200 stage=dark
 # (g27) pa_emerg_w        emergency_glow    -1500 2376  -150  stage=dark
 # (g27) pa_emerg_door     emergency_glow    2376  1960  -150  stage=dark
 
 # service tunnel: ground fog, grate steam, falling ceiling dust, emergency glows by the lamps
 tunnel_fog        fog_tunnel        -3420 1900  -384
-tunnel_steam      steam_grate       -3420 2250  -384  stage=lit
-tunnel_steam_dark steam_grate_dark  -3420 2250  -384  stage=dark
+# (dfx2) lit grate steam reads in the flashlight (proof-dfx1-a 2.1 %): always; the self-lit copy was too faint
+tunnel_steam      steam_grate       -3420 2250  -384
 tunnel_lamp_steam steam_pipe        -3570 2400  -210  angles=0,0,0
 tunnel_dust       dust_fall         -3000 1300  -90
 # (g27) tunnel_emerg      emergency_glow    -2700 1240  -150  stage=dark
 # (g27) tunnel_emerg_b    emergency_glow    -3576 2400  -150  stage=dark
 
 # maintenance corridor: steam jet from the wall pipe, emergency glow
-corr_steam        steam_pipe        2664  1700  -150  angles=0,90,0 stage=lit
+corr_steam        steam_pipe        2664  1700  -150  angles=0,90,0
 corr_steam_dark   steam_pipe_dark   2664  1700  -150  angles=0,90,0 stage=dark
 corr_lamp_steam   steam_pipe        2900  1890  -200  angles=0,270,0
 # (g27) corr_emerg        emergency_glow    2900  1896  -140  stage=dark
@@ -55,4 +56,5 @@ gen_exhaust       generator_idle    3421  2793  -219  stage=lit view=3420,2560,-
 # platform B and control room: emergency glows while dark; control room haze
 # (g27) pb_emerg          emergency_glow    -2900 3376  -150  stage=dark
 # (g27) ctrl_emerg        emergency_glow    3576  3600  -100  stage=dark
-ctrl_mist         mist              3100  3700  -300
+# (dfx2) lit floor mist has no light in the dark control room: lit stage only
+ctrl_mist         mist              3100  3700  -300  stage=lit

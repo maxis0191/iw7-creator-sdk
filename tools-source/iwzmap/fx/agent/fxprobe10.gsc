@@ -8,11 +8,12 @@ init()
     if ( getdvarint( "dedicated" ) || getdvar( "paris_iwz_mode" ) != "fxprobe10" )
         return;
     level.fxp = [];
-    // set 0: motes at the distance of the station (250 / 400 u), view horizontal
+    // set 0: dust-in-the-beam candidates at the station distance (250 / 400 u), view horizontal
     fxp_add( 0, "motes", "vfx/iw7/levels/cp_disco/amb/vfx_amb_motes", 0, 0, ( 0, 0, 0 ) );
-    fxp_add( 0, "motes_d15", "vfx/iwz/amb/vfx_amb_motes_d15", 0, 0, ( 0, 0, 0 ) );
     fxp_add( 0, "motes_d40", "vfx/iwz/amb/vfx_amb_motes_d40", 0, 0, ( 0, 0, 0 ) );
     fxp_add( 0, "glitter", "vfx/iw7/core/zombie/environment/vfx_cop_zmb_particle_dust", 0, 0, ( 0, 0, 0 ) );
+    fxp_add( 0, "fireflychild", "vfx/iw7/levels/cp_zmb/vfx_zmb_fireflys_child", 0, 0, ( 0, 0, 0 ) );
+    fxp_add( 0, "dustfall", "vfx/iw7/levels/sa_common/vfx_sa_falling_dust_rumble_ch", 80, 0, ( 0, 0, 0 ) );
     foreach ( f in level.fxp )
         print( "[IWZ local] FXPROBE_LOAD set=" + f.set + " name=" + f.name + " id=" + f.id );
     level thread fxp_main();

@@ -14,7 +14,7 @@ param(
 $ErrorActionPreference='Stop'
 $Runs='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\fx\runs'
 $Server='C:\Users\ezvalo\Documents\IW7-Paris-Server\.claude\worktrees\custom-zombies-map-iwz-26cd2d'
-$Pkg='C:\Users\ezvalo\AppData\Local\Temp\claude\ffc8c2fd82d25eb3\3d781a32-1ec5-4875-9f47-5fae74b66b77\scratchpad\srcpkg-a'
+$Pkg='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\srcpkg-shared'   # read-only runner package (bootstrap.ps1, server de4e30a6)
 $Game='C:\Users\ezvalo\Desktop\iw_game_files'
 $out=Join-Path $Runs $Tag
 $t0=Get-Date
