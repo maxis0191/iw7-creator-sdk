@@ -41,7 +41,7 @@ python -I bake\layout_lights.py <src> lit.json --texel 6 --ambient 0.012
 python -I darkness\dark_build.py <src> lit.json dark.json --ambient 0.03 --scale 9000
 python -I bake\lmbake.py <src> dark.json <src>_lm --rays 256 --bounces 3 --denoise 1
 python -I darkness\make_vfx_light.py <cp_disco dump>\particlesystem\vfx\iw7\levels\cp_disco\subway_train\vfx_train_front_light_ch.iw7VFX `
-       <vfx root> vfx/iwz/vfx_iwz_flashlight_world --fov 32 --inner 12 --radius 900 --color 1,0.92,0.80 --brightness 4 --shadow 1
+       <vfx root> vfx/iwz/vfx_iwz_flashlight_world --fov 32 --inner 12 --radius 900 --color 1,0.92,0.80 --brightness 1 --shadow 1 --near 8 --life 100000
 build-sz2.ps1 -Src <src>_lm -Darkness -FxImport 'iwz:vfx/iwz/vfx_iwz_flashlight_world' -FxDumps 'iwz=<vfx root>' ...
 ```
 
@@ -63,13 +63,22 @@ players (bots), zombies walking into the light, the power-on transition every 0.
 (1 dark, 2 dark 4p, 3 dark 8p, 4 transition, 5 lit, 6 lit 4p, 7 lit 8p). Frames are `iwzdk_*.bmp` (the runner only
 collects `iwz*`). Then `dk_measure.py <run> --perf <fxperf> --phases ... --sheet`.
 
-## Findings that shaped the route (engine runs dk2 .. dk7, darkness\NOTES.md)
+## Findings that shaped the route (engine runs dk2 .. dk11, darkness\NOTES.md)
 
-- IW7 auto exposure undoes a dark bake: the dark vision is required. With tonemapAuto 0 the exposure key is
-  tonemapMaxExposure (stock cp_zmb_bw uses -10; tonemapExposure has no effect). add_darkness writes it as
-  <map>_dark and under the template's spare stock name cp_zmb_int_basement; the module applies it 8 s and 14 s after
-  each spawn (init-time calls are reset by stock spawn code). Use `--dark tonemapAuto=0;tonemapMaxExposure=-3`.
-- `killfxontag` + `playfxontag` of the same effect on the same tag soon after stays dark: the module rotates six
-  identical copies; after a weapon switch the light is re-attached 0.8 s later (the new weapon's tag).
-- The cp_disco train front light (brightness 1.5 .. 4) works as a flashlight; a brightness-40 copy renders nothing.
+- The stock train light used as the template is ONE particle with a 1 s life (intensity curve fading 0.75 -> 1.0)
+  that is never re-spawned: without `--life` every flashlight copy goes dark ~1 s after `playfxontag`. The earlier
+  "weapon switch loses the light" results (dk6 .. dk9) were this lifetime; pools had only been measured < 1 s after
+  an attach. Always build the flashlight with `--life 100000`.
+- IW7 auto exposure undoes a dark bake: a dark vision is required. add_darkness writes it as <map>_dark and under the
+  spare stock name cp_zmb_int_basement; the module applies it 8 s and 14 s after each spawn (init-time calls are
+  reset by stock spawn code). With tonemapAuto 0, tonemapMaxExposure -6 and -8 rendered identical frames (dk10 /
+  dk11): it is not a manual exposure key (probably the auto-exposure clamp). The d11 build carries a fast-adapting
+  ladder (auto clamped at max 2 / -2, manual tonemapExposure 13, tonemapExposureAdjust -3) under spare stock names;
+  NOTES has the measured winner.
+- Carrier: a fresh tag_origin model linked to tag_eye (mode `link`) does not depend on the weapon model. At eye +6
+  forward the light lit the viewmodel hands (dk10); default forward 24.
+- `killfxontag` + `playfxontag` of the same effect on the same entity soon after stays dark: every attach uses a
+  fresh carrier entity.
 - `setlightintensity` on compiler-named lights in the extended scriptable range switches them (bank frames).
+- Lit state: fog 0.03 and volumetrics 0 remove the fog veil; the remaining white-out near fixtures is over-exposure
+  (power scale 1400 clipped 8 .. 11 % of some views in dk10; d11 uses 840).
