@@ -36,6 +36,7 @@ def main(argv=None):
     ap.add_argument('--ceiling-fov', type=float, default=150.0)
     ap.add_argument('--shadow-per-zone', type=int, default=1, help='brightest N power lights per zone cast shadows')
     ap.add_argument('--power-emissive', type=float, default=0.0, help='emissive of power fixture materials in the dark bake')
+    ap.add_argument('--alt', default='', help='calibration light sets "b:dz=-24,rs=3.0,is=0.5|c:..." named iwz_power_<set>')
     ap.add_argument('--cue-scale', type=float, default=1.0,
                     help='intensity scale of the amber interaction cues in the dark bake (run dk9: 1.0 lit the door / perk '
                          'areas almost like a lamp under the dark exposure; 0.4 suggested, not engine-tested)')
@@ -122,13 +123,30 @@ def main(argv=None):
         else:
             out_lines.append('omni %g %g %g %.3f %.3f %.3f %g %g %d %s' % (x, y, zc, r, g, b, inten, rad, sh, tail))
         named.append({'zone': z, 'kind': kind, 'origin': [x, y, zc], 'intensity': inten, 'radius': rad, 'shadow': sh})
+    # calibration only: alternative power-light sets named iwz_power_<set> (the module ignores them; a probe switches
+    # them with setlightintensity). --alt "b:dz=-24,rs=3.0,is=0.5|c:dz=-24,rs=4.5,is=0.35": every power light as an
+    # unshadowed omni, dz below the fitting, radius x rs (of the layout radius), intensity x is (of this build's).
+    alt_n = 0
+    for spec in [s for s in (a.alt or '').split('|') if s]:
+        sname, _, kv = spec.partition(':')
+        o = dict(p.split('=') for p in kv.split(',') if '=' in p)
+        dz, rs, iscale = float(o.get('dz', 0)), float(o.get('rs', a.radius_scale)), float(o.get('is', 1))
+        for l in power:
+            x, y, zc = l['origin']
+            r, g, b = l.get('color', (1, 1, 1))
+            inten = float(l['intensity']) * a.scale * iscale
+            z = l.get('zone') or ''
+            kind = 'flicker' if l.get('group') == 'flicker' else l.get('fixture', 'lamp')
+            out_lines.append('omni %g %g %g %.3f %.3f %.3f %g %g 0 name=iwz_power_%s group=%d|%s|%g|%s' % (
+                x, y, zc + dz, r, g, b, inten, float(l['radius']) * rs, sname, bank.get(z, 0), z, inten, kind))
+            alt_n += 1
     open(os.path.join(a.src, 'lights.txt'), 'w', newline='\n').write('\n'.join(out_lines) + '\n')
     rep = {'bank_order': order, 'generator': gen, 'baked_emergency': len(dark['lights']), 'named_lights': len(named),
-           'shadowed': sum(1 for n in named if n.get('shadow')), 'ambient': a.ambient, 'scale': a.scale,
+           'shadowed': sum(1 for n in named if n.get('shadow')), 'ambient': a.ambient, 'scale': a.scale, 'alt_lights': alt_n,
            'per_zone': {z: len(v) for z, v in by_zone.items()}, 'emissive_zeroed': [m for m in em if em[m] != lit['emissive'].get(m)]}
     json.dump(rep, open(os.path.join(a.src, 'darkness.json'), 'w'), indent=1)
-    print('dark bake: %d emergency lights (of %d); %d named power lights in %d banks %s' % (
-        len(dark['lights']), len(L), len(named), len(order), ','.join(order)))
+    print('dark bake: %d emergency lights (of %d); %d named power lights in %d banks %s; %d calibration lights' % (
+        len(dark['lights']), len(L), len(named), len(order), ','.join(order), alt_n))
 
 
 if __name__ == '__main__':
