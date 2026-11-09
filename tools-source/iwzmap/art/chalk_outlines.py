@@ -6,7 +6,7 @@ frame and a blank price line (prices come from the live interaction table, not d
 on the wall behind each wall-buy struct, only when its TGA exists.
 """
 import math, os, random, sys
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 W, H = 512, 256
 SHAPES = {   # silhouettes in a 100 x 50 box: lists of polylines (closed unless the first point repeats)
@@ -31,7 +31,10 @@ def chalk_line(d, a, b, rnd, width=5):
         d.line([p0, p1], fill=int(rnd.uniform(150, 235)), width=max(2, int(width + rnd.uniform(-1.5, 1.5))))
 
 
-def make(cls, seed):
+PRICES = {'pistol': (500,), 'smg': (1250,), 'rifle': (500, 1500), 'shotgun': (750,)}   # live costs (g27d capture COST lines)
+
+
+def make(cls, seed, price=None):
     rnd = random.Random(seed)
     a = Image.new('L', (W, H), 0)
     d = ImageDraw.Draw(a)
@@ -43,6 +46,11 @@ def make(cls, seed):
     for p, q in (((14, 10), (W - 14, 10)), ((W - 14, 10), (W - 14, H - 14)), ((W - 14, H - 14), (14, H - 14)), ((14, H - 14), (14, 10))):
         chalk_line(d, p, q, rnd, width=4)                     # chalk frame
     chalk_line(d, (W / 2 - 70, H - 46), (W / 2 + 70, H - 46), rnd, width=3)     # price line
+    if price:
+        f = ImageFont.truetype(os.path.join(r'C:\Windows\Fonts', 'segoepr.ttf' if os.path.exists(r'C:\Windows\Fonts\segoepr.ttf') else 'arialbd.ttf'), 40)
+        t = str(price)
+        l, tp, r, b = d.textbbox((0, 0), t, font=f)
+        d.text((W / 2 - (r - l) / 2 - l, H - 92 - tp), t, font=f, fill=225)
     grain = Image.effect_noise((W, H), 70).point(lambda v: 255 if v > 110 else 0)
     a = Image.composite(a, Image.new('L', (W, H), 0), grain).filter(ImageFilter.GaussianBlur(0.8))
     rgba = Image.merge('RGBA', (Image.new('L', (W, H), 236), Image.new('L', (W, H), 234), Image.new('L', (W, H), 226), a))
@@ -57,6 +65,11 @@ def main():
         im.save(os.path.join(out, 'chalk_%s.png' % cls))
         im.save(os.path.join(out, 'chalk_%s_c.tga' % cls))
         print('chalk', cls, im.size)
+        for pr in PRICES.get(cls, ()):
+            im = make(cls, 470 + k, pr)
+            im.save(os.path.join(out, 'chalk_%s_%d.png' % (cls, pr)))
+            im.save(os.path.join(out, 'chalk_%s_%d_c.tga' % (cls, pr)))
+            print('chalk', cls, pr)
 
 
 if __name__ == '__main__':

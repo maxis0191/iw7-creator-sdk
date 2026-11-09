@@ -66,8 +66,20 @@ def main():
             for suf, ps in apose:
                 if fr in ps and os.path.exists(os.path.join(adir, 'frames', fr + suf + '.png')):
                     after = fr + suf
-                    cam = 'same' if bp and ps[fr] == bp else 'MOVED %s -> %s' % (bp, ps[fr])
+                    q_ = ps[fr]
+                    close_ = bp and all(abs(a_ - b_) <= 2 for a_, b_ in zip(q_[0], bp[0])) and (q_[1] == bp[1] or (q_[1] and bp[1] and all(abs(a_ - b_) <= 1 for a_, b_ in zip(q_[1], bp[1]))))
+                    cam = 'same' if close_ else 'MOVED %s -> %s' % (bp, q_)
                     break
+            if bp and cam != 'same':
+                # a renumbered view list or a fixed fp_* camera: any after frame at exactly the before pose
+                # (origin within 2 units, angles within 1 degree) is the same camera
+                for suf, ps in apose:
+                    hit = next((n_ for n_, q_ in ps.items() if q_[1] and bp[1] and all(abs(a_ - b_) <= 2 for a_, b_ in zip(q_[0], bp[0]))
+                                and all(abs(a_ - b_) <= 1 for a_, b_ in zip(q_[1], bp[1]))
+                                and os.path.exists(os.path.join(adir, 'frames', n_ + suf + '.png'))), None)
+                    if hit:
+                        after, cam = hit + suf, 'same pose (%s)' % hit
+                        break
             bpng = os.path.join(bdir, 'frames', fr + '.png')
             if after is None or not os.path.exists(bpng):
                 missing += 1

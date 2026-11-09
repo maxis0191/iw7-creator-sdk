@@ -86,7 +86,7 @@ BED_OK = {'wood_planks', 'ballast', 'ibeam_bare', 'chrome_trim', 'metal_black', 
 VEHICLE_MATS = {'metal_silver', 'carriage_red', 'seat_blue'}
 TRAIN_OK = {'cp_disco_subway_train_bsp2xmodel'}
 HERO_PARTS = {'iwz_g2_radiator'}   # (g27d) the G-2's own remote radiator stands by it on purpose (train agent spec)
-DARK_DECALS = {'art_decal_grime_feathered'}
+DARK_DECALS = {'art_decal_grime_feathered', 'floor_stain', 'water_stain'}   # (g27d BLOQUANT 2) black shapes / holes
 EDGE = 4.0           # trackbed: wall trims up to 4 units proud of a channel side or end wall belong to the wall
 ENVELOPE = 170.0     # trackbed: car kinematic envelope above the bed (cable trays and ceiling ribs above it are fine)
 TONE_BANNED = ('park_', 'spaceland', 'zmb_wood_support', '_ride_', 'ride_car', 'racin', 'astrocade', 'kepler')
@@ -231,6 +231,35 @@ def g27_rules(lay, quads, fails, bounds):
         o = opening_at('y', x - fx * 48, y - 28, y + 28, z + 4, z + 44) if fx else opening_at('x', y - fy * 48, x - 28, x + 28, z + 4, z + 44)
         if o:
             fails.append('in-opening spawner vent at %s inside opening %s' % ([round(v) for v in sp['origin']], o))
+    # (g27e, g27d BLOQUANT 3: a perk machine buried behind crates) perk-approach: no decor box in the 1.5 m (60 units)
+    # in front of a perk machine / Pack-a-Punch, 64 wide
+    for it in lay.get('interactions', []):
+        if not (it['kind'].startswith('perk_machine') or it['kind'] == 'weapon_upgrade'):
+            continue
+        ox, oy, oz = it['origin']
+        a = math.radians(it.get('yaw', 0)); fx, fy = math.cos(a), math.sin(a)
+        corners = [(ox + fx * d - fy * w, oy + fy * d + fx * w) for d in (16, 76) for w in (-32, 32)]
+        amn = (min(c[0] for c in corners), min(c[1] for c in corners), oz); amx = (max(c[0] for c in corners), max(c[1] for c in corners), oz + 60)
+        for d in lay.get('decor', []):
+            bx = model_box(d, bounds) or decor_box(d)
+            if bx and box_overlap(amn, amx, bx[0], bx[1]) > 0:
+                fails.append('perk-approach %s at %s blocked by %s at %s' % (it['kind'], it['origin'], d['model'], d['origin']))
+    # (g27e, g27d BLOQUANT 4) plank-depth: a door's barricade plank must lie between that door's two wall planes
+    for d in lay.get('decor', []):
+        if 'plank' not in d['model'] or not str(d.get('targetname') or '').startswith('iwz_doordress'):
+            continue
+        x, y, z = d['origin']
+        best = None
+        for o in lay.get('openings', []):
+            if o.get('kind') != 'door':
+                continue
+            s_ = x if o['axis'] == 'x' else y
+            w_ = y if o['axis'] == 'x' else x
+            ws = sorted(o['walls'].values())
+            if o['a'] - 60 <= s_ <= o['b'] + 60 and ws[0] - 40 <= w_ <= ws[1] + 40 and o['z0'] - 8 <= z <= o['z1'] + 8:
+                best = (o, w_, ws)
+        if best and not (best[2][0] - 0.5 <= best[1] <= best[2][1] + 0.5):
+            fails.append('plank-depth %s at %s outside the %s door frame (walls %s)' % (d['model'], d['origin'], best[0]['name'], best[2]))
     # sign-overlap / sign-repeat (g27d)
     walls_ = [sg for sg in lay.get('signs', []) if not sg.get('hanging')]
     def span_(sg):

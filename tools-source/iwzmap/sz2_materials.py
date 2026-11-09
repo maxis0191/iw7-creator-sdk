@@ -160,11 +160,15 @@ for _s in STORY:
     if os.path.exists(os.path.join(ART, 'story', _s + '_c.tga')):
         custom_image(_s, _s + '_c', os.path.join(ART, 'story', _s + '_c.tga'))
 # (g27d, review item 20) wall-buy chalk outlines (art/chalk_outlines.py): blended decals, only when delivered
-for _c in ('pistol', 'smg', 'rifle', 'shotgun'):
+for _c in ('pistol', 'smg', 'rifle', 'shotgun', 'pistol_500', 'smg_1250', 'rifle_500', 'rifle_1500', 'shotgun_750'):
     _t = os.path.join(ART, 'chalk', 'chalk_%s_c.tga' % _c)
     if os.path.exists(_t):
         custom_image('chalk_' + _c, 'chalk_%s_c' % _c, _t, base='wall_stain_01_dec')
         MATERIALS['chalk_' + _c]['collide'] = False
+# (g27e, review g27d item 15) G-2 soot bloom: the lit alpha blend decal route of the wall blood (art/soot.py)
+if os.path.exists(os.path.join(ART, 'story', 'decal_soot_bloom_c.tga')):
+    custom_image('decal_soot_bloom', 'decal_soot_bloom_c', os.path.join(ART, 'story', 'decal_soot_bloom_c.tga'), base='wall_stain_01_dec')
+    MATERIALS['decal_soot_bloom']['collide'] = False
 for _p in ('poster_mindgap', 'poster_lasttrain', 'poster_station_zero'):
     custom_image(_p, _p + '_c', os.path.join(ART, 'out', _p + '_c.tga'))
 
@@ -174,7 +178,7 @@ custom_tint('lamp_warm', 'lamp_warm', EMISSIVE_BASE, (1.0, 0.82, 0.62, 1.0), emi
 custom_tint('lamp_red', 'lamp_red', EMISSIVE_BASE, (1.0, 0.06, 0.04, 1.0), emissive=(1.8, 0, 0, 0))
 custom_tint('lamp_green', 'lamp_green', EMISSIVE_BASE, (0.1, 1.0, 0.2, 1.0), emissive=(1.6, 0, 0, 0))
 # tinted stock surfaces
-custom_tint('tile_green', 'tile_green', 'dt_tile_ceramic_white', (0.42, 0.62, 0.45, 1.0), su=64)
+custom_tint('tile_green', 'tile_green', 'dt_tile_ceramic_white', (0.36, 0.47, 0.40, 1.0), su=64, consts={'reflectionRa': (8096, 0, 0, 0)})     # (g27e item 7: lime cast on stair B; matte)
 custom_tint('tile_charcoal', 'tile_charcoal', 'dt_tile_ceramic_white', (0.24, 0.25, 0.26, 1.0), su=64)   # g26: lower wall bands
 custom_tint('tile_cream', 'tile_cream', 'dt_tile_ceramic_white', (1.0, 0.93, 0.78, 1.0), su=64)
 custom_tint('metal_silver', 'metal_silver', 'metal_painted_wall_panel_04', (0.82, 0.85, 0.9, 1.0), su=128)
@@ -183,6 +187,7 @@ custom_tint('panel_wall_red', 'panel_wall_red', 'metal_painted_wall_panel_04', (
 custom_tint('panel_dark_red', 'panel_dark_red', 'metal_panel_dark_01', (1.0, 0.5, 0.46, 1.0), su=128)
 custom_tint('ceil_red', 'ceil_red', 'ceiling_tile_01', (1.0, 0.62, 0.58, 1.0), su=96)
 custom_tint('seat_blue', 'seat_blue', 'fac_rubber_mat_black', (0.25, 0.35, 0.8, 1.0), su=64)
+custom_tint('conc_warm', 'conc_warm', 'concrete_01', (1.0, 0.93, 0.84, 1.0), su=256)     # (g27e) cess / pit floor: matte, a touch warm against the faint cool cast
 
 
 def material_rows():
