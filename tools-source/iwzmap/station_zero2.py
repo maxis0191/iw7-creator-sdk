@@ -688,24 +688,33 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     # collision: nosing line z(s) = z_lo + rise + (s - s_a) * rise / run, from s_a - run (z_lo) to s_b - run (z_hi)
     r0, r1 = s_a - run, s_b - run
 
-    def cq(sa, sb, za, zb):
+    def cq(sa, sb, za, zb, both=False):
         pts = [P(sa, c0, za), P(sb, c0, zb), P(sb, c1, zb), P(sa, c1, za)]
         B.collision_quad(pts, n=(0, 0, 1))
-    cq(lo_end, r0, z_lo, z_lo)
-    cq(r0, r1, z_lo, z_hi)
+        if both:
+            B.collision_quad(pts, n=(0, 0, -1))
+    # (g27b, engine stair probe g27: the climbing zombie walked UNDER the ramp at floor height - nav point 20-40 above
+    # it - and stalled under the flight on the east well, the west well and stair B alike; on the climbs that worked it
+    # mantled onto the flight at the first step). The ramp used to start one run before the first riser at floor
+    # height (r0 = s_a - run), a wedge an agent's capsule slid under, and it was one-sided from below. The ramp now
+    # starts on top of the first riser (s_a, z_lo + rise: the same nosing plane), the first riser is a real vertical
+    # face, and the ramp and every riser are two-sided, so nothing gets inside the flight.
+    cq(lo_end, s_a, z_lo, z_lo)
+    cq(s_a, r1, z_lo + rise, z_hi, both=True)
     cq(r1, hi_end, z_hi, z_hi)
-    # zombies (scripted agents) do not climb the smooth ramp: they keep their height, pass under its rising face and
-    # fall out of the world (g14/g15 STAIR trails). Solid steps under the ramp (treads at their true height, risers
-    # facing down the stair; all on or below the nosing line, so players and downward traces still meet the ramp first)
-    # give agents 16-unit step-ups, matching the render treads.
-    cq(r0, s_a, z_lo, z_lo)
+    # zombies (scripted agents) do not climb the smooth ramp: solid steps under it (treads at their true height,
+    # risers facing down the stair; all on or below the nosing line, so players and downward traces still meet the
+    # ramp first) give agents 10.7-unit step-ups, matching the render treads.
     rn = (-d, 0, 0) if axis == 'x' else (0, -d, 0)
     for k in range(n_steps):
         sk0, sk1 = s_a + k * run, s_a + (k + 1) * run
         zt = z_lo + (k + 1) * rise
-        B.collision_quad([P(sk0, c0, zt - rise), P(sk0, c1, zt - rise), P(sk0, c1, zt), P(sk0, c0, zt)], n=rn)
+        rq_ = [P(sk0, c0, zt - rise), P(sk0, c1, zt - rise), P(sk0, c1, zt), P(sk0, c0, zt)]
+        B.collision_quad(rq_, n=rn)
+        B.collision_quad(rq_, n=tuple(-c for c in rn))
         if k < n_steps - 1:
             cq(sk0, sk1, zt, zt)
+    STAIRS[-1]['ramp_from'] = [s_a, z_lo + rise]
 
     def zline(s):
         t = (s - r0) / (r1 - r0)

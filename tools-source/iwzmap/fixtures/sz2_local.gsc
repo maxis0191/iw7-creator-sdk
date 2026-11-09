@@ -48,6 +48,13 @@ iwz_main()
     mode = getdvar( "paris_iwz_mode" );
     if ( mode == "views" )
     {
+        // (g27, coordinator: the stair_a_3 view saw only the door barricades) doors open before the views, so the
+        // dressing is removed and every view looks through; paris_iwz_views_closed 1 keeps them closed
+        if ( !getdvarint( "paris_iwz_views_closed" ) )
+        {
+            iwz_open_doors( player );
+            wait 3;
+        }
         iwz_views( player );
         iwz_fx_views( player );
     }
@@ -319,6 +326,8 @@ iwz_sp_case( player, label, src, goal )
         wait 0.1;
     if ( isalive( z ) )
         z setorigin( getclosestpointonnavmesh( src ), 1 );
+    if ( isalive( z ) )
+        iwz_sp_aitrace( z, label, src, goal );
     z thread iwz_sp_death( label );
     start = gettime();
     last = z.origin;
@@ -350,6 +359,27 @@ iwz_sp_case( player, label, src, goal )
         z dodamage( z.health + 1000, z.origin, z, z, "MOD_SUICIDE" );
     player freezecontrols( 0 );
     wait 1;
+}
+
+// the zombie's own collision view of the flight (aiphysicstrace with its radius 15 / height 60): SP_AIDOWN = the
+// ground it finds dropping from 80 above the start height at 16-unit steps along the line start -> goal; SP_AIFWD =
+// how far it gets moving 16 units towards the goal at 4 above that ground (blocked = a riser it must step up)
+iwz_sp_aitrace( z, label, src, goal )
+{
+    d = vectornormalize( ( goal[0] - src[0], goal[1] - src[1], 0 ) );
+    n = int( distance( ( src[0], src[1], 0 ), ( goal[0], goal[1], 0 ) ) / 16 );
+    for ( k = 0; k <= n; k++ )
+    {
+        p = src + d * ( k * 16 );
+        top = ( p[0], p[1], max( src[2], goal[2] ) + 80 );
+        g = z aiphysicstrace( top, ( p[0], p[1], min( src[2], goal[2] ) - 40 ), 15, 60, 1 );
+        f = z aiphysicstrace( g + ( 0, 0, 4 ), g + ( 0, 0, 4 ) + d * 16, 15, 60, 1 );
+        nv = getclosestpointonnavmesh( p );
+        print( "[IWZ local] SP_AI case=" + label + " k=" + k + " at=" + ( p[0], p[1], 0 ) + " ground=" + g[2] + " fwd=" + distance( g + ( 0, 0, 4 ), f )
+            + " nav=" + nv );
+        if ( k % 8 == 7 )
+            wait 0.05;
+    }
 }
 
 iwz_sp_death( label )
