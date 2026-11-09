@@ -1,14 +1,17 @@
-// Darkness probe 6 (final proof) (local private session only) on a darkness build with test effects (build-dk -TestVfx):
+// Darkness probe 8 (g27 darkness build) (local private session only) on a darkness build with test effects (build-dk -TestVfx):
 // 1 dark vision exposure sweep; 2 flashlight effects isolated (spawnfx in front of the camera, no attachment),
 // stock controls; 3 attachment variants; 4 power light calibration under one light; 5 power-on transition;
 // 6 lit views; 7 4 / 8 players frame time. Frames iwzdk_*.bmp (collected by the runner).
 // fxperf phases: 1 dark solo, 2 dark 4p, 3 dark 8p, 4 transition, 5 lit solo, 6 lit 4p, 7 lit 8p, 9 end.
 init()
 {
-    if ( getdvarint( "dedicated" ) || getdvar( "paris_iwz_mode" ) != "dkprobe6" )
+    if ( getdvarint( "dedicated" ) || getdvar( "paris_iwz_mode" ) != "dkprobe8" )
         return;
     setdvar( "paris_iwz_fxphase", "0" );
     setdvar( "paris_iwz_dark_debug", "1" );
+    level.dk_flt = [];
+    foreach ( n in [ "b10", "b30" ] )
+        level.dk_flt[n] = loadfx( "vfx/iwz/vfx_iwz_fl_" + n );
     level.dkfx = [];
     foreach ( n in [ "vfx/iwz/vfx_iwz_flashlight_world", "vfx/iwz/vfx_iwz_fltest_hot", "vfx/iwz/vfx_iwz_fltest_head",
         "vfx/iwz/vfx_iwz_flashlight_view", "vfx/iw7/core/zombie/vfx_zmb_headlight", "vfx/iw7/_requests/coop/vfx_zb_thu_sparks" ] )
@@ -89,6 +92,7 @@ dk_vision( p, name )
 dk_keep_health()
 {
     self endon( "disconnect" );
+    self endon( "dk_stop_health" );
     self.maxhealth = 100000;
     for ( ;; )
     {
@@ -176,6 +180,63 @@ dk_main()
     dk_place( player, w.origin, w.yaw, w.pitch );
     wait 1.5;
     dk_cap( player, "fl_start" );
+    // the light follows the view: frames 0.1 s and 0.6 s after a 30 deg turn, and pitched down
+    player setplayerangles( ( w.pitch, w.yaw + 30, 0 ) );
+    wait 0.1;
+    executecommand( "capture_frame iwzdk_fl_turn_01" );
+    wait 0.5;
+    dk_cap( player, "fl_turn_06" );
+    player setplayerangles( ( w.pitch + 25, w.yaw, 0 ) );
+    wait 0.5;
+    dk_cap( player, "fl_pitch" );
+    player setplayerangles( ( w.pitch, w.yaw, 0 ) );
+    // brightness calibration: test copies on a carrier linked like the module's, module light off
+    // (life 100000 copies) frames: lit, after killfxontag (carrier still there), after moving the carrier under the
+    // map and deleting it - tells whether killfxontag removes a long-lived particle
+    dk_fl( player, 0 );
+    wait 1;
+    dk_cap( player, "flb_off" );
+    foreach ( n, fx in level.dk_flt )
+    {
+        c = spawn( "script_model", player geteye() );
+        c setmodel( "tag_origin" );
+        c linkto( player, "tag_eye", ( 24, -4, -6 ), ( 0, 0, 0 ) );
+        wait 0.1;
+        playfxontag( fx, c, "tag_origin" );
+        wait 1.5;
+        dk_cap( player, "flb_" + n );
+        killfxontag( fx, c, "tag_origin" );
+        wait 0.5;
+        dk_cap( player, "flb_" + n + "_killed" );
+        c unlink();
+        c.origin = c.origin + ( 0, 0, -10000 );
+        wait 0.2;
+        c delete();
+        wait 0.6;
+        dk_cap( player, "flb_" + n + "_gone" );
+    }
+    dk_fl( player, 1 );
+    wait 0.5;
+    if ( getdvarint( "paris_iwz_dkshort" ) )
+    {
+        for ( i = 1; i < cams.size; i++ )
+        {
+            c = cams[i];
+            dk_place( player, c.origin, c.yaw, c.pitch );
+            wait 1.5;
+            dk_cap( player, "pre_" + c.name );
+        }
+        if ( getdvarint( "paris_iwz_dkfltest" ) )
+            dk_fltest( player, cams[0] );
+        if ( getdvar( "paris_iwz_dkvsweep" ) != "" )
+            dk_vsweep( player, cams );
+        if ( getdvarint( "paris_iwz_dkdown" ) )
+            dk_down( player, cams[0] );
+        if ( getdvarint( "paris_iwz_dklit" ) )
+            dk_litcheck( player );
+        dk_log( "DONE short" );
+        return;
+    }
     // 2. flashlight toggles (each re-attach uses the next copy) and a weapon switch
     for ( r = 0; r < 3; r++ )
     {
@@ -189,11 +250,15 @@ dk_main()
     player switchtoweapon( "iw7_m4_zm" );
     wait 3;
     dk_cap( player, "wswitch_m4" );
-    dk_log( "WEAPON " + player getcurrentweapon() + " fl=" + player.iwz_fl_on + " k=" + player.iwz_fl_k );
+    dk_log( "WEAPON " + player getcurrentweapon() + " fl=" + player.iwz_fl_on + " carrier=" + isdefined( player.iwz_fl_carrier ) );
     player switchtoweapon( level.dk_first_weapon );
     wait 3;
     dk_cap( player, "wswitch_back" );
-    dk_log( "WEAPON " + player getcurrentweapon() + " fl=" + player.iwz_fl_on + " k=" + player.iwz_fl_k );
+    dk_log( "WEAPON " + player getcurrentweapon() + " fl=" + player.iwz_fl_on + " carrier=" + isdefined( player.iwz_fl_carrier ) );
+    if ( getdvarint( "paris_iwz_dkfltest" ) )
+        dk_fltest( player, cams[0] );
+    if ( getdvar( "paris_iwz_dkvsweep" ) != "" )
+        dk_vsweep( player, cams );
 
     // dark views with the module flashlight (other zones)
     for ( i = 1; i < cams.size; i++ )
@@ -322,6 +387,27 @@ dk_main()
         wait 1.5;
         dk_cap( player, "postfx_" + c.name );
     }
+    foreach ( c in dk_cams_of( "paris_iwz_dklitcams" ) )
+    {
+        dk_place( player, c.origin, c.yaw, c.pitch );
+        wait 1.5;
+        dk_cap( player, "lit_" + c.name );
+    }
+    // lit vision variants (paris_iwz_dklitsweep, fast-adapting): the same lit views under each, then the map vision
+    if ( getdvar( "paris_iwz_dklitsweep" ) != "" )
+    {
+        foreach ( vn in strtok( getdvar( "paris_iwz_dklitsweep" ), "," ) )
+        {
+            dk_vision( player, vn );
+            foreach ( c in dk_cams_of( "paris_iwz_dklitcams" ) )
+            {
+                dk_place( player, c.origin, c.yaw, c.pitch );
+                wait 1.5;
+                dk_cap( player, "ls_" + vn + "_" + c.name );
+            }
+        }
+        dk_vision( player, "" );
+    }
     dk_place( player, t.origin, t.yaw, t.pitch );
     four = [];
     for ( i = 0; i < 3 && i < bots.size; i++ )
@@ -337,5 +423,139 @@ dk_main()
     wait 6;
     dk_cap( player, "post_bots" + ( bots.size + 1 ) );
     dk_phase( 9 );
+    foreach ( b in bots )
+        b setorigin( b.origin + ( 0, 0, -3000 ) );
+    if ( getdvarint( "paris_iwz_dkdown" ) )
+        dk_down( player, t );
     dk_log( "DONE" );
+}
+
+// downed / self-revive: health refill stopped, one lethal hit, frames and module state every second
+dk_down( player, w )
+{
+    dk_quiet();
+    dk_place( player, w.origin, w.yaw, w.pitch );
+    wait 1;
+    player notify( "dk_stop_health" );
+    player.maxhealth = 100;
+    player.health = 100;
+    wait 0.1;
+    player.ignoreme = 1;
+    player dodamage( 1000, player.origin );
+    for ( k = 0; k < 24; k++ )
+    {
+        wait 1;
+        st = "?";
+        if ( isdefined( player.inlaststand ) )
+            st = "" + player.inlaststand;
+        dk_log( "DOWN k=" + k + " alive=" + isalive( player ) + " laststand=" + st + " fl=" + player.iwz_fl_on + " carrier=" +
+            isdefined( player.iwz_fl_carrier ) + " weapon=" + player getcurrentweapon() );
+        if ( k % 3 == 0 )
+            executecommand( "capture_frame iwzdk_down_" + k );
+    }
+    player thread dk_keep_health();
+}
+
+// flashlight carrier test: link offsets (eye + forward 6 / 24 / 36) at 1.5 s and 4 s after attach, an M4 switch,
+// follow mode (turn lag) and the weapon-tag mode, all against an off frame from the same spot
+dk_fltest( player, w )
+{
+    dk_quiet();
+    dk_place( player, w.origin, w.yaw, w.pitch );
+    dk_fl( player, 0 );
+    wait 1;
+    dk_cap( player, "ft_off" );
+    offs = [ ( 6, -4, -6 ), ( 24, -4, -6 ), ( 36, -6, -8 ) ];
+    for ( i = 0; i < offs.size; i++ )
+    {
+        level.iwz_fl_link_offset = offs[i];
+        dk_fl( player, 1 );
+        wait 1.1;
+        dk_cap( player, "ft_o" + i + "_15" );
+        wait 2.5;
+        dk_cap( player, "ft_o" + i + "_40" );
+        dk_fl( player, 0 );
+        wait 0.6;
+    }
+    level.iwz_fl_link_offset = offs[1];
+    dk_fl( player, 1 );
+    player giveweapon( "iw7_m4_zm" );
+    player switchtoweapon( "iw7_m4_zm" );
+    wait 3;
+    dk_cap( player, "ft_m4_o1" );
+    dk_log( "FLTEST m4 weapon=" + player getcurrentweapon() + " on=" + player.iwz_fl_on );
+    dk_fl( player, 0 );
+    wait 0.8;
+    dk_cap( player, "ft_m4_off" );
+    level.iwz_fl_mode = "follow";
+    dk_fl( player, 1 );
+    wait 1.1;
+    dk_cap( player, "ft_follow_15" );
+    player setplayerangles( ( w.pitch, w.yaw + 30, 0 ) );
+    wait 0.1;
+    executecommand( "capture_frame iwzdk_ft_follow_turn01" );
+    wait 0.6;
+    dk_cap( player, "ft_follow_turn07" );
+    player setplayerangles( ( w.pitch, w.yaw, 0 ) );
+    dk_fl( player, 0 );
+    wait 0.6;
+    level.iwz_fl_mode = "tag";
+    dk_fl( player, 1 );
+    wait 1.1;
+    dk_cap( player, "ft_tag_15" );
+    wait 2.5;
+    dk_cap( player, "ft_tag_40" );
+    dk_fl( player, 0 );
+    wait 0.6;
+    level.iwz_fl_mode = "link";
+    dk_fl( player, 1 );
+    dk_log( "FLTEST done" );
+}
+
+// exposure ladder: each vision of paris_iwz_dkvsweep (comma list; the variants adapt fast) applied for 4 s, frames
+// at the hall wall (cams[0]) and the platform (cams[1]) with the flashlight off, then the module's dark vision again
+dk_vsweep( player, cams )
+{
+    names = strtok( getdvar( "paris_iwz_dkvsweep" ), "," );
+    dk_fl( player, 0 );
+    foreach ( n in names )
+    {
+        dk_vision( player, n );
+        for ( i = 0; i < 2 && i < cams.size; i++ )
+        {
+            dk_place( player, cams[i].origin, cams[i].yaw, cams[i].pitch );
+            wait 3.5;
+            dk_cap( player, "vs_" + n + "_" + cams[i].name );
+        }
+    }
+    dk_vision( player, level.iwz_dark_vision );
+    dk_fl( player, 1 );
+    dk_log( "VSWEEP done" );
+}
+
+// power on (stock generator routine) and the lit comparison views (paris_iwz_dklitcams), prefix lit2_
+dk_litcheck( player )
+{
+    dk_quiet();
+    generator = undefined;
+    foreach ( s in level.all_interaction_structs )
+    {
+        if ( isdefined( s.script_noteworthy ) && s.script_noteworthy == "generator" )
+            generator = s;
+    }
+    t0 = gettime();
+    if ( isdefined( generator ) )
+        generator thread scripts\cp\zombies\zombie_power::generic_generator( generator, player );
+    else
+        scripts\engine\utility::flag_set( "power_on" );
+    while ( !scripts\engine\utility::flag( "iwz_power_lights_done" ) && gettime() - t0 < 30000 )
+        wait 0.5;
+    wait 6;
+    dk_log( "LITCHECK scale=" + getdvar( "paris_iwz_dark_scale" ) );
+    foreach ( c in dk_cams_of( "paris_iwz_dklitcams" ) )
+    {
+        dk_place( player, c.origin, c.yaw, c.pitch );
+        wait 1.5;
+        dk_cap( player, "lit2_" + c.name );
+    }
 }

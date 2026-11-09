@@ -58,7 +58,8 @@ Audio: `level.iwz_light_banks_external = 1`, `iwz_light_bank_on, <zone>`, `iwz_p
 ## Engine proof (private local runner)
 
 `dk_proof_fixture.gsc` (staged as the runner fixture; launch args in `dk_proof_fixture.args.txt`, mode
-`paris_iwz_mode dkprobe6`): flashlight on / off / weapon switch, dark views, the FX agent's effect views, 4 and 8
+`paris_iwz_mode dkprobe8`; optional phases paris_iwz_dkfltest (carrier offsets / modes), paris_iwz_dkvsweep and
+`paris_iwz_dklitsweep` (vision ladders), paris_iwz_dkdown (last stand), paris_iwz_dkshort (+ paris_iwz_dklit)): flashlight on / off / weapon switch, dark views, the FX agent's effect views, 4 and 8
 players (bots), zombies walking into the light, the power-on transition every 0.25 s, the same views lit, fxperf phases
 (1 dark, 2 dark 4p, 3 dark 8p, 4 transition, 5 lit, 6 lit 4p, 7 lit 8p). Frames are `iwzdk_*.bmp` (the runner only
 collects `iwz*`). Then `dk_measure.py <run> --perf <fxperf> --phases ... --sheet`.
