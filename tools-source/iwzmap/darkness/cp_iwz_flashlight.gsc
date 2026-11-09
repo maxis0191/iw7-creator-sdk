@@ -72,9 +72,20 @@ iwz_fl_player()
 iwz_fl_disconnect_watch()
 {
     carrier_holder = self;
-    self waittill( "disconnect" );
-    if ( isdefined( carrier_holder.iwz_fl_carrier ) )
-        carrier_holder.iwz_fl_carrier delete();
+    c = undefined;
+    for ( ;; )
+    {
+        // keep a reference that survives the player entity: the carrier changes at every attach
+        ev = self scripts\engine\utility::waittill_any_return( "disconnect", "iwz_fl_carrier_set" );
+        if ( ev == "disconnect" )
+            break;
+        c = carrier_holder.iwz_fl_carrier;
+    }
+    if ( isdefined( c ) )
+    {
+        killfxontag( level.iwz_fl_world, c, "tag_origin" );
+        c thread iwz_fl_dispose();
+    }
 }
 
 iwz_fl_life()
@@ -128,6 +139,7 @@ iwz_fl_attach( click )
         c setmodel( "tag_origin" );
         c.angles = self getplayerangles();
         self.iwz_fl_carrier = c;
+        self notify( "iwz_fl_carrier_set" );
         if ( level.iwz_fl_mode == "link" )
             c linkto( self, level.iwz_fl_link_tag, level.iwz_fl_link_offset, ( 0, 0, 0 ) );
         else
@@ -197,12 +209,25 @@ iwz_fl_detach()
     }
     else if ( isdefined( self.iwz_fl_carrier ) )
     {
-        // stop the emission first (a deleted bolt entity can leave its last particle for up to its 1 s life)
-        killfxontag( self.iwz_fl_fx, self.iwz_fl_carrier, "tag_origin" );
-        self.iwz_fl_carrier delete();
+        // the light particle lives 100000 s: kill it, then take the carrier under the map before deleting it, so a
+        // particle the kill missed (entity deleted in the same frame, run dk13) is left where nobody sees it
+        c = self.iwz_fl_carrier;
+        self.iwz_fl_carrier = undefined;
+        killfxontag( self.iwz_fl_fx, c, "tag_origin" );
+        c thread iwz_fl_dispose();
     }
     self.iwz_fl_on = 0;
     iwz_fl_log( "OFF " + self.name );
+}
+
+iwz_fl_dispose()
+{
+    self endon( "death" );
+    wait 0.25;
+    self unlink();
+    self.origin = self.origin + ( 0, 0, -20000 );
+    wait 0.25;
+    self delete();
 }
 
 // after the station lights are on: keep the flashlights (default) or switch them off once
