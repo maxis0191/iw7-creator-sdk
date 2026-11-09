@@ -1,0 +1,58 @@
+# Station Zero ambient FX, dark-state version for the darkness builds (d12+, g27 world). From the level builder's
+# station_zero_fx_g25.txt; lit particle effects (motes, drips, steam: eq_effect_* blend materials) are lit by the baked
+# light grid and disappear in the dark bake, so each gets a faint self-lit variant (fx_variant.py, zone iwzv) for the
+# dark stage and keeps the lit original for the lit stage. Steam next to the baked emergency lamps stays lit (grid).
+# Station Zero ambient FX for the g25 layout (level builder; from the FX agent's station_zero_fx.txt, g24 coordinates
+# moved). <name> <alias|vfx path> <x> <y> <z> [key=value ...]. Stages: always | dark (until power_on) | lit | poweron.
+# Emergency glows sit beside the battery emergency lamps of the generator (clk_emergency_light, group emergency).
+# (g27, review C generator_room_1 / kit_8 / sign_9 / wc_platform_a_-2032_2064_y0) the emergency_glow sprite
+# (shredder part glow) rendered as a violet halo on the wall with no fixture: every placement is off; the lamps
+# have a housing with a lit lens and their own light instead (station_zero2.py). sz2_artlint fx-fixture fails a
+# glow / flare sprite without a lit fixture within 24 units.
+
+# ticket hall: motes always; the lamp light cone only once the lamps are on
+hall_motes        motes             -1000 3800  200   stage=lit
+hall_motes_dark   motes_dark        -1000 3800  200   stage=dark
+hall_cone         light_cone        -600  3400  300   stage=lit
+# (g27) hall_emerg_w      emergency_glow    -1176 3500  250   stage=dark
+# (g27) hall_emerg_s      emergency_glow    -380  3224  250   stage=dark
+
+# platform A: leaking ceiling over the deck, low fog in the trackbed channel (centre y 1488), emergency glows on the
+# back wall and by the maintenance door (route to the power switch)
+pa_leak           drips_line        300   1900  0     region=96 region_dz=-290 stage=lit
+pa_leak_dark      drips_line_dark   300   1900  0     region=96 region_dz=-290 stage=dark
+# (g27) pa_emerg_w        emergency_glow    -1500 2376  -150  stage=dark
+# (g27) pa_emerg_door     emergency_glow    2376  1960  -150  stage=dark
+
+# service tunnel: ground fog, grate steam, falling ceiling dust, emergency glows by the lamps
+tunnel_fog        fog_tunnel        -3420 1900  -384
+tunnel_steam      steam_grate       -3420 2250  -384  stage=lit
+tunnel_steam_dark steam_grate_dark  -3420 2250  -384  stage=dark
+tunnel_lamp_steam steam_pipe        -3570 2400  -210  angles=0,0,0
+tunnel_dust       dust_fall         -3000 1300  -90
+# (g27) tunnel_emerg      emergency_glow    -2700 1240  -150  stage=dark
+# (g27) tunnel_emerg_b    emergency_glow    -3576 2400  -150  stage=dark
+
+# maintenance corridor: steam jet from the wall pipe, emergency glow
+corr_steam        steam_pipe        2664  1700  -150  angles=0,90,0 stage=lit
+corr_steam_dark   steam_pipe_dark   2664  1700  -150  angles=0,90,0 stage=dark
+corr_lamp_steam   steam_pipe        2900  1890  -200  angles=0,270,0
+# (g27) corr_emerg        emergency_glow    2900  1896  -140  stage=dark
+
+# generator room (generator unit on the plinth at 3300 2800): haze, burning barrel, embers, sparking panel (flashes
+# while dark), at power on: spark flashes and a smoke burst at the generator, then the running exhaust
+gen_haze          smoke_hang        3100  2950  -250
+gen_barrel_fire   fire_trash        3700  3040  -278
+gen_embers        embers            3690  3060  -260
+gen_panel_sparks  sparks            2615  2650  -265
+gen_panel_flash   spark_flash       2630  2650  -250  stage=dark
+# (g27) gen_emerg         emergency_glow    2624  2800  -120  stage=dark
+# (g27) on the G-2 genset anchors (train agent v4: tripped breaker (131, 23, 58), exhaust flange top (-48, 0, 101), origin (3469, 2793, -320))
+gen_start_flash   spark_flash       3600  2816  -262  stage=poweron mode=interval:0.4-1.2 for=6 view=3560,2600,-320,80,8
+gen_start_smoke   smoke_burst       3421  2793  -300  stage=poweron for=12 view=3420,2560,-320,90,0
+gen_exhaust       generator_idle    3421  2793  -219  stage=lit view=3420,2560,-320,90,20
+
+# platform B and control room: emergency glows while dark; control room haze
+# (g27) pb_emerg          emergency_glow    -2900 3376  -150  stage=dark
+# (g27) ctrl_emerg        emergency_glow    3576  3600  -100  stage=dark
+ctrl_mist         mist              3100  3700  -300

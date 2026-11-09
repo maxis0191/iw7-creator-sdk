@@ -1,6 +1,6 @@
 {
  "schema": "iwzmap.fx-catalog/1",
- "note": "Aliases for fx.txt. fx = vfx path without .vfx (must be in the level ncs_efx list, or imported by fx_import.py). mode/delay/angles/region/region_dz/settle are defaults a fx.txt line can override. status/evidence are filled from fx_proof runs. Default angles follow the stock cp_zmb createfx placements (decomp 4277: hang smoke 270,0,0; light cone 300,180,180; light wedge 339,181,0). Entries with \"import\" are foreign-zone effects: build with fx_import.py (build-sz2.ps1 -FxImport <zone>:<fx>) so they are in the FF and in the level effect list.",
+ "note": "Aliases for fx.txt. fx = vfx path without .vfx (must be in the level ncs_efx list, or imported by fx_import.py). mode/delay/angles/region/region_dz/settle are defaults a fx.txt line can override. status/evidence are filled from fx_proof runs. Default angles follow the stock cp_zmb createfx placements (decomp 4277: hang smoke 270,0,0; light cone 300,180,180; light wedge 339,181,0). Entries with \"import\" are foreign-zone effects: build with fx_import.py (build-sz2.ps1 -FxImport <zone>:<fx>) so they are in the FF and in the level effect list. Entries with \"variant\" are made by fx_variant.py (unlit clone of a lit stock effect, colorTint x tint) into a dump root passed to fx_import as zone iwzv.",
  "fx": {
   "dust_motes": {
    "fx": "vfx/iw7/core/zombie/environment/vfx_cop_zmb_particle_dust",
@@ -380,6 +380,55 @@
    "region": 48,
    "status": "PROVEN_LOCAL in the control room; 2 of 3 placements under threshold (next to a lit lamp / far)",
    "evidence": "iwz-stage2/fx/analysis/proof-fx3-a (FF 54C8AA94)"
+  },
+  "motes_dark": {
+   "fx": "vfx/iwz/amb/vfx_amb_motes_dark",
+   "import": "iwzv",
+   "variant": {
+    "of": "vfx/iw7/levels/cp_disco/amb/vfx_amb_motes",
+    "tint": 0.12
+   },
+   "kind": "dust motes, faint self-lit (dark state)",
+   "mode": "loop",
+   "region": 96,
+   "status": "untested"
+  },
+  "steam_pipe_dark": {
+   "fx": "vfx/iwz/amb/vfx_broken_pipe_steam_dark",
+   "import": "iwzv",
+   "variant": {
+    "of": "vfx/iw7/levels/cp_disco/amb/vfx_broken_pipe_steam",
+    "tint": 0.12
+   },
+   "kind": "pipe steam, faint self-lit (dark state)",
+   "mode": "loop",
+   "region": 96,
+   "status": "untested"
+  },
+  "steam_grate_dark": {
+   "fx": "vfx/iwz/amb/vfx_grate_steam_01_dark",
+   "import": "iwzv",
+   "variant": {
+    "of": "vfx/iw7/levels/cp_disco/amb/vfx_grate_steam_01",
+    "tint": 0.12
+   },
+   "kind": "grate steam, faint self-lit (dark state)",
+   "mode": "loop",
+   "region": 96,
+   "region_dz": 48,
+   "status": "untested"
+  },
+  "drips_line_dark": {
+   "fx": "vfx/iwz/amb/vfx_water_drips_line_dark",
+   "import": "iwzv",
+   "variant": {
+    "of": "vfx/iw7/levels/cp_disco/amb/vfx_water_drips_line",
+    "tint": 0.35
+   },
+   "kind": "leak drips with self-lit glints (dark state)",
+   "mode": "loop",
+   "region": 96,
+   "status": "untested"
   }
  }
 }
