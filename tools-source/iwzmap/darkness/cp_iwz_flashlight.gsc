@@ -26,6 +26,14 @@ init()
         level.iwz_fl_worlds[level.iwz_fl_worlds.size] = loadfx( "vfx/iwz/vfx_iwz_flashlight_world" + s );
     level.iwz_fl_world = level.iwz_fl_worlds[0];
     level.iwz_fl_world_lit = loadfx( "vfx/iwz/vfx_iwz_flashlight_lit" );
+    // halo: a wide, dim, unshadowed cone on the same carrier (follow / link). The particle spot light ignores its inner
+    // cone angle (run dk16: 32/12, 40/2 and 56/0 all end in a hard rim), so the soft edge is built from two cones.
+    level.iwz_fl_halo_world = loadfx( "vfx/iwz/vfx_iwz_flashlight_halo" );
+    level.iwz_fl_halo_world_lit = loadfx( "vfx/iwz/vfx_iwz_flashlight_halo_lit" );
+    if ( !isdefined( level.iwz_fl_halo ) )
+        level.iwz_fl_halo = 1;
+    if ( getdvar( "paris_iwz_fl_halo" ) != "" )
+        level.iwz_fl_halo = getdvarint( "paris_iwz_fl_halo" );
     if ( !isdefined( level.iwz_fl_mode ) )
         level.iwz_fl_mode = "follow";
     if ( getdvar( "paris_iwz_fl_mode" ) != "" )
@@ -89,6 +97,8 @@ iwz_fl_disconnect_watch()
     if ( isdefined( c ) )
     {
         killfxontag( level.iwz_fl_world, c, "tag_origin" );
+        foreach ( h in [ level.iwz_fl_halo_world, level.iwz_fl_halo_world_lit ] )
+            killfxontag( h, c, "tag_origin" );
         c thread iwz_fl_dispose();
     }
 }
@@ -160,6 +170,14 @@ iwz_fl_attach( click )
             return;
         self.iwz_fl_fx = level.iwz_fl_world;
         playfxontag( self.iwz_fl_fx, c, "tag_origin" );
+        self.iwz_fl_hfx = undefined;
+        if ( level.iwz_fl_halo )
+        {
+            self.iwz_fl_hfx = level.iwz_fl_halo_world;
+            if ( level.iwz_fl_world == level.iwz_fl_world_lit )
+                self.iwz_fl_hfx = level.iwz_fl_halo_world_lit;
+            playfxontag( self.iwz_fl_hfx, c, "tag_origin" );
+        }
     }
     self.iwz_fl_on = 1;
     if ( click && isdefined( level.iwz_fl_click ) && soundexists( level.iwz_fl_click ) )
@@ -225,6 +243,8 @@ iwz_fl_detach()
         c = self.iwz_fl_carrier;
         self.iwz_fl_carrier = undefined;
         killfxontag( self.iwz_fl_fx, c, "tag_origin" );
+        if ( isdefined( self.iwz_fl_hfx ) )
+            killfxontag( self.iwz_fl_hfx, c, "tag_origin" );
         c thread iwz_fl_dispose();
     }
     self.iwz_fl_on = 0;
