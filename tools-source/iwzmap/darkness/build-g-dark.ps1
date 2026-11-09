@@ -1,8 +1,8 @@
 param([Parameter(Mandatory)][string]$Tag, [switch]$ReuseBake, [string]$BakeFrom='', [switch]$ReuseCompile, [int]$Rays=256,
-# Reference copy (darkness agent): the darkness build as used for d15 (-TestVfx -Scale 840 -FlBright 3.5 -FlFov 40 -FlInner 2
-# -TrainSet g27d -FxTxt <sdk>\fx\station_zero_fx_dark.txt). Paths are this machine's; see README "Integration".
+# Reference copy (darkness agent): the darkness build as used for d16 (-TestVfx -Scale 840 -FlBright 3.5 -FlFov 40 -FlInner 2
+# -TrainSet g27e -FxTxt <sdk>\fx\station_zero_fx_dark.txt -ZoneFill <4 corridor zones>:3.5:0.35:-40). Paths are this machine's.
       [string]$Ambient='0.025', [string]$Scale='1400', [string]$RadiusScale='1.8', [string]$CueScale='0.35', [string]$FlBright='1.0',
-      [string]$FlFov='32', [string]$FlInner='12', [string]$FlHaloFov='64', [string]$FlHaloScale='0.25', [string]$Alt='', [ValidateSet('g27','g27d')][string]$TrainSet='g27', [string]$FxTxt='', [switch]$TestVfx)
+      [string]$FlFov='32', [string]$FlInner='12', [string]$FlHaloFov='64', [string]$FlHaloScale='0.25', [string]$Alt='', [string]$ZoneFill='', [ValidateSet('g27','g27d','g27e')][string]$TrainSet='g27', [string]$FxTxt='', [switch]$TestVfx)
 # Darkness build on the level builder's current source (g27 flags of level\tools\chain-g27.sh: -SkipPick -Bake
 # --texel 6 --ambient 0.012 -Train -NeutralProbes -Fx -Audio -NavObstacles -Lights -Smodels -Kit), with:
 #   generator IWZ_DARK=1 (SDK codex/iwzmap-darkness = sz2 + darkness), dark split of the layout lights (dark_build.py:
@@ -54,7 +54,7 @@ if($LASTEXITCODE -ne 0){ "WARNING artlint failed: $DK\artlint_$Tag.json" }
 python -I "$S\sz2_navconn.py" $src --json "$DK\navconn_$Tag.json" | Select-Object -Last 2
 if($LASTEXITCODE -ne 0){ throw 'nav connectivity failed' }
 & $PY -I "$B\layout_lights.py" $src "$DK\lights_full_$Tag.json" --texel 6 --ambient 0.012
-& $PY -I "$S\darkness\dark_build.py" $src "$DK\lights_full_$Tag.json" "$DK\lights_$Tag.json" --ambient $Ambient --scale $Scale --radius-scale $RadiusScale --cue-scale $CueScale @(if($Alt){'--alt',$Alt})
+& $PY -I "$S\darkness\dark_build.py" $src "$DK\lights_full_$Tag.json" "$DK\lights_$Tag.json" --ambient $Ambient --scale $Scale --radius-scale $RadiusScale --cue-scale $CueScale @(if($Alt){'--alt',$Alt}) @(if($ZoneFill){'--zone-fill',$ZoneFill})
 if($LASTEXITCODE){ throw 'dark_build failed' }
 $build="$src`_lm"
 if($ReuseBake){

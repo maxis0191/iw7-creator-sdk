@@ -816,8 +816,16 @@ dk_zone_presets( player, sub )
             dk_vision( player, pv );
         foreach ( l in level.iwz_dark_lights )
         {
+            // lamps take the zone key; fill lights (kind "fill") take "fill_<zone>", then "fill" (absent = 100)
             s = 1.0;
-            if ( isdefined( zs[l.iwz_zone] ) )
+            if ( isdefined( l.iwz_kind ) && l.iwz_kind == "fill" )
+            {
+                if ( isdefined( zs["fill_" + l.iwz_zone] ) )
+                    s = zs["fill_" + l.iwz_zone];
+                else if ( isdefined( zs["fill"] ) )
+                    s = zs["fill"];
+            }
+            else if ( isdefined( zs[l.iwz_zone] ) )
                 s = zs[l.iwz_zone];
             l setlightintensity( l.iwz_on * s );
         }
