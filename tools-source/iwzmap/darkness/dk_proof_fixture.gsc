@@ -9,9 +9,15 @@ init()
         return;
     setdvar( "paris_iwz_fxphase", "0" );
     setdvar( "paris_iwz_dark_debug", "1" );
+    // calibration power-light sets (dark_build --alt, iwz_power_<set>): off until the lit sweep
+    foreach ( sn in [ "b", "c" ] )
+    {
+        foreach ( l in getentarray( "iwz_power_" + sn, "targetname" ) )
+            l setlightintensity( 0 );
+    }
     level.dk_flt = [];
-    foreach ( n in [ "b10", "b30" ] )
-        level.dk_flt[n] = loadfx( "vfx/iwz/vfx_iwz_fl_" + n );
+    foreach ( n in [ "a", "b", "c", "d" ] )
+        level.dk_flt[n] = loadfx( "vfx/iwz/vfx_iwz_flv_" + n );
     level.dkfx = [];
     foreach ( n in [ "vfx/iwz/vfx_iwz_flashlight_world", "vfx/iwz/vfx_iwz_fltest_hot", "vfx/iwz/vfx_iwz_fltest_head",
         "vfx/iwz/vfx_iwz_flashlight_view", "vfx/iw7/core/zombie/vfx_zmb_headlight", "vfx/iw7/_requests/coop/vfx_zb_thu_sparks" ] )
@@ -189,32 +195,44 @@ dk_main()
     player setplayerangles( ( w.pitch + 25, w.yaw, 0 ) );
     wait 0.5;
     dk_cap( player, "fl_pitch" );
+    // pitch proof (follow carrier): looking 30 degrees up the pool must climb the wall, then level again
+    player setplayerangles( ( w.pitch - 30, w.yaw, 0 ) );
+    wait 0.5;
+    dk_cap( player, "fl_pitch_up" );
     player setplayerangles( ( w.pitch, w.yaw, 0 ) );
-    // brightness calibration: test copies on a carrier linked like the module's, module light off
-    // (life 100000 copies) frames: lit, after killfxontag (carrier still there), after moving the carrier under the
-    // map and deleting it - tells whether killfxontag removes a long-lived particle
+    wait 0.5;
+    dk_cap( player, "fl_level" );
+    // (d13) penumbra / brightness variants through the module itself (level.iwz_fl_world swapped, normal attach /
+    // detach): wall at the hall camera and the floor pitched down, against off frames from the same spots
     dk_fl( player, 0 );
     wait 1;
-    dk_cap( player, "flb_off" );
+    dk_cap( player, "flv_off" );
+    player setplayerangles( ( w.pitch + 25, w.yaw, 0 ) );
+    wait 0.6;
+    dk_cap( player, "flv_off_floor" );
+    player setplayerangles( ( w.pitch, w.yaw, 0 ) );
+    vnames = [ "def" ];
+    vfx = [ level.iwz_fl_worlds[0] ];
     foreach ( n, fx in level.dk_flt )
     {
-        c = spawn( "script_model", player geteye() );
-        c setmodel( "tag_origin" );
-        c linkto( player, "tag_eye", ( 24, -4, -6 ), ( 0, 0, 0 ) );
-        wait 0.1;
-        playfxontag( fx, c, "tag_origin" );
-        wait 1.5;
-        dk_cap( player, "flb_" + n );
-        killfxontag( fx, c, "tag_origin" );
-        wait 0.5;
-        dk_cap( player, "flb_" + n + "_killed" );
-        c unlink();
-        c.origin = c.origin + ( 0, 0, -10000 );
-        wait 0.2;
-        c delete();
-        wait 0.6;
-        dk_cap( player, "flb_" + n + "_gone" );
+        vnames[vnames.size] = n;
+        vfx[vfx.size] = fx;
     }
+    for ( k = 0; k < vnames.size; k++ )
+    {
+        level.iwz_fl_world = vfx[k];
+        dk_fl( player, 1 );
+        wait 1.6;
+        dk_cap( player, "flv_" + vnames[k] );
+        player setplayerangles( ( w.pitch + 25, w.yaw, 0 ) );
+        wait 0.6;
+        dk_cap( player, "flv_" + vnames[k] + "_floor" );
+        player setplayerangles( ( w.pitch, w.yaw, 0 ) );
+        dk_fl( player, 0 );
+        wait 0.8;
+    }
+    level.iwz_fl_world = level.iwz_fl_worlds[0];
+    dk_cap( player, "flv_off2" );
     dk_fl( player, 1 );
     wait 0.5;
     if ( getdvarint( "paris_iwz_dkshort" ) )
@@ -273,6 +291,8 @@ dk_main()
         dk_cap( player, "pre_" + c.name + "_side" );
     }
 
+    if ( getdvarint( "paris_iwz_dkc2" ) )
+        dk_client2( player, cams );
     fxcams = dk_cams_of( "paris_iwz_dkfxcams" );
     foreach ( c in fxcams )
     {
@@ -380,6 +400,17 @@ dk_main()
         dk_place( player, c.origin, c.yaw, c.pitch );
         wait 1.5;
         dk_cap( player, "post_" + c.name );
+    }
+    // the lit-state flashlight (module "dim": ~30 % copy after the lights are done) on / off at two lit views
+    foreach ( ci in [ 0, 1 ] )
+    {
+        dk_place( player, cams[ci].origin, cams[ci].yaw, cams[ci].pitch );
+        dk_fl( player, 0 );
+        wait 1;
+        dk_cap( player, "litfl_off_" + cams[ci].name );
+        dk_fl( player, 1 );
+        wait 1.6;
+        dk_cap( player, "litfl_on_" + cams[ci].name );
     }
     foreach ( c in fxcams )
     {
@@ -533,6 +564,70 @@ dk_vsweep( player, cams )
     dk_log( "VSWEEP done" );
 }
 
+// other players' lights: the runner's second real client (-SecondClient) joins; it stands beside and ahead of the host
+// with its own module flashlight; host frames with its light on / off (host light off), both on, and a side view across
+// its beam. Bots never get spawned_player, so they cannot show this (runs dk10 .. dk15).
+dk_client2( host, cams )
+{
+    c2 = undefined;
+    for ( k = 0; k < 180 && !isdefined( c2 ); k++ )
+    {
+        foreach ( p in level.players )
+        {
+            if ( isdefined( p ) && p != host && !isbot( p ) && isalive( p ) )
+                c2 = p;
+        }
+        if ( !isdefined( c2 ) )
+            wait 0.5;
+    }
+    if ( !isdefined( c2 ) )
+    {
+        print( "[IWZ local] CLIENT2 none after 90 s players=" + level.players.size );
+        dk_log( "CLIENT2 none players=" + level.players.size );
+        return;
+    }
+    print( "[IWZ local] CLIENT2 joined name=" + c2.name );
+    wait 2;
+    c2.ignoreme = 1;
+    c2 thread dk_keep_health();
+    c2 freezecontrols( 1 );
+    dk_quiet();
+    foreach ( ci in [ 0, 1 ] )
+    {
+        t = cams[ci];
+        f = anglestoforward( ( 0, t.yaw, 0 ) );
+        r = anglestoright( ( 0, t.yaw, 0 ) );
+        dk_place( host, t.origin, t.yaw, t.pitch );
+        // beside and ahead of the host, aimed 25 degrees to the host's left: its beam and pool sit left of centre
+        c2 setorigin( t.origin + f * 90 + r * 70 );
+        c2 setplayerangles( ( t.pitch + 5, t.yaw + 25, 0 ) );
+        dk_fl( host, 0 );
+        c2.iwz_fl_enabled = 1;
+        c2 notify( "iwz_fl_toggle" );
+        wait 2;
+        dk_cap( host, "c2_on_" + t.name );
+        dk_log( "CLIENT2 " + t.name + " fl=" + c2.iwz_fl_on + " carrier=" + isdefined( c2.iwz_fl_carrier ) + " origin=" + c2.origin );
+        c2.iwz_fl_enabled = 0;
+        c2 notify( "iwz_fl_toggle" );
+        wait 1.5;
+        dk_cap( host, "c2_off_" + t.name );
+        c2.iwz_fl_enabled = 1;
+        c2 notify( "iwz_fl_toggle" );
+        dk_fl( host, 1 );
+        wait 1.6;
+        dk_cap( host, "c2_both_" + t.name );
+        // side view: the host 250 to the right, looking back across the client's beam
+        dk_place( host, t.origin + r * 250 + f * 40, t.yaw + 60, t.pitch );
+        dk_fl( host, 0 );
+        wait 1.6;
+        dk_cap( host, "c2_side_" + t.name );
+        dk_fl( host, 1 );
+    }
+    // out of the host's way for the rest of the probe (behind the start camera), light still on
+    c2 setorigin( cams[0].origin - anglestoforward( ( 0, cams[0].yaw, 0 ) ) * 120 );
+    level.dk_c2 = c2;
+}
+
 // power on (stock generator routine) and the lit comparison views (paris_iwz_dklitcams), prefix lit2_
 dk_litcheck( player )
 {
@@ -552,10 +647,107 @@ dk_litcheck( player )
         wait 0.5;
     wait 6;
     dk_log( "LITCHECK scale=" + getdvar( "paris_iwz_dark_scale" ) );
-    foreach ( c in dk_cams_of( "paris_iwz_dklitcams" ) )
+    lx = getdvarint( "paris_iwz_dklitx" );
+    if ( lx )
+    {
+        // the g27 lit views are weaponless and without a flashlight
+        dk_fl( player, 0 );
+        player takeallweapons();
+    }
+    cams = dk_cams_of( "paris_iwz_dklitcams" );
+    // long view lists are split over paris_iwz_dklitcams2 / 3 (dvar length)
+    foreach ( dn in [ "paris_iwz_dklitcams2", "paris_iwz_dklitcams3" ] )
+    {
+        foreach ( c in dk_cams_of( dn ) )
+            cams[cams.size] = c;
+    }
+    sub = [];
+    subn = strtok( getdvar( "paris_iwz_dklitsub" ), "," );
+    foreach ( c in cams )
+    {
+        foreach ( n in subn )
+        {
+            if ( c.name == n )
+                sub[sub.size] = c;
+        }
+    }
+    if ( lx && sub.size )
+    {
+        dk_place( player, sub[0].origin, sub[0].yaw, sub[0].pitch );
+        wait 1;
+        dk_cap( player, "drift_a_" + sub[0].name );
+    }
+    foreach ( c in cams )
     {
         dk_place( player, c.origin, c.yaw, c.pitch );
         wait 1.5;
         dk_cap( player, "lit2_" + c.name );
+    }
+    if ( !lx )
+        return;
+    dk_place( player, sub[0].origin, sub[0].yaw, sub[0].pitch );
+    wait 1.5;
+    dk_cap( player, "drift_b_" + sub[0].name );
+    // the map's own vision applied explicitly (level + player): equal to the released state if the hand-back is exact
+    visionsetnaked( level.script, 0 );
+    player visionsetnakedforplayer( level.script, 0 );
+    dk_lit_sub( player, sub, "lre_" );
+    visionsetnaked( "", 0 );
+    player visionsetnakedforplayer( "", 0 );
+    // lit vision candidates (fast-adapting variants under spare stock names)
+    foreach ( vn in strtok( getdvar( "paris_iwz_dklitsweep" ), "," ) )
+    {
+        dk_vision( player, vn );
+        dk_lit_sub( player, sub, "ls_" + vn + "_" );
+    }
+    dk_vision( player, "" );
+    // power-light sets and scales at runtime: paris_iwz_dklitsets "a:60|b:100|a:40+b:60" (a = the module's lights,
+    // b / c = calibration sets; percent of each light's on intensity); frames set_<combo>_<view>
+    foreach ( combo in strtok( getdvar( "paris_iwz_dklitsets" ), "|" ) )
+    {
+        dk_set_all( 0 );
+        tag = "";
+        foreach ( part in strtok( combo, "+" ) )
+        {
+            kv = strtok( part, ":" );
+            dk_set( kv[0], float( kv[1] ) / 100 );
+            tag = tag + kv[0] + kv[1];
+        }
+        dk_log( "LITSET " + tag );
+        dk_lit_sub( player, sub, "set_" + tag + "_" );
+    }
+    dk_set_all( 0 );
+    dk_set( "a", 1 );
+    dk_place( player, sub[0].origin, sub[0].yaw, sub[0].pitch );
+    wait 2;
+    dk_cap( player, "drift_c_" + sub[0].name );
+    dk_log( "LITX done" );
+}
+
+dk_set( sn, s )
+{
+    if ( sn == "a" )
+    {
+        foreach ( l in level.iwz_dark_lights )
+            l setlightintensity( l.iwz_on * s );
+        return;
+    }
+    foreach ( l in getentarray( "iwz_power_" + sn, "targetname" ) )
+        l setlightintensity( float( strtok( l.script_noteworthy, "|" )[2] ) * s );
+}
+
+dk_set_all( s )
+{
+    foreach ( sn in [ "a", "b", "c" ] )
+        dk_set( sn, s );
+}
+
+dk_lit_sub( player, sub, prefix )
+{
+    foreach ( c in sub )
+    {
+        dk_place( player, c.origin, c.yaw, c.pitch );
+        wait 1.5;
+        dk_cap( player, prefix + c.name );
     }
 }
