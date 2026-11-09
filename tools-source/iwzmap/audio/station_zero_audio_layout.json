@@ -559,7 +559,7 @@
       },
       {
         "alias": "amb_iwz_spark",
-        "at": "decor:electrical_control_panel_01@generator_room#1",
+        "at": "decor:iwz_fuse_box@generator_room#1",
         "wait": [
           12,
           30
@@ -777,7 +777,7 @@
           "zone": "generator_room"
         },
         {
-          "at": "decor:clk_defend_generator_solo@generator_room",
+          "at": "decor:iwz_g2_genset@generator_room",
           "zone": "generator_room",
           "offset": [
             0,
@@ -808,7 +808,7 @@
     "phone": {
       "ring": "amb_iwz_phone_ring",
       "hangup": "amb_iwz_phone_hangup",
-      "at": "decor:zmb_mobile_ticket_booth@ticket_hall",
+      "at": "decor:iwz_zm_zod_ticket_booth@ticket_hall",
       "zone": "ticket_hall",
       "offset": [
         0,
