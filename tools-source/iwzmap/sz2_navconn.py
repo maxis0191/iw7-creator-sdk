@@ -146,6 +146,23 @@ def main():
     rres['deck west->east on the deck'] = ok
     if not ok:
         fails.append('route deck west -> east on the deck has no cell path')
+    # (g27, coordinator 2026-11-08) corridor arch -> power switch: from the generator room cells at the corridor arch,
+    # a cell within 80 of the power switch (layout interaction 'generator') on generator-room cells only
+    sw = next((it for it in lay.get('interactions', []) if it.get('kind') == 'generator'), None) if lay else None
+    if sw and 'generator' in region_zone:
+        sx, sy = sw['origin'][:2]
+        src = [k for k, v in cells.items() if v[1] == 'generator' and abs((k[1] + 0.5) * CELL - 2420) < 32 and 2992 < (k[0] + 0.5) * CELL < 3168]
+        seen = set(src); q = collections.deque(src); ok = False
+        while q:
+            u = q.popleft()
+            if ((u[0] + 0.5) * CELL - sx) ** 2 + ((u[1] + 0.5) * CELL - sy) ** 2 < 80 ** 2:
+                ok = True; break
+            for v in nbrs(u):
+                if v not in seen and cells[v][1] == 'generator':
+                    seen.add(v); q.append(v)
+        rres['generator arch->power switch'] = ok
+        if not ok:
+            fails.append('route generator arch -> power switch has no cell path')
     for n_, ok_ in rres.items():
         print('ROUTE %-50s %s' % (n_, 'ok' if ok_ else 'FAIL'))
     for f in fails:

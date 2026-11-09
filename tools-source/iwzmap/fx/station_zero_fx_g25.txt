@@ -32,15 +32,15 @@ corr_steam        steam_pipe        2664  1700  -150  angles=0,90,0
 # generator room (generator unit on the plinth at 3300 2800): haze, burning barrel, embers, sparking panel (flashes
 # while dark), at power on: spark flashes and a smoke burst at the generator, then the running exhaust
 gen_haze          smoke_hang        3100  2950  -250
-gen_barrel_fire   fire_trash        3700  2700  -278
-gen_embers        embers            3600  2760  -260
+gen_barrel_fire   fire_trash        3700  3040  -278
+gen_embers        embers            3690  3060  -260
 gen_panel_sparks  sparks            2615  2650  -265
 gen_panel_flash   spark_flash       2630  2650  -250  stage=dark
 # (g27) gen_emerg         emergency_glow    2624  2800  -120  stage=dark
-# (g27) on the G-2 genset anchors (train agent v4: tripped breaker (131, 23, 58), exhaust flange top (-48, 0, 101), origin (3200, 2850, -320))
-gen_start_flash   spark_flash       3331  2873  -262  stage=poweron mode=interval:0.4-1.2 for=6 view=3260,2600,-320,90,8
-gen_start_smoke   smoke_burst       3152  2850  -300  stage=poweron for=12 view=3160,2580,-320,90,0
-gen_exhaust       generator_idle    3152  2850  -219  stage=lit view=3160,2580,-320,90,20
+# (g27) on the G-2 genset anchors (train agent v4: tripped breaker (131, 23, 58), exhaust flange top (-48, 0, 101), origin (3469, 2793, -320))
+gen_start_flash   spark_flash       3600  2816  -262  stage=poweron mode=interval:0.4-1.2 for=6 view=3560,2600,-320,80,8
+gen_start_smoke   smoke_burst       3421  2793  -300  stage=poweron for=12 view=3420,2560,-320,90,0
+gen_exhaust       generator_idle    3421  2793  -219  stage=lit view=3420,2560,-320,90,20
 
 # platform B and control room: emergency glows while dark; control room haze
 # (g27) pb_emerg          emergency_glow    -2900 3376  -150  stage=dark
