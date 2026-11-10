@@ -147,8 +147,7 @@ instead of one session's worktree (set `IWZ_SERVER` to choose another); the scri
 `darkness\build-g-dark.ps1` use the tools of the checkout they are in instead of older worktrees. Every other
 default resolves to the same path as before.
 
-Records keep the paths of the runs they describe and are not tools: `sz2_submodels.json` (`_source`),
-`darkness/integration/`.
+The records in `darkness/integration/` keep the paths of the runs they describe; they are not tools.
 
 This landed without a map build: every script parses and every default was compared with the path it replaced.
 The first agent that builds or runs a map after this change reports the result.
