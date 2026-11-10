@@ -1,7 +1,7 @@
-param([Parameter(Mandatory)][string]$Work,[string]$ZoneTool='C:\Users\ezvalo\Documents\IW7-Runtime\kino-ff-work-full\zonetool.exe')
+param([Parameter(Mandatory)][string]$Work,[string]$ZoneTool=(& "$PSScriptRoot\machine.ps1" Runtime 'kino-ff-work-full\zonetool.exe'))
 $ErrorActionPreference='Stop'
-$g='C:\Users\ezvalo\Desktop\iw_game_files'
-$k='C:\Users\ezvalo\Documents\IW7-Runtime\kino-ff-work-full'
+$g=(& "$PSScriptRoot\machine.ps1" GameRoot)
+$k=(& "$PSScriptRoot\machine.ps1" Runtime 'kino-ff-work-full')
 if(Test-Path $Work){throw "exists $Work"}
 New-Item -ItemType Directory $Work,"$Work\zone","$Work\main" | Out-Null
 foreach($f in 'iw7_ship.exe','amd_ags_x64.dll','bink2w64.dll','d3dcompiler_46.dll','steam_api.dll','steam_api64.dll','Steam.dll'){Copy-Item "$g\$f" "$Work\$f"}

@@ -1,5 +1,7 @@
 # IW7 community SDK v1
 
+Start at [docs/INDEX.md](../../docs/INDEX.md), the page that routes a reader.
+
 Start with [platform contract and beacon walkthrough](../../docs/MODDING-PLATFORM.md)
 and [capability evidence / importer milestones](../../docs/MODDING-CAPABILITIES.md).
 The [BO3/T7 import profiles](BO3-IMPORT-PROFILES.md) distinguish the first static

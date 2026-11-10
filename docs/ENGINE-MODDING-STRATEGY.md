@@ -63,7 +63,7 @@ no new evidence or protection. A failed test should narrow the hypothesis.
 | Gameplay and delivery | iw7-paris-server | The capability operates with the required server/client authority and survives its relevant session transitions and rollback. |
 
 These are capability tracks, not orders to start six simultaneous heavy jobs.
-The orchestrator selects the current critical path from concrete evidence.
+The working agent selects the current critical path from concrete evidence.
 Prioritise a primitive that unlocks several real consumers, has a short decisive
 test, and removes an observed blocker. Source preparation can remain parallel;
 heavy work retains the common scheduler and exact process ownership.
@@ -89,25 +89,6 @@ Use these distinctions without building another receipt framework:
 Count capabilities and retired uncertainties, not PRs, lines, tokens, manifest
 fields or synthetic tests. Keep failed candidates and precise limits. No global
 percentage of engine ownership, BO3 compatibility, or unlimited modding is inferred.
-
-## Strategic review and execution are separate roles
-
-The execution orchestrator remains chat
-`01a1364c-8574-72c2-bf64-079c5f1459d8`. It owns assignments, sequencing, resource
-coordination and daily worker reports. The strategic reviewer is chat
-`01a142b6-dd2b-7091-a408-9655304bf18b`, authorised by the owner to correct goals,
-architecture and priorities and to review hourly.
-
-Workers report to the orchestrator, not to both chats. The reviewer reads their
-work and sends consolidated, actionable corrections when needed. It is not an
-extra routine approval gate. An unchanged hour requires no status broadcast.
-Escalate only a strategic conflict, a materially unsupported claim, a repeated
-technical impasse, or a decision actually requiring the owner.
-
-Preserve the canonical product boundaries, private Git/PR workflow, Main27016,
-banks and occupied client. Existing specific human prohibitions and execution
-refusals remain in effect; a tool installation or strategic correction does
-not erase them. Do not recreate retired labs, access bridges or deleted stock.
 
 ## Tooling direction
 

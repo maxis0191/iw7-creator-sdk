@@ -10,7 +10,9 @@ UV scales were checked in the engine gallery (IWZ_GALLERY=1 build, see level/REP
 """
 import os
 
-ART = os.environ.get('IWZ_ART_DIR', r'C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\art')
+ART = os.environ.get('IWZ_ART_DIR') or os.path.join(
+    os.environ.get('IWZ_RUNTIME') or os.path.join(os.path.expanduser('~'), 'Documents', 'IW7-Runtime'),
+    'iwz-stage2', 'art')
 
 
 # Colour image size of every stock material (GrayWolf PNG export of cp_zmb, 2026-11-08; material_dims.json). Many stock

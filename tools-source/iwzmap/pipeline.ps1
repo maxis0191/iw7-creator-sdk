@@ -1,8 +1,8 @@
 param([string]$Map='cp_iwz',[string]$Src,[string]$Script,[string]$Tag,[switch]$Rebuild,[switch]$NoProbe,[switch]$Fresh,[double]$FloorZ=0,
-  [string]$Server='C:\Users\ezvalo\Documents\IW7-Paris-Server',                                           # server checkout (probe runner)
-  [string]$ZoneToolExe='C:\Users\ezvalo\Documents\IW7-Products\worktrees\x64-zt-iwz-map\build\bin\x64\Release\zonetool.exe',
-  [string]$Work='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-map-m2-a',                                    # zonetool work dir (game zones linked)
-  [string]$TemplateDump='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-map-ref-a\dump',                     # stock dumps (cp_zmb, techsets_*)
+  [string]$Server=(& "$PSScriptRoot\machine.ps1" Server),                                           # server checkout (probe runner)
+  [string]$ZoneToolExe=(& "$PSScriptRoot\machine.ps1" ZoneToolExe 'x64-zt-iwz-map'),
+  [string]$Work=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-map-m2-a'),                                    # zonetool work dir (game zones linked)
+  [string]$TemplateDump=(& "$PSScriptRoot\machine.ps1" TemplateDump),                     # stock dumps (cp_zmb, techsets_*)
   [string]$Out=(Join-Path $PSScriptRoot 'out'),                                                         # receives um_<map>/
   [string]$SourcePackage)                                                                               # prepared server inputs (probe)
 $ErrorActionPreference='Stop'
@@ -33,5 +33,5 @@ $um=Join-Path $Out "um_$Map"; $null=New-Item -ItemType Directory -Force $um
 Copy-Item "$W\zone\$Map.ff" "$um\$Map.ff" -Force
 "built $((Get-Item "$um\$Map.ff").Length) bytes"
 if(!$NoProbe){
-  & "$R\ops\iwzmap\Test-IWZMap.ps1" -SourcePackage $SourcePackage -CandidateRoot 'C:\Users\ezvalo\Documents\IW7-Runtime\private-test-server' -GameRoot 'C:\Users\ezvalo\Desktop\iw_game_files' -OutputRoot "C:\Users\ezvalo\Documents\IW7-Runtime\iwz-probe-$Tag" -UsermapDir $um -Map $Map -Probe "$R\tests\fixtures\iwzmap_probe.gsc" -FloorZ $FloorZ -TimeoutSeconds 240
+  & "$R\ops\iwzmap\Test-IWZMap.ps1" -SourcePackage $SourcePackage -CandidateRoot (& "$PSScriptRoot\machine.ps1" Runtime 'private-test-server') -GameRoot (& "$PSScriptRoot\machine.ps1" GameRoot) -OutputRoot (& "$PSScriptRoot\machine.ps1" Runtime "iwz-probe-$Tag") -UsermapDir $um -Map $Map -Probe "$R\tests\fixtures\iwzmap_probe.gsc" -FloorZ $FloorZ -TimeoutSeconds 240
 }

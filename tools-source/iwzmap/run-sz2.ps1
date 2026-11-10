@@ -12,11 +12,11 @@ param(
   [string]$DvarForce='',                                      # error-journal DLL: "name=value;..." written by dvar type and read back (name=? reads only)
   [string]$Probe='',                                          # stairprobe: "label sx sy sz gx gy gz cx cy/..." (fixture iwz_stairprobe)                                      # dvar names ("a|b|c") printed with their value at spawn ([IWZ local] DVAR)
   [int]$Seconds=420,
-  [string]$Runs='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\level\runs',
-  [string]$Server='C:\Users\ezvalo\Documents\IW7-Paris-Server\.claude\worktrees\custom-zombies-map-iwz-26cd2d',
-  [string]$SourcePackage='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\srcpkg-shared',
-  [string]$InjectDll='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\level\tools\bin\iw7_error_journal.dll',
-  [string]$GameRoot='C:\Users\ezvalo\Desktop\iw_game_files',
+  [string]$Runs=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\runs'),
+  [string]$Server=(& "$PSScriptRoot\machine.ps1" Server),
+  [string]$SourcePackage=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\srcpkg-shared'),
+  [string]$InjectDll=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\tools\bin\iw7_error_journal.dll'),
+  [string]$GameRoot=(& "$PSScriptRoot\machine.ps1" GameRoot),
   [int]$Tries=60)
 # Short leased private local session of Station Zero v2 through the server's local runner (sv_lanOnly, random password,
 # loopback, private desktop, staged files restored). Waits while the game or the runtime lease is taken.

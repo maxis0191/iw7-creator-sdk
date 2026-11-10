@@ -1,5 +1,9 @@
 # Creative freedom: current evidence and next proof
 
+> Evidence as of 2026-10-16, kept as a record. The map, world and entity tools of November are not covered
+> here; see [CREATION-TOOLS.md](CREATION-TOOLS.md), [WORLDKIT.md](WORLDKIT.md) and [MAPENTS.md](MAPENTS.md).
+> Where this page says "current", read "on 2026-10-16".
+
 The objective is the deepest practical control of IW7: original content, engine
 inspection, rendering, physics, AI, gameplay, networking and creator tools.
 BO3 is a reference and a source of demonstrations, not a ceiling. Individual
@@ -8,7 +12,7 @@ BO3 tool or unrestricted control of every IW7 subsystem is not established.
 
 Owner correction, 2026-10-16: IW7 engine control is the primary objective, not
 BO3-to-IW7 portability. The [engine strategy](ENGINE-MODDING-STRATEGY.md) defines
-the working method and reviewer/orchestrator roles. Kino and Ray Gun remain
+the working method. Kino and Ray Gun remain
 particular requested demonstrations, without blocking independent IW7 work.
 The HUD showcase is cancelled and Rhino remains retired. Dated snapshots below
 retain their historical proposals and are not current orders to resume them.
@@ -113,7 +117,7 @@ playback remain unproved. The original F decoder failure is retained unchanged.
 This section preserves the earlier source proposal. It is not the current BO3/T7
 work plan and does not authorize a new H1 build, conversion or runtime.
 
-Source base is owner fork `bigmangeekf/x64-zt` at
+Source base is the owner's fork of x64-zt at
 `fab935826c898806855376662a8a03317b3ad8f1`, already retained. The parallel owner's
 `tools-source/asset-bridge/model/zonetool-fab9358-h1-xsurface.patch` changes only
 `h1/converter/iw7/assets/xsurface.cpp`: refuse unsupported groups5–8, invalid

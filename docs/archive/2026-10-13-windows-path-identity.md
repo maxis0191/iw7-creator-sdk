@@ -1,5 +1,8 @@
 # Creator Windows path identity correction - 2026-10-13
 
+> History, not instructions. Archived on 2026-11-10 from `docs/WINDOWS-PATH-IDENTITY.md`; the text below is
+> unchanged. The migration it mentions is finished and hosted checks are no longer the gate (see `AGENTS.md`).
+
 Executed server CI exposed SDK Creator failures when Windows supplied an 8.3
 temporary directory such as `RUNNER~1` while Python resolved an equivalent long
 path. SourceRoot comparison rejected the same project; package receipt comparison

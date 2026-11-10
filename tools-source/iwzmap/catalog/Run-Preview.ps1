@@ -3,9 +3,9 @@ param(
     [Parameter(Mandatory)][string[]]$Models,
     [Parameter(Mandatory)][string]$Cam,                                         # "x,y,z,yaw,pitch[,rel]|..."
     [Parameter(Mandatory)][string]$OutputRoot,                                  # fresh directory per run
-    [string]$Runner='C:\Users\ezvalo\Documents\IW7-Paris-Server\.claude\worktrees\custom-zombies-map-iwz-26cd2d\ops\iwzmap\Test-IWZMapLocal.ps1',
-    [string]$SourcePackage='C:\Users\ezvalo\AppData\Local\Temp\claude\ffc8c2fd82d25eb3\3d781a32-1ec5-4875-9f47-5fae74b66b77\scratchpad\srcpkg-a',
-    [string]$GameRoot='C:\Users\ezvalo\Desktop\iw_game_files',
+    [string]$Runner=(& "$PSScriptRoot\..\machine.ps1" Server 'ops\iwzmap\Test-IWZMapLocal.ps1'),
+    [Parameter(Mandatory)][string]$SourcePackage,                               # prepared server inputs (bootstrap.ps1 output of the server repository)
+    [string]$GameRoot=(& "$PSScriptRoot\..\machine.ps1" GameRoot),
     [string]$UsermapDir='-',                                                    # '-' = stock map; else a usermap dir
     [double]$Fill=0.30,
     [string]$ExtraArgs='',
