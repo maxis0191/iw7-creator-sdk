@@ -54,7 +54,7 @@ The GSC source passed the existing `gsc-tool -m parse -g iw7 -s pc -y` check on
 ## Materialize a plan from completed production
 
 Use the completed StandardMod execution plan and `state.local.json` from the
-qualified producer described in [Sound Agent Lab](../../../../docs/SOUND-AGENT-LAB.md).
+qualified producer described in Sound Agent Lab (server repository: `docs/SOUND-AGENT-LAB.md`).
 Their pinned SHA-256 values must come from that retained run's evidence. A failed,
 quarantined, unrestored or incompletely closed run is not eligible. Keep output
 outside the closed producer run in an existing owned directory, with a fresh name.
@@ -88,7 +88,7 @@ The three producer file measurements alone cannot complete those fields.
 ## Complete the static closure with exact representations
 
 For a producer receipt containing the new
-[`Reader.closure_evidence`](../../../../docs/SOUND-CLOSURE-REPRESENTATIONS.md),
+`Reader.closure_evidence` (x64-zt-extensions: `docs/SOUND-CLOSURE-REPRESENTATIONS.md`),
 stage the reviewed canonical GSC at `server/sdk_original_sound_v1.gsc` in a fresh
 private package directory. Then explicitly request the additional bounded source read:
 

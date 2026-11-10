@@ -1,0 +1,13 @@
+{
+ "_source": "engine-measured texel gallery run views-g2 (level/analysis-g2/gallery.json): white tile luma / chroma under each texel",
+ "ticket_hall":    {"bright": [0.5938, 0.0625], "mid": [0.7744, 0.5605], "dark": [0.2812, 0.9375]},
+ "stair_a":        {"bright": [0.5938, 0.0625], "mid": [0.7744, 0.5605], "dark": [0.2812, 0.9375]},
+ "platform_a":     {"bright": [0.5938, 0.0625], "mid": [0.7744, 0.5605], "dark": [0.2812, 0.9375]},
+ "maint_corridor": {"bright": [0.8975, 0.3965], "mid": [0.8018, 0.5645], "dark": [0.8438, 0.0625]},
+ "generator_room": {"bright": [0.8975, 0.3965], "mid": [0.8975, 0.3965], "dark": [0.8438, 0.0625]},
+ "control_room":   {"bright": [0.8975, 0.3965], "mid": [0.8018, 0.5645], "dark": [0.6562, 0.6875]},
+ "service_tunnel": {"bright": [0.8018, 0.5645], "mid": [0.1562, 0.6875], "dark": [0.8438, 0.0625]},
+ "platform_b":     {"bright": [0.5938, 0.0625], "mid": [0.8018, 0.5645], "dark": [0.3037, 0.8965]},
+ "stair_b":        {"bright": [0.5938, 0.0625], "mid": [0.8975, 0.3965], "dark": [0.3037, 0.8965]},
+ "gallery":        {"bright": [0.5938, 0.0625], "mid": [0.8018, 0.5645], "dark": [0.3037, 0.8965]}
+}

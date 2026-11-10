@@ -17,6 +17,7 @@ class Mesh:
         self.materials = []
         self.by_mat = {}      # material -> (verts, indices)
         self.col = []         # collision triangles (game units)
+        self.col_tag = {}     # collision triangle index -> surface-table tag (default: the encoder's tag)
 
     def mat(self, name):
         if name not in self.by_mat:
@@ -38,6 +39,21 @@ class Mesh:
         if os.environ.get('IWZ_DOUBLE_SIDED') == '1':
             idx += [base, base + 2, base + 1, base, base + 3, base + 2]
         if collide:
+            self.col += [(p0, p1, p2), (p0, p2, p3)]
+
+    def quad_uv(self, material, pts, uvs, normal, tangent, lm, collide=True, double_sided=None):
+        """Quad with explicit texture coordinates (pts counter-clockwise seen from the normal side)."""
+        verts, idx = self.mat(material)
+        base = len(verts)
+        for p, (u, v) in zip(pts, uvs):
+            verts.append((tuple(float(c) for c in p), u, v, lm, pack_unit(normal), pack_unit(tangent)))
+        idx += [base, base + 1, base + 2, base, base + 2, base + 3]
+        if double_sided is None:
+            double_sided = os.environ.get('IWZ_DOUBLE_SIDED') == '1'
+        if double_sided:
+            idx += [base, base + 2, base + 1, base, base + 3, base + 2]
+        if collide:
+            p0, p1, p2, p3 = pts
             self.col += [(p0, p1, p2), (p0, p2, p3)]
 
 
@@ -110,8 +126,10 @@ def write_world(mesh, path):
 
 
 # ---------------------------------------------------------------- nav graph (bfx, IW7 graph version 0x2B)
-def nav_graph(cells, cell, link=None):
-    """cells: dict (i, j) -> z (walkable grid cells of size `cell`, floor height z). One quad area per cell."""
+def nav_graph(cells, cell, link=None, corners=None):
+    """cells: dict (i, j) -> z (walkable grid cells of size `cell`, floor height z). One quad area per cell.
+    corners: optional dict (i, j) -> 4 corner heights (x0y0, x1y0, x1y1, x0y1) for sloped cells (stairs), so that
+    neighbouring areas share their edges exactly (flat cells with 16-unit steps can be descended but not climbed)."""
     keys = sorted(cells)
     HS, AREA, EDGE = 336, 72, 32
     offs = {}
@@ -151,7 +169,10 @@ def nav_graph(cells, cell, link=None):
     for k in keys:
         i, j = k; z = cells[k]; base = offs[k]
         c = center(k)
-        corners = [(i * cell, j * cell, z), ((i + 1) * cell, j * cell, z), ((i + 1) * cell, (j + 1) * cell, z), (i * cell, (j + 1) * cell, z)]
+        cz = corners.get(k) if corners else None
+        if cz is None:
+            cz = (z, z, z, z)
+        corners_ = [(i * cell, j * cell, cz[0]), ((i + 1) * cell, j * cell, cz[1]), ((i + 1) * cell, (j + 1) * cell, cz[2]), (i * cell, (j + 1) * cell, cz[3])]
         nbrs = [(i, j - 1), (i + 1, j), (i, j + 1), (i - 1, j)]   # edge e goes corner e -> e+1
         struct.pack_into('<3ff', graph, base + 32, *c, math.sqrt(2) * cell / 2)
         struct.pack_into('<III', graph, base + 48, 0xFFFFFFFF, 0, 0x3FFFF << 7 | 4)
@@ -165,7 +186,7 @@ def nav_graph(cells, cell, link=None):
                 struct.pack_into('<Q', graph, eo, offs[nb])
             else:
                 cost = 0
-            struct.pack_into('<3fIII', graph, eo + 8, *corners[e], 0xFFFF0000, cost, 0)
+            struct.pack_into('<3fIII', graph, eo + 8, *corners_[e], 0xFFFF0000, cost, 0)
     g = bytes(graph) + bytes(kd)
     body = 12 + 12 + len(g)
     res = bytearray(24 + body)
@@ -189,7 +210,8 @@ def ents_text(worldspawn, ents):
 
 
 def stock_worldspawn(ents_path):
-    txt = open(ents_path, 'rb').read().decode('latin-1')
+    with open(ents_path, 'rb') as f:
+        txt = f.read().decode('latin-1')
     block = txt[txt.index('{') + 1: txt.index('}')]
     rows = []
     for ln in block.strip().splitlines():

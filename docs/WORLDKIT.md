@@ -19,6 +19,9 @@ Files: `iw7_dump.py` (the byte-level reader: format, layouts, loud failures), `i
 prefabs, command line), `iw7_worldpatch.py` (removes and moves props in a copy of the render world file, see
 [WORLDPATCH](WORLDPATCH.md)), `tests/` (synthetic world and tests).
 
+`iw7_see.py` in the same folder joins this database with a frame captured in the game (its camera and depth) and
+answers what the frame shows: [SEE.md](SEE.md).
+
 ## Commands
 
 ```
@@ -88,14 +91,21 @@ A folder with:
 * `surfaces.bin`: per surface, little endian, origin-relative: positions `f32x3`, normals `f32x3`, texture
   coordinates `f32x2`, lightmap coordinates `f32x2` for each vertex (in that order), then triangles `u32x3`. Only
   triangles whose centroid is inside the box are kept. `read_prefab_surface(dir, prefab, k)` reads one.
+* `surfaces_extra.bin` (named by `mesh_extra` in `prefab.json`; absent in prefabs written before 10 Nov 2026): per
+  surface, at the surface's `extra_offset`: tangents `f32x3` for each vertex, then for each vertex the raw fourth
+  float of the shipped vertex (`f32`) and the vertex colour (`u32`). With it a prefab holds every field of the
+  shipped world vertex, so a generator can write the surface back exactly. Each surface entry also carries
+  `lightmapIndex`, `flags` and `layered` (the shipped surface has per-vertex layer data, which is not copied).
+* `collision.bin` (optional, written by `tools-source/iwzmap/prefab_place.py collision` for a placed prefab): the
+  shipped collision triangles of the box with their surface tags. See [PREFAB-ROOMS.md](PREFAB-ROOMS.md).
 * `smodels.txt`: one line per prop, `<xmodel> x y z pitch yaw roll scale`, the format the map compiler's
   `smodels.txt` reader takes (`#` comments allowed). The angles use the compiler's own convention (see above),
   so no conversion is needed. After `extract` the positions are prefab-relative; after `place` they are world
   positions, ready to be used as the compiler's input. The compiler's optional `noshadow` / `cull=` flags are not
   written; `flags` and `cullDist` are in `prefab.json`.
 
-`place` rotates positions, orientations, light directions, entity origins and angles, and mesh positions and normals
-about the vertical axis through the prefab origin, then moves the origin to `--at`. Multiples of 90 degrees use
+`place` rotates positions, orientations, light directions, entity origins and angles, and mesh positions, normals and
+tangents about the vertical axis through the prefab origin, then moves the origin to `--at`. Multiples of 90 degrees use
 exact cosine and sine, so they are exact. A world-space prefab can be placed again.
 
 ## Measured on Spaceland
@@ -112,12 +122,14 @@ distant vista (trees, terrain). The test suite uses a synthetic world only and r
 
 ## What it does not do yet
 
-* Collision and navigation of a prefab are not extracted (no Havok mesh, no nav mesh, no path nodes).
+* Navigation of a prefab is not extracted (no nav mesh, no path nodes). Collision is not extracted here either; the
+  map tools cut it from the shipped collision file for a placed prefab ([PREFAB-ROOMS.md](PREFAB-ROOMS.md)).
 * Lightmap texels are referenced, not copied: a prefab carries lightmap coordinates and the lightmap index, not
   the lighting. Light grid, reflection probe contents and umbra visibility data are not read (their sections are
   walked over and counted, not decoded).
-* Nothing here builds a map. A prefab's `smodels.txt` and surface meshes are inputs for the map generator, which
-  must still learn to take them (the compiler already takes `smodels.txt`; surface meshes have no consumer yet).
+* Nothing here builds a map. A prefab's props, lights and surface meshes are inputs of the map generator:
+  `tools-source/iwzmap/prefab_place.py` and `prefab_room.py` place a prefab in a generated map
+  ([PREFAB-ROOMS.md](PREFAB-ROOMS.md)).
 * Surface fields without a known meaning (`unk1`..`unk4`, `sortKey`, vertex layer data) are kept raw; this dump
   version has no per-surface reflection probe or primary light index, so none is reported.
 * The binary `.ents.data` (triggers, splines, dynamic entities, clip data) is listed in `meta`, not read; the

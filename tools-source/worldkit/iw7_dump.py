@@ -748,3 +748,14 @@ def decode_vertices(raw, count):
         lm.append(rec[7:9])
         nrm.append(decode_unit(rec[9]))
     return pos, nrm, uv, lm
+
+
+def decode_vertex_extras(raw, count):
+    """The vertex fields decode_vertices leaves out, as lists: tangents (decoded like the normals), the raw fourth
+    float of the vertex (named binormalSign in the asset tool; kept as stored) and the vertex colour (u32)."""
+    tan, sign, col = [], [], []
+    for rec in struct.iter_unpack('<3ffI2f2fII', raw[:count * VERTEX_SIZE]):
+        tan.append(decode_unit(rec[10]))
+        sign.append(rec[3])
+        col.append(rec[4])
+    return tan, sign, col

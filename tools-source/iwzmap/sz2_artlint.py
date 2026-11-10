@@ -1,0 +1,626 @@
+"""Static art lint of a generated Station Zero v2 source (surfaces.json + layout.json), run before any build is shown.
+
+usage: sz2_artlint.py <src dir> [--json out.json]
+
+Rules (lead / owner review of g24):
+  failed-material  a world quad uses a material the engine gallery marked FAILED (sz2_materials: opaque squares)
+  track-bed        anything drawn inside a track bed between the running rails (y 1464..1560 in the pits, track
+                   height up to 40 above the bed) other than sleepers, rails, ballast and stains; decor models there
+                   other than the parked train (fx_1: a yellow-covered "beam" lay between the rails)
+  fake-vehicle     generated vehicle assemblies (car body / seat materials, or decor names of fake trains): the box
+                   carriage of g24 read as grey concrete boxes; vehicles must be stock models
+  floor-streak     a floor strip narrower than 16 and longer than 256 with a texture repeat >= 64 (stretched smear:
+                   the deck inlay of g24, platform_a_2)
+  void-black       a world quad with the unlit `black` material (review A3/B: flat black voids in windows, panels,
+                   vents, clock faces); only the gallery may use it
+  uv-aspect        a stock material whose texture repeat (su/sv) differs from its measured image aspect by more than 10%
+                   (material_dims.json; review A6: trims mapped square were stretched 4-16x)
+  uv-sliver        (note only) a world-projected non-trim face thinner than 1/16 of a texture repeat and longer than one
+                   repeat: it shows a thin band of the texture at true density, which is not a stretch
+  material-role    tactile/grip paving on anything but a floor (review B: tactile strip used as wall trim)
+  tone             decor from another map's identity (Spaceland park props, ride cars, Racin' Stripes) or the wood
+                   mine support (review A10)
+  fake-object      a generated box assembly standing in for an object that has a stock model (turnstile, desk, console,
+                   booth, kiosk, generator, hvac, buffer) (review A2)
+  anchor           a wall/ceiling-mounted decor model (pipes, signs, lamps, panels, lockers, cabinets, fans, speakers)
+                   whose origin is more than 24 units from any world surface (review A7: floating pipes, lockers off the wall)
+  intersect        two decor clip boxes overlapping by more than 30% of the smaller one, or a sign overlapping a
+                   decor clip box (review A7: board through a crate, signs on lamps and pipes)
+  sign-dupe        the same sign image twice within 600 units in one zone (review A8: stacked duplicate signs)
+  art-trim         (review C g25t) a frameless art plane less than 3.4 off its wall (behind the trims / moldings), or
+                   overlapping a pilaster on the same wall (the pilaster cuts it)
+  trackbed         (layout track_spec, coordinator 2026-11-08) any level surface other than the bed floor inside a
+                   trackbed channel volume (channel x/y less 4 units at its walls, 0.5..170 above the bed = car envelope: walls, piers, ribs, generated rails,
+                   ties, beams, buffers), any decor inside a channel, a channel whose centre is not the middle of its
+                   y range, rails not symmetric about the centre, or a tunnel door not spanning the channel
+  stair-tactile    tactile paving on more than two tread heights of one stair (review C: all-yellow treads)
+  decal-aspect     a stock decal (layout decals) whose w/h differs from its image aspect by more than 15% (review C)
+  colour-cast      a baked coloured light (channel spread > 0.4) without a fixture or with a radius over 192
+                   (reviews A9/B: red, green, pink and mustard casts with no visible source)
+  (g27, coordinator 2026-11-08 open list; layout keys written by station_zero2.py)
+  track-end        a trackbed channel end that meets neither a door spanning the channel, a buffer stop, a tunnel
+                   collapse (rubble_end) nor a bricked mouth within 64 (review B: track ends at flat portal planes)
+  conduit-end      a conduit / cable / pipe run (layout conduits) whose end meets no surface perpendicular to it (an end
+                   wall, ceiling, beam, frame), no junction box and no collapse (review C: conduits ending in mid-air)
+  pipe-foot        a wall pipe model whose pipes run down to the floor without a pipe chase over their feet (review C
+                   maint_corridor_2: pipes stopped open on the floor)
+  rail-return      a stair handrail line without a wall return at both ends (review C flk_0_off: rail cut open)
+  threshold        a door / arch opening without a threshold plate across its wall gap (review C interact_5)
+  fx-fixture       a glow / flare sprite FX (layout fx_placed) without a lit fixture within 24 (review C: violet halos)
+  fx-source        a drip FX without its leak (ceiling stain + puddle) (review C: blue streaks in mid-air)
+  decor-rail       a decor model (catalog bounds, else its clip) through a railing / handrail / window frame
+  in-opening       (lead g27 stair_a_2: a black-backed ad frame, a pilaster and a clock stood inside the stair A arch,
+                   unchanged since g24) a wall sign / poster, a pilaster / rib or a wall-mounted model within 24 of a
+                   wall plane inside one of that wall's openings (layout openings, span +-10, below the opening top)
+  sign-overlap     (review g27 item 17: a poster z-fought through the departure board, missing posters overlapped a frame,
+                   a pilaster hid the network map) two wall signs / posters on the same wall plane overlapping, or a wall
+                   sign behind a pilaster / rib / ad frame standing proud of the same wall
+  sign-repeat      (review g27 item 17: "The Last Train" five times) one poster / notice image placed more than 3 times
+                   (wayfinding signs sign_* and story plates excepted)
+  dark-image       (needs --catalog / --kit for models) a placed model whose catalog / kit entry has no colour image, missing images, or a kit preview mean
+                   luma under 0.03; a custom image material (art, signs) whose colour image has mean luma under 0.03
+  floating-floor   an up-facing deck-level surface over an open stairwell (other than the stair's own treads)
+  stair-soffit     a stair flight without side walls and without a stringer on its open side(s) (wells: the pit
+                   side; review C / train agent: black wedges under the well stairs)
+  door-reach       a door's purchase struct inside or within 8 of that door's barricade dressing (QA g26c: F found no
+                   interaction)
+  hero-clear       (coordinator 2026-11-08) the hero generator (layout genset) with less than 48 clear around its footprint
+                   (decor, ported props, spawners, wall fittings), inside the corridor-arch / control-door lane
+                   (x 3004..3196), or a walk-path segment crossing it
+  stacked          a decor model standing on top of another decor model's footprint (review C interact_10: a crate on
+                   a turnstile); with --catalog / --kit the model bounds are used, else the clip boxes
+Exit status 1 when any rule fails.
+"""
+import argparse, json, math, os, sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import sz2_materials as SM
+import sz2_art_hooks as ART_HOOKS
+ART_HOOKS.register()       # the art drop-ins become custom image materials, as in the generator (dark-image checks them)
+
+PITS = [(-2400, 2592, -384), (-3540, -2416, -384)]          # track beds: x range, bed height (platform_a pit, tunnel)
+BED_Y = (1464, 1560)
+BED_OK = {'wood_planks', 'ballast', 'ibeam_bare', 'chrome_trim', 'metal_black', 'water_stain', 'floor_stain', 'blood_pool',
+          'drip_stain', 'top_stain', 'vent', 'conc_dark'}
+VEHICLE_MATS = {'metal_silver', 'carriage_red', 'seat_blue'}
+TRAIN_OK = {'cp_disco_subway_train_bsp2xmodel'}
+HERO_PARTS = {'iwz_g2_radiator'}   # (g27d) the G-2's own remote radiator stands by it on purpose (train agent spec)
+DARK_DECALS = {'art_decal_grime_feathered', 'floor_stain', 'water_stain'}   # (g27d BLOQUANT 2) black shapes / holes
+EDGE = 4.0           # trackbed: wall trims up to 4 units proud of a channel side or end wall belong to the wall
+ENVELOPE = 170.0     # trackbed: car kinematic envelope above the bed (cable trays and ceiling ribs above it are fine)
+TONE_BANNED = ('park_', 'spaceland', 'zmb_wood_support', '_ride_', 'ride_car', 'racin', 'astrocade', 'kepler')
+TONE_OK = {'park_token_machine'}   # token machine fits a hall ((g27) the spawn-window frames are Spaceland trim: no exception)
+GLOW_FX = ('emergency_glow', 'glow', 'flare')       # sprite FX that need a lit fixture
+PIPE_TO_FLOOR = {'wall_mounted_pipes_01'}
+STACK_OK = ('train', 'iwz_', 'newspaper', 'cup_', 'mug', 'candle', 'paper', 'debris', 'rubble', 'zom_duffel', 'backpack',
+            'zmb_tv_crt', 'console', 'radio', 'computer', 'testpattern', 'plank', 'biohazard')     # dressing that sits on things
+FAKE_OBJECTS = ('turnstile', 'desk', 'console', 'booth', 'kiosk', 'generator', 'hvac', 'buffer')
+MOUNTED = ('pipe', 'sign', 'lamp', 'light', 'panel', 'locker', 'cabinet', 'fan', 'loudspeaker', 'control_box', 'shutoff',
+           'fuse_box', 'vent', 'wires')
+MOUNTED_FREE = ('standing', 'traffic', 'sign_clock', 'pardon_our_dust', 'barricade')   # floor-standing despite the name; clocks hang
+GRIP = {'yellow_grip'}
+
+
+def pt_box_dist(p, mn, mx):
+    return sum(max(mn[i] - p[i], 0, p[i] - mx[i]) ** 2 for i in range(3)) ** 0.5
+
+
+def box_overlap(a0, a1, b0, b1):
+    v = 1.0
+    for i in range(3):
+        d = min(a1[i], b1[i]) - max(a0[i], b0[i])
+        if d <= 0:
+            return 0.0
+        v *= d
+    return v
+
+
+def decor_box(d):
+    x, y, z = d['origin']
+    cx, cy, cz = d.get('clip') or (0, 0, 0)
+    return (x - cx, y - cy, z), (x + cx, y + cy, z + 2 * cz)     # clip = half extents (decor() in the generator)
+
+
+def model_box(d, bounds):
+    """World AABB of a placed decor model: catalog bounds rotated by its yaw, else its clip box, else None."""
+    b = bounds.get(d['model'])
+    x, y, z = d['origin']
+    if b:
+        c, s = math.cos(math.radians(d.get('yaw', 0))), math.sin(math.radians(d.get('yaw', 0)))
+        xs, ys = [], []
+        for lx in (b['mins'][0], b['maxs'][0]):
+            for ly in (b['mins'][1], b['maxs'][1]):
+                xs.append(x + c * lx - s * ly); ys.append(y + s * lx + c * ly)
+        return (min(xs), min(ys), z + b['mins'][2]), (max(xs), max(ys), z + b['maxs'][2])
+    if d.get('clip'):
+        return decor_box(d)
+    return None
+
+
+def on_surface(p, axis, quads, slack=3.0):
+    """p meets a world quad whose normal lies along `axis` (the run's own direction): an end wall, ceiling, beam face."""
+    for zone, mat, pts, n in quads:
+        if abs(n[axis]) < 0.9:
+            continue
+        plane = sum(pts[0][k] * n[k] for k in range(3))
+        if abs(sum(p[k] * n[k] for k in range(3)) - plane) > slack:
+            continue
+        if all(min(q[k] for q in pts) - slack <= p[k] <= max(q[k] for q in pts) + slack for k in range(3) if k != axis):
+            return True
+    return False
+
+
+def in_box(p, mn, mx, slack=4.0):
+    return all(mn[k] - slack <= p[k] <= mx[k] + slack for k in range(3))
+
+
+def g27_rules(lay, quads, fails, bounds):
+    geo = lay.get('geo_props', [])
+    # track-end
+    spec = lay.get('track_spec') or {}
+    tspec = lay.get('train_spec') or {}
+    ends_ok = [g for g in geo if g['name'] in ('rubble_end', 'bricked_mouth')]
+    for ch in spec.get('channels', []):
+        for xe in (ch['x0'], ch['x1']):
+            ok = any(o['kind'] == 'door' and o['axis'] == 'y' and any(abs(w - xe) <= 64 for w in o['walls'].values())
+                     and o['a'] <= ch['y0'] + 1 and o['b'] >= ch['y1'] - 1 for o in lay.get('openings', []))
+            ok = ok or bool(tspec.get('buffer') and abs(tspec['buffer'][0] - xe) <= 64)
+            ok = ok or any(g['mins'][0] - 64 <= xe <= g['maxs'][0] + 64 and g['mins'][1] <= ch['centre_y'] <= g['maxs'][1] for g in ends_ok)
+            if not ok:
+                fails.append('track-end %s channel end x %g meets no door, buffer stop or collapse' % (ch['zone'], xe))
+    # conduit-end
+    juncs = [(j['mins'], j['maxs']) for j in lay.get('junctions', [])] + \
+            [(g['mins'], g['maxs']) for g in geo if g['name'] in ('rubble_end', 'throat_cap', 'pipe_chase', 'window_frame', 'bricked_mouth')]
+    runs = [([min(c['p0'][k], c['p1'][k]) - (c.get('w', 4) / 2 if k != c['axis'] else 0) for k in range(3)],
+             [max(c['p0'][k], c['p1'][k]) + (c.get('w', 4) / 2 if k != c['axis'] else 0) for k in range(3)], c) for c in lay.get('conduits', [])]
+    for cd in lay.get('conduits', []):
+        for p in (cd['p0'], cd['p1']):
+            if any(in_box(p, mn, mx) for mn, mx in juncs) or on_surface(p, cd['axis'], quads, 3.0 + cd.get('w', 4) / 2):
+                continue
+            if any(c is not cd and c['axis'] != cd['axis'] and in_box(p, mn, mx, 1.0) for mn, mx, c in runs):      # an elbow into the next run
+                continue
+            fails.append('conduit-end %s run %s..%s: end %s in mid-air' % (cd['zone'], [round(c) for c in cd['p0']], [round(c) for c in cd['p1']],
+                                                                           [round(c) for c in p]))
+    # pipe-foot
+    chases = lay.get('pipe_chases', [])
+    for d in lay.get('decor', []):
+        if d['model'] in PIPE_TO_FLOOR and not any(in_box(d['origin'], c['mins'], c['maxs'], 8) for c in chases):
+            fails.append('pipe-foot %s at %s has no pipe chase over its feet' % (d['model'], d['origin']))
+    # rail-return
+    lines = {}
+    for g in geo:
+        if g['name'] == 'handrail':
+            ax = 0 if (g['maxs'][0] - g['mins'][0]) < (g['maxs'][1] - g['mins'][1]) else 1      # the fixed coordinate axis
+            lines.setdefault((g['zone'], ax, round((g['mins'][ax] + g['maxs'][ax]) / 2)), []).append(g)
+    rets = [g for g in geo if g['name'] == 'rail_return']
+    for (zone, ax, c), gs in lines.items():
+        sa = 1 - ax
+        lo = min(g['mins'][sa] for g in gs); hi = max(g['maxs'][sa] for g in gs)
+        for se in (lo, hi):
+            if not any(r['zone'] == zone and r['mins'][sa] - 6 <= se <= r['maxs'][sa] + 6 and r['mins'][ax] - 8 <= c <= r['maxs'][ax] + 8 for r in rets):
+                fails.append('rail-return %s handrail at %s %g: no wall return at %g' % (zone, 'xy'[ax], c, se))
+    # in-opening
+    ops = lay.get('openings', [])
+
+    def opening_at(axis, plane, s0, s1, z0, z1, zpad=0):
+        for o in ops:
+            if o['axis'] != axis or not any(abs(w - plane) <= 24 for w in o['walls'].values()):
+                continue
+            h0, h1 = (-1e9, 1e9) if o['kind'] == 'open' else (o['z0'], o['z1'])
+            if s0 < o['b'] + 10 and s1 > o['a'] - 10 and z0 < h1 + zpad and z1 > h0:
+                return o['name']
+        return None
+    for sg in lay.get('signs', []):
+        if sg.get('hanging'):
+            continue
+        c = sg['center']; hw, hh = sg['size'][0] / 2, sg['size'][1] / 2
+        plane = c[1] - sg['facing'] * sg.get('off', 0) if sg['axis'] == 'x' else c[0] - sg['facing'] * sg.get('off', 0)
+        sc = c[0] if sg['axis'] == 'x' else c[1]
+        o = opening_at(sg['axis'], plane, sc - hw, sc + hw, c[2] - hh, c[2] + hh)
+        if o:
+            fails.append('in-opening sign %s at %s inside opening %s' % (sg['image'], [round(v) for v in c], o))
+    # (g27d, BLOQUANT 2: the white block behind the stair B barricade was a wall spawner's vent grille drawn inside
+    # the door opening) in-opening for wall-spawner vents (vent plane 48 behind the spawner, 56 wide, 4..44 up)
+    for sp in lay.get('spawners', []):
+        if sp.get('kind') != 'wall':
+            continue
+        x, y, z = sp['origin']
+        fx, fy = round(math.cos(math.radians(sp.get('yaw', 0)))), round(math.sin(math.radians(sp.get('yaw', 0))))
+        z = z or 0
+        o = opening_at('y', x - fx * 48, y - 28, y + 28, z + 4, z + 44) if fx else opening_at('x', y - fy * 48, x - 28, x + 28, z + 4, z + 44)
+        if o:
+            fails.append('in-opening spawner vent at %s inside opening %s' % ([round(v) for v in sp['origin']], o))
+    # (g27e, g27d BLOQUANT 3: a perk machine buried behind crates) perk-approach: no decor box in the 1.5 m (60 units)
+    # in front of a perk machine / Pack-a-Punch, 64 wide
+    for it in lay.get('interactions', []):
+        if not (it['kind'].startswith('perk_machine') or it['kind'] == 'weapon_upgrade'):
+            continue
+        ox, oy, oz = it['origin']
+        a = math.radians(it.get('yaw', 0)); fx, fy = math.cos(a), math.sin(a)
+        corners = [(ox + fx * d - fy * w, oy + fy * d + fx * w) for d in (16, 76) for w in (-32, 32)]
+        amn = (min(c[0] for c in corners), min(c[1] for c in corners), oz); amx = (max(c[0] for c in corners), max(c[1] for c in corners), oz + 60)
+        for d in lay.get('decor', []):
+            bx = model_box(d, bounds) or decor_box(d)
+            if bx and box_overlap(amn, amx, bx[0], bx[1]) > 0:
+                fails.append('perk-approach %s at %s blocked by %s at %s' % (it['kind'], it['origin'], d['model'], d['origin']))
+    # (g27e, g27d BLOQUANT 4) plank-depth: a door's barricade plank must lie between that door's two wall planes
+    for d in lay.get('decor', []):
+        if 'plank' not in d['model'] or not str(d.get('targetname') or '').startswith('iwz_doordress'):
+            continue
+        x, y, z = d['origin']
+        best = None
+        for o in lay.get('openings', []):
+            if o.get('kind') != 'door':
+                continue
+            s_ = x if o['axis'] == 'x' else y
+            w_ = y if o['axis'] == 'x' else x
+            ws = sorted(o['walls'].values())
+            if o['a'] - 60 <= s_ <= o['b'] + 60 and ws[0] - 40 <= w_ <= ws[1] + 40 and o['z0'] - 8 <= z <= o['z1'] + 8:
+                best = (o, w_, ws)
+        if best and not (best[2][0] - 0.5 <= best[1] <= best[2][1] + 0.5):
+            fails.append('plank-depth %s at %s outside the %s door frame (walls %s)' % (d['model'], d['origin'], best[0]['name'], best[2]))
+    # sign-overlap / sign-repeat (g27d)
+    walls_ = [sg for sg in lay.get('signs', []) if not sg.get('hanging')]
+    def span_(sg):
+        c = sg['center']; hw, hh = sg['size'][0] / 2, sg['size'][1] / 2
+        plane = c[1] - sg['facing'] * sg.get('off', 0) if sg['axis'] == 'x' else c[0] - sg['facing'] * sg.get('off', 0)
+        sc = c[0] if sg['axis'] == 'x' else c[1]
+        return plane, sc - hw, sc + hw, c[2] - hh, c[2] + hh
+    for i, a_ in enumerate(walls_):
+        pa, a0, a1, az0, az1 = span_(a_)
+        for b_ in walls_[i + 1:]:
+            if b_['axis'] != a_['axis'] or b_['facing'] != a_['facing']:
+                continue
+            pb, b0, b1, bz0, bz1 = span_(b_)
+            if abs(pa - pb) < 8 and min(a1, b1) - max(a0, b0) > 1 and min(az1, bz1) - max(az0, bz0) > 1:
+                fails.append('sign-overlap %s at %s and %s at %s' % (a_['image'], [round(v) for v in a_['center']], b_['image'], [round(v) for v in b_['center']]))
+        for g in lay.get('geo_props', []):
+            if g['name'] not in ('pilaster', 'rib', 'ad_frame'):
+                continue
+            k_ = 1 if a_['axis'] == 'x' else 0
+            if not (g['mins'][k_] - 2 <= pa <= g['maxs'][k_] + 2 or abs(g['mins'][k_] - pa) < 12 or abs(g['maxs'][k_] - pa) < 12):
+                continue
+            s_ = 0 if a_['axis'] == 'x' else 1
+            proud_ = max(abs(g['mins'][k_] - pa), abs(g['maxs'][k_] - pa))
+            if g['name'] == 'ad_frame' and abs((g['mins'][s_] + g['maxs'][s_]) / 2 - (a0 + a1) / 2) < 2 and abs((g['mins'][2] + g['maxs'][2]) / 2 - (az0 + az1) / 2) < 2:
+                continue        # the frame's own poster
+            if proud_ > a_.get('off', 0) + 0.5 and min(a1, g['maxs'][s_]) - max(a0, g['mins'][s_]) > 1 and min(az1, g['maxs'][2]) - max(az0, g['mins'][2]) > 1:
+                fails.append('sign-overlap %s at %s behind a %s at %s' % (a_['image'], [round(v) for v in a_['center']], g['name'], [round(v) for v in g['mins']]))
+    reps_ = {}
+    for sg in lay.get('signs', []):
+        im_ = sg['image']
+        if not im_.startswith(('sign_', 'story_')):
+            reps_[im_] = reps_.get(im_, 0) + 1
+    for im_, n_ in sorted(reps_.items()):
+        if n_ > 3:
+            fails.append('sign-repeat %s placed %d times (max 3)' % (im_, n_))
+    for g in geo:
+        if g['name'] not in ('pilaster', 'rib'):
+            continue
+        dx, dy = g['maxs'][0] - g['mins'][0], g['maxs'][1] - g['mins'][1]
+        axis = 'x' if dx > dy else 'y'          # pilaster on a wall along x: thin in y
+        plane = (g['mins'][1] + g['maxs'][1]) / 2 if axis == 'x' else (g['mins'][0] + g['maxs'][0]) / 2
+        s0, s1 = (g['mins'][0], g['maxs'][0]) if axis == 'x' else (g['mins'][1], g['maxs'][1])
+        if dx < 2 * 24 and dy < 2 * 24:          # square-ish: try both axes
+            for ax_, pl_, a_, b_ in (('x', (g['mins'][1] + g['maxs'][1]) / 2, g['mins'][0], g['maxs'][0]),
+                                     ('y', (g['mins'][0] + g['maxs'][0]) / 2, g['mins'][1], g['maxs'][1])):
+                o = opening_at(ax_, pl_, a_, b_, g['mins'][2], g['maxs'][2])
+                if o:
+                    break
+        else:
+            o = opening_at(axis, plane, s0, s1, g['mins'][2], g['maxs'][2])
+        if o:
+            fails.append('in-opening %s at %s inside opening %s' % (g['name'], [round(v) for v in g['mins']], o))
+    for d in lay.get('decor', []):
+        m = d['model']
+        if not any(t in m for t in MOUNTED) or any(t in m for t in ('standing', 'traffic', 'pardon_our_dust', 'barricade')) or d.get('targetname'):
+            continue
+        x, y, z = d['origin']
+        for axis, plane, sc in (('x', y, x), ('y', x, y)):
+            o = opening_at(axis, plane, sc - 8, sc + 8, z, z + 24)
+            if o:
+                fails.append('in-opening decor %s at %s inside opening %s' % (m, d['origin'], o))
+                break
+    # floating-floor (g27): an up-facing deck-level surface over an open stairwell (the deck expansion joint crossed the
+    # east well at z -319.75 with nothing under it)
+    STAIR_MATS = {'conc_floor', 'beam_yellow', 'yellow_grip', 'tile_floor', 'stair_tread'}
+    for st in lay.get('stairs', []):
+        if st['side_walls']:
+            continue
+        s0, s1 = st['span']; c0, c1 = sorted(st['c']); ztop = max(st['z'])
+        sa = 0 if st['axis'] == 'x' else 1
+        for zone, mat, pts, n in quads:
+            if n[2] < 0.9 or mat in STAIR_MATS or min(p[2] for p in pts) < ztop - 1 or max(p[2] for p in pts) > ztop + 1:
+                continue
+            lo = [min(p[k] for p in pts) for k in range(2)]; hi = [max(p[k] for p in pts) for k in range(2)]
+            if hi[sa] > s0 + 2 and lo[sa] < s1 - 2 and hi[1 - sa] > c0 + 2 and lo[1 - sa] < c1 - 2:
+                fails.append('floating-floor %s over the open %s stairwell at %s' % (mat, st['space'], [round(c) for c in pts[0]]))
+    # stair-soffit (wells: open towards the pit on c0)
+    for st in lay.get('stairs', []):
+        if not st['side_walls'] and 'c0' not in st['stringers']:
+            fails.append('stair-soffit %s %s: open side without a stringer (void under the treads)' % (st['zone'], st['space']))
+    # threshold
+    ths = {t['name'] for t in lay.get('thresholds', [])}
+    for o in lay.get('openings', []):
+        if o['kind'] in ('door', 'arch') and o['name'] != 'd_platform_tunnel' and o['name'] not in ths:
+            fails.append('threshold %s has no threshold plate' % o['name'])
+    # fx-fixture / fx-source
+    lit = [l['origin'] for l in lay.get('lights', []) if l.get('fixture') and l.get('intensity', 1) > 0]
+    leaks = lay.get('leaks', [])
+    for e in lay.get('fx_placed', []):
+        o = e['origin']
+        if any(g in e['kind'] for g in GLOW_FX) and not any(sum((o[k] - p[k]) ** 2 for k in range(3)) ** 0.5 <= 24 for p in lit):
+            fails.append('fx-fixture %s (%s) at %s: no lit fixture within 24' % (e['name'], e['kind'], o))
+        if e['kind'].startswith('drips') and not any(abs(o[0] - l['origin'][0]) <= 48 and abs(o[1] - l['origin'][1]) <= 48 for l in leaks):
+            fails.append('fx-source %s (%s) at %s: no leak (ceiling stain + puddle)' % (e['name'], e['kind'], o))
+    # door-reach (QA g26c: a real F press found no interaction): a door's debris interaction struct must stand clear
+    # in front of that door's dressing (barricades / planks), not inside or behind it
+    for it in lay.get('interactions', []):
+        if not str(it.get('kind', '')).startswith('debris') or not it.get('target'):
+            continue
+        for d in lay.get('decor', []):
+            if d.get('targetname') != 'iwz_doordress_' + it['target']:
+                continue
+            bx = model_box(d, bounds)
+            if bx and in_box(it['origin'], bx[0], bx[1], 8):
+                fails.append('door-reach %s struct at %s inside / at the dressing %s at %s' % (it['target'], it['origin'], d['model'], d['origin']))
+                break
+    # hero-clear
+    gs = lay.get('genset')
+    if gs and gs.get('footprint'):
+        (gx0, gy0), (gx1, gy1) = gs['footprint']
+        if gx0 < 3196 and gx1 > 3004:
+            fails.append('hero-clear genset footprint x %g..%g blocks the arch / control-door lane x 3004..3196' % (gx0, gx1))
+        for d in lay.get('decor', []):
+            if d['model'] == gs['model'] or d['model'] in HERO_PARTS:
+                continue
+            bx = model_box(d, bounds)
+            if bx is None:
+                tp = next((p for p in (lay.get('train_spec') or {}).get('props', []) if p['model'] == d['model'] and p['origin'] == list(d['origin'])), None)
+                bx = ((d['origin'][0] - 16, d['origin'][1] - 16, d['origin'][2]), (d['origin'][0] + 16, d['origin'][1] + 16, d['origin'][2] + 40)) if tp else None
+            if bx and bx[1][0] > gx0 - 48 and bx[0][0] < gx1 + 48 and bx[1][1] > gy0 - 48 and bx[0][1] < gy1 + 48 and bx[0][2] < -200:
+                fails.append('hero-clear %s at %s within 48 of the genset footprint' % (d['model'], d['origin']))
+        for sp in lay.get('spawners', []):
+            x, y = sp['origin'][:2]
+            if gx0 - 48 < x < gx1 + 48 and gy0 - 48 < y < gy1 + 48:
+                fails.append('hero-clear spawner %s at %s within 48 of the genset' % (sp['zone'], sp['origin']))
+        w = lay.get('walk', [])
+        for p, q in zip(w, w[1:]):
+            for k in range(41):
+                x = p[0] + (q[0] - p[0]) * k / 40; y = p[1] + (q[1] - p[1]) * k / 40
+                if gx0 - 16 < x < gx1 + 16 and gy0 - 16 < y < gy1 + 16 and abs(p[2] - gs['origin'][2]) < 40:
+                    fails.append('hero-clear walk segment %s -> %s crosses the genset' % (p, q)); break
+    # decor-rail / stacked
+    rails = [g for g in geo if g['name'] in ('rail', 'handrail', 'window_frame')]
+    boxes = []
+    for d in lay.get('decor', []):
+        bx = model_box(d, bounds)
+        if bx:
+            boxes.append((d, bx))
+    for d, (mn, mx) in boxes:
+        if 'train' in d['model'] or d['model'].startswith('iwz_'):
+            continue
+        for g in rails:
+            if box_overlap(mn, mx, [v + 1 for v in g['mins']], [v - 1 for v in g['maxs']]) > 0:
+                fails.append('decor-rail %s at %s through the %s at %s' % (d['model'], d['origin'], g['name'], [round(v) for v in g['mins']]))
+                break
+    for d, (mn, mx) in boxes:
+        if any(t in d['model'] for t in STACK_OK):
+            continue
+        for e, (emn, emx) in boxes:
+            if e is d or any(t in e['model'] for t in STACK_OK) or emx[2] - emn[2] < 6:
+                continue
+            if emn[2] + 6 < mn[2] <= emx[2] + 4:            # d's base is on or just above e's top half
+                ox = min(mx[0], emx[0]) - max(mn[0], emn[0]); oy = min(mx[1], emx[1]) - max(mn[1], emn[1])
+                if ox > 0 and oy > 0 and ox * oy > 0.3 * min((mx[0] - mn[0]) * (mx[1] - mn[1]), (emx[0] - emn[0]) * (emx[1] - emn[1])):
+                    fails.append('stacked %s at %s stands on %s at %s' % (d['model'], d['origin'], e['model'], e['origin']))
+
+
+def dark_image_rule(lay, quads, fails, entries):
+    """dark-image: every placed model resolved to its materials' colour images (asset catalog / kit report); every
+    custom image material used by a world quad checked on its source image."""
+    cat, kit = entries['catalog'], entries['kit']
+    if cat or kit:
+        seen = set()
+        for d in lay.get('decor', []):
+            m = d['model']
+            if m in seen or m.startswith('iwz_'):        # ported models: their port report checks the images
+                continue
+            seen.add(m)
+            c, k = cat.get(m), kit.get(m)
+            if c is None and k is None:
+                continue
+            if c is not None:
+                cost = c.get('cost') or {}
+                if not c.get('images') and not c.get('emissive'):
+                    fails.append('dark-image %s has no colour image in the catalog' % m)
+                elif [i_ for i_ in cost.get('missingImages', []) if 'nml' not in i_ and '_n_' not in i_ and not i_.endswith('_n')]:
+                    fails.append('dark-image %s missing colour images %s' % (m, cost['missingImages'][:3]))
+            tex = ((k or {}).get('check') or {}).get('texture') or {}
+            if tex.get('meanLuma') is not None and tex['meanLuma'] < 0.03 * 255:
+                fails.append('dark-image %s kit preview mean luma %.1f / 255' % (m, tex['meanLuma']))
+    used = {mat for zone, mat, pts, n in quads}
+    try:
+        from PIL import Image, ImageStat
+    except Exception:
+        return
+    for key in sorted(used):
+        cu = SM.CUSTOM.get(key) or {}
+        tga = cu.get('tga')
+        if not tga or not os.path.isfile(tga):
+            continue
+        im = Image.open(tga).convert('RGBA')
+        st = ImageStat.Stat(im)
+        alpha = st.mean[3] / 255.0
+        lum = (0.2126 * st.mean[0] + 0.7152 * st.mean[1] + 0.0722 * st.mean[2]) / 255.0
+        if alpha > 0.5 and lum < 0.03:
+            fails.append('dark-image material %s: %s mean luma %.3f' % (key, os.path.basename(tga), lum))
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('src'); ap.add_argument('--json')
+    ap.add_argument('--catalog', help='asset catalog.json (model bounds) for decor-rail / stacked')
+    ap.add_argument('--kit', help='kit_final.json (kit model bounds)')
+    a = ap.parse_args()
+    bounds = {}
+    entries = {'catalog': {}, 'kit': {}}
+    for tag_, path_ in (('catalog', a.catalog), ('kit', a.kit)):
+        if path_ and os.path.isfile(path_):
+            for m_ in json.load(open(path_))['models']:
+                entries[tag_][m_['name']] = m_
+                if m_.get('bounds'):
+                    bounds.setdefault(m_['name'], m_['bounds'])
+    quads = json.load(open(os.path.join(a.src, 'surfaces.json')))['quads']
+    lay = json.load(open(os.path.join(a.src, 'layout.json')))
+    fails = []
+    spec = lay.get('track_spec') or {}
+    channels = spec.get('channels', [])
+    # train kit (IWZ_TRAIN, train agent): the platform edge comes forward to train_spec.edge_y over the channel (deck
+    # overhang); the channel ends there, and the kit's own models (iwz_*) are the track, car and edge, not intruders
+    tspec = lay.get('train_spec') or {}
+    env_channels = [dict(ch, y1=min(ch['y1'], tspec['edge_y'] + EDGE)) for ch in channels] if tspec.get('edge_y') else channels
+    for ch in channels:
+        if abs(ch['centre_y'] - (ch['y0'] + ch['y1']) / 2) > 0.5:
+            fails.append('trackbed %s channel off-centre: centre %g, middle %g' % (ch['zone'], ch['centre_y'], (ch['y0'] + ch['y1']) / 2))
+    if spec.get('rail_y') and abs(sum(spec['rail_y']) / 2 - spec.get('centre_y', 0)) > 0.5:
+        fails.append('trackbed rails not centred: %s about %s' % (spec['rail_y'], spec.get('centre_y')))
+    for dr in lay.get('doors', []):
+        if dr.get('name') == 'd_platform_tunnel' and channels:
+            a_, b_ = dr.get('a'), dr.get('b')
+            if a_ is not None and (abs(a_ - channels[0]['y0']) > 0.5 or abs(b_ - channels[0]['y1']) > 0.5):
+                fails.append('trackbed: tunnel door %s..%s does not span the channel %s..%s' % (a_, b_, channels[0]['y0'], channels[0]['y1']))
+    grip_treads = {}
+    for zone, mat, pts, n in quads:
+        if mat == 'yellow_grip' and n[2] > 0.9 and zone.startswith('stair'):
+            grip_treads.setdefault(zone, set()).add(round(pts[0][2]))
+    for zone, zs in grip_treads.items():
+        if len(zs) > 2:
+            fails.append('stair-tactile %s has tactile paving on %d tread heights' % (zone, len(zs)))
+    for l in lay.get('lights', []):
+        col = l.get('color', (1, 1, 1))
+        if max(col) - min(col) > 0.4 and (not l.get('fixture') or l.get('radius', 384) > 192):
+            fails.append('colour-cast %s light in %s at %s radius %s' % (l.get('fixture'), l['zone'], l['origin'], l.get('radius')))
+    for dc in lay.get('decals', []):
+        img = SM.MATERIALS.get(dc.get('mat'), {}).get('img')
+        if img and not SM.MATERIALS[dc['mat']].get('custom') and dc.get('w') and dc.get('h'):
+            if abs((dc['w'] / dc['h']) / (img[0] / img[1]) - 1) > 0.15:
+                fails.append('decal-aspect %s %gx%g vs image %dx%d in %s' % (dc['mat'], dc['w'], dc['h'], img[0], img[1], dc['zone']))
+    for k, m in SM.MATERIALS.items():
+        if m.get('custom') or not m.get('img'):
+            continue
+        w, h = m['img']
+        if abs((m['su'] / m['sv']) / (w / h) - 1) > 0.1:
+            fails.append('uv-aspect %s su/sv %g/%g vs image %dx%d' % (k, m['su'], m['sv'], w, h))
+    boxes = []
+    notes = []
+    for zone, mat, pts, n in quads:
+        m = SM.MATERIALS.get(mat, {})
+        if zone != 'gallery':
+            boxes.append(([min(p[i] for p in pts) for i in range(3)], [max(p[i] for p in pts) for i in range(3)]))
+        if mat in DARK_DECALS and n[2] > 0.9:      # (g27c fixproof I9) renders as hard-edged black floor parallelograms
+            fails.append('dark-decal %s on a floor in %s at %s' % (mat, zone, [round(c) for c in pts[0]]))
+        if mat == 'black' and zone != 'gallery':
+            fails.append('void-black in %s at %s' % (zone, [round(c) for c in pts[0]]))
+        if mat in GRIP and n[2] < 0.9:
+            fails.append('material-role %s on a non-floor face in %s at %s' % (mat, zone, [round(c) for c in pts[0]]))
+        if not m.get('trim') and not m.get('custom') and m.get('collide', True) and zone != 'gallery':
+            e = [sum((pts[1][i] - pts[0][i]) ** 2 for i in range(3)) ** 0.5, sum((pts[3][i] - pts[0][i]) ** 2 for i in range(3)) ** 0.5]
+            if 0 < min(e) < min(m.get('su', 64), m.get('sv', 64)) / 16 and max(e) > max(m.get('su', 64), m.get('sv', 64)):
+                notes.append('uv-sliver %s %gx%g in %s at %s' % (mat, round(min(e), 1), round(max(e)), zone, [round(c) for c in pts[0]]))
+        if str(m.get('verified', '')).startswith('FAILED'):
+            fails.append('failed-material %s in %s at %s' % (mat, zone, pts[0]))
+        if mat in VEHICLE_MATS:
+            fails.append('fake-vehicle material %s in %s at %s' % (mat, zone, pts[0]))
+        xs = [p[0] for p in pts]; ys = [p[1] for p in pts]; zs = [p[2] for p in pts]
+        # (g27d) plates on a car body (run number, headsign): within a car's nav box are car dressing, not trackbed
+        on_car = any(all(abs(v - c_['origin'][0]) <= c_['nav_half'][0] for v in xs) and all(abs(v - c_['origin'][1]) <= c_['nav_half'][1] for v in ys)
+                     and min(zs) >= c_['origin'][2] - 1 for c_ in tspec.get('cars', [])) if tspec and m.get('custom') and str(mat).startswith('story_') else False
+        for ch in (env_channels if not on_car else []):
+            if max(xs) > ch['x0'] + EDGE and min(xs) < ch['x1'] - EDGE and max(ys) > ch['y0'] + EDGE and min(ys) < ch['y1'] - EDGE \
+                    and max(zs) > ch['z'] + 0.5 and min(zs) < ch['z'] + ENVELOPE and not (n[2] > 0.9 and max(zs) <= ch['z'] + 1):
+                fails.append('trackbed %s (%s) inside the %s channel at %s' % (mat, zone, ch['zone'], [round(c) for c in pts[0]]))
+        if n[2] > 0.9 and any(abs(zs[0] - f) < 3 for f in (0, -320, -384)):      # walkable floor planes only
+            w = max(xs) - min(xs); h = max(ys) - min(ys)
+            if 6 <= min(w, h) < 16 and max(w, h) > 256 and m.get('su', 0) >= 64 and not m.get('trim') and mat not in ('stair_tread', 'yellow_grip', 'steel_trim', 'rubber_trim', 'wood_trim', 'beam_yellow', 'ibeam') \
+                    and not (mat == 'conc_painted' and min(ys) >= 1588 and max(ys) <= 1600):   # strip textures; beam tops at the ceiling; the platform coping
+                fails.append('floor-streak %s %gx%g in %s at %s' % (mat, round(w), round(h), zone, [round(c) for c in pts[0]]))
+    for d in lay.get('decor', []):
+        x, y, z = d['origin']
+        in_car = any(all(abs(d['origin'][k] - c_['origin'][k]) <= c_['nav_half'][k] for k in range(2)) and
+                     c_['origin'][2] - 1 <= d['origin'][2] <= c_['origin'][2] + 2 * c_['nav_half'][2] for c_ in tspec.get('cars', []))
+        for ch in (env_channels if not (tspec and (d['model'].startswith('iwz_') or in_car)) else []):     # kit models; car dressing
+            hx, hy = (d.get('clip') or (0, 0, 0))[:2]
+            if x + hx > ch['x0'] + EDGE and x - hx < ch['x1'] - EDGE and y + hy > ch['y0'] + EDGE and y - hy < ch['y1'] - EDGE and ch['z'] - 1 <= z <= ch['z'] + ENVELOPE:
+                fails.append('trackbed decor %s at (%g %g %g) inside the %s channel' % (d['model'], x, y, z, ch['zone']))
+        if d['model'] in ('fake_train', 'box_train', 'box_carriage'):
+            fails.append('fake-vehicle decor %s' % d['model'])
+        if d['model'] not in TONE_OK and any(t in d['model'] for t in TONE_BANNED):
+            fails.append('tone decor %s in %s' % (d['model'], d['zone']))
+        mname = d['model']
+        dboxes = [decor_box(e) for e in lay.get('decor', []) if e.get('clip') and e is not d]
+        if any(t in mname for t in MOUNTED) and not any(t in mname for t in MOUNTED_FREE) and d['zone'] != 'gallery':
+            dist = min((pt_box_dist(d['origin'], mn, mx) for mn, mx in boxes + dboxes), default=1e9)
+            if dist > 28:
+                fails.append('anchor %s in %s at %s is %d from any surface' % (mname, d['zone'], d['origin'], dist))
+    for g in lay.get('geo_props', []):
+        if any(t in g['name'] for t in FAKE_OBJECTS):
+            fails.append('fake-object geo_prop %s in %s' % (g['name'], g['zone']))
+    dec = [d for d in lay.get('decor', []) if d.get('clip')]
+    for i, da in enumerate(dec):
+        a0, a1 = decor_box(da)
+        va = max(1e-6, (a1[0] - a0[0]) * (a1[1] - a0[1]) * (a1[2] - a0[2]))
+        for db in dec[i + 1:]:
+            b0, b1 = decor_box(db)
+            vb = max(1e-6, (b1[0] - b0[0]) * (b1[1] - b0[1]) * (b1[2] - b0[2]))
+            ov = box_overlap(a0, a1, b0, b1)
+            if ov > 0.3 * min(va, vb) and 'train' not in da['model'] + db['model']:
+                fails.append('intersect %s %s and %s %s' % (da['model'], da['origin'], db['model'], db['origin']))
+    signs = lay.get('signs', [])
+    pils = [g for g in lay.get('geo_props', []) if g['name'] == 'pilaster']
+    for sg in signs:
+        if sg.get('hanging'):
+            continue
+        c = sg['center']; hw, hh = sg['size'][0] / 2, sg['size'][1] / 2
+        is_art = sg['image'].startswith('art_') or sg['image'].startswith('poster') or sg['image'].startswith('notice')
+        if is_art and sg.get('off', 9) < 3.4:
+            fails.append('art-trim %s at %s only %.1f off the wall (behind the trim)' % (sg['image'], c, sg.get('off', 0)))
+        for g in pils:
+            if sg['axis'] == 'x':
+                same = abs((g['mins'][1] + g['maxs'][1]) / 2 - (c[1] - sg['facing'] * sg.get('off', 0))) < 12
+                ov = c[0] - hw < g['maxs'][0] and c[0] + hw > g['mins'][0]
+            else:
+                same = abs((g['mins'][0] + g['maxs'][0]) / 2 - (c[0] - sg['facing'] * sg.get('off', 0))) < 12
+                ov = c[1] - hw < g['maxs'][1] and c[1] + hw > g['mins'][1]
+            if same and ov and c[2] - hh < g['maxs'][2] and c[2] + hh > g['mins'][2]:
+                fails.append('art-trim %s at %s overlaps a pilaster' % (sg['image'], c))
+    for i, da in enumerate(signs):
+        for db in signs[i + 1:]:
+            if da['image'] == db['image'] and da['zone'] == db['zone'] and not (da.get('hanging') and db.get('hanging') and
+                    sum((da['center'][k] - db['center'][k]) ** 2 for k in range(3)) ** 0.5 < 16) and \
+                    sum((da['center'][k] - db['center'][k]) ** 2 for k in range(3)) ** 0.5 < 600:
+                fails.append('sign-dupe %s in %s at %s and %s' % (da['image'], da['zone'], da['center'], db['center']))
+        c = da['center']; hw = da['size'][0] / 2; hh = da['size'][1] / 2
+        s0 = [c[0] - (hw if da['axis'] == 'x' else 2), c[1] - (hw if da['axis'] == 'y' else 2), c[2] - hh]
+        s1 = [c[0] + (hw if da['axis'] == 'x' else 2), c[1] + (hw if da['axis'] == 'y' else 2), c[2] + hh]
+        for d in dec:
+            d0, d1 = decor_box(d)
+            if box_overlap(s0, s1, d0, d1) > 0:
+                fails.append('intersect sign %s at %s with %s %s' % (da['image'], c, d['model'], d['origin']))
+    g27_rules(lay, quads, fails, bounds)
+    dark_image_rule(lay, quads, fails, entries)
+    import collections
+    for r, c in collections.Counter(f.split()[0] for f in fails).most_common():
+        print('ARTLINT rule %-14s %d' % (r, c))
+    for f in fails[:80]:
+        print('ARTLINT', f)
+    print('artlint notes (not failing): %d uv-sliver faces (world-projected at true density: a thin band, not a stretch)' % len(notes))
+    print('artlint fails: %d' % len(fails))
+    if a.json:
+        json.dump({'fails': fails}, open(a.json, 'w'), indent=1)
+    sys.exit(1 if fails else 0)
+
+
+if __name__ == '__main__':
+    main()

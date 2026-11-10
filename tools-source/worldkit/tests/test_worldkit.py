@@ -251,6 +251,33 @@ class PrefabTests(Base):
         self.assertEqual(len(m['normals']), 3)
         self.assertEqual(len(m['lmuvs']), 3)
 
+    def test_extract_carries_tangents_colours_and_surface_attributes(self):
+        out, p = self.extract('extras')
+        self.assertEqual(p['mesh_extra']['file'], 'surfaces_extra.bin')
+        self.assertEqual(os.path.getsize(os.path.join(out, 'surfaces_extra.bin')), 20 * p['counts']['vertices'])
+        m = W.read_prefab_surface(out, W.load_prefab(out), 0)
+        self.assertEqual(len(m['tangents']), 3)
+        for t in m['tangents']:
+            self.assertLess(max(abs(a - b) for a, b in zip(t, (1.0, 0.0, 0.0))), 2e-3)
+        self.assertEqual(m['signs'], [1.0, 1.0, 1.0])
+        self.assertEqual(m['colors'], [0xFFFFFFFF] * 3)
+        self.assertEqual((p['surfaces'][0]['lightmapIndex'], p['surfaces'][0]['layered']), (0, False))
+        # a prefab written before the extra file existed still reads
+        old = dict(p)
+        del old['mesh_extra']
+        self.assertNotIn('tangents', W.read_prefab_surface(out, old, 0))
+
+    def test_place_turns_the_tangents_with_the_mesh(self):
+        out, p = self.extract('extras2')
+        out2 = os.path.join(self.tmp, 'extras2_placed')
+        W.place(out, (5, 6, 7), 90, out2)
+        q = W.load_prefab(out2)
+        m = W.read_prefab_surface(out2, q, 0)
+        for t in m['tangents']:
+            self.assertLess(max(abs(a - b) for a, b in zip(t, (0.0, 1.0, 0.0))), 2e-3)
+        self.assertEqual(m['colors'], [0xFFFFFFFF] * 3)
+        self.assertEqual(os.path.getsize(os.path.join(out2, 'surfaces_extra.bin')), 20 * q['counts']['vertices'])
+
     def test_extract_triangle_centroid_rule(self):
         out, p = self.extract('wide', (-10, -10, -10, 200, 200, 200))
         self.assertEqual(p['counts']['triangles'], 4)
