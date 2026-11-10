@@ -74,18 +74,20 @@ index says which.
 7. Never copy the game, and never test in the owner's game folder.
 8. Preserve the public Main server (UDP 27016), bank data and occupied clients. Anything that changes a running
    system needs its identity, backup and ownership checks first.
-9. Do not edit the resource scheduler here and never delete its lease. Keep its telemetry and shared leases; heavy
-   work stays serialised through it.
+9. Do not edit the resource scheduler here and never delete its lease. Keep its telemetry and shared leases. Builds
+   and heavy groups stay serialised through it; game sessions are admitted by free memory, several at once (this is
+   what the first section's "several at once" means).
 10. Nothing is deployed to players without the owner, and then to both public servers.
 11. The repository is private. Do not publish private code into public forks. Do not change visibility, billing,
     protection or credentials.
-12. Nothing is sent to the public game-client project (upstream iw7-mod) without the owner: no issue, no pull
-    request, no message.
+12. Nothing is sent to any public upstream project (the game client iw7-mod, ZoneTool or any other) without the
+    owner: no issue, no pull request, no message. Contribute only to the owner's forks, never with private code.
 13. Historical results do not qualify moved or rebuilt inputs. A failed result stays recorded as failed.
 14. Keys, passwords, bank data and player identifiers are never read, printed or committed.
 15. Game tests follow the server repository's test-server privacy rules: a password, `sv_lanOnly 1`, loopback, absent
     from the public server browser.
-16. Specific stops, prohibitions and refusals the owner has given remain in effect; a new tool, a strategic
+16. Do not change another agent's or tool's memory or configuration automatically.
+17. Specific stops, prohibitions and refusals the owner has given remain in effect; a new tool, a strategic
     correction or a rewrite of these instructions does not erase them.
 
 ## 3. How to work here
@@ -107,6 +109,9 @@ index says which.
 - Do not edit a composed source workspace (`runtime/...`); edit the tracked file here.
 - Map tools: commands run from `tools-source/iwzmap`. Machine locations come from parameters or from the `IWZ_*`
   variables listed in `tools-source/iwzmap/README.md`, never from a new hard-coded path.
+- Testing a map-tool change in the game: set `IWZ_GAME_ROOT` to a bench root (a stopped test server's folder, see
+  the server repository's `docs/DEVKIT.md`), never the owner's game folder; without it `run-sz2.ps1`,
+  `new-work.ps1`, `pipeline.ps1` and `fx/agent/run-fx.ps1` stop with an error by design.
 - A result is a measured run. Report source checks, build, game run and owner acceptance separately.
 
 ## 4. How to land
@@ -124,7 +129,7 @@ index says which.
 ## 5. What needs the owner
 
 - Anything deployed to players (then to both public servers).
-- Anything sent to the public game-client project.
+- Anything sent to a public upstream project.
 - Making the repository or any private code public; a licence statement; changing visibility, billing, protection
   or credentials.
 - Resuming a retired effort (Rhino, the HUD showcase), or recreating a retired lab, an access bridge or deleted
