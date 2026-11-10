@@ -122,7 +122,8 @@ server repository.
 - Anything sent to the public game-client project.
 - Making the repository or any private code public; a licence statement; changing visibility, billing, protection
   or credentials.
-- Resuming a retired effort (Rhino, the HUD showcase).
+- Resuming a retired effort (Rhino, the HUD showcase), or recreating a retired lab, an access bridge or deleted
+  game stock.
 
 ## 6. History
 

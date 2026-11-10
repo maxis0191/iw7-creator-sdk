@@ -47,7 +47,7 @@
     "docs/MODDING-CAPABILITIES.md",
     "docs/MODDING-PLATFORM.md",
     "docs/SOUND-SDK-CONTRACT.md",
-    "docs/WINDOWS-PATH-IDENTITY.md",
+    "docs/archive/2026-10-13-windows-path-identity.md",
     "ops/hud-lab/artifact.011.measured.json",
     "ops/hud-lab/artifact.measured.json",
     "ops/hud-lab/bootstrap-dependencies.json",
@@ -401,7 +401,8 @@
     "tools-source/mapents/iw7_mapents.py",
     "tools-source/mapents/test_mapents.py",
     "docs/INDEX.md",
-    "docs/archive/AGENTS-2026-10.md"
+    "docs/archive/AGENTS-2026-10.md",
+    "docs/archive/MODDING-PLATFORM-2026-10-12.md"
   ],
   "dependencies": [
     {
