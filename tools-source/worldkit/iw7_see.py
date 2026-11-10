@@ -39,7 +39,7 @@ except ImportError:  # pragma: no cover
 
 CAMERA_SCHEMAS = ('iw7.see-camera/1', 'iw7.see-camera/2')    # /1: the camera written out; /2: the engine's projection of points
 # The engine's depth convention, measured on Spaceland (docs/SEE.md): device depth = DEPTH_A + DEPTH_B / z
-DEPTH_A, DEPTH_B = 0.0, 4.0
+DEPTH_A, DEPTH_B = 0.0, 3.9375
 MESH_VERSION = 2
 NOTHING = 0              # id buffer: 0 nothing, prop i -> i + 1, surface j -> -(j + 1)
 FAR = 1e30
@@ -1062,16 +1062,30 @@ def answer_compare(scene, fa, fb, cache_dir, min_pixels=40, limit=20):
     key = lambda r: ('prop', r['prop']) if r['kind'] == 'prop' else ('surface', r['surface'])  # noqa: E731
     pa, pb = {key(r): r for r in ta['objects']}, {key(r): r for r in tb['objects']}
     gone, came, changed = [], [], []
+    # With one camera the engine's depth repeats bit for bit, so a thin thing that went (a frame flush on a wall moves
+    # the depth by an inch) is still seen: per object, the share of its pixels whose depth moved by more than 0.25 units.
+    moved_a, moved_b = {}, {}
+    if out['same_camera']:
+        za, zb = fa.z_buffer(), fb.z_buffer()
+        fine = np.abs(za - zb) > np.maximum(0.25, 0.002 * np.minimum(za, zb))
+        for table_, z_own, z_other, into in ((ta, za, zb, moved_a), (tb, zb, za, moved_b)):
+            ids = table_['ids'].ravel()
+            own = (table_['class'].ravel() == 0) & (ids != NOTHING)
+            uniq, inv = np.unique(ids[own], return_inverse=True)
+            total = np.bincount(inv, minlength=len(uniq))
+            went = np.bincount(inv, weights=(fine.ravel()[own] & (z_other.ravel()[own] > z_own.ravel()[own])), minlength=len(uniq))
+            for u, n_all, n_moved in zip(uniq.tolist(), total.tolist(), went.tolist()):
+                into[('prop', u - 1) if u > 0 else ('surface', -u - 1)] = n_moved / float(n_all)
     for k, r in pa.items():
         now = pb.get(k, {}).get('pixels', 0)
-        if r['pixels'] >= min_pixels and now < 0.3 * r['pixels']:
-            gone.append(dict(r, pixels_before=r['pixels'], pixels_after=now))
+        if r['pixels'] >= min_pixels and (now < 0.3 * r['pixels'] or moved_a.get(k, 0.0) >= 0.7):
+            gone.append(dict(r, pixels_before=r['pixels'], pixels_after=min(now, int(r['pixels'] * (1.0 - moved_a.get(k, 0.0))))))
         elif r['pixels'] >= min_pixels and (now < 0.5 * r['pixels'] or now > 2 * r['pixels']):
             changed.append(dict(r, pixels_before=r['pixels'], pixels_after=now))
     for k, r in pb.items():
         was = pa.get(k, {}).get('pixels', 0)
-        if r['pixels'] >= min_pixels and was < 0.3 * r['pixels']:
-            came.append(dict(r, pixels_before=was, pixels_after=r['pixels']))
+        if r['pixels'] >= min_pixels and (was < 0.3 * r['pixels'] or moved_b.get(k, 0.0) >= 0.7):
+            came.append(dict(r, pixels_before=min(was, int(r['pixels'] * (1.0 - moved_b.get(k, 0.0)))), pixels_after=r['pixels']))
     for rows in (gone, came, changed):
         for r in rows:
             r.pop('pixels', None)
