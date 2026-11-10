@@ -200,6 +200,38 @@
         "-B",
         "tools-source/compile_check.py"
       ]
+    },
+    {
+      "id": "sdk-modding-examples-original-rig-probe-test_example",
+      "command": [
+        "python",
+        "-B",
+        "sdk/modding/examples/original-rig-probe/test_example.py"
+      ]
+    },
+    {
+      "id": "sdk-modding-examples-stock-option-test_hud",
+      "command": [
+        "python",
+        "-B",
+        "sdk/modding/examples/stock-option/test_hud.py"
+      ]
+    },
+    {
+      "id": "sdk-modding-examples-stock-option-test_source",
+      "command": [
+        "python",
+        "-B",
+        "sdk/modding/examples/stock-option/test_source.py"
+      ]
+    },
+    {
+      "id": "sdk-modding-examples-stock-option-test_trace",
+      "command": [
+        "python",
+        "-B",
+        "sdk/modding/examples/stock-option/test_trace.py"
+      ]
     }
   ]
 }
