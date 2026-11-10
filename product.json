@@ -10,6 +10,8 @@
     "tools-source/iwzmap/cp_iwz_v1.gsc",
     "tools-source/iwzmap/cp_iwz.gsc",
     "tools-source/iwzmap/hkcm_write.py",
+    "tools-source/iwzmap/iwz_zonecheck.py",
+    "tools-source/iwzmap/tests/test_iwz_zonecheck.py",
     "tools-source/iwzmap/hkcm.py",
     "tools-source/iwzmap/hkpack.py",
     "tools-source/iwzmap/hktree_check5.py",
