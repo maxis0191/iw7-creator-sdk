@@ -23,6 +23,7 @@ records (`iw7-paris-server`: `ops/iwzmap/`, `tests/fixtures/iwzmap_*`,
 | `lightmap_read.py` | decodes the template lightmap atlas to pick per-room texels |
 | `tome_read.py` | reads an Umbra format-20 tome header |
 | `iwz_emitcheck.py` | offline gate on an emit: collision, nav, links, stairs, spawners, routes, build-to-build diff |
+| `iwz_zonecheck.py` | offline gate between "emitted" and "packed": everything built is listed, present in the source tree, and the compiled file is newer than its sources |
 | `iwz_probe_forensics.py` | recorded probe logs to per-zombie classes, verdicts, trust flags, flaky cases, hotspots |
 | `pipeline.ps1`, `build-map-wait.ps1`, `zt.ps1`, `build-zt.ps1`, `new-work.ps1` | build orchestration under the shared resource lease |
 | `native/error_journal.c` | diagnostic DLL for the local runner: Com_Error journal, fault dump, timed console commands, LuaFile dump, dvar force, RenderDoc trigger |
@@ -85,7 +86,26 @@ are listed as flaky, and failures are grouped into hotspots with the place
 where the body left the built surface. A `probe_artifact` verdict means the
 probe proved nothing: fix the probe, do not rebuild the map.
 
-Both tools read; neither builds, launches or writes into an emit. Tests:
+Between the emit and the compiled file there is one more stretch nothing used
+to read: the source list and the source tree ZoneTool packs from. A file that
+was emitted but never listed is silently absent from the map; a compiled file
+older than its sources is yesterday's map under today's name.
+
+```powershell
+python -I -B iwz_zonecheck.py <ztwork> --zone cp_iwz --emit out\sz_src --stock <dumped stock zones> --table
+python -I -B iwz_zonecheck.py <ztwork> --zone cp_iwz --strict   # release gate: exit 2 while a warning stands
+```
+
+It reports rows of the source list with no file in the tree, files in the tree
+no row lists, emitted files that differ from the copy in the tree, a collision file that
+cannot be read, references
+to assets no listed zone or stock dump holds, and a compiled file older than
+what it was built from. It writes the same report shape
+(`iw7.content-audit/1`) as the weapon audits of the asset tools, so one reader
+handles all of them. It never judges how the map looks, and a name that is
+absent from a stock dump is a note to check, never proof that it is missing.
+
+All three tools read; none builds, launches or writes into an emit. Tests:
 `python -B -m unittest discover -s tools-source/iwzmap/tests`.
 
 ## Players
