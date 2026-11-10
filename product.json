@@ -400,7 +400,8 @@
     "tools-source/mapents/examples/spaceland-overlay-probe.patch.json",
     "tools-source/mapents/iw7_mapents.py",
     "tools-source/mapents/test_mapents.py",
-    "docs/INDEX.md"
+    "docs/INDEX.md",
+    "docs/archive/AGENTS-2026-10.md"
   ],
   "dependencies": [
     {
