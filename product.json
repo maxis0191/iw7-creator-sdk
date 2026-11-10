@@ -399,7 +399,8 @@
     "docs/CREATION-TOOLS.md",
     "tools-source/mapents/examples/spaceland-overlay-probe.patch.json",
     "tools-source/mapents/iw7_mapents.py",
-    "tools-source/mapents/test_mapents.py"
+    "tools-source/mapents/test_mapents.py",
+    "docs/INDEX.md"
   ],
   "dependencies": [
     {
