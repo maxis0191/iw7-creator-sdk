@@ -111,7 +111,7 @@ The table above explains the main pieces. The three tables below list every file
 | `bake/` | lightmap and light grid baker and its measurements |
 | `catalog/` | model catalogue and preview booth (see `catalog/README.md`) |
 | `content/cp_iwz/` | one content table of the map (`cp_iwz_playercash_images.csv`) |
-| `darkness/` | dark-until-power chain (see `darkness/README.md`) |
+| `darkness/` | dark-until-power chain (see `darkness/README.md`); `darkness/runs/` (launch arguments of dated proof runs) and `darkness/integration/` (a patch for a script outside the repository) are records |
 | `fixtures/` | GSC fixtures for private local runs: `sz2_local.gsc` (views, walk, probes), `sz2_gameplay.gsc`, `sz2_hitch.gsc`, `train_kit.gsc` |
 | `fx/` | effect placement, import, variants and proof; `fx/agent/` holds one agent's run scripts and probes (see its `README.txt`) |
 | `native/` | diagnostic DLL sources for an owned private test client (`error_journal.c`, `iw7_fxperf.c`, `build.cmd`) |
