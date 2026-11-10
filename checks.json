@@ -112,6 +112,21 @@
         "-B",
         "tools-source/gsc-consumption-tool/verify_archive.py"
       ]
+    },
+    {
+      "id": "tools-source-iwzmap-volume-check",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/iwzmap",
+        "-p",
+        "test_volume_check.py",
+        "-v"
+      ]
     }
   ]
 }

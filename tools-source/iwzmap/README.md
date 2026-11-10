@@ -25,6 +25,7 @@ records (`iw7-paris-server`: `ops/iwzmap/`, `tests/fixtures/iwzmap_*`,
 | `iwz_emitcheck.py` | offline gate on an emit: collision, nav, links, stairs, spawners, routes, build-to-build diff |
 | `iwz_zonecheck.py` | offline gate between "emitted" and "packed": everything built is listed, present in the source tree, and the compiled file is newer than its sources |
 | `iwz_probe_forensics.py` | recorded probe logs to per-zombie classes, verdicts, trust flags, flaky cases, hotspots |
+| `volume_check.py` (+ `test_volume_check.py`) | offline check of a compiled map's trigger volumes: every info_volume / trigger_* has an entity Havok shape the engine can point-test (ispointinvolume = Havok point query, units / 32, no shape = never inside), of its trigger model's size; spawners and plan nav cells inside their zone volume (`--plan`, `--require-spawners`) |
 | `pipeline.ps1`, `build-map-wait.ps1`, `zt.ps1`, `build-zt.ps1`, `new-work.ps1` | build orchestration under the shared resource lease |
 | `native/error_journal.c` | diagnostic DLL for the local runner: Com_Error journal, fault dump, timed console commands, LuaFile dump, dvar force, RenderDoc trigger |
 
