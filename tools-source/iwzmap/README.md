@@ -136,8 +136,9 @@ No script of this folder holds a path of one machine. A location comes from a pa
 | `IWZ_TEMPLATE_DUMP` | `<IWZ_RUNTIME>\iwz-map-ref-a\dump` | stock dumps (`cp_zmb`, `techsets_*`) |
 | `IWZ_GAME_ROOT` | none | game folder for `run-sz2.ps1`, `new-work.ps1`, `pipeline.ps1`, `catalog\Run-Preview.ps1`, `fx\agent\run-fx.ps1`: a bench root, never the owner's game folder |
 
-`<Documents>` is the Documents folder of the account. The Python tools read `IWZ_RUNTIME` the same way for their
-fall-backs, next to the variables they already had: `IWZ_TEXCONV`, `GRAYWOLF_EXE`, `IWZ_SMODEL_STOCK_CSV`,
+`<Documents>` is the Documents folder of the account. The Python tools read `IWZ_RUNTIME` for their
+fall-backs (their default is `~/Documents/IW7-Runtime`, which differs from the PowerShell default only when the
+Documents folder is redirected; set `IWZ_RUNTIME` in that case), next to the variables they already had: `IWZ_TEXCONV`, `GRAYWOLF_EXE`, `IWZ_SMODEL_STOCK_CSV`,
 `IWZ_ART_DIR`, and `IWZ_STOCK_DUMP_CP` for the optional case of `test_volume_check.py`.
 `catalog\Run-Preview.ps1 -SourcePackage` is mandatory (prepared server inputs).
 

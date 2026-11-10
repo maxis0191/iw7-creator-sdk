@@ -41,7 +41,9 @@ waiting for GitHub checks; per-test game copies; launching once per question.
 
 The section above is the owner's current workflow and wins wherever anything else differs. The sections below are
 the standing rules of this repository, each written once. `docs/TOOLS-INDEX.md` named above has landed in the
-server repository.
+server repository. The `ops/bench`, `ops/gamelab`, `ops/enginelab`, `ops/netlab` and `ops/quality` paths named above
+are not in this repository: they live in the server repository (iw7-paris-server) or in iw7-mod-components; that
+index says which.
 
 ## 1. What this repository is
 
@@ -83,6 +85,8 @@ server repository.
 14. Keys, passwords, bank data and player identifiers are never read, printed or committed.
 15. Game tests follow the server repository's test-server privacy rules: a password, `sv_lanOnly 1`, loopback, absent
     from the public server browser.
+16. Specific stops, prohibitions and refusals the owner has given remain in effect; a new tool, a strategic
+    correction or a rewrite of these instructions does not erase them.
 
 ## 3. How to work here
 
@@ -112,6 +116,7 @@ server repository.
   `./checks.ps1 -Workspace runtime/<short>`, once, in the background; post the result on the pull request; merge.
   `bootstrap.ps1` refuses a checkout with uncommitted changes and composes the workspace from the committed head.
   GitHub's own checks do not run and their colour means nothing.
+- A check that fails is fixed at its cause. It is never removed, skipped or weakened to get a passing run.
 - Exit code 3221225794 on several checks at once means Windows could not start the processes (machine under load):
   run again once before reading it as a failure.
 - Leave the main checkout clean and synchronised.

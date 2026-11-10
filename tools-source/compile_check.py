@@ -4,7 +4,8 @@ usage (from the repository root or a composed workspace): python -B tools-source
 
 Python files are compiled with compile() (no import, nothing executed, no .pyc written). PowerShell files are
 parsed with the language parser (nothing executed). This is the only guard over the scripts no test loads; it
-says that a file is syntactically valid, nothing about what it does. Exit 1 lists every file that does not parse.
+says that a file is syntactically valid, nothing about what it does. Exit 1 lists every file that does not parse; finding no file of
+either kind (wrong folder) is also a failure.
 """
 import os
 import subprocess
@@ -45,7 +46,11 @@ def main():
         run = subprocess.run(['pwsh', '-NoLogo', '-NoProfile', '-NonInteractive', '-Command', PARSE],
                              input='\n'.join(powershell), capture_output=True, text=True)
         if run.returncode:
-            failures.extend(line for line in (run.stdout + run.stderr).splitlines() if line.strip())
+            lines = [line for line in (run.stdout + run.stderr).splitlines() if line.strip()]
+            failures.extend(lines or ['pwsh exit %d with no output' % run.returncode])
+    if not python or not powershell:
+        failures.append('found %d Python and %d PowerShell files: run from the repository root or a composed workspace'
+                        % (len(python), len(powershell)))
     print('compile_check: %d Python files, %d PowerShell files, %d failures' % (len(python), len(powershell), len(failures)))
     for line in failures:
         print('FAIL ' + line)

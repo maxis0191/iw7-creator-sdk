@@ -9,6 +9,7 @@ One page that routes a reader. Paths are relative to the repository root. The ch
 | read a studio map as data, lift a prefab | [WORLDKIT.md](WORLDKIT.md) | `tools-source/worldkit` | `tools-source-worldkit-tests` |
 | change a shipped map's entities with no build | [MAPENTS.md](MAPENTS.md) | `tools-source/mapents` | `tools-source-mapents-tests` |
 | describe, validate and package a mod | [MODDING-PLATFORM.md](MODDING-PLATFORM.md) (the contract), [MOD-PACKAGES.md](MOD-PACKAGES.md), [COMMUNITY-MOD-DISTRIBUTION.md](COMMUNITY-MOD-DISTRIBUTION.md), [sdk/modding/CREATOR.md](../sdk/modding/CREATOR.md) | `sdk/modding`, `ops/modding`, `ops/Validate-ModPackage.py` | `sdk-modding-tests`, `mod_package_test`, `community_distribution_test`, `beacon_ff_test`, the `sdk-modding-examples-*` checks |
+| touch the HUD lab (showcase cancelled, files pinned by the server) | header of `tests/ops/hud_lab_test.py` | `ops/hud-lab` | `hud_lab_test` |
 | describe sound in a mod | [SOUND-SDK-CONTRACT.md](SOUND-SDK-CONTRACT.md) | `sdk/modding/examples/original-sound` | `sdk-modding-examples-original-sound-test_example` |
 | audit what a compiled GSC consumes | [sdk/modding/gsc-consumption-audit.md](../sdk/modding/gsc-consumption-audit.md), [tools-source/gsc-consumption-tool/README.md](../tools-source/gsc-consumption-tool/README.md) | `sdk/modding/audit_gsc_consumption.py`, `tools-source/gsc-consumption-tool` | `tools-source-gsc-consumption-tool-verify_archive` |
 | build the server spawn tip example | [tools-source/gsc-spawn-tip/README.md](../tools-source/gsc-spawn-tip/README.md) | `tools-source/gsc-spawn-tip` | `tools-source-gsc-spawn-tip`, `Test-SpawnTip`, `Test-SpawnTipHost` |
@@ -40,7 +41,8 @@ Recorded decisions (2026-11-10), not to be reopened without a reason that is new
 - `tools-source/iwzmap` is not restructured now. Its Python files import each other by bare module name, its
   PowerShell scripts call their siblings by folder, `checks.json` discovers a test in the folder root, and the
   server's documents name the flat paths. Revisit when a second map exists and the generic tools must be separated
-  from Station Zero. Until then `tools-source/iwzmap/README.md` lists every file of the folder.
+  from Station Zero. Until then `tools-source/iwzmap/README.md` lists every file directly in the folder and
+  describes each sub-folder.
 
 ## Dated records in `sdk/modding/`
 

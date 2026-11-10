@@ -64,7 +64,7 @@ resource and authorisation gates. To run one, use the composed workspace or
   repository. The composition receipt records every owner, commit, Git blob and checkout-byte hash. It does not
   qualify a native build and does not inherit an older runtime receipt.
 - Every tracked file is declared in the `exports` list of `product.json`; a file that is not declared fails the
-  first check.
+  first check. The exceptions (root files, `.github/`, `migration/`) are listed in `AGENTS.md` section 3.
 - Other products pin files of this repository by path and hash: iw7-paris-server and x64-zt-extensions pin files
   under `ops/hud-lab`, `ops/modding`, `ops/Validate-ModPackage.py` and `sdk/modding`; iw7-mod-components pins
   `tools-source/gsc-consumption-tool`. Those paths do not move.
