@@ -16,7 +16,8 @@ It reads dumps; it never runs the asset tool or the game. Python standard librar
 importable, `IW7_WORLD_NO_NUMPY=1` turns it off; both paths give identical databases).
 
 Files: `iw7_dump.py` (the byte-level reader: format, layouts, loud failures), `iw7_world.py` (database, queries,
-prefabs, command line), `tests/` (synthetic world and tests).
+prefabs, command line), `iw7_worldpatch.py` (removes and moves props in a copy of the render world file, see
+[WORLDPATCH](WORLDPATCH.md)), `tests/` (synthetic world and tests).
 
 `iw7_see.py` in the same folder joins this database with a frame captured in the game (its camera and depth) and
 answers what the frame shows: [SEE.md](SEE.md).
