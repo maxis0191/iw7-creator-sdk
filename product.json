@@ -35,8 +35,14 @@
     "tools-source/iwzmap/tests/test_iwz_probe_forensics.py",
     "tools-source/iwzmap/tome_read.py",
     "tools-source/iwzmap/zt.ps1",
+    "tools-source/worldkit/iw7_dump.py",
+    "tools-source/worldkit/iw7_world.py",
+    "tools-source/worldkit/tests/synthetic.py",
+    "tools-source/worldkit/tests/test_worldkit.py",
+    "docs/WORLDKIT.md",
     "docs/ENGINE-MODDING-STRATEGY.md",
     "docs/COMMUNITY-MOD-DISTRIBUTION.md",
+    "docs/MAPENTS.md",
     "docs/MOD-PACKAGES.md",
     "docs/MODDING-CAPABILITIES.md",
     "docs/MODDING-PLATFORM.md",
@@ -390,7 +396,10 @@
     "tools-source/iwzmap/train_perf.py",
     "tools-source/iwzmap/train_proof.py",
     "tools-source/iwzmap/volume_check.py",
-    "docs/CREATION-TOOLS.md"
+    "docs/CREATION-TOOLS.md",
+    "tools-source/mapents/examples/spaceland-overlay-probe.patch.json",
+    "tools-source/mapents/iw7_mapents.py",
+    "tools-source/mapents/test_mapents.py"
   ],
   "dependencies": [
     {

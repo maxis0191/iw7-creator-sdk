@@ -1,0 +1,13 @@
+{
+  "schema": "iw7.ents-patch/1",
+  "note": "Spaceland (cp_zmb): remove a basketball arcade hoop (five entities), add one prop near the spawn, mark one bumper car",
+  "remove": [
+    {"targetname": "pf405_auto67"}
+  ],
+  "set": [
+    {"where": {"targetname": "bumper_car", "index": 1648}, "values": {"script_noteworthy": "overlay_changed"}}
+  ],
+  "add": [
+    {"classname": "script_model", "targetname": "overlay_probe", "origin": "467 3677 40", "angles": "0 270 0", "model": "toy_zombies_plastic_egg"}
+  ]
+}
