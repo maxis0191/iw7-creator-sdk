@@ -19,6 +19,7 @@ records (`iw7-paris-server`: `ops/iwzmap/`, `tests/fixtures/iwzmap_*`,
 | `hkcm.py`, `hkcm_write.py`, `hkpack.py` | Havok hk_2014 compressed mesh collision (scale 1/32) |
 | `assemble.py` | zone sources for buildzone (level script, content tables, csv) |
 | `cp_iwz.gsc` | level script: agents, spawn volumes, interactions, door barrier |
+| `art/` (package) | in-map 2D art: procedural grime/water/blood masks and decals, typeset clock/board/diagram/notices/posters, sign ageing, TGA+mipped DDS writer (see art/README.md) |
 | `build_art.py`, `make_art.py` | map browser art zone `<map>_art.ff`: 2D list/vote images and the theater poster model, made from engine renders |
 | `lightmap_read.py` | decodes the template lightmap atlas to pick per-room texels (LDR preview; superseded by `bake/lm_decode.py`) |
 | `bake/lmbake.py` | lightmap baker: charts and atlas, ray traced direct light with soft shadows, cosine-gathered bounces, AO, dilation, BC6H/BC4/R8G8 encoding; rewrites the world.bin lightmap coordinates and lighting.txt (light grid) in a baked copy of the source |
@@ -136,3 +137,97 @@ All three tools read; none builds, launches or writes into an emit. Tests:
 A zombies usermap also needs the iw7-mod `Usermaps` script fix (fork branch
 `fix/usermaps-cp-map-stats`): without it one installed `cp_` usermap breaks the
 whole CHOOSE FILM list.
+
+## Station Zero v2 (stage 2 level design)
+
+`station_zero2.py` builds the nine-zone metro station of the stage 2 level design from textured brushes
+(`brushkit.py`: world-aligned quads with per-material texture world size, boxes, banded walls with door
+openings, reveals and frames, straight stairs with render steps and a smooth collision ramp). Data tables
+(`ZONES`, `OPENINGS`, `SPAWNERS`, `PERKS`, `WALL_BUYS`, `WHEELS`, `QUEST`, `PROPS`, `LIGHTS`, `SIGNS`, `VIEWS`,
+`WALK`) are kept separate so the static model, light, audio and gameplay tools can plug in. Materials and their
+UV scales are in `sz2_materials.py`; custom-image signs/posters and tinted lamps are cloned stock world materials
+written by `sz2_assemble.py`. The level script is `cp_iwz2.gsc` (generated door / zone link tables).
+
+```powershell
+$env:IWZ_DOUBLE_SIDED='1'                       # optional: IWZ_GALLERY=1 adds the material / texel gallery room
+python -I station_zero2.py <stock cp_zmb dump> <src>
+python -I sz2_plan.py <src>                     # offline plan image + nav/data checks (exit 1 on failure)
+.\build-sz2.ps1 -Src <src> -UmOut <usermap dir> # own zonetool work dir, leased
+.\run-sz2.ps1 -Tag <run> -UsermapDir <dir> -Mode views|walk|gameplay -Fixture <src>\iwzmap_sz2_local.gsc
+python -I sz2_frames.py <run dir> <src> <analysis dir>   # contact sheets, luma, gallery sampling
+python -I sz2_lmpick.py <analysis>\gallery.json sz2_lm_table.json   # measured per-zone texels
+```
+
+## Stock models from other zones (kit import)
+
+The template carries cp_zmb only. `kit_import.py` adds stock xmodels of other zones (cp_disco, cp_final, ...) to the
+usermap zone: geometry, materials, image headers (pixels stream from the base `imagefile*.pak`), physics assets and
+the techsets the template's runtime techset zones lack. Needs ZoneTool x64-zt `codex/iwzmap-kit-import` or later
+(`-dumpzonetypes` writes a map zone's materials, whose definitions live in `techsets_<zone>`).
+
+```powershell
+# once per source zone, in the zonetool work dir (zt.ps1 lease)
+zonetool -dumpzonetypes cp_disco xmodel,xmodelsurfs,material,image,physicsasset,physicsfxshape
+zonetool -dumpzone techsets_cp_disco
+# build: models from a list or kit_final.json rows; '<zone>=<model dump>;<techsets dump>'
+.\build-sz2.ps1 -Src <src> -UmOut <dir> -KitModels 'cp_disco_subway_train_bsp2xmodel,clk_defend_generator_solo' `
+  -KitDumps 'cp_disco=<W>\dump\cp_disco;<W>\dump\techsets_cp_disco','cp_final=<W>\dump\cp_final;<W>\dump\techsets_cp_final'
+python -I kit_proof.py <kit run> <baseline run> <src> kit_final.json <out>   # drawn / textured / lit per model
+```
+
+Rules: a material, image, techset or shader already named by the zone csv or defined by a runtime techset zone is
+referenced, not copied; other techsets are embedded from the techsets dump (`.techset`, `.technique`,
+`.vertexdecl`, shader `.cso`). Do not `require` extra map techset zones: two of them next to the template's nine hung
+ZoneTool. Scriptable movers (the subway train's) are dropped from a patched `.xmb` copy (`--keep-scriptable` keeps
+them and then needs the scriptable dump and its dependencies).
+
+## Ambient FX (fx/)
+
+Stock IW7 effects render in a usermap through the ordinary script route (`loadfx` in `main()`, then
+`spawnfx` + `triggerfx( ent, -4 )` for looping ambience, `playfx` for bursts). Every cp_zmb effect is already in the FF
+(assemble.py copies the stock zone rows). What matters: the effect must be in the level effect list
+(`netconststrings/ncs_efx_level.json`, IW7 registers effects through it), placed with the stock createfx angles, and
+be a top-level effect (child effects such as `vfx_zmb_drips`, `vfx_zb_trash_a_ch` are spawned by their parents).
+Particle-cloud effects (techset `particle_cloud_*`, e.g. `vfx_zmb_dust_motes_md`) do not draw in a generated map:
+use sprite effects (the cp_disco `vfx_amb_motes` import) for motes.
+
+```powershell
+# fx.txt: <name> <alias|vfx path> <x> <y> <z> [angles=p,y,r] [mode=loop|interval:a-b|retrigger:s|flicker:a-b|oneshot]
+#         [delay=s] [view=x,y,z,yaw,pitch] [region=r] [region_dz=dz] [zone=z]       (aliases: fx/fx_catalog.json)
+python -I fx\fx_place.py <fx.txt> <src> --list-imports               # foreign effects the file needs
+python -I fx\fx_place.py <fx.txt> <src> --ncs <ncs_efx_level.json> [--ncs <imported list>] `
+  --fixture-out <src>\fxproof.gsc --manifest-out <src>\fx_manifest.json   # patches <src>\cp_iwz.gsc (iwz_fx module)
+# foreign effects (cp_disco steam, drips, motes, beams...): dump once, then build with the import
+zonetool -dumpzonetypes cp_disco vfx,particlesimanimation,netconststrings
+.\build-sz2.ps1 ... -FxImport 'cp_disco:vfx/iw7/levels/cp_disco/amb/vfx_grate_steam_01,...' `
+  -FxDumps 'cp_disco=<vfx dump>;<kit dump>;<techsets_cp_disco dump>'
+# proof: private run with the generated fixture (+set paris_iwz_mode fxproof +set paris_iwz_fxproof 1
+#        +set paris_iwz_fxonly -2 +set paris_iwz_fxphase 0) and the fxperf DLL (IW7_FXPERF=<file>), then
+python -I fx\fx_proof.py <run> <src>\fx_manifest.json <out> --perf <fxperf file>
+```
+
+fx_proof.py: per effect, same camera, frames with the effect held off (off0, off1) and running (on0..on4 over 4 s);
+the luma is box-blurred 7x7 first (IW7 film grain changes ~10% of single pixels between any two frames); PASS when
+the changed fraction inside the projected effect region is >= 0.4%, >= 4x the off/off noise and >= 3x the change
+outside the region; ANIMATED when consecutive on frames also change in the region. Frame time: the fxperf DLL hooks
+DXGI Present and buckets present-to-present intervals by the dvar `paris_iwz_fxphase` (2k+1 effect k off, 2k+2 on,
+200/201 every effect off/on at the zone views). In a match the module starts every effect once and never polls.
+
+Power stages (`stage=` in fx.txt): `always`, `dark` (until the stock `power_on` flag), `lit` (from power on),
+`poweron` (start-up burst for `for=<s>` seconds). With `level.iwz_light_banks_external` (darkness lighting script) the
+dark/lit switch follows each zone's light bank (`iwz_light_bank_on`, <zone>; `iwz_power_lights_done`). Proof runs
+ignore stages (every effect is tested on its own) and hold the flickering lamps (`paris_iwz_flickertest 1`).
+Engine findings (runs in iwz-stage2\fx): sprite effects render; GPU particle clouds (`particle_cloud_*` techsets,
+`vfx_zmb_dust_motes_md`) and `vfx_knee_high_fog_dark` (placeholder material `gfx_test01`) never draw;
+`vfx_zb_thu_sparks` and `vfx_zmb_light_strobe_01` emit light (the surroundings brighten); thin drips
+(`vfx_water_drips_line`, `vfx_zmb_drips_parent`) stay below the measurement threshold at 200+ units; the effect list
+entry is not required for an imported effect (`vfx_light_mist` rendered without it). fx_place refuses effect origins
+more than 96 units from any walkable plan cell (inside a wall or the void).
+
+Dark maps (darkness builds: pitch dark before power, flashlight = particle spot light). Lit particle materials
+(`eq_effect_*_blend_*`) take the baked light grid AND dynamic lights: they read inside the flashlight cone and next to
+baked emergency lamps, nowhere else (fx\NOTES.md probe9 / proof-dfx1-a). `fx_variant.py` makes self-lit variants of
+lit stock effects (unlit counterpart techset with the donor's state / constant-buffer files, colour tint) for the dark
+stage; `station_zero_fx_dark.txt` pairs them (`stage=dark`) with the lit originals (`stage=lit`). Prove dark FX with the
+flashlight carrier in "follow" mode (`+set paris_iwz_fl_mode follow`): the "link" carrier does not follow view pitch.
+`vfx_lit.py` (fx/agent) lists the lighting class of every material of an effect.

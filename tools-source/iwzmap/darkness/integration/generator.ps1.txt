@@ -1,0 +1,3 @@
+# -Darkness (darkness agent, SDK codex/iwzmap-darkness darkness\README.md): power fittings get dark diffusers and
+# unlit / lit fixture models, the level script calls the darkness + flashlight modules
+if($Darkness){ $env:IWZ_DARK='1' } else { Remove-Item Env:IWZ_DARK -ErrorAction SilentlyContinue }

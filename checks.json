@@ -127,6 +127,21 @@
         "test_volume_check.py",
         "-v"
       ]
+    },
+    {
+      "id": "tools-source-iwzmap-audio",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/iwzmap/audio",
+        "-p",
+        "test_*.py",
+        "-v"
+      ]
     }
   ]
 }

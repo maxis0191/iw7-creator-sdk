@@ -1,0 +1,25 @@
+# -Darkness: flashlight effects (one LIGHT_SPOT particle from the cp_disco train front light, life 100000 s): six
+# copies of the beam, its 30 % lit-state copy, the wide dim halo cone and its lit copy; the dark vision (manual
+# exposure -3) under cp_zmb_int_basement and the lit map vision (no fog veil / volumetrics / veiling glare, auto
+# exposure adapting at 0.3); the zonetool with named scriptable lights.
+if($Darkness){
+  $DV="$L\darkvfx\$Tag"; if(Test-Path $DV){ Remove-Item $DV -Recurse -Force }
+  $TL='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\fx\ztwork\dump\cp_disco\particlesystem\vfx\iw7\levels\cp_disco\subway_train\vfx_train_front_light_ch.iw7VFX'
+  $fl=@()
+  foreach($v in @(@('vfx/iwz/vfx_iwz_flashlight_world','40','2','3.5','1','900'),@('vfx/iwz/vfx_iwz_flashlight_world_b','40','2','3.5','1','900'),
+                  @('vfx/iwz/vfx_iwz_flashlight_world_c','40','2','3.5','1','900'),@('vfx/iwz/vfx_iwz_flashlight_world_d','40','2','3.5','1','900'),
+                  @('vfx/iwz/vfx_iwz_flashlight_world_e','40','2','3.5','1','900'),@('vfx/iwz/vfx_iwz_flashlight_world_f','40','2','3.5','1','900'),
+                  @('vfx/iwz/vfx_iwz_flashlight_lit','40','2','1.05','1','900'),@('vfx/iwz/vfx_iwz_flashlight_halo','64','0','0.88','0','700'),
+                  @('vfx/iwz/vfx_iwz_flashlight_halo_lit','64','0','0.26','0','700'))){
+    $fn=$v[0]; $ff=$v[1]; $fi=$v[2]; $fb=$v[3]; $fs=$v[4]; $fr=$v[5]
+    & $PY -I "$S\darkness\make_vfx_light.py" $TL $DV $fn --fov $ff --inner $fi --radius $fr --color 1,0.92,0.80 --brightness $fb --shadow $fs --near 8 --life 100000 | Out-Null
+    if($LASTEXITCODE){ throw "make_vfx_light failed for $fn" }
+    $fl+="iwz:$fn"
+  }
+  $A['FxImport']=((@($A['FxImport']) + $fl) | Where-Object { $_ }) -join ','
+  $A['FxDumps']=@($A['FxDumps']) + @("iwz=$DV") | Where-Object { $_ }
+  if(-not $A['FxReport']){ $A['FxReport']="$um.fx_import.json" }
+  $A['Darkness']=$true
+  $A['DarkArgs']='--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --lit fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3'
+  $Z=$DarkZoneTool
+}

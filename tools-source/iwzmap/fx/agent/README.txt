@@ -1,0 +1,1 @@
+FX agent run scripts (Station Zero stage 2, machine paths as used): build-fx.ps1 (g24 + fx module + imports), run-proof.ps1 (leased proof run + fx_proof), run-fx.ps1 (leased runner wrapper, waits for other agents, stops on the owner game), zt-retry.ps1, import_dry.py, fxprobe2.gsc (probe fixture: N effects at a station, off/on frames), probe_sheet.py / probe_analyze.py.
