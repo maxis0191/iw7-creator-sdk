@@ -3,7 +3,7 @@
 A synthetic hknpDynamicCompoundShape -> hknpConvexPolytopeShape box is laid out exactly like the stock cp_zmb ones
 (compound AABB +0x80/+0x90, instance array +0x60, tree +0xc0; polytope vertices +0x30, planes +0x40). The g8 case
 reproduces the partial resize of the IWZ_TRIGGER_SHAPES compiler patch (only the positive half extents rewritten).
-When the stock dump and a generated compile output exist locally, they are checked too.
+When IWZ_STOCK_DUMP_CP names a stock dump, it is checked too.
 """
 import os
 import struct
@@ -11,7 +11,9 @@ import unittest
 
 import volume_check as vc
 
-STOCK = r'C:\Users\ezvalo\Documents\IW7-Runtime\iwz-map-ref-a\dump\cp_zmb\maps\cp'
+# Optional extra case on a real stock dump: set IWZ_STOCK_DUMP_CP to <dump>/cp_zmb/maps/cp. Unset, that case is
+# skipped and the verdict depends on the synthetic cases only.
+STOCK = os.environ.get('IWZ_STOCK_DUMP_CP', '')
 
 
 class FakePack(vc.Pack):
@@ -107,7 +109,7 @@ class VolumeShapeTest(unittest.TestCase):
         self.assertFalse(vc.shape_geom(FakePack(), None)['ok'])
 
 
-@unittest.skipUnless(os.path.exists(os.path.join(STOCK, 'cp_zmb.d3dbsp.ents.data.hkx')), 'stock cp_zmb dump not present')
+@unittest.skipUnless(STOCK and os.path.exists(os.path.join(STOCK, 'cp_zmb.d3dbsp.ents.data.hkx')), 'stock cp_zmb dump not present')
 class StockDumpTest(unittest.TestCase):
     def test_stock_volumes_pass(self):
         r = vc.check(STOCK, 'cp_zmb')
