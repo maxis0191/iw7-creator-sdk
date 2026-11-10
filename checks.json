@@ -28,6 +28,19 @@
       ]
     },
     {
+      "id": "tools-source-mapents-tests",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/mapents",
+        "-v"
+      ]
+    },
+    {
       "id": "tools-source-iwzmap-tests",
       "command": [
         "python",
