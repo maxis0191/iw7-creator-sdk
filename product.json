@@ -42,6 +42,7 @@
     "tools-source/worldkit/iw7_worldpatch.py",
     "tools-source/worldkit/tests/test_worldpatch.py",
     "docs/WORLDKIT.md",
+    "docs/WORLDPATCH.md",
     "docs/ENGINE-MODDING-STRATEGY.md",
     "docs/COMMUNITY-MOD-DISTRIBUTION.md",
     "docs/MAPENTS.md",
