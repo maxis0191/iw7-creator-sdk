@@ -128,4 +128,4 @@ server repository.
 ## 6. History
 
 Older instructions and the record of the extraction: [docs/archive/AGENTS-2026-10.md](docs/archive/AGENTS-2026-10.md).
-They are history, not instructions.
+They are history, not instructions. This is the history that the first section says is kept below.
