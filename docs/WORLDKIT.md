@@ -18,6 +18,9 @@ importable, `IW7_WORLD_NO_NUMPY=1` turns it off; both paths give identical datab
 Files: `iw7_dump.py` (the byte-level reader: format, layouts, loud failures), `iw7_world.py` (database, queries,
 prefabs, command line), `tests/` (synthetic world and tests).
 
+`iw7_see.py` in the same folder joins this database with a frame captured in the game (its camera and depth) and
+answers what the frame shows: [SEE.md](SEE.md).
+
 ## Commands
 
 ```

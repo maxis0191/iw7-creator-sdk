@@ -7,6 +7,7 @@ One page that routes a reader. Paths are relative to the repository root. The ch
 | --- | --- | --- | --- |
 | make or change a generated map (Station Zero and after) | [CREATION-TOOLS.md](CREATION-TOOLS.md), then [tools-source/iwzmap/README.md](../tools-source/iwzmap/README.md) | `tools-source/iwzmap` | `tools-source-iwzmap-tests`, `tools-source-iwzmap-volume-check`, `tools-source-iwzmap-audio`, `tools-source-iwzmap-catalog`, `tools-source-iwzmap-art` |
 | read a studio map as data, lift a prefab | [WORLDKIT.md](WORLDKIT.md) | `tools-source/worldkit` | `tools-source-worldkit-tests` |
+| know what a captured frame of the game shows, as data (what is at a pixel, is a thing visible, floating, sunk, missing) | [SEE.md](SEE.md) | `tools-source/worldkit/iw7_see.py` | `tools-source-worldkit-tests` |
 | change a shipped map's entities with no build | [MAPENTS.md](MAPENTS.md) | `tools-source/mapents` | `tools-source-mapents-tests` |
 | describe, validate and package a mod | [MODDING-PLATFORM.md](MODDING-PLATFORM.md) (the contract), [MOD-PACKAGES.md](MOD-PACKAGES.md), [COMMUNITY-MOD-DISTRIBUTION.md](COMMUNITY-MOD-DISTRIBUTION.md), [sdk/modding/CREATOR.md](../sdk/modding/CREATOR.md) | `sdk/modding`, `ops/modding`, `ops/Validate-ModPackage.py` | `sdk-modding-tests`, `mod_package_test`, `community_distribution_test`, `beacon_ff_test`, the `sdk-modding-examples-*` checks |
 | touch the HUD lab (showcase cancelled, files pinned by the server) | header of `tests/ops/hud_lab_test.py` | `ops/hud-lab` | `hud_lab_test` |
@@ -21,7 +22,7 @@ One page that routes a reader. Paths are relative to the repository root. The ch
 
 ## Kinds of document
 
-- Living documents, kept true: this page, `README.md`, `AGENTS.md`, `docs/CREATION-TOOLS.md`, `docs/WORLDKIT.md`,
+- Living documents, kept true: this page, `README.md`, `AGENTS.md`, `docs/CREATION-TOOLS.md`, `docs/WORLDKIT.md`, `docs/SEE.md`,
   `docs/MAPENTS.md`, `docs/ENGINE-MODDING-STRATEGY.md`, the READMEs under `tools-source/`.
 - Contracts, stable formats that change with the code: `docs/MODDING-PLATFORM.md`, `docs/MOD-PACKAGES.md`,
   `docs/COMMUNITY-MOD-DISTRIBUTION.md`, `docs/SOUND-SDK-CONTRACT.md`, the `*.md` files in `sdk/modding/`.

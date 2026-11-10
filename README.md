@@ -14,7 +14,7 @@ This repository is private. It complements the owner's public forks and does not
 | Folder | What it holds |
 | --- | --- |
 | `tools-source/iwzmap` | Generated IW7 zombies maps (Station Zero): generator, collision and navigation, light bake, effects, art, audio, darkness, catalogue, offline checks, build and run scripts. See [docs/CREATION-TOOLS.md](docs/CREATION-TOOLS.md). |
-| `tools-source/worldkit` | Reads a studio map as data and lifts prefabs from it. See [docs/WORLDKIT.md](docs/WORLDKIT.md). |
+| `tools-source/worldkit` | Reads a studio map as data and lifts prefabs from it. See [docs/WORLDKIT.md](docs/WORLDKIT.md). `iw7_see.py` says what a captured frame of the game shows, as data. See [docs/SEE.md](docs/SEE.md). |
 | `tools-source/mapents` | Changes a shipped map's entities with no build. See [docs/MAPENTS.md](docs/MAPENTS.md). |
 | `tools-source/gsc-spawn-tip` | Offline audit profile of the server spawn tip example: whether its compiled GSC holds external or unresolved references. |
 | `tools-source/gsc-consumption-tool` | Text-only patch series and manifest for the strict GSC consumption auditor; no executable. |

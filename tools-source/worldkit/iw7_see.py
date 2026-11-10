@@ -1,11 +1,12 @@
 """iw7_see: what a captured frame of the game shows, as data.
 
-A lab client writes, with every frame capture, the exact camera of that frame (see-<name>.json, schema
-iw7.see-camera/1) and, on request, the engine's depth buffer of the same present (<name>__z.bmp). This tool joins
-them with the world database (iw7_world.py) and the models of the dump:
+A lab client records, with every frame capture, the exact camera of that frame (see-<name>.json, schema
+iw7.see-camera/2: the engine's own projection of world points, from which the camera is solved here) and, on request,
+the engine's depth buffer of the same present (<name>__z.bmp). This tool joins them with the world database
+(iw7_world.py) and the models of the dump:
 
     index    read the models of the dump once (the props' triangles) into <db>.models.npz
-    camera   the camera of a frame, and whether it agrees with the engine's own projection
+    camera   the camera of a frame, how well it reproduces the engine's own projection, and whether it moved
     at       what is at a pixel: world position, distance, and the prop or surface (or "dynamic or unknown")
     project  where a world point falls in the frame and whether it is hidden
     visible  how many pixels of a prop, a model or a point are seen, and what fraction is hidden
