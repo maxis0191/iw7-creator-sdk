@@ -6,16 +6,16 @@ param(
   [string]$Extra='',
   [int]$Seconds=420,
   [string]$DllEnv='',                                  # "NAME=value|NAME=value" set for the injected diagnostic DLL
-  [string]$InjectDll='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\fx\tools\fxperf\iw7_fxperf.dll',
+  [string]$InjectDll=(& "$PSScriptRoot\..\..\machine.ps1" Runtime 'iwz-stage2\fx\tools\fxperf\iw7_fxperf.dll'),
   [int]$MaxWaitMinutes=180)
 # FX agent: one short private local session through the server's runner (lease, lock, staged files restored).
 # Retries every 60 s while the runtime lease / lock is busy or another agent's test client runs; stops (exit 3)
 # when the base game is occupied by anything else (the owner's game).
 $ErrorActionPreference='Stop'
-$Runs='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\fx\runs'
-$Server='C:\Users\ezvalo\Documents\IW7-Paris-Server\.claude\worktrees\custom-zombies-map-iwz-26cd2d'
-$Pkg='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\srcpkg-shared'   # read-only runner package (bootstrap.ps1, server de4e30a6)
-$Game='C:\Users\ezvalo\Desktop\iw_game_files'
+$Runs=(& "$PSScriptRoot\..\..\machine.ps1" Runtime 'iwz-stage2\fx\runs')
+$Server=(& "$PSScriptRoot\..\..\machine.ps1" Server)
+$Pkg=(& "$PSScriptRoot\..\..\machine.ps1" Runtime 'iwz-stage2\srcpkg-shared')   # read-only runner package (bootstrap.ps1, server de4e30a6)
+$Game=(& "$PSScriptRoot\..\..\machine.ps1" GameRoot)
 $out=Join-Path $Runs $Tag
 $t0=Get-Date
 $busyRx='Resource busy|Heavy job already reserved|wait before heavy admission|wait for its owner|Unowned local image|Unattached lab process|Resource lease not found|Child identity unavailable|Reserved process identity unavailable|Base game occupied|Reserved child is still alive|lease retained'

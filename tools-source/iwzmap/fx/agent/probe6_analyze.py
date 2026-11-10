@@ -4,7 +4,7 @@ plus the region's mean luma (how much light reaches it). usage: probe6_analyze.p
 import importlib.util, json, os, re, sys
 import numpy as np
 from PIL import Image, ImageDraw
-spec = importlib.util.spec_from_file_location('fxp', r'C:\Users\ezvalo\Documents\IW7-Products\worktrees\sdk-iwzmap-fx\tools-source\iwzmap\fx\fx_proof.py')
+spec = importlib.util.spec_from_file_location('fxp', os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'fx_proof.py'))
 fxp = importlib.util.module_from_spec(spec); sys.argv_saved = sys.argv; spec.loader.exec_module(fxp)
 run, out = sys.argv[1], sys.argv[2]
 pre = sys.argv[3] if len(sys.argv) > 3 else 'iwzd'

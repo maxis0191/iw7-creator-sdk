@@ -29,4 +29,5 @@ result from a running game. An undated result is marked as such.
 - The offline gates (emit, zone, volume, plan, nav connectivity) are the first stop; the checks registered in
   `checks.json` run them on every change of the tools.
 - Anything meant to leave the lab depends on the darkness and bake chain being built with the ZoneTool branches named
-  in the READMEs; the build scripts in `tools-source/iwzmap` still carry the machine paths of the original runs.
+  in the READMEs. The build and run scripts take their machine locations from parameters or from the `IWZ_*`
+  variables listed in `tools-source/iwzmap/README.md`, section "Machine locations"; a game folder is never assumed.

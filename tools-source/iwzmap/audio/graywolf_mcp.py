@@ -14,7 +14,9 @@ import shutil
 import subprocess
 import sys
 
-EXE = os.environ.get('GRAYWOLF_EXE', r'C:\Users\ezvalo\Documents\IW7-Runtime\tools\graywolf-0.8.0\GrayWolf.exe')
+EXE = os.environ.get('GRAYWOLF_EXE') or os.path.join(
+    os.environ.get('IWZ_RUNTIME') or os.path.join(os.path.expanduser('~'), 'Documents', 'IW7-Runtime'),
+    'tools', 'graywolf-0.8.0', 'GrayWolf.exe')
 
 # Station Zero easter egg, from the BO3 data (zone, filter) -> sounds/models used by the map
 STATION_ZERO = [

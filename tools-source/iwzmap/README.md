@@ -57,6 +57,7 @@ The table above explains the main pieces. The three tables below list every file
 | `volume_check.py`, `test_volume_check.py` | offline check of a compiled map's trigger and spawn volumes, and its unit tests |
 | `lightmap_read.py` | decodes the template lightmap atlas to pick texels (its output feeds `sz2_lmpick.py`; the HDR decode is `bake/lm_decode.py`) |
 | `tome_read.py` | reads an Umbra format-20 tome header |
+| `machine.ps1` | resolves the machine locations of the build and run scripts (see "Machine locations") |
 | `zt.ps1` | runs ZoneTool in a work folder under the shared resource lease |
 | `build-zt.ps1` | builds the ZoneTool fork under the lease |
 | `new-work.ps1` | makes a ZoneTool work folder from a game folder: copies the executable set, hard-links the zone files |
@@ -118,6 +119,39 @@ The table above explains the main pieces. The three tables below list every file
 | `tests/` | unit tests of the three `iwz_*` gates |
 
 `hkcm_write.py` cites `hktree_check.py` in its header; the file is `hktree_check5.py`.
+
+## Machine locations
+
+No script of this folder holds a path of one machine. A location comes from a parameter of the script, or from
+`machine.ps1`, which reads these variables and otherwise uses the default beside them:
+
+| Variable | Default | What it is |
+| --- | --- | --- |
+| `IWZ_RUNTIME` | `<Documents>\IW7-Runtime` | work folders, dumps, runs, the Python environments of the stage |
+| `IWZ_PRODUCTS` | `<Documents>\IW7-Products` | checkouts of the products |
+| `IWZ_SERVER` | `<Documents>\IW7-Paris-Server` | server checkout that holds the local runner (`ops\iwzmap`) |
+| `IWZ_COMPONENTS` | `<IWZ_PRODUCTS>\iw7-mod-components` | resource scheduler (`ops\Resource-Scheduler.Core.ps1`) |
+| `IWZ_ZONETOOL_EXE` | `<IWZ_PRODUCTS>\worktrees\<worktree the script names>\build\bin\x64\Release\zonetool.exe` | the ZoneTool build to use |
+| `IWZ_ZONETOOL_SOURCE` | `<IWZ_PRODUCTS>\worktrees\x64-zt-iwz-map` | ZoneTool source built by `build-zt.ps1` |
+| `IWZ_TEMPLATE_DUMP` | `<IWZ_RUNTIME>\iwz-map-ref-a\dump` | stock dumps (`cp_zmb`, `techsets_*`) |
+| `IWZ_GAME_ROOT` | none | game folder for `run-sz2.ps1`, `new-work.ps1`, `pipeline.ps1`, `catalog\Run-Preview.ps1`, `fx\agent\run-fx.ps1`: a bench root, never the owner's game folder |
+
+`<Documents>` is the Documents folder of the account. The Python tools read `IWZ_RUNTIME` the same way for their
+fall-backs, next to the variables they already had: `IWZ_TEXCONV`, `GRAYWOLF_EXE`, `IWZ_SMODEL_STOCK_CSV`,
+`IWZ_ART_DIR`, and `IWZ_STOCK_DUMP_CP` for the optional case of `test_volume_check.py`.
+`catalog\Run-Preview.ps1 -SourcePackage` is mandatory (prepared server inputs).
+
+Three things changed for a caller on the machine the scripts were written on (2026-11-10): the game folder is no
+longer assumed (set `IWZ_GAME_ROOT` or pass the parameter); the server runner defaults to the main server checkout
+instead of one session's worktree (set `IWZ_SERVER` to choose another); the scripts under `fx\agent` and
+`darkness\build-g-dark.ps1` use the tools of the checkout they are in instead of older worktrees. Every other
+default resolves to the same path as before.
+
+Records keep the paths of the runs they describe and are not tools: `sz2_submodels.json` (`_source`),
+`darkness/integration/`.
+
+This landed without a map build: every script parses and every default was compared with the path it replaced.
+The first agent that builds or runs a map after this change reports the result.
 
 ## Build
 

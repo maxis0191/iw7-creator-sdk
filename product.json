@@ -405,7 +405,8 @@
     "docs/archive/MODDING-PLATFORM-2026-10-12.md",
     "tools-source/compile_check.py",
     "tools-source/iwzmap/darkness/integration/README.md",
-    "tools-source/iwzmap/darkness/runs/README.md"
+    "tools-source/iwzmap/darkness/runs/README.md",
+    "tools-source/iwzmap/machine.ps1"
   ],
   "dependencies": [
     {

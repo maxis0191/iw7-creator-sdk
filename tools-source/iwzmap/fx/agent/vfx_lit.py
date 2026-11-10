@@ -1,7 +1,7 @@
 """Classify effects by the lighting of their particle materials: lit (eq_effect_* without _em), emissive (_em),
 unlit (effectunlit), distortion. usage: vfx_lit.py <out json> [name filter regex]"""
 import json, os, re, sys, glob
-R = r'C:\Users\ezvalo\Documents\IW7-Runtime'
+R = os.environ.get('IWZ_RUNTIME') or os.path.join(os.path.expanduser('~'), 'Documents', 'IW7-Runtime')
 P = [R + r'\iwz-map-ref-a\dump\cp_zmb\particlesystem', R + r'\iwz-stage2\fx\ztwork\dump\cp_disco\particlesystem']
 M = [R + r'\iwz-stage2\kitimport\ztwork\dump\cp_disco\materials', R + r'\iwz-stage2\level\ztwork\dump\techsets_cp_disco\materials'] + glob.glob(R + r'\iwz-map-ref-a\dump\*\materials')
 def strs(p): return sorted(set(m.decode() for m in re.findall(rb'[\x20-\x7e]{4,}', open(p, 'rb').read())))
