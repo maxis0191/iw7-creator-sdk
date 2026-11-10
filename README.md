@@ -5,6 +5,9 @@ BO3 import is one optional use case. Start with the owner's
 [engine-modding strategy](docs/ENGINE-MODDING-STRATEGY.md), then the
 [capability evidence](docs/MODDING-CAPABILITIES.md).
 
+Map and content creation tools (catalogue, kit import, bake, effects, art, audio, darkness, train kit,
+volumes, map generator v2, navigation checks): [creation tools](docs/CREATION-TOOLS.md).
+
 Author manifests, validation, GSC compiler audit adapters, author examples, composition and packaging. Native engine and asset conversion implementations are versioned dependencies.
 
 This repository is private. It complements the public owner forks; it does not

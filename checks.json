@@ -138,6 +138,60 @@
         "-B",
         "tools-source/gsc-consumption-tool/verify_archive.py"
       ]
+    },
+    {
+      "id": "tools-source-iwzmap-volume-check",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/iwzmap",
+        "-p",
+        "test_volume_check.py",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-iwzmap-audio",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/iwzmap/audio",
+        "-p",
+        "test_*.py",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-iwzmap-catalog",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/iwzmap/catalog",
+        "-p",
+        "test_catalog.py",
+        "-v"
+      ]
+    },
+    {
+      "id": "tools-source-iwzmap-art",
+      "command": [
+        "python",
+        "-B",
+        "-c",
+        "import sys,runpy;sys.path.insert(0,'tools-source/iwzmap');runpy.run_module('art.test_art',run_name='__main__')"
+      ]
     }
   ]
 }

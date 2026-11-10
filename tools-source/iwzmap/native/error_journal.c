@@ -66,24 +66,78 @@ static DWORD WINAPI rdoc_capture(LPVOID unused)
     return 0;
 }
 
-// optional diagnostic dvar override for the owned test client: IW7_DVAR_FORCE="name=int;name=int"
-// (re-applied once per second for IW7_DVAR_FORCE_SECONDS, default 240, so map loads cannot reset it)
+// optional diagnostic dvar override for the owned test client: IW7_DVAR_FORCE="name=value;name=value"
+// (re-applied once per second for IW7_DVAR_FORCE_SECONDS, default 240, so map loads cannot reset it).
+// The value is written by the dvar's own type (dvar_t: flags +4, type +9, current union +16): bool 0/1,
+// float, vec2..4 / colour "a,b,c[,d]", int / enum. "name=?" only reads the dvar back. Every read-back prints
+// the type and the typed current value, so a refused or reset write is visible in the journal.
 typedef void* (*dvar_find_t)(const char* name);
 typedef void (*dvar_set_int_t)(void* dvar, int value);
+typedef void (*dvar_set_bool_t)(void* dvar, bool value);
+typedef void (*dvar_set_float_t)(void* dvar, float value);
+static const char* dvar_type_name(unsigned t)
+{
+    static const char* n[] = { "bool", "float", "vec2", "vec3", "vec4", "int", "enum", "string", "color", "vec3color" };
+    return t < 10 ? n[t] : "?";
+}
+static void dvar_value_text(const unsigned char* d, char* out, size_t size)
+{
+    const unsigned t = d[9];
+    const float* f = (const float*)(d + 16);
+    switch (t)
+    {
+    case 0: _snprintf_s(out, size, _TRUNCATE, "%d", d[16] ? 1 : 0); break;
+    case 1: _snprintf_s(out, size, _TRUNCATE, "%g", f[0]); break;
+    case 2: _snprintf_s(out, size, _TRUNCATE, "%g,%g", f[0], f[1]); break;
+    case 3: case 9: _snprintf_s(out, size, _TRUNCATE, "%g,%g,%g", f[0], f[1], f[2]); break;
+    case 4: _snprintf_s(out, size, _TRUNCATE, "%g,%g,%g,%g", f[0], f[1], f[2], f[3]); break;
+    case 8: _snprintf_s(out, size, _TRUNCATE, "%u,%u,%u,%u", d[16], d[17], d[18], d[19]); break;
+    case 7: _snprintf_s(out, size, _TRUNCATE, "(string)"); break;
+    default: _snprintf_s(out, size, _TRUNCATE, "%d", *(const int*)(d + 16)); break;
+    }
+}
+static void dvar_write(unsigned char* d, const char* text)
+{
+    const unsigned t = d[9];
+    float v[4] = { 0, 0, 0, 0 };
+    int n = sscanf_s(text, "%f,%f,%f,%f", &v[0], &v[1], &v[2], &v[3]);
+    switch (t)
+    {
+    case 0:
+        ((dvar_set_bool_t)0x140CEC7D0)(d, atoi(text) != 0);
+        d[16] = atoi(text) != 0;
+        break;
+    case 1:
+        ((dvar_set_float_t)0x140CECD90)(d, v[0]);
+        *(float*)(d + 16) = v[0];
+        break;
+    case 2: case 3: case 4: case 9:
+        for (int i = 0; i < n && i < 4; i++) ((float*)(d + 16))[i] = v[i];
+        break;
+    case 8:
+        for (int i = 0; i < n && i < 4; i++) d[16 + i] = (unsigned char)(v[i] <= 1.0f ? v[i] * 255.0f + 0.5f : v[i]);
+        break;
+    case 7:
+        break;
+    default:   // int, enum (enums ignore Dvar_SetInt)
+        ((dvar_set_int_t)0x140CED3D0)(d, atoi(text));
+        *(int*)(d + 16) = atoi(text);
+        break;
+    }
+}
 static DWORD WINAPI dvar_force(LPVOID unused)
 {
-    char spec[1024], secs[32], line[512];
+    char spec[1024], secs[32], line[512], val[96];
     if (!GetEnvironmentVariableA("IW7_DVAR_FORCE", spec, sizeof(spec))) return 0;
     int seconds = GetEnvironmentVariableA("IW7_DVAR_FORCE_SECONDS", secs, sizeof(secs)) ? atoi(secs) : 240;
     dvar_find_t find = (dvar_find_t)0x140CEA460;
-    dvar_set_int_t set_int = (dvar_set_int_t)0x140CED3D0;
     char delay[32];
     if (GetEnvironmentVariableA("IW7_DVAR_FORCE_EARLY", delay, sizeof(delay)))
     {
         // set the first listed dvar the moment it is registered (before the renderer starts using it)
         char name[256]; lstrcpynA(name, spec, sizeof(name));
+        char* semi = strchr(name, ';'); if (semi) *semi = 0;
         char* eq = strchr(name, '='); if (!eq) return 0; *eq = 0;
-        const int value = atoi(eq + 1);
         Sleep(1000);
         for (int i = 0; i < 12000; i++)
         {
@@ -91,8 +145,10 @@ static DWORD WINAPI dvar_force(LPVOID unused)
             __try { d = find(name); } __except (EXCEPTION_EXECUTE_HANDLER) { d = NULL; }
             if (d)
             {
-                *(int*)((unsigned char*)d + 16) = value;
-                _snprintf_s(line, sizeof(line), _TRUNCATE, "[%llu] dvar early %s=%d after %d polls\r\n", GetTickCount64(), name, value, i);
+                if (eq[1] != '?') dvar_write((unsigned char*)d, eq + 1);
+                dvar_value_text((const unsigned char*)d, val, sizeof(val));
+                _snprintf_s(line, sizeof(line), _TRUNCATE, "[%llu] dvar early %s=%s type=%s current=%s after %d polls\r\n",
+                    GetTickCount64(), name, eq + 1, dvar_type_name(((const unsigned char*)d)[9]), val, i);
                 append(line);
                 break;
             }
@@ -111,13 +167,13 @@ static DWORD WINAPI dvar_force(LPVOID unused)
             char* eq = strchr(item, '=');
             if (!eq) continue;
             *eq = 0;
-            void* d = find(item);
-            if (d && eq[1] != '?') { set_int(d, atoi(eq + 1)); *(int*)((unsigned char*)d + 16) = atoi(eq + 1); } // enums ignore Dvar_SetInt
-            if (t == 0 || t == seconds - 1)
+            unsigned char* d = (unsigned char*)find(item);
+            if (d && eq[1] != '?') dvar_write(d, eq + 1);
+            if (t == 0 || t == 5 || t == seconds - 1)
             {
-                const unsigned char* b = (const unsigned char*)d;
-                _snprintf_s(line, sizeof(line), _TRUNCATE, "[%llu] dvar force %s=%s found=%d flags=%08x type=%u current=%d\r\n",
-                    GetTickCount64(), item, eq + 1, d != NULL, d ? *(const unsigned int*)(b + 4) : 0, d ? b[9] : 0, d ? *(const int*)(b + 16) : 0);
+                if (d) dvar_value_text(d, val, sizeof(val)); else lstrcpynA(val, "-", sizeof(val));
+                _snprintf_s(line, sizeof(line), _TRUNCATE, "[%llu] dvar force %s=%s found=%d flags=%08x type=%s current=%s t=%d\r\n",
+                    GetTickCount64(), item, eq + 1, d != NULL, d ? *(const unsigned int*)(d + 4) : 0, d ? dvar_type_name(d[9]) : "-", val, t);
                 append(line);
             }
         }

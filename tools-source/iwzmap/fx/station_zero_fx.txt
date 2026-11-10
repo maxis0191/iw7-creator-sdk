@@ -1,0 +1,38 @@
+# Station Zero ambient FX (tools-source/iwzmap/fx/fx_place.py). <name> <alias|vfx path> <x> <y> <z> [key=value ...]
+# Aliases: tools-source/iwzmap/fx/fx_catalog.json. Aliases with "import" need build-sz2.ps1 -FxImport (fx_import.py).
+# Coordinates: g24 layout. Stages (owner 2026-11-08: pitch dark until power, weapon flashlight): always | dark (until the
+# stock power_on flag) | lit (from power on) | poweron (start-up burst, for=<s>).
+
+# ticket hall: motes always; the lamp light cone only once the lamps are on
+hall_motes        motes             -1000 3800  200
+hall_cone         light_cone        -600  3400  300   stage=lit
+
+# platform A: leaking ceiling over the deck, low fog along the track pit
+pa_leak           drips_line        300   1900  0     region=96 region_dz=-290
+pa_pit_fog        fog_tunnel        -1000 1400  -384
+pa_pit_fog_e      fog_low_bright    1000  1400  -384
+
+# service tunnel: ground fog, grate steam, falling ceiling dust, a red emergency glow while dark
+tunnel_fog        fog_tunnel        -3420 1900  -384
+tunnel_steam      steam_grate       -3420 2250  -384
+tunnel_dust       dust_fall         -3000 1500  -90
+tunnel_emerg      emergency_glow    -3100 1400  -112  stage=dark
+
+# maintenance corridor: steam jet from the wall pipe
+corr_steam        steam_pipe        2664  1700  -150  angles=0,90,0
+
+# generator room: haze, burning barrel, embers, sparking panel (flashes light while dark);
+# at power on: spark flashes + smoke burst at the generator, then the running exhaust
+gen_haze          smoke_hang        3100  2950  -250
+gen_barrel_fire   fire_trash        3700  2700  -278
+gen_embers        embers            3600  2760  -260
+gen_panel_sparks  sparks            2615  2650  -265
+gen_panel_flash   spark_flash       2630  2650  -250  stage=dark
+gen_start_flash   spark_flash       3360  2800  -170  stage=poweron mode=interval:0.4-1.2 for=6
+gen_start_smoke   smoke_burst       3360  2830  -320  stage=poweron for=12
+gen_exhaust       generator_idle    3360  2800  -150  stage=lit
+
+# platform B and control room: red emergency glows while dark; control room haze
+pb_emerg          emergency_glow    -3050 3000  -60   stage=dark
+ctrl_emerg        emergency_glow    2640  3300  -150  stage=dark
+ctrl_mist         mist              3100  3700  -300
