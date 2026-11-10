@@ -37,6 +37,7 @@
     "tools-source/iwzmap/zt.ps1",
     "docs/ENGINE-MODDING-STRATEGY.md",
     "docs/COMMUNITY-MOD-DISTRIBUTION.md",
+    "docs/MAPENTS.md",
     "docs/MOD-PACKAGES.md",
     "docs/MODDING-CAPABILITIES.md",
     "docs/MODDING-PLATFORM.md",
@@ -248,7 +249,10 @@
     "tools-source/gsc-spawn-tip/SpawnTip.Profile.ps1",
     "tools-source/gsc-spawn-tip/test_spawn_tip.py",
     "tools-source/gsc-spawn-tip/Test-SpawnTip.ps1",
-    "tools-source/gsc-spawn-tip/Test-SpawnTipHost.ps1"
+    "tools-source/gsc-spawn-tip/Test-SpawnTipHost.ps1",
+    "tools-source/mapents/examples/spaceland-overlay-probe.patch.json",
+    "tools-source/mapents/iw7_mapents.py",
+    "tools-source/mapents/test_mapents.py"
   ],
   "dependencies": [
     {
