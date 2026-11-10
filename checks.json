@@ -54,6 +54,19 @@
       ]
     },
     {
+      "id": "tools-source-worldkit-tests",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/worldkit/tests",
+        "-v"
+      ]
+    },
+    {
       "id": "community_distribution_test",
       "command": [
         "python",
