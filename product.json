@@ -402,7 +402,8 @@
     "tools-source/mapents/test_mapents.py",
     "docs/INDEX.md",
     "docs/archive/AGENTS-2026-10.md",
-    "docs/archive/MODDING-PLATFORM-2026-10-12.md"
+    "docs/archive/MODDING-PLATFORM-2026-10-12.md",
+    "tools-source/compile_check.py"
   ],
   "dependencies": [
     {

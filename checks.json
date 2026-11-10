@@ -192,6 +192,14 @@
         "-c",
         "import sys,runpy;sys.path.insert(0,'tools-source/iwzmap');runpy.run_module('art.test_art',run_name='__main__')"
       ]
+    },
+    {
+      "id": "tools-source-compiles",
+      "command": [
+        "python",
+        "-B",
+        "tools-source/compile_check.py"
+      ]
     }
   ]
 }
