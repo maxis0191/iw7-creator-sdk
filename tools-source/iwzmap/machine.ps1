@@ -38,7 +38,7 @@ switch($Name){
   'ZoneToolSource' { $path=Pick $variable (Join-Path $products "worktrees\$Child"); $Child='' }
   'GameRoot'       {
     $path=Pick $variable ''
-    if(!$path){ throw "Set `$env:IWZ_GAME_ROOT (or pass the script's game folder parameter) to a bench root. No default: tests never run in the owner's game folder." }
+    if(!$path){ throw "Set `$env:IWZ_GAME_ROOT to a bench root (scripts that have a game folder parameter also accept it there). No default: tests never run in the owner's game folder." }
   }
 }
 if($Child){ $path=Join-Path $path $Child }
