@@ -1,14 +1,7 @@
 # Community mod distribution: deterministic staging, explicit client compatibility
 
-Source-only checkpoint, 2026-10-12. The preparation gate forbids game launches,
-native builds, asset extraction, leases and publication. This work adds an offline
-packager and compatibility preflight. It does not deploy or qualify a public
-server. Main27016, the owner's client, bank, configuration and network are untouched.
-
-Player projection added on 2026-10-13 under the owner's resumed feature work.
-The dated source-only checkpoint above describes its original authorization.
-The same ZIP writer now supports an explicit `--layout player`; default staging,
-the common manifest, compatibility gates and package qualification are preserved.
+An offline packager and a compatibility preflight, written as a source-only checkpoint on 2026-10-12; the
+`--layout player` projection was added on 2026-10-13. Nothing here deploys or qualifies a public server.
 
 ## One contract, two delivery routes
 
@@ -52,8 +45,8 @@ The inspected protocol does **not** advertise SDK version, asset namespace,
 dependency graph or client build identity. The CLI checks the supplied environment
 facts; it does not add handshake enforcement. A source pin is an operator assertion
 until correlated with the exact executable/build manifest. See also
-[existing client evidence](CLIENT-COMPATIBILITY.md) and the earlier
-[one-time upstream inspection](UPSTREAM-2026-10-06.md).
+existing client evidence (server repository: `docs/CLIENT-COMPATIBILITY.md`) and the earlier
+one-time upstream inspection (server repository: `docs/UPSTREAM-2026-10-06.md`).
 
 ## Author to package
 
@@ -299,8 +292,8 @@ Next, under the parent's single heavy reservation, reuse the SDK vertical's
 small genuine FF with original model/Lua assets and its dedicated script. Cap
 new pack+staging+logs at64MiB for this distribution experiment; reuse installed
 tools, stock and base client. Budget the full dedicated+client through current
-[resource](RESOURCE-WORKFLOW.md), [instance](INSTANCE-WORKFLOW.md) and
-[storage](STORAGE-WORKFLOW.md) workflows; a12GiB full-quality client plus the
+resource (iw7-mod-components: `docs/RESOURCE-WORKFLOW.md`), instance (server repository: `docs/INSTANCE-WORKFLOW.md`) and
+storage (server repository: `docs/STORAGE-WORKFLOW.md`) workflows; a12GiB full-quality client plus the
 greater2–4GiB dedicated estimate is the starting physical/commit estimate, not
 proof of admission. Compile/extract only in a separately admitted phase.
 

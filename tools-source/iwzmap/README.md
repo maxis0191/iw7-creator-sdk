@@ -1,8 +1,9 @@
 # iwzmap: generated IW7 zombies maps (Station Zero)
 
 Code-first authoring of an original IW7 zombies usermap. A Python generator
-describes the rooms; our ZoneTool fork (`maxis0191/x64-zt`, branch
-`codex/iw7-map-compiler`, `-iwzcompile`) compiles them against the stock
+describes the rooms; the map compiler of our ZoneTool fork (`-iwzcompile`; the
+branch that carries it is named in the x64-zt-extensions documents) compiles
+them against the stock
 `cp_zmb` world, used as a template for sun, sky, light grid and reflection
 probes. Moved here from the server repository on 2026-11-06 (creator tooling
 belongs to the SDK); the server keeps only its local test runner, fixtures and
@@ -36,6 +37,121 @@ records (`iw7-paris-server`: `ops/iwzmap/`, `tests/fixtures/iwzmap_*`,
 
 Older experiments kept for history: `cp_iwz_v1.gsc`, `m2a_room.py`,
 `hktree_check5.py`, `simd_check.py`, `native/xref.py`, `native/disas.py`.
+
+## Every file of this folder
+
+The table above explains the main pieces. The three tables below list every file that lies directly in
+`tools-source/iwzmap`, with the role its own header gives. Sub-folders follow.
+
+### Generic tools (any generated map)
+
+| File | Role |
+| --- | --- |
+| `mapgen.py` | iwzcompile sources from a box-based map description: render mesh, nav graph, entity text |
+| `brushkit.py` | brush library: textured quads, boxes, wedges, banded walls with openings, stairs |
+| `hkpack.py`, `hkcm.py`, `hkcm_write.py` | Havok 2014 packfile reader; decoder and encoder of the compressed mesh collision |
+| `assemble.py` | assembles `zonetool/<map>/` (hard links) and `zone_source/<map>.csv` |
+| `kit_import.py`, `kit_proof.py` | stock models of other zones into a usermap zone; drawn / textured / lit proof on capture frames |
+| `build_art.py`, `make_art.py` | map browser art zone and its images from engine renders |
+| `iwz_emitcheck.py`, `iwz_zonecheck.py`, `iwz_probe_forensics.py` | offline gates on an emit and on a zone tree; forensics of recorded route probes (tests in `tests/`) |
+| `volume_check.py`, `test_volume_check.py` | offline check of a compiled map's trigger and spawn volumes, and its unit tests |
+| `lightmap_read.py` | decodes the template lightmap atlas to pick texels (its output feeds `sz2_lmpick.py`; the HDR decode is `bake/lm_decode.py`) |
+| `tome_read.py` | reads an Umbra format-20 tome header |
+| `machine.ps1` | resolves the machine locations of the build and run scripts (see "Machine locations") |
+| `zt.ps1` | runs ZoneTool in a work folder under the shared resource lease |
+| `build-zt.ps1` | builds the ZoneTool fork under the lease |
+| `new-work.ps1` | makes a ZoneTool work folder from a game folder: copies the executable set, hard-links the zone files |
+| `pipeline.ps1`, `build-map-wait.ps1` | build chain of a generated source (compile, pack, optional probe run); the second waits while another owner holds the lease |
+
+### Station Zero level (v1 and v2)
+
+| File | Role |
+| --- | --- |
+| `station_zero.py`, `sz_interactions.py`, `cp_iwz.gsc` | v1: the compact three-zone map, its stock interactions and its level script |
+| `station_zero2.py`, `cp_iwz2.gsc` | v2: the nine-zone metro station from textured brushes and data tables; its level script template |
+| `sz2_materials.py`, `sz2_assemble.py` | v2 material table; custom world materials and their images added to the zone |
+| `sz2_art_hooks.py` | art drop-ins: an image present under its request name becomes a map material, a missing one changes nothing |
+| `sz2_submodels.py` | picks the door blocker sub-model from a compile log made with `IWZ_KEEP_SUBMODELS=1`; writes `sz2_submodels.json` |
+| `sz2_kitzone.py` | adds kit models of other CP zones to an assembled map zone |
+| `sz2_tables.py` | Markdown tables of a generated layout (zones, doors, interactions, spawners, quest spots, lights) |
+| `build-sz2.ps1`, `run-sz2.ps1` | v2 build (own ZoneTool work folder, leased) and private local run (views, walk, gameplay modes) |
+| `sz2_plan.py` | offline: plan image and nav / data consistency (exit 1 on failure) |
+| `sz2_navconn.py` | offline: nav connectivity of the generated source (stairs, decks) |
+| `sz2_artlint.py` | offline: static art lint of a generated source (failed materials, track bed, fake vehicles, ...) |
+| `sz2_density.py` | offline: set-dressing density per zone and longest bare wall run |
+| `sz2_flatness.py` | offline: largest undetailed wall, floor and ceiling area per zone |
+| `sz2_seams.py` | offline: gaps at ceiling edges that show the void |
+| `track_clearance.py` | offline: what stands inside the envelope a subway car runs through |
+| `sz2_frames.py` | capture run to contact sheets, luma per frame and zone, gallery sampling |
+| `sz2_lmpick.py` | per-zone lightmap texels from engine measurements; writes `sz2_lm_table.json` |
+| `sz2_contrast.py` | frames: contrast between floor, wall and ceiling families per zone |
+| `sz2_mood.py`, `sz2_mood_predict.py` | frames: median luma and lighting spread per zone; prediction of those numbers for a new bake from an old one |
+| `sz2_fxcheck.py` | frames: ambient effects render and decal quads blend |
+| `sz2_propcheck.py` | frames: props that render as flat black or untextured slabs |
+| `sz2_signcheck.py` | frames: custom sign and poster images are not mirrored or flipped |
+| `sz2_probecheck.py` | compile log and frames: reflection probe rooms and their colour |
+| `sz2_fixproof.py` | before / after crop pairs of a fix at the same camera pose |
+| `train_proof.py`, `train_perf.py` | train kit: drawn / textured / lit from A/B frames; frame time with the kit shown and hidden |
+
+### Data files and who reads them
+
+| File | Written by | Read by |
+| --- | --- | --- |
+| `material_dims.json` | by hand (image name and pixel size per material key) | `sz2_materials.py`, `sz2_artlint.py` |
+| `mood_dark_ok.json` | by hand (views that are meant to hold a large black area) | `sz2_mood.py --gate` |
+| `probe_colours.json` | from the views of one build (`sz2_probecheck.py`); the source is named in the file | `station_zero2.py` |
+| `sz2_submodels.json` | `sz2_submodels.py` | `station_zero2.py` |
+| `sz2_lm_table.json` | `sz2_lmpick.py` | `station_zero2.py` |
+
+### Sub-folders
+
+| Folder | Holds |
+| --- | --- |
+| `art/` | deterministic 2D art package (see `art/README.md`) |
+| `audio/` | sound bank, emitters, music, capture and measurement (see `audio/README.md`) |
+| `bake/` | lightmap and light grid baker and its measurements |
+| `catalog/` | model catalogue and preview booth (see `catalog/README.md`) |
+| `content/cp_iwz/` | one content table of the map (`cp_iwz_playercash_images.csv`) |
+| `darkness/` | dark-until-power chain (see `darkness/README.md`); `darkness/runs/` (launch arguments of dated proof runs) and `darkness/integration/` (a patch for a script outside the repository) are records |
+| `fixtures/` | GSC fixtures for private local runs: `sz2_local.gsc` (views, walk, probes), `sz2_gameplay.gsc`, `sz2_hitch.gsc`, `train_kit.gsc` |
+| `fx/` | effect placement, import, variants and proof; `fx/agent/` holds one agent's run scripts and probes (see its `README.txt`) |
+| `native/` | diagnostic DLL sources for an owned private test client (`error_journal.c`, `iw7_fxperf.c`, `build.cmd`) |
+| `tests/` | unit tests of the three `iwz_*` gates |
+
+`hkcm_write.py` cites `hktree_check.py` in its header; the file is `hktree_check5.py`.
+
+## Machine locations
+
+No script of this folder holds a path of one machine. A location comes from a parameter of the script, or from
+`machine.ps1`, which reads these variables and otherwise uses the default beside them:
+
+| Variable | Default | What it is |
+| --- | --- | --- |
+| `IWZ_RUNTIME` | `<Documents>\IW7-Runtime` | work folders, dumps, runs, the Python environments of the stage |
+| `IWZ_PRODUCTS` | `<Documents>\IW7-Products` | checkouts of the products |
+| `IWZ_SERVER` | `<Documents>\IW7-Paris-Server` | server checkout that holds the local runner (`ops\iwzmap`) |
+| `IWZ_COMPONENTS` | `<IWZ_PRODUCTS>\iw7-mod-components` | resource scheduler (`ops\Resource-Scheduler.Core.ps1`) |
+| `IWZ_ZONETOOL_EXE` | `<IWZ_PRODUCTS>\worktrees\<worktree the script names>\build\bin\x64\Release\zonetool.exe` | the ZoneTool build to use |
+| `IWZ_ZONETOOL_SOURCE` | `<IWZ_PRODUCTS>\worktrees\x64-zt-iwz-map` | ZoneTool source built by `build-zt.ps1` |
+| `IWZ_TEMPLATE_DUMP` | `<IWZ_RUNTIME>\iwz-map-ref-a\dump` | stock dumps (`cp_zmb`, `techsets_*`) |
+| `IWZ_GAME_ROOT` | none | game folder for `run-sz2.ps1`, `new-work.ps1`, `pipeline.ps1`, `catalog\Run-Preview.ps1`, `fx\agent\run-fx.ps1`: a bench root, never the owner's game folder |
+
+`<Documents>` is the Documents folder of the account. The Python tools read `IWZ_RUNTIME` for their
+fall-backs (their default is `~/Documents/IW7-Runtime`, which differs from the PowerShell default only when the
+Documents folder is redirected; set `IWZ_RUNTIME` in that case), next to the variables they already had: `IWZ_TEXCONV`, `GRAYWOLF_EXE`, `IWZ_SMODEL_STOCK_CSV`,
+`IWZ_ART_DIR`, and `IWZ_STOCK_DUMP_CP` for the optional case of `test_volume_check.py`.
+`catalog\Run-Preview.ps1 -SourcePackage` is mandatory (prepared server inputs).
+
+Three things changed for a caller on the machine the scripts were written on (2026-11-10): the game folder is no
+longer assumed (set `IWZ_GAME_ROOT` or pass the parameter); the server runner defaults to the main server checkout
+instead of one session's worktree (set `IWZ_SERVER` to choose another); the scripts under `fx\agent` and
+`darkness\build-g-dark.ps1` use the tools of the checkout they are in instead of older worktrees. Every other
+default resolves to the same path as before.
+
+The records in `darkness/integration/` keep the paths of the runs they describe; they are not tools.
+
+This landed without a map build: every script parses and every default was compared with the path it replaced.
+The first agent that builds or runs a map after this change reports the result.
 
 ## Build
 

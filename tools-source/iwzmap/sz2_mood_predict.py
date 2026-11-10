@@ -25,7 +25,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('old'); ap.add_argument('new'); ap.add_argument('run'); ap.add_argument('src'); ap.add_argument('out')
     ap.add_argument('--eye', type=float, default=58.45); ap.add_argument('--hfov', type=float, default=133.14)
-    ap.add_argument('--baker', default=r'C:\Users\ezvalo\Documents\IW7-Products\worktrees\iw7-creator-sdk-lightbake\tools-source\iwzmap\bake')
+    ap.add_argument('--baker', default=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bake'))
     ap.add_argument('--points'); ap.add_argument('--points-min', type=float, default=0.22)
     a = ap.parse_args()
     sys.path.insert(0, a.baker)

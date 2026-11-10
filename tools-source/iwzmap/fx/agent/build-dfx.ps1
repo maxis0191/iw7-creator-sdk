@@ -1,6 +1,6 @@
 param([Parameter(Mandatory)][string]$Tag,                  # output fx\src_<Tag>, fx\um_<Tag>
-      [string]$Base='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\darkness\src_d12_lm',   # darkness d12 baked source (read only)
-      [string]$FxTxt='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\fx\layout\station_zero_fx_dark.txt',
+      [string]$Base=(& "$PSScriptRoot\..\..\machine.ps1" Runtime 'iwz-stage2\darkness\src_d12_lm'),   # darkness d12 baked source (read only)
+      [string]$FxTxt=(& "$PSScriptRoot\..\..\machine.ps1" Runtime 'iwz-stage2\fx\layout\station_zero_fx_dark.txt'),
       [string]$FlBright='2.0', [switch]$ReuseCompile,
       [string]$Ladder='0.5,4')                              # extra tints of every variant (imported for probes, not placed)
 # FX agent build on the darkness agent's d12 source: same world, bake, darkness modules (SDK 3d7ed90 detached worktree
@@ -8,15 +8,15 @@ param([Parameter(Mandatory)][string]$Tag,                  # output fx\src_<Tag>
 # agent's dark-state fx.txt with self-lit variants (fx_variant.py -> fx\variants\<Tag>, imported as zone iwzv).
 # Never writes darkness\ or level\ (reads src_d12_lm, kit/train dumps, the darkness zonetool exe).
 $ErrorActionPreference='Stop'
-$F='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\fx'
-$DK='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\darkness'
-$L='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\level'
-$S='C:\Users\ezvalo\Documents\IW7-Products\worktrees\sdk-fx-d12\tools-source\iwzmap'          # d12 SDK (build-sz2, darkness)
-$FXS='C:\Users\ezvalo\Documents\IW7-Products\worktrees\sdk-iwzmap-fx\tools-source\iwzmap\fx'  # FX agent tools (fx_place, fx_variant, module)
-$PY='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\lightmaps\venv\Scripts\python.exe'
-$Z='C:\Users\ezvalo\Documents\IW7-Products\worktrees\x64-zt-iwz-darkness\build\bin\x64\Release\zonetool.exe'
-$D='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-map-ref-a\dump'
-$KD='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\kitimport\ztwork\dump'
+$F=(& "$PSScriptRoot\..\..\machine.ps1" Runtime 'iwz-stage2\fx')
+$DK=(& "$PSScriptRoot\..\..\machine.ps1" Runtime 'iwz-stage2\darkness')
+$L=(& "$PSScriptRoot\..\..\machine.ps1" Runtime 'iwz-stage2\level')
+$S=(Resolve-Path "$PSScriptRoot\..\..").Path          # d12 SDK (build-sz2, darkness)
+$FXS=(Join-Path (Resolve-Path "$PSScriptRoot\..\..").Path 'fx')  # FX agent tools (fx_place, fx_variant, module)
+$PY=(& "$PSScriptRoot\..\..\machine.ps1" Runtime 'iwz-stage2\lightmaps\venv\Scripts\python.exe')
+$Z=(& "$PSScriptRoot\..\..\machine.ps1" ZoneToolExe 'x64-zt-iwz-darkness')
+$D=(& "$PSScriptRoot\..\..\machine.ps1" TemplateDump)
+$KD=(& "$PSScriptRoot\..\..\machine.ps1" Runtime 'iwz-stage2\kitimport\ztwork\dump')
 $LD2="$L\ztwork\dump"
 $FD="$F\ztwork\dump"
 $W="$F\ztwork-d"
@@ -58,7 +58,7 @@ foreach($p in $cat.PSObject.Properties){ if($p.Value.variant){
   }
 } }
 $A=@{KeepSubmodels=$true; NavObstacles=$true; Darkness=$true; FxReport="$um.fx_import.json"
-     AudioSdk="$S\audio"; AudioBank='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\audio\build\src15'; AudioModels='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\audio\build\src'}
+     AudioSdk="$S\audio"; AudioBank=(& "$PSScriptRoot\..\..\machine.ps1" Runtime 'iwz-stage2\audio\build\src15'); AudioModels=(& "$PSScriptRoot\..\..\machine.ps1" Runtime 'iwz-stage2\audio\build\src')}
 $A['DarkArgs']="--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --lit fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0"
 if($ReuseCompile){ $A['ReuseCompile']=$true }
 $TP=@("$DK\..\train\port\banzai_v3","$DK\..\train\port\kit_v4","$DK\..\train\port\genset","$DK\..\train\port\props_v4") | ForEach-Object { [IO.Path]::GetFullPath($_) }

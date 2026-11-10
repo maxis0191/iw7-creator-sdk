@@ -3051,7 +3051,9 @@ SMODELS = os.environ.get('IWZ_SMODELS') == '1'
 # zom_machinery_generator_portable_01 (g21 had no kit model). They stay script_models. IWZ_SMODEL_STOCK_CSV: the
 # static-models agent's table of the 17,010 cp_zmb static models.
 SMODEL_STOCK = None
-_smc = os.environ.get('IWZ_SMODEL_STOCK_CSV', r'C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\smodels\stock-smodels.csv')
+_smc = os.environ.get('IWZ_SMODEL_STOCK_CSV') or os.path.join(
+    os.environ.get('IWZ_RUNTIME') or os.path.join(os.path.expanduser('~'), 'Documents', 'IW7-Runtime'),
+    'iwz-stage2', 'smodels', 'stock-smodels.csv')
 # x64-zt door-brushmodels (static-model donor fix): the compiler now picks a donor with the same lod / surface layout
 # and refuses a model without one, so every template model can be static again; IWZ_SMODEL_STOCK_ONLY=1 restores the
 # stock-instance filter (the g22-g24 workaround).

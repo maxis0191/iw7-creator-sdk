@@ -1,6 +1,6 @@
 import glob, os, subprocess, sys, json
-S = r'C:\Users\ezvalo\Documents\IW7-Products\worktrees\sdk-iwzmap-fx\tools-source\iwzmap\fx\fx_import.py'
-R = r'C:\Users\ezvalo\Documents\IW7-Runtime'
+S = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'fx_import.py')
+R = os.environ.get('IWZ_RUNTIME') or os.path.join(os.path.expanduser('~'), 'Documents', 'IW7-Runtime')
 A = 'vfx/iw7/levels/cp_disco/amb/'
 names = sys.argv[1].split(',')
 args = [sys.executable, '-I', S, R + r'\iwz-stage2\level\ztwork', 'cp_iwz', '--dump',

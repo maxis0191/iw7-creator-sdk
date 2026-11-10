@@ -12,7 +12,8 @@ Block compression goes through texconv (DirectXTex, GPU BC6H) - see encode().
 import os, struct, subprocess, tempfile
 import numpy as np
 
-TEXCONV = os.environ.get('IWZ_TEXCONV', r'C:\Users\ezvalo\Documents\IW7-Tools\texconv-may2026\texconv.exe')
+TEXCONV = os.environ.get('IWZ_TEXCONV') or os.path.join(
+    os.path.expanduser('~'), 'Documents', 'IW7-Tools', 'texconv-may2026', 'texconv.exe')
 
 DXGI = {'R32G32B32A32_FLOAT': 2, 'R16G16B16A16_FLOAT': 10, 'R8G8_UNORM': 49, 'R8_UNORM': 61,
         'BC4_UNORM': 80, 'BC6H_UF16': 95}

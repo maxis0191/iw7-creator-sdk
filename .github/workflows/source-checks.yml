@@ -1,8 +1,7 @@
 name: Source checks
+# Started by hand only: the account cannot run hosted jobs, and a job that is refused paints every pull request red.
+# The judge is the local run of checks.ps1 on the exact head (see AGENTS.md).
 on:
-  push:
-    branches: [main, "codex/**"]
-  pull_request:
   workflow_dispatch:
 permissions:
   contents: read

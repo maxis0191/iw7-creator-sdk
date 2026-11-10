@@ -1,6 +1,6 @@
 param([Parameter(Mandatory)][string]$Work,[Parameter(Mandatory)][string[]]$ZtArgs,[string]$Owner='IWZ custom map zonetool',[int]$TimeoutSec=1200)
 $ErrorActionPreference='Stop'
-. 'C:\Users\ezvalo\Documents\IW7-Products\iw7-mod-components\ops\Resource-Scheduler.Core.ps1'
+. (& "$PSScriptRoot\machine.ps1" Components 'ops\Resource-Scheduler.Core.ps1' -MustExist)
 $lease=Enter-IW7ResourceLease -Scope $Work -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner $Owner
 try{
   $tag=[DateTime]::UtcNow.ToString('HHmmss')

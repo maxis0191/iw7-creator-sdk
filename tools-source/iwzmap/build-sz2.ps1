@@ -2,10 +2,10 @@ param(
   [Parameter(Mandatory)][string]$Src,                                                                 # station_zero2.py output
   [Parameter(Mandatory)][string]$UmOut,                                                               # usermap dir to fill (cp_iwz.ff, .arena)
   [string]$Map='cp_iwz',
-  [string]$Work='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\level\ztwork',                     # own zonetool work dir (new-work.ps1 + zonetool\cp_zmb_tpl junction)
-  [string]$ZoneToolExe='C:\Users\ezvalo\Documents\IW7-Products\worktrees\x64-zt-iwz-map\build\bin\x64\Release\zonetool.exe',
-  [string]$TemplateDump='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-map-ref-a\dump',
-  [string]$Arena='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-release\cp_iwz-rc1\usermaps\cp_iwz\cp_iwz.arena',
+  [string]$Work=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\ztwork'),                     # own zonetool work dir (new-work.ps1 + zonetool\cp_zmb_tpl junction)
+  [string]$ZoneToolExe=(& "$PSScriptRoot\machine.ps1" ZoneToolExe 'x64-zt-iwz-map'),
+  [string]$TemplateDump=(& "$PSScriptRoot\machine.ps1" TemplateDump),
+  [string]$Arena=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-release\cp_iwz-rc1\usermaps\cp_iwz\cp_iwz.arena'),
   [int]$Tries=600,
   [switch]$KeepSubmodels,                                                                             # door blockers: zonetool codex/iwzmap-door-brushmodels
   [switch]$CompileOnly,

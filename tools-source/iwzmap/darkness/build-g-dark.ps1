@@ -11,13 +11,13 @@ param([Parameter(Mandatory)][string]$Tag, [switch]$ReuseBake, [string]$BakeFrom=
 # Dark vision args: env IWZ_DARK_ARGS (pwsh -File cannot take a value that starts with --).
 # Output darkness\src_<Tag>[_lm], darkness\um_<Tag>. Reads level\ files (props_g27.json, train ports), never writes them.
 $ErrorActionPreference='Stop'
-$DK='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\darkness'
-$L='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\level'
-$S='C:\Users\ezvalo\Documents\IW7-Products\worktrees\sdk-iwzmap-darkness\tools-source\iwzmap'
-$B='C:\Users\ezvalo\Documents\IW7-Products\worktrees\iw7-creator-sdk-lightbake\tools-source\iwzmap\bake'
-$PY='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\lightmaps\venv\Scripts\python.exe'
-$Z='C:\Users\ezvalo\Documents\IW7-Products\worktrees\x64-zt-iwz-darkness\build\bin\x64\Release\zonetool.exe'
-$D='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-map-ref-a\dump'
+$DK=(& "$PSScriptRoot\..\machine.ps1" Runtime 'iwz-stage2\darkness')
+$L=(& "$PSScriptRoot\..\machine.ps1" Runtime 'iwz-stage2\level')
+$S=(Resolve-Path "$PSScriptRoot\..").Path
+$B=(Join-Path (Resolve-Path "$PSScriptRoot\..").Path 'bake')
+$PY=(& "$PSScriptRoot\..\machine.ps1" Runtime 'iwz-stage2\lightmaps\venv\Scripts\python.exe')
+$Z=(& "$PSScriptRoot\..\machine.ps1" ZoneToolExe 'x64-zt-iwz-darkness')
+$D=(& "$PSScriptRoot\..\machine.ps1" TemplateDump)
 $W="$DK\ztwork"
 $src="$DK\src_$Tag"; $um="$DK\um_$Tag"
 # (d12) run dk13 sweep (fast adaptation): the manual exposure keys are tonemapExposure / tonemapExposureAdjust
@@ -48,7 +48,7 @@ $env:IWZ_AUDIO='1'
 if(-not $FxTxt){ $FxTxt="$S\fx\station_zero_fx_g25.txt" }; $env:IWZ_FX_TXT=$FxTxt
 python -I "$S\station_zero2.py" "$D\cp_zmb" $src | Select-Object -Last 1
 python -I "$S\sz2_plan.py" $src | Select-Object -Last 1
-$AS='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\assets'
+$AS=(& "$PSScriptRoot\..\machine.ps1" Runtime 'iwz-stage2\assets')
 python -I "$S\sz2_artlint.py" $src --json "$DK\artlint_$Tag.json" --catalog "$AS\catalog.json" --kit "$AS\kit\kit_final.json" | Select-Object -Last 1
 if($LASTEXITCODE -ne 0){ "WARNING artlint failed: $DK\artlint_$Tag.json" }
 python -I "$S\sz2_navconn.py" $src --json "$DK\navconn_$Tag.json" | Select-Object -Last 2
@@ -66,7 +66,7 @@ if($ReuseBake){
   Get-ChildItem $src -File | Where-Object { $_.Name -notin @('world.bin','lighting.txt') } | ForEach-Object { Copy-Item $_.FullName (Join-Path $build $_.Name) -Force }
   "bake reused from $BakeFrom"
 } else {
-  . 'C:\Users\ezvalo\Documents\IW7-Products\iw7-mod-components\ops\Resource-Scheduler.Core.ps1'
+  . (& "$PSScriptRoot\..\machine.ps1" Components 'ops\Resource-Scheduler.Core.ps1' -MustExist)
   for($i=0;$i -lt 900;$i++){ try { $lease=Enter-IW7ResourceLease -Scope "$DK\bake" -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner 'IWZ darkness agent: dark light bake'; break } catch { if($_.Exception.Message -match 'busy|reserved|wait'){ Start-Sleep 60; continue }; throw } }
   try {
     if(Test-Path $build){ Remove-Item $build -Recurse -Force }
@@ -106,11 +106,11 @@ if($TestVfx){
   }
 }
 $A=@{KeepSubmodels=$true; NavObstacles=$true; Darkness=$true; DarkArgs=$DarkArgs; FxReport="$um.fx_import.json"
-     AudioSdk="$S\audio"; AudioBank='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\audio\build\src15'; AudioModels='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\audio\build\src'}
+     AudioSdk="$S\audio"; AudioBank=(& "$PSScriptRoot\..\machine.ps1" Runtime 'iwz-stage2\audio\build\src15'); AudioModels=(& "$PSScriptRoot\..\machine.ps1" Runtime 'iwz-stage2\audio\build\src')}
 if($ReuseCompile){ $A['ReuseCompile']=$true }
 # kit + train models
 $km=@((Get-Content "$src\layout.json" -Raw | ConvertFrom-Json).kit_models | Where-Object { -not $_.StartsWith('iwz_') })
-$KD='C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\kitimport\ztwork\dump'
+$KD=(& "$PSScriptRoot\..\machine.ps1" Runtime 'iwz-stage2\kitimport\ztwork\dump')
 $A['KitDumps']=@("cp_disco=$KD\cp_disco;$KD\techsets_cp_disco","cp_final=$KD\cp_final;$KD\techsets_cp_final")
 # (as the level build since g27) only the port models the generator places (layout decor)
 $placed=@((Get-Content "$src\layout.json" -Raw | ConvertFrom-Json).decor | ForEach-Object { $_.model } | Select-Object -Unique)
@@ -128,7 +128,7 @@ $vroots="$FD\cp_disco;$KD\cp_disco;$LD2\techsets_cp_disco;$D\cp_zmb;$D\techsets_
 if(Test-Path "$S\fx\fx_catalog.json"){
   $fxcat=(Get-Content "$S\fx\fx_catalog.json" -Raw | ConvertFrom-Json).fx
   foreach($pv in $fxcat.PSObject.Properties){ if($pv.Value.variant -and ($imp -match [regex]::Escape(($pv.Value.variant.of -split '/')[-1] + $pv.Value.variant.suffix))){
-    python -I "$S\fx\fx_variant.py" --dump $vroots --fx $pv.Value.variant.of --out $VR --tint $pv.Value.variant.tint --suffix $pv.Value.variant.suffix --techsets 'C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\fx\techsets_all.txt' --report "$VR.$($pv.Name).json" | Select-Object -Last 1
+    python -I "$S\fx\fx_variant.py" --dump $vroots --fx $pv.Value.variant.of --out $VR --tint $pv.Value.variant.tint --suffix $pv.Value.variant.suffix --techsets (& "$PSScriptRoot\..\machine.ps1" Runtime 'iwz-stage2\fx\techsets_all.txt') --report "$VR.$($pv.Name).json" | Select-Object -Last 1
     if($LASTEXITCODE){ throw "fx_variant failed for $($pv.Name)" }
   } }
 }
