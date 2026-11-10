@@ -144,6 +144,6 @@ The removed entities are one basketball arcade game: a `trigger_multiple` (`hoop
 at about x -9754, y 288, z -1750. A player who goes there finds no hoop and no mini-game; the three other hoops
 of the map are untouched. The game printed nothing about the entity file in the clean runs.
 
-Not verified: a client reading the file (nothing was seen on screen); a player joining a server that has the file;
+Not verified: only a dedicated server was proven; a client reading the file (no client was run, nothing was seen on screen); which client-only classes (`client_trigger_occluder_audio`, `light_spot`, `audio_pa_speaker`) matter to a player without the file; a player joining a server that has the file;
 adding a trigger or brush entity; maps other than Spaceland (the loader file name for another map is built from the
-same pattern and was not run); several files for several maps in one session.
+same pattern and was not run); several files for several maps in one session. The count of the whole live list varies by one between runs (754 or 755).
