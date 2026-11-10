@@ -210,7 +210,8 @@ def ents_text(worldspawn, ents):
 
 
 def stock_worldspawn(ents_path):
-    txt = open(ents_path, 'rb').read().decode('latin-1')
+    with open(ents_path, 'rb') as f:
+        txt = f.read().decode('latin-1')
     block = txt[txt.index('{') + 1: txt.index('}')]
     rows = []
     for ln in block.strip().splitlines():

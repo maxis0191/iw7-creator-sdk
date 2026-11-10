@@ -27,6 +27,7 @@ from iw7_dump import WorldError, np  # noqa: E402
 
 READER_VERSION = '1.0.0'
 PREFAB_SCHEMA = 'iw7.prefab/1'
+EXTRA_FILE = 'surfaces_extra.bin'
 
 # counts the project's map compiler printed for the same dump (independent source), per map
 GROUND_TRUTH = {'cp_zmb': {'surfaces': 10760, 'smodels': 17010, 'primaryLights': 1039, 'probes': 160, 'models': 94}}
@@ -534,7 +535,8 @@ class World:
 
     # -- mesh
     def surface_mesh(self, i):
-        """Mesh of surface i: dict with positions, normals, uvs (texture), lmuvs (lightmap) as lists of tuples and
+        """Mesh of surface i: dict with positions, normals, uvs (texture), lmuvs (lightmap) as lists of tuples,
+        tangents (decoded like the normals), signs (the raw fourth vertex float), colors (u32) and
         tris as index triples into them. Only the vertices the triangles use are returned (indices remapped).
         Normals are the 10:10:10 packed unit vectors decoded to [-1, 1] (v = bits / 511.5 - 1)."""
         rows = self.q('SELECT material, tri_count, first_vertex, base_index, transientZone FROM surfaces WHERE i=?', (i,))
@@ -551,7 +553,8 @@ class World:
                 raise WorldError('mesh side file is truncated (surface %d)' % i)
             idx = struct.unpack('<%dH' % n, raw)
             if not idx:
-                return {'material': s['material'], 'positions': [], 'normals': [], 'uvs': [], 'lmuvs': [], 'tris': []}
+                return {'material': s['material'], 'positions': [], 'normals': [], 'uvs': [], 'lmuvs': [], 'tangents': [],
+                        'signs': [], 'colors': [], 'tris': []}
             lo, hi = min(idx), max(idx)
             first = s['first_vertex'] + lo
             count = hi - lo + 1
@@ -560,10 +563,13 @@ class World:
             f.seek(zrow['offset'] + first * dump.VERTEX_SIZE)
             vraw = f.read(count * dump.VERTEX_SIZE)
         pos, nrm, uv, lm = dump.decode_vertices(vraw, count)
+        tan, sign, col = dump.decode_vertex_extras(vraw, count)
         used = sorted(set(idx))
         remap = {v: k for k, v in enumerate(used)}
         return {'material': s['material'], 'positions': [pos[v - lo] for v in used], 'normals': [nrm[v - lo] for v in used],
                 'uvs': [uv[v - lo] for v in used], 'lmuvs': [lm[v - lo] for v in used],
+                'tangents': [tan[v - lo] for v in used], 'signs': [sign[v - lo] for v in used],
+                'colors': [col[v - lo] for v in used],
                 'tris': [(remap[idx[k]], remap[idx[k + 1]], remap[idx[k + 2]]) for k in range(0, n, 3)]}
 
     # -- statistics
@@ -756,7 +762,8 @@ def extract(world, box, name, out_dir):
                 item[1] = ' '.join(fmt(c) for c in o)
         ents.append({'origin': o, 'kv': kv})
     os.makedirs(out_dir, exist_ok=True)
-    surfaces, blob, triangles, vertices = [], bytearray(), 0, 0
+    surfaces, blob, extra, triangles, vertices = [], bytearray(), bytearray(), 0, 0
+    attrs = {r['i']: r for r in world.q('SELECT i, lightmapIndex, flags, vertexLayerData FROM surfaces')}
     for s in b['surfaces_touching']:
         mesh = world.surface_mesh(s['i'])
         keep = []
@@ -768,8 +775,14 @@ def extract(world, box, name, out_dir):
             continue
         used = sorted({v for t in keep for v in t})
         remap = {v: k for k, v in enumerate(used)}
+        a = attrs[s['i']]
         entry = {'material': mesh['material'], 'source_surface': s['i'], 'vertices': len(used), 'triangles': len(keep),
-                 'offset': len(blob)}
+                 'offset': len(blob), 'extra_offset': len(extra), 'lightmapIndex': a['lightmapIndex'], 'flags': a['flags'],
+                 'layered': bool(a['vertexLayerData'])}
+        for v in used:
+            extra += struct.pack('<3f', *mesh['tangents'][v])
+        for v in used:
+            extra += struct.pack('<fI', mesh['signs'][v], mesh['colors'][v])
         for key, comps in (('positions', 3), ('normals', 3), ('uvs', 2), ('lmuvs', 2)):
             for v in used:
                 p = mesh[key][v]
@@ -783,12 +796,16 @@ def extract(world, box, name, out_dir):
         vertices += len(used)
     with open(os.path.join(out_dir, 'surfaces.bin'), 'wb') as f:
         f.write(bytes(blob))
+    with open(os.path.join(out_dir, EXTRA_FILE), 'wb') as f:
+        f.write(bytes(extra))
     prefab = {'schema': PREFAB_SCHEMA, 'name': name, 'source': {'map': world.meta['map_name'], 'reader_version': READER_VERSION},
               'box': [x1, y1, z1, x2, y2, z2], 'origin': list(origin), 'yaw': 0.0, 'space': 'relative',
               'counts': {'props': len(props), 'lights': len(lights), 'ents': len(ents), 'surfaces': len(surfaces),
                          'triangles': triangles, 'vertices': vertices},
               'mesh': {'file': 'surfaces.bin', 'layout': 'per surface: positions f32x3, normals f32x3, uvs f32x2, lmuvs f32x2 '
                                                          '(per vertex, arrays in that order), then triangles u32x3; little endian; origin-relative'},
+              'mesh_extra': {'file': EXTRA_FILE, 'layout': 'per surface, at extra_offset: tangents f32x3 per vertex, then '
+                                                           '(fourth vertex float f32, colour u32) per vertex; little endian'},
               'props': props, 'lights': lights, 'ents': ents, 'surfaces': surfaces}
     _write_prefab(out_dir, prefab)
     return prefab
@@ -830,8 +847,20 @@ def read_prefab_surface(prefab_dir, prefab, k):
     uv = [tuple(f32[6 * nv + 2 * i:6 * nv + 2 * i + 2]) for i in range(nv)]
     lm = [tuple(f32[8 * nv + 2 * i:8 * nv + 2 * i + 2]) for i in range(nv)]
     ix = struct.unpack_from('<%dI' % (nt * 3), data, off + nv * 40)
-    return {'material': s['material'], 'positions': pos, 'normals': nrm, 'uvs': uv, 'lmuvs': lm,
-            'tris': [tuple(ix[3 * t:3 * t + 3]) for t in range(nt)]}
+    out = {'material': s['material'], 'positions': pos, 'normals': nrm, 'uvs': uv, 'lmuvs': lm,
+           'tris': [tuple(ix[3 * t:3 * t + 3]) for t in range(nt)]}
+    if prefab.get('mesh_extra') and 'extra_offset' in s:
+        with open(os.path.join(prefab_dir, prefab['mesh_extra']['file']), 'rb') as f:
+            ex = f.read()
+        eo = s['extra_offset']
+        if eo + nv * 20 > len(ex):
+            raise WorldError('prefab extra mesh file is truncated (surface %d)' % k)
+        t32 = struct.unpack_from('<%df' % (nv * 3), ex, eo)
+        out['tangents'] = [tuple(t32[3 * i:3 * i + 3]) for i in range(nv)]
+        sc = struct.unpack_from('<' + 'fI' * nv, ex, eo + nv * 12)
+        out['signs'] = list(sc[0::2])
+        out['colors'] = list(sc[1::2])
+    return out
 
 
 def place(prefab_dir, at, yaw, out_dir):
@@ -880,12 +909,18 @@ def place(prefab_dir, at, yaw, out_dir):
         ents.append({'origin': o, 'kv': kv})
     out['props'], out['lights'], out['ents'] = props, lights, ents
     os.makedirs(out_dir, exist_ok=True)
-    blob = bytearray()
+    blob, extra = bytearray(), bytearray()
     new_surfaces = []
     for k, s in enumerate(p['surfaces']):
         m = read_prefab_surface(prefab_dir, p, k)
         s2 = dict(s)
         s2['offset'] = len(blob)
+        if 'tangents' in m:
+            s2['extra_offset'] = len(extra)
+            for t in m['tangents']:
+                extra += struct.pack('<3f', *rot_z(t, cs))
+            for sg, c in zip(m['signs'], m['colors']):
+                extra += struct.pack('<fI', sg, c)
         for pos in m['positions']:
             blob += struct.pack('<3f', *tr(pos))
         for n in m['normals']:
@@ -899,6 +934,9 @@ def place(prefab_dir, at, yaw, out_dir):
     out['surfaces'] = new_surfaces
     with open(os.path.join(out_dir, out['mesh']['file']), 'wb') as f:
         f.write(bytes(blob))
+    if out.get('mesh_extra'):
+        with open(os.path.join(out_dir, out['mesh_extra']['file']), 'wb') as f:
+            f.write(bytes(extra))
     _write_prefab(out_dir, out)
     return out
 
