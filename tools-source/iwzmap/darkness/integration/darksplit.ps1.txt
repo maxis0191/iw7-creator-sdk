@@ -1,0 +1,10 @@
+# -Darkness: dark split of the layout lights. The bake gets the emergency lights and the dimmed amber cue glows only;
+# the power lights (and the lit-state corridor fill) become named scriptable lights in lights.txt, switched bank by
+# bank at power-on by cp_iwz_darkness.gsc. Runs before the bake and before a bake reuse (lights.txt is not baked;
+# a reused bake must itself be a darkness bake: same world.bin, baked from the same dark list).
+if($Darkness){
+  $LightsFull="$L\lights_full_$Tag.json"; $DarkLights="$L\lights_dark_$Tag.json"
+  & $PY -I "$B\layout_lights.py" $src $LightsFull @($LightArgs -split ' ' | Where-Object { $_ })
+  & $PY -I "$S\darkness\dark_build.py" $src $LightsFull $DarkLights --ambient 0.025 --scale 840 --radius-scale 1.8 --cue-scale 0.35 @(if($DarkZoneFill){'--zone-fill',$DarkZoneFill})
+  if($LASTEXITCODE){ throw 'dark_build failed' }
+}

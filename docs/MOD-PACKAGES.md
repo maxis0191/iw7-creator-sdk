@@ -129,7 +129,7 @@ range or inferred ancestry is silently accepted. The example's two pins are
 source-level compatibility observations, not measured installed binary hashes.
 The caller must still establish actual executable provenance independently.
 Official release main `1b76f04` predates the loader.
-Our pinned `77e6d4d` contains it. See [upstream evidence](UPSTREAM-2026-10-06.md).
+Our pinned `77e6d4d` contains it. See the upstream evidence (server repository: `docs/UPSTREAM-2026-10-06.md`).
 
 ## Minimal LuaFile recipe, still unbuilt
 

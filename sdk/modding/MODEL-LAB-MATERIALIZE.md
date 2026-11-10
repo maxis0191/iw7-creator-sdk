@@ -13,10 +13,10 @@ qualification of the future real export, rendered model or script.
 
 ## Existing route and explicit inputs
 
-The upstream route remains [Model Lab resident preparation](../../ops/model-lab/RESIDENT-RIGID.md):
+The upstream route remains Model Lab resident preparation (x64-zt-extensions: `ops/model-lab/RESIDENT-RIGID.md`):
 `prepare_ff.py --export-root ... --material-rebinds ...`, then the existing
 `Build-ModelFF.ps1`. Creator consumes the retained results; it never calls either
-operation. The [existing Model Lab scene](../../ops/model-lab/RESIDENT-RIGID.md#existing-ff-and-runtime-route)
+operation. The existing Model Lab scene (x64-zt-extensions: `ops/model-lab/RESIDENT-RIGID.md`, section "Existing FF and runtime route")
 can test the independently reviewed FF before an SDK archive exists.
 
 The author `Project` must contain `manifest.json`, an existing `<namespace>.gsc`

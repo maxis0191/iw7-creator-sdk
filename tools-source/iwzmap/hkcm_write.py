@@ -146,7 +146,11 @@ class Writer:
         if count: self.local.append((at, target))
 
 
-def encode(tris, template_path, tag=0, max_tris=127):
+def encode(tris, template_path, tag=0, max_tris=127, tags=None):
+    """tags: optional per-triangle surface-table index (into the template's HavokPhysicsShapeList table, which
+    carries contents and surface flags); default `tag` for every triangle."""
+    tags = list(tags) if tags is not None else [tag] * len(tris)
+    assert len(tags) == len(tris)
     tris = [tuple(tuple(float(c) for c in v) for v in t) for t in tris]
     tpl = Packfile(open(template_path, 'rb').read())
     tb = tpl.data_sec.body
@@ -166,6 +170,8 @@ def encode(tris, template_path, tag=0, max_tris=127):
     prims = bytearray(); svi = bytearray(); runs = bytearray(); sec_recs = []; sec_trees = []
     simd_items = []
     for k, s in enumerate(sections):
+        s = sorted(s, key=lambda i: tags[i])          # one primitive run per tag
+        sections[k] = s
         local = []; lmap = {}
         for i in s:
             for v in tris[i]:
@@ -187,11 +193,17 @@ def encode(tris, template_path, tag=0, max_tris=127):
             mn, mx = tri_box(tris[i])
             simd_items.append(((k << 8) | (j << 1), mn, mx))
         r_off = len(runs) // 4
-        runs += struct.pack('<HBB', tag, 0, len(s))
+        nr = 0; j0 = 0
+        while j0 < len(s):
+            j1 = j0
+            while j1 < len(s) and tags[s[j1]] == tags[s[j0]]:
+                j1 += 1
+            runs += struct.pack('<HBB', tags[s[j0]], j0, j1 - j0); nr += 1
+            j0 = j1
         smn, smx = sec_boxes[k]
         sroot = bvh([(j, *tri_box(tris[i])) for j, i in enumerate(s)])
         sec_trees.append(emit_axis4(sroot, smn, smx))
-        sec_recs.append((smn, smx, sh_off, len(local), p_off, len(s), r_off, page, leaf_node[k]))
+        sec_recs.append((smn, smx, sh_off, len(local), p_off, len(s), r_off, page, leaf_node[k], nr))
     simd_root = bvh(simd_items)
     simd_bytes, simd_n = emit_simd(simd_root)
     nsec = len(sections)
@@ -225,11 +237,11 @@ def encode(tris, template_path, tag=0, max_tris=127):
     struct.pack_into('<iiI', w.b, data + 0x40, nkeys, bits, maxkey)
     o = w.put(top_bytes); w.arr(data + 0x10, o, len(top_bytes) // 5)
     secs = w.put(bytes(96 * nsec)); w.arr(data + 0x50, secs, nsec)
-    for k, (smn, smx, sh_off, nsh, p_off, np_, r_off, page, leaf) in enumerate(sec_recs):
+    for k, (smn, smx, sh_off, nsh, p_off, np_, r_off, page, leaf, nr) in enumerate(sec_recs):
         so = secs + 96 * k
         struct.pack_into('<4f4f', w.b, so + 16, *smn, 0.0, *smx, 0.0)
         struct.pack_into('<3f3f', w.b, so + 48, FLT_MAX, FLT_MAX, FLT_MAX, -math.inf, -math.inf, -math.inf)
-        struct.pack_into('<IIII', w.b, so + 72, 0, sh_off << 8, p_off << 8 | np_, r_off << 8 | 1)
+        struct.pack_into('<IIII', w.b, so + 72, 0, sh_off << 8, p_off << 8 | np_, r_off << 8 | nr)
         struct.pack_into('<BBHBBBB', w.b, so + 88, 0, nsh, leaf, page, 0, 0, 0)
     for k, t in enumerate(sec_trees):
         o = w.put(t); w.arr(secs + 96 * k, o, len(t) // 4)
