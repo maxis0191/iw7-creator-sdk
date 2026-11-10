@@ -20,7 +20,11 @@ records (`iw7-paris-server`: `ops/iwzmap/`, `tests/fixtures/iwzmap_*`,
 | `assemble.py` | zone sources for buildzone (level script, content tables, csv) |
 | `cp_iwz.gsc` | level script: agents, spawn volumes, interactions, door barrier |
 | `build_art.py`, `make_art.py` | map browser art zone `<map>_art.ff`: 2D list/vote images and the theater poster model, made from engine renders |
-| `lightmap_read.py` | decodes the template lightmap atlas to pick per-room texels |
+| `lightmap_read.py` | decodes the template lightmap atlas to pick per-room texels (LDR preview; superseded by `bake/lm_decode.py`) |
+| `bake/lmbake.py` | lightmap baker: charts and atlas, ray traced direct light with soft shadows, cosine-gathered bounces, AO, dilation, BC6H/BC4/R8G8 encoding; rewrites the world.bin lightmap coordinates and lighting.txt (light grid) in a baked copy of the source |
+| `bake/rt.py` | numba BVH ray tracer of the baker and the measurements |
+| `bake/iw7image.py`, `bake/lm_decode.py` | iw7Image/DDS IO, texconv encode/decode; HDR decode of a lightmap set (A/B/D/S terms) |
+| `bake/lm_measure.py` | engine frames against a bake: camera fit, visibility-tested texel projection, per-wall luma CV, rendered-vs-baked correlation, calibration patches |
 | `tome_read.py` | reads an Umbra format-20 tome header |
 | `iwz_emitcheck.py` | offline gate on an emit: collision, nav, links, stairs, spawners, routes, build-to-build diff |
 | `iwz_zonecheck.py` | offline gate between "emitted" and "packed": everything built is listed, present in the source tree, and the compiled file is newer than its sources |
@@ -41,6 +45,24 @@ python -I station_zero.py <stock cp_zmb dump> out\sz_src
 python -I make_art.py <hero frame.bmp> <second frame.bmp> out\art cp_iwz
 python -I build_art.py <zonetool work> cp_iwz <work>\zonetool\cp_iwz out\art <work>\dump\cp_frontend
 ```
+
+Baked lightmap (Python 3.12 with numpy, numba, scipy, pillow; DirectXTex texconv, path in `IWZ_TEXCONV`):
+
+```powershell
+python -I bake\lmbake.py out\sz_src out\sz_src\lights.json out\sz_baked   # station_zero.py writes lights.json
+python -I bake\layout_lights.py <src> <src>\lights.json   # or: lights.json from a level generator's layout.json lights
+.\build-map-wait.ps1 -Src out\sz_baked -UmOut out\um_cp_iwz_baked             # the compiler ships lightmap\*.dds
+python -I bake\lm_measure.py out\sz_baked "<views>" <run dir> measure.json --frames-flat <flat run> --viz <dir> `
+       --eye 58.45 --fov 133.14   # frames of a local run vs the bake (camera of the base client, 1280x720)
+```
+
+The compiler (`iwzmap_lightmap.cpp`, x64-zt branch `codex/iwzmap-lightmaps`) replaces the template lightmap
+images (`*lightmap0_primary/secondary/secondunorm`: same names, own size) when the source has
+`lightmap\secondary.dds`. World shader: `E = A + ssao * B * saturate(dot(N, D))`, diffuse = albedo * E, with
+A = secondary top half, B = bottom half, D = secondunorm (rotated octahedral, tangent frame) and S = primary
+(baked sun visibility; the sun itself is shaded at runtime). Engine evidence (iwz-stage2/lightmaps): calibration
+patches give E = A + B * Dz (B-only patches render within 4..11 % of the equal-E A-only patches); the baked/flat luma
+ratio follows the baked E (r 0.87..0.985 per view); forcing S = 0/0.5/1 indoors changes nothing measurable.
 
 Compiler switches (environment): `IWZ_GEN_TOME` (generated conservative Umbra
 tome; required for complete rooms), `IWZ_KEEP_ENTSHAPES` (template entity

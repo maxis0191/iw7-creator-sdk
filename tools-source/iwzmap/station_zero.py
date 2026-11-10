@@ -271,4 +271,29 @@ for name, (x0, y0, x1, y1), h, _, _ in ROOMS:
     light_lines.append('room %d %d %d %d %d %d %.4f %.4f %.4f %.2f' % (x0 - 256, y0 - 256, -256, x1 + 256, y1 + 256, h + 256,
                                                                     r * scale, g * scale, b * scale, up))
 open(os.path.join(out, 'lighting.txt'), 'w', newline='\n').write('\n'.join(light_lines) + '\n')
+
+# lights.json: input of the lightmap baker (bake/lmbake.py), which replaces world.bin's lightmap coordinates,
+# lighting.txt and adds lightmap/ in a baked copy of this source. One light per lamp model (just below the
+# shade), a dim bulb in each corridor; colours follow ROOM_LIGHT. Intensity I: E = I * (100 / d)^2 * cos.
+LAMP_DROP = {'zmb_light_interior_hanging_ceiling_lamp_01_on': 52, 'light_interior_ceiling_industrial_lamp_01_mounted_on': 30}
+LAMP_POWER = {'arrival': 2.2, 'generator': 2.6, 'platform': 2.6}
+bake_lights = []
+for room, model, (x, y, z), yaw, clip in DECOR:
+    if model in LAMP_DROP:
+        r, g, b, _ = ROOM_LIGHT[room]
+        mx_ = max(r, g, b)
+        # shaded lamps: a wide downward cone, the ceiling receives only bounced light
+        bake_lights.append({'type': 'spot', 'origin': [x, y, z - LAMP_DROP[model]], 'dir': [0, 0, -1], 'inner': 25, 'outer': 62,
+                            'color': [r / mx_, g / mx_, b / mx_], 'intensity': LAMP_POWER[room], 'radius': 1100, 'size': 10,
+                            'room': room})
+for name, (x0, y0, x1, y1), h, _, _ in ROOMS:
+    if name.startswith('hall_'):
+        r, g, b, _ = ROOM_LIGHT[name]
+        bake_lights.append({'type': 'point', 'origin': [(x0 + x1) / 2, (y0 + y1) / 2, h - 24], 'color': [1.0, g / r, b / r],
+                            'intensity': 0.6, 'radius': 600, 'size': 6, 'room': name})
+json.dump({'texel': 8, 'probe_cell': 128,
+           'albedo': {M['concrete']: [0.36, 0.35, 0.33], M['panel']: [0.45, 0.45, 0.43], M['tile']: [0.62, 0.62, 0.6],
+                      M['brick']: [0.62, 0.62, 0.6], M['plate']: [0.3, 0.3, 0.3]},
+           'default_albedo': [0.5, 0.5, 0.5], 'sky': [0, 0, 0], 'ambient': {'color': [0.02, 0.02, 0.022], 'ao_radius': 96},
+           'lights': bake_lights}, open(os.path.join(out, 'lights.json'), 'w'), indent=1)
 print('verts', nv, 'indices', ni, 'surfaces', ns, 'bounds', wb, 'collision', info, 'nav areas', nareas, 'nav bytes', len(nav))
