@@ -80,17 +80,25 @@ register()
 {
     if ( !isdefined( level.szp ) )
         init();
+    // hints: the stock perks keep their own stock strings; Deadeye's stock string (COOP_PERK_MACHINES_1000) names it at
+    // 1500; the four new perks have their own strings in the map zone (perks/strings.json, add_localize.py)
     hint = [];
-    hint[1500] = &"COOP_PERK_MACHINES_1500";
-    hint[2000] = &"COOP_PERK_MACHINES_2000";
-    hint[2500] = &"COOP_PERK_MACHINES_2500";
-    hint[3000] = &"COOP_PERK_MACHINES_3000";
+    hint["perk_machine_deadeye"] = &"COOP_PERK_MACHINES_1000";
+    hint["perk_machine_bakers"] = &"IWZ_PERK_MACHINES_BAKERS";
+    hint["perk_machine_voyage"] = &"IWZ_PERK_MACHINES_VOYAGE";
+    hint["perk_machine_grudge"] = &"IWZ_PERK_MACHINES_GRUDGE";
+    hint["perk_machine_double"] = &"IWZ_PERK_MACHINES_DOUBLE";
+
     foreach ( name in level.szp.newperks )
     {
         if ( name == "perk_machine_deadeye" )
             continue;      // registered by the stock registry already
         scripts\cp\cp_interaction::register_interaction( name, "perk", 1, ::hint_func, ::activate, level.szp.price[name], 1, ::machines_init );
     }
+    // Deadeye Dewdrops in the game's own machine (cp_disco scriptable on a spare template perk instance,
+    // perks/add_deadeye_machine.py): then the stock Deadeye machine code runs it (lights, sign states, jingle)
+    level.szp.deadeye_stock = getscriptablearray( "perk_machine_deadeye_sign", "targetname" ).size > 0;
+    print( "[IWZ perks] DEADEYE_MACHINE stock=" + level.szp.deadeye_stock );
     foreach ( name in level.szp.names )
     {
         if ( !isdefined( level.interactions[name] ) )
@@ -104,10 +112,10 @@ register()
         i.activation_func = ::activate;
         i.hint_func = ::hint_func;
         i.spend_type = "perk";
-        if ( scripts\engine\utility::array_contains( level.szp.newperks, name ) )
+        if ( scripts\engine\utility::array_contains( level.szp.newperks, name ) && !( name == "perk_machine_deadeye" && level.szp.deadeye_stock ) )
             i.init_func = ::machines_init;     // Deadeye's stock init needs its scriptable machine, which this map has not
-        if ( isdefined( hint[i.cost] ) )
-            level.interaction_hintstrings[name] = hint[i.cost];
+        if ( isdefined( hint[name] ) )
+            level.interaction_hintstrings[name] = hint[name];
     }
     register_callbacks();
     print( "[IWZ perks] REGISTERED " + level.szp.names.size );
@@ -286,6 +294,8 @@ machines_init()
     n = 0;
     foreach ( name in level.szp.newperks )
     {
+        if ( name == "perk_machine_deadeye" && level.szp.deadeye_stock )
+            continue;
         foreach ( st in scripts\engine\utility::getstructarray( name, "script_noteworthy" ) )
         {
             st thread machine_power();

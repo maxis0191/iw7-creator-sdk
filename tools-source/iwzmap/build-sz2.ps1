@@ -25,11 +25,19 @@ param(
   [string]$FxNcsSkip='',                                                                             # experiment: imported effects left out of the level effect list
   [switch]$ReuseCompile,                                                                             # keep the previous iwzcompile output of the same -Src (dump\<map>)
   [string]$DeadeyeImage=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\assets\dumps\cp_disco\images\cp_zmb_perk_icon_deadeye.iw7Image'),  # P1: Deadeye Dewdrops' HUD icon (not in the template zone)
+  [string]$PerkMachines=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\p1\machines\port'),       # P1: the four authored perk machines (perks\machines\README.md)
+  [string]$DeadeyeKitDump=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\kitimport\ztwork\dump'),        # P1: cp_disco dump with Deadeye's machine (models, scriptable)
   [switch]$Incremental)                                                                              # keep the stock links and the module outputs of the previous assembly (same modules and dumps)
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
 $ErrorActionPreference='Stop'
 $S=$PSScriptRoot; $W=$Work; $D=$TemplateDump
+# P1 perk machines, always part of the map: the four authored machines and Deadeye's own cp_disco machine (its two models
+# here; its scriptable by perks\add_deadeye_machine.py after the kit import)
+$perkKit=@()
+if($PerkMachines -and (Test-Path $PerkMachines)){ $perkKit+='perks:iwz_perk_machine_bakers,perks:iwz_perk_machine_voyage,perks:iwz_perk_machine_grudge,perks:iwz_perk_machine_double'; $KitDumps=@($KitDumps)+"perks=$PerkMachines" }
+if($DeadeyeKitDump -and (Test-Path "$DeadeyeKitDump\cp_disco\xmodel")){ $perkKit+='cp_disco:cp_disco_perk_dewdrops,cp_disco:cp_disco_perk_dewdrops_off'; $KitDumps=@($KitDumps)+"cp_disco=$DeadeyeKitDump\cp_disco;$DeadeyeKitDump\techsets_cp_disco" }
+if($perkKit.Count){ $KitModels=((@($KitModels)+$perkKit) | Where-Object { $_ }) -join ',' }
 $times=[ordered]@{}; $t0=Get-Date; $tp=Get-Date
 function Lap([string]$Name){ $script:times[$Name]=[int]((Get-Date)-$script:tp).TotalSeconds; $script:tp=Get-Date }
 function Invoke-Zt([string[]]$a,[int]$t){
@@ -99,6 +107,12 @@ if($KitModels -or $KitJson){
   python -I "$S\kit_import.py" @ka
   if($LASTEXITCODE){ throw 'kit_import failed' }
 }
+$deScr="$DeadeyeKitDump\cp_disco\scriptable\zm_perk_machine_deadeye_sign"
+if($DeadeyeKitDump -and (Test-Path $deScr)){
+  # P1: Deadeye Dewdrops' own machine (cp_disco scriptable) on the spare template perk scriptable scenegen relocated
+  python -I "$S\perks\add_deadeye_machine.py" "$W\zone_source\$Map.csv" "$W\zonetool\$Map" $Map --scriptable $deScr --report "$UmOut.deadeye.json"
+  if($LASTEXITCODE){ throw 'add_deadeye_machine failed' }
+}
 if($Crowd){
   # crowd module (E2): the crowd body model without a scriptable, the module script, the level script's call
   python -I "$S\crowd\add_crowd.py" "$W\zone_source\$Map.csv" "$W\zonetool\$Map" $Map --stock-xmodel "$D\cp_zmb\xmodel" --model $CrowdModel
@@ -119,6 +133,16 @@ if($FxImport){
   python -I "$S\fx\fx_import.py" @fa
   if($LASTEXITCODE){ throw 'fx_import failed' }
 }
+# P1: the stock perk jingles and machine sounds in the map's bank (after the audio module, which writes the bank json)
+$ps=@("$W\zone_source\$Map.csv","$W\zonetool\$Map",$Map,'--aliases',"$D\cp_zmb\sound\cp_zmb.all.aliases.csv",'--aliases',(& "$S\machine.ps1" Runtime 'iwz-stage2\audio\lab\dump\cp_disco\sound\cp_disco.all.aliases.csv'),'--stock-bank',(& "$S\machine.ps1" Runtime 'private-test-server\cp_disco.sabl'),'--stock-bank',(& "$S\machine.ps1" Runtime 'private-test-server\cp_disco.sabs'),'--report',"$UmOut.perk_sounds.json")
+python -I "$S\perks\add_perk_sounds.py" @ps
+if($LASTEXITCODE){ throw 'add_perk_sounds failed' }
+# P1: every localized string the zone's scripts use, in the zone (a usermap loads no language zone of its template),
+# last so it sees every module's scripts
+$la=@("$W\zone_source\$Map.csv","$W\zonetool\$Map",'--strings',(& "$S\machine.ps1" Runtime 'iw7-dump-lui\localize.json'),'--extra',"$S\perks\strings.json",'--report',"$UmOut.localize.tsv")
+foreach($lz in 'eng_cp_zmb','eng_patch_cp_zmb'){ if(Test-Path "$W\dump\$lz\localizedstrings"){ $la+=@('--strings',"$W\dump\$lz\localizedstrings") } }
+python -I "$S\perks\add_localize.py" @la
+if($LASTEXITCODE){ throw 'add_localize failed' }
 $null = New-Item -ItemType Directory -Force "$W\zonetool\$Map\techsets\ps"
 if(!(Test-Path "$W\zonetool\$Map\techsets\ps\null.hlsl.cso")){ [IO.File]::WriteAllBytes("$W\zonetool\$Map\techsets\ps\null.hlsl.cso",[byte[]]@()) }
 $csv="$W\zone_source\$Map.csv"; $lines=Get-Content $csv
@@ -136,7 +160,7 @@ Copy-Item "$W\zone\$Map.ff" "$UmOut\$Map.ff" -Force
 # sound bank files (audio module): the usermap needs them next to the FF, and stale ones from an earlier build must go
 foreach($ext in 'sabl','sabs'){
   if(Test-Path "$UmOut\$Map.$ext"){ Remove-Item "$UmOut\$Map.$ext" -Force }
-  if($AudioSdk -and (Test-Path "$W\zone\$Map.$ext")){ Copy-Item "$W\zone\$Map.$ext" "$UmOut\$Map.$ext" -Force }
+  if((Test-Path "$W\zone\$Map.$ext")){ Copy-Item "$W\zone\$Map.$ext" "$UmOut\$Map.$ext" -Force }
 }
 if($Arena -and (Test-Path $Arena)){ Copy-Item $Arena "$UmOut\$Map.arena" -Force }
 $times.total=[int]((Get-Date)-$t0).TotalSeconds

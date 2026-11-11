@@ -1,0 +1,6 @@
+{
+  "IWZ_PERK_MACHINES_BAKERS": "\"Thirteen to the bag!\"\nHold [{+usereload,+activate}] to purchase ^2Baker's Dozens^7 (^3$3000^7)",
+  "IWZ_PERK_MACHINES_VOYAGE": "\"Every journey a pleasure!\"\nHold [{+usereload,+activate}] to purchase ^2Bon Voyages^7 (^3$2000^7)",
+  "IWZ_PERK_MACHINES_GRUDGE": "\"Never forgive, never forget!\"\nHold [{+usereload,+activate}] to purchase ^2Sour Grudges^7 (^3$2500^7)",
+  "IWZ_PERK_MACHINES_DOUBLE": "\"Say cheese, then say it again!\"\nHold [{+usereload,+activate}] to purchase ^2Double Takes^7 (^3$3000^7)"
+}
