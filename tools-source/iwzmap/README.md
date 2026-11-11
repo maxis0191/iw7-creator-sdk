@@ -398,19 +398,28 @@ cp_disco, Elvira in cp_town). `build-charpack.ps1` packs their body, head and ar
 zone, which loads on every map, so each character can be a player character on all five maps. One command:
 
 ```powershell
-# dumps what the work folder lacks (each source zone's models and its techsets zone, through zt.ps1), writes the pack,
+# dumps what the work folder lacks (one zt.ps1 run per source map: techsets_<map>, <map>, patch_<map>), writes the pack,
 # and with -Build compiles it alone as zone "mod" (a test mod: copy <Out>\mod.ff to mods\<name>\mod.ff)
 .\build-charpack.ps1 -Work <ZoneTool work folder from new-work-from-stock.ps1> -Out <new folder> -Build `
   [-Characters characters_5_8.json] [-Scheduler <prepared inputs>\ops\Resource-Scheduler.Core.ps1] [-WaitForSlotSeconds 3600]
 ```
 
+Measured 11 Nov 2026: the four characters (9 models) give a 22,364,464-byte `mod.ff` in 12 s once the dumps exist;
+gate and loader readback clean. One dump run per map, because four patch zones in one run hit the game's limit of 16
+`animclass` assets (a hidden fatal dialog; `zt.ps1` now ends such a run at once with the dialog's text). A finished map
+leaves `dump\.charpack-<map>.done`.
+
 - `characters_5_8.json`: the characters (`key`, source `zone`, `body`, `head` (empty for a full body), `arms`) and
   the name of the table the pack carries (`paris/characters_5_8.csv`, rows `key,body,head,arms`).
-- `char_pack.py <out> --dump <zone>=<dump>;<techsets dump> ...`: the pack itself. It calls `kit_import.py` with
-  `--share-runtime-materials`: a material that a shared techset zone (`techsets_common*`, `techsets_global*`,
-  `*_cp`, `*_mp`, `*_core_mp`) already defines becomes a `material,,<name>` reference row; the others are copied with
-  their image headers (pixels stream from the base `imagefile*.pak`) and their techsets when no shared zone has them.
-  The pack's csv starts with `require` rows for those shared techset zones. Report: `<out>\charpack-report.json`.
+- `char_pack.py <out> --dump <zone>=<dump>;<techsets dump>;<patch dump> ...`: the pack itself. It calls `kit_import.py`
+  with `--share-runtime` and `--drop-procedural-bones`. A material or physics asset that a zone loaded on every map
+  defines (`techsets_*` of common/global, `global_core_mp`, `global_cp`, `global`) becomes a reference row; the others
+  are copied with their image headers (pixels stream from the base `imagefile*.pak`) and their techsets when no shared
+  zone has them. Nothing is referenced into a map zone: the mod zone outlives the map. Every procedural bone set
+  (shoulder twist helpers) is dropped from a patched copy of the model: x64-zt registers that asset type, even as a
+  reference, only in zones `paris_enemy_*`. Scriptable parts are dropped as for kit props. Images that the source zones
+  themselves only reference are referenced the same way. The pack's csv starts with `require` rows for the shared
+  techset zones. Report: `<out>\charpack-report.json` (each drop and reference is named there).
 - `kit_import.py` fills a zone csv with no world rows (no `com_map,` row) by appending: that is how a mod zone takes it.
 - The Paris mod takes the pack with `Build-ParisMod.ps1 -CharacterPack <Out>` (server repository,
   `docs/CHARACTER-PACK.md` there, with the measured size, memory and per-map proof).
