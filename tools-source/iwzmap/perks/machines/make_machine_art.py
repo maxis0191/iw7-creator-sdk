@@ -48,8 +48,9 @@ def tnoise(n, scale, seed, aniso=(1.0, 1.0)):
     return out / max(out.max(), 1e-9)
 
 
-def enamel(base, seed, n=512, chips=10, chip_col=(150, 146, 138), grime=0.14, mottle=0.03, runs=0.10):
-    """Old painted enamel, tileable: soft mottling, dust, vertical grime runs, a few small chips worn to grey primer."""
+def enamel(base, seed, n=512, chips=22, chip_col=(92, 60, 38), grime=0.2, mottle=0.03, runs=0.16):
+    """Old painted enamel after a year sealed underground, tileable: soft mottling, dust, vertical grime runs, a few
+    rust streaks under small chips worn through to rusty metal (dark rim, rust-brown core)."""
     b = np.array(base, np.float32)[None, None, :]
     mot = tnoise(n, 40, seed) - 0.5
     img = b * (1 + mottle * 2 * mot[..., None])
@@ -58,18 +59,30 @@ def enamel(base, seed, n=512, chips=10, chip_col=(150, 146, 138), grime=0.14, mo
     run = tnoise(n, 3, seed + 5, aniso=(1.0, 30.0)) ** 3
     img = img * (1 - runs * run[..., None]) + np.array([40, 34, 26]) * (runs * 0.4 * run[..., None])
     dust = tnoise(n, 0.8, seed + 6)
-    img = img * 0.97 + np.array([120, 116, 108]) * 0.03 * dust[..., None]
+    img = img * 0.96 + np.array([120, 116, 108]) * 0.04 * dust[..., None]
     r = random.Random(seed)
     im = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8))
+    streaks = Image.new('L', (n, n), 0)
+    sd = ImageDraw.Draw(streaks)
     d = ImageDraw.Draw(im)
-    for _ in range(chips):
-        x, y, s = r.randrange(n), r.randrange(n), r.uniform(1.2, 3.5)
-        pts = [(x + s * math.cos(a) * r.uniform(0.5, 1.3), y + s * math.sin(a) * r.uniform(0.4, 1.0))
-               for a in np.linspace(0, 2 * math.pi, 8)[:-1]]
+    for k in range(chips):
+        x, y, sz = r.randrange(n), r.randrange(n), r.uniform(1.5, 4.5)
+        pts = [(x + sz * math.cos(a_) * r.uniform(0.5, 1.3), y + sz * math.sin(a_) * r.uniform(0.4, 1.0))
+               for a_ in np.linspace(0, 2 * math.pi, 8)[:-1]]
+        if k % 3 == 0:                                   # a rust streak running down from every third chip
+            L = r.uniform(15, 60)
+            for ox in (-n, 0, n):
+                sd.line([(x + ox, y), (x + ox + r.uniform(-2, 2), y + L)], fill=150, width=int(max(1, sz * 0.8)))
         for ox in (-n, 0, n):
             for oy in (-n, 0, n):
-                d.polygon([(px + ox, py + oy) for px, py in pts], fill=chip_col)
-    return im
+                pp = [(px + ox, py + oy) for px, py in pts]
+                d.polygon(pp, fill=tuple(int(c * 0.45) for c in chip_col))
+                cx_, cy_ = x + ox, y + oy
+                d.polygon([(cx_ + (px - x) * 0.65, cy_ + (py - y) * 0.65) for px, py in pts], fill=chip_col)
+    sm = np.asarray(streaks.filter(ImageFilter.GaussianBlur(1.5)), np.float32)[..., None] / 255.0
+    a2 = np.asarray(im, np.float32)
+    a2 = a2 * (1 - 0.45 * sm) + np.array([110, 62, 30]) * 0.45 * sm
+    return Image.fromarray(np.clip(a2, 0, 255).astype(np.uint8))
 
 
 def walnut(n=512, seed=5):
@@ -235,13 +248,38 @@ def candies(w, h, seed, colours, sugar=True, pucker=False, bg=(30, 18, 14), size
 
 
 def bulb_art(w, h, col):
+    """A lit bulb seen through warm glass: amber filament core, coloured glass, darker rim (no white blob)."""
     im = panel(w, h, (0, 0, 0))
     d = ImageDraw.Draw(im)
     W, H = w * SS, h * SS
-    for k in range(20, 0, -1):
-        t = k / 20
-        c = tuple(int(255 * (1 - t) + v * t) for v in col)
+    rim = tuple(int(v * 0.45) for v in col)
+    core = tuple(min(255, int(v * 1.0 + 30)) for v in col)
+    for k in range(24, 0, -1):
+        t = k / 24
+        c = tuple(int(rv * t + cv * (1 - t)) for rv, cv in zip(rim, core))
         d.ellipse((W / 2 - W / 2 * t, H / 2 - H / 2 * t, W / 2 + W / 2 * t, H / 2 + H / 2 * t), fill=c)
+    d.line([(W * 0.38, H * 0.55), (W * 0.45, H * 0.42), (W * 0.55, H * 0.58), (W * 0.62, H * 0.45)],
+           fill=(255, 236, 190), width=max(1, int(W * 0.04)))
+    return im
+
+
+def drop_swatch(col, seed, kind):
+    """One drop's skin for the 3D drops inside the glass: 'sour' crinkled and sugared, 'jelly' sugar-crusted matte,
+    'hard' glossy boiled sweet. Tiles around a small sphere."""
+    n = 64
+    r = random.Random(seed)
+    im = panel(n, n, col)
+    d = ImageDraw.Draw(im)
+    shade = tuple(int(c * 0.6) for c in col)
+    if kind == 'sour':
+        for k in range(10):
+            x = r.uniform(0, n) * SS
+            d.line([(x, 0), (x + r.uniform(-12, 12) * SS, n * SS)], fill=shade, width=2 * SS)
+    if kind in ('sour', 'jelly'):
+        for _ in range(500 if kind == 'jelly' else 220):
+            x, y = r.uniform(0, n) * SS, r.uniform(0, n) * SS
+            v = r.randint(215, 255)
+            d.rectangle((x, y, x + SS, y + SS), fill=(v, v, v - 8))
     return im
 
 
@@ -375,6 +413,9 @@ def art_bakers(out):
     text_center(d, 130 * SS, 22 * SS, 'INSERT COIN', font('arialbd.ttf', 22 * SS), (30, 30, 34), spacing=2 * SS)
     text_center(d, 130 * SS, 46 * SS, 'PUSH FOR 13', font('arialbd.ttf', 20 * SS), RED, spacing=2 * SS)
     c.paste('coin', grime_overlay(s, 9, 0.3))
+    for k, col in enumerate([(200, 30, 40), (240, 150, 30), (90, 160, 50), (170, 40, 90)]):
+        c.rect('drop%d' % k, 330 + 66 * k, 958, 64, 64)
+        c.paste('drop%d' % k, drop_swatch(col, 40 + k, 'jelly'))
     c.save(out, 'bakers')
 
 
@@ -523,29 +564,54 @@ def art_grudge(out):
     gl = candies(1024, 360, 17, [(232, 205, 40), (180, 225, 70), (90, 170, 40), (240, 240, 200), (250, 230, 90)],
                  pucker=True, size=(30, 40), bg=(40, 50, 20))
     c.paste('globe', gl, dim(gl, 0.4))
-    # face plate: the maker's printed smiling mascot with the Zero Kings' black spray scowl over it
+    # face plate: the maker's hand-painted smiling mascot (enamel, crazed and chipped), and over it the Zero Kings'
+    # rough aerosol scowl: wobbling strokes built from overspray dots, a heavier core, runs and drips
     c.rect('face', 0, 660, 364, 364)
-    s = panel(364, 364, GREEN)
+    s = enamel(rgb('#2F6E22'), 27, n=182, chips=6).resize((364 * SS, 364 * SS))
     d = ImageDraw.Draw(s)
     W = 364 * SS
-    d.ellipse((8 * SS, 8 * SS, W - 8 * SS, W - 8 * SS), fill=YELLOW, outline=(120, 90, 20), width=6 * SS)
+    d.ellipse((14 * SS, 14 * SS, W - 14 * SS, W - 14 * SS), fill=rgb('#E2BE34'), outline=(110, 80, 20), width=7 * SS)
     for x in (100, 264):
-        d.ellipse(((x - 32) * SS, 196 * SS, (x + 32) * SS, 236 * SS), fill=(240, 150, 120))
-    d.ellipse((118 * SS, 112 * SS, 150 * SS, 160 * SS), fill=(70, 45, 20))
-    d.ellipse((214 * SS, 112 * SS, 246 * SS, 160 * SS), fill=(70, 45, 20))
-    d.arc((82 * SS, 120 * SS, 282 * SS, 300 * SS), 25, 155, fill=(150, 60, 40), width=10 * SS)   # printed smile
-    text_center(d, W / 2, 334 * SS, 'SWEET TREATS', font('arialbd.ttf', 20 * SS), (120, 90, 20))
+        d.ellipse(((x - 32) * SS, 200 * SS, (x + 32) * SS, 238 * SS), fill=(232, 140, 108))
+    d.ellipse((120 * SS, 118 * SS, 150 * SS, 162 * SS), fill=(60, 38, 16))
+    d.ellipse((214 * SS, 118 * SS, 244 * SS, 162 * SS), fill=(60, 38, 16))
+    d.ellipse((128 * SS, 124 * SS, 138 * SS, 136 * SS), fill=(250, 240, 220))
+    d.ellipse((222 * SS, 124 * SS, 232 * SS, 136 * SS), fill=(250, 240, 220))
+    d.chord((92 * SS, 150 * SS, 272 * SS, 300 * SS), 15, 165, fill=(150, 40, 30))      # the painted grin
+    d.chord((110 * SS, 172 * SS, 254 * SS, 262 * SS), 20, 160, fill=(250, 245, 230))   # its teeth
+    s = grime_overlay(s, 28, 0.25)
+    rr = random.Random(29)
 
-    def scowl(md):
-        w = 22 * SS
-        md.line([(84 * SS, 92 * SS), (168 * SS, 138 * SS)], fill=255, width=w)
-        md.line([(280 * SS, 92 * SS), (196 * SS, 138 * SS)], fill=255, width=w)
-        md.arc((92 * SS, 236 * SS, 272 * SS, 340 * SS), 195, 345, fill=255, width=w)
-        md.line([(70 * SS, 260 * SS), (110 * SS, 230 * SS)], fill=255, width=int(w * 0.7))   # strike through the smile
-        md.line([(254 * SS, 230 * SS), (294 * SS, 262 * SS)], fill=255, width=int(w * 0.7))
-    m = spray(s.size, scowl, 2.0 * SS, 21, drips=9, drip_len=(12, 46))
-    s = Image.composite(Image.new('RGB', s.size, BLACK), s, m)
-    c.paste('face', grime_overlay(s, 18, 0.3))
+    def wobble(p0, p1, n=24, amp=6):
+        out = []
+        for k in range(n + 1):
+            t = k / n
+            out.append((p0[0] + (p1[0] - p0[0]) * t + rr.uniform(-amp, amp) * SS * 0.3,
+                        p0[1] + (p1[1] - p0[1]) * t + math.sin(t * 7 + rr.uniform(0, 1)) * amp * SS * 0.5))
+        return out
+
+    strokes = [wobble((70 * SS, 84 * SS), (172 * SS, 142 * SS)), wobble((294 * SS, 84 * SS), (192 * SS, 142 * SS)),
+               [(96 * SS + 172 * SS * k / 24, 318 * SS - 70 * SS * math.sin(math.pi * k / 24) + rr.uniform(-3, 3) * SS)
+                for k in range(25)],
+               wobble((60 * SS, 236 * SS), (304 * SS, 222 * SS), amp=8)]
+    paint = Image.new('L', s.size, 0)
+    pd = ImageDraw.Draw(paint)
+    for k, st in enumerate(strokes):
+        w = (13 if k < 3 else 9) * SS
+        for (x0, y0), (x1, y1) in zip(st, st[1:]):
+            pd.line([(x0, y0), (x1, y1)], fill=235, width=int(w * rr.uniform(0.8, 1.2)))
+        for _ in range(900):                                  # overspray: scattered dots round the stroke
+            x0, y0 = rr.choice(st)
+            a_, rad = rr.uniform(0, 2 * math.pi), abs(rr.gauss(0, w * 1.1))
+            pd.point((x0 + rad * math.cos(a_), y0 + rad * math.sin(a_)), fill=rr.randint(120, 255))
+        for _ in range(3):                                    # runs
+            x0, y0 = rr.choice(st)
+            L = rr.uniform(14, 50) * SS
+            pd.line([(x0, y0), (x0 + rr.uniform(-2, 2) * SS, y0 + L)], fill=220, width=int(3 * SS))
+            pd.ellipse((x0 - 3 * SS, y0 + L - 3 * SS, x0 + 3 * SS, y0 + L + 4 * SS), fill=220)
+    paint = paint.filter(ImageFilter.GaussianBlur(0.8 * SS))
+    s = Image.composite(Image.new('RGB', s.size, (14, 14, 12)), s, paint)
+    c.paste('face', s)
     # crown stencil: sprayed black with stencil bridges, overspray and drips, on weathered green; a pink outline tag
     c.rect('crown', 364, 660, 330, 364)
     s = enamel(GREEN, 19, n=330 * SS // 2, chips=10).resize((330 * SS, 364 * SS))
@@ -576,7 +642,7 @@ def art_grudge(out):
     bl = bulb_art(64, 64, (200, 255, 120))
     c.paste('bulb', bl, bl)
     # graffiti panel for the plinth and body sides: pink and white tags with a crown over weathered green
-    c.rect('tag', 758, 860, 266, 164)
+    c.rect('tag', 758, 860, 266, 100)
     s = enamel(GREEN, 24, n=266 * SS // 2, chips=8).resize((266 * SS, 164 * SS))
 
     def tag(md):
@@ -590,7 +656,10 @@ def art_grudge(out):
                    fill=255)
     m = spray(s.size, tag2, 0.8 * SS, 26)
     s = Image.composite(Image.new('RGB', s.size, (235, 235, 225)), s, m)
-    c.paste('tag', s)
+    c.paste('tag', s.resize((266 * SS, 100 * SS)))
+    for k, col in enumerate([(232, 205, 40), (180, 225, 70), (90, 170, 40), (240, 240, 200)]):
+        c.rect('drop%d' % k, 758 + 66 * k, 960, 64, 64)
+        c.paste('drop%d' % k, drop_swatch(col, 50 + k, 'sour'))
     c.save(out, 'grudge')
 
 
@@ -657,6 +726,32 @@ def art_double(out):
     c.rect('bulb', 220, 840, 120, 120)
     bl = bulb_art(120, 120, (225, 245, 255))
     c.paste('bulb', bl, bl)
+    # lit header over the candy hopper: SWEETS / 4 IN A STRIP
+    c.rect('sweets', 620, 840, 404, 120)
+    s = panel(404, 120, rgb('#C8323A'))
+    d = ImageDraw.Draw(s)
+    W, H = 404 * SS, 120 * SS
+    round_rect(d, (5 * SS, 5 * SS, W - 5 * SS, H - 5 * SS), 14 * SS, outline=CHROME, width=5 * SS)
+    text_center(d, W / 2, 50 * SS, 'SWEETS', font('ariblk.ttf', 64 * SS), BONE, spacing=6 * SS)
+    text_center(d, W / 2, 98 * SS, '4 IN A STRIP  \u00b7  ONE FLASH', font('ariblk.ttf', 20 * SS), rgb('#FFB238'),
+                spacing=2 * SS)
+    c.paste('sweets', s, s)
+    # FLASH plate on the flash unit: a bolt and the word
+    c.rect('flashplate', 620, 960, 404, 64)
+    s = panel(404, 64, (24, 24, 26))
+    d = ImageDraw.Draw(s)
+    d.polygon([(30 * SS, 6 * SS), (12 * SS, 36 * SS), (26 * SS, 36 * SS), (16 * SS, 60 * SS), (48 * SS, 26 * SS),
+               (33 * SS, 26 * SS), (44 * SS, 6 * SS)], fill=rgb('#FFB238'))
+    text_center(d, 222 * SS, 33 * SS, 'FLASH', font('ariblk.ttf', 44 * SS), BONE, spacing=8 * SS)
+    c.paste('flashplate', s, dim(s, 0.6))
+    # the hopper's packed core (seen between the 3D drops) and the drops' skins
+    c.rect('core', 340, 904, 280, 120)
+    core = candies(280, 120, 61, [(33, 166, 154), (200, 50, 58), (238, 231, 215), (255, 178, 56)], size=(14, 20), glass=False,
+                   bg=(20, 30, 30))
+    c.paste('core', core, dim(core, 0.3))
+    for k, col in enumerate([(33, 166, 154), (200, 50, 58), (255, 178, 56)]):
+        c.rect('drop%d' % k, 340 + 66 * k, 840, 64, 64)
+        c.paste('drop%d' % k, drop_swatch(col, 60 + k, 'hard'))
     c.save(out, 'double')
 
 

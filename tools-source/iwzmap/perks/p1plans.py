@@ -103,7 +103,11 @@ def main(argv=None):
           exp('use:flash_full.perks1', 'eq', 6, 'still six')]
     if not given:
         ex += [exp('use:b_%s.spent' % k[13:], 'eq', PRICE[k], '%s at %d' % (k, PRICE[k])) for k in ['perk_machine_deadeye', 'perk_machine_bakers', 'perk_machine_voyage', 'perk_machine_grudge']]
-        ex += [exp('use:double_full.spent', 'eq', 0, 'Double Takes refused at six'), exp('probe:assets.bodies', 'eq', 5, 'five placeholder machine bodies'),
+        ex += [exp('use:double_full.spent', 'eq', 0, 'Double Takes refused at six'), exp('probe:assets.bodies', 'eq', 4, 'the four authored machines are in the map'),
+               exp('probe:assets.deadeye_scriptable', 'eq', 1, 'Deadeye stands in its own cp_disco machine'),
+               exp('probe:b_setup.module', 'eq', 1, 'module'),
+               ] + [exp('probe:assets.snd%d' % i, 'eq', 1, 'stock perk sound alias %d is in the map bank' % i) for i in (0, 1, 2, 4, 6, 7, 8, 9)] + [
+               exp('probe:assets.tuff_jingle_ms', 'gt', 10000, 'the Tuff Nuff jingle has its stock length'),
                exp('probe:assets.bit_bakers', 'eq', 18, "Baker's Dozens has its HUD bit row in the zone's table"),
                exp('probe:assets.bit_double_cd', 'eq', 22, "Double Takes' recharging icon row")]
     json.dump(plan('p1_buy', 'P1: the ten machines, prices, power, limit of six, sold back, Validated Ticket (headless).', st + ex),
