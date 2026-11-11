@@ -28,6 +28,14 @@ def slab(extra_tris=(), areas=None, layout=None):
     return ec.Emit(tris, areas, layout or {}, 'synthetic')
 
 
+class DegenerateTests(unittest.TestCase):
+    def test_a_triangle_with_two_equal_corners_is_an_error(self):
+        emit = slab([((0.0, 0.0, 0.0), (10.0, 0.0, 0.0), (0.0, 0.0, 0.0))])
+        f = ec.check_degenerate(emit)
+        self.assertEqual([(x['code'], x['severity'], x['count']) for x in f], [('DEGENERATE_COLLISION', 'error', 1)])
+        self.assertEqual(ec.check_degenerate(slab()), [])
+
+
 class CollisionTests(unittest.TestCase):
     def test_floor_is_found_where_it_exists(self):
         emit = slab()

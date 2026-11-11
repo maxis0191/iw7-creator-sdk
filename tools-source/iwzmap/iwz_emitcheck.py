@@ -467,6 +467,25 @@ def majority(emit, cells, cell):
     return cnt.most_common(1)[0][0]
 
 
+def check_degenerate(emit):
+    """collision triangles with two equal corners: the engine reads them as a custom primitive with no shape and a query
+    that touches one crashes the server (hkcdStaticMeshTree, sub_1410AD7F0+0x11B)"""
+    bad = []
+    for t in emit.tris:
+        a, b, c = t
+        u = [b[k] - a[k] for k in range(3)]; v = [c[k] - a[k] for k in range(3)]
+        n = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+        if a == b or b == c or a == c or n[0] * n[0] + n[1] * n[1] + n[2] * n[2] < 1e-6:
+            bad.append(t)
+    if not bad:
+        return []
+    xs = [p[0] for t in bad for p in t]; ys = [p[1] for t in bad for p in t]; zs = [p[2] for t in bad for p in t]
+    return [{'code': 'DEGENERATE_COLLISION', 'severity': 'error', 'where': 'map', 'count': len(bad),
+             'bbox': [round(min(xs)), round(min(ys)), round(min(zs)), round(max(xs)), round(max(ys)), round(max(zs))],
+             'detail': 'collision triangles with two equal corners or no area: the engine reads them as a custom primitive '
+                       'with no shape and crashes the server when a query touches one'}]
+
+
 def check_nav_support(emit):
     """Every nav cell centre should sit on a collision floor."""
     bad = collections.defaultdict(list)
@@ -723,6 +742,7 @@ def print_stairs(tables, only=None):
 # --------------------------------------------------------------------------- reports
 def run_check(emit, cell=16.0):
     findings = []
+    findings += check_degenerate(emit)
     findings += check_nav_support(emit)
     link_findings, oneway = check_links(emit)
     findings += link_findings

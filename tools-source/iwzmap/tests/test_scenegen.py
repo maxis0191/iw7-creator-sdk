@@ -150,6 +150,10 @@ class EmitTests(unittest.TestCase):
         self.assertEqual(self.report['problems'], [])
         self.assertEqual(self.report['spawners'], 10)
 
+    def test_the_collision_holds_no_degenerate_triangle(self):
+        import iwz_emitcheck as ec
+        self.assertEqual(ec.check_degenerate(ec.Emit.load(self.out)), [])
+
     def test_navigation_lies_on_the_flight_sheet(self):
         r = sg.check_flights(self.out)
         self.assertEqual(list(r['flights']), ['low_steps'])
