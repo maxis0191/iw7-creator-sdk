@@ -61,6 +61,7 @@ The table above explains the main pieces. The three tables below list every file
 | `tome_read.py` | reads an Umbra format-20 tome header |
 | `tome_cull.py` | the generated map's culling data: per-prop cull distances by size, a check of the tome against every door sightline before the zone step, and the game's depth of door captures ([CULLING](../../docs/CULLING.md)) |
 | `machine.ps1` | resolves the machine locations of the build and run scripts (see "Machine locations") |
+| `scheduler.ps1` | finds the resource scheduler core for `zt.ps1`, `build-zt.ps1`, `darkness\build-g-dark.ps1` and refuses a core without the waiting order and the fit rule (see "The scheduler core") |
 | `zt.ps1` | runs ZoneTool in a work folder under the shared resource lease |
 | `build-zt.ps1` | builds the ZoneTool fork under the lease |
 | `new-work.ps1` | makes a ZoneTool work folder from a game folder: copies the executable set, hard-links the zone files |
@@ -133,7 +134,7 @@ No script of this folder holds a path of one machine. A location comes from a pa
 | `IWZ_RUNTIME` | `<Documents>\IW7-Runtime` | work folders, dumps, runs, the Python environments of the stage |
 | `IWZ_PRODUCTS` | `<Documents>\IW7-Products` | checkouts of the products |
 | `IWZ_SERVER` | `<Documents>\IW7-Paris-Server` | server checkout that holds the local runner (`ops\iwzmap`) |
-| `IWZ_COMPONENTS` | `<IWZ_PRODUCTS>\iw7-mod-components` | resource scheduler (`ops\Resource-Scheduler.Core.ps1`) |
+| `IWZ_COMPONENTS` | none | a components worktree; last place `scheduler.ps1` looks for the scheduler core (see "The scheduler core") |
 | `IWZ_ZONETOOL_EXE` | `<IWZ_PRODUCTS>\worktrees\<worktree the script names>\build\bin\x64\Release\zonetool.exe` | the ZoneTool build to use |
 | `IWZ_ZONETOOL_SOURCE` | `<IWZ_PRODUCTS>\worktrees\x64-zt-iwz-map` | ZoneTool source built by `build-zt.ps1` |
 | `IWZ_TEMPLATE_DUMP` | `<IWZ_RUNTIME>\iwz-map-ref-a\dump` | stock dumps (`cp_zmb`, `techsets_*`) |
@@ -155,6 +156,23 @@ The records in `darkness/integration/` keep the paths of the runs they describe;
 
 This landed without a map build: every script parses and every default was compared with the path it replaced.
 The first agent that builds or runs a map after this change reports the result.
+
+## The scheduler core
+
+Every build script of this folder takes the machine-wide build reservation with the scheduler core of
+iw7-mod-components (`ops\Resource-Scheduler.Core.ps1`), found by `scheduler.ps1` in this order:
+
+1. the script's `-Scheduler` parameter (`zt.ps1`, `build-prefab-room.ps1`), else `$env:IW7_RESOURCE_SCHEDULER`;
+2. the core of the prepared workspace the script runs from (`./bootstrap.ps1 -Output runtime/<name>` composes it at
+   the components pin of `product.json`);
+3. `$env:IWZ_COMPONENTS\ops\Resource-Scheduler.Core.ps1`.
+
+There is no default checkout. Until 11 Nov 2026 the default was the main components checkout, 11 commits behind and
+without the waiting order: a zone build started with it took the machine ahead of every queued caller.
+`scheduler.ps1` then refuses, with a sentence naming the path and what to do, a core that does not define
+`Assert-IW7QueueTurn` (the waiting order, components PR 129) and `Test-IW7TicketCanFit` (the fit rule, components
+PR 130, pin `pin/server-447c1ad-shareable` a0990f32). It reads the file text only, so nothing of a refused core runs.
+`tests/test_scheduler_core.py` holds the guard to that, and accepts the core of the workspace the checks run in.
 
 ## Build
 

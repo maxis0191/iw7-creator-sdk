@@ -1,6 +1,6 @@
 $ErrorActionPreference='Stop'
 $msb = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
-. (& "$PSScriptRoot\machine.ps1" Components 'ops\Resource-Scheduler.Core.ps1' -MustExist)
+. (& "$PSScriptRoot\scheduler.ps1")
 $W=(& "$PSScriptRoot\machine.ps1" ZoneToolSource 'x64-zt-iwz-map')
 $lease=Enter-IW7ResourceLease -Scope $W -Kind Build -PhysicalBytes 8GB -CommitBytes 12GB -Owner 'IWZ map compiler zonetool build'
 try {

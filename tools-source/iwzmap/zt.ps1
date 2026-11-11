@@ -1,11 +1,9 @@
 param([Parameter(Mandatory)][string]$Work,[Parameter(Mandatory)][string[]]$ZtArgs,[string]$Owner='IWZ custom map zonetool',[int]$TimeoutSec=1200,
-  [string]$Scheduler=$env:IW7_RESOURCE_SCHEDULER,        # Resource-Scheduler.Core.ps1 of iw7-mod-components (or of prepared inputs: <inputs>\ops)
+  [string]$Scheduler='',                                 # Resource-Scheduler.Core.ps1; empty: scheduler.ps1 resolves and guards it
   [ValidateRange(0,14400)][int]$WaitForSlotSeconds=0)    # wait this long for the shared reservation, asking the scheduler every 5 s
 # One ZoneTool run under the machine-wide build reservation.
 $ErrorActionPreference='Stop'
-if(!$Scheduler){ $Scheduler=(& "$PSScriptRoot\machine.ps1" Components 'ops\Resource-Scheduler.Core.ps1' -MustExist) }
-if(!(Test-Path -LiteralPath $Scheduler)){ throw "Resource scheduler not found: $Scheduler" }
-. $Scheduler
+. (& "$PSScriptRoot\scheduler.ps1" $Scheduler)
 $waitClock=[Diagnostics.Stopwatch]::StartNew()
 $until=[datetime]::UtcNow.AddSeconds($WaitForSlotSeconds)
 # Ask the scheduler itself every 5 s, never only look at its status: since 11 Nov 2026 a refused request that asks
