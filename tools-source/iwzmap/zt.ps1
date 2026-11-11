@@ -33,4 +33,15 @@ try{
   }
   $p.WaitForExit(10000) | Out-Null
   "exit $($p.ExitCode)"; Get-Content "$Work\zt-$tag.out.log" -Tail 25; Get-Content "$Work\zt-$tag.err.log" -Tail 10
-} finally { Exit-IW7ResourceLease -Token $lease.Token | Out-Null }
+} finally {
+  # The scheduler keeps a Build lease while ANY compiler runs on the machine, ours or not ('Heavy child may still be
+  # alive'). Once our ZoneTool has exited, ask again every 5 s for up to 30 min instead of leaving the lease behind.
+  $released=$false; $exitUntil=[datetime]::UtcNow.AddMinutes(30)
+  while(-not $released){
+    try{ Exit-IW7ResourceLease -Token $lease.Token | Out-Null; $released=$true }
+    catch{
+      if(-not ($p -and $p.HasExited) -or $_.Exception.Message -notlike 'Heavy child may still be alive*' -or [datetime]::UtcNow -ge $exitUntil){ throw }
+      Start-Sleep -Seconds 5
+    }
+  }
+}
