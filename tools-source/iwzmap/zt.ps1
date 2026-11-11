@@ -6,15 +6,19 @@ $ErrorActionPreference='Stop'
 if(!$Scheduler){ $Scheduler=(& "$PSScriptRoot\machine.ps1" Components 'ops\Resource-Scheduler.Core.ps1' -MustExist) }
 if(!(Test-Path -LiteralPath $Scheduler)){ throw "Resource scheduler not found: $Scheduler" }
 . $Scheduler
+$waitClock=[Diagnostics.Stopwatch]::StartNew()
 if($WaitForSlotSeconds -gt 0){
   $until=[datetime]::UtcNow.AddSeconds($WaitForSlotSeconds)
   while(@((Get-IW7ResourceStatus).Leases).Count -and [datetime]::UtcNow -lt $until){ Start-Sleep -Seconds 5 }
 }
 $lease=Enter-IW7ResourceLease -Scope $Work -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner $Owner
+"waited for the build reservation $([int]$waitClock.Elapsed.TotalSeconds) s"
 try{
   $tag=[DateTime]::UtcNow.ToString('HHmmss')
   $p=Start-Process -FilePath "$Work\zonetool.exe" -ArgumentList (@('-headless','-unbuffered-io')+$ZtArgs) -WorkingDirectory $Work -RedirectStandardOutput "$Work\zt-$tag.out.log" -RedirectStandardError "$Work\zt-$tag.err.log" -PassThru -NoNewWindow
   try{ Add-IW7ResourceProcess -Token $lease.Token -ProcessId $p.Id | Out-Null }catch{}
+  # time stamps for every log line (zt_timeline.py report <file> says where the minutes went)
+  try{ Start-Process -FilePath python -ArgumentList @('-I',"`"$PSScriptRoot\zt_timeline.py`"",'follow',"`"$Work\zt-$tag.out.log`"","`"$Work\zt-$tag.timeline.tsv`"",'--pid',"$($p.Id)") -WindowStyle Hidden | Out-Null }catch{}
   $deadline=[datetime]::UtcNow.AddSeconds($TimeoutSec)
   while(-not $p.WaitForExit(2000)){
     $log = Get-Content "$Work\zt-$tag.out.log" -Raw -ErrorAction SilentlyContinue
