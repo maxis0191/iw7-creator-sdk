@@ -37,13 +37,13 @@ souvenir glow on the zombie's head; the Sour Grudges rim is four thin green bars
 |---|---|
 | Up 'N Atoms before the power, alone | sells for 500, given |
 | Tuff 'Nuff before the power | refused, 0 paid |
-| The five machines without a stock machine (Deadeye and the four new) | see section 6 (build p1) |
+| The five machines without a stock machine | Deadeye 1500, Baker's 3000, Bon Voyages 2000, Sour Grudges 2500 paid at their machines after the power; Double Takes refused at six; five bodies in the map; the HUD rows 18 (Baker's) and 22 (Double Takes recharging) read from the zone's table |
 | A sixth perk | bought at its price (Tuff 'Nuff 2500) |
 | A seventh perk | refused, 0 paid, still six (the stock purchase test of every other machine also refuses) |
 | A perk used again | sold back, 0 paid, five |
 | Validated Ticket | next perk free (0 paid); the one after is refused at six |
 | A second player | holds its own six; its seventh refused while the first player's purchase test says yes |
-| Rounds 1 to 3 (stock spawning, 57 kills) | every perk and Baker's counter (5) survive |
+| Rounds 1 to 3 (stock spawning) | every perk and Baker's counter (5) survive |
 | Down (a lethal hit, two players) and revive | every perk lost (2 to 0); revived; Tuff 'Nuff bought again for 2500 |
 
 ## 3. Measured: the four new perks
@@ -53,7 +53,7 @@ souvenir glow on the zombie's head; the Sour Grudges rim is four thin green bars
 | Baker's Dozens | 12 hits counted; the 13th dealt exactly 3.0 times its own damage (90 for 30); it passed through the 2 zombies behind on the line (both lost health); it paid its hit points again (10 more); 13 hits with a wonder weapon counted 0 and punched nothing; a second dozen punched again |
 | Sour Grudges | the zombie that hit (20) was marked; killed in time with a rifle: the next hit (30) took 0; the one after (25) took 25 (one forgiven hit only); a kill with a wonder weapon and a kill after the 6 s mark earned nothing; a zombie typed as the Night Inspector was not marked |
 | Bon Voyages | trap 375 instead of 750, postage 250 instead of 500, its own trap does not hurt the owner, 4 s at 1.2 speed after an arrival |
-| Double Takes | a zombie hit takes 45 at every round 1 to 30 (seven rounds measured, 64 hits); 100 to 55 does not trigger, 55 to 10 does; the three zombies within 400 units were lured and the one typed as the Night Inspector was not; no second trigger inside the cooldown (60 s) |
+| Double Takes | a zombie's hit takes 45 at every round measured (rounds 1, 5, 10, 15, 20, 25, 30; 63 hits, every non-zero one 45); 100 to 55 does not trigger, 55 to 10 does; the three zombies within 400 units were lured, the one typed as the Night Inspector was not; 2 of the 3 had closed 30 units or more on the image 3.5 s later while the owner had stepped 300 units away; no second trigger inside the 60 s cooldown (more than 50 s left) |
 
 Double Takes' threshold stays as the bible wrote it: the bible's fallback ("the first hit after 10 s unhurt") was for
 two-hit deaths at round 25, and the measurement shows a flat 45 a hit from round 1 to 30, so from 100 health a player
@@ -64,9 +64,9 @@ always survives one hit under 35 % (55 then 10); with Tuff 'Nuff (200): 155, 110
 | Perk | Damage | Survival | Economy / movement | Measured size |
 |---|---|---|---|---|
 | Tuff 'Nuff | no | +100 health, always | no | 200 health (second player) = two more 45 hits before going down, every time |
-| Bang Bangs | yes, every bullet | no | no | see section 6 (plain vs Bang Bangs hits) |
+| Bang Bangs | yes, every bullet | no | no | 30 to 39 per hit (x1.3) in the same series of 12 hits, and the stock double-fire attachment on top (not measurable headless) |
 | Quickies, Racin' Stripes, Deadeye, Up 'N Atoms | handling, movement, aim, revive | Up 'N Atoms only | yes | stock code |
-| Baker's Dozens | one hit in 13 x3, through 2 more | no | the punched hit's points again | +15.4 % damage over 13 body hits ((12 + 3) / 13); its value is where the 13th lands |
+| Baker's Dozens | one hit in 13 x3, through 2 more | no | the punched hit's points again (10) | measured series: 12 hits of 30 then 90 = 34.6 a hit on average (+15.4 %), against Bang Bangs' 39 (+30 %) before its fire rate |
 | Bon Voyages | no | no | half-price traps and postage, 4 s x1.2 after arrivals | 375 saved per Third Rail |
 | Sour Grudges | no | at most one 45 hit forgiven per mark earned | no | needs a kill of one given zombie inside 6 s, a forgiven hit inside 8 s |
 | Double Takes | no | one 4 s lure a minute | 1.5 s x1.2 | triggers on the second 45 hit from full health |
@@ -89,3 +89,16 @@ always survives one hit under 35 % (55 then 10); with Tuff 'Nuff (200): 155, 110
   for Double Takes and Bang Bangs for Baker's Dozens, both different mechanics.
 
 ## 6. Runs and their conditions
+
+All on Station Zero, private loopback servers, the scheduler's queue. Headless = dedicated server and one engine bot as the tested player, no client. Conditions common to the headless plans: round spawning off (`waves` off; the round number still advances by the stock code), the player ignored by zombies except in the measured hits, every door open, money set, the runtime's health top-up switched off where health is measured (`gl_protect_off`, stock health 100), the plan's zombies held in place (`szp_hold`) except during the Double Takes lure and the rounds, hits given by script (`dodamage` with a player or zombie attacker, through the stock damage callbacks), no inactivity kick on the private server.
+
+| Run | Build / scripts | Plan | Result |
+|---|---|---|---|
+| a1 | build e + perk module as loose files | p1_buy (five perks given by script) | PASS 20/20, 200 s, no map build |
+| a1 | same | p1_effect | lost: placed zombies were free and downed the bot (environment fault, fixed with szp_hold and gl_protect_off, ledger) |
+| a2 | same | p1_hurt (rounds set by script, the player protected by values, one zombie chasing per round) | PASS: 45 a hit at rounds 1 to 30 |
+| a5 | same | p1_effect | PASS 26/26 |
+| b2 | build p1b (zone scripts only) | p1_effect | PASS 27/27 (punch through: the zombies behind lose 90, the same as the first) |
+| b2 | build p1b | p1_edge (two players for the down; rounds 1 to 3 with the stock spawning, the player protected by values) | PASS 20/20 |
+| b2 | build p1b | p1_buy (all ten at their machines) | 14/28: the five new machines never powered on (init bug, ledger); fixed |
+| b3 | build p1b + the fixed module loose | p1_buy | PASS 28/28 |
