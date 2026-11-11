@@ -150,12 +150,12 @@ there). `at` named 10 props, 16 surfaces, 2 sky pixels and 2 things that are not
 
 | Named as | Check | Result |
 |---|---|---|
-| prop (10) | hide exactly that prop with the live editor (`paris_world_hide_model <model> <origin> 0.5`, `matched=1` every time), capture again, compare the depth at the pixel; the 8 or 9 other pixels of the view must not move | 9 tested: the depth changed at the pixel in 9 of 9, and 0 other pixels moved. 1 not tested (the hide had been planned from a predicted camera for the gate next to it); the game's trace hits 15.5 units from the tool's point, 3,355 units away |
+| prop (10) | hide exactly that prop with the live editor (`paris_world_hide_model <model> <origin> 0.5`, `matched=1` every time), capture again, compare the depth at the pixel; the 8 or 9 other pixels of the view must not move | 10 of 10: the depth changed at the pixel every time, and 0 other pixels moved (9 in the proof session; the tenth, a gate 3,355 units away, in a later session: its depth went to 3,421.8, the gate behind it, and the tool lists the hidden gate as not drawn in front) |
 | surface (16) | the game's own collision trace from the camera through the pixel | 15 hit within 0.1 unit of the tool's point. 1 differs: the collision trace stops 25.7 units short on a collision shape (`plastic`) that is not drawn at that pixel; the depth and the database agree on the floor |
 | nothing drawn (2) | the depth is 0 and the database has the sky there | 2 of 2 |
 | not in the map (2) | the game's trace | 1 confirmed: the trace hits a `scriptable` entity 0.8 units from the tool's point (the balloons). 1 not confirmed: the trace passes through it and hits the wall the tool reports 32.8 units behind it |
 
-So 27 of 30 are confirmed by an independent check (9 props, 15 surfaces, 2 sky pixels, 1 thing that is not in the map), none is shown wrong, and 3 are not confirmed: the untested gate, the surface where collision and picture differ, and one thing that is not in the map.
+So 28 of 30 are confirmed by an independent check (10 props, 15 surfaces, 2 sky pixels, 1 thing that is not in the map), none is shown wrong, and 2 are not confirmed: the surface where collision and picture differ, and one thing that is not in the map.
 
 **P3, dynamic things.** A script model placed by the plan (`zmb_target_01` at (467, 3477, 40)): `at` on its pixel
 says `dynamic or unknown`, distance 199.22; the game's trace through the same pixel hits
@@ -179,7 +179,7 @@ disappeared. They are exactly the 28 props of the box that were seen on 40 pixel
 props outside the box is listed. After the restore: 0 disappeared (one surface listed as appeared, 8 to 80 pixels, next to a moving thing). Two frames of the unchanged view: 0 disappeared,
 0 appeared, 159 pixels of 921,600 with another depth.
 
-**P5, cost.** In the game: a capture without depth is the picture copy the game's own capture already cost (median 14.4 ms in the renderer); the depth adds a median of 9.6 ms, so a capture with depth is one long frame of about 25 ms. With no capture pending the frame time is unchanged within the noise (listener on, off, on, off: medians 7.41, 7.88, 7.80, 7.26 ms). Files per frame: picture 3.7 MB, depth 3.7 MB, camera 33 KB. Details: components `docs/SEE.md`. The tool: `objects` 7.9 s the first time for a view (the database is drawn once and kept in
+**P5, cost.** In the game: a capture without depth is the picture copy the game's own capture already cost (median 14.4 ms in the renderer); the depth adds a median of 9.6 ms, so a capture with depth is one long frame of about 25 ms (the first one of a session 0.2 to 0.6 s: the depth target is looked up once). With no capture pending the frame time is unchanged within the noise (listener on, off, on, off: medians 7.41, 7.88, 7.80, 7.26 ms in one session and 6.35, 6.53, 5.51, 6.12 ms in another). Files per frame: picture 3.7 MB, depth 3.7 MB, camera 33 KB. Details: components `docs/SEE.md`. The tool: `objects` 7.9 s the first time for a view (the database is drawn once and kept in
 the cache folder), 2.3 s after; `at` 0.7 s; `visible --model` 1.5 s for 99 props; `floor` 0.8 s.
 
 ## What is not covered
