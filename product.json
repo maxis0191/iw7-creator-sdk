@@ -63,6 +63,7 @@
     "tools-source/iwzmap/tests/test_kit_lists.py",
     "tools-source/iwzmap/tests/test_kit_import_stage.py",
     "docs/STATION-ZERO-KITS.md",
+    "docs/STATION-ZERO-W1-ST1.md",
     "tools-source/worldkit/iw7_see.py",
     "tools-source/worldkit/tests/test_see.py",
     "docs/SEE.md",
