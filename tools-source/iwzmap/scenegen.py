@@ -1482,6 +1482,39 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
     return plans
 
 
+def lab_report(src, runs):
+    """read gamelab run folders of the lab plans: every case's zombie arrivals (SP_END lines), the verdicts, and the
+    survey points per zone (which zones the navigation reaches from the start with every door open)"""
+    import glob, re
+    lay = json.load(open(os.path.join(src, 'layout.json')))
+    cases, verdicts, survey = {}, {}, None
+    for run in runs:
+        for log in glob.glob(os.path.join(run, '**', 'client.stdout.log'), recursive=True) + glob.glob(os.path.join(run, '**', 'server.stdout.log'), recursive=True):
+            for ln in open(log, encoding='utf-8', errors='replace'):
+                m = re.search(r'SP_END case=(\S+) result=(\d+)/(\d+) \S+ died=(\d+) ms=(\d+)', ln)
+                if m:
+                    cases[m.group(1)] = {'reached': int(m.group(2)), 'total': int(m.group(3)), 'died': int(m.group(4)), 'ms': int(m.group(5))}
+        for res in glob.glob(os.path.join(run, '**', 'gamelab.result.json'), recursive=True):
+            d = json.load(open(res, encoding='utf-8'))
+            verdicts[os.path.basename(os.path.dirname(os.path.dirname(res)))] = d.get('verdict') or d.get('class')
+        for sv in glob.glob(os.path.join(run, '**', 'survey-*.json'), recursive=True):
+            survey = json.load(open(sv, encoding='utf-8'))
+    zones = lay['zones']
+    per_zone = collections.Counter()
+    if survey:
+        for _i, x, y, z, _f in survey['points']:
+            hit = [n for n, zd in zones.items() if any(b[0] <= x <= b[2] and b[1] <= y <= b[3] for b in zd['boxes'])]
+            per_zone[hit[0] if hit else 'outside'] += 1
+    expected = test_args(src)
+    names = [c.split('=')[0] for c in (expected['climbs'] + '|' + expected['routes']).split('|') if c]
+    tag = lambda n: re.sub(r'[^a-z0-9_]', '_', n.lower())[:40]
+    rows = [(n, cases.get(tag(n))) for n in names]
+    return {'cases': rows, 'passed': sum(1 for _n, c in rows if c and c['total'] and c['reached'] == c['total']),
+            'run': sum(1 for _n, c in rows if c), 'expected': len(rows), 'verdicts': verdicts,
+            'survey': {'points': len(survey['points']) if survey else 0, 'per_zone': dict(per_zone),
+                       'zones_missing': [z for z, zd in zones.items() if not zd.get('far') and not per_zone.get(z)] if survey else None}}
+
+
 def pools(src, tpl):
     """what the emit takes from the template's finite pools, and the entity count"""
     import re
@@ -1522,6 +1555,7 @@ def main(argv=None):
     p = sub.add_parser('tests'); p.add_argument('src'); p.add_argument('--json')
     p = sub.add_parser('labplans'); p.add_argument('src'); p.add_argument('out'); p.add_argument('--per-plan', type=int, default=26)
     p.add_argument('--count', type=int, default=3); p.add_argument('--chase', type=int, default=45)
+    p = sub.add_parser('labreport'); p.add_argument('src'); p.add_argument('runs', nargs='+'); p.add_argument('--json')
     a = ap.parse_args(argv)
     if a.cmd == 'check':
         sc = Scene.load(a.scene)
@@ -1558,6 +1592,16 @@ def main(argv=None):
         if a.md:
             open(a.md, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
         return 1 if any(v is None for v in t.values()) else 0
+    if a.cmd == 'labreport':
+        r = lab_report(a.src, a.runs)
+        for n, c in r['cases']:
+            print('CASE %-32s %s' % (n, 'not run' if not c else '%d/%d reached, died %d, %d ms' % (c['reached'], c['total'], c['died'], c['ms'])))
+        print('verdicts', r['verdicts'])
+        print('survey points %d; per zone %s; zones not reached %s' % (r['survey']['points'], r['survey']['per_zone'], r['survey']['zones_missing']))
+        print('cases: %d expected, %d run, %d with every zombie arriving' % (r['expected'], r['run'], r['passed']))
+        if a.json:
+            json.dump(r, open(a.json, 'w'), indent=1)
+        return 0 if r['passed'] == r['expected'] else 1
     if a.cmd == 'labplans':
         os.makedirs(a.out, exist_ok=True)
         lay = json.load(open(os.path.join(a.src, 'layout.json')))
