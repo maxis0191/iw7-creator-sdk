@@ -3,6 +3,7 @@
 main()
 {
     level.iwz_custom_map = 3;
+    scripts\cp\maps\cp_iwz\cp_iwz_perks::init();        // P1 perks (perks/cp_iwz_perks.gsc, in the zone by build-sz2.ps1)
     scripts\mp\mp_agent::init_agent( "mp/default_agent_definition.csv" );
     scripts\mp\agents\zombie\zombie_agent::registerscriptedagent();
     scripts\mp\agents\zombie_brute\zombie_brute_agent::registerscriptedagent();     // Spaceland registerscriptedagents()
@@ -293,14 +294,17 @@ iwz_third_rail()
     {
         use sethintstring( &"ZOMBIE_CRAFTING_SOUVENIRS_HINT_ELECTRICTRAP" );
         use waittill( "trigger", p );
-        if ( !p scripts\cp\cp_persistence::player_has_enough_currency( 750 ) )
+        cost = 750;
+        if ( isdefined( level.iwz_price_func ) )
+            cost = [[ level.iwz_price_func ]]( p, 750, "trap" );      // Bon Voyages (P1): traps at half price
+        if ( !p scripts\cp\cp_persistence::player_has_enough_currency( cost ) )
         {
             p playlocalsound( "purchase_deny" );
             continue;
         }
-        p scripts\cp\cp_persistence::take_player_currency( 750, 1, "trap" );
+        p scripts\cp\cp_persistence::take_player_currency( cost, 1, "trap" );
         use makeunusable();
-        print( "[IWZ level] TRAP_ON by=" + p.name );
+        print( "[IWZ level] TRAP_ON by=" + p.name + " cost=" + cost );
         iwz_third_rail_run( p, 25 );
         print( "[IWZ level] TRAP_COOLDOWN" );
         wait 60;
@@ -339,8 +343,8 @@ iwz_third_rail_run( owner, seconds )
         }
         foreach ( pl in level.players )
         {
-            if ( isalive( pl ) && iwz_in_box( pl.origin, lo, hi ) )
-                pl dodamage( 20, pl.origin );
+            if ( isalive( pl ) && iwz_in_box( pl.origin, lo, hi ) && !( isdefined( level.iwz_trap_hurts_func ) && ![[ level.iwz_trap_hurts_func ]]( pl, owner ) ) )
+                pl dodamage( 20, pl.origin );      // Bon Voyages (P1): the owner's own trap spares them
         }
         wait 0.25;
     }
@@ -360,6 +364,7 @@ iwz_in_box( p, lo, hi )
 iwz_register_interactions()
 {
     scripts\cp\maps\cp_zmb\cp_zmb_interactions::register_interactions();
+    scripts\cp\maps\cp_iwz\cp_iwz_perks::register();     // P1: the new perks and this map's limit of six
     used = [];
     foreach ( s in level.all_interaction_structs )
     {

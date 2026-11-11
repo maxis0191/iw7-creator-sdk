@@ -115,8 +115,8 @@ dump before building, and a match is redesigned.
 | Sour Grudges | no | one forgiven hit, if earned | no | down |
 | Double Takes | no | one four-second opening a minute | no | down |
 
-No new perk multiplies another or a wonder weapon: Baker's Dozens and Sour Grudges ignore wonder weapons; Day
-Trippers touches no combat number; Double Takes cannot trigger while it recharges. Named test cases for P1:
+No new perk multiplies another or a wonder weapon: Baker's Dozens and Sour Grudges ignore wonder weapons; Bon
+Voyages touches no combat number; Double Takes cannot trigger while it recharges. Named test cases for P1:
 Sour Grudges with each wonder weapon (must not trigger); Double Takes inside a Live Rail triangle and on a
 slick; Bon Voyages with eight players queuing at one hatch; Baker's Dozens on the Inspector's lamp.
 A player with all four and two stock perks has given up two of Tuff 'Nuff, Quickies, Bang Bangs and Racin'
