@@ -147,6 +147,17 @@
       "motion": {
         "lamp_speed_mm_s": 60.0,
         "lamp_length_mm": 5.0
+      },
+      "material_motion": {
+        "_doc": "route diagram drifts along the barrel: 0.12 tiles/s = 22 mm/s on the gun (stock VS layer-1 scroll, engine-camo-shading.md)",
+        "scroll_uv_s": [
+          0.12,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0
+        ]
       }
     },
     "mercury": {
@@ -292,6 +303,17 @@
           70.0
         ],
         "_note": "Directions in degrees from +U (barrel axis), counter-clockwise; the product mask A x B is the visible arc."
+      },
+      "material_motion": {
+        "_doc": "liquid skin breathes: slow two-axis drift, 0.035/0.021 tiles/s (6/4 mm/s); no rotation (pivot is UV 0,0)",
+        "scroll_uv_s": [
+          0.035,
+          0.021
+        ],
+        "rotation": [
+          0.0,
+          0.0
+        ]
       }
     }
   }

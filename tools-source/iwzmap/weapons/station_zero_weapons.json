@@ -1,0 +1,57 @@
+{
+  "_doc": "Station Zero weapons and camos module (add_weapons.py). K1: the map's Pack-a-Punch camos (cp_iwz3.gsc sets pap_1_camo camo01 and pap_2_camo camo04; their donor materials camo_01 / camo_04 are shipped in the map zone with CARRIER and MERCURY ARC). WW1: EXACT CHANGE on the Model 1887 skeleton (donor animation package iw7_1887_mp_package and sound package iw7_mod2187_mp_sfxpackage are STOCK PLACEHOLDERS until our own exist). Variables: CAMOS (camo_gen.py output), WW1 (build_authored_weapon.py output zonetool folder), DUMP (stock dumps root), HERE (this folder).",
+  "fragments": [
+    {"root": "${WW1}", "rows": "${WW1}/rows.csv"}
+  ],
+  "camos": [
+    {"material": "camo_01", "json": "${CAMOS}/materials/iwz_camo_carrier.json", "images": "${CAMOS}/images", "prefix": "iwz_camo_carrier",
+     "donor": "camo_01", "donor_techsets": "${DUMP}/techsets_global_mp"},
+    {"material": "camo_04", "json": "${CAMOS}/materials/iwz_camo_mercury.json", "images": "${CAMOS}/images", "prefix": "iwz_camo_mercury",
+     "donor": "camo_01", "donor_techsets": "${DUMP}/techsets_global_mp"}
+  ],
+  "weapons": [
+    {
+      "name": "iw7_exactchange_zm",
+      "donor": "${DUMP}/global_cp/weapons/iw7_mod2187_zm.json",
+      "view_model": "weapon_iwz_exactchange_vm",
+      "world_model": "weapon_iwz_exactchange_wm",
+      "camo_vm": ["m2o/weapon_iwz_exactchange_camo", "m2o/weapon_iwz_exactchange_acc_camo", "weapon_iwz_exactchange_camo", "weapon_iwz_exactchange_acc_camo"],
+      "camo_wm": ["m2o/weapon_wm_iwz_exactchange_camo", "m2o/weapon_wm_iwz_exactchange_acc_camo", "weapon_wm_iwz_exactchange_camo", "weapon_wm_iwz_exactchange_acc_camo"],
+      "_why": "05-WONDER-WEAPONS.md 1: single lever-cycled shots at 110 a minute (iFireTime 545), hopper 12, one token (shotCount 1), pierces (penetrateType 3; the script caps victims per shot), damage set by script (onzombiedamage), so the file damage is a low fallback. Ammo stock is kept equal to the clip by the script (no reserve, refills free, Max Ammo no effect).",
+      "weapdef": {
+        "weapClass": 1,
+        "shotCount": 1,
+        "iFireTime": 545,
+        "penetrateType": 3,
+        "damage": 120,
+        "mid3Damage": 120,
+        "iStartAmmo": 12,
+        "iMaxAmmo": 12,
+        "iReloadAmmoAdd": 12,
+        "iReloadStartAdd": 12,
+        "maxDamageRange": 4000,
+        "mid3DamageRange": 5000,
+        "minDamageRange": 5001
+      },
+      "top": {
+        "iClipSize": 12,
+        "penetrateMultiplier": 4.0,
+        "ammoDropStockMin": 0,
+        "ammoDropStockMax": 0,
+        "szLootTable": "",
+        "attachments": ["spasslugpap1"],
+        "attachments2": [],
+        "attachments4": [],
+        "attachments5": [],
+        "attachments6": []
+      }
+    }
+  ],
+  "stringtables": [
+    {"name": "cp/cp_iwz_weapontable.csv", "base": "${DUMP}/patch_cp_zmb/cp/cp_weapontable.csv",
+     "append": [["iw7_exactchange_zm", "magic upgrade", "Magic Wheel", ""]]}
+  ],
+  "gsc": [
+    {"module": "wonder", "src": "${HERE}/cp_iwz_wonder.gsc", "entry": "init", "after": "level.no_pap_camos"}
+  ]
+}

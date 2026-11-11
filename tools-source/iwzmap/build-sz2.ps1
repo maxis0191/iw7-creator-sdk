@@ -24,6 +24,8 @@ param(
   [switch]$Darkness, [string]$DarkArgs='',                                                         # (DarkArgs: add_darkness options, e.g. "--dark-exposure 8 --exposures 4,6")                                                                                  # darkness\add_darkness.py: darkness + flashlight modules (generator IWZ_DARK=1)
   [string]$FxNcsSkip='',                                                                             # experiment: imported effects left out of the level effect list
   [switch]$ReuseCompile,                                                                             # keep the previous iwzcompile output of the same -Src (dump\<map>)
+  [string]$Weapons='',                                                                              # weapons\add_weapons.py recipe: original weapons, camos, their script (e.g. weapons\station_zero_weapons.json)
+  [string[]]$WeaponVars=@(),                                                                         # NAME=path for ${NAME} in the recipe (CAMOS, WW1, DUMP; HERE is the recipe's folder)
   [switch]$Incremental)                                                                              # keep the stock links and the module outputs of the previous assembly (same modules and dumps)
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
@@ -62,7 +64,7 @@ if($CompileOnly){ return }
 Lap 'compile'
 # -Incremental: the stock links and what the modules added stay when the modules ran with the same arguments last time
 # (the key below); only the generated world is linked again and the modules run again over the kept tree.
-$modKey=(@($D,$AudioSdk,$AudioBank,$AudioModels,$KitModels,$KitJson,$KitTier,$KitZones,($KitDumps -join '|'),($KitRuntimeCsv -join '|'),$FxImport,($FxDumps -join '|'),$FxNcsSkip,[string][bool]$Darkness,$DarkArgs,[string][bool]$Crowd,$CrowdModel) -join "`n")
+$modKey=(@($D,$AudioSdk,$AudioBank,$AudioModels,$KitModels,$KitJson,$KitTier,$KitZones,($KitDumps -join '|'),($KitRuntimeCsv -join '|'),$FxImport,($FxDumps -join '|'),$FxNcsSkip,[string][bool]$Darkness,$DarkArgs,[string][bool]$Crowd,$CrowdModel,$Weapons,($WeaponVars -join '|')) -join "`n")
 $keyFile="$W\zonetool\$Map\.iwz_modules.key"
 $inc=@()
 if($Incremental -and (Test-Path -LiteralPath $keyFile) -and ((Get-Content -LiteralPath $keyFile -Raw) -eq $modKey)){ $inc=@('--incremental'); 'incremental assembly: same modules as the kept tree' }
@@ -113,7 +115,14 @@ if($FxImport){
   python -I "$S\fx\fx_import.py" @fa
   if($LASTEXITCODE){ throw 'fx_import failed' }
 }
-$null = New-Item -ItemType Directory -Force "$W\zonetool\$Map\techsets\ps"
+if($Weapons){
+  # weapons and camos module: original weapons (model fragments of the authored-weapon chain), the map's camo
+  # materials, weapon definitions from stock donors, the map's weapon table and the weapons' game script
+  $wa=@($W,$Map,$Weapons,'--var',"HERE=$(Split-Path -Parent (Resolve-Path $Weapons))",'--var',"DUMP=$D",'--report',"$UmOut.weapons.json")
+  foreach($v in $WeaponVars){ $wa+=@('--var',$v) }
+  python -I "$S\weapons\add_weapons.py" @wa
+  if($LASTEXITCODE){ throw 'add_weapons failed' }
+}$null = New-Item -ItemType Directory -Force "$W\zonetool\$Map\techsets\ps"
 if(!(Test-Path "$W\zonetool\$Map\techsets\ps\null.hlsl.cso")){ [IO.File]::WriteAllBytes("$W\zonetool\$Map\techsets\ps\null.hlsl.cso",[byte[]]@()) }
 $csv="$W\zone_source\$Map.csv"; $lines=Get-Content $csv
 $req=@('techsets_common','techsets_global','techsets_common_core_mp','techsets_global_core_mp','techsets_common_mp','techsets_global_mp','techsets_common_cp','techsets_global_cp','techsets_cp_zmb')|ForEach-Object {"require,$_"}
