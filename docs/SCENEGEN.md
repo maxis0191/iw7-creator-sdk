@@ -202,3 +202,16 @@ island: the Terminus, a far box, by design); `sz2_navconn` 0 failures; `flights`
 the ents lint finds no blocker. Unit tests: `tests/test_scenegen.py` (scene rules on synthetic layouts; an emitted
 synthetic map read back by the gates when a stock dump is present). Nothing about this generator is proven in the
 game until the first build of the blockout (package W1a).
+
+## Dressing files, panels, clip boxes and cull distances (W2, 11 Nov 2026)
+
+- `dress_files` entries are written by `szdress.py build` ([STATION-ZERO-W2](STATION-ZERO-W2.md)); a prop there may
+  carry `clip_box` [x0, y0, z0, x1, y1, z1] (absolute, a player and monster clip that also cuts the navigation) instead
+  of the older `clip` half sizes.
+- A `solids` entry with `quad` (four corners counter-clockwise seen from the front, bottom left first), `normal`, `mat`
+  and `fit` is a flat panel: render only, the image fitted once (signs, posters, ceiling light panels).
+- `emit` writes every static prop with the size-rule cull distance of `tome_cull.py` (30 pixels at 1080p, from the
+  template's worldkit database: `IWZ_MODELS_DB`, default `<IWZ_RUNTIME>/worldkit/cp_zmb.sqlite`; a loud warning when it
+  is missing). Before, props kept their template donor's distance and 134 of 577 props seen through doors popped
+  (`tome_cull.py check`, W2 build b).
+- A change of props only (smodels.txt) does not need a new bake: copy the new `smodels.txt` into the baked source.

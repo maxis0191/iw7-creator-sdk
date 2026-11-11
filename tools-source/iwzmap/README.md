@@ -49,6 +49,7 @@ The table above explains the main pieces. The three tables below list every file
 | File | Role |
 | --- | --- |
 | `scenegen.py`, `cp_iwz3.gsc`, `scenes/` | a whole zombies map from a scene description (zones, heights, doors, flights, spawners, interactions, lights and dressing files as data): checks, emit, light bake (`scenegen.py bake`), flight / route / pool readers (`docs/SCENEGEN.md`); `scenes/station_zero.json` is the bible's 19 zones |
+| `szdress.py` | zone dressing as described data (vignettes, rows, seeded scatters, lights at fixtures, solids, sign panels) checked against model bounds, floors, overlaps, door approaches, spawners, interactions, budgets and repetition; clip boxes for standing pieces; `plan` draws a zone from above ([STATION-ZERO-W2](../../docs/STATION-ZERO-W2.md)). `scenegen.py emit` gives every static prop the size-rule cull distance (no donor-distance pops) |
 | `mapgen.py` | iwzcompile sources from a box-based map description: render mesh, nav graph, entity text |
 | `brushkit.py` | brush library: textured quads, boxes, wedges, banded walls with openings, stairs |
 | `hkpack.py`, `hkcm.py`, `hkcm_write.py` | Havok 2014 packfile reader; decoder and encoder of the compressed mesh collision |
