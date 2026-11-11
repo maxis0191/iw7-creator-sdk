@@ -1574,7 +1574,8 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45, player=True):
                              'why': 'the player walks %s %s' % (name, 'forward' if w == 'fwd' else 'back')} for w in ('fwd', 'bck')]
             steps += [{'do': 'kill'}, {'do': 'tp', 'at': b}, {'do': 'spawn', 'tag': tag, 'at': a, 'count': count},
                       {'do': 'chase', 'tag': tag, 's': s}, {'do': 'kill', 'tag': tag}]
-            expects.append({'do': 'expect', 'that': 'chase:%s.reached' % tag, 'eq': '@chase:%s.total' % tag,
+            # the chase also counts zombies of earlier cases that died there: the case needs as many arrivals as it spawned
+            expects.append({'do': 'expect', 'that': 'chase:%s.reached' % tag, 'ge': count,
                             'why': 'every zombie gets from %s to the player at %s (%s)' % (a, b, name)})
         plans.append({'schema': 'iw7.gamelab-plan/1', 'name': '%s_w1a_%d' % (mapname, len(plans)), 'map': mapname,
                       'about': 'Scene-generated map: zombie climbs on every flight and crossings of every door and link, '
