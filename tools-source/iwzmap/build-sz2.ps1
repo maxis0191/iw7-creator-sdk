@@ -33,12 +33,29 @@ $times=[ordered]@{}; $t0=Get-Date; $tp=Get-Date
 function Lap([string]$Name){ $script:times[$Name]=[int]((Get-Date)-$script:tp).TotalSeconds; $script:tp=Get-Date }
 function Invoke-Zt([string[]]$a,[int]$t){
   for($k=0;$k -lt $Tries;$k++){
-    try { return (& "$S\zt.ps1" -Work $W -ZtArgs $a -TimeoutSec $t -Owner $(if($env:IWZ_BUILD_OWNER){$env:IWZ_BUILD_OWNER}else{'IWZ Station Zero v2 level build'})) }
+    try { return (& "$S\zt.ps1" -Work $W -ZtArgs $a -TimeoutSec $t -HeldLease $script:held -Owner $(if($env:IWZ_BUILD_OWNER){$env:IWZ_BUILD_OWNER}else{'IWZ Station Zero v2 level build'})) }
     catch { if($_.Exception.Message -match 'Resource busy|Heavy job already reserved|busy|wait before heavy admission|wait for its owner'){ Start-Sleep 15; continue }; throw }
   }
   throw 'resource lease not obtained'
 }
 Copy-Item $ZoneToolExe "$W\zonetool.exe" -Force
+# One build reservation for the whole build (compile, assembly, zone). Each ZoneTool run used to take its own, so the
+# zone step went back to the end of the machine's waiting order after the compile: W2 build b waited 1,721 s for the
+# compile and 2,371 s for the zone (4,573 s of wall time for about 7 minutes of work). The assembly between them is
+# held too: about 1 s incremental, 5 to 8 minutes for a full one.
+. (& "$S\scheduler.ps1" '')
+$held=$null; $heldClock=[Diagnostics.Stopwatch]::StartNew()
+$ownerName=if($env:IWZ_BUILD_OWNER){$env:IWZ_BUILD_OWNER}else{'IWZ Station Zero v2 level build'}
+while(-not $held){
+  try{ $held=Enter-IW7ResourceLease -Scope $W -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner $ownerName }
+  catch{
+    $busy=if(Get-Command Test-IW7RetryableRefusal -ErrorAction SilentlyContinue){ (Test-IW7RetryableRefusal $_.Exception.Message) -or $_.Exception.Message -like 'Resource admission lock busy*' }else{ $_.Exception.Message -match 'Resource busy|busy' }
+    if(!$busy -or $heldClock.Elapsed.TotalSeconds -gt $Tries*15){ throw }
+    Start-Sleep -Seconds 5
+  }
+}
+"waited for the build reservation $([int]$heldClock.Elapsed.TotalSeconds) s (held for compile, assembly and zone)"
+try {
 if($ReuseCompile -and (Test-Path "$W\dump\$Map\maps\cp\$Map.d3dbsp.ents")){ "reusing compiled $W\dump\$Map" } else {
 if(Test-Path "$W\iwz_src"){ Remove-Item "$W\iwz_src" -Recurse -Force }
 Copy-Item -Recurse $Src "$W\iwz_src"
@@ -136,3 +153,11 @@ if($Arena -and (Test-Path $Arena)){ Copy-Item $Arena "$UmOut\$Map.arena" -Force 
 $times.total=[int]((Get-Date)-$t0).TotalSeconds
 [ordered]@{map=$Map;ff_bytes=(Get-Item "$UmOut\$Map.ff").Length;incremental=[bool]$inc;seconds=$times;zonetool=$ZoneToolExe} | ConvertTo-Json | Set-Content "$UmOut.build.json"
 "built $UmOut\$Map.ff $((Get-Item "$UmOut\$Map.ff").Length) bytes in $($times.total) s (compile $($times.compile), assemble $($times.assemble), zone $($times.zone))"
+} finally {
+  # release the build reservation; the scheduler keeps it while a compiler of ours may still be ending
+  $relUntil=[datetime]::UtcNow.AddMinutes(30); $done=$false
+  while(-not $done){
+    try{ Exit-IW7ResourceLease -Token $held.Token | Out-Null; $done=$true }
+    catch{ if($_.Exception.Message -notlike 'Heavy child may still be alive*' -or [datetime]::UtcNow -ge $relUntil){ throw }; Start-Sleep -Seconds 5 }
+  }
+}

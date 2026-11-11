@@ -109,6 +109,10 @@ index says which.
   `product.json` in the same commit; the first gate of `checks.ps1` fails otherwise. The exceptions are the root
   files (`README.md`, `AGENTS.md`, `product.json`, `checks.json`, `dependency-package.json`, `bootstrap.ps1`,
   `checks.ps1`, `.gitignore`, `.gitattributes`) and what is under `.github/` and `migration/`.
+- `product.json` `exports` stays in sorted order, one path a line, so branches that add files in parallel change
+  different lines and merge without a conflict. `checks.ps1` refuses an unsorted list; put the path at its place or
+  run `pwsh -NoProfile -File checks.ps1 -SortExports` (inside a conflicted merge of main it keeps every path of both
+  sides that exists on disk, which resolves that file).
 - Paths other products pin (`ops/`, `sdk/modding/`, `tests/ops/`, `tools-source/gsc-consumption-tool/`,
   `tools-source/gsc-spawn-tip/`): do not move or rename. Changing their bytes is allowed; the consumer then pins
   the new revision.
