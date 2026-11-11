@@ -171,6 +171,7 @@ def q1_order_coop(L):
     s += [{'do': 'call', 'fn': 'szq_bot_to', 'args': [0, inside], 's': 1}, {'do': 'call', 'fn': 'szq_bot_to', 'args': [2, outside], 's': 1},
           {'do': 'spawn', 'tag': 'car', 'at': [car[0] + 300, car[1], car[2]], 'count': 2, 'place': True},
           {'do': 'use', 'name': 'c_go', 'ent': 'iwz_q1_cab', 'near': car, 's': 1},
+          {'do': 'call', 'fn': 'szq_zombies_to', 'args': [[car[0] + 300, car[1], car[2]], 1200], 's': 0.5},
           {'do': 'call', 'fn': 'szq_wait_tp', 'args': ['away', 12], 's': 12}, {'do': 'call', 'fn': 'szq_state', 'args': ['c_away'], 's': 1},
           {'do': 'call', 'fn': 'szq_wait_tp', 'args': ['cooldown', 45], 's': 45}, {'do': 'call', 'fn': 'szq_state', 'args': ['c_back'], 's': 1}]
     e += [exp('probe:c_away.travellers', 'eq', 2, 'the player at the cab and the downed player inside car 1 travel'),

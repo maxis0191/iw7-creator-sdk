@@ -608,8 +608,12 @@ q1_conductor_death()
 {
     self waittill( "death", attacker );
     q = level.iwz_q1;
-    if ( scripts\engine\utility::is_true( self.iwz_leaving ) )
+    // a Conductor removed at a round end is not a kill (the state is set before the damage; agent fields do not survive it)
+    if ( q.conductor_state == "leaving" )
+    {
+        q.conductor_state = "left";
         return;
+    }
     q.conductor_state = "dead";
     by = "none";
     if ( isdefined( attacker ) && isplayer( attacker ) )
@@ -626,9 +630,7 @@ q1_conductor_leave()
     if ( !isdefined( z ) || !isalive( z ) || q.conductor_state != "walking" )
         return;
     q.conductor_state = "leaving";
-    z.iwz_leaving = 1;
     z dodamage( z.health + 1000, z.origin );
-    q.conductor_state = "left";
     q1_board( "047 - THE CONDUCTOR WILL RETURN NEXT ROUND" );
     q1_log( "CONDUCTOR left (round ended)" );
 }
