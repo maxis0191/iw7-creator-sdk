@@ -48,6 +48,7 @@
     "tools-source/iwzmap/scenegen.py",
     "tools-source/iwzmap/cp_iwz3.gsc",
     "tools-source/iwzmap/scenes/station_zero.json",
+    "tools-source/iwzmap/scenes/station_zero_kept_props.json",
     "tools-source/iwzmap/tests/test_scenegen.py",
     "tools-source/iwzmap/prefab_proof.py",
     "tools-source/iwzmap/build-prefab-room.ps1",

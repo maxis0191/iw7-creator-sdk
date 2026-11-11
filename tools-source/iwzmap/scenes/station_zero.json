@@ -2,6 +2,7 @@
  "schema": "iw7.scene/1",
  "map": "cp_iwz",
  "title": "STATION ZERO: the 19 zones of the bible (docs/station-zero/02-WORLD.md sections 2 to 4 and 6), blockout",
+ "props_files": ["station_zero_kept_props.json"],
  "start": {"zone": "cordon", "points": [[300, 5300, 192, 270], [420, 5300, 192, 270], [540, 5300, 192, 270], [660, 5300, 192, 270]]},
  "zones": [
   {"id": "cordon", "name": "THE CORDON", "boxes": [[-1400, 4600, 2200, 5800]], "floor": 192, "ceiling": 620,
@@ -130,7 +131,7 @@
   {"id": "L4", "name": "staff stair head", "zones": ["staff_stair", "police"], "kind": "arch", "span": [3724, 3976], "sill": 0}
  ],
  "interactions": [
-  {"kind": "perk", "perk": "revive", "zone": "cordon", "wall": "west", "t": 0.5, "off": 48},
+  {"kind": "perk", "perk": "revive", "zone": "cordon", "wall": "west", "t": 0.5, "off": 48, "powered": true},
   {"kind": "perk", "perk": "tough", "zone": "platform_east", "wall": "north", "s": 1600, "off": 48},
   {"kind": "perk", "perk": "run", "zone": "platform_west", "wall": "north", "s": -1500, "off": 48},
   {"kind": "perk", "perk": "rat_a_tat", "zone": "police", "wall": "north", "s": 1300, "off": 48},
