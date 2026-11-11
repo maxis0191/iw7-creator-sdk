@@ -77,6 +77,38 @@ def strings_of(path, minlen=3):
     return [m.decode('ascii') for m in re.findall(rb'[\x20-\x7e]{%d,}' % minlen, data)]
 
 
+def link_or_copy(src, dst):
+    if os.path.exists(dst):
+        os.remove(dst)
+    try:
+        os.link(src, dst)
+    except OSError:
+        with open(src, 'rb') as i, open(dst, 'wb') as o:
+            o.write(i.read())
+
+
+def stage_xmodels(src, names, dumps, find):
+    """The map compiler reads a static model that the template map does not carry from <source>/xmodel (x64-zt
+    iwzmap read_smodels). Links each model's .xmb and its _lod*.hkx physics data there. Exit 1 when one is missing."""
+    out = os.path.join(src, 'xmodel')
+    os.makedirs(out, exist_ok=True)
+    missing, staged = [], []
+    for n in names:
+        zone, name = n.split(':', 1) if ':' in n else (None, n)
+        zones = [zone] if zone else list(dumps)
+        xm = next((p for z in zones for p in [find(z, os.path.join('xmodel', name + '.xmb'))] if p), None)
+        if not xm:
+            missing.append(name); continue
+        files = [xm] + [os.path.join(os.path.dirname(xm), f) for f in sorted(os.listdir(os.path.dirname(xm)))
+                        if f.startswith(name + '_lod') and f.endswith('.hkx')]
+        for f in files:
+            link_or_copy(f, os.path.join(out, os.path.basename(f)))
+        staged.append(name)
+    print('kit_import: staged %d xmodel(s) for the compiler in %s%s' % (len(staged), out,
+          ('; missing: ' + ', '.join(missing)) if missing else ''))
+    return 1 if missing else 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('work'); ap.add_argument('map')
@@ -93,6 +125,9 @@ def main(argv=None):
                     help='old=new: rename a material of the kit models (the subway train window glass to a translucent '
                          'glass of the same zone dump); also read from IWZ_KIT_MATERIAL_MAP (old=new;old=new)')
     ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--stage-xmodels', default='', metavar='SRC',
+                    help='only link the --models .xmb (+ _lod*.hkx) files into SRC/xmodel, for the map compiler to read '
+                         'kit models placed as static models (smodels.txt); work and map are not used')
     a = ap.parse_args(argv)
 
     dumps = {}                                  # zone -> [dump roots], searched in order
@@ -106,6 +141,9 @@ def main(argv=None):
             if os.path.isfile(p):
                 return p
         return None
+
+    if a.stage_xmodels:
+        return stage_xmodels(a.stage_xmodels, [n for n in a.models.split(',') if n], dumps, find)
 
     listing = {}
 

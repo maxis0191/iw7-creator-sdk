@@ -61,6 +61,7 @@
     "tools-source/iwzmap/scenes/station_zero_kit_select.json",
     "tools-source/iwzmap/scenes/station_zero_kits.json",
     "tools-source/iwzmap/tests/test_kit_lists.py",
+    "tools-source/iwzmap/tests/test_kit_import_stage.py",
     "docs/STATION-ZERO-KITS.md",
     "tools-source/worldkit/iw7_see.py",
     "tools-source/worldkit/tests/test_see.py",
@@ -509,7 +510,15 @@
     "tools-source/compile_check.py",
     "tools-source/iwzmap/darkness/integration/README.md",
     "tools-source/iwzmap/darkness/runs/README.md",
-    "tools-source/iwzmap/machine.ps1"
+    "tools-source/iwzmap/machine.ps1",
+    "tools-source/iwzmap/zt_timeline.py",
+    "tools-source/iwzmap/iwz_ledger.py",
+    "tools-source/iwzmap/tests/test_iwz_ledger.py",
+    "tools-source/iwzmap/proc_sample.py",
+    "tools-source/iwzmap/ff_compare.py",
+    "tools-source/iwzmap/tests/test_ff_compare.py",
+    "tools-source/iwzmap/bake/New-BakeEnv.ps1",
+    "tools-source/iwzmap/bake/requirements.txt"
   ],
   "dependencies": [
     {

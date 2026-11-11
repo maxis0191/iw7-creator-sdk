@@ -1,20 +1,75 @@
-"""Assemble zonetool/<map>/ (hardlinks: generated world first, then stock dumps) and zone_source/<map>.csv."""
-import os, sys
-work, mapname, script = sys.argv[1], sys.argv[2], sys.argv[3]
-dumps = sys.argv[4:]
+"""Assemble zonetool/<map>/ (hardlinks: generated world first, then stock dumps) and zone_source/<map>.csv.
+
+usage: assemble.py <work> <map> <level script> <dump> [<dump> ...] [--incremental]
+
+--incremental keeps the stock links of the previous assembly when it was made from the same dumps (recorded in
+zonetool/<map>/.iwz_assemble.json): only the generated world files are linked again, and a stock file that an earlier
+generated file had shadowed is linked back. Without the record, or with other dumps, it assembles everything.
+"""
+import json as _json, os, sys
+argv = [a for a in sys.argv[1:] if a != '--incremental']
+incremental = '--incremental' in sys.argv[1:]
+work, mapname, script = argv[0], argv[1], argv[2]
+dumps = argv[3:]
 dst = os.path.join(work, 'zonetool', mapname)
+gen = os.path.join(work, 'dump', mapname)
+record_path = os.path.join(dst, '.iwz_assemble.json')
+record = None
+if incremental and os.path.isfile(record_path):
+    record = _json.load(open(record_path))
+    if record.get('dumps') != [os.path.abspath(d) for d in dumps]:
+        print('incremental: the dumps differ from the recorded assembly; assembling everything')
+        record = None
+if incremental and record is None and os.path.isdir(dst):
+    import shutil as _sh
+    _sh.rmtree(dst)
 os.makedirs(dst, exist_ok=True)
 n = 0
-for src in [os.path.join(work, 'dump', mapname)] + dumps:
-    for root, _, files in os.walk(src):
-        rel = os.path.relpath(root, src)
-        for f in files:
-            d = os.path.join(dst, rel, f)
-            if os.path.exists(d):
-                if src == os.path.join(work, 'dump', mapname): os.remove(d)
-                else: continue
-            os.makedirs(os.path.dirname(d), exist_ok=True)
-            os.link(os.path.join(root, f), d); n += 1
+
+
+def stock_source(rel):
+    for d in dumps:
+        p = os.path.join(d, rel)
+        if os.path.isfile(p):
+            return p
+    return None
+
+
+generated = []
+for root, _, files in os.walk(gen):
+    for f in files:
+        generated.append(os.path.relpath(os.path.join(root, f), gen))
+if record is not None:
+    # take back what the previous generated world put here; the stock file it shadowed (if any) comes back
+    now = set(generated)
+    restored = 0
+    for rel in record.get('generated', []):
+        d = os.path.join(dst, rel)
+        if os.path.lexists(d):
+            os.remove(d)
+        if rel not in now:
+            s = stock_source(rel)
+            if s:
+                os.link(s, d); restored += 1
+    for rel in generated:
+        d = os.path.join(dst, rel)
+        if os.path.lexists(d):
+            os.remove(d)
+        os.makedirs(os.path.dirname(d), exist_ok=True)
+        os.link(os.path.join(gen, rel), d); n += 1
+    print('incremental: %d generated files linked, %d stock files restored, stock links kept' % (n, restored))
+else:
+    for src in [gen] + dumps:
+        for root, _, files in os.walk(src):
+            rel = os.path.relpath(root, src)
+            for f in files:
+                d = os.path.join(dst, rel, f)
+                if os.path.exists(d):
+                    if src == gen: os.remove(d)
+                    else: continue
+                os.makedirs(os.path.dirname(d), exist_ok=True)
+                os.link(os.path.join(root, f), d); n += 1
+_json.dump({'dumps': [os.path.abspath(d) for d in dumps], 'generated': generated}, open(record_path, 'w'))
 sp = os.path.join(dst, 'scripts', 'cp', 'maps', mapname, mapname + '.gsc')
 os.makedirs(os.path.dirname(sp), exist_ok=True)
 if os.path.exists(sp): os.remove(sp)

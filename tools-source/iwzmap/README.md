@@ -187,6 +187,33 @@ tome; required for complete rooms), `IWZ_KEEP_ENTSHAPES` (template entity
 shapes for the reused trigger model), `IWZ_LOG_PROBES`, `IWZ_DUMP_TOME`.
 Older routes (`IWZ_KEEP_UMBRA`, `IWZ_SLOT_SURFACES`) are superseded.
 
+### Build time: where it goes and the fast rebuild (TF4)
+
+Every ZoneTool run of `zt.ps1` prints how long it waited for the build reservation and writes
+`zt-<time>.timeline.tsv` beside its log (each line with the second it appeared); `python -I zt_timeline.py report
+<file>` lists the longest gaps and the time per message source. `build-sz2.ps1` and `build-prefab-room.ps1` write
+`<um>.build.json` with compile, assemble and zone seconds. `python -I proc_sample.py <pid>` samples any of your own
+running programs (stacks named from the .pdb with `--symbols`).
+
+Measured 11 Nov 2026 (ZoneTool main 26382dd unless said):
+
+| Step | Before | Now | What changed |
+| --- | --- | --- | --- |
+| Light bake (`bake\lmbake.py`, 256 rays, 3 bounces, Station Zero g27dw) | 225 s (recorded) | 250 s, measured with `bake\New-BakeEnv.ps1`'s environment | only when the render world changes; `-ReuseBake` keeps it otherwise |
+| Zone step, prefab room (ZoneTool itself) | 518 s | 49 s | ZoneTool's log went through PowerShell's `Start-Process` redirection; every unbuffered line waited on that pipe (the sampler: 90 % of the main thread in `NtWriteFile`). `zt.ps1` now redirects to the file through cmd.exe. Indexed asset and script string lookups (x64-zt `claude/zone-build-speed`) took it from 518 to 337 s before that |
+| Zone step, Station Zero g27dw | 482 s | see the table below | same |
+| Assemble (135,676 stock hard links, prefab room) | 166 s | seconds with `-Incremental` | `assemble.py --incremental` keeps the stock links of the previous assembly made from the same dumps and links only the generated world again; `build-sz2.ps1 -Incremental` also keeps what the modules (kit, effects, audio, darkness) added when they ran with the same arguments |
+
+`ff_compare.py <a.ff> <b.ff>` says whether two built zones hold the same map: it decompresses both and separates
+pointer residue (leftover addresses of ZoneTool's own process in fields the game rebuilds at load; they change with
+the heap of the run) from content. Two builds of the same source by the same binary differed in 58,613 bytes, all
+residue; the zone built with the direct log and with the indexed lookups has the same content as the main-line one
+(prefab room and Station Zero g27dw). Needs `pip install lz4`.
+
+Light baker environment: `pwsh bake\New-BakeEnv.ps1` makes `<IWZ_RUNTIME>\iwzmap-bake-venv` (numba, numpy, scipy,
+pillow at the versions of `bake\requirements.txt`, 22 s) and prints its python; `machine.ps1 BakePython` names it;
+texconv is `IWZ_TEXCONV` or `<Documents>\IW7-Tools\texconv-may2026\texconv.exe`.
+
 ## Check before you build (seconds, no game)
 
 The generator output (`colmap.hkx`, `navgraph.bin`, `layout.json`) already
@@ -249,6 +276,30 @@ absent from a stock dump is a note to check, never proof that it is missing.
 All three tools read; none builds, launches or writes into an emit. Tests:
 `python -B -m unittest discover -s tools-source/iwzmap/tests`.
 
+### Entities and template pools (iwz_ledger.py, under 1 s)
+
+```powershell
+python -I iwz_ledger.py check out\sz_src --template <stock dumps>\cp_zmb [--live <gamelab run>\client.stdout.log]
+python -I iwz_ledger.py compiled <um>.compile.log      # what the compiler really did with the pools
+```
+
+The engine has 2,048 entity slots; the project ceiling is 1,800. `check` counts the entity list (every `ents.txt`
+entry that is not a struct) and adds the runtime worst cases each package writes before it builds, in
+`<src>\entity_budget.json` (`{"rows": [{"package": "E1", "entities": 120, "why": "..."}]}`); it refuses (exit 1)
+above the ceiling. The template pools the compiler reuses are counted against what the stock template has:
+generated trigger shapes (`triggers.txt` rows against the template trigger models the source does not name itself,
+an upper bound), lights (static and named `lights.txt` rows against 1,010 static and 25 scriptable slots of cp_zmb),
+probe rooms (160 cubes), static models (65,535); door blockers and scriptables are reported. A source over a pool
+is refused before the build instead of failing in the compiler. `--live` reads the `ents` census of a gamelab run
+(the plan step `ents` with no key counts every entity of the running map) and prints how many entities scripts,
+players and the engine add.
+
+Measured 11 Nov 2026: Station Zero g27dw, 305 entities in its list (257 script models, 24 brush models, 13 use
+triggers, 9 volumes, 2 others; 150 structs not counted), equal to a count of the file by hand; trigger shapes 9 of
+136, lights 5 of 1,010, probes 9 of 160; the compiler log agrees (9 shaped triggers, 5 light slots, 9 probe rooms).
+The prefab room: 2 entities in its list, 240 live in the running map (the stock gameplay scripts the map carries,
+the bot and the engine add 238).
+
 ## Players
 
 A zombies usermap also needs the iw7-mod `Usermaps` script fix (fork branch
@@ -297,6 +348,25 @@ referenced, not copied; other techsets are embedded from the techsets dump (`.te
 `.vertexdecl`, shader `.cso`). Do not `require` extra map techset zones: two of them next to the template's nine hung
 ZoneTool. Scriptable movers (the subway train's) are dropped from a patched `.xmb` copy (`--keep-scriptable` keeps
 them and then needs the scriptable dump and its dependencies).
+
+### Kit and authored models as static models (TF10)
+
+A kit model (another shipped map) or an authored model (a port folder of `x64-zt-extensions` asset-bridge) can be
+placed in `smodels.txt` like a stock model: compiled into the map as a static model, lit by the light grid, not an
+entity. It needs the map compiler of x64-zt `main` after the TF10 change (a model with no light grid lit instance in
+the template map gets a neutral, fitted draw instance; before, it copied another model's, whose material index read
+past a smaller model's material list and crashed the client at `iw7_ship+0xDCE6E7`). The compiler reads the
+model's `.xmb` from `<source>\xmodel`; `kit_import.py --stage-xmodels <source>` links it there, and the normal kit
+import then puts the model itself into the zone. `build-prefab-room.ps1` does both:
+
+```powershell
+.\build-prefab-room.ps1 -Src <src with smodels.txt rows for the models> -UmOut <dir> -Work <work> -ZoneToolExe <zonetool> `
+  -TemplateDump <dumps> -KitModels 'cp_disco_worn_subway_bench,train:iwz_fire_hose_cabinet' `
+  -KitDumps 'cp_disco=<W>\dump\cp_disco;<W>\dump\techsets_cp_disco','train=<port folder>'
+```
+
+The proof plan is the server repository's `tests/scenarios/gamelab/tf10-static-models.json` (frames with depth for
+`iw7_see.py visible`, bullet traces, the entity census).
 
 ## Ambient FX (fx/)
 
