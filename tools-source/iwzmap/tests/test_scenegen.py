@@ -224,7 +224,7 @@ class EmitTests(unittest.TestCase):
 
     def test_system_plans_use_every_thing_and_judge_the_game_state(self):
         plans = {p['name']: p for p in sg.w1b_plans(self.out)}
-        self.assertEqual(sorted(plans), ['cp_test_w1b_rounds', 'cp_test_w1b_systems', 'cp_test_w1b_walls'])
+        self.assertEqual(sorted(plans), ['cp_test_w1b_powered_client', 'cp_test_w1b_rounds', 'cp_test_w1b_systems', 'cp_test_w1b_walls'])
         sysp = plans['cp_test_w1b_systems']['steps']
         uses = [s['name'] for s in sysp if s['do'] == 'use']
         # the powered perk first, the unpowered one refused, the switch, then the unpowered one bought

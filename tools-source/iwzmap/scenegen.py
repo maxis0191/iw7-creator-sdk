@@ -1826,8 +1826,11 @@ def w1b_plans(src, mapname=None, start_weapon='iw7_g18_zm'):
     for p in powered:
         nm = 'pk_' + p['kind'][len('perk_machine_'):] + '_prepower'
         a.append({'do': 'use', 'name': nm[:40], 'kind': p['kind'], 'near': p['origin'], 's': 4})
-        ea += [{'do': 'expect', 'that': 'use:%s.perks1' % nm[:40], 'gt': '@use:%s.perks0' % nm[:40], 'why': '%s works before the power (its own generator)' % p['kind']},
-               {'do': 'expect', 'that': 'use:%s.spent' % nm[:40], 'gt': 0, 'why': 'a perk costs points'}]
+        # headless: the purchase is judged by the points it took before the power. Up 'N Atoms' gesture never ends on an
+        # engine bot, so the perk itself is checked with a real player in the client plan <map>_w1b_powered_client
+        # (11 Nov 2026: bot 500 taken, no perk; a client player got it)
+        ea += [{'do': 'expect', 'that': 'use:%s.spent' % nm[:40], 'gt': 0, 'why': '%s sells before the power (its own generator)' % p['kind']},
+               {'do': 'expect', 'that': 'use:%s.power' % nm[:40], 'eq': 0, 'why': 'the main power is still off'}]
     if needs and gen:
         p = needs[0]
         nm = 'pk_%s_nopower' % p['kind'][len('perk_machine_'):]
@@ -1881,6 +1884,14 @@ def w1b_plans(src, mapname=None, start_weapon='iw7_g18_zm'):
     plans.append({'schema': 'iw7.gamelab-plan/1', 'name': '%s_w1b_rounds' % mapname, 'map': mapname,
                   'about': 'W1b: rounds 1 to 7 with the stock spawning from the start zone; the bot kills what spawns (headless).',
                   'steps': c + ec})
+    if powered:
+        p = powered[0]
+        steps = [{'do': 'waves', 'on': False}, {'do': 'ignore', 'on': True}, {'do': 'doors'}, {'do': 'money', 'value': 500000},
+                 {'do': 'take', 'give': start_weapon}, {'do': 'use', 'name': 'pk', 'kind': p['kind'], 'near': p['origin'], 's': 10},
+                 {'do': 'expect', 'that': 'use:pk.perks1', 'gt': '@use:pk.perks0', 'why': 'a player gets %s before the power' % p['kind']},
+                 {'do': 'expect', 'that': 'use:pk.power', 'eq': 0, 'why': 'the main power is still off'}]
+        plans.append({'schema': 'iw7.gamelab-plan/1', 'name': '%s_w1b_powered_client' % mapname, 'map': mapname,
+                      'about': 'W1b: the perk on its own generator, bought by a real player before the power (client).', 'steps': steps})
     return plans
 
 
