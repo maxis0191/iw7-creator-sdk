@@ -55,6 +55,22 @@ INSPECTION until 15 s after he moved away); `level.iwz_post_ride` (the test entr
 
 `python -I -B sz_q1t1.py plans <src> <folder>` writes nine plans; all but the client plan run headless
 (`Invoke-GameLabHeadless.ps1 -UsermapDir <built map>`, library `szq`). Lab sessions may answer a Use hold for the
-bot: dvar `iw z_test_hold` 1 (held) or 0 (a tap); it is read only when the dvar `gamelab` or `soak_driver` is set.
+bot: dvar `iwz_test_hold` 1 (held) or 0 (a tap); it is read only when the dvar `gamelab` or `soak_driver` is set.
 
-RESULTS: see the table filled at the end of the package.
+| Plan | What it proves | Result (headless, build e geometry, modules as server custom scripts) |
+|---|---|---|
+| `t1_routes` | 4 hatches unsealed (750 each), all 12 routes on BLOW, the lever (12 s changeover), all 12 on DRAW | **PASS 128/128**; 24 rides, 432 position samples every 0.25 s, every sample in the destination zone by the map's volume table and by the engine's own spawn volume (`sz_q1t1.py report`), 0 script errors |
+| `t1_rules` | every refusal, dial tap and hold, capsules, rest, changeover and lever reset, inspection (stand-in Inspector) for 15 s after, downed, busy, points, blowback, a player on the hatch, two riders on the last capsule, a rider who leaves mid-ride | 38/39; the miss was the probe reading the blowback counter before the module counted it (3 zombies stood at the BARN hatch); module fixed (counted when they come out) |
+| `q1_steps` | refusals before power and before the clocks, a tap is not a hold, 4 clocks (4 bursts of 4), wrong levers (spring back, 4 zombies), the road, the Conductor (450 health = 3x, leaves at a round end, back at the next), the Handle, the cab, the teleport, Pack-a-Punch at the Terminus (5,000 taken), the return, 150 s not in service | 37/43 on the first run; two causes found: the Conductor's leave was taken for a kill (fixed), and **the Terminus floor had no collision beyond x 8,381 / y 8,796** (the player fell at Pack-a-Punch; fixed in the collision encoder, below) |
+| `q1_order_coop` | out of order, 2 then 4 players: burst of 6 with two players, the Handle carrier down (dropped) and leaving (dropped), a downed player inside car 1 travels, zombies inside car 1 put out, a player on his feet left outside keeps the round going | **PASS 16/16** |
+| `q1_late_round` | round 20 (stock rounds), every player at the Terminus for 40 s | **PASS 7/7**: spawning paused 41 s; zombies alive 10 at arrival, 0 after 30 s (the stock cleanup recycles zombies far from every player), 6 again after the return; round 20 kept running |
+| `q1t1_travel1..3` | body walks with player physics from every hatch arrival and the Terminus arrival into the zone and back, zombies reaching a player on each hatch and inside car 1 | hatches PASS 12/12; car 1 zombies 3/3; the Terminus walk fell (collision, above); the hull-trace walk cannot pass car 1's 84-unit doors (tool limit, ledger) |
+
+### The Terminus floor (found by these tests)
+
+A trace grid in the game (45 traces, 37 s, no build) showed the Terminus floor hit only for x <= 8,380 and y <= 8,750,
+and a ray starting beyond that found no wall either, although the emitted collision has the floor everywhere
+(`iwz_emitcheck at`). The collision section holding the Terminus spanned 3,000..9,400 x 3,000..8,900 (6,400 units);
+by the encoder's own rule its boxes are right, so the engine reads a very wide section's tree more coarsely. Fix:
+`hkcm_write.split_sections(max_extent)`, used by `scenegen emit` with sections at most 1,024 units wide
+(`IWZ_MAX_SECTION`; 633 sections instead of 64, the widest 3,600 units = one triangle).
