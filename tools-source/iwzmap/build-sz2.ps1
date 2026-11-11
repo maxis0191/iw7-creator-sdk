@@ -27,6 +27,7 @@ param(
   [string]$DeadeyeImage=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\assets\dumps\cp_disco\images\cp_zmb_perk_icon_deadeye.iw7Image'),  # P1: Deadeye Dewdrops' HUD icon (not in the template zone)
   [string]$PerkMachines=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\p1\machines\port'),       # P1: the four authored perk machines (perks\machines\README.md)
   [string]$DeadeyeKitDump=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\kitimport\ztwork\dump'),        # P1: cp_disco dump with Deadeye's machine (models, scriptable)
+  [string]$DeadeyeScriptable=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\ztwork-p1\dump\cp_disco\scriptable\zm_perk_machine_deadeye_sign'),  # P1: zonetool -dumpzonetypes cp_disco scriptable
   [switch]$Incremental)                                                                              # keep the stock links and the module outputs of the previous assembly (same modules and dumps)
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
@@ -107,8 +108,8 @@ if($KitModels -or $KitJson){
   python -I "$S\kit_import.py" @ka
   if($LASTEXITCODE){ throw 'kit_import failed' }
 }
-$deScr="$DeadeyeKitDump\cp_disco\scriptable\zm_perk_machine_deadeye_sign"
-if($DeadeyeKitDump -and (Test-Path $deScr)){
+$deScr=$DeadeyeScriptable
+if($deScr -and (Test-Path $deScr)){
   # P1: Deadeye Dewdrops' own machine (cp_disco scriptable) on the spare template perk scriptable scenegen relocated
   python -I "$S\perks\add_deadeye_machine.py" "$W\zone_source\$Map.csv" "$W\zonetool\$Map" $Map --scriptable $deScr --report "$UmOut.deadeye.json"
   if($LASTEXITCODE){ throw 'add_deadeye_machine failed' }
