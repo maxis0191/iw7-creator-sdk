@@ -1445,7 +1445,7 @@ def test_args(src, inset=20.0, depth=96.0):
     return {'climbs': '|'.join(climbs), 'routes': '|'.join(routes), 'climb_cases': len(climbs), 'route_cases': len(routes)}
 
 
-def lab_plans(src, mapname='cp_iwz', per_plan=26, count=3, chase_s=45):
+def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
     """headless gamelab plans (iw7-paris-server ops/gamelab/Invoke-GameLabHeadless.ps1 -UsermapDir) from an emit:
     doors opened, then for every flight a zombie climb up and down (zombies placed at the foot or the head, the bot at
     the other end) and for every door and link a zombie crossing (zombies placed in one zone, the bot in the other);
@@ -1461,6 +1461,7 @@ def lab_plans(src, mapname='cp_iwz', per_plan=26, count=3, chase_s=45):
         p = [[float(v) for v in q.split(',')] for q in pts.split('/')]
         cases.append((name, p[0], p[-1]))
     lay = json.load(open(os.path.join(src, 'layout.json')))
+    mapname = mapname or lay.get('map', 'cp_iwz')
     start = lay['starts'][0]
     plans = [{'schema': 'iw7.gamelab-plan/1', 'name': '%s_w1a_survey' % mapname, 'map': mapname,
               'about': 'Scene-generated map: every door opened, the navigation surveyed from the start, the entities counted.',
