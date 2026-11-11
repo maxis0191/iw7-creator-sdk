@@ -6,6 +6,7 @@ One page that routes a reader. Paths are relative to the repository root. The ch
 | I want to | Read | Tools | Check |
 | --- | --- | --- | --- |
 | make or change a generated map (Station Zero and after) | [CREATION-TOOLS.md](CREATION-TOOLS.md), then [tools-source/iwzmap/README.md](../tools-source/iwzmap/README.md) | `tools-source/iwzmap` | `tools-source-iwzmap-tests`, `tools-source-iwzmap-volume-check`, `tools-source-iwzmap-audio`, `tools-source-iwzmap-catalog`, `tools-source-iwzmap-art` |
+| lay out a whole zombies map as data (zones, heights, doors, stairs, spawners) | [SCENEGEN.md](SCENEGEN.md) | `tools-source/iwzmap/scenegen.py`, `tools-source/iwzmap/scenes/` | `tools-source-iwzmap-tests` |
 | read a studio map as data, lift a prefab | [WORLDKIT.md](WORLDKIT.md) | `tools-source/worldkit` | `tools-source-worldkit-tests` |
 | know what a captured frame of the game shows, as data (what is at a pixel, is a thing visible, floating, sunk, missing) | [SEE.md](SEE.md) | `tools-source/worldkit/iw7_see.py` | `tools-source-worldkit-tests` |
 | change a shipped map's entities with no build | [MAPENTS.md](MAPENTS.md) | `tools-source/mapents` | `tools-source-mapents-tests` |

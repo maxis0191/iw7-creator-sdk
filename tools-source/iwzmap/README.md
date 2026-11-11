@@ -47,6 +47,7 @@ The table above explains the main pieces. The three tables below list every file
 
 | File | Role |
 | --- | --- |
+| `scenegen.py`, `cp_iwz3.gsc`, `scenes/` | a whole zombies map from a scene description (zones, heights, doors, flights, spawners, interactions as data): checks, emit, flight / route / pool readers (`docs/SCENEGEN.md`); `scenes/station_zero.json` is the bible's 19 zones |
 | `mapgen.py` | iwzcompile sources from a box-based map description: render mesh, nav graph, entity text |
 | `brushkit.py` | brush library: textured quads, boxes, wedges, banded walls with openings, stairs |
 | `hkpack.py`, `hkcm.py`, `hkcm_write.py` | Havok 2014 packfile reader; decoder and encoder of the compressed mesh collision |
