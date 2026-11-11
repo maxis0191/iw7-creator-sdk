@@ -5,11 +5,11 @@ Each file modules/<name>.gsc is a self-contained level module. The emit (scenege
   //@VOLUMES@  one line per spawn volume:         v[v.size] = [ name, zone, lo, hi ];
 and writes it to <src>/modules/<map>_<name>.gsc. The level script calls each module's init() (//@MODULES@ in
 cp_iwz3.gsc) and sz2_assemble.py puts the files in the zone as scripts/cp/maps/<map>/<map>_<name>.gsc. The modules
-call no function of each other or of the level script by path, so the same file also runs as a server custom script
-(iw7-mod/custom_scripts/cp/<map>_<name>.gsc) on an already built map: the fast route for script changes (no map build).
+call no function of each other or of the level script by path. A changed module is tested on an already built map by
+installing the file at iw7-mod/scripts/cp/maps/<map>/<map>_<name>.gsc (read before the zone's rawfile; docs/DEVKIT.md).
 
 usage: sz_modules.py <src>                 regenerate <src>/modules from <src>/layout.json (same output as the emit)
-       sz_modules.py <src> --out <dir>     write them elsewhere (a custom_scripts folder for a test session)
+       sz_modules.py <src> --out <dir>     write them elsewhere (loose files for a test session)
 """
 import argparse, glob, json, os, sys
 

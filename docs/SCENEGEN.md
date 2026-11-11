@@ -91,10 +91,10 @@ T1; [STATION-ZERO-Q1-T1](STATION-ZERO-Q1-T1.md)). `emit` fills two tables in eac
 as `[ kind, id, zone, origin, yaw ( , lo, hi ) ]`; `//@VOLUMES@`: every spawn volume as `[ name, zone, lo, hi ]`),
 writes `<src>/modules/<map>_<name>.gsc`, and the level script starts each one (`//@MODULES@` becomes
 `level thread scripts\cp\maps\<map>\<map>_<name>::init();`). `sz2_assemble.py` puts them in the zone as rawfiles
-next to the level script. A module calls nothing of another module or of the level script by path, so the same file
-also runs as a server custom script on a map already built: `python -I -B sz_modules.py <src> --out <folder>`, then
-a headless run with `-ServerCopy '<file>|iw7-mod/custom_scripts/cp/<file name>'`. A script change is tested in about
-3 minutes of session instead of a map build (about 6 minutes of zone step plus the wait for the build slot). A new
+next to the level script. To test a script change without a map build, use the shared route of DEVKIT ("Can I change my map's script without
+building the map?"): `python -I -B sz_modules.py <src> --out <folder>` writes the modules, then a run with
+`-ServerCopy '<folder>\<map>_<name>.gsc|iw7-mod/scripts/cp/maps/<map>/<map>_<name>.gsc'`: the game reads that file before the
+zone's rawfile. A new
 module needs no other change: drop the file in `modules/` and emit.
 
 ## What `check` refuses
