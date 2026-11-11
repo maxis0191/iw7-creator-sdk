@@ -20,6 +20,9 @@ while(-not $lease){
     # leased process ending), a refusal the scheduler counts as a wait, while this loop knew only two others.
     $busy=if(Get-Command Test-IW7RetryableRefusal -ErrorAction SilentlyContinue){ Test-IW7RetryableRefusal $_.Exception.Message }
       else{ $_.Exception.Message -like 'Resource busy:*' -or $_.Exception.Message -like 'An existing compiler/extractor/Java analysis is running;*' }
+    # the scheduler's admission lock held by another caller for its 5 s bound is a moment of contention, not a refusal
+    # (11 Nov 2026: a queued P1 dump stopped on it after 20 min of waiting; server runners: PR #478)
+    if($_.Exception.Message -like 'Resource admission lock busy*'){ $busy=$true }
     if(!$busy -or $WaitForSlotSeconds -le 0 -or [datetime]::UtcNow -ge $until){ throw }
     Start-Sleep -Seconds 5
   }

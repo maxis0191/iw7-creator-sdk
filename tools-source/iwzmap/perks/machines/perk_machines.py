@@ -28,6 +28,9 @@ COMMON = {
     'iwz_pk_chrome': dict(kind='metal', spec='spec_chrome.png', rough=0.18, uv=16),
     'iwz_pk_brass': dict(kind='metal', spec='spec_brass.png', rough=0.32, uv=16),
     'iwz_pk_black': dict(kind='paint', albedo='enamel_black.png', rough=0.4, uv=24),
+    # glass: the zone references the stock clear model glass (swap_stock_glass.py after the port); the bake of this
+    # stand-in is discarded. Sorted last ('zz') so the port's image de-duplication never points another material at it
+    'iwz_pk_zz_glass': dict(kind='glass', albedo='glass_c.png', rough=0.05, uv=24),
 }
 PER = {
     'bakers': {'iwz_pk_bak_red': dict(kind='paint', albedo='enamel_red.png', rough=0.26, uv=24),
@@ -214,6 +217,22 @@ class B:
         prof = [(r * math.sin(math.pi * i / rings), c[2] - r * math.cos(math.pi * i / rings)) for i in range(rings + 1)]
         return self.lathe(mat, prof, seg, c[0], c[1], rect=rect)
 
+    def drop(self, mat, rect, c, r, shape, rng):
+        """One sweet, 24 triangles: 'ball' (a squashed sphere) or 'dome' (a flat-bottomed jelly drop), turned at random."""
+        if shape == 'dome':
+            prof = [(0, 0), (r, 0), (0.75 * r, 0.75 * r), (0, 0.95 * r)]
+        else:
+            prof = [(0, -0.8 * r), (0.87 * r, -0.4 * r), (0.87 * r, 0.4 * r), (0, 0.8 * r)]
+        n0 = self.lathe(mat, prof, 6, rect=rect, phase=rng.uniform(0, 1))
+        rot = Matrix.Rotation(rng.uniform(0, 6.3), 4, 'Z') @ Matrix.Rotation(rng.uniform(-0.6, 0.6), 4, 'X')
+        self.xform(n0, Matrix.Translation(Vector(c) * INCH) @ rot)
+
+    def drops_on(self, mat, rects, pts, r, shape, seed):
+        import random as _r
+        rng = _r.Random(seed)
+        for pnt in pts:
+            self.drop(mat, rng.choice(rects), pnt, r * rng.uniform(0.85, 1.1), shape, rng)
+
     def finish(self, name):
         bm = self.bm
         for f in bm.faces:
@@ -236,6 +255,41 @@ class B:
 
 
 # ---------------------------------------------------------------- the machines
+def fib_sphere(n):
+    g = math.pi * (3 - math.sqrt(5))
+    for i in range(n):
+        z = 1 - 2 * (i + 0.5) / n
+        rr = math.sqrt(1 - z * z)
+        yield (rr * math.cos(g * i), rr * math.sin(g * i), z)
+
+
+def disk_points(cx, cy, z, R, spacing):
+    out = []
+    k = 0
+    while True:
+        rad = spacing * k
+        if rad > R:
+            return out
+        n = max(1, int(2 * math.pi * rad / spacing))
+        for i in range(n):
+            a = 2 * math.pi * i / n + 0.37 * k
+            out.append((cx + rad * math.cos(a), cy + rad * math.sin(a), z))
+        k += 1
+
+
+def cylinder_points(cx, cy, R, z0, z1, spacing):
+    out = []
+    n = max(3, int(2 * math.pi * R / spacing))
+    z, k = z0, 0
+    while z <= z1:
+        for i in range(n):
+            a = 2 * math.pi * (i + 0.5 * (k % 2)) / n
+            out.append((cx + R * math.cos(a), cy + R * math.sin(a), z))
+        z += spacing * 0.87
+        k += 1
+    return out
+
+
 def bakers(b):
     A, G = b.A, b.G
     R, C, K = 'iwz_pk_bak_red', 'iwz_pk_bak_cream', 'iwz_pk_chrome'
@@ -257,7 +311,8 @@ def bakers(b):
     b.front(G, 'sign', 2.04, -18.3, 18.3, 73.0, 84.3)
     b.box(K, -12.3, 2.3, -19.8, 19.8, 85.5, 86.3)
     for k in range(9):                                                       # chaser bulbs along the marquee top
-        b.sphere(G, (2.0, -17.0 + k * 34.0 / 8, 87.1), 0.8, 8, 4, rect='bulb')
+        b.cyl(K, (2.0, -17.0 + k * 34.0 / 8, 86.2), (2.0, -17.0 + k * 34.0 / 8, 86.9), 0.45, 6)
+        b.sphere(G, (2.0, -17.0 + k * 34.0 / 8, 87.6), 0.75, 8, 4, rect='bulb')
     # striped awning over the drum: top and underside, valance face
     x0, z0, x1, z1 = -3.0, 71.6, 11.0, 65.6
     b.quad(R, [(x1, -19, z1), (x1, 19, z1), (x0, 19, z0), (x0, -19, z0)])
@@ -268,7 +323,11 @@ def bakers(b):
     # glass drum of sugared jelly drops (lit inside) on a chrome base, chrome cap and knob, crank on its side
     dx, dy = 4.0, -5.0
     b.lathe(K, [(0, 42.5), (9.8, 42.5), (9.8, 45.4), (9.0, 46.2), (0, 46.2)], 32, dx, dy)
-    b.lathe(G, [(9.0, 46.0), (9.0, 61.2)], 32, dx, dy, rect='drum')
+    b.lathe(G, [(0, 46.0), (7.2, 46.0), (7.2, 57.0), (0, 57.0)], 20, dx, dy, rect='drum')        # packed core, lit
+    drops = [(x, y, z) for x, y, z in cylinder_points(dx, dy, 7.9, 47.4, 56.2, 3.0)]
+    drops += disk_points(dx, dy, 57.6, 6.6, 3.0)
+    b.drops_on(A, ['drop0', 'drop1', 'drop2', 'drop3'], drops, 1.55, 'dome', 13)
+    b.lathe('iwz_pk_zz_glass', [(9.0, 46.0), (9.0, 61.2)], 32, dx, dy)                           # the glass
     b.lathe(K, [(0, 61.0), (9.6, 61.0), (9.6, 62.2), (7.0, 63.8), (2.2, 64.4), (1.2, 65.3), (1.7, 66.4), (0, 66.9)], 32, dx, dy)
     for z in (49.0, 58.0):                                                    # drum hoops
         b.lathe(K, [(9.05, z), (9.35, z), (9.35, z + 0.6), (9.05, z + 0.6)], 32, dx, dy, closed=True)
@@ -371,44 +430,61 @@ def voyage(b):
 def grudge(b):
     A, G = b.A, b.G
     Gr, Y, K = 'iwz_pk_gru_green', 'iwz_pk_gru_yellow', 'iwz_pk_chrome'
-    b.box(Gr, -17, 17, -18, 18, 0, 13, bevel=0.8)                             # plinth: lit name, crown stencils
-    b.box('iwz_pk_black', 17.0, 17.6, -17.2, 17.2, 1.2, 12.0)
-    b.front(G, 'sign', 17.63, -16.8, 16.8, 1.7, 11.5)
-    b.side(A, 'crown', 18.03, -5.8, 5.8, 0.6, 12.8, 1)
-    b.side(A, 'crown', -18.03, -5.8, 5.8, 0.6, 12.8, -1)
-    b.quad(A, [(-17.03, 9.5, 1.0), (-17.03, -9.5, 1.0), (-17.03, -9.5, 12.6), (-17.03, 9.5, 12.6)], 'tag')
-    b.box(Y, -15, 15, -15, 15, 13, 14.6, bevel=0.4)
-    n_col = b.mark()
-    b.lathe(Y, [(0, 14.6), (8.0, 14.6), (5.8, 17.0), (4.8, 19.0), (4.8, 30.4), (6.4, 32.2), (6.4, 33.2), (0, 33.2)], 20)
-    b.rot(n_col, 'X', -4.0, (0, 0, 14.6))
-    # the head, set crooked: collar, cast body with the sprayed-over face, coin plate, crank, chute; lit globe; cap
+    b.box(Gr, -17, 17, -18, 18, 0, 10, bevel=0.8)                             # plinth: crown stencils, tag
+    b.front(A, 'crown', 17.03, -5.0, 5.0, 0.4, 9.6)
+    b.side(A, 'crown', 18.03, -5.0, 5.0, 0.4, 9.6, 1)
+    b.side(A, 'crown', -18.03, -5.0, 5.0, 0.4, 9.6, -1)
+    b.quad(A, [(-17.03, 8.0, 0.8), (-17.03, -8.0, 0.8), (-17.03, -8.0, 6.8), (-17.03, 8.0, 6.8)], 'tag')
+    b.box(Y, -15, 15, -15, 15, 10, 11.4, bevel=0.4)
+    # everything above the plinth leans the same way: the stand has been knocked over and stood up again; two hose
+    # clamps hold the cracked column at the bend, and the head is turned on its mount
+    n_all = b.mark()
+    b.lathe(Y, [(0, 11.4), (8.0, 11.4), (5.8, 13.8), (4.8, 15.8), (4.8, 28.6), (6.4, 30.4), (6.4, 31.2), (0, 31.2)], 20)
+    for z in (17.0, 18.6):
+        b.lathe(K, [(4.8, z), (5.3, z), (5.3, z + 0.7), (4.8, z + 0.7)], 16, closed=True)
+    b.box(K, 5.0, 6.4, -0.6, 0.6, 16.8, 19.6)
     n_head = b.mark()
-    b.lathe(Gr, [(0, 33.0), (9.0, 33.0), (10.2, 34.4), (10.2, 35.2), (0, 35.2)], 24)
-    b.box(Gr, -10, 10, -10, 10, 35.2, 56.0, bevel=1.2)
-    b.box(Y, -10.3, 10.3, -10.3, 10.3, 35.2, 36.6)
-    b.box(Y, -10.3, 10.3, -10.3, 10.3, 54.6, 56.0)
-    b.disc_x(A, 10.06, 0, 48.6, 6.0, 28, 'face')
-    b.lathe_x(Y, [(5.9, 0.0), (6.7, 0.0), (6.7, 0.4), (5.9, 0.4)], 28, (10.0, 0, 48.6), closed=True)
-    b.front(A, 'coin', 10.06, -4.3, 4.3, 36.9, 41.9)
-    b.side(A, 'tag', 10.06, -8, 8, 39.5, 49.4, 1)
-    b.side(A, 'tag', -10.06, -8, 8, 39.5, 49.4, -1)
-    b.lathe_x(K, [(0, 0), (2.1, 0), (2.1, 1.4), (1.7, 3.0), (0, 3.0)], 16, (10.0, -2.2, 39.4))      # crank
-    b.box(K, 12.6, 13.5, -7.6, 3.2, 38.6, 40.2, bevel=0.25)
-    b.lathe_x('iwz_pk_black', [(0, 0), (0.9, 0), (0.9, 2.2), (0, 2.2)], 10, (13.5, -6.8, 39.4))
-    b.box(K, 10.0, 11.8, 5.2, 9.2, 37.0, 42.2, bevel=0.3)                    # chute flap
-    b.lathe(K, [(0, 56.0), (10.6, 56.0), (11.1, 57.4), (10.3, 58.9), (0, 58.9)], 32)
-    R, zc = 13.4, 70.6
-    t0, t1 = math.acos((zc - 58.6) / R), math.acos((zc - 81.6) / R)
+    b.lathe(Gr, [(0, 31.0), (10.0, 31.0), (11.2, 32.4), (11.2, 33.2), (0, 33.2)], 24)
+    b.box(Gr, -11, 11, -13, 13, 33.2, 62.0, bevel=1.2)                        # cast head body
+    b.box(Y, -11.3, 11.3, -13.3, 13.3, 33.2, 34.6)
+    b.box(Y, -11.3, 11.3, -13.3, 13.3, 60.6, 62.0)
+    # the name, lit, at head height across the top of the head; the sprayed-over face below; coin plate and crank
+    b.box('iwz_pk_black', 11.0, 11.5, -12.7, 12.7, 52.6, 60.2)
+    b.front(G, 'sign', 11.53, -12.4, 12.4, 52.9, 59.9)
+    b.front(A, 'face', 11.03, -6.6, 6.6, 37.8, 51.0)
+    b.front(A, 'coin', 11.03, -12.4, -7.4, 46.0, 49.0)
+    b.lathe_x(K, [(0, 0), (1.9, 0), (1.9, 1.3), (1.5, 2.8), (0, 2.8)], 16, (11.0, -9.9, 41.4))       # crank
+    b.box(K, 13.4, 14.2, -12.0, -7.8, 40.7, 42.1, bevel=0.2)
+    b.box(K, 11.0, 12.8, 7.6, 12.0, 36.0, 43.0, bevel=0.3)                    # drop chute flap
+    b.side(A, 'tag', 13.06, -8.5, 8.5, 38.0, 44.4, 1)
+    b.side(A, 'tag', -13.06, -8.5, 8.5, 38.0, 44.4, -1)
+    # the globe: clear stock glass over 3D puckered sour drops on a packed core, filled two thirds
+    b.lathe(K, [(0, 62.0), (10.4, 62.0), (10.9, 63.2), (10.2, 64.4), (0, 64.4)], 32)
+    R, zb = 12.6, 64.0
+    t0 = math.radians(36)
+    zc = zb + R * math.cos(t0)
+    t1 = math.radians(146)
     prof = [(R * math.sin(t0 + (t1 - t0) * i / 10), zc - R * math.cos(t0 + (t1 - t0) * i / 10)) for i in range(11)]
-    b.lathe(G, prof, 32, rect='globe')
-    b.lathe(Y, [(7.4, 81.0), (8.4, 81.0), (8.4, 82.0), (7.4, 82.0)], 24, closed=True)
-    b.lathe(Gr, [(0, 81.8), (8.0, 81.8), (8.2, 82.8), (7.4, 84.6), (5.0, 86.2), (2.2, 87.0), (0, 87.1)], 24)
-    b.sphere(G, (0, 0, 88.3), 1.4, 12, 6, rect='bulb')
-    b.xform(n_head, Matrix.Translation(Vector((0, 0, 33.0)) * INCH) @ Matrix.Scale(1.1, 4) @
-            Matrix.Translation(Vector((0, 0, -33.0)) * INCH))
-    b.rot(n_head, 'Z', 12.0, (0, 0, 0))
-    b.rot(n_head, 'X', -11.0, (0, 0, 33.0))
-    b.rot(n_head, 'Y', 3.0, (0, 0, 33.0))
+    zf = zc + 2.5                                                           # fill level
+    Rc = R - 3.4
+    core = [(Rc * math.sin(math.radians(a)), zc - Rc * math.cos(math.radians(a))) for a in (40, 70, 100)]
+    hf = math.sqrt(max(Rc * Rc - (zf - zc) ** 2, 1))
+    b.lathe(G, [(0, zb + 0.3)] + core + [(hf, zf), (0, zf)], 20, rect='globe')
+    pts = []
+    for x, y, z in fib_sphere(150):
+        P = (x * (R - 1.7), y * (R - 1.7), zc + z * (R - 1.7))
+        if zb + 1.0 < P[2] < zf:
+            pts.append(P)
+    pts += disk_points(0, 0, zf + 0.6, math.sqrt(max((R - 1.8) ** 2 - (zf - zc) ** 2, 1)) - 0.5, 3.1)
+    b.drops_on(A, ['drop0', 'drop1', 'drop2', 'drop3'], pts, 1.7, 'ball', 7)
+    b.lathe('iwz_pk_zz_glass', prof, 32)
+    zt = prof[-1][1]
+    b.lathe(Y, [(6.6, zt - 0.4), (7.6, zt - 0.4), (7.6, zt + 0.6), (6.6, zt + 0.6)], 24, closed=True)
+    b.lathe(Gr, [(0, zt + 0.4), (7.2, zt + 0.4), (7.4, zt + 1.4), (6.6, zt + 3.0), (4.4, zt + 4.4), (2.0, zt + 5.1), (0, zt + 5.2)], 24)
+    b.cyl(K, (0, 0, zt + 5.1), (0, 0, zt + 5.9), 0.5, 6)
+    b.sphere(G, (0, 0, zt + 6.9), 1.2, 10, 5, rect='bulb')
+    b.rot(n_head, 'Z', 8.0, (0, 0, 0))
+    b.rot(n_all, 'X', -6.0, (0, 0, 11.4))
 
 
 def double(b):
@@ -438,24 +514,43 @@ def double(b):
     for y in (-18.2, 18.2):
         b.box(K, 15.3, 15.9, y - 0.4, y + 0.4, 68.0, 79.0)
     b.box(T, -16.0, 15.5, -20.3, 20.3, 79, 80.2, bevel=0.4)
-    # camera flash gun on the roof: post, arm, a big polished reflector facing the player, the bulb in it
-    b.box(K, 0.0, 6.8, -3.2, 3.2, 80.2, 84.2, bevel=0.4)                     # flash unit housing
-    b.cyl(K, (5.0, 0, 84.2), (7.0, 0, 86.0), 0.8, 10)
-    n0 = b.lathe(K, [(1.2, 0.0), (5.6, 3.0), (6.0, 3.0), (6.0, 3.4), (5.5, 3.4), (1.0, 0.4)], 28, closed=True)
-    b.xform(n0, Matrix.Translation(Vector((7.4, 0, 87.0)) * INCH) @ Matrix.Rotation(math.radians(98), 4, 'Y'))
-    b.lathe_x(K, [(0, 0), (1.3, 0), (1.3, 1.2), (0, 1.2)], 12, (7.0, 0, 87.0))
-    b.sphere(G, (9.4, 0, 86.9), 2.3, 16, 8, rect='bulb')
-    # right panel: framed lit photo strip of four identical sweets, SWEETS card, coin box, slot with a strip in it
-    b.box(K, 14.0, 14.5, 2.0, 11.0, 35.4, 64.6, bevel=0.15)
-    b.front(G, 'strip', 14.53, 2.5, 10.5, 36.0, 64.0)
-    b.box(K, 14.0, 14.3, 11.6, 19.6, 41.6, 50.8)
-    b.front(G, 'card', 14.33, 11.9, 19.3, 42.0, 50.4)
-    b.box(K, 14.0, 15.4, 13.4, 18.4, 32.0, 38.4, bevel=0.3)
-    b.box('iwz_pk_black', 15.38, 15.45, 15.4, 16.4, 34.0, 36.6)
-    b.front(A, 'slot', 14.03, 4.6, 16.4, 25.6, 30.4)
-    b.box(K, 14.0, 16.2, 5.6, 15.4, 21.4, 24.8, bevel=0.3)
-    b.box('iwz_pk_black', 16.1, 16.25, 6.4, 14.6, 22.0, 22.8)
-    b.quad(A, [(16.4, 8.8, 13.4), (16.4, 11.4, 13.4), (16.4, 11.4, 22.4), (16.4, 8.8, 22.4)], 'strip')   # delivered strip
+    # the booth's flash: a black flash unit with a lit FLASH plate, a deep polished bowl reflector turned to the
+    # player, and a big clear flash bulb on its socket standing out of the bowl (the bulb lit)
+    b.box('iwz_pk_black', -1.0, 7.0, -6.2, 6.2, 80.2, 83.6, bevel=0.3)
+    b.front(G, 'flashplate', 7.03, -5.9, 5.9, 80.9, 82.8)
+    b.cyl(K, (3.0, 0, 83.6), (3.0, 0, 84.6), 0.9, 10)
+    n0 = b.lathe(K, [(1.2, 0.0), (3.0, 0.9), (4.5, 2.4), (5.4, 3.9), (5.8, 3.9), (5.8, 4.3), (5.2, 4.3), (4.2, 2.6),
+                     (2.8, 1.2), (1.0, 0.4)], 28, closed=True)
+    b.xform(n0, Matrix.Translation(Vector((3.6, 0, 89.0)) * INCH) @ Matrix.Rotation(math.radians(93), 4, 'Y'))
+    b.lathe_x(K, [(0, 0), (1.0, 0), (1.0, 2.2), (0.8, 2.6), (0, 2.6)], 12, (3.8, 0, 89.0))           # bulb socket
+    b.sphere(G, (8.4, 0, 88.9), 2.3, 16, 8, rect='bulb')                    # the flash bulb, standing out of the bowl
+    b.cyl(K, (3.0, 0, 84.6), (3.4, 0, 85.4), 0.7, 8)
+    # right panel: a candy dispenser in the booth. Lit SWEETS header, a glass hopper of wrapped sweets (3D) on a chrome
+    # base with a crank, the drop slot and its tray; beside it the lit sample strip of four identical sweets, the coin
+    # box, and the photo slot with a strip delivered
+    b.front(G, 'sweets', 14.43, 2.0, 19.5, 58.6, 63.8)
+    b.box(K, 14.0, 14.4, 1.6, 19.9, 58.2, 64.2)
+    hx, hy = 17.4, 7.0
+    b.box(K, 14.0, 21.8, 2.0, 12.0, 27.0, 36.8, bevel=0.4)                   # hopper base
+    b.box('iwz_pk_black', 21.75, 21.85, 4.6, 9.4, 29.6, 32.4)                 # drop slot
+    b.box(K, 21.8, 23.6, 4.4, 9.6, 27.6, 28.4, bevel=0.15)                    # its tray
+    b.box(K, 23.2, 23.6, 4.4, 9.6, 28.4, 29.8)
+    b.lathe_x(K, [(0, 0), (1.5, 0), (1.5, 1.0), (1.2, 2.2), (0, 2.2)], 14, (21.8, hy, 34.4))         # crank knob
+    b.box(K, 23.6, 24.2, hy - 0.4, hy + 0.4, 33.8, 37.4)
+    b.lathe(K, [(0, 36.8), (4.9, 36.8), (4.9, 37.6), (0, 37.6)], 24, hx, hy)
+    b.lathe(G, [(0, 37.6), (3.1, 37.6), (3.1, 51.4), (0, 51.4)], 14, hx, hy, rect='core')
+    pts = cylinder_points(hx, hy, 3.7, 38.6, 50.6, 2.3) + disk_points(hx, hy, 52.0, 3.0, 2.3)
+    b.drops_on(A, ['drop0', 'drop1', 'drop2'], pts, 1.15, 'ball', 21)
+    b.lathe('iwz_pk_zz_glass', [(4.6, 37.6), (4.6, 55.6)], 28, hx, hy)
+    b.lathe(K, [(0, 55.4), (5.0, 55.4), (5.0, 56.4), (3.6, 57.4), (1.0, 57.8), (0, 57.9)], 24, hx, hy)
+    b.box(K, 14.0, 14.5, 12.8, 19.6, 36.4, 56.2, bevel=0.15)                  # sample strip frame
+    b.front(G, 'strip', 14.53, 13.2, 19.2, 36.9, 55.7)
+    b.box(K, 14.0, 15.4, 13.6, 18.6, 29.0, 35.0, bevel=0.3)                   # coin box
+    b.box('iwz_pk_black', 15.38, 15.45, 15.6, 16.6, 30.8, 33.4)
+    b.front(A, 'slot', 14.03, 12.6, 19.4, 21.8, 24.5)
+    b.box(K, 14.0, 16.2, 12.8, 19.2, 18.2, 21.4, bevel=0.3)
+    b.box('iwz_pk_black', 16.1, 16.25, 13.6, 18.4, 18.8, 19.6)
+    b.quad(A, [(16.4, 14.7, 9.4), (16.4, 17.3, 9.4), (16.4, 17.3, 18.8), (16.4, 14.7, 18.8)], 'strip')   # delivered strip
     for y in (-20.4, 20.0):                                                   # chrome corner strips
         b.box(K, 13.6, 14.4, y, y + 0.4, 2.0, 68.0)
     b.box(K, 13.6, 14.4, 0.6, 1.4, 14.0, 68.0)
@@ -485,6 +580,13 @@ def render_material(name, d, art):
         n.image = bpy.data.images.load(os.path.join(art, fn), check_existing=True)
         n.image.colorspace_settings.name = 'sRGB' if colour else 'Non-Color'
         return n
+    if d['kind'] == 'glass':                                  # thin clear glass, as the stock additive glass reads
+        p.inputs['Base Color'].default_value = (1, 1, 1, 1)
+        p.inputs['Transmission Weight'].default_value = 1.0
+        p.inputs['IOR'].default_value = 1.05
+        p.inputs['Roughness'].default_value = 0.02
+        m.surface_render_method = 'BLENDED' if hasattr(m, 'surface_render_method') else None
+        return m
     if d['kind'] == 'metal':
         nt.links.new(img(d['spec']).outputs[0], p.inputs['Base Color'])
         p.inputs['Metallic'].default_value = 1.0
@@ -500,7 +602,8 @@ def materials_json(m, out, art):
     rel = os.path.relpath(art, out).replace(os.sep, '/')
     mats = []
     for n, d in mat_table(m).items():
-        e = {'name': n, 'alpha': 'opaque', 'techset': 'authored', 'roughness_value': d['rough']}
+        e = {'name': n, 'alpha': 'blend' if d['kind'] == 'glass' else 'opaque', 'techset': 'authored',
+             'roughness_value': d['rough']}
         if d['kind'] == 'metal':
             e['albedo'] = {'path': rel + '/metal_c.png'}
             e['specular'] = {'path': rel + '/' + d['spec']}
@@ -627,7 +730,7 @@ def roundtrip_object(m, port, name):
     for o in obs:
         for slot in o.material_slots:
             nm = slot.material.name.split('.')[0] if slot.material else ''
-            nm = nm.replace('mo/t7e_', '')
+            nm = 'iwz_pk_zz_glass' if 'glass_clear_model_no_imp' in nm else nm.replace('mo/t7e_', '')
             if nm in bpy.data.materials:
                 slot.material = bpy.data.materials[nm]
     return obs

@@ -97,6 +97,7 @@ def walnut(n=512, seed=5):
     t = (t - t.min()) / (t.max() - t.min())
     dark, light = np.array([52, 29, 16]), np.array([98, 57, 31])
     img = dark + (light - dark) * t[..., None]
+    img = img * (1 - 0.18 * tnoise(n, 30, seed + 9)[..., None] ** 2)            # a year of dust and handling
     return Image.fromarray(np.clip(img, 0, 255).astype(np.uint8))
 
 
@@ -597,7 +598,7 @@ def art_grudge(out):
     paint = Image.new('L', s.size, 0)
     pd = ImageDraw.Draw(paint)
     for k, st in enumerate(strokes):
-        w = (13 if k < 3 else 9) * SS
+        w = (18 if k < 3 else 12) * SS
         for (x0, y0), (x1, y1) in zip(st, st[1:]):
             pd.line([(x0, y0), (x1, y1)], fill=235, width=int(w * rr.uniform(0.8, 1.2)))
         for _ in range(900):                                  # overspray: scattered dots round the stroke
@@ -769,6 +770,7 @@ def tiles(out):
     spec((214, 168, 82)).save(os.path.join(out, 'spec_brass.png'))
     spec((236, 196, 110)).save(os.path.join(out, 'spec_gilt.png'))
     Image.fromarray((np.dstack([tnoise(64, 4, 7)] * 3) * 20 + 14).astype(np.uint8)).save(os.path.join(out, 'rubber.png'))
+    Image.new('RGB', (16, 16), (200, 206, 210)).save(os.path.join(out, 'glass_c.png'))   # stand-in, swapped for stock glass
 
 
 def main():
