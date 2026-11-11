@@ -1,0 +1,298 @@
+{
+  "_doc": "Station Zero Pack-a-Punch camos (docs 08-CAMOS.md). Palette in sRGB hex, lengths in millimetres at weapon scale, shares as fractions of the tile. camo_gen.py reads this file; tune here, not in code.",
+  "size": 1024,
+  "tile_mm": 180.0,
+  "camo_uv_mm_per_unit": 217.0,
+  "_camo_uv_note": "Measured on the stock weapon_1887_vm_camo surfaces (layer-1 UV records, area-weighted median 8.53 model units per UV unit, 1 unit = 1 inch). The material's UV scale constant (secondarySam 4044143062 [s, s, 0, 0]) is set to camo_uv_mm_per_unit / tile_mm so one texture tile covers tile_mm of the gun.",
+  "normal_y_down": true,
+  "normal_encoding": "hybrid",
+  "seam_ratio_max": 1.05,
+  "seed": 47,
+  "camos": {
+    "carrier": {
+      "kind": "carrier",
+      "material": "iwz_camo_carrier",
+      "images": "iwz_camo_carrier",
+      "emissive_max_strength": 6.0,
+      "metal_diffuse_scale": 0.35,
+      "palette": {
+        "enamel": {
+          "hex": "#0C0D10",
+          "roughness": 0.55,
+          "metal": 0.0,
+          "band": [
+            0.62,
+            0.78
+          ]
+        },
+        "wear": {
+          "hex": "#1B1E24",
+          "roughness": 0.4,
+          "metal": 0.0,
+          "band": [
+            0.03,
+            0.07
+          ]
+        },
+        "route": {
+          "hex": "#FFB000",
+          "emissive": 2.0,
+          "albedo_scale": 0.55,
+          "roughness": 0.45,
+          "band": [
+            0.11,
+            0.17
+          ]
+        },
+        "lamp": {
+          "hex": "#FFE7B0",
+          "emissive": 6.0,
+          "roughness": 0.2,
+          "band": [
+            0.01,
+            0.03
+          ]
+        },
+        "red": {
+          "hex": "#FF2A1A",
+          "emissive": 4.0,
+          "roughness": 0.2,
+          "band": [
+            0.0002,
+            0.01
+          ]
+        },
+        "green": {
+          "hex": "#27F58A",
+          "emissive": 4.0,
+          "roughness": 0.2,
+          "band": [
+            0.0002,
+            0.01
+          ]
+        },
+        "brass": {
+          "hex": "#B08D4A",
+          "roughness": 0.35,
+          "metal": 1.0,
+          "band": [
+            0.02,
+            0.04
+          ]
+        },
+        "lettering": {
+          "hex": "#D9D4C4",
+          "roughness": 0.6,
+          "metal": 0.0,
+          "band": [
+            0.01,
+            0.03
+          ]
+        }
+      },
+      "pattern": {
+        "bundles": 3,
+        "routes_per_bundle": [
+          3,
+          3,
+          3
+        ],
+        "line_width_mm": 3.0,
+        "route_spacing_mm": 9.0,
+        "bend_radius_mm": 4.0,
+        "engrave_depth_mm": 0.2,
+        "merge_events_per_bundle": 2,
+        "merge_length_mm": [
+          22.0,
+          40.0
+        ],
+        "station_ticks_per_tile": 5,
+        "_ticks_note": "180 mm tile / 5 = 36 mm: the nearest tile-periodic spacing to the 40 mm of the spec (4 per tile would give 45 mm).",
+        "tick_length_mm": 6.0,
+        "tick_width_mm": 2.0,
+        "station_lamp_radius_mm": 2.6,
+        "parked_lamp_radius_mm": 2.6,
+        "junction_stud_radius_mm": 3.6,
+        "panel_screw_radius_mm": 4.4,
+        "panel_screws": 6,
+        "roundel_outer_mm": 7.5,
+        "roundel_inner_mm": 3.0,
+        "signal_lamp_radius_mm": 2.0,
+        "red_lamps_per_tile": 1,
+        "green_lamps_per_tile": 1,
+        "glyph_height_mm": 2.0,
+        "route_labels_per_gap": 5,
+        "labels": [
+          "0",
+          "A",
+          "047",
+          "12.6",
+          "3",
+          "047",
+          "A2",
+          "0.40"
+        ],
+        "chainage_mark_mm": [
+          0.45,
+          2.4
+        ],
+        "chainage_mark_step_mm": 4.5,
+        "wear_share": 0.05,
+        "orange_peel_mm": [
+          0.7,
+          2.0
+        ],
+        "orange_peel_height_mm": 0.012
+      },
+      "motion": {
+        "lamp_speed_mm_s": 60.0,
+        "lamp_length_mm": 5.0
+      }
+    },
+    "mercury": {
+      "kind": "mercury",
+      "material": "iwz_camo_mercury",
+      "images": "iwz_camo_mercury",
+      "emissive_max_strength": 8.0,
+      "metal_diffuse_scale": 0.6,
+      "palette": {
+        "skin": {
+          "hex": "#C9CED6",
+          "roughness": 0.24,
+          "metal": 1.0,
+          "band": [
+            0.55,
+            0.8
+          ]
+        },
+        "shadow": {
+          "hex": "#3A3F4A",
+          "roughness": 0.3,
+          "metal": 1.0,
+          "band": [
+            0.09,
+            0.15
+          ]
+        },
+        "core": {
+          "hex": "#E9E0FF",
+          "emissive": 8.0,
+          "band": [
+            0.008,
+            0.025
+          ]
+        },
+        "body": {
+          "hex": "#8A5CFF",
+          "emissive": 4.0,
+          "band": [
+            0.03,
+            0.075
+          ]
+        },
+        "glow": {
+          "hex": "#2A0A5E",
+          "emissive": 1.5,
+          "band": [
+            0.07,
+            0.13
+          ]
+        },
+        "teal": {
+          "hex": "#35E0D0",
+          "emissive": 2.0,
+          "band": [
+            0.003,
+            0.015
+          ]
+        },
+        "glass": {
+          "hex": "#0A0612",
+          "opacity": 0.85,
+          "_note": "optics and magazines only, glass technique: not part of this texture set"
+        }
+      },
+      "arc_max_share": 0.09,
+      "pattern": {
+        "ripple_wavelength_mm": [
+          25.0,
+          40.0
+        ],
+        "ripple_height_mm": 1.1,
+        "shadow_share": 0.12,
+        "shadow_softness": 0.8,
+        "env_normal_gain": 2.5,
+        "glow_role_level": 0.3,
+        "beads_per_tile": 7,
+        "bead_diameter_mm": [
+          1.0,
+          3.0
+        ],
+        "env_strength": 0.22,
+        "env_lamps": [
+          {
+            "hex": "#FFFFFF",
+            "at": [
+              0.1,
+              -0.28
+            ],
+            "spread": 0.16,
+            "gain": 1.0
+          },
+          {
+            "hex": "#E8C79A",
+            "at": [
+              -0.32,
+              0.12
+            ],
+            "spread": 0.2,
+            "gain": 0.55
+          },
+          {
+            "hex": "#F4F1EA",
+            "at": [
+              0.36,
+              0.3
+            ],
+            "spread": 0.12,
+            "gain": 0.5
+          }
+        ],
+        "filaments_per_tile": 4,
+        "branches": [
+          3,
+          6
+        ],
+        "trunk_length_mm": [
+          55.0,
+          85.0
+        ],
+        "root_radius_mm": 2.0,
+        "tip_radius_mm": 0.55,
+        "step_mm": 0.6,
+        "wander_rad": 0.12,
+        "twigs_per_filament": 8,
+        "core_fraction": 0.45,
+        "teal_fringe_mm": 0.2,
+        "glow_radius_mm": 3.0,
+        "glow_trough_gain": 0.35,
+        "core_min_radius_mm": 0.2,
+        "ripple_stretch_u": 1.8,
+        "fold_radius_mm": 6.0
+      },
+      "motion": {
+        "speed_a_uv_s": 0.11,
+        "dir_a_deg": 8.0,
+        "speed_b_uv_s": 0.07,
+        "dir_b_deg": 197.0,
+        "filaments_a": 7,
+        "reveal_share": 0.38,
+        "reveal_wavelength_mm": [
+          30.0,
+          70.0
+        ],
+        "_note": "Directions in degrees from +U (barrel axis), counter-clockwise; the product mask A x B is the visible arc."
+      }
+    }
+  }
+}
