@@ -5,7 +5,7 @@ param(
   [Parameter(Mandatory)][string]$ZoneToolExe,    # zonetool.exe with -iwzcompile
   [Parameter(Mandatory)][string]$TemplateDump,   # folder of stock dumps: cp_zmb, patch_cp_zmb, techsets_cp_zmb, techsets_global_cp, techsets_global
   [string]$Map='cp_pfr',
-  [string]$Scheduler=$env:IW7_RESOURCE_SCHEDULER,
+  [string]$Scheduler='',                         # Resource-Scheduler.Core.ps1; empty: scheduler.ps1 resolves and guards it
   [string]$Probes='',                            # 'neutral': every lighting.txt room gets a plain reflection probe (IWZ_PROBES)
   [ValidateRange(0,14400)][int]$WaitForSlotSeconds=3600,
   [string]$Owner='IWZ prefab room build',

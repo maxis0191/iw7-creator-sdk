@@ -190,6 +190,19 @@
   {"kind": "quest_clock", "id": "clock_3", "zone": "car_barn", "wall": "south", "s": 5100},
   {"kind": "quest_clock", "id": "clock_4", "zone": "parlour", "wall": "north", "s": -3200},
   {"kind": "generator", "id": "cordon_generator", "zone": "cordon", "wall": "west", "t": 0.75, "off": 64, "note": "Up 'N Atoms powered from match start (W1b)"},
-  {"kind": "generator", "id": "terminus_clock", "zone": "terminus", "at": [8700, 8800], "note": "the only running clock"}
+  {"kind": "generator", "id": "terminus_clock", "zone": "terminus", "at": [8700, 8800], "note": "the only running clock"},
+  {"kind": "quest_lever", "id": "lever_1", "zone": "signal_cabin", "wall": "north", "s": 2450, "off": 32, "note": "Q1 step 2: the lever frame (modules/quest.gsc names the eight)"},
+  {"kind": "quest_lever", "id": "lever_2", "zone": "signal_cabin", "wall": "north", "s": 2520, "off": 32},
+  {"kind": "quest_lever", "id": "lever_3", "zone": "signal_cabin", "wall": "north", "s": 2590, "off": 32},
+  {"kind": "quest_lever", "id": "lever_4", "zone": "signal_cabin", "wall": "north", "s": 2660, "off": 32},
+  {"kind": "quest_lever", "id": "lever_5", "zone": "signal_cabin", "wall": "north", "s": 2730, "off": 32},
+  {"kind": "quest_lever", "id": "lever_6", "zone": "signal_cabin", "wall": "north", "s": 2800, "off": 32},
+  {"kind": "quest_lever", "id": "lever_7", "zone": "signal_cabin", "wall": "north", "s": 2870, "off": 32},
+  {"kind": "quest_lever", "id": "lever_8", "zone": "signal_cabin", "wall": "north", "s": 2940, "off": 32},
+  {"kind": "quest_diagram", "id": "diagram", "zone": "signal_cabin", "wall": "east", "s": 2200, "off": 32, "note": "Q1 step 2: the track diagram lights the three sections"},
+  {"kind": "quest_cab", "id": "car1", "zone": "platform_east", "at": [300, 1517], "yaw": 0, "area": [264, 1450, -330, 798, 1584, -200], "note": "Q1 step 4 and the teleport: the cab of car 1; area = who travels"},
+  {"kind": "quest_conductor", "id": "car6", "zone": "platform_east", "at": [3200, 1517], "note": "Q1 step 3: the Conductor steps out of the Party Car"},
+  {"kind": "terminus_arrival", "id": "arrival", "zone": "terminus", "at": [8300, 8450], "yaw": 0, "area": [7992, 7992, -16, 9408, 8908, 272], "note": "Q1: where the team stands at the Terminus; area = the Terminus"},
+  {"kind": "post_lever", "id": "bellows_lever", "zone": "bellows", "wall": "north", "s": -4400, "off": 32, "note": "T1: BLOW / DRAW"}
  ]
 }

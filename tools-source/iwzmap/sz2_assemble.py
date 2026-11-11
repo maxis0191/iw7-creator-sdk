@@ -40,5 +40,20 @@ csv = os.path.join(work, 'zone_source', mapname + '.csv')
 lines = open(csv).read().splitlines()
 at = next(i for i, l in enumerate(lines) if l.startswith('com_map,'))
 lines[at:at] = [r for r in rows if r not in lines]
+# game-script modules of the emit (<src>/modules/<map>_<name>.gsc, sz_modules.py): rawfiles right after the level script
+mods = sorted(f for f in os.listdir(os.path.join(src, 'modules')) if f.endswith('.gsc')) if os.path.isdir(os.path.join(src, 'modules')) else []
+mrows = []
+for f in mods:
+    rel = 'scripts/cp/maps/%s/%s' % (mapname, f)
+    out = os.path.join(dst, *rel.split('/'))
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    if os.path.exists(out):
+        os.remove(out)
+    shutil.copyfile(os.path.join(src, 'modules', f), out)
+    mrows.append('rawfile,' + rel)
+if mrows:
+    level_row = 'rawfile,scripts/cp/maps/%s/%s.gsc' % (mapname, mapname)
+    at = lines.index(level_row) + 1
+    lines[at:at] = [r for r in mrows if r not in lines]
 open(csv, 'w', newline='\n').write('\n'.join(lines) + '\n')
-print('custom materials', len(rows))
+print('custom materials', len(rows), 'modules', len(mrows))
