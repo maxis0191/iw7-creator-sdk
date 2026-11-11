@@ -53,11 +53,60 @@ main()
     level thread iwz_zone_links();
     level thread iwz_wheel_cleanup();
     level thread iwz_third_rail();
+    level thread iwz_wall_prices();
     //@DARK@
     level thread iwz_door_dressing();
     level thread iwz_hide_door_blockers();
     level thread iwz_report();
     //@AUDIO@
+}
+
+// Wall weapons: one price per place (the scene's), although several places sell the same weapon. The stock purchase and
+// its hint read level.interactions[weapon].cost when they run, so every server frame the cost is set to the price of the
+// place a player stands at (the stock monitor's self.last_interaction_point). Two players at two places of the same
+// weapon in the same 50 ms would share one price.
+iwz_wall_prices()
+{
+    level endon( "game_ended" );
+    table = [];
+    //@PRICES@
+    for ( i = 0; i < 600 && !( isdefined( level.all_interaction_structs ) && isdefined( level.interactions ) ); i++ )
+        wait 0.1;
+    wait 1;
+    n = 0;
+    foreach ( s in level.all_interaction_structs )
+    {
+        if ( !isdefined( s ) || !isdefined( s.script_noteworthy ) || !scripts\cp\cp_interaction::interaction_is_weapon_buy( s ) )
+            continue;
+        foreach ( p in table )
+        {
+            if ( p.weapon == s.script_noteworthy && distance( p.origin, s.origin ) < 16 )
+            {
+                s.iwz_price = p.price;
+                n++;
+            }
+        }
+    }
+    print( "[IWZ level] WALL_PRICES places=" + n + " of=" + table.size );
+    for ( ;; )
+    {
+        foreach ( pl in level.players )
+        {
+            s = pl.last_interaction_point;
+            if ( isdefined( s ) && isdefined( s.iwz_price ) && isdefined( level.interactions[s.script_noteworthy] ) )
+                level.interactions[s.script_noteworthy].cost = s.iwz_price;
+        }
+        wait 0.05;
+    }
+}
+
+iwz_price( origin, weapon, price )
+{
+    p = spawnstruct();
+    p.origin = origin;
+    p.weapon = weapon;
+    p.price = price;
+    return p;
 }
 
 // door purchases: wrap the stock debris activation so the barrier knows which door was bought
@@ -231,6 +280,7 @@ iwz_third_rail()
     wait 1;
     level.iwz_trap_use = spawn( "script_model", box.origin + anglestoforward( box.angles ) * 12 + ( 0, 0, 36 ) );
     use = level.iwz_trap_use;
+    use.targetname = "iwz_trap_third_rail_use";      // a test plan uses it by name (gamelab step "use")
     use setmodel( "tag_origin" );
     use makeusable();
     use sethintstring( &"COOP_INTERACTIONS_REQUIRES_POWER" );

@@ -23,4 +23,15 @@ try{
   }
   $p.WaitForExit(10000) | Out-Null
   "exit $($p.ExitCode)"; Get-Content "$Work\zt-$tag.out.log" -Tail 25; Get-Content "$Work\zt-$tag.err.log" -Tail 10
-} finally { Exit-IW7ResourceLease -Token $lease.Token | Out-Null }
+} finally {
+  # The scheduler keeps a Build lease while ANY ZoneTool process runs on the machine, ours or another session's unleased
+  # dump (11 Nov 2026: a build failed after its zone was written because another agent's zonetool -dumpzone started 7 s
+  # before the release). Ours has exited: wait for theirs, at most 30 min, instead of failing the build.
+  for($k=0;;$k++){
+    try{ Exit-IW7ResourceLease -Token $lease.Token | Out-Null; break }
+    catch{
+      if($k -lt 180 -and $p -and $p.HasExited -and $_.Exception.Message -match 'Heavy child may still be alive'){ Start-Sleep -Seconds 10; continue }
+      throw
+    }
+  }
+}

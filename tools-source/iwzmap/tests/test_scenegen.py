@@ -58,6 +58,14 @@ class GeometryTests(unittest.TestCase):
         self.assertIsNone(sg.shared_edge((0, 0, 100, 100), (140, 50, 200, 150)))
         self.assertEqual(sg.shared_edge((0, 0, 100, 100), (20, 100, 60, 180))[0], 'x')
 
+    def test_a_walk_path_keeps_its_corners_and_drops_straight_runs(self):
+        pts = [[x, 0, 0] for x in range(0, 500, 48)] + [[480, y, 0] for y in range(48, 500, 48)]
+        s = sg.simplify(pts, 12.0)
+        self.assertEqual(s[0], pts[0])
+        self.assertEqual(s[-1], pts[-1])
+        self.assertEqual(len(s), 3)
+        self.assertEqual(s[1][:2], [480, 0])
+
     def test_flight_sheet_runs_over_the_nosings(self):
         f = sg.Flight('z', {'id': 'f', 'rect': [0, 0, 192, 400], 'up': '+y', 'z_lo': 0, 'z_hi': 160})
         self.assertEqual(f.n, 20)
@@ -151,7 +159,13 @@ class EmitTests(unittest.TestCase):
         cls.tmp = tempfile.TemporaryDirectory()
         cls.out = os.path.join(cls.tmp.name, 'src')
         path = os.path.join(cls.tmp.name, 'scene.json')
-        json.dump(BASE, open(path, 'w'))
+        base = copy.deepcopy(BASE)
+        base['interactions'][0]['powered'] = True
+        base['interactions'] += [{'kind': 'perk', 'perk': 'tough', 'zone': 'side', 'wall': 'east', 't': 0.5},
+                                 {'kind': 'wall_buy', 'class': 'smg', 'price': 1250, 'zone': 'hall', 'wall': 'south', 's': 300},
+                                 {'kind': 'wall_buy', 'class': 'smg', 'price': 1500, 'zone': 'side', 'wall': 'north', 's': 1500},
+                                 {'kind': 'power', 'zone': 'low', 'wall': 'west', 't': 0.5}]
+        json.dump(base, open(path, 'w'))
         cls.report = sg.emit(path, TEMPLATE, cls.out, log=lambda *_: None)
 
     @classmethod
@@ -201,6 +215,31 @@ class EmitTests(unittest.TestCase):
         gsc = open(os.path.join(self.out, 'cp_iwz.gsc')).read()
         self.assertIn('iwz_door( "D1", "iwz_door_D1"', gsc)
         self.assertNotIn('//@DOORS@', gsc)
+
+    def test_each_wall_weapon_place_keeps_its_own_price(self):
+        gsc = open(os.path.join(self.out, 'cp_iwz.gsc')).read()
+        self.assertNotIn('//@PRICES@', gsc)
+        self.assertIn('"iw7_ump45_zml", 1250 );', gsc)
+        self.assertIn('"iw7_ump45_zml", 1500 );', gsc)
+
+    def test_system_plans_use_every_thing_and_judge_the_game_state(self):
+        plans = {p['name']: p for p in sg.w1b_plans(self.out)}
+        self.assertEqual(sorted(plans), ['cp_test_w1b_rounds', 'cp_test_w1b_systems', 'cp_test_w1b_walls'])
+        sysp = plans['cp_test_w1b_systems']['steps']
+        uses = [s['name'] for s in sysp if s['do'] == 'use']
+        # the powered perk first, the unpowered one refused, the switch, then the unpowered one bought
+        self.assertEqual(uses, ['pk_revive_prepower', 'pk_tough_nopower', 'power', 'pk_tough'])
+        walls = plans['cp_test_w1b_walls']['steps']
+        spent = sorted(s['eq'] for s in walls if s['do'] == 'expect' and s['that'].endswith('.spent'))
+        self.assertEqual(spent, [1250, 1500])
+        self.assertEqual(sum(1 for s in walls if s['do'] == 'take'), 2)
+
+    def test_the_walk_plan_walks_each_route_with_the_forward_key(self):
+        pl = sg.walk_plan(self.out, pairs=[('hall', 'side')])
+        walks = [s for s in pl['steps'] if s['do'] == 'walk']
+        self.assertEqual(len(walks), 1)
+        self.assertTrue(2 <= len(walks[0]['path']) <= 40)
+        self.assertEqual(walks[0]['name'], 'walk_hall_side')
 
 
 if __name__ == '__main__':

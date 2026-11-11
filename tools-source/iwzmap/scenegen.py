@@ -1281,8 +1281,15 @@ class Emitter:
             gsc = gsc.replace('//@TRAPRAILY@', '%g' % tr['rail'][0]).replace('//@TRAPRAILZ@', '%g' % tr['rail'][1])
         else:
             gsc = gsc.replace('//@TRAPMIN@', '( 0, 0, 0 )').replace('//@TRAPMAX@', '( 0, 0, 0 )').replace('//@TRAPRAILY@', '0').replace('//@TRAPRAILZ@', '0')
+        prices = ['    table[table.size] = iwz_price( %s, "%s", %d );' % (self.fmt3(i['origin']), i['kind'], int(i['price']))
+                  for i in self.layout['interactions'] if i.get('groupname') == 'wall_buy' and i.get('price')]
+        gsc = gsc.replace('//@PRICES@', '\n'.join(prices).lstrip())
         self.layout['zone_links'] = links
         open(os.path.join(self.out, 'cp_iwz.gsc'), 'w', newline='\n').write(gsc)
+
+    @staticmethod
+    def fmt3(p):
+        return '( %g, %g, %g )' % tuple(float(v) for v in p)
 
     def opening_point(self, o, zid):
         mid = (o['span'][0] + o['span'][1]) / 2
@@ -1553,10 +1560,30 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45, player=True):
               'about': 'Scene-generated map: every door opened, the navigation surveyed from the start, the entities counted.',
               'steps': [{'do': 'waves', 'on': False}, {'do': 'doors'}, {'do': 'tp', 'at': list(start)}, {'do': 'ents', 'name': 'all'},
                         {'do': 'survey', 'name': 'map', 'step': 128, 'max': 6000}]}]
-    for k in range(0, len(cases), per_plan):
+    # A session holds 600 s (gamelab MAX_SESSION_S; the plan needs 75 s of start-up and 1.2 x its steps): cases are
+    # packed into plans by their estimated time, at most per_plan a plan (11 Nov 2026: 8 cases with longer chases needed
+    # 683 s and were refused).
+    def cost(a, b, pts):
+        ln = None
+        if nav is not None:
+            ln, _p = nav.route(nav.nearest(*a), nav.nearest(*b))
+        walk = sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1)) / 190.0 * 1.5 + len(pts) if player else 0
+        return 2 * walk + count * 4.8 + max(chase_s, int(math.ceil((ln or 0) / 20.0 + 10))) + 1
+
+    chunks, cur, t = [], [], 0.0
+    for case in cases:
+        ct = cost(case[1], case[2], case[3])
+        if cur and (len(cur) >= per_plan or t + ct > 360):
+            chunks.append(cur)
+            cur, t = [], 0.0
+        cur.append(case)
+        t += ct
+    if cur:
+        chunks.append(cur)
+    for chunk in chunks:
         steps = [{'do': 'waves', 'on': False}, {'do': 'doors'}]
         expects = []
-        for name, a, b, pts in cases[k:k + per_plan]:
+        for name, a, b, pts in chunk:
             if zone_at(a) not in ground and zone_at(b) in ground:
                 a, b, pts = b, a, pts[::-1]
             tag = re.sub(r'[^a-z0-9_]', '_', name.lower())[:40]
@@ -1573,7 +1600,9 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45, player=True):
                 expects += [{'do': 'expect', 'that': 'move:%s_%s.reached' % (tag[:36], w), 'eq': len(pts) - 1,
                              'why': 'the player walks %s %s' % (name, 'forward' if w == 'fwd' else 'back')} for w in ('fwd', 'bck')]
             steps += [{'do': 'kill'}, {'do': 'tp', 'at': b}, {'do': 'spawn', 'tag': tag, 'at': a, 'count': count},
-                      {'do': 'chase', 'tag': tag, 's': s}, {'do': 'kill', 'tag': tag}]
+                      {'do': 'chase', 'tag': tag, 's': s, 'allow_partial': True}, {'do': 'kill', 'tag': tag}]
+            # allow_partial: the case is judged by its expectation below (arrivals against the number spawned), not by
+            # the chase's own count, which also counts a stray of the same tag (11 Nov 2026: "2 of 3" for 2 spawned)
             # the chase also counts zombies of earlier cases that died there: the case needs as many arrivals as it spawned
             expects.append({'do': 'expect', 'that': 'chase:%s.reached' % tag, 'ge': count,
                             'why': 'every zombie gets from %s to the player at %s (%s)' % (a, b, name)})
@@ -1634,6 +1663,221 @@ def lab_report(src, runs):
                        'zones_missing': [z for z, zd in zones.items() if not zd.get('far') and not per_zone.get(z)] if survey else None}}
 
 
+def stress_props(scene_path, kits_path, n, seed=1, clear=96.0):
+    """ST1: n stock props spread over the zones by floor area, as compiled static models of models that have a template
+    twin (kit lists, template_donor: no model without a twin, so no entity and no TF10 dependency). Each stands on a flat
+    floor of its zone, clear of every opening and flight. -> ({zone: [props]}, {zone: count})"""
+    import random
+    rnd = random.Random(seed)
+    sc = Scene.load(scene_path)
+    kits = json.load(open(kits_path, encoding='utf-8'))['zones']
+    donors = {z: [m['name'] for m in v['models'] if m.get('template_donor')] for z, v in kits.items()}
+    every = sorted({m for v in donors.values() for m in v})
+    ops = [sc.locate(o) for o in sc.openings()]
+    zones = [z for z in sc.zones.values() if not z.far]
+    pieces = {z.id: [(r, zz) for r, zz, _k in z.floor_pieces() if rect_area(r) > 64 * 64] for z in zones}
+    area = {z.id: sum(rect_area(r) for r, _zz in pieces[z.id]) for z in zones}
+    total = sum(area.values())
+    out, counts = {}, {}
+    for z in zones:
+        want = int(round(n * area[z.id] / total))
+        models = donors.get(z.id) or every
+        items, tries = [], 0
+        while len(items) < want and tries < want * 40:
+            tries += 1
+            r, fz = rnd.choices(pieces[z.id], weights=[rect_area(p[0]) for p in pieces[z.id]])[0]
+            x, y = rnd.uniform(r[0] + 24, r[2] - 24), rnd.uniform(r[1] + 24, r[3] - 24)
+            if any(f.rect[0] - clear <= x <= f.rect[2] + clear and f.rect[1] - clear <= y <= f.rect[3] + clear for f in z.flights):
+                continue
+            near = False
+            for o in ops:
+                if z.id not in o['zones']:
+                    continue
+                u, v = (x, y) if o['axis'] == 'x' else (y, x)
+                if o['span'][0] - clear <= u <= o['span'][1] + clear and abs(v - o['planes'][z.id]) <= clear + 48:
+                    near = True
+                    break
+            if near:
+                continue
+            items.append({'model': rnd.choice(models), 'at': [round(x, 1), round(y, 1)], 'z': fz, 'yaw': rnd.randrange(0, 360, 15),
+                          'static': True, 'stress': 1})
+        out[z.id], counts[z.id] = items, len(items)
+    return out, counts
+
+
+WALK_PAIRS = [('cordon', 'converter_hall'), ('fare_hall', 'platform_west'), ('car_barn', 'exchange')]
+
+
+def simplify(pts, eps):
+    """Ramer-Douglas-Peucker in 3D: the points a walker steers at, at most eps units off the navigation path"""
+    if len(pts) < 3:
+        return list(pts)
+    a, b = pts[0], pts[-1]
+    ab = [b[i] - a[i] for i in range(3)]
+    L = math.sqrt(sum(v * v for v in ab)) or 1e-9
+    best, k = -1.0, 0
+    for i in range(1, len(pts) - 1):
+        ap = [pts[i][j] - a[j] for j in range(3)]
+        t = max(0.0, min(1.0, sum(ap[j] * ab[j] for j in range(3)) / (L * L)))
+        d = math.dist(pts[i], [a[j] + t * ab[j] for j in range(3)])
+        if d > best:
+            best, k = d, i
+    if best <= eps:
+        return [a, b]
+    return simplify(pts[:k + 1], eps)[:-1] + simplify(pts[k:], eps)
+
+
+def walk_paths(src, pairs=None):
+    """the navigation path between zone standing points, simplified to at most 40 points: [(a, b, nav_length, points)]"""
+    import iwz_emitcheck as EC
+    e = EC.Emit.load(src)
+    zp = e.layout.get('zone_points', {})
+    out = []
+    for a, b in pairs or WALK_PAIRS:
+        pa, pb = zp[a], zp[b]
+        ln, path = e.nav.route(e.nav.nearest(pa[0], pa[1], pa[2] + NAV_LIFT), e.nav.nearest(pb[0], pb[1], pb[2] + NAV_LIFT))
+        if ln is None:
+            out.append((a, b, None, []))
+            continue
+        pts = [list(e.nav.a[k]['c']) for k in path]
+        eps, s = 12.0, simplify(pts, 12.0)
+        while len(s) > 40:
+            eps *= 1.5
+            s = simplify(pts, eps)
+        out.append((a, b, ln, [[round(p[0], 1), round(p[1], 1), round(p[2] + 8, 1)] for p in s]))
+    return out
+
+
+def walk_plan(src, mapname=None, pairs=None):
+    """a client plan (it presses a movement key): a real player walks each route along the navigation path with the
+    forward key held, so its time calibrates the walking-time table (routes) that assumed 190 units a second"""
+    lay = json.load(open(os.path.join(src, 'layout.json')))
+    mapname = mapname or lay.get('map', 'cp_iwz')
+    steps = [{'do': 'waves', 'on': False}, {'do': 'ignore', 'on': True}, {'do': 'doors'}]
+    expects = []
+    for a, b, ln, pts in walk_paths(src, pairs):
+        if not pts:
+            continue
+        name = ('walk_%s_%s' % (a, b))[:40]
+        steps.append({'do': 'walk', 'name': name, 'path': pts, 's': min(300, int(ln / 120.0 + 20))})
+        expects.append({'do': 'expect', 'that': 'walk:%s.reached' % name, 'eq': len(pts) - 1, 'why': 'a player walks from %s to %s' % (a, b)})
+    return {'schema': 'iw7.gamelab-plan/1', 'name': '%s_walk' % mapname, 'map': mapname,
+            'about': 'Scene-generated map: a real walk (forward key held) along three routes, to calibrate the walking-time table.',
+            'steps': steps + expects}
+
+
+def walk_report(src, runs, pairs=None):
+    """the timed walks of a walk plan against the navigation length: the measured walking speed and the factor that turns
+    the routes table (nav length at 190 u/s) into real walking time"""
+    import glob, re
+    want = {('walk_%s_%s' % (a, b))[:40]: (a, b, ln, pts) for a, b, ln, pts in walk_paths(src, pairs)}
+    got = {}
+    for run in runs:
+        for log in glob.glob(os.path.join(run, '**', '*.log'), recursive=True):
+            for line in open(log, encoding='utf-8', errors='replace'):
+                m = re.search(r'GL WALK i=\d+ seq=\d+ name=(\S+) legs=(\d+) reached=(\d+) result=(\S+) moved=(\d+) ms=(\d+) speed=(\d+)', line)
+                if m:
+                    got[m.group(1)] = {'legs': int(m.group(2)), 'reached': int(m.group(3)), 'result': m.group(4), 'moved': int(m.group(5)),
+                                       'ms': int(m.group(6)), 'speed': int(m.group(7))}
+    rows, moved, ms, navsum = [], 0, 0, 0.0
+    for name, (a, b, ln, pts) in want.items():
+        g = got.get(name)
+        plen = sum(math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1)) if pts else None
+        r = {'route': '%s -> %s' % (a, b), 'nav_length': round(ln) if ln else None, 'path_length': round(plen) if plen else None,
+             'predicted_190_s': round(ln / 190.0, 1) if ln else None}
+        if g:
+            r.update({'measured_s': round(g['ms'] / 1000.0, 1), 'moved': g['moved'], 'speed': g['speed'], 'result': g['result'],
+                      'reached': '%d/%d' % (g['reached'], g['legs'])})
+            if g['result'] == 'reached':
+                moved, ms, navsum = moved + g['moved'], ms + g['ms'], navsum + ln
+        rows.append(r)
+    speed = moved * 1000.0 / ms if ms else None
+    return {'routes': rows, 'walk_speed': round(speed, 1) if speed else None,
+            'nav_speed': round(navsum * 1000.0 / ms, 1) if ms else None,
+            'note': 'walk_speed: units a second along the walked path; nav_speed: navigation length / measured time, '
+                    'the speed to give scenegen routes --speed for real walking times'}
+
+
+def w1b_plans(src, mapname=None, start_weapon='iw7_g18_zm'):
+    """headless plans for the blockout's systems (W1b): power, perks, wall weapons, the wheel, the Third Rail trap,
+    special-enemy structs and rounds, each used through the game's own interaction code (gamelab step "use") and judged
+    on the game's own script state (money, perks, weapons, the power flag, the round number, entities)"""
+    lay = json.load(open(os.path.join(src, 'layout.json')))
+    mapname = mapname or lay.get('map', 'cp_iwz')
+    its = lay['interactions']
+    perks = [i for i in its if i['kind'].startswith('perk_machine_')]
+    powered = [i for i in perks if i.get('parameters') != 'requires_power']
+    needs = [i for i in perks if i.get('parameters') == 'requires_power']
+    gen = next((i for i in its if i['kind'] == 'generator'), None)
+    walls = [i for i in its if i.get('groupname') == 'wall_buy']
+    wheels = [i for i in its if i['kind'] == 'magic_wheel']
+    trap = next((i for i in its if i['kind'] == 'trap_third_rail'), None)
+    head = [{'do': 'waves', 'on': False}, {'do': 'ignore', 'on': True}, {'do': 'doors'}, {'do': 'money', 'value': 500000}]
+    a, ea = list(head), []
+    ndog = sum(len(v) for v in lay.get('dog_spawners', {}).values())
+    for nm, key, val, n in (('dogs', 'targetname', 'dog_spawner', ndog), ('brute', 'targetname', 'brute_hide_org', 1),
+                            ('respawns', 'targetname', 'player_respawn_loc', sum(1 for v in lay.get('respawns', {}).values() for _ in v) or 1)):
+        a.append({'do': 'ents', 'name': nm, 'key': key, 'value': val})
+        ea.append({'do': 'expect', 'that': 'ents:%s.n' % nm, 'ge': n, 'why': 'the special-enemy and respawn structs are in the running map (%s)' % val})
+    a.append({'do': 'state', 'name': 'start'})
+    for p in powered:
+        nm = 'pk_' + p['kind'][len('perk_machine_'):] + '_prepower'
+        a.append({'do': 'use', 'name': nm[:40], 'kind': p['kind'], 'near': p['origin'], 's': 4})
+        ea += [{'do': 'expect', 'that': 'use:%s.perks1' % nm[:40], 'gt': '@use:%s.perks0' % nm[:40], 'why': '%s works before the power (its own generator)' % p['kind']},
+               {'do': 'expect', 'that': 'use:%s.spent' % nm[:40], 'gt': 0, 'why': 'a perk costs points'}]
+    if needs and gen:
+        p = needs[0]
+        nm = 'pk_%s_nopower' % p['kind'][len('perk_machine_'):]
+        a.append({'do': 'use', 'name': nm[:40], 'kind': p['kind'], 'near': p['origin'], 's': 3})
+        ea += [{'do': 'expect', 'that': 'use:%s.perks1' % nm[:40], 'eq': '@use:%s.perks0' % nm[:40], 'why': 'a powered perk refuses before the power'},
+               {'do': 'expect', 'that': 'use:%s.spent' % nm[:40], 'eq': 0, 'why': 'a refused perk costs nothing'}]
+    if gen:
+        a.append({'do': 'use', 'name': 'power', 'kind': 'generator', 'near': gen['origin'], 's': 6})
+        ea.append({'do': 'expect', 'that': 'use:power.power', 'eq': 1, 'why': 'the power switch (%s) turns the power on' % gen['zone']})
+    for p in (needs if gen else []):
+        nm = ('pk_' + p['kind'][len('perk_machine_'):])[:40]
+        a.append({'do': 'use', 'name': nm, 'kind': p['kind'], 'near': p['origin'], 's': 4})
+        ea += [{'do': 'expect', 'that': 'use:%s.perks1' % nm, 'gt': '@use:%s.perks0' % nm, 'why': '%s gives its perk after the power' % p['kind']},
+               {'do': 'expect', 'that': 'use:%s.spent' % nm, 'gt': 0, 'why': 'a perk costs points'}]
+    if wheels:
+        w = next((x for x in wheels if x.get('first')), wheels[0])
+        a += [{'do': 'take', 'give': start_weapon}, {'do': 'use', 'name': 'wheel', 'kind': 'magic_wheel', 'near': w['origin'], 's': 7, 'again': True}]
+        ea += [{'do': 'expect', 'that': 'use:wheel.spent', 'gt': 0, 'why': 'a spin costs points'},
+               {'do': 'expect', 'that': 'use:wheel.weapons1', 'gt': '@use:wheel.weapons0', 'why': 'the wheel gives a weapon (spin, then take it)'}]
+        a.append({'do': 'ents', 'name': 'wheels', 'key': 'script_noteworthy', 'value': 'magic_wheel'})
+        ea.append({'do': 'expect', 'that': 'ents:wheels.n', 'ge': len(wheels), 'why': 'every wheel position is a stock wheel struct'})
+    if trap:
+        bx = trap['box']
+        mid = [round((bx[0] + bx[3]) / 2.0), round((bx[1] + bx[4]) / 2.0), bx[2]]
+        a += [{'do': 'spawn', 'tag': 'pit', 'at': mid, 'count': 4}, {'do': 'mark', 'name': 'trap_before'},
+              {'do': 'use', 'name': 'trap', 'ent': 'iwz_trap_third_rail_use', 'near': trap['origin'], 's': 3},
+              {'do': 'mark', 'name': 'trap_after'}, {'do': 'kill'}]
+        ea += [{'do': 'expect', 'that': 'trap_before.alive', 'ge': 1, 'why': 'zombies stand in the track pit'},
+               {'do': 'expect', 'that': 'trap_after.alive', 'eq': 0, 'why': 'the Third Rail kills every zombie in the pit'},
+               {'do': 'expect', 'that': 'use:trap.spent', 'eq': 750, 'why': 'the trap costs 750'}]
+    a.append({'do': 'state', 'name': 'end_systems'})
+    plans = [{'schema': 'iw7.gamelab-plan/1', 'name': '%s_w1b_systems' % mapname, 'map': mapname,
+              'about': 'W1b: power, perks, the wheel, the Third Rail trap and the special-enemy structs, used through the stock interaction code (headless).',
+              'steps': a + ea}]
+    b, eb = list(head), []
+    for k, w in enumerate(walls):
+        nm = ('wb%02d_%s' % (k, w['zone']))[:40]
+        b += [{'do': 'take', 'give': start_weapon}, {'do': 'use', 'name': nm, 'kind': w['kind'], 'near': w['origin'], 's': 2}]
+        eb.append({'do': 'expect', 'that': 'use:%s.has' % nm, 'eq': 1, 'why': 'the wall weapon in %s gives %s' % (w['zone'], w['kind'])})
+        if w.get('price'):
+            eb.append({'do': 'expect', 'that': 'use:%s.spent' % nm, 'eq': int(w['price']), 'why': 'it costs the price of its place (%d)' % w['price']})
+    plans.append({'schema': 'iw7.gamelab-plan/1', 'name': '%s_w1b_walls' % mapname, 'map': mapname,
+                  'about': 'W1b: every wall weapon bought through the stock interaction code at the price of its place (headless).',
+                  'steps': b + eb})
+    c = [{'do': 'ignore', 'on': True}, {'do': 'state', 'name': 'r_start'}, {'do': 'rounds', 'name': 'r', 'to': 7, 's': 380}, {'do': 'state', 'name': 'r_end'}]
+    ec = [{'do': 'expect', 'that': 'rounds:r.advanced', 'ge': 5, 'why': 'rounds advance with the stock spawning'},
+          {'do': 'expect', 'that': 'rounds:r.growth', 'le': 40, 'why': 'entities are cleaned up between rounds'}]
+    plans.append({'schema': 'iw7.gamelab-plan/1', 'name': '%s_w1b_rounds' % mapname, 'map': mapname,
+                  'about': 'W1b: rounds 1 to 7 with the stock spawning from the start zone; the bot kills what spawns (headless).',
+                  'steps': c + ec})
+    return plans
+
+
 def pools(src, tpl):
     """what the emit takes from the template's finite pools, and the entity count"""
     import re
@@ -1678,7 +1922,44 @@ def main(argv=None):
     p.add_argument('--count', type=int, default=3); p.add_argument('--chase', type=int, default=45)
     p.add_argument('--no-player', action='store_true', help='zombie cases only (no player walks)')
     p = sub.add_parser('labreport'); p.add_argument('src'); p.add_argument('runs', nargs='+'); p.add_argument('--json')
+    p = sub.add_parser('walkplan', help='a client plan: a real walk along three routes (calibrates the walking-time table)')
+    p.add_argument('src'); p.add_argument('out'); p.add_argument('--pairs', help='a,b;c,d (zone ids)')
+    p = sub.add_parser('walkreport', help='the measured walking speed from a walk plan run')
+    p.add_argument('src'); p.add_argument('runs', nargs='+'); p.add_argument('--pairs'); p.add_argument('--json')
+    p = sub.add_parser('w1bplans', help='headless plans for the systems: power, perks, wall weapons, wheel, trap, rounds')
+    p.add_argument('src'); p.add_argument('out'); p.add_argument('--start-weapon', default='iw7_g18_zm')
+    p = sub.add_parser('stressprops', help='ST1: a copy of the scene with n stock static props spread by floor area')
+    p.add_argument('scene'); p.add_argument('kits'); p.add_argument('n', type=int); p.add_argument('out_scene')
+    p.add_argument('--seed', type=int, default=1)
     a = ap.parse_args(argv)
+    if a.cmd == 'stressprops':
+        props, counts = stress_props(a.scene, a.kits, a.n, a.seed)
+        base = os.path.dirname(os.path.abspath(a.scene))
+        d = json.load(open(a.scene, encoding='utf-8'))
+        pf = os.path.splitext(os.path.abspath(a.out_scene))[0] + '_props.json'
+        with open(pf, 'w', encoding='utf-8', newline=chr(10)) as f:
+            json.dump(props, f)
+        d['props_files'] = [os.path.join(base, x) for x in d.get('props_files', [])] + [pf]
+        json.dump(d, open(a.out_scene, 'w', encoding='utf-8'), indent=1)
+        print('stress props: %d placed (%s) -> %s' % (sum(counts.values()), ', '.join('%s %d' % kv for kv in counts.items()), a.out_scene))
+        return 0
+    pairs =[tuple(x.split(',')) for x in a.pairs.split(';')] if getattr(a, 'pairs', None) else None
+    if a.cmd in ('walkplan', 'w1bplans'):
+        os.makedirs(a.out, exist_ok=True)
+        pls = [walk_plan(a.src, None, pairs)] if a.cmd == 'walkplan' else w1b_plans(a.src, None, a.start_weapon)
+        for pl in pls:
+            path = os.path.join(a.out, pl['name'] + '.json')
+            json.dump(pl, open(path, 'w'), indent=1)
+            print('%s: %d steps' % (path, len(pl['steps'])))
+        return 0
+    if a.cmd == 'walkreport':
+        r = walk_report(a.src, a.runs, pairs)
+        for row in r['routes']:
+            print(json.dumps(row))
+        print('walking speed along the path %s u/s; navigation length / time %s u/s' % (r['walk_speed'], r['nav_speed']))
+        if a.json:
+            json.dump(r, open(a.json, 'w'), indent=1)
+        return 0 if r['walk_speed'] else 1
     if a.cmd == 'check':
         sc = Scene.load(a.scene)
         res = check_scene(sc)
