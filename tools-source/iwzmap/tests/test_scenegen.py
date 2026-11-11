@@ -193,7 +193,7 @@ class EmitTests(unittest.TestCase):
         plans = sg.lab_plans(self.out, per_plan=3)
         self.assertEqual(plans[0]['name'], 'cp_test_w1a_survey')
         expects = [st for pl in plans for st in pl['steps'] if st['do'] == 'expect']
-        self.assertEqual(len(expects), 4)
+        self.assertEqual(len(expects), 4 * 3)      # per case: zombies arrive, the player walks forward and back
         tags = [st['tag'] for pl in plans for st in pl['steps'] if st['do'] == 'spawn']
         self.assertTrue(all(t.replace('_', '').isalnum() and t == t.lower() for t in tags), tags)
 
