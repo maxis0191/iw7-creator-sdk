@@ -47,16 +47,17 @@ class ModuleTables(unittest.TestCase):
     def test_emit_fills_every_module(self):
         with tempfile.TemporaryDirectory() as d:
             mods = sz_modules.emit(d, MARKERS, VOLS, 'cp_iwz')
-            self.assertEqual(mods, ['post', 'quest'])
+            self.assertEqual(mods, ['cap', 'post', 'quest'])
             for n in mods:
                 with open(os.path.join(d, 'cp_iwz_%s.gsc' % n), encoding='utf-8') as f:
                     src = f.read()
                 self.assertNotIn('//@MARKERS@', src)
                 self.assertNotIn('//@VOLUMES@', src)
-                self.assertIn('"terminus_arrival"', src)
+                if n != 'cap':                                    # the cap module places nothing: no tables
+                    self.assertIn('"terminus_arrival"', src)
                 # self-contained: no call into another module or the level script by path
                 self.assertNotIn('scripts\\cp\\maps\\', src)
-            self.assertEqual(sz_modules.calls(mods, 'cp_iwz')[1], '    level thread scripts\\cp\\maps\\cp_iwz\\cp_iwz_quest::init();')
+            self.assertEqual(sz_modules.calls(mods, 'cp_iwz')[2], '    level thread scripts\\cp\\maps\\cp_iwz\\cp_iwz_quest::init();')
 
 
 class Ring(unittest.TestCase):

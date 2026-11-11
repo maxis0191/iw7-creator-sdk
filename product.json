@@ -541,7 +541,8 @@
     "tools-source/iwzmap/ff_compare.py",
     "tools-source/iwzmap/tests/test_ff_compare.py",
     "tools-source/iwzmap/bake/New-BakeEnv.ps1",
-    "tools-source/iwzmap/bake/requirements.txt"
+    "tools-source/iwzmap/bake/requirements.txt",
+    "tools-source/iwzmap/modules/cap.gsc"
   ],
   "dependencies": [
     {
