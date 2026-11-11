@@ -16,7 +16,8 @@ init()
 {
     level.coop_weapontable = "cp/cp_iwz_weapontable.csv";       // the map's table: stock rows + EXACT CHANGE (magic upgrade)
     precacheitem( "iw7_exactchange_zm" );
-    precachemodel( "zmb_coin_space" );                            // token stand-in model (stock Spaceland coin): placeholder
+    precachemodel( "zmb_coin_space" );                            // token stand-in model (stock Spaceland coin): PLACEHOLDER
+    level._effect["iwz_ec_coins"] = loadfx( "vfx/iw7/core/zombie/vfx_zmb_money_cash_imp_exp.vfx" );   // coin spray on a hit: stock cash burst, PLACEHOLDER
     level.iwz_ec_fare = 30;
     level.iwz_ec_tokens = [];
     level.iwz_ec_prev_damage = level.onzombiedamage_func;
@@ -206,6 +207,8 @@ iwz_ec_damage( inflictor, attacker, damage, flags, mod, weapon, point, dir, hitl
     if ( special )
         rated = int( min( rated, 2000 ) );
     kills = isdefined( self.health ) && rated >= self.health;
+    if ( isdefined( point ) && index == 1 )
+        playfx( level._effect["iwz_ec_coins"], point );
     print( "[IWZ wonder] HIT player=" + attacker getentitynumber() + " victim=" + self getentitynumber() + " index=" + index + " head=" + head + " up=" + up + " special=" + special + " rated=" + rated + " health=" + self.health + " kill=" + kills );
     if ( kills )
     {
