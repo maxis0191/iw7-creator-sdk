@@ -1526,10 +1526,22 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45, player=True):
             continue
         name, pts = c.split('=')
         p = [[float(v) for v in q.split(',')] for q in pts.split('/')]
+        if zone_at(p[0]) not in ground and zone_at(p[-1]) in ground:
+            p = p[::-1]
         cases.append((name, p[0], p[-1], p))
     lay = json.load(open(os.path.join(src, 'layout.json')))
     mapname = mapname or lay.get('map', 'cp_iwz')
     start = lay['starts'][0]
+    # the plan's spawn step takes the nearest real spawner and places its zombies; a ceiling spawner's drop animation
+    # then still runs and takes them through the floor (11 Nov 2026, the Staff stair). A case starts on the side whose
+    # zone has ground spawners.
+    ground = {s_['zone'] for s_ in lay.get('spawners', []) if s_.get('kind') == 'ground'}
+
+    def zone_at(p_):
+        for zn, zd in lay['zones'].items():
+            if any(b[0] <= p_[0] <= b[2] and b[1] <= p_[1] <= b[3] for b in zd['boxes']):
+                return zn
+        return None
     try:
         import iwz_emitcheck as EC
         nav = EC.Emit.load(src).nav
