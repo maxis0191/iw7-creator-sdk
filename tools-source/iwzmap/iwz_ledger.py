@@ -1,7 +1,7 @@
 """Entity and template-pool ledger of a generated IW7 map source (TF8). Seconds, no game, no build.
 
   python -I iwz_ledger.py count <src> [--template <stock cp_zmb dump>] [--json <out>]
-  python -I iwz_ledger.py check <src> --template <stock cp_zmb dump> [--ceiling 1800] [--json <out>]
+  python -I iwz_ledger.py check <src> --template <stock cp_zmb dump> [--ceiling 1800] [--live <run log>] [--json <out>]
   python -I iwz_ledger.py compiled <compile log> [--json <out>]
 
 <src> is a generator output folder (ents.txt, triggers.txt, lights.txt, probes.txt, smodels.txt, scriptables.txt).
@@ -134,6 +134,14 @@ def ledger(src, tdump=None, ceiling=1800):
     return out
 
 
+def live(log):
+    """Entity census lines of a gamelab run (GL ENTS name=.. key=* .. n=..): what the running map really holds."""
+    out = {}
+    for m in re.finditer(r'GL ENTS i=\d+ name=(\S+) key=(\S+) value=(\S+) n=(\d+) ents=(\d+) structs=(\d+)', open(log, encoding='utf-8', errors='replace').read()):
+        out[m.group(1)] = {'key': m.group(2), 'value': m.group(3), 'n': int(m.group(4)), 'ents': int(m.group(5)), 'structs': int(m.group(6))}
+    return out
+
+
 def compiled(log):
     """What the compiler really did with the pools (read from an iwzcompile log)."""
     text = open(log, encoding='utf-8', errors='replace').read()
@@ -159,6 +167,9 @@ def show(o):
         print('entities: %d in the entity list (%d structs not counted), %d declared at runtime, total %d of ceiling %d (engine %d)' % (
             e['entity_list'], e['structs'], e['runtime'], e['total'], e['ceiling'], e['engine']))
         print('  by class: ' + ', '.join('%s %d' % kv for kv in e['by_class'].items() if kv[0] not in STRUCTS))
+        if 'live_total' in e:
+            print('  live census: %d entities in the running map, so %d come from scripts, players and the engine at that moment' % (
+                e['live_total'], e['live_runtime_share']))
         for name, p in o['pools'].items():
             cap = p.get('capacity')
             print('pool %-15s used %5d of %s%s' % (name, p['used'], '-' if cap is None else cap, ('  (' + p['note'] + ')') if p.get('note') else ''))
@@ -176,12 +187,20 @@ def main():
     for n in ('count', 'check'):
         p = sub.add_parser(n); p.add_argument('src'); p.add_argument('--template', required=(n == 'check'))
         p.add_argument('--ceiling', type=int, default=1800); p.add_argument('--json')
+        p.add_argument('--live', help="a gamelab run's client.stdout.log with an `ents` step that counts every entity")
     c = sub.add_parser('compiled'); c.add_argument('log'); c.add_argument('--json')
     a = ap.parse_args()
     if a.cmd == 'compiled':
         o = compiled(a.log)
     else:
         o = ledger(a.src, a.template, a.ceiling)
+        if a.live:
+            census = live(a.live)
+            whole = next((c for c in census.values() if c['key'] == '*'), None)
+            o['entities']['live'] = census
+            if whole:
+                o['entities']['live_total'] = whole['ents']
+                o['entities']['live_runtime_share'] = whole['ents'] - o['entities']['entity_list']
     if a.json:
         json.dump(o, open(a.json, 'w'), indent=1)
     show(o)

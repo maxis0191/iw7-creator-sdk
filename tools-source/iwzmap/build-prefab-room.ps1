@@ -11,6 +11,7 @@ param(
   [string]$Owner='IWZ prefab room build',
   [string]$ZoneBuildExe='',                      # another zonetool.exe for the zone step (default: the same binary)
   [switch]$ReuseCompile,                         # keep the compile output already in <work>\dump\<map> (same -Src)
+  [switch]$Incremental,                          # keep the stock links of the previous assembly (assemble.py --incremental)
   [switch]$CompileOnly)
 # Prefab Room build: iwzcompile (generated visibility tome) -> assemble -> zone check -> buildzone. Every ZoneTool run takes
 # the machine-wide build reservation through zt.ps1 (which waits for it; nothing is retried). Times go to <UmOut>.build.json.
@@ -36,8 +37,9 @@ if(($c -join "`n") -notmatch 'iwzmap: wrote'){ $c | Select-Object -Last 25; thro
 if($CompileOnly){ return }
 if($ZoneBuildExe){ Copy-Item -LiteralPath $ZoneBuildExe -Destination "$W\zonetool.exe" -Force }
 $t=Get-Date
-if(Test-Path "$W\zonetool\$Map"){ Remove-Item -LiteralPath "$W\zonetool\$Map" -Recurse -Force }
-python -I "$S\assemble.py" $W $Map "$Src\$Map.gsc" "$D\patch_cp_zmb" "$D\techsets_cp_zmb" "$D\techsets_global_cp" "$D\techsets_global" "$D\cp_zmb" | Select-Object -Last 2
+$inc=@()
+if($Incremental){ $inc=@('--incremental') } elseif(Test-Path "$W\zonetool\$Map"){ Remove-Item -LiteralPath "$W\zonetool\$Map" -Recurse -Force }
+python -I "$S\assemble.py" $W $Map "$Src\$Map.gsc" "$D\patch_cp_zmb" "$D\techsets_cp_zmb" "$D\techsets_global_cp" "$D\techsets_global" "$D\cp_zmb" @inc | Select-Object -Last 2
 if($LASTEXITCODE){ throw 'assemble failed' }
 $null = New-Item -ItemType Directory -Force "$W\zonetool\$Map\techsets\ps"
 if(!(Test-Path "$W\zonetool\$Map\techsets\ps\null.hlsl.cso")){ [IO.File]::WriteAllBytes("$W\zonetool\$Map\techsets\ps\null.hlsl.cso",[byte[]]@()) }
