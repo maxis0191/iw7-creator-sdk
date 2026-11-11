@@ -410,9 +410,16 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
     imgA, imgB, imgD, imgS = dilate(imgA, valid), dilate(imgB, valid), dilate(imgD, valid), dilate(imgS, valid)
 
     os.makedirs(out, exist_ok=True)
+    # the baked source is the whole source: files and folders (modules/ holds the game-script modules the level
+    # script starts; a copy without it builds a map whose level script fails to link: ShutdownGame at load, W2 build b)
     for f in os.listdir(src):
-        if os.path.isfile(os.path.join(src, f)) and os.path.abspath(src) != os.path.abspath(out):
-            shutil.copyfile(os.path.join(src, f), os.path.join(out, f))
+        p = os.path.join(src, f)
+        if os.path.abspath(src) == os.path.abspath(out) or f in ('lightmap', 'bake_tmp'):
+            continue
+        if os.path.isfile(p):
+            shutil.copyfile(p, os.path.join(out, f))
+        elif os.path.isdir(p):
+            shutil.copytree(p, os.path.join(out, f), dirs_exist_ok=True)
     lmdir = os.path.join(out, 'lightmap'); os.makedirs(lmdir, exist_ok=True)
     work = os.path.join(out, 'bake_tmp')
     t0 = time.time()
