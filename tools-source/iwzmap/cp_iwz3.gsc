@@ -58,6 +58,7 @@ main()
     level thread iwz_door_dressing();
     level thread iwz_hide_door_blockers();
     level thread iwz_report();
+    //@CROWD@
     //@AUDIO@
 }
 
