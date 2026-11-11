@@ -1284,6 +1284,13 @@ class Emitter:
         prices = ['    table[table.size] = iwz_price( %s, "%s", %d );' % (self.fmt3(i['origin']), i['kind'], int(i['price']))
                   for i in self.layout['interactions'] if i.get('groupname') == 'wall_buy' and i.get('price')]
         gsc = gsc.replace('//@PRICES@', '\n'.join(prices).lstrip())
+        # game-script modules (modules/*.gsc: Q1 quest, T1 Capsule Post...): tables filled, started by the level script
+        import sz_modules
+        mapname = self.sc.map
+        mods = sz_modules.emit(os.path.join(self.out, 'modules'), self.layout['markers'],
+                               [{'name': v['name'], 'zone': v['zone'], 'box': v['box']} for v in self.vols], mapname)
+        gsc = gsc.replace('//@MODULES@', '\n'.join(sz_modules.calls(mods, mapname)).lstrip())
+        self.layout['modules'] = mods
         self.layout['zone_links'] = links
         open(os.path.join(self.out, 'cp_iwz.gsc'), 'w', newline='\n').write(gsc)
 
@@ -1314,6 +1321,8 @@ class Emitter:
         col = [tuple(tuple(c * mg.HAVOK_SCALE for c in p) for p in t) for t in self.B.mesh.col]
         blob, info = self.hk.encode(col, os.path.join(self.tpl, 'maps', 'cp', 'cp_zmb.d3dbsp.colmap.hkx'), tag=TAG_SOLID,
                                     max_tris=int(os.environ.get('IWZ_MAX_TRIS', '127')),
+                                    # sections at most 1,024 units wide (IWZ_MAX_SECTION, 0 = no limit): hkcm_write.split_sections
+                                    max_extent=(float(os.environ.get('IWZ_MAX_SECTION', '1024')) * mg.HAVOK_SCALE) or None,
                                     tags=[self.B.mesh.col_tag.get(i, TAG_SOLID) for i in range(len(col))])
         open(os.path.join(self.out, 'colmap.hkx'), 'wb').write(blob)
         amb = ['ambient 0.30 0.30 0.32 0.50']
