@@ -233,7 +233,15 @@ class Scene:
         self.d, self.path = d, path
         self.map = d.get('map', 'cp_iwz')
         self.zones = collections.OrderedDict()
+        # props kept in their own files ({zone: [props]}, next to the scene): added to the zones' own props
+        extra = collections.defaultdict(list)
+        for pf in d.get('props_files', []):
+            with open(os.path.join(os.path.dirname(os.path.abspath(path)) if path else '.', pf), encoding='utf-8') as f:
+                for zid, items in json.load(f).items():
+                    extra[zid] += items
         for zd in d['zones']:
+            if extra.get(zd['id']):
+                zd = dict(zd, props=list(zd.get('props', [])) + extra[zd['id']])
             z = Zone(zd)
             if z.id in self.zones:
                 raise SceneError('zone %s defined twice' % z.id)
@@ -1183,7 +1191,11 @@ class Emitter:
             if kind == 'perk':
                 org, yaw = self.place(z, it, 40)
                 name = 'perk_machine_' + it['perk']
-                self.istruct(name, org, yaw, z.id, parameters='requires_power')
+                # 'powered': on from match start, like a stock area generator that is on (the Cordon's Up 'N Atoms)
+                if it.get('powered'):
+                    self.istruct(name, org, yaw, z.id)
+                else:
+                    self.istruct(name, org, yaw, z.id, parameters='requires_power')
                 self.relocations.append('%s 0 %g %g %g %g' % (self.PERK_SCRIPTABLE[it['perk']], org[0], org[1], org[2], yaw))
             elif kind == 'wall_buy':
                 org, yaw = self.place(z, it, 8)
@@ -1453,7 +1465,58 @@ def test_args(src, inset=20.0, depth=96.0):
     return {'climbs': '|'.join(climbs), 'routes': '|'.join(routes), 'climb_cases': len(climbs), 'route_cases': len(routes)}
 
 
-def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
+def import_props(scene_path, old_layout, mapping, exclude=r'rubble|plank|barricade|debris', clear=96.0):
+    """props for kept rooms from an older generated map's layout.json decor: compiled static models of zone A moved into
+    zone B (mapping 'old=new[:dx,dy,dz]'). A prop is kept when it lands on a floor of its new zone at the height it had,
+    clear of every opening and flight by `clear`, and its name does not match `exclude`. -> {zone: [props]}, report"""
+    import re
+    sc = Scene.load(scene_path)
+    ops = [sc.locate(o) for o in sc.openings()]
+    lay = json.load(open(old_layout, encoding='utf-8'))
+    maps = {}
+    for m in mapping:
+        old, rest = m.split('=')
+        new, _, off = rest.partition(':')
+        maps[old] = (new, tuple(float(v) for v in off.split(',')) if off else (0.0, 0.0, 0.0))
+    out, rep = collections.defaultdict(list), collections.Counter()
+    for d in lay.get('decor', []):
+        if d.get('zone') not in maps:
+            continue
+        news, (dx, dy, dz) = maps[d['zone']]
+        if not d.get('static') or re.search(exclude, d['model']):
+            rep['skipped: not static or excluded'] += 1
+            continue
+        x, y, oz = d['origin'][0] + dx, d['origin'][1] + dy, d['origin'][2] + dz
+        new = next((n for n in news.split('|') if sc.zones[n].floor_at(x, y) is not None), news.split('|')[0])
+        z = sc.zones[new]
+        fz = z.floor_at(x, y)
+        if fz is None or any(f.rect[0] - clear <= x <= f.rect[2] + clear and f.rect[1] - clear <= y <= f.rect[3] + clear for f in z.flights):
+            rep['skipped: off a floor of the zone or on a flight'] += 1
+            continue
+        if abs(fz - oz) > 24 and abs(fz - (oz - dz)) > 24:
+            rep['skipped: floor height differs'] += 1
+            continue
+        near = False
+        for o in ops:
+            if new not in o['zones']:
+                continue
+            p = o['planes'][new]
+            u, v = (x, y) if o['axis'] == 'x' else (y, x)
+            if o['span'][0] - clear <= u <= o['span'][1] + clear and abs(v - p) <= clear + 48:
+                near = True
+        if near:
+            rep['skipped: in front of an opening'] += 1
+            continue
+        pr = {'model': d['model'], 'at': [round(x, 2), round(y, 2)], 'z': round(oz, 2), 'yaw': d.get('yaw', 0),
+              'pitch': d.get('pitch', 0), 'roll': d.get('roll', 0), 'static': True, 'from': d['zone']}
+        if d.get('clip'):
+            pr['clip'] = d['clip']
+        out[new].append(pr)
+        rep['kept'] += 1
+    return dict(out), dict(rep)
+
+
+def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45, player=True):
     """headless gamelab plans (iw7-paris-server ops/gamelab/Invoke-GameLabHeadless.ps1 -UsermapDir) from an emit:
     doors opened, then for every flight a zombie climb up and down (zombies placed at the foot or the head, the bot at
     the other end) and for every door and link a zombie crossing (zombies placed in one zone, the bot in the other);
@@ -1467,10 +1530,20 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
             continue
         name, pts = c.split('=')
         p = [[float(v) for v in q.split(',')] for q in pts.split('/')]
-        cases.append((name, p[0], p[-1]))
+        cases.append((name, p[0], p[-1], p))
     lay = json.load(open(os.path.join(src, 'layout.json')))
     mapname = mapname or lay.get('map', 'cp_iwz')
     start = lay['starts'][0]
+    # the plan's spawn step takes the nearest real spawner and places its zombies; a ceiling spawner's drop animation
+    # then still runs and takes them through the floor (11 Nov 2026, the Staff stair). A case starts on the side whose
+    # zone has ground spawners.
+    ground = {s_['zone'] for s_ in lay.get('spawners', []) if s_.get('kind') == 'ground'}
+
+    def zone_at(p_):
+        for zn, zd in lay['zones'].items():
+            if any(b[0] <= p_[0] <= b[2] and b[1] <= p_[1] <= b[3] for b in zd['boxes']):
+                return zn
+        return None
     try:
         import iwz_emitcheck as EC
         nav = EC.Emit.load(src).nav
@@ -1483,7 +1556,9 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
     for k in range(0, len(cases), per_plan):
         steps = [{'do': 'waves', 'on': False}, {'do': 'doors'}]
         expects = []
-        for name, a, b in cases[k:k + per_plan]:
+        for name, a, b, pts in cases[k:k + per_plan]:
+            if zone_at(a) not in ground and zone_at(b) in ground:
+                a, b, pts = b, a, pts[::-1]
             tag = re.sub(r'[^a-z0-9_]', '_', name.lower())[:40]
             # round-1 zombies walk about 34 units a second (measured, W1a runs hl-b, 11 Nov 2026) and start after
             # about 3 s: the chase gets the navigation length at 20 u/s plus 10 s, at least chase_s
@@ -1491,9 +1566,16 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
             if nav is not None:
                 ln, _p = nav.route(nav.nearest(*a), nav.nearest(*b))
             s = max(chase_s, int(math.ceil((ln or 0) / 20.0 + 10)))
+            if player:
+                # the player walks it both ways with player physics (gamelab move step), before the zombies come
+                steps += [{'do': 'kill'}, {'do': 'move', 'name': tag[:36] + '_fwd', 'path': pts},
+                          {'do': 'move', 'name': tag[:36] + '_bck', 'path': pts[::-1]}]
+                expects += [{'do': 'expect', 'that': 'move:%s_%s.reached' % (tag[:36], w), 'eq': len(pts) - 1,
+                             'why': 'the player walks %s %s' % (name, 'forward' if w == 'fwd' else 'back')} for w in ('fwd', 'bck')]
             steps += [{'do': 'kill'}, {'do': 'tp', 'at': b}, {'do': 'spawn', 'tag': tag, 'at': a, 'count': count},
                       {'do': 'chase', 'tag': tag, 's': s}, {'do': 'kill', 'tag': tag}]
-            expects.append({'do': 'expect', 'that': 'chase:%s.reached' % tag, 'eq': '@chase:%s.total' % tag,
+            # the chase also counts zombies of earlier cases that died there: the case needs as many arrivals as it spawned
+            expects.append({'do': 'expect', 'that': 'chase:%s.reached' % tag, 'ge': count,
                             'why': 'every zombie gets from %s to the player at %s (%s)' % (a, b, name)})
         plans.append({'schema': 'iw7.gamelab-plan/1', 'name': '%s_w1a_%d' % (mapname, len(plans)), 'map': mapname,
                       'about': 'Scene-generated map: zombie climbs on every flight and crossings of every door and link, '
@@ -1506,10 +1588,13 @@ def lab_report(src, runs):
     survey points per zone (which zones the navigation reaches from the start with every door open)"""
     import glob, re
     lay = json.load(open(os.path.join(src, 'layout.json')))
-    cases, verdicts, survey, made = {}, {}, None, {}
+    cases, verdicts, survey, made, moves = {}, {}, None, {}, {}
     for run in runs:
         for log in glob.glob(os.path.join(run, '**', 'client.stdout.log'), recursive=True) + glob.glob(os.path.join(run, '**', 'server.stdout.log'), recursive=True):
             for ln in open(log, encoding='utf-8', errors='replace'):
+                m = re.search(r'GL MOVE i=\d+ name=(\S+) legs=(\d+) reached=(\d+) result=(\S+)', ln)
+                if m:
+                    moves[m.group(1)] = (int(m.group(3)), int(m.group(2)), m.group(4))
                 m = re.search(r'GL SPAWN i=\d+ tag=(\S+) made=(\d+)', ln)
                 if m:
                     made[m.group(1)] = int(m.group(2))
@@ -1535,11 +1620,16 @@ def lab_report(src, runs):
     tag = lambda n: re.sub(r'[^a-z0-9_]', '_', n.lower())[:40]
     rows = [(n, cases.get(tag(n))) for n in names]
     ok = lambda c: bool(c) and c['reached'] >= (c.get('made') or c['total']) > 0
-    for _n, c in rows:
+    for n, c in rows:
         if c:
             c['pass'] = ok(c)
+            for w in ('fwd', 'bck'):
+                mv = moves.get(tag(n)[:36] + '_' + w)
+                if mv:
+                    c['player_' + w] = '%d/%d %s' % mv
     return {'cases': rows, 'passed': sum(1 for _n, c in rows if ok(c)),
             'run': sum(1 for _n, c in rows if c), 'expected': len(rows), 'verdicts': verdicts,
+            'player_walks': {'run': len(moves), 'reached': sum(1 for v in moves.values() if v[0] == v[1])},
             'survey': {'points': len(survey['points']) if survey else 0, 'per_zone': dict(per_zone),
                        'zones_missing': [z for z, zd in zones.items() if not zd.get('far') and not per_zone.get(z)] if survey else None}}
 
@@ -1582,8 +1672,11 @@ def main(argv=None):
     p.add_argument('--pairs', help='a,b;c,d (zone ids); default every pair')
     p = sub.add_parser('pools'); p.add_argument('src'); p.add_argument('template'); p.add_argument('--json')
     p = sub.add_parser('tests'); p.add_argument('src'); p.add_argument('--json')
+    p = sub.add_parser('importprops'); p.add_argument('scene'); p.add_argument('old_layout'); p.add_argument('mapping', nargs='+')
+    p.add_argument('--out', help='write {zone: [props]} (one prop a line); name it in the props_files of the scene')
     p = sub.add_parser('labplans'); p.add_argument('src'); p.add_argument('out'); p.add_argument('--per-plan', type=int, default=26)
     p.add_argument('--count', type=int, default=3); p.add_argument('--chase', type=int, default=45)
+    p.add_argument('--no-player', action='store_true', help='zombie cases only (no player walks)')
     p = sub.add_parser('labreport'); p.add_argument('src'); p.add_argument('runs', nargs='+'); p.add_argument('--json')
     a = ap.parse_args(argv)
     if a.cmd == 'check':
@@ -1624,20 +1717,27 @@ def main(argv=None):
     if a.cmd == 'labreport':
         r = lab_report(a.src, a.runs)
         for n, c in r['cases']:
-            print('CASE %-32s %s' % (n, 'not run' if not c else '%s %d/%d reached (spawned %s), died %d, %d ms' % ('PASS' if c['pass'] else 'FAIL', c['reached'], c['total'], c.get('made'), c['died'], c['ms'])))
+            print('CASE %-32s %s' % (n, 'not run' if not c else '%s %d/%d reached (spawned %s), died %d, %d ms; player %s / %s' % ('PASS' if c['pass'] else 'FAIL', c['reached'], c['total'], c.get('made'), c['died'], c['ms'], c.get('player_fwd', '-'), c.get('player_bck', '-'))))
         print('verdicts', r['verdicts'])
         print('survey points %d; per zone %s; zones not reached %s' % (r['survey']['points'], r['survey']['per_zone'], r['survey']['zones_missing']))
-        print('cases: %d expected, %d run, %d with every zombie arriving' % (r['expected'], r['run'], r['passed']))
+        print('cases: %d expected, %d run, %d with every zombie arriving; player walks %d, %d reached the end' % (r['expected'], r['run'], r['passed'], r['player_walks']['run'], r['player_walks']['reached']))
         if a.json:
             json.dump(r, open(a.json, 'w'), indent=1)
         return 0 if r['passed'] == r['expected'] else 1
     if a.cmd == 'labplans':
         os.makedirs(a.out, exist_ok=True)
         lay = json.load(open(os.path.join(a.src, 'layout.json')))
-        for pl in lab_plans(a.src, lay.get('map', 'cp_iwz'), a.per_plan, a.count, a.chase):
+        for pl in lab_plans(a.src, lay.get('map', 'cp_iwz'), a.per_plan, a.count, a.chase, not a.no_player):
             path = os.path.join(a.out, pl['name'] + '.json')
             json.dump(pl, open(path, 'w'), indent=1)
             print('%s: %d steps' % (path, len(pl['steps'])))
+        return 0
+    if a.cmd == 'importprops':
+        props, rep = import_props(a.scene, a.old_layout, a.mapping)
+        print(json.dumps(rep), {k: len(v) for k, v in props.items()})
+        if a.out:
+            with open(a.out, 'w', encoding='utf-8', newline=chr(10)) as f:
+                f.write('{' + chr(10) + (',' + chr(10)).join(' %s: [' % json.dumps(z) + chr(10) + (',' + chr(10)).join('  ' + json.dumps(p) for p in ps) + chr(10) + ' ]' for z, ps in props.items()) + chr(10) + '}' + chr(10))
         return 0
     if a.cmd == 'tests':
         r = test_args(a.src)

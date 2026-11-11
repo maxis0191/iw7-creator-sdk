@@ -124,6 +124,20 @@ class SceneRuleTests(unittest.TestCase):
             d['zones'][0]['props'] = [{'model': 'm', 'at': [5000, 5000]}]
         self.assertTrue(any('prop 0' in m for m in errors(scene(mut))))
 
+    def test_props_come_over_from_an_old_layout_only_where_they_stand(self):
+        tmp = tempfile.mkdtemp()
+        sp, lp = os.path.join(tmp, 's.json'), os.path.join(tmp, 'old.json')
+        json.dump(BASE, open(sp, 'w'))
+        decor = [{'zone': 'old', 'model': 'bench', 'origin': [200, 200, 0], 'yaw': 90, 'static': True},        # kept
+                 {'zone': 'old', 'model': 'rubble_pile', 'origin': [300, 300, 0], 'static': True},          # excluded name
+                 {'zone': 'old', 'model': 'crate', 'origin': [480, 700, 0], 'static': True},                # in front of D1
+                 {'zone': 'old', 'model': 'kit', 'origin': [250, 250, 0], 'static': False},                 # not static
+                 {'zone': 'old', 'model': 'lamp', 'origin': [5000, 5000, 0], 'static': True}]              # off the zone
+        json.dump({'decor': decor}, open(lp, 'w'))
+        props, rep = sg.import_props(sp, lp, ['old=hall'])
+        self.assertEqual([p['model'] for p in props['hall']], ['bench'])
+        self.assertEqual(rep['kept'], 1)
+
     def test_headroom_is_checked(self):
         def mut(d):
             d['zones'][0]['ceiling'] = 60
@@ -150,6 +164,10 @@ class EmitTests(unittest.TestCase):
         self.assertEqual(self.report['problems'], [])
         self.assertEqual(self.report['spawners'], 10)
 
+    def test_the_collision_holds_no_degenerate_triangle(self):
+        import iwz_emitcheck as ec
+        self.assertEqual(ec.check_degenerate(ec.Emit.load(self.out)), [])
+
     def test_navigation_lies_on_the_flight_sheet(self):
         r = sg.check_flights(self.out)
         self.assertEqual(list(r['flights']), ['low_steps'])
@@ -175,7 +193,7 @@ class EmitTests(unittest.TestCase):
         plans = sg.lab_plans(self.out, per_plan=3)
         self.assertEqual(plans[0]['name'], 'cp_test_w1a_survey')
         expects = [st for pl in plans for st in pl['steps'] if st['do'] == 'expect']
-        self.assertEqual(len(expects), 4)
+        self.assertEqual(len(expects), 4 * 3)      # per case: zombies arrive, the player walks forward and back
         tags = [st['tag'] for pl in plans for st in pl['steps'] if st['do'] == 'spawn']
         self.assertTrue(all(t.replace('_', '').isalnum() and t == t.lower() for t in tags), tags)
 
