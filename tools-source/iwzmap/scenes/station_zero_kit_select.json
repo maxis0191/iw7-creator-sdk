@@ -1,0 +1,4901 @@
+{
+ "schema": "iwz.station-zero-kit-select/1",
+ "note": "Hand-selected from the stock catalogue of the five shipped zombies maps; every name is checked by kit_lists.py.",
+ "zones": {
+  "cordon": {
+   "models": [
+    {
+     "name": "barrier_queue_post",
+     "role": "barrier slab"
+    },
+    {
+     "name": "barrier_pedestrian_01",
+     "role": "barrier slab"
+    },
+    {
+     "name": "barrier_bollard_concrete_group",
+     "role": "barrier slab"
+    },
+    {
+     "name": "barrier_bollard_rising_01",
+     "role": "barrier slab"
+    },
+    {
+     "name": "barrier_metal_scissor_01",
+     "role": "barrier slab"
+    },
+    {
+     "name": "barrier_yellow_post_01",
+     "role": "barrier slab"
+    },
+    {
+     "name": "barrier_airport_security_gate_01",
+     "role": "barrier slab"
+    },
+    {
+     "name": "ind_street_safety_water_barrier_wt",
+     "role": "barrier slab"
+    },
+    {
+     "name": "com_parking_block_white01",
+     "role": "barrier slab"
+    },
+    {
+     "name": "com_parking_block_yellow01",
+     "role": "barrier slab"
+    },
+    {
+     "name": "traffic_cone_sml_01",
+     "role": "traffic cone"
+    },
+    {
+     "name": "com_trafficcone01",
+     "role": "traffic cone"
+    },
+    {
+     "name": "det_traffic_cone_01",
+     "role": "traffic cone"
+    },
+    {
+     "name": "barricade_construction_sign_old_iw6",
+     "role": "street sign"
+    },
+    {
+     "name": "dontentersign",
+     "role": "street sign"
+    },
+    {
+     "name": "noparksign",
+     "role": "street sign"
+    },
+    {
+     "name": "towawaysign",
+     "role": "street sign"
+    },
+    {
+     "name": "stopsign01",
+     "role": "street sign"
+    },
+    {
+     "name": "com_floodlight_on",
+     "role": "floodlight"
+    },
+    {
+     "name": "com_floodlight",
+     "role": "floodlight"
+    },
+    {
+     "name": "ctl_light_spotlight_generator_on",
+     "role": "floodlight"
+    },
+    {
+     "name": "cp_town_studiolight_stand",
+     "role": "floodlight"
+    },
+    {
+     "name": "light_exterior_post_01_off",
+     "role": "floodlight"
+    },
+    {
+     "name": "globe_light_pole_01_on",
+     "role": "floodlight"
+    },
+    {
+     "name": "cp_town_cdc_tent_01_01",
+     "role": "decontamination tent"
+    },
+    {
+     "name": "cp_town_cdc_tent_01_02",
+     "role": "decontamination tent"
+    },
+    {
+     "name": "cp_town_cdc_tent_02_01",
+     "role": "decontamination tent"
+    },
+    {
+     "name": "cp_town_cdc_tent_03_02",
+     "role": "decontamination tent"
+    },
+    {
+     "name": "cp_town_cdc_tent_05",
+     "role": "decontamination tent"
+    },
+    {
+     "name": "cp_town_cdc_tent_06",
+     "role": "decontamination tent"
+    },
+    {
+     "name": "cp_town_cdc_tarp_01",
+     "role": "decontamination tent"
+    },
+    {
+     "name": "cp_town_cdc_tarp_02",
+     "role": "decontamination tent"
+    },
+    {
+     "name": "cp_town_cdc_tarp_04",
+     "role": "decontamination tent"
+    },
+    {
+     "name": "cp_town_cdc_warning_panel",
+     "role": "decontamination tent"
+    },
+    {
+     "name": "cp_town_cdc_tent_shade_01",
+     "role": "decontamination tent"
+    },
+    {
+     "name": "decor_titan_flapping_tarp_02",
+     "role": "torn tarp / canopy"
+    },
+    {
+     "name": "decor_titan_flapping_tarp_04",
+     "role": "torn tarp / canopy"
+    },
+    {
+     "name": "flat_tarp_01",
+     "role": "torn tarp / canopy"
+    },
+    {
+     "name": "plastic_tarp_cover_torn_blue_03",
+     "role": "torn tarp / canopy"
+    },
+    {
+     "name": "rolled_tarp",
+     "role": "torn tarp / canopy"
+    },
+    {
+     "name": "dns_fence_tarp_01",
+     "role": "torn tarp / canopy"
+    },
+    {
+     "name": "fence_tarp_draping_130x50",
+     "role": "torn tarp / canopy"
+    },
+    {
+     "name": "zom_machinery_generator_portable_01",
+     "role": "trailer generator"
+    },
+    {
+     "name": "machinery_generator_portable_01_dirty",
+     "role": "trailer generator"
+    },
+    {
+     "name": "dns_militarybase_generator",
+     "role": "trailer generator"
+    },
+    {
+     "name": "veh_civ_lnd_70s_police_sedan",
+     "role": "police car / bus"
+    },
+    {
+     "name": "veh_civ_lnd_80s_police",
+     "role": "police car / bus"
+    },
+    {
+     "name": "veh_civ_lnd_70s_bus",
+     "role": "police car / bus"
+    },
+    {
+     "name": "truck_pickup_iw6",
+     "role": "police car / bus"
+    },
+    {
+     "name": "cp_final_vehicle_police_sedan_des",
+     "role": "police car / bus"
+    },
+    {
+     "name": "cp_town_travel_trailer_ext_01",
+     "role": "police car / bus"
+    },
+    {
+     "name": "sign_clock_04",
+     "role": "street clock / lamp"
+    },
+    {
+     "name": "paris_street_lamp_freestanding_03",
+     "role": "street clock / lamp"
+    },
+    {
+     "name": "me_streetlightdual",
+     "role": "street clock / lamp"
+    },
+    {
+     "name": "cp_town_streetlight",
+     "role": "street clock / lamp"
+    },
+    {
+     "name": "p7_candle_01",
+     "role": "candles and flowers at the barrier"
+    },
+    {
+     "name": "p7_candle_02",
+     "role": "candles and flowers at the barrier"
+    },
+    {
+     "name": "p7_candle_tall",
+     "role": "candles and flowers at the barrier"
+    },
+    {
+     "name": "p7_candle_06_glass",
+     "role": "candles and flowers at the barrier"
+    },
+    {
+     "name": "iw7_foliage_flower_bouquet_jar_01",
+     "role": "candles and flowers at the barrier"
+    },
+    {
+     "name": "p7_foliage_flower_bouquet_jar",
+     "role": "candles and flowers at the barrier"
+    },
+    {
+     "name": "decor_church_candle_stand_01",
+     "role": "candles and flowers at the barrier"
+    },
+    {
+     "name": "dub_flower_vase_set_02",
+     "role": "candles and flowers at the barrier"
+    },
+    {
+     "name": "zmb_poster_coming_soon",
+     "role": "hoarding poster"
+    },
+    {
+     "name": "zmb_poster_frame_now_playing",
+     "role": "hoarding poster"
+    },
+    {
+     "name": "me_chainlink_fence_pole",
+     "role": "fence"
+    },
+    {
+     "name": "p7_spl_entrance_fence_chainlink_gate_01_left",
+     "role": "fence"
+    },
+    {
+     "name": "h1_chainlink_fence_concrete_base",
+     "role": "fence"
+    },
+    {
+     "name": "ls_fence_pole_01",
+     "role": "fence"
+    },
+    {
+     "name": "mil_sandbag_desert_long",
+     "role": "sandbags"
+    },
+    {
+     "name": "dns_sandbag01_singleflat_iw6",
+     "role": "sandbags"
+    },
+    {
+     "name": "antenna_rooftop01_iw6",
+     "role": "mast / dish"
+    },
+    {
+     "name": "misc_exterior_antenna_01",
+     "role": "mast / dish"
+    },
+    {
+     "name": "misc_exterior_antenna_02",
+     "role": "mast / dish"
+    },
+    {
+     "name": "saf_dish_small_01",
+     "role": "mast / dish"
+    },
+    {
+     "name": "equipment_industrial_satellite_dish_mobile_shelter_01",
+     "role": "mast / dish"
+    },
+    {
+     "name": "park_trash_can_red_01",
+     "role": "bins"
+    },
+    {
+     "name": "com_trashcan_metal",
+     "role": "bins"
+    },
+    {
+     "name": "com_trashbag2_black",
+     "role": "bins"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_vld_telephone_pole_01",
+     "role": "street light / telephone pole"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_final/amb/vfx_streets_smoke",
+     "role": "street smoke"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_final/amb/vfx_low_mist",
+     "role": "low mist"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_final/amb/vfx_dense_mist",
+     "role": "dense mist"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_candle_flame",
+     "role": "candle flame"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_traffic_light_flash",
+     "role": "traffic light flash"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_zb_carfire_a",
+     "role": "burning car"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_water_drips_splash_ch",
+     "role": "water drips splash"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_trash_drift_01",
+     "role": "trash drift"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mo/asphalt_flooring_01",
+     "role": "wet street"
+    },
+    {
+     "name": "mo/fac_concrete_sidewalk_01",
+     "role": "sidewalk"
+    },
+    {
+     "name": "mcopw/me_decal_water_puddle_reflection",
+     "role": "puddle decal"
+    },
+    {
+     "name": "mopw/concrete_wall_painted_01",
+     "role": "concrete wall"
+    },
+    {
+     "name": "mcopw/signage_sign_caution_stripe_rvl_01",
+     "role": "caution stripe"
+    },
+    {
+     "name": "m2opw/cp_town_cdc_tent_fabric_04",
+     "role": "tent fabric"
+    },
+    {
+     "name": "mcopw/dirt_stain_water_drips_01",
+     "role": "dirt run-off"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "news van with mast and open door",
+     "size": [
+      190,
+      80,
+      110
+     ],
+     "note": "only civilian cars, a bus and a trailer exist"
+    },
+    {
+     "object": "station entrance canopy sign \"STATION 0\"",
+     "size": [
+      400,
+      40,
+      120
+     ],
+     "note": "author as a lit sign; stock signs carry other names"
+    },
+    {
+     "object": "stencilled concrete slab \"CORDON\"",
+     "size": [
+      120,
+      30,
+      100
+     ],
+     "note": "stock barriers have no lettering; needs a custom decal material"
+    },
+    {
+     "object": "Lodestar hoist for the capsule post hatch",
+     "size": [
+      120,
+      120,
+      260
+     ],
+     "note": "no hoist model"
+    },
+    {
+     "object": "street clock stopped at 23:47",
+     "size": [
+      30,
+      30,
+      90
+     ],
+     "note": "stock clock is a wall dial only"
+    }
+   ]
+  },
+  "fare_hall": {
+   "models": [
+    {
+     "name": "park_turn_style_blue",
+     "role": "turnstile / gate"
+    },
+    {
+     "name": "cp_final_subway_turnstyle_arm",
+     "role": "turnstile / gate"
+    },
+    {
+     "name": "gate_roller_coaster_left",
+     "role": "turnstile / gate"
+    },
+    {
+     "name": "gate_roller_coaster_right",
+     "role": "turnstile / gate"
+    },
+    {
+     "name": "zmb_mobile_ticket_booth",
+     "role": "token booth / ticket window"
+    },
+    {
+     "name": "park_token_machine",
+     "role": "token booth / ticket window"
+    },
+    {
+     "name": "park_cash_register",
+     "role": "token booth / ticket window"
+    },
+    {
+     "name": "cp_final_theater_ticket_window_01",
+     "role": "token booth / ticket window"
+    },
+    {
+     "name": "p7_spl_ticket_booth_awning",
+     "role": "token booth / ticket window"
+    },
+    {
+     "name": "decor_ph_street_banner_flags_01",
+     "role": "bunting / streamers"
+    },
+    {
+     "name": "decor_ph_street_banner_flags_01_plain",
+     "role": "bunting / streamers"
+    },
+    {
+     "name": "decor_balloon_bunch_01",
+     "role": "bunting / streamers"
+    },
+    {
+     "name": "balloon_on_string_1_red",
+     "role": "bunting / streamers"
+    },
+    {
+     "name": "balloon_on_string_2_yellow",
+     "role": "bunting / streamers"
+    },
+    {
+     "name": "decor_venice_curtain_flag_red",
+     "role": "bunting / streamers"
+    },
+    {
+     "name": "seo_shop_awning_01_flag",
+     "role": "bunting / streamers"
+    },
+    {
+     "name": "furniture_park_bench_01_red",
+     "role": "bench"
+    },
+    {
+     "name": "furniture_park_bench_01_yellow",
+     "role": "bench"
+    },
+    {
+     "name": "furniture_bench_wood_01",
+     "role": "bench"
+    },
+    {
+     "name": "street_bench_long_iw6",
+     "role": "bench"
+    },
+    {
+     "name": "church_bench_fn_01",
+     "role": "bench"
+    },
+    {
+     "name": "furniture_park_table_01_aqua",
+     "role": "banquet table"
+    },
+    {
+     "name": "furniture_park_table_01_red",
+     "role": "banquet table"
+    },
+    {
+     "name": "com_folding_table",
+     "role": "banquet table"
+    },
+    {
+     "name": "furniture_mess_hall_table_01",
+     "role": "banquet table"
+    },
+    {
+     "name": "furniture_table_office_01",
+     "role": "banquet table"
+    },
+    {
+     "name": "ch_russian_table_cloth3",
+     "role": "banquet table"
+    },
+    {
+     "name": "com_restaurantchair_1",
+     "role": "fallen chair"
+    },
+    {
+     "name": "chair_folding_iw6",
+     "role": "fallen chair"
+    },
+    {
+     "name": "chair_folding_wood",
+     "role": "fallen chair"
+    },
+    {
+     "name": "chair_folding_iw6_folded",
+     "role": "fallen chair"
+    },
+    {
+     "name": "chair_dining_french_worn",
+     "role": "fallen chair"
+    },
+    {
+     "name": "furniture_restaurant_chair_01",
+     "role": "fallen chair"
+    },
+    {
+     "name": "chair_victorian_velvet_01_red",
+     "role": "fallen chair"
+    },
+    {
+     "name": "cp_disco_mic_stand_tall",
+     "role": "music stand / microphone"
+    },
+    {
+     "name": "cp_disco_mic_stand_short",
+     "role": "music stand / microphone"
+    },
+    {
+     "name": "antique_book_stand_01",
+     "role": "music stand / microphone"
+    },
+    {
+     "name": "misc_interior_guitar_01",
+     "role": "music stand / microphone"
+    },
+    {
+     "name": "zmb_dj_mic",
+     "role": "music stand / microphone"
+    },
+    {
+     "name": "p7_light_chandelier_vintage_02",
+     "role": "chandelier / lamp"
+    },
+    {
+     "name": "wall_sconce_01_iw6",
+     "role": "chandelier / lamp"
+    },
+    {
+     "name": "park_globe_light_01",
+     "role": "chandelier / lamp"
+    },
+    {
+     "name": "zmb_light_interior_hanging_ceiling_lamp_01",
+     "role": "chandelier / lamp"
+    },
+    {
+     "name": "cp_final_chandelier_d",
+     "role": "chandelier / lamp"
+    },
+    {
+     "name": "shop_pillar_01",
+     "role": "column"
+    },
+    {
+     "name": "shop_pillar_02",
+     "role": "column"
+    },
+    {
+     "name": "shop_pillar_03",
+     "role": "column"
+    },
+    {
+     "name": "signage_exit_sign_emergency",
+     "role": "signage"
+    },
+    {
+     "name": "signage_exit_sign_emergency_light",
+     "role": "signage"
+    },
+    {
+     "name": "cp_final_theater_sign_01",
+     "role": "signage"
+    },
+    {
+     "name": "decor_wall_clock_02",
+     "role": "wall clock"
+    },
+    {
+     "name": "clock_decor_interior_fn_01",
+     "role": "wall clock"
+    },
+    {
+     "name": "equipment_wall_mounted_phone_01_yellow",
+     "role": "pay phone"
+    },
+    {
+     "name": "cp_town_desk_phone_01_black",
+     "role": "pay phone"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_piano_bench_vintage_velvet_worn",
+     "role": "brass band instrument stand"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_dust_falling_med_ch",
+     "role": "falling dust"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_light_mist",
+     "role": "light haze"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_dust_falling_sm_ch",
+     "role": "dust in air"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/fah_marble_floor_01",
+     "role": "checkerboard marble floor"
+    },
+    {
+     "name": "mopw/fah_marble_floor_01_black",
+     "role": "black marble"
+    },
+    {
+     "name": "mopw/fah_marble_floor_01_black_ssr",
+     "role": "glossy black marble"
+    },
+    {
+     "name": "mo/plaster_wall_trim_gold",
+     "role": "gold trim"
+    },
+    {
+     "name": "mcopw/carpet_pattern_05_red",
+     "role": "red carpet"
+    },
+    {
+     "name": "mopw/beacon_lab_floor_tile_02_black",
+     "role": "white tile wall"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "split-flap departure board, six metres wide",
+     "size": [
+      600,
+      30,
+      200
+     ],
+     "note": "animated flaps need authored models; no stock board"
+    },
+    {
+     "object": "brass band music stands",
+     "size": [
+      25,
+      25,
+      110
+     ],
+     "note": "only microphone stands and a book stand exist"
+    },
+    {
+     "object": "ribbon across the fare gates",
+     "size": [
+      400,
+      4,
+      12
+     ],
+     "note": "a fabric strip: author as a flat model"
+    },
+    {
+     "object": "Announcer Booth window with ON AIR lamp",
+     "size": [
+      160,
+      10,
+      90
+     ],
+     "note": "author"
+    },
+    {
+     "object": "Lost Property window and grille",
+     "size": [
+      160,
+      30,
+      120
+     ],
+     "note": "author"
+    },
+    {
+     "object": "token booth with rounded glass and the Zero token",
+     "size": [
+      80,
+      60,
+      110
+     ],
+     "note": "only fairground ticket booths exist"
+    }
+   ]
+  },
+  "escalator_hall": {
+   "models": [
+    {
+     "name": "beacon_stairs_step_81",
+     "role": "stair kit"
+    },
+    {
+     "name": "zmb_underground_stairs_01",
+     "role": "stair kit"
+    },
+    {
+     "name": "barrier_spaceland_handrail_stair_01_left",
+     "role": "stair kit"
+    },
+    {
+     "name": "barrier_spaceland_handrail_stair_01_right",
+     "role": "stair kit"
+    },
+    {
+     "name": "cp_final_railing_01_stairs_32_complete_l",
+     "role": "stair kit"
+    },
+    {
+     "name": "cp_final_railing_01_stairs_32_complete_r",
+     "role": "stair kit"
+    },
+    {
+     "name": "equipment_industrial_stair_step_03",
+     "role": "stair kit"
+    },
+    {
+     "name": "barrier_handrail_single_01_silver",
+     "role": "handrail"
+    },
+    {
+     "name": "barrier_handrail_rounded_aluminum_64",
+     "role": "handrail"
+    },
+    {
+     "name": "barrier_handrail_rounded_aluminum_24",
+     "role": "handrail"
+    },
+    {
+     "name": "barrier_handrail_rounded_aluminum_32",
+     "role": "handrail"
+    },
+    {
+     "name": "barrier_handrail_128_blue",
+     "role": "handrail"
+    },
+    {
+     "name": "barrier_handrail_64_blue",
+     "role": "handrail"
+    },
+    {
+     "name": "barrier_handrail_end_01_blue",
+     "role": "handrail"
+    },
+    {
+     "name": "barrier_handrail_cap_01_silver",
+     "role": "handrail"
+    },
+    {
+     "name": "barrier_handrail_down_01",
+     "role": "handrail"
+    },
+    {
+     "name": "barrier_handrail_rounded_aluminum_corner_outside",
+     "role": "handrail"
+    },
+    {
+     "name": "light_box_01",
+     "role": "illuminated advertising box"
+    },
+    {
+     "name": "light_box_01_on",
+     "role": "illuminated advertising box"
+    },
+    {
+     "name": "greece_display_cases_11",
+     "role": "illuminated advertising box"
+    },
+    {
+     "name": "greece_display_cases_08",
+     "role": "illuminated advertising box"
+    },
+    {
+     "name": "bike_shop_board_display_01",
+     "role": "illuminated advertising box"
+    },
+    {
+     "name": "light_interior_ceiling_living_room_01_on",
+     "role": "ceiling light"
+    },
+    {
+     "name": "light_interior_frame_01_on",
+     "role": "ceiling light"
+    },
+    {
+     "name": "fixture_ceiling_light_01_on",
+     "role": "ceiling light"
+    },
+    {
+     "name": "light_interior_ceiling_spotlight_01_on",
+     "role": "ceiling light"
+    },
+    {
+     "name": "light_outdoorwall01_on",
+     "role": "ceiling light"
+    },
+    {
+     "name": "signage_exit_sign_emergency_only",
+     "role": "exit sign"
+    },
+    {
+     "name": "signage_exit_sign_emergency_on",
+     "role": "exit sign"
+    },
+    {
+     "name": "clk_electric_piping_tile",
+     "role": "wall tile panel"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_sta_pneumatic_tube_switch_lever",
+     "role": "pneumatic lever for the side stair door"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_dust_fall_tunnel",
+     "role": "dust in tunnel"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_dust_falling_sm_ch",
+     "role": "small dust"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_final/amb/vfx_flashing_red_01",
+     "role": "lamp flicker"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/metal_sdf_grating_stainless_steel_01",
+     "role": "stainless steel step"
+    },
+    {
+     "name": "mopw/metal_grating_panels_01",
+     "role": "grating"
+    },
+    {
+     "name": "mopw/beacon_lab_floor_tile_02_black",
+     "role": "dark tile"
+    },
+    {
+     "name": "mopw/concrete_tiles_01_trim",
+     "role": "concrete tile trim"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "escalator, dead, ribbed steel steps (one lane)",
+     "size": [
+      80,
+      700,
+      350
+     ],
+     "note": "no escalator model; build from steps, comb plate and balustrade"
+    },
+    {
+     "object": "escalator balustrade with glass and rubber handrail",
+     "size": [
+      10,
+      700,
+      100
+     ],
+     "note": "author"
+    },
+    {
+     "object": "tiled barrel soffit as stepped ceiling",
+     "size": [
+      600,
+      800,
+      60
+     ],
+     "note": "author"
+    },
+    {
+     "object": "advertising box with fake product art",
+     "size": [
+      60,
+      12,
+      120
+     ],
+     "note": "frame exists (light_box_01); the art is a custom texture"
+    },
+    {
+     "object": "locked side stair door with lit sign",
+     "size": [
+      40,
+      100,
+      230
+     ],
+     "note": "author"
+    }
+   ]
+  },
+  "arcade": {
+   "models": [
+    {
+     "name": "park_arcade_standing_02_off",
+     "role": "arcade cabinet"
+    },
+    {
+     "name": "park_arcade_standing_05_off",
+     "role": "arcade cabinet"
+    },
+    {
+     "name": "park_arcade_standing_08_off",
+     "role": "arcade cabinet"
+    },
+    {
+     "name": "park_arcade_standing_01_off",
+     "role": "arcade cabinet"
+    },
+    {
+     "name": "park_arcade_standing_09",
+     "role": "arcade cabinet"
+    },
+    {
+     "name": "park_arcade_standing_18",
+     "role": "arcade cabinet"
+    },
+    {
+     "name": "park_arcade_standing_19",
+     "role": "arcade cabinet"
+    },
+    {
+     "name": "park_arcade_table_top_01",
+     "role": "arcade cabinet"
+    },
+    {
+     "name": "roll_up_door_top_02",
+     "role": "shop shutter / awning"
+    },
+    {
+     "name": "arch_rollup_door_bottom",
+     "role": "shop shutter / awning"
+    },
+    {
+     "name": "arch_rollup_door_bottom_dmg",
+     "role": "shop shutter / awning"
+    },
+    {
+     "name": "cp_town_market_awning",
+     "role": "shop shutter / awning"
+    },
+    {
+     "name": "greece_awning_round_02",
+     "role": "shop shutter / awning"
+    },
+    {
+     "name": "light_exterior_neon_gasstation_01",
+     "role": "neon sign"
+    },
+    {
+     "name": "light_exterior_neon_gasstation_02",
+     "role": "neon sign"
+    },
+    {
+     "name": "light_exterior_neon_gasstation_03",
+     "role": "neon sign"
+    },
+    {
+     "name": "light_exterior_neon_gasstation_04",
+     "role": "neon sign"
+    },
+    {
+     "name": "neon_open_sign",
+     "role": "neon sign"
+    },
+    {
+     "name": "neon_open_sign_on_02",
+     "role": "neon sign"
+    },
+    {
+     "name": "sign_city_neon_diner_02",
+     "role": "neon sign"
+    },
+    {
+     "name": "cp_disco_neon_bar_sign_01",
+     "role": "neon sign"
+    },
+    {
+     "name": "cp_disco_neon_bar_sign_02",
+     "role": "neon sign"
+    },
+    {
+     "name": "cp_disco_neon_bar_sign_03",
+     "role": "neon sign"
+    },
+    {
+     "name": "cp_disco_peepshow_neon_sign",
+     "role": "neon sign"
+    },
+    {
+     "name": "shop_display_rack_01",
+     "role": "record / display rack"
+    },
+    {
+     "name": "shop_display_rack_02",
+     "role": "record / display rack"
+    },
+    {
+     "name": "shop_display_rack_03",
+     "role": "record / display rack"
+    },
+    {
+     "name": "furniture_rack_forms_iw6",
+     "role": "record / display rack"
+    },
+    {
+     "name": "cp_town_45_record_01",
+     "role": "record / display rack"
+    },
+    {
+     "name": "cp_town_45_record_02",
+     "role": "record / display rack"
+    },
+    {
+     "name": "cp_town_jukebox",
+     "role": "record / display rack"
+    },
+    {
+     "name": "equipment_old_computer",
+     "role": "copier / screen"
+    },
+    {
+     "name": "zmb_tv_crt_01",
+     "role": "copier / screen"
+    },
+    {
+     "name": "com_tv2_testpattern",
+     "role": "copier / screen"
+    },
+    {
+     "name": "park_soda_machine",
+     "role": "copier / screen"
+    },
+    {
+     "name": "soda_machine_zmb",
+     "role": "copier / screen"
+    },
+    {
+     "name": "cp_town_space_hero_photos_01",
+     "role": "photo booth corner"
+    },
+    {
+     "name": "cp_disco_street_telephone_booth",
+     "role": "photo booth corner"
+    },
+    {
+     "name": "com_janitor_bucket_mop_iw6",
+     "role": "floor polisher / cleaning"
+    },
+    {
+     "name": "bucket_plastic",
+     "role": "floor polisher / cleaning"
+    },
+    {
+     "name": "equipment_push_broom_01",
+     "role": "floor polisher / cleaning"
+    },
+    {
+     "name": "food_snacks_iw6_donutsstack01",
+     "role": "coffee and doughnuts"
+    },
+    {
+     "name": "misc_coffee_machine",
+     "role": "coffee and doughnuts"
+    },
+    {
+     "name": "ma_cup_stack",
+     "role": "coffee and doughnuts"
+    },
+    {
+     "name": "container_coffee_mug_01",
+     "role": "coffee and doughnuts"
+    },
+    {
+     "name": "stool_bar_padded_01_green",
+     "role": "stool"
+    },
+    {
+     "name": "chair_bar_stool_02",
+     "role": "stool"
+    },
+    {
+     "name": "furniture_lounge_bar_stool_01",
+     "role": "stool"
+    },
+    {
+     "name": "lab_desk_02",
+     "role": "counter"
+    },
+    {
+     "name": "cp_town_market_checkoutcounter",
+     "role": "counter"
+    },
+    {
+     "name": "p7_table_bar_modern_01_red",
+     "role": "counter"
+    },
+    {
+     "name": "ls_sign_sale_01",
+     "role": "sale card"
+    },
+    {
+     "name": "zmb_8_bit_price",
+     "role": "sale card"
+    },
+    {
+     "name": "trash_can3",
+     "role": "litter bin"
+    },
+    {
+     "name": "com_trashcan_metallid",
+     "role": "litter bin"
+    }
+   ],
+   "ported": [],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_zb_spark_a",
+     "role": "copier spark"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_light_mist",
+     "role": "stale haze"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_trash_flies",
+     "role": "flies over litter"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/carpet_office_01",
+     "role": "office carpet"
+    },
+    {
+     "name": "mcopw/cp_disco_velvet_pattern_01_red",
+     "role": "velvet pattern"
+    },
+    {
+     "name": "mo/cp_disco_neon_blue",
+     "role": "neon blue"
+    },
+    {
+     "name": "mo/cp_disco_neon_purple",
+     "role": "neon purple"
+    },
+    {
+     "name": "mopw/cp_disco_chrome_tile_01",
+     "role": "chrome tile"
+    },
+    {
+     "name": "mcopw/zmb_neon_yellow_off",
+     "role": "neon yellow (off)"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "photocopier with lid and flashing lamp",
+     "size": [
+      60,
+      90,
+      100
+     ],
+     "note": "only office computers exist"
+    },
+    {
+     "object": "blueprint machine",
+     "size": [
+      120,
+      70,
+      110
+     ],
+     "note": "author"
+    },
+    {
+     "object": "passport-photo booth with curtain",
+     "size": [
+      110,
+      110,
+      210
+     ],
+     "note": "phone booths only"
+    },
+    {
+     "object": "floor polisher",
+     "size": [
+      60,
+      60,
+      110
+     ],
+     "note": "author; mop and bucket exist"
+    },
+    {
+     "object": "shop front with half-raised shutter, per shop (5)",
+     "size": [
+      320,
+      20,
+      260
+     ],
+     "note": "shutters exist; shop fronts must be built from wall pieces"
+    },
+    {
+     "object": "hand-lettered sale cards",
+     "size": [
+      40,
+      2,
+      30
+     ],
+     "note": "author as decals"
+    }
+   ]
+  },
+  "shelter": {
+   "models": [
+    {
+     "name": "bed_mattress_bent02_iw6",
+     "role": "bunk / mattress"
+    },
+    {
+     "name": "p7_bed_mattress_barrack_made",
+     "role": "bunk / mattress"
+    },
+    {
+     "name": "p7_bed_mattress_barrack_made_v2",
+     "role": "bunk / mattress"
+    },
+    {
+     "name": "p7_bed_mattress_barrack_made_v3_dlc1",
+     "role": "bunk / mattress"
+    },
+    {
+     "name": "com_barrel_white_rust",
+     "role": "water drum"
+    },
+    {
+     "name": "com_barrel_tan_rust",
+     "role": "water drum"
+    },
+    {
+     "name": "com_barrel_green_rust",
+     "role": "water drum"
+    },
+    {
+     "name": "com_barrel_fire",
+     "role": "water drum"
+    },
+    {
+     "name": "equipment_oil_barrel_military_01_white",
+     "role": "water drum"
+    },
+    {
+     "name": "p7_barrel_vintage_wood",
+     "role": "water drum"
+    },
+    {
+     "name": "ammo_crate_01_dust",
+     "role": "crates and tins"
+    },
+    {
+     "name": "crate_wood_closed_iw6",
+     "role": "crates and tins"
+    },
+    {
+     "name": "milk_crate_red_iw6",
+     "role": "crates and tins"
+    },
+    {
+     "name": "p7_crate_wood_01_short",
+     "role": "crates and tins"
+    },
+    {
+     "name": "p7_crate_wood_01_tall",
+     "role": "crates and tins"
+    },
+    {
+     "name": "com_soup_can",
+     "role": "crates and tins"
+    },
+    {
+     "name": "com_cardboardbox02",
+     "role": "crates and tins"
+    },
+    {
+     "name": "com_cardboardbox03",
+     "role": "crates and tins"
+    },
+    {
+     "name": "p7_box_cardboard_a_closed",
+     "role": "crates and tins"
+    },
+    {
+     "name": "p7_box_cardboard_b_closed",
+     "role": "crates and tins"
+    },
+    {
+     "name": "p7_box_cardboard_c_closed",
+     "role": "crates and tins"
+    },
+    {
+     "name": "misc_wall_mounted_fan_01",
+     "role": "ventilator"
+    },
+    {
+     "name": "misc_wall_mounted_fan_04",
+     "role": "ventilator"
+    },
+    {
+     "name": "p7_duct_metal_square_vent",
+     "role": "ventilator"
+    },
+    {
+     "name": "com_roofvent1",
+     "role": "ventilator"
+    },
+    {
+     "name": "lockers_tall01_2x1_iw6",
+     "role": "supply locker"
+    },
+    {
+     "name": "lockers_tall01_1x1_door_iw6",
+     "role": "supply locker"
+    },
+    {
+     "name": "furniture_filing_cabinet",
+     "role": "supply locker"
+    },
+    {
+     "name": "com_dresser",
+     "role": "supply locker"
+    },
+    {
+     "name": "com_pan_metal",
+     "role": "half-eaten meal"
+    },
+    {
+     "name": "p7_pan_metal_sauce",
+     "role": "half-eaten meal"
+    },
+    {
+     "name": "p7_dinnerware_01_plate01",
+     "role": "half-eaten meal"
+    },
+    {
+     "name": "p7_cup_coffee_mug",
+     "role": "half-eaten meal"
+    },
+    {
+     "name": "p7_pot_metal_stock_dirty",
+     "role": "half-eaten meal"
+    },
+    {
+     "name": "equipment_portable_stove_01",
+     "role": "half-eaten meal"
+    },
+    {
+     "name": "light_bulb_incandescent_on",
+     "role": "bare bulb / lamp"
+    },
+    {
+     "name": "p7_light_hurricane_lamp",
+     "role": "bare bulb / lamp"
+    },
+    {
+     "name": "p7_lights_cagelight02_on",
+     "role": "bare bulb / lamp"
+    },
+    {
+     "name": "furniture_greece_wooden_old_table_01",
+     "role": "table / chair"
+    },
+    {
+     "name": "p7_cai_chair_wood",
+     "role": "table / chair"
+    },
+    {
+     "name": "com_clipboard",
+     "role": "instructions"
+    },
+    {
+     "name": "misc_operations_manual_red",
+     "role": "instructions"
+    },
+    {
+     "name": "office_paper_stack01_iw6",
+     "role": "instructions"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_tool_cabinet_yellow",
+     "role": "tool cabinet"
+    },
+    {
+     "name": "p7_zm_ctl_locker_metal_lrg",
+     "role": "metal locker"
+    },
+    {
+     "name": "p7_zm_ctl_canteen_stove",
+     "role": "canteen stove"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_candle_flame_nl",
+     "role": "candle / hand lamp flame"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_dust_falling_sm_ch",
+     "role": "dust"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mcopw/concrete_wall_07_white",
+     "role": "white painted concrete"
+    },
+    {
+     "name": "mcopw/concrete_stain_01_dec",
+     "role": "stain"
+    },
+    {
+     "name": "mo/clk_concrete_bunker_dark",
+     "role": "bunker concrete"
+    },
+    {
+     "name": "mcopw/has_peeling_painted_concrete_01_rvl",
+     "role": "peeling paint"
+    },
+    {
+     "name": "mopw/mtl_corrugated_metal",
+     "role": "corrugated steel"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "steel bunk, two-high",
+     "size": [
+      80,
+      200,
+      170
+     ],
+     "note": "only mattresses exist; build frame from beams"
+    },
+    {
+     "object": "hand-cranked ventilator",
+     "size": [
+      50,
+      40,
+      60
+     ],
+     "note": "fans only"
+    },
+    {
+     "object": "wall of instruction posters in own design",
+     "size": [
+      300,
+      2,
+      200
+     ],
+     "note": "author textures"
+    },
+    {
+     "object": "blast door with wheel",
+     "size": [
+      20,
+      120,
+      220
+     ],
+     "note": "stock blast doors belong to other maps"
+    },
+    {
+     "object": "cracker tin stacks",
+     "size": [
+      30,
+      30,
+      40
+     ],
+     "note": "cardboard boxes stand in"
+    }
+   ]
+  },
+  "police": {
+   "models": [
+    {
+     "name": "cp_town_desk_01",
+     "role": "duty desk"
+    },
+    {
+     "name": "cp_town_misc_work_desk_03",
+     "role": "duty desk"
+    },
+    {
+     "name": "cp_town_pb_desk_metal",
+     "role": "duty desk"
+    },
+    {
+     "name": "furniture_factory_desk_01",
+     "role": "duty desk"
+    },
+    {
+     "name": "lab_desk_02_drawers_intact",
+     "role": "duty desk"
+    },
+    {
+     "name": "p7_light_lamp_desk_vintage_01_on",
+     "role": "desk lamp"
+    },
+    {
+     "name": "p7_light_lamp_desk_vintage_01",
+     "role": "desk lamp"
+    },
+    {
+     "name": "light_lamp_black_01",
+     "role": "desk lamp"
+    },
+    {
+     "name": "com_debris_paper_iw6_02",
+     "role": "report and papers"
+    },
+    {
+     "name": "office_paper_piece01_iw6",
+     "role": "report and papers"
+    },
+    {
+     "name": "cnd_paper_cia_01",
+     "role": "report and papers"
+    },
+    {
+     "name": "hjk_clipboard_wpaper",
+     "role": "report and papers"
+    },
+    {
+     "name": "office_book_set_iw6",
+     "role": "report and papers"
+    },
+    {
+     "name": "me_window_bars_05",
+     "role": "cell bars"
+    },
+    {
+     "name": "paris_window_bars_05",
+     "role": "cell bars"
+    },
+    {
+     "name": "paris_window_bars_01",
+     "role": "cell bars"
+    },
+    {
+     "name": "paris_window_bars_03",
+     "role": "cell bars"
+    },
+    {
+     "name": "cargo_cage_64x96x48",
+     "role": "cell bars"
+    },
+    {
+     "name": "lockers_tall01_1x1_open_iw6",
+     "role": "locker"
+    },
+    {
+     "name": "cp_final_map_puzzle_paper",
+     "role": "wall map"
+    },
+    {
+     "name": "cp_town_topo_map",
+     "role": "wall map"
+    },
+    {
+     "name": "com_transistor_radio",
+     "role": "radio"
+    },
+    {
+     "name": "lag_portable_radio",
+     "role": "radio"
+    },
+    {
+     "name": "com_desktop_speaker",
+     "role": "radio"
+    },
+    {
+     "name": "chair_covered_02",
+     "role": "chair"
+    },
+    {
+     "name": "chair_cafe_wood_dirty",
+     "role": "chair"
+    },
+    {
+     "name": "cai_chair_lounge_greek_worn",
+     "role": "chair"
+    },
+    {
+     "name": "executive_chair",
+     "role": "chair"
+    },
+    {
+     "name": "com_filecabinetblackclosed",
+     "role": "filing cabinet"
+    },
+    {
+     "name": "com_filecabinetblackopen",
+     "role": "filing cabinet"
+    },
+    {
+     "name": "tool_cabinet_02_sw_dyn",
+     "role": "filing cabinet"
+    },
+    {
+     "name": "cp_town_desk_phone_01_blue",
+     "role": "telephone"
+    },
+    {
+     "name": "p7_box_cardboard_d_closed",
+     "role": "evidence box"
+    },
+    {
+     "name": "p7_box_wood_wine_storage",
+     "role": "evidence box"
+    },
+    {
+     "name": "com_bookshelves1",
+     "role": "shelving"
+    },
+    {
+     "name": "com_office_book_shelf",
+     "role": "shelving"
+    },
+    {
+     "name": "com_fire_bell_iw6",
+     "role": "alarm bell"
+    },
+    {
+     "name": "window_blinds_police_01a",
+     "role": "blinds"
+    },
+    {
+     "name": "window_blinds_police_02a",
+     "role": "blinds"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_ctl_typewriter_vintage",
+     "role": "typewriter with the report"
+    },
+    {
+     "name": "p7_zm_ctl_desk_wood_vintage",
+     "role": "wooden desk"
+    },
+    {
+     "name": "p7_zm_ctl_phone_vintage",
+     "role": "vintage telephone"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_final/amb/vfx_flashing_red_01",
+     "role": "red flash"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_final/amb/vfx_flashing_blue01",
+     "role": "blue flash"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/concrete_wall_painted_01",
+     "role": "painted concrete"
+    },
+    {
+     "name": "mopw/carpet_office_01",
+     "role": "office carpet"
+    },
+    {
+     "name": "mopw/brick_wall_modern_02",
+     "role": "brick"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "public counter with glass screen",
+     "size": [
+      300,
+      60,
+      120
+     ],
+     "note": "author; supermarket counters stand in"
+    },
+    {
+     "object": "holding cell with scratch marks (door open)",
+     "size": [
+      160,
+      160,
+      230
+     ],
+     "note": "bars exist; the cell must be assembled"
+    },
+    {
+     "object": "armoury cage with weapon racks",
+     "size": [
+      200,
+      100,
+      230
+     ],
+     "note": "cage panel exists; racks do not"
+    },
+    {
+     "object": "network map with one station blacked out",
+     "size": [
+      150,
+      4,
+      100
+     ],
+     "note": "author texture"
+    },
+    {
+     "object": "duty desk typewriter and report",
+     "size": [
+      14,
+      14,
+      8
+     ],
+     "note": "ported typewriter available"
+    }
+   ]
+  },
+  "staff_stair": {
+   "models": [
+    {
+     "name": "machinery_bulkhead_attachment_01",
+     "role": "caged lamp"
+    },
+    {
+     "name": "beacon_wall_light_01_on",
+     "role": "caged lamp"
+    },
+    {
+     "name": "clk_wall_light_01_on",
+     "role": "caged lamp"
+    },
+    {
+     "name": "light_interior_fixture_caged_02_on",
+     "role": "caged lamp"
+    },
+    {
+     "name": "p7_lights_cagelight02",
+     "role": "caged lamp"
+    },
+    {
+     "name": "com_pallet_2",
+     "role": "pallet / hand truck"
+    },
+    {
+     "name": "com_pallet_stack",
+     "role": "pallet / hand truck"
+    },
+    {
+     "name": "equipment_moving_dolly_01",
+     "role": "pallet / hand truck"
+    },
+    {
+     "name": "com_wooden_pallet",
+     "role": "pallet / hand truck"
+    },
+    {
+     "name": "ammo_crate_01",
+     "role": "crate"
+    },
+    {
+     "name": "sign_wet_floor",
+     "role": "notice"
+    },
+    {
+     "name": "sign_ind_misc_01",
+     "role": "notice"
+    },
+    {
+     "name": "p7_caution_metal_sign_rusty",
+     "role": "notice"
+    },
+    {
+     "name": "com_fire_extinguisher_incase",
+     "role": "extinguisher"
+    },
+    {
+     "name": "zmb_card_01",
+     "role": "staff card"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_der_time_clock",
+     "role": "clocking-in machine"
+    },
+    {
+     "name": "p7_zm_der_time_clock_card_01",
+     "role": "clock cards"
+    },
+    {
+     "name": "p7_zm_der_time_clock_card_02",
+     "role": "clock cards"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_dust_fall_tunnel",
+     "role": "dust in tunnel"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/brick_red_grout_03",
+     "role": "red brick"
+    },
+    {
+     "name": "mo/brick_red_grout_02",
+     "role": "brick grout"
+    },
+    {
+     "name": "mcopw/plaster_peeling_01_grey_dec",
+     "role": "peeling plaster"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "card rack with 58 cards",
+     "size": [
+      40,
+      8,
+      80
+     ],
+     "note": "cards exist as flat items; rack to author"
+    },
+    {
+     "object": "crate with address label (11 of them)",
+     "size": [
+      40,
+      40,
+      40
+     ],
+     "note": "ammo crate stands in; label is a decal"
+    },
+    {
+     "object": "NO HRT STAFF notice over an HRT one",
+     "size": [
+      40,
+      2,
+      30
+     ],
+     "note": "author texture"
+    },
+    {
+     "object": "painted brick stair flight, 800 long",
+     "size": [
+      300,
+      800,
+      320
+     ],
+     "note": "built from the stair kit"
+    }
+   ]
+  },
+  "platform_west": {
+   "models": [
+    {
+     "name": "zmb_shops_pillar_lower_01",
+     "role": "tiled column"
+    },
+    {
+     "name": "zmb_shops_pillar_top_01",
+     "role": "tiled column"
+    },
+    {
+     "name": "furniture_bench_wood_01_brown",
+     "role": "bench"
+    },
+    {
+     "name": "furniture_bench_wood_01_green",
+     "role": "bench"
+    },
+    {
+     "name": "furniture_park_bench_01",
+     "role": "bench"
+    },
+    {
+     "name": "street_bench_short_iw6",
+     "role": "bench"
+    },
+    {
+     "name": "street_bench_long_old_iw6",
+     "role": "bench"
+    },
+    {
+     "name": "cp_town_furniture_bench_wood_01_brown",
+     "role": "bench"
+    },
+    {
+     "name": "cp_final_monitor_large_facility_map",
+     "role": "network map"
+    },
+    {
+     "name": "com_magazine_english_stack_04",
+     "role": "newspaper kiosk stock"
+    },
+    {
+     "name": "com_magazine_english_single_03_dyn",
+     "role": "newspaper kiosk stock"
+    },
+    {
+     "name": "com_magazine_english_single_06",
+     "role": "newspaper kiosk stock"
+    },
+    {
+     "name": "newspaper_single_fn_01",
+     "role": "newspaper kiosk stock"
+    },
+    {
+     "name": "newspaper_stack_fn_01",
+     "role": "newspaper kiosk stock"
+    },
+    {
+     "name": "misc_magazine_rack_01",
+     "role": "newspaper kiosk stock"
+    },
+    {
+     "name": "magazines_01_newspaper_stack",
+     "role": "newspaper kiosk stock"
+    },
+    {
+     "name": "clk_wall_light_01",
+     "role": "tunnel / wall lamp"
+    },
+    {
+     "name": "ch_street_wall_light_01_on",
+     "role": "tunnel / wall lamp"
+    },
+    {
+     "name": "ch_street_wall_light_01_off",
+     "role": "tunnel / wall lamp"
+    },
+    {
+     "name": "equipment_dyn_trash_soda_01",
+     "role": "litter"
+    },
+    {
+     "name": "trash_bag_small_empty",
+     "role": "litter"
+    },
+    {
+     "name": "fac_trash_bin",
+     "role": "litter"
+    },
+    {
+     "name": "trash_can4",
+     "role": "litter"
+    },
+    {
+     "name": "duct_metal_rectangle_straight_128",
+     "role": "vent duct"
+    },
+    {
+     "name": "duct_metal_rectangle_straight_32",
+     "role": "vent duct"
+    },
+    {
+     "name": "industrial_conduit_metal_1_straight_128",
+     "role": "cable conduit"
+    },
+    {
+     "name": "industrial_conduit_metal_1_straight_64",
+     "role": "cable conduit"
+    },
+    {
+     "name": "sz_railing_steel_long_01",
+     "role": "stair rail"
+    },
+    {
+     "name": "beacon_lab_railing_96",
+     "role": "stair rail"
+    },
+    {
+     "name": "beacon_lab_railing_01",
+     "role": "stair rail"
+    },
+    {
+     "name": "signage_exit_sign_emergency_d",
+     "role": "exit sign"
+    },
+    {
+     "name": "signage_exit_sign_emergency_only_on",
+     "role": "exit sign"
+    },
+    {
+     "name": "cp_town_highway_rail_128",
+     "role": "rail / fence rail"
+    },
+    {
+     "name": "cp_town_highway_rail_256",
+     "role": "rail / fence rail"
+    },
+    {
+     "name": "locomotive_headlight_01",
+     "role": "signal head"
+    },
+    {
+     "name": "sign_clock_04",
+     "role": "wall clock"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_ctl_clock_wall_vintage",
+     "role": "wall clock"
+    },
+    {
+     "name": "p7_zm_sta_wall_map",
+     "role": "wall map"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_dust_fall_platform",
+     "role": "dust on deck"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_dust_fall_tunnel",
+     "role": "dust in tunnel"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_broken_pipe_steam",
+     "role": "broken pipe steam"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/subway_train/vfx_train_sparks",
+     "role": "track sparks"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/brick_modern_tan02",
+     "role": "tan brick"
+    },
+    {
+     "name": "mopw/brick_wall_08_blue_clean",
+     "role": "blue brick"
+    },
+    {
+     "name": "mopw/concrete_tiles_01_trim_dark",
+     "role": "dark concrete tile"
+    },
+    {
+     "name": "mopw/brick_wall_limestone_smooth_weathered",
+     "role": "limestone"
+    },
+    {
+     "name": "mcopw/frag_gravel_chunks",
+     "role": "track ballast gravel"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "station rail, sleepers and third rail",
+     "size": [
+      1000,
+      60,
+      20
+     ],
+     "note": "only highway rails; the train kit has to be authored"
+    },
+    {
+     "object": "enamel network map",
+     "size": [
+      120,
+      4,
+      80
+     ],
+     "note": "author texture"
+    },
+    {
+     "object": "brass zero stud in the floor",
+     "size": [
+      12,
+      12,
+      1
+     ],
+     "note": "author"
+    },
+    {
+     "object": "tiled column with station name band",
+     "size": [
+      40,
+      40,
+      320
+     ],
+     "note": "pillars exist; tile art is a material"
+    },
+    {
+     "object": "newspaper kiosk, 1984 papers",
+     "size": [
+      110,
+      90,
+      230
+     ],
+     "note": "stacks exist; the kiosk body must be built"
+    },
+    {
+     "object": "yellow edge line and tactile strip",
+     "size": [
+      2400,
+      20,
+      1
+     ],
+     "note": "decal"
+    }
+   ]
+  },
+  "platform_east": {
+   "models": [
+    {
+     "name": "veh_civ_lnd_70s_bus_clean",
+     "role": "bus (nearest stock to a car)"
+    },
+    {
+     "name": "p7_sofa_modern_loveseat_armless",
+     "role": "seat"
+    },
+    {
+     "name": "p7_sofa_modern_seat",
+     "role": "seat"
+    },
+    {
+     "name": "chair_victorian_velvet_01_red_worn",
+     "role": "seat"
+    },
+    {
+     "name": "furniture_sofa_leather_loveseat_clean_black",
+     "role": "seat"
+    },
+    {
+     "name": "couch_modern_2seats",
+     "role": "seat"
+    },
+    {
+     "name": "couch_modern_3seats",
+     "role": "seat"
+    },
+    {
+     "name": "queue_pole_iw6",
+     "role": "grab pole / queue post"
+    },
+    {
+     "name": "queue_pole_rope_a_iw6",
+     "role": "grab pole / queue post"
+    },
+    {
+     "name": "balloon_on_string_3_yellow",
+     "role": "streamer balloons"
+    },
+    {
+     "name": "balloon_on_string_4_orange",
+     "role": "streamer balloons"
+    },
+    {
+     "name": "balloon_on_string_1_green",
+     "role": "streamer balloons"
+    },
+    {
+     "name": "decor_balloon_a_blue",
+     "role": "streamer balloons"
+    },
+    {
+     "name": "decor_balloon_a_pink",
+     "role": "streamer balloons"
+    },
+    {
+     "name": "decor_balloon_a_yellow",
+     "role": "streamer balloons"
+    },
+    {
+     "name": "decor_balloon_single_green",
+     "role": "streamer balloons"
+    },
+    {
+     "name": "decor_balloon_single_orange",
+     "role": "streamer balloons"
+    },
+    {
+     "name": "boots_civ_miner_01_static",
+     "role": "pair of street shoes"
+    },
+    {
+     "name": "p7_54i_gear_shoes",
+     "role": "pair of street shoes"
+    },
+    {
+     "name": "speaker_public_iw6",
+     "role": "sound system"
+    },
+    {
+     "name": "ehq_speaker_monitor_01",
+     "role": "sound system"
+    },
+    {
+     "name": "misc_wall_mounted_loudspeaker_01",
+     "role": "sound system"
+    },
+    {
+     "name": "com_emergency_alarm_speaker",
+     "role": "sound system"
+    },
+    {
+     "name": "misc_bottle_wine_01",
+     "role": "champagne bottle / glass"
+    },
+    {
+     "name": "p7_bottle_plastic_16oz_cola",
+     "role": "champagne bottle / glass"
+    },
+    {
+     "name": "p7_glassware_wine_01",
+     "role": "champagne bottle / glass"
+    },
+    {
+     "name": "zmb_tunnel_boards",
+     "role": "tunnel boards"
+    },
+    {
+     "name": "decor_bathroom_mirror_01",
+     "role": "mirror"
+    },
+    {
+     "name": "dt_mirror",
+     "role": "mirror"
+    }
+   ],
+   "ported": [],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/subway_train/vfx_train_sparks_ch",
+     "role": "train sparks"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/subway_train/vfx_train_headlight_ch",
+     "role": "train headlight"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/subway_train/vfx_train_signal_flare_red",
+     "role": "red signal flare"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/subway_train/vfx_train_signal_flare_green",
+     "role": "green signal flare"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/subway_train/vfx_train_tail_light_ch",
+     "role": "train tail light"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/subway_train/vfx_train_front_light_ch",
+     "role": "train front light"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/metal_painted_corrugated_white",
+     "role": "white painted corrugated"
+    },
+    {
+     "name": "mcopw/metal_panel_white_03_noline",
+     "role": "white metal panel"
+    },
+    {
+     "name": "mopw/metal_trim_corrugated_01",
+     "role": "corrugated trim"
+    },
+    {
+     "name": "mcopw/glass_modern_window_03_lightblue_ssr_editor",
+     "role": "window glass"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "silver train car, 534 long, walkable interior (6)",
+     "size": [
+      534,
+      90,
+      120
+     ],
+     "note": "no train car; the largest stock vehicles are a bus (473 long) and an oil tanker"
+    },
+    {
+     "object": "car door pair, open",
+     "size": [
+      60,
+      10,
+      110
+     ],
+     "note": "author"
+    },
+    {
+     "object": "driver cab with controls and champagne on coupler",
+     "size": [
+      120,
+      100,
+      140
+     ],
+     "note": "author"
+    },
+    {
+     "object": "mirror ball",
+     "size": [
+      40,
+      40,
+      40
+     ],
+     "note": "author"
+    },
+    {
+     "object": "forty pairs of street shoes in a row",
+     "size": [
+      30,
+      12,
+      10
+     ],
+     "note": "shoes exist; skates do not"
+    },
+    {
+     "object": "roller skate trophy",
+     "size": [
+      20,
+      10,
+      10
+     ],
+     "note": "author"
+    },
+    {
+     "object": "east signal head, red then green",
+     "size": [
+      20,
+      20,
+      60
+     ],
+     "note": "locomotive headlight only"
+    }
+   ]
+  },
+  "signal_cabin": {
+   "models": [
+    {
+     "name": "ls_lightswitch_01_iw6",
+     "role": "lever / switch"
+    },
+    {
+     "name": "conduit_metal_outlet_switch",
+     "role": "lever / switch"
+    },
+    {
+     "name": "cnd_office_01_handle",
+     "role": "lever / switch"
+    },
+    {
+     "name": "electrical_control_panel_01",
+     "role": "control and diagram panel"
+    },
+    {
+     "name": "electrical_control_box_01",
+     "role": "control and diagram panel"
+    },
+    {
+     "name": "electrical_control_box_03",
+     "role": "control and diagram panel"
+    },
+    {
+     "name": "electrical_control_box_04",
+     "role": "control and diagram panel"
+    },
+    {
+     "name": "bi_command_center_panel_11",
+     "role": "control and diagram panel"
+    },
+    {
+     "name": "bi_command_center_panel_5",
+     "role": "control and diagram panel"
+    },
+    {
+     "name": "ceiling_console_01",
+     "role": "control and diagram panel"
+    },
+    {
+     "name": "ceiling_console_03",
+     "role": "control and diagram panel"
+    },
+    {
+     "name": "com_restaurantstovewithburner",
+     "role": "stove"
+    },
+    {
+     "name": "misc_coffee_machine_pot",
+     "role": "kettle / pot"
+    },
+    {
+     "name": "p7_pan_metal_lid",
+     "role": "kettle / pot"
+    },
+    {
+     "name": "office_book_open_iw6_black",
+     "role": "train register / book"
+    },
+    {
+     "name": "office_space_book_open_01",
+     "role": "train register / book"
+    },
+    {
+     "name": "decor_book_large_01",
+     "role": "train register / book"
+    },
+    {
+     "name": "p7_book_vintage_04",
+     "role": "train register / book"
+    },
+    {
+     "name": "com_office_book_red_flat",
+     "role": "train register / book"
+    },
+    {
+     "name": "zmb_tv_crt_screen_01",
+     "role": "desk screen"
+    },
+    {
+     "name": "cp_final_monitor_small",
+     "role": "desk screen"
+    },
+    {
+     "name": "cp_final_monitor_medium_screen_control",
+     "role": "desk screen"
+    },
+    {
+     "name": "cp_final_console_keyboard_01",
+     "role": "desk screen"
+    },
+    {
+     "name": "p7_light_lamp_desk_vintage_01_broken",
+     "role": "desk lamp"
+    },
+    {
+     "name": "light_interior_hanging_ceiling_lamp_01_on",
+     "role": "desk lamp"
+    },
+    {
+     "name": "zmb_window_frame_01",
+     "role": "window frame"
+    },
+    {
+     "name": "p7_window_metal_01_2x1_arch",
+     "role": "window frame"
+    },
+    {
+     "name": "chair_folding_wood_dustable",
+     "role": "chair"
+    },
+    {
+     "name": "chair_folding_wood_folded",
+     "role": "chair"
+    },
+    {
+     "name": "cp_final_railing_01_stairs_32_mid_l",
+     "role": "stair"
+    },
+    {
+     "name": "ship_hallway_fuse_box",
+     "role": "relay cupboard / fuse box"
+    },
+    {
+     "name": "fac_sort_machine_fuse_box_set_01",
+     "role": "relay cupboard / fuse box"
+    },
+    {
+     "name": "electrical_fuse_box_cables_dangle",
+     "role": "relay cupboard / fuse box"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_sta_pneumatic_tube_switch_lever",
+     "role": "lever frame stand-in (pneumatic lever)"
+    },
+    {
+     "name": "p7_zm_ctl_phone_military_vintage_full_02",
+     "role": "railway telephone"
+    },
+    {
+     "name": "p7_zm_ctl_radio_reciever_01",
+     "role": "radio receiver"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/subway_train/vfx_train_signal_flare_red",
+     "role": "red signal flare"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/subway_train/vfx_train_signal_flare_green",
+     "role": "green signal flare"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_zb_spark_b",
+     "role": "spark"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/wood_floor_dirty_01",
+     "role": "worn wood floor"
+    },
+    {
+     "name": "mopw/t7_plaster_wallpaper_pattern_05_red",
+     "role": "red wallpaper"
+    },
+    {
+     "name": "mcopw/metal_bare_steel_trim_01",
+     "role": "painted steel"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "lever frame, forty colour-banded levers",
+     "size": [
+      300,
+      40,
+      150
+     ],
+     "note": "only single switches; build the frame as one authored model"
+    },
+    {
+     "object": "illuminated track diagram",
+     "size": [
+      300,
+      6,
+      80
+     ],
+     "note": "author, with emissive lamps"
+    },
+    {
+     "object": "Lodestar grey control desk with one line of text",
+     "size": [
+      140,
+      70,
+      110
+     ],
+     "note": "author"
+    },
+    {
+     "object": "long window looking down the platform",
+     "size": [
+      400,
+      6,
+      90
+     ],
+     "note": "frame exists, glazing is a material"
+    },
+    {
+     "object": "train register open at 23:44",
+     "size": [
+      30,
+      22,
+      3
+     ],
+     "note": "books exist, the page is a texture"
+    }
+   ]
+  },
+  "car_barn": {
+   "models": [
+    {
+     "name": "vertical_hook_stand",
+     "role": "hook / hoist stand"
+    },
+    {
+     "name": "square_hook",
+     "role": "hook / hoist stand"
+    },
+    {
+     "name": "cp_town_equipment_whiteboard_stand",
+     "role": "hook / hoist stand"
+    },
+    {
+     "name": "fxanim_gp_chain_med_hook_mod",
+     "role": "chain"
+    },
+    {
+     "name": "fxanim_gp_chain_arch_sm_mod",
+     "role": "chain"
+    },
+    {
+     "name": "p7_chain_metal_str_64",
+     "role": "chain"
+    },
+    {
+     "name": "p7_chain_metal_str_64_hook",
+     "role": "chain"
+    },
+    {
+     "name": "equipment_industrial_c12_support_chain",
+     "role": "chain"
+    },
+    {
+     "name": "prop_wheels",
+     "role": "wheel / tyre"
+    },
+    {
+     "name": "com_junktire",
+     "role": "wheel / tyre"
+    },
+    {
+     "name": "com_junktire2",
+     "role": "wheel / tyre"
+    },
+    {
+     "name": "cp_town_tire_rack",
+     "role": "wheel / tyre"
+    },
+    {
+     "name": "veh_18wheeler_dam_wheel_01",
+     "role": "wheel / tyre"
+    },
+    {
+     "name": "machinery_elevator_wheel",
+     "role": "wheel / tyre"
+    },
+    {
+     "name": "p7_machine_welding_large",
+     "role": "machine"
+    },
+    {
+     "name": "p7_machine_welding_small",
+     "role": "machine"
+    },
+    {
+     "name": "machinery_elevator_lift_engine_01",
+     "role": "machine"
+    },
+    {
+     "name": "com_electrical_transformer",
+     "role": "machine"
+    },
+    {
+     "name": "com_wheelbarrow",
+     "role": "machine"
+    },
+    {
+     "name": "toolbox_small01_iw6",
+     "role": "tools"
+    },
+    {
+     "name": "equipment_industrial_toolbox_01",
+     "role": "tools"
+    },
+    {
+     "name": "equipment_aid_tool_bag_01",
+     "role": "tools"
+    },
+    {
+     "name": "equipment_industrial_rivet_tool_01",
+     "role": "tools"
+    },
+    {
+     "name": "equipment_industrial_screwdriver_01",
+     "role": "tools"
+    },
+    {
+     "name": "equipment_industrial_power_drill_01_zerog",
+     "role": "tools"
+    },
+    {
+     "name": "veh_parts_large_toolbox",
+     "role": "tools"
+    },
+    {
+     "name": "moab_tools_brush_thin_01",
+     "role": "tools"
+    },
+    {
+     "name": "equipment_oil_barrel_military_01_yellow",
+     "role": "oil drum"
+    },
+    {
+     "name": "equipment_oil_barrel_military_01_blue",
+     "role": "oil drum"
+    },
+    {
+     "name": "com_barrel_black_dirt_havok",
+     "role": "oil drum"
+    },
+    {
+     "name": "container_paint_can_01",
+     "role": "paint store"
+    },
+    {
+     "name": "container_paint_can_02",
+     "role": "paint store"
+    },
+    {
+     "name": "misc_paint_brush_01",
+     "role": "paint store"
+    },
+    {
+     "name": "misc_paint_brush_roller_01",
+     "role": "paint store"
+    },
+    {
+     "name": "mp_dart_workbench_01",
+     "role": "workbench"
+    },
+    {
+     "name": "p7_cai_work_table_metal_01_red",
+     "role": "workbench"
+    },
+    {
+     "name": "p7_cai_work_table_metal_03_white",
+     "role": "workbench"
+    },
+    {
+     "name": "p7_cai_work_table_wood_01_bare",
+     "role": "workbench"
+    },
+    {
+     "name": "p7_shelf_industrial_gray_48",
+     "role": "shelf / rack"
+    },
+    {
+     "name": "equipment_rack_corridor_01",
+     "role": "shelf / rack"
+    },
+    {
+     "name": "com_restaurantstainlessteelshelf_01",
+     "role": "shelf / rack"
+    },
+    {
+     "name": "ch_industrial_lamp_wall_on",
+     "role": "work lamp"
+    },
+    {
+     "name": "ch_industrial_lamp_wall_off",
+     "role": "work lamp"
+    },
+    {
+     "name": "com_ladder_wood",
+     "role": "ladder"
+    },
+    {
+     "name": "p7_ladder_metal_secured_128",
+     "role": "ladder"
+    },
+    {
+     "name": "ladder_metal_leaning",
+     "role": "ladder"
+    },
+    {
+     "name": "cnd_ladder01_closed",
+     "role": "ladder"
+    },
+    {
+     "name": "ladder01_large_closed",
+     "role": "ladder"
+    },
+    {
+     "name": "clk_fire_extinguisher_lrg_scaled",
+     "role": "extinguisher"
+    },
+    {
+     "name": "fac_metal_extinguisher_02",
+     "role": "extinguisher"
+    },
+    {
+     "name": "com_pallet_havok",
+     "role": "crate / pallet"
+    },
+    {
+     "name": "p7_crate_wood_01_open_lid",
+     "role": "crate / pallet"
+    },
+    {
+     "name": "veh_parts_spare_tank",
+     "role": "crate / pallet"
+    },
+    {
+     "name": "ng_water_hose",
+     "role": "air hose"
+    },
+    {
+     "name": "machinery_hose02",
+     "role": "air hose"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_sta_crane",
+     "role": "overhead crane (stand-in)"
+    },
+    {
+     "name": "p7_tool_cabinet_top_red",
+     "role": "tool cabinet red"
+    },
+    {
+     "name": "p7_desk_metal_old_01_body_rusty",
+     "role": "desk with drawers"
+    },
+    {
+     "name": "p7_zm_der_clock_lab",
+     "role": "wall clock"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_zb_spark_a",
+     "role": "welding spark"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_pallet_fire",
+     "role": "pallet fire"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_pipe_smoke",
+     "role": "pipe smoke"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_zb_carfire_a",
+     "role": "burning car"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mo/asphalt_flooring_01",
+     "role": "oily concrete floor"
+    },
+    {
+     "name": "mcopw/stain_leak_rust_01_dec",
+     "role": "rust leak stain"
+    },
+    {
+     "name": "mopw/metal_rusty_corrugated_01",
+     "role": "rusty corrugated"
+    },
+    {
+     "name": "mco/rust_coarse",
+     "role": "coarse rust"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "spare train car on four jacks, bogies rolled out",
+     "size": [
+      534,
+      90,
+      120
+     ],
+     "note": "needs the train car as well; jacks are not stock"
+    },
+    {
+     "object": "inspection-pit work lamp pair",
+     "size": [
+      20,
+      20,
+      60
+     ],
+     "note": "caged lamps exist"
+    },
+    {
+     "object": "wheel lathe",
+     "size": [
+      250,
+      120,
+      140
+     ],
+     "note": "no lathe"
+    },
+    {
+     "object": "overhead crane on rails",
+     "size": [
+      900,
+      120,
+      60
+     ],
+     "note": "ported crane available; rails to author"
+    },
+    {
+     "object": "foreman office with glass and clock",
+     "size": [
+      300,
+      250,
+      260
+     ],
+     "note": "author from wall and window pieces"
+    },
+    {
+     "object": "shadow board of tools",
+     "size": [
+      220,
+      6,
+      120
+     ],
+     "note": "tools exist; the board is a texture"
+    }
+   ]
+  },
+  "converter_hall": {
+   "models": [
+    {
+     "name": "clk_defend_generator_solo",
+     "role": "generator"
+    },
+    {
+     "name": "machinery_generator_portable_01",
+     "role": "generator"
+    },
+    {
+     "name": "machinery_generator_portable_01_d",
+     "role": "generator"
+    },
+    {
+     "name": "machinery_oxygen_tank02",
+     "role": "generator"
+    },
+    {
+     "name": "p7_chemistry_kit_round_flask",
+     "role": "glass vessels"
+    },
+    {
+     "name": "p7_chemistry_kit_beaker_lg",
+     "role": "glass vessels"
+    },
+    {
+     "name": "p7_chemistry_kit_beaker_mid",
+     "role": "glass vessels"
+    },
+    {
+     "name": "p7_lab_chemistry_set_beaker",
+     "role": "glass vessels"
+    },
+    {
+     "name": "p7_jar_glass_tall",
+     "role": "glass vessels"
+    },
+    {
+     "name": "p7_jar_glass_lrg",
+     "role": "glass vessels"
+    },
+    {
+     "name": "p7_bottle_glass_liquor_01",
+     "role": "glass vessels"
+    },
+    {
+     "name": "electrical_box02_iw6",
+     "role": "switchboard / breaker box"
+    },
+    {
+     "name": "electrical_box04_iw6",
+     "role": "switchboard / breaker box"
+    },
+    {
+     "name": "electrical_box_01_d",
+     "role": "switchboard / breaker box"
+    },
+    {
+     "name": "electrical_box_03",
+     "role": "switchboard / breaker box"
+    },
+    {
+     "name": "electrical_box_generic_03",
+     "role": "switchboard / breaker box"
+    },
+    {
+     "name": "electrical_wall_box_01",
+     "role": "switchboard / breaker box"
+    },
+    {
+     "name": "electrical_wall_mounted_panel_03",
+     "role": "switchboard / breaker box"
+    },
+    {
+     "name": "emergency_shutoff_sm_panel_01",
+     "role": "switchboard / breaker box"
+    },
+    {
+     "name": "equipment_industrial_ground_panel_a_steel_01",
+     "role": "switchboard / breaker box"
+    },
+    {
+     "name": "equipment_industrial_ground_panel_b_01",
+     "role": "switchboard / breaker box"
+    },
+    {
+     "name": "panel_metal_02_32x176_vent",
+     "role": "switchboard / breaker box"
+    },
+    {
+     "name": "cp_town_chem_lab_combinizer_gauges",
+     "role": "gauge"
+    },
+    {
+     "name": "grate_catwalk_metal_02",
+     "role": "wire cage / grating"
+    },
+    {
+     "name": "floor_grate_catwalk_metal",
+     "role": "wire cage / grating"
+    },
+    {
+     "name": "ground_wires_01",
+     "role": "cable / insulator"
+    },
+    {
+     "name": "factory_wires_a",
+     "role": "cable / insulator"
+    },
+    {
+     "name": "factory_wires_b",
+     "role": "cable / insulator"
+    },
+    {
+     "name": "hanging_wires_01",
+     "role": "cable / insulator"
+    },
+    {
+     "name": "hanging_wires_01_multicolored",
+     "role": "cable / insulator"
+    },
+    {
+     "name": "industrial_conduit_metal_1_body_joint_c",
+     "role": "cable / insulator"
+    },
+    {
+     "name": "electric_insulator_01",
+     "role": "cable / insulator"
+    },
+    {
+     "name": "utility_transformer_small01",
+     "role": "cable / insulator"
+    },
+    {
+     "name": "cp_town_camp_caution_sign",
+     "role": "warning notice"
+    },
+    {
+     "name": "cp_town_camp_danger_deathraysign",
+     "role": "warning notice"
+    },
+    {
+     "name": "afr_ladder_01_dlc1",
+     "role": "ladder"
+    },
+    {
+     "name": "clt_ladder_construction_01",
+     "role": "ladder"
+    },
+    {
+     "name": "park_ball_light_backlit",
+     "role": "lamp"
+    },
+    {
+     "name": "light_outdoorwall01_on",
+     "role": "lamp"
+    },
+    {
+     "name": "mp_dart_lightfluo_on",
+     "role": "lamp"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_pipe_metal_hp_12_valve_01_grey_dk",
+     "role": "valve"
+    },
+    {
+     "name": "p7_zm_ctl_clock_wall_vintage",
+     "role": "time-keeping wall clock"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/core/expl/transformer_sparks_f_sound",
+     "role": "transformer sparks"
+    },
+    {
+     "name": "vfx/iw7/_requests/coop/vfx_mini_grey_shock_arc",
+     "role": "shock arc"
+    },
+    {
+     "name": "vfx/iw7/_requests/mp/vfx_tesla_shock_sparks",
+     "role": "tesla sparks"
+    },
+    {
+     "name": "vfx/iw7/_requests/coop/vfx_zb_thu_sparks",
+     "role": "sparks"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/metal_bare_steel_floor_grating_01_editor",
+     "role": "steel grating floor"
+    },
+    {
+     "name": "mcopw/metal_bare_steel_trim_01",
+     "role": "bare steel trim"
+    },
+    {
+     "name": "mopw/metal_grating_12",
+     "role": "grating"
+    },
+    {
+     "name": "mcopw/metal_bare_copper_ribbed_01",
+     "role": "copper"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "mercury-arc rectifier, man-sized bulb with arms",
+     "size": [
+      70,
+      70,
+      200
+     ],
+     "note": "no stock equivalent; glass material and emissive violet arc to author"
+    },
+    {
+     "object": "marble switchboard with knife switches and brass meters",
+     "size": [
+      300,
+      30,
+      220
+     ],
+     "note": "only metal boxes exist"
+    },
+    {
+     "object": "generator G-2 with tag",
+     "size": [
+      250,
+      120,
+      160
+     ],
+     "note": "portable generators are far smaller"
+    },
+    {
+     "object": "wire cages around the rectifiers",
+     "size": [
+      150,
+      150,
+      230
+     ],
+     "note": "grating panels can be assembled"
+    },
+    {
+     "object": "knife switch",
+     "size": [
+      20,
+      8,
+      60
+     ],
+     "note": "author"
+    },
+    {
+     "object": "brass meter",
+     "size": [
+      14,
+      6,
+      14
+     ],
+     "note": "author"
+    }
+   ]
+  },
+  "exchange": {
+   "models": [
+    {
+     "name": "computer_server_rack_02",
+     "role": "relay rack / server cabinet"
+    },
+    {
+     "name": "computer_server_rack_unit_07",
+     "role": "relay rack / server cabinet"
+    },
+    {
+     "name": "computer_server_rack_unit_11",
+     "role": "relay rack / server cabinet"
+    },
+    {
+     "name": "com_cabinet_long_rusted",
+     "role": "relay rack / server cabinet"
+    },
+    {
+     "name": "cp_final_messhall_cabinet_16",
+     "role": "relay rack / server cabinet"
+    },
+    {
+     "name": "cp_final_messhall_cabinet_32",
+     "role": "relay rack / server cabinet"
+    },
+    {
+     "name": "wire_spool_02",
+     "role": "tape spool / reel"
+    },
+    {
+     "name": "cable_spool_pmars_01",
+     "role": "tape spool / reel"
+    },
+    {
+     "name": "com_wire_spool_red_2",
+     "role": "tape spool / reel"
+    },
+    {
+     "name": "cp_final_film_reel_case",
+     "role": "tape spool / reel"
+    },
+    {
+     "name": "cp_town_tape_recorder",
+     "role": "tape spool / reel"
+    },
+    {
+     "name": "zmb_tv_crt_01",
+     "role": "terminal / screen"
+    },
+    {
+     "name": "zmb_atm_screen_01a",
+     "role": "terminal / screen"
+    },
+    {
+     "name": "zmb_atm_screen_02a",
+     "role": "terminal / screen"
+    },
+    {
+     "name": "zmb_atm_screen_03a",
+     "role": "terminal / screen"
+    },
+    {
+     "name": "cp_final_monitor_large",
+     "role": "terminal / screen"
+    },
+    {
+     "name": "cp_final_monitor_small_happy",
+     "role": "terminal / screen"
+    },
+    {
+     "name": "cp_final_monitor_large_screen_power_grid",
+     "role": "terminal / screen"
+    },
+    {
+     "name": "cp_final_console_main_02",
+     "role": "terminal / screen"
+    },
+    {
+     "name": "cp_final_console_standing_01",
+     "role": "terminal / screen"
+    },
+    {
+     "name": "cp_final_console_keyboard_01",
+     "role": "terminal / screen"
+    },
+    {
+     "name": "cp_town_chem_lab_computer_01",
+     "role": "terminal / screen"
+    },
+    {
+     "name": "com_computer_mouse",
+     "role": "terminal / screen"
+    },
+    {
+     "name": "com_debris_paper_iw6_01",
+     "role": "fan-fold paper"
+    },
+    {
+     "name": "com_debris_paper_single_brn_iw6_03",
+     "role": "fan-fold paper"
+    },
+    {
+     "name": "com_copypaper_box",
+     "role": "fan-fold paper"
+    },
+    {
+     "name": "com_copypaper_box_open",
+     "role": "fan-fold paper"
+    },
+    {
+     "name": "office_military_paper_stack_01",
+     "role": "fan-fold paper"
+    },
+    {
+     "name": "cable_tray_wires_straight",
+     "role": "cable tray / duct"
+    },
+    {
+     "name": "cable_tray_wires_90_2",
+     "role": "cable tray / duct"
+    },
+    {
+     "name": "duct_metal_rectangle_straight_64",
+     "role": "cable tray / duct"
+    },
+    {
+     "name": "duct_metal_rectangle_t_joint",
+     "role": "cable tray / duct"
+    },
+    {
+     "name": "industrial_conduit_metal_1_elbow45_long",
+     "role": "cable tray / duct"
+    },
+    {
+     "name": "paris_catacombs_wire_red_01",
+     "role": "cable tray / duct"
+    },
+    {
+     "name": "p7_table_endtable_wood",
+     "role": "desk"
+    },
+    {
+     "name": "fixture_ceiling_light_01",
+     "role": "ceiling light"
+    },
+    {
+     "name": "cp_town_lamp_ornate_3_off",
+     "role": "ceiling light"
+    },
+    {
+     "name": "com_trashbag2_green",
+     "role": "litter"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_ctl_radio_recorder_deck",
+     "role": "radio recorder with tapes"
+    },
+    {
+     "name": "p7_zm_ctl_radio_recorder_tape_01",
+     "role": "radio recorder with tapes"
+    },
+    {
+     "name": "p7_zm_ctl_radio_reciever_02",
+     "role": "radio receiver"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_light_mist",
+     "role": "light haze"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_zb_spark_b",
+     "role": "spark"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_trash_flies",
+     "role": "flies over paper"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/beacon_lab_floor_tile_02_black",
+     "role": "dark tile floor"
+    },
+    {
+     "name": "mopw/ceiling_waterstains1",
+     "role": "stained ceiling"
+    },
+    {
+     "name": "mopw/carpet_office_01",
+     "role": "office carpet"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "relay rack with clicking relays (3 damage states)",
+     "size": [
+      60,
+      50,
+      230
+     ],
+     "note": "server racks stand in; relays are an animated material"
+    },
+    {
+     "object": "tape drive, two reels turning",
+     "size": [
+      70,
+      70,
+      180
+     ],
+     "note": "only film reel cases and spools"
+    },
+    {
+     "object": "green-screen terminal",
+     "size": [
+      40,
+      40,
+      40
+     ],
+     "note": "CRTs exist; the green display is a material"
+    },
+    {
+     "object": "line printer with paper fountain",
+     "size": [
+      80,
+      60,
+      110
+     ],
+     "note": "no printer"
+    },
+    {
+     "object": "fan-fold paper knee-deep",
+     "size": [
+      200,
+      200,
+      30
+     ],
+     "note": "author as a pile"
+    },
+    {
+     "object": "raised floor panels",
+     "size": [
+      60,
+      60,
+      30
+     ],
+     "note": "author"
+    }
+   ]
+  },
+  "sump": {
+   "models": [
+    {
+     "name": "cp_town_gas_pump",
+     "role": "pump / motor"
+    },
+    {
+     "name": "machinery_turbine_beam_support_01",
+     "role": "pump / motor"
+    },
+    {
+     "name": "p7_ceiling_fan_metal_motor",
+     "role": "pump / motor"
+    },
+    {
+     "name": "equipment_tank_nitrogen_zmb",
+     "role": "pump / motor"
+    },
+    {
+     "name": "machinery_fuel_tank_des_piece_01",
+     "role": "pump / motor"
+    },
+    {
+     "name": "bridge_walkway_03",
+     "role": "catwalk / grating"
+    },
+    {
+     "name": "drain_grate_metal_01",
+     "role": "catwalk / grating"
+    },
+    {
+     "name": "ship_interior_floor_grating_01_64_half",
+     "role": "catwalk / grating"
+    },
+    {
+     "name": "p7_scaff_plywood_walkway_36x192",
+     "role": "catwalk / grating"
+    },
+    {
+     "name": "fixture_sewer_cover_01",
+     "role": "culvert / drain"
+    },
+    {
+     "name": "fixture_sewer_cover_02",
+     "role": "culvert / drain"
+    },
+    {
+     "name": "p7_street_curb_sewer_drain",
+     "role": "culvert / drain"
+    },
+    {
+     "name": "cp_town_drain_opener",
+     "role": "culvert / drain"
+    },
+    {
+     "name": "mp_flooded_sewer_pipe",
+     "role": "culvert / drain"
+    },
+    {
+     "name": "rope_hanging",
+     "role": "rope"
+    },
+    {
+     "name": "zmb_bridge_rope_03",
+     "role": "rope"
+    },
+    {
+     "name": "queue_pole_rope_b_iw6",
+     "role": "rope"
+    },
+    {
+     "name": "pipe_set_pmars_valve",
+     "role": "valve"
+    },
+    {
+     "name": "blackice_valve_red",
+     "role": "valve"
+    },
+    {
+     "name": "cp_town_pipe_t_valve",
+     "role": "valve"
+    },
+    {
+     "name": "ind_pipe_metal_hp_12_valve_01",
+     "role": "valve"
+    },
+    {
+     "name": "machinery_oxygen_generator_pipe_valve_01",
+     "role": "valve"
+    },
+    {
+     "name": "baseball_cap_02",
+     "role": "floating party hat / cap"
+    },
+    {
+     "name": "baseball_cap_group_01",
+     "role": "floating party hat / cap"
+    },
+    {
+     "name": "p7_bottle_plastic_cleaner",
+     "role": "floating debris"
+    },
+    {
+     "name": "glass_beer_bottle_fn_01",
+     "role": "floating debris"
+    },
+    {
+     "name": "bucket_plastic_lid",
+     "role": "floating debris"
+    },
+    {
+     "name": "cart_janitor_plastic_bucket",
+     "role": "floating debris"
+    },
+    {
+     "name": "p7_zm_der_plank_wood_2x12x96",
+     "role": "floating debris"
+    },
+    {
+     "name": "p7_vista_buoy_04",
+     "role": "floating debris"
+    },
+    {
+     "name": "p7_fishing_nets_float_02",
+     "role": "floating debris"
+    },
+    {
+     "name": "beacon_wall_light_01_on_mars",
+     "role": "caged wall lamp"
+    },
+    {
+     "name": "cp_final_wall_light_red_01",
+     "role": "caged wall lamp"
+    },
+    {
+     "name": "cs_cargoship_wall_light_on",
+     "role": "caged wall lamp"
+    },
+    {
+     "name": "propane_tank_rusty_iw6",
+     "role": "tank"
+    },
+    {
+     "name": "machinery_oxygen_tank02_empty",
+     "role": "tank"
+    },
+    {
+     "name": "machinery_hose02",
+     "role": "hose"
+    },
+    {
+     "name": "ls_concrete_chunks_06_wet_01",
+     "role": "wet rubble"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_ori_pipe_valve",
+     "role": "pump valve"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_water_drips_circle",
+     "role": "water drips (circle)"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_water_drips_line",
+     "role": "water drips (line)"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_water_drips_splash_ch",
+     "role": "drip splash"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_sewer_grate_steam",
+     "role": "sewer steam"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_rave/amb/vfx_rave_waterfall",
+     "role": "waterfall"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_rave/amb/vfx_rave_waterdrip_a",
+     "role": "water drip (rave)"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mcopw/me_decal_water_puddle_reflection",
+     "role": "puddle reflection"
+    },
+    {
+     "name": "mcopw/dirt_water_stain_01",
+     "role": "water stain"
+    },
+    {
+     "name": "mco/vfx_mtl_waterfall_sewage",
+     "role": "sewage fall"
+    },
+    {
+     "name": "mopw/grate_industrial_set",
+     "role": "industrial grate"
+    },
+    {
+     "name": "mopw/beacon_metal_grate_01",
+     "role": "metal grate"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "black moving water surface with current",
+     "size": [
+      1200,
+      1200,
+      1
+     ],
+     "note": "no stock water plane; the report lists it as an unproven look"
+    },
+    {
+     "object": "big pump with housing, one running (3)",
+     "size": [
+      120,
+      120,
+      160
+     ],
+     "note": "only gas pumps and motors exist"
+    },
+    {
+     "object": "storm culvert with bent grille and rope",
+     "size": [
+      160,
+      200,
+      160
+     ],
+     "note": "author"
+    },
+    {
+     "object": "catwalk ring with handrails",
+     "size": [
+      1200,
+      1200,
+      100
+     ],
+     "note": "grating and rails exist as pieces"
+    },
+    {
+     "object": "tide marks",
+     "size": [
+      300,
+      4,
+      60
+     ],
+     "note": "decal"
+    }
+   ]
+  },
+  "breach": {
+   "models": [
+    {
+     "name": "misc_industrial_scaffolding_01",
+     "role": "scaffold / truss"
+    },
+    {
+     "name": "p7_scaffold_metal_01_128x128a_blue",
+     "role": "scaffold / truss"
+    },
+    {
+     "name": "p7_scaffold_metal_01_128x64a_blue",
+     "role": "scaffold / truss"
+    },
+    {
+     "name": "p7_scaffold_metal_01_64x128a_blue",
+     "role": "scaffold / truss"
+    },
+    {
+     "name": "p7_scaffold_metal_01_crossbeam_128x128a",
+     "role": "scaffold / truss"
+    },
+    {
+     "name": "p7_truss_framing_modular_section_128",
+     "role": "scaffold / truss"
+    },
+    {
+     "name": "p7_truss_framing_modular_section_64",
+     "role": "scaffold / truss"
+    },
+    {
+     "name": "carrier_scaffold",
+     "role": "scaffold / truss"
+    },
+    {
+     "name": "cnd_plywood_stacks_01",
+     "role": "boards / plywood"
+    },
+    {
+     "name": "p7_debris_plywood_4x8_cracked_white",
+     "role": "boards / plywood"
+    },
+    {
+     "name": "beacon_metal_panel_wall_double_gray",
+     "role": "steel plate"
+    },
+    {
+     "name": "p7_ibeam_bracket_32_x_01",
+     "role": "steel plate"
+    },
+    {
+     "name": "light_string_bulb_a",
+     "role": "work lamp string"
+    },
+    {
+     "name": "p7_box_cardboard_a_open01",
+     "role": "core sample trays"
+    },
+    {
+     "name": "p7_box_cardboard_b_open01",
+     "role": "core sample trays"
+    },
+    {
+     "name": "p7_box_cardboard_c_open01",
+     "role": "core sample trays"
+    },
+    {
+     "name": "p7_box_cardboard_d_open01",
+     "role": "core sample trays"
+    },
+    {
+     "name": "table_endtable_iw6",
+     "role": "field desk"
+    },
+    {
+     "name": "furniture_restaurant_table_01",
+     "role": "field desk"
+    },
+    {
+     "name": "p7_coffee_table_rectangle_wood_02_worn",
+     "role": "field desk"
+    },
+    {
+     "name": "debris_concrete_rubble_pile_01_dark",
+     "role": "rubble"
+    },
+    {
+     "name": "debris_concrete_rubble_lg_02",
+     "role": "rubble"
+    },
+    {
+     "name": "cnd_concrete_rubble_pile_02_nobeam",
+     "role": "rubble"
+    },
+    {
+     "name": "p7_brick_broken_pile_01_med",
+     "role": "rubble"
+    },
+    {
+     "name": "p7_brick_broken_worn_dirty_pile_01",
+     "role": "rubble"
+    },
+    {
+     "name": "p7_brick_broken_worn_dirty_pile_02_dlc2",
+     "role": "rubble"
+    },
+    {
+     "name": "p7_brick_broken_worn_dirty_pile_03_dlc2",
+     "role": "rubble"
+    },
+    {
+     "name": "p7_debris_brick_clump_01_red",
+     "role": "rubble"
+    },
+    {
+     "name": "p7_debris_brick_clump_02_red",
+     "role": "rubble"
+    },
+    {
+     "name": "ind_debris_metal_scrap_04",
+     "role": "rubble"
+    },
+    {
+     "name": "ls_concrete_chunks_06",
+     "role": "rubble"
+    },
+    {
+     "name": "mp_frag_rock_pile_02",
+     "role": "rubble"
+    },
+    {
+     "name": "zmb_wood_support_03",
+     "role": "timber support"
+    },
+    {
+     "name": "zmb_wood_support_02",
+     "role": "timber support"
+    },
+    {
+     "name": "zmb_wood_support_05",
+     "role": "timber support"
+    },
+    {
+     "name": "cp_town_chair_01",
+     "role": "chair"
+    },
+    {
+     "name": "cp_town_chair_cushion_chrome",
+     "role": "chair"
+    },
+    {
+     "name": "cable_carriage_01",
+     "role": "cable"
+    },
+    {
+     "name": "equipment_industrial_cable_guard_01",
+     "role": "cable"
+    },
+    {
+     "name": "p7_ladder_metal_secured_cap",
+     "role": "ladder"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_ctl_light_lamp_vintage_01",
+     "role": "field desk lamp"
+    },
+    {
+     "name": "p7_zm_sta_note_cypher_typewriter_01",
+     "role": "field notes typewriter"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_dust_falling_lg_ch",
+     "role": "falling dust, large"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_dust_fall_tunnel",
+     "role": "tunnel dust"
+    },
+    {
+     "name": "vfx/iw7/_requests/coop/vfx_window_board_dust_01",
+     "role": "board dust"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mo/mtl_p7_brick_worn_brown_01",
+     "role": "worn brown brick"
+    },
+    {
+     "name": "mo/mtl_skl_stone_brick_01",
+     "role": "stone brick"
+    },
+    {
+     "name": "mcopw/plaster_damaged_02_dec",
+     "role": "damaged plaster"
+    },
+    {
+     "name": "mo/t7_wood_lath_plaster_01",
+     "role": "lath and plaster"
+    },
+    {
+     "name": "mo/brick_wall_13_red_plaster",
+     "role": "1931 red brick plaster"
+    },
+    {
+     "name": "mo/dt_plywood_dirty",
+     "role": "dirty plywood"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "layered wall section: 1978 tile, 1931 brick, rubble, glazed brick",
+     "size": [
+      832,
+      40,
+      400
+     ],
+     "note": "layers are materials; the cut wall is authored geometry"
+    },
+    {
+     "object": "glazed brick wall of the 1890s tunnel (Vayle)",
+     "size": [
+      128,
+      4,
+      128
+     ],
+     "note": "no glazed brick material among the stock maps; author the texture"
+    },
+    {
+     "object": "core samples in trays",
+     "size": [
+      40,
+      30,
+      10
+     ],
+     "note": "author"
+    },
+    {
+     "object": "field desk lamp (Strand)",
+     "size": [
+      20,
+      20,
+      40
+     ],
+     "note": "ported lamp available"
+    }
+   ]
+  },
+  "parlour": {
+   "models": [
+    {
+     "name": "p7_light_chandelier_vintage_02_off",
+     "role": "chandelier / sconce"
+    },
+    {
+     "name": "ac_prs_imp_furniture_chandelier1_off",
+     "role": "chandelier / sconce"
+    },
+    {
+     "name": "decor_light_chandelier_candle_bulbs_01",
+     "role": "chandelier / sconce"
+    },
+    {
+     "name": "wall_sconce_01_broken_iw6",
+     "role": "chandelier / sconce"
+    },
+    {
+     "name": "wall_sconce_01_iw6_on",
+     "role": "chandelier / sconce"
+    },
+    {
+     "name": "p7_picture_frame_fancy_04",
+     "role": "frame / painting"
+    },
+    {
+     "name": "com_frame_painting_medium_2",
+     "role": "frame / painting"
+    },
+    {
+     "name": "p7_painting_chinese_01",
+     "role": "frame / painting"
+    },
+    {
+     "name": "chair_victorian_velvet_01_red",
+     "role": "velvet seat"
+    },
+    {
+     "name": "chair_victorian_velvet_01_red_worn",
+     "role": "velvet seat"
+    },
+    {
+     "name": "ctl_furniture_chair_fancy_gold",
+     "role": "velvet seat"
+    },
+    {
+     "name": "furniture_pod_sofa_chair_corner_01",
+     "role": "velvet seat"
+    },
+    {
+     "name": "couch_modern_ottoman",
+     "role": "velvet seat"
+    },
+    {
+     "name": "ctl_furniture_side_table_fancy",
+     "role": "table"
+    },
+    {
+     "name": "p7_table_oriental_wood_01",
+     "role": "table"
+    },
+    {
+     "name": "p7_table_bar_modern_01_red",
+     "role": "table"
+    },
+    {
+     "name": "cp_final_messhall_cabinet_40",
+     "role": "cabinet"
+    },
+    {
+     "name": "cp_final_messhall_cabinet_slim",
+     "role": "cabinet"
+    },
+    {
+     "name": "captains_quarters_cabinet_03",
+     "role": "cabinet"
+    },
+    {
+     "name": "com_fire_bell_iw6",
+     "role": "bell"
+    },
+    {
+     "name": "p7_book_vintage_05",
+     "role": "books"
+    },
+    {
+     "name": "base_book_stack_01a",
+     "role": "books"
+    },
+    {
+     "name": "base_book_stack_02a",
+     "role": "books"
+    },
+    {
+     "name": "decor_book_large_02",
+     "role": "books"
+    },
+    {
+     "name": "decor_books_shelf",
+     "role": "books"
+    },
+    {
+     "name": "com_bookshelveswide",
+     "role": "books"
+    },
+    {
+     "name": "pb_curtain_fancy",
+     "role": "curtain"
+    },
+    {
+     "name": "afr_curtain_rod",
+     "role": "curtain"
+    },
+    {
+     "name": "p7_rug_cloth_modern_128x256_05",
+     "role": "rug"
+    },
+    {
+     "name": "furniture_dormitory_square_rug_01",
+     "role": "rug"
+    },
+    {
+     "name": "decor_dub_vase_01_dlc2",
+     "role": "vase / bust / globe"
+    },
+    {
+     "name": "p7_pottery_terracotta_d_bright_red",
+     "role": "vase / bust / globe"
+    },
+    {
+     "name": "decor_globe_antique_01_dlc1",
+     "role": "vase / bust / globe"
+    },
+    {
+     "name": "p7_mannequin_bust_vintage_01",
+     "role": "vase / bust / globe"
+    },
+    {
+     "name": "furniture_lamp_floor1_off",
+     "role": "floor lamp"
+    },
+    {
+     "name": "cp_final_messhall_column_angle",
+     "role": "arch / pillar"
+    },
+    {
+     "name": "cp_final_theater_arch_01",
+     "role": "arch / pillar"
+    },
+    {
+     "name": "decor_venice_wood_trim_ornate_02",
+     "role": "moulding"
+    },
+    {
+     "name": "decor_cornice_element_02",
+     "role": "moulding"
+    },
+    {
+     "name": "p7_sin_rowhouse_set_f_trim_136",
+     "role": "moulding"
+    },
+    {
+     "name": "p7_shelf_metal_single_small_01",
+     "role": "shelf"
+    },
+    {
+     "name": "cp_town_flower_shop_shelf_02",
+     "role": "shelf"
+    },
+    {
+     "name": "furniture_book_store_shelf_02",
+     "role": "shelf"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_ctl_clock_wall_vintage",
+     "role": "wall clock (long-case stand-in)"
+    },
+    {
+     "name": "p7_zm_ctl_desk_wood_vintage",
+     "role": "writing desk"
+    },
+    {
+     "name": "p7_zm_ctl_desk_mail_set",
+     "role": "desk set"
+    },
+    {
+     "name": "p7_zm_ctl_light_lamp_vintage_02",
+     "role": "table lamp"
+    },
+    {
+     "name": "p7_zm_sta_light_chandelier",
+     "role": "chandelier"
+    },
+    {
+     "name": "p7_piano_vintage_wood_worn",
+     "role": "piano (listening-horn stand-in)"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_candle_flame",
+     "role": "candle flame"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_dust_falling_med_ch",
+     "role": "dust in air"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/wood_seo_hotel_wood_floor_01_splinters",
+     "role": "hotel wood floor (parquet stand-in)"
+    },
+    {
+     "name": "mopw/wood_seo_hotel_wood_floor_01_splinters_light",
+     "role": "lighter wood floor"
+    },
+    {
+     "name": "mcopw/plaster_wall_trim_gold_editor",
+     "role": "gold wall trim"
+    },
+    {
+     "name": "mo/metal_gold_trim_01",
+     "role": "gold metal"
+    },
+    {
+     "name": "mcopw/refmat_metal_gold_01",
+     "role": "gold reference"
+    },
+    {
+     "name": "mo/mtl_p7_chair_victorian_velvet_red",
+     "role": "velvet chair"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "the fork wall: 144 tuning forks in a walnut frame",
+     "size": [
+      400,
+      12,
+      230
+     ],
+     "note": "author"
+    },
+    {
+     "object": "the listening horn, a brass horn the size of a door",
+     "size": [
+      120,
+      120,
+      240
+     ],
+     "note": "author"
+    },
+    {
+     "object": "long-case clock",
+     "size": [
+      40,
+      30,
+      230
+     ],
+     "note": "author; stock clocks are wall dials"
+    },
+    {
+     "object": "dispatch desk with four hatches",
+     "size": [
+      240,
+      90,
+      110
+     ],
+     "note": "author"
+    },
+    {
+     "object": "capsule No. 12 on a brass cradle",
+     "size": [
+      120,
+      60,
+      70
+     ],
+     "note": "author"
+    },
+    {
+     "object": "Vayle portrait with cut-out eyes",
+     "size": [
+      80,
+      4,
+      100
+     ],
+     "note": "author texture"
+    },
+    {
+     "object": "coffered ceiling",
+     "size": [
+      1700,
+      800,
+      60
+     ],
+     "note": "author"
+    },
+    {
+     "object": "herringbone parquet floor",
+     "size": [
+      1736,
+      800,
+      2
+     ],
+     "note": "stock hotel wood floor is a plank pattern, not herringbone"
+    }
+   ]
+  },
+  "bellows": {
+   "models": [
+    {
+     "name": "p7_cai_ceiling_fan_metal_blades",
+     "role": "fan / blower"
+    },
+    {
+     "name": "p7_ceiling_fan_metal_damaged",
+     "role": "fan / blower"
+    },
+    {
+     "name": "misc_modern_ceiling_fan_01",
+     "role": "fan / blower"
+    },
+    {
+     "name": "cp_town_wall_fan",
+     "role": "fan / blower"
+    },
+    {
+     "name": "cs_wallfan1",
+     "role": "fan / blower"
+    },
+    {
+     "name": "pipes_metal_vert_128",
+     "role": "pipe run"
+    },
+    {
+     "name": "pipes_metal02",
+     "role": "pipe run"
+    },
+    {
+     "name": "pipe_corridor_cluster_01",
+     "role": "pipe run"
+    },
+    {
+     "name": "pipe_metal_painted_straight_128_blue",
+     "role": "pipe run"
+    },
+    {
+     "name": "pipe_metal_painted_straight_128_red",
+     "role": "pipe run"
+    },
+    {
+     "name": "pipe_metal_painted_bend_90_med_red",
+     "role": "pipe run"
+    },
+    {
+     "name": "pipe_metal_painted_straight_64_red",
+     "role": "pipe run"
+    },
+    {
+     "name": "zmb_spaceland_theater_roof_base_gears_01",
+     "role": "gear"
+    },
+    {
+     "name": "container_plastic_holding_tank_01",
+     "role": "tank"
+    },
+    {
+     "name": "cp_town_propane_tank_large",
+     "role": "tank"
+    },
+    {
+     "name": "machinery_reciever_tank_pipe_topper_01",
+     "role": "tank"
+    },
+    {
+     "name": "container_electrical_box_01_components",
+     "role": "switchgear"
+    },
+    {
+     "name": "electrical_box_03_d",
+     "role": "switchgear"
+    },
+    {
+     "name": "electrical_freight_elevator_hoist_mech_dmg",
+     "role": "switchgear"
+    },
+    {
+     "name": "beacon_runningpipe_str_128",
+     "role": "running pipe"
+    },
+    {
+     "name": "beacon_runningpipe_bend_90",
+     "role": "running pipe"
+    },
+    {
+     "name": "duct_metal_rectangle_elbow_down_90",
+     "role": "duct / intake"
+    },
+    {
+     "name": "duct_metal_rectangle_s_joint",
+     "role": "duct / intake"
+    },
+    {
+     "name": "duct_metal_circular_vent",
+     "role": "duct / intake"
+    },
+    {
+     "name": "duct_metal_rectangle_slanted",
+     "role": "duct / intake"
+    },
+    {
+     "name": "fixture_exposed_air_vent",
+     "role": "duct / intake"
+    },
+    {
+     "name": "cp_final_railing_01_stairs_32_top_r_d",
+     "role": "stair"
+    },
+    {
+     "name": "machinery_oxygen_generator_pipe_valve_01_bare",
+     "role": "valve"
+    },
+    {
+     "name": "machinery_oxygen_generator_pipe_valve_02_bare",
+     "role": "valve"
+    },
+    {
+     "name": "light_exterior_wall_semi_cylinder_01",
+     "role": "warning beacon lamp"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_sta_elevator_weight_gear_01",
+     "role": "elevator counterweight gear"
+    },
+    {
+     "name": "p7_zm_sta_elevator_weight_gear_02",
+     "role": "elevator counterweight gear"
+    },
+    {
+     "name": "p7_zm_sta_elevator_weight_gear_sml",
+     "role": "elevator counterweight gear"
+    },
+    {
+     "name": "p7_piano_vintage_wood_worn",
+     "role": "organ console stand-in (piano)"
+    },
+    {
+     "name": "p7_ris_crane_tower_trolley",
+     "role": "crane tower trolley"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_final/amb/vfx_floor_vent_steam",
+     "role": "floor vent steam"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_grate_steam_01",
+     "role": "grate steam"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_broken_pipe_steam",
+     "role": "broken pipe steam"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_dust_falling_lg_ch",
+     "role": "dust"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/zerotest_metal_grate_painted_01_dark",
+     "role": "dark painted grate"
+    },
+    {
+     "name": "mo/ch_metal_rusty_03",
+     "role": "rusty metal"
+    },
+    {
+     "name": "mo/cp_final_metal_panel_lines_01",
+     "role": "metal panel lines"
+    },
+    {
+     "name": "mopw/metal_grate_expanded_panel",
+     "role": "expanded grate"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "two-storey rotary blower in riveted iron",
+     "size": [
+      300,
+      300,
+      500
+     ],
+     "note": "no blower; ceiling fans are 90 units"
+    },
+    {
+     "object": "organ console with pipes up the wall",
+     "size": [
+      200,
+      100,
+      600
+     ],
+     "note": "author (a ported piano stands in at most)"
+    },
+    {
+     "object": "grated intake three metres across",
+     "size": [
+      300,
+      60,
+      300
+     ],
+     "note": "author"
+    },
+    {
+     "object": "brass maker plate",
+     "size": [
+      40,
+      2,
+      24
+     ],
+     "note": "author"
+    },
+    {
+     "object": "Lodestar yellow beacon",
+     "size": [
+      20,
+      20,
+      30
+     ],
+     "note": "author; yellow tint of a stock lamp possible"
+    },
+    {
+     "object": "BLOW / DRAW lever",
+     "size": [
+      30,
+      30,
+      90
+     ],
+     "note": "author"
+    }
+   ]
+  },
+  "boneyard": {
+   "models": [
+    {
+     "name": "cp_town_bomb_delivery_vehicle",
+     "role": "wreck / vehicle shell"
+    },
+    {
+     "name": "cp_town_vehicle_oil_tanker_01",
+     "role": "wreck / vehicle shell"
+    },
+    {
+     "name": "veh_civ_lnd_70s_taxi_destroyed",
+     "role": "wreck / vehicle shell"
+    },
+    {
+     "name": "veh_civ_lnd_90s_pickup_truck",
+     "role": "wreck / vehicle shell"
+    },
+    {
+     "name": "veh_civ_lnd_40s_farm_truck_flatbed_static",
+     "role": "wreck / vehicle shell"
+    },
+    {
+     "name": "equipment_medical_cart_table_01",
+     "role": "trestle / table"
+    },
+    {
+     "name": "p7_cai_work_table_wood_03_bare",
+     "role": "trestle / table"
+    },
+    {
+     "name": "p7_table_folding_vintage_folded",
+     "role": "trestle / table"
+    },
+    {
+     "name": "cp_town_com_barrel_green",
+     "role": "paint drum / bucket"
+    },
+    {
+     "name": "zmb_bucket_01",
+     "role": "paint drum / bucket"
+    },
+    {
+     "name": "zmb_bucket_01_rusty",
+     "role": "paint drum / bucket"
+    },
+    {
+     "name": "com_plastic_crate_pallet",
+     "role": "tarp"
+    },
+    {
+     "name": "sketch_board_01",
+     "role": "colour chart"
+    },
+    {
+     "name": "misc_interior_chess_game_board",
+     "role": "colour chart"
+    },
+    {
+     "name": "couch_modern_01_3seats_alt_brown",
+     "role": "foreman seat"
+    },
+    {
+     "name": "couch_modern_2seats_white",
+     "role": "foreman seat"
+    },
+    {
+     "name": "couch_modern_3seats",
+     "role": "foreman seat"
+    },
+    {
+     "name": "furniture_sofa_leather_chair_clean_black",
+     "role": "foreman seat"
+    },
+    {
+     "name": "chair_lawn_plastic_iw6",
+     "role": "foreman seat"
+    },
+    {
+     "name": "zmb_fire_pit_large",
+     "role": "barrel fire"
+    },
+    {
+     "name": "zmb_light_bulb_incandescent_on_orange_bright",
+     "role": "stolen lamp"
+    },
+    {
+     "name": "light_bulb_incandescent",
+     "role": "stolen lamp"
+    },
+    {
+     "name": "p7_debris_junkyard_scrap_pile_01",
+     "role": "rubbish"
+    },
+    {
+     "name": "p7_debris_junkyard_scrap_pile_03",
+     "role": "rubbish"
+    },
+    {
+     "name": "p7_debris_clothing_tshirts_01",
+     "role": "rubbish"
+    },
+    {
+     "name": "p7_debris_clothing_pants_01",
+     "role": "rubbish"
+    },
+    {
+     "name": "com_asphalt_rubble_debris_01",
+     "role": "rubbish"
+    },
+    {
+     "name": "crr_deckbox_01",
+     "role": "crate"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_ori_crane_wood",
+     "role": "crane for the shell stack"
+    },
+    {
+     "name": "p7_zm_sta_desk_wood_burnt",
+     "role": "desk for the foreman"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_board_fire",
+     "role": "board fire"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_pallet_fire",
+     "role": "pallet fire"
+    },
+    {
+     "name": "vfx/iw7/core/fire/vfx_fire_lrg",
+     "role": "large fire"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_final/amb/vfx_falling_ash",
+     "role": "falling ash"
+    },
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_win_fire_dist",
+     "role": "flames at distance"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mopw/cp_rave_wood_planks_worn",
+     "role": "worn planks"
+    },
+    {
+     "name": "mopw/pbk_wood_planks_dirt_01",
+     "role": "dirty planks"
+    },
+    {
+     "name": "mcopw/dirt_stain_top_01",
+     "role": "dirt stain"
+    },
+    {
+     "name": "mcopw/has_peeling_painted_concrete_01_rvl",
+     "role": "peeling paint"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "two wrecked train car shells, stacked aslant, painted",
+     "size": [
+      534,
+      90,
+      120
+     ],
+     "note": "shells must come from the train car model"
+    },
+    {
+     "object": "spray booth of tarpaulin",
+     "size": [
+      150,
+      150,
+      220
+     ],
+     "note": "author"
+    },
+    {
+     "object": "barrel fire with flames",
+     "size": [
+      40,
+      40,
+      60
+     ],
+     "note": "barrel exists; fire is an effect"
+    },
+    {
+     "object": "murals 4 and 5, six metres long",
+     "size": [
+      600,
+      4,
+      200
+     ],
+     "note": "custom textures"
+    },
+    {
+     "object": "driver seat as foreman chair",
+     "size": [
+      60,
+      60,
+      100
+     ],
+     "note": "stock sofas stand in"
+    },
+    {
+     "object": "trestles with paint drums",
+     "size": [
+      120,
+      50,
+      90
+     ],
+     "note": "drums only in part"
+    }
+   ]
+  },
+  "terminus": {
+   "models": [
+    {
+     "name": "street_bench_short_iw6",
+     "role": "bench"
+    },
+    {
+     "name": "sdf_bench_folding_01_32",
+     "role": "bench"
+    },
+    {
+     "name": "sdf_bench_seat_padding_01",
+     "role": "bench"
+    },
+    {
+     "name": "p7_sin_signage_pole",
+     "role": "printed sign"
+    },
+    {
+     "name": "p7_sin_signage_generic",
+     "role": "printed sign"
+    },
+    {
+     "name": "sign_ind_misc_03",
+     "role": "printed sign"
+    },
+    {
+     "name": "sign_ind_misc_12",
+     "role": "printed sign"
+    },
+    {
+     "name": "base_book_stack_02b",
+     "role": "paper stack"
+    },
+    {
+     "name": "base_book_stack_04a",
+     "role": "paper stack"
+    },
+    {
+     "name": "light_interior_ceiling_lamp_01_prisoner_pt3",
+     "role": "ceiling light"
+    },
+    {
+     "name": "light_interior_frame_01",
+     "role": "ceiling light"
+    }
+   ],
+   "ported": [
+    {
+     "name": "p7_zm_ctl_clock_wall_vintage",
+     "role": "wall clock"
+    }
+   ],
+   "effects": [
+    {
+     "name": "vfx/iw7/levels/cp_disco/amb/vfx_light_mist",
+     "role": "light haze"
+    }
+   ],
+   "materials": [
+    {
+     "name": "mco/mtl_cardboardbox",
+     "role": "cardboard / paper"
+    },
+    {
+     "name": "mo/mtl_com_debris_paper_iw6_01",
+     "role": "printed paper"
+    },
+    {
+     "name": "mopw/carpet_office_01",
+     "role": "office carpet"
+    }
+   ],
+   "gaps": [
+    {
+     "object": "platform made of green-bar printer paper (1400x900)",
+     "size": [
+      1400,
+      900,
+      10
+     ],
+     "note": "custom texture on quads (report 8.1)"
+    },
+    {
+     "object": "312 pairs of printed footprints",
+     "size": [
+      30,
+      12,
+      1
+     ],
+     "note": "decals"
+    },
+    {
+     "object": "running clock",
+     "size": [
+      40,
+      6,
+      40
+     ],
+     "note": "ported wall clock available"
+    },
+    {
+     "object": "four benches of paper",
+     "size": [
+      100,
+      40,
+      45
+     ],
+     "note": "bench frames exist; skin is a material"
+    }
+   ]
+  }
+ }
+}
