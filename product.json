@@ -391,6 +391,7 @@
     "tools-source/iwzmap/native/iw7_fxperf.c",
     "tools-source/iwzmap/probe_colours.json",
     "tools-source/iwzmap/run-sz2.ps1",
+    "tools-source/iwzmap/st1_report.py",
     "tools-source/iwzmap/station_zero2.py",
     "tools-source/iwzmap/sz2_art_hooks.py",
     "tools-source/iwzmap/sz2_artlint.py",
