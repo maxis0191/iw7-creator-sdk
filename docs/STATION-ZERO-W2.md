@@ -37,4 +37,13 @@ zombies; the navigation is cut round it). Thin sheets get a box at least 4 thick
 
 ## Measured
 
-(filled in below as the runs land)
+Offline (no game), 11 Nov 2026:
+
+| What | Result |
+| --- | --- |
+| Dressing | 527 props (Cordon 171, Fare Hall 200, Escalator Hall 23, Arcade 133), 149 distinct models in the map, 55 fixture lights, about 155 solids and panels; `szdress.py build` 0 errors in under 2 s |
+| Gates on the emit | `iwz_emitcheck` 0 errors (the one island is the Terminus, far by design), `sz2_navconn` 0 fails, `flights` 14 of 14, ents lint no blocker; navigation cells 26,763 -> 25,974 (the clip boxes cut 789) |
+| Bake | 247 lights (192 fill lights in the 15 undressed zones, their look 0.97 to 1.35 of flat), 395 s |
+| Props per view (`tome_cull.py model`, the perfzones views) | 577 static props map-wide; kept per view median 29, max 278 (Arcade); budget 700 |
+| Door sightlines (`tome_cull.py check`, 276 views) | build b: 0 frustum errors, 134 props popped (they kept their template donors' cull distances). Fixed at the source: `scenegen.py emit` now writes the size-rule cull distance for every prop (build c) |
+| Build b | 447.9 MB; 4,573 s of wall time, of which the work was about 7 minutes (compile 10 s, full assembly 481 s, zone about 50 s): the rest was waiting for the machine's build slot |
