@@ -10,6 +10,9 @@ param(
   [ValidateRange(0,14400)][int]$WaitForSlotSeconds=3600,
   [string]$Owner='IWZ prefab room build',
   [string]$ZoneBuildExe='',                      # another zonetool.exe for the zone step (default: the same binary)
+  [string]$KitModels='',                         # kit_import.py: models of other zones or authored ports 'a,b' (or 'zone:name'); smodels.txt may place them
+  [string[]]$KitDumps=@(),                       # '<zone>=<dump root>;<techsets dump root>' (README, kit import)
+  [string]$KitReport='',
   [switch]$ReuseCompile,                         # keep the compile output already in <work>\dump\<map> (same -Src)
   [switch]$Incremental,                          # keep the stock links of the previous assembly (assemble.py --incremental)
   [switch]$CompileOnly)
@@ -24,6 +27,12 @@ if($ReuseCompile -and (Test-Path "$W\dump\$Map\maps\cp\$Map.d3dbsp.ents")){ "reu
 if(Test-Path "$W\iwz_src"){ Remove-Item "$W\iwz_src" -Recurse -Force }
 Copy-Item -Recurse $Src "$W\iwz_src"
 if(Test-Path "$W\dump\$Map"){ Remove-Item -LiteralPath "$W\dump\$Map" -Recurse -Force }
+if($KitModels){
+  # kit models placed as static models: the compiler reads their .xmb from <source>\xmodel (x64-zt iwzmap read_smodels)
+  $ka=@($W,$Map,'--models',$KitModels,'--stage-xmodels',"$W\iwz_src"); foreach($kd in $KitDumps){ $ka+=@('--dump',$kd) }
+  python -I "$S\kit_import.py" @ka
+  if($LASTEXITCODE){ throw 'kit_import --stage-xmodels failed' }
+}
 $env:IWZ_GEN_TOME='1'; $env:IWZ_KEEP_ENTSHAPES='1'
 if($Probes){ $env:IWZ_PROBES=$Probes }
 $t=Get-Date
@@ -32,7 +41,7 @@ $times.compile=[int]((Get-Date)-$t).TotalSeconds
 $full = Get-ChildItem "$W\zt-*.out.log" | Sort-Object LastWriteTime | Select-Object -Last 1
 if($full){ Copy-Item $full.FullName "$UmOut.compile.log" -Force -ErrorAction SilentlyContinue }
 if(($c -join "`n") -notmatch 'iwzmap: wrote'){ $c | Select-Object -Last 25; throw 'iwzcompile failed' }
-($c | Select-String 'iwzmap: wrote|static models|Umbra tome|not in the template|not used by the template').Line | Select-Object -First 12
+($c | Select-String 'iwzmap: wrote|iwzmap: [0-9]+ static models|no template instance|IWZ_SMODEL_DONOR|Umbra tome|not in the template|not used by the template').Line | Select-Object -First 12
 }
 if($CompileOnly){ return }
 if($ZoneBuildExe){ Copy-Item -LiteralPath $ZoneBuildExe -Destination "$W\zonetool.exe" -Force }
@@ -41,6 +50,14 @@ $inc=@()
 if($Incremental){ $inc=@('--incremental') } elseif(Test-Path "$W\zonetool\$Map"){ Remove-Item -LiteralPath "$W\zonetool\$Map" -Recurse -Force }
 python -I "$S\assemble.py" $W $Map "$Src\$Map.gsc" "$D\patch_cp_zmb" "$D\techsets_cp_zmb" "$D\techsets_global_cp" "$D\techsets_global" "$D\cp_zmb" @inc | Select-Object -Last 2
 if($LASTEXITCODE){ throw 'assemble failed' }
+if($KitModels){
+  # the kit models themselves into the zone (geometry, materials, image headers, techsets the template lacks)
+  $ka=@($W,$Map,'--models',$KitModels); foreach($kd in $KitDumps){ $ka+=@('--dump',$kd) }
+  if($KitReport){ $ka+=@('--report',$KitReport) }
+  foreach($td in [IO.Directory]::GetDirectories($D,'techsets_*')){ $rcsv=Join-Path $td ((Split-Path $td -Leaf)+".csv"); if(Test-Path $rcsv){ $ka+=@('--runtime-csv',$rcsv) } }
+  python -I "$S\kit_import.py" @ka
+  if($LASTEXITCODE){ throw 'kit_import failed' }
+}
 $null = New-Item -ItemType Directory -Force "$W\zonetool\$Map\techsets\ps"
 if(!(Test-Path "$W\zonetool\$Map\techsets\ps\null.hlsl.cso")){ [IO.File]::WriteAllBytes("$W\zonetool\$Map\techsets\ps\null.hlsl.cso",[byte[]]@()) }
 $csv="$W\zone_source\$Map.csv"; $lines=Get-Content $csv

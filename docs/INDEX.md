@@ -6,6 +6,7 @@ One page that routes a reader. Paths are relative to the repository root. The ch
 | I want to | Read | Tools | Check |
 | --- | --- | --- | --- |
 | make or change a generated map (Station Zero and after) | [CREATION-TOOLS.md](CREATION-TOOLS.md), then [tools-source/iwzmap/README.md](../tools-source/iwzmap/README.md) | `tools-source/iwzmap` | `tools-source-iwzmap-tests`, `tools-source-iwzmap-volume-check`, `tools-source-iwzmap-audio`, `tools-source-iwzmap-catalog`, `tools-source-iwzmap-art` |
+| lay out a whole zombies map as data (zones, heights, doors, stairs, spawners) | [SCENEGEN.md](SCENEGEN.md) | `tools-source/iwzmap/scenegen.py`, `tools-source/iwzmap/scenes/` | `tools-source-iwzmap-tests` |
 | read a studio map as data, lift a prefab | [WORLDKIT.md](WORLDKIT.md) | `tools-source/worldkit` | `tools-source-worldkit-tests` |
 | know what a captured frame of the game shows, as data (what is at a pixel, is a thing visible, floating, sunk, missing) | [SEE.md](SEE.md) | `tools-source/worldkit/iw7_see.py` | `tools-source-worldkit-tests` |
 | change a shipped map's entities with no build | [MAPENTS.md](MAPENTS.md) | `tools-source/mapents` | `tools-source-mapents-tests` |
@@ -16,6 +17,8 @@ One page that routes a reader. Paths are relative to the repository root. The ch
 | build the server spawn tip example | [tools-source/gsc-spawn-tip/README.md](../tools-source/gsc-spawn-tip/README.md) | `tools-source/gsc-spawn-tip` | `tools-source-gsc-spawn-tip`, `Test-SpawnTip`, `Test-SpawnTipHost` |
 | know that every script still parses after an edit | header of `tools-source/compile_check.py` | `tools-source/compile_check.py` | `tools-source-compiles` |
 | know what is proven and what is not | [MODDING-CAPABILITIES.md](MODDING-CAPABILITIES.md) (evidence as of 2026-10-16), [CREATION-TOOLS.md](CREATION-TOOLS.md) (the map tools) | | |
+| read the design of the custom map Station Zero (lore, world, quest, weapons, audio, build plan, client needs) | [station-zero/README.md](station-zero/README.md), then [station-zero/12-BUILD-PLAN.md](station-zero/12-BUILD-PLAN.md) | | |
+| pick stock models, materials and effects for a Station Zero zone, or see which objects must be authored | [STATION-ZERO-KITS.md](STATION-ZERO-KITS.md) | `tools-source/iwzmap/scenes/kit_lists.py` | `tools-source-iwzmap-tests` |
 | know why and in what order | [ENGINE-MODDING-STRATEGY.md](ENGINE-MODDING-STRATEGY.md) | | |
 | test in the game, measure, find a tool | server repository (iw7-paris-server): `docs/DEVKIT.md`, `docs/TOOLS-INDEX.md` | | |
 | know the rules for working here | [AGENTS.md](../AGENTS.md) | | |

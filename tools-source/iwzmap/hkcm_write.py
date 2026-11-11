@@ -118,6 +118,16 @@ def emit_simd(root):
     return b''.join(nodes), len(nodes)
 
 
+def degenerate(t, eps=1e-4):
+    """two corners equal (in collision units), or no area"""
+    a, b, c = t
+    if a == b or b == c or a == c:
+        return True
+    u = [b[k] - a[k] for k in range(3)]; v = [c[k] - a[k] for k in range(3)]
+    n = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+    return (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]) < eps * eps
+
+
 def tri_box(t):
     return [min(v[a] for v in t) for a in range(3)], [max(v[a] for v in t) for a in range(3)]
 
@@ -152,6 +162,14 @@ def encode(tris, template_path, tag=0, max_tris=127, tags=None):
     tags = list(tags) if tags is not None else [tag] * len(tris)
     assert len(tags) == len(tris)
     tris = [tuple(tuple(float(c) for c in v) for v in t) for t in tris]
+    # A triangle with two equal corners is written with two equal vertex indices, which the engine's static mesh tree
+    # reads as a custom primitive (a convex shape reference) that has no shape: a query that touches it calls the
+    # collide routine with a null shape (dedicated server crash at sub_1410AD7F0+0x11B from hkcdStaticMeshTree,
+    # Station Zero W1a, 11 Nov 2026). Degenerate triangles carry no surface: they are dropped.
+    keep = [i for i, t in enumerate(tris) if not degenerate(t)]
+    if len(keep) != len(tris):
+        tris = [tris[i] for i in keep]
+        tags = [tags[i] for i in keep]
     tpl = Packfile(open(template_path, 'rb').read())
     tb = tpl.data_sec.body
     root_end = [a for a, n, _ in tpl.objects if n == 'hknpCompressedMeshShape'][0]
