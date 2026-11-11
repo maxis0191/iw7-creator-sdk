@@ -68,9 +68,13 @@ bot: dvar `iwz_test_hold` 1 (held) or 0 (a tap); it is read only when the dvar `
 
 ### The Terminus floor (found by these tests)
 
-A trace grid in the game (45 traces, 37 s, no build) showed the Terminus floor hit only for x <= 8,380 and y <= 8,750,
-and a ray starting beyond that found no wall either, although the emitted collision has the floor everywhere
-(`iwz_emitcheck at`). The collision section holding the Terminus spanned 3,000..9,400 x 3,000..8,900 (6,400 units);
-by the encoder's own rule its boxes are right, so the engine reads a very wide section's tree more coarsely. Fix:
-`hkcm_write.split_sections(max_extent)`, used by `scenegen emit` with sections at most 1,024 units wide
-(`IWZ_MAX_SECTION`; 633 sections instead of 64, the widest 3,600 units = one triangle).
+A trace sweep in the game (127 vertical traces every 100 units over the whole room, one headless session) hit the
+Terminus floor only at 32 points: x <= 8,380 and y <= 8,750, and a ray starting beyond that found no wall either,
+although the emitted collision has the floor everywhere (`iwz_emitcheck at`) and the compiled collision is byte for byte
+the emitted one. Cause, read from the compiled clip map (`<work>\dump\cp_iwz\maps\cp\cp_iwz.d3dbsp.colmap`, floats at
+0xC6): the map compiler kept the template's physics broadphase, Spaceland's x -13,600..8,384, y -7,864..8,760; physics
+queries (traces, player movement, AI) are answered only inside it. With that box grown (10,424 / 9,932, written into
+the dump for a proof build) the same sweep hits 127 of 127 points. Fix at the source: x64-zt `iwzmap.cpp`
+`build_clip` grows the broadphase to hold the generated world plus 1,024 units (branch `claude/iwzmap-broadphase`).
+A first theory (collision sections too wide) was wrong: splitting sections to 1,024 units changed nothing (32 of 127
+again); that option stays available (`IWZ_MAX_SECTION`) but is off.

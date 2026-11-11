@@ -1321,8 +1321,9 @@ class Emitter:
         col = [tuple(tuple(c * mg.HAVOK_SCALE for c in p) for p in t) for t in self.B.mesh.col]
         blob, info = self.hk.encode(col, os.path.join(self.tpl, 'maps', 'cp', 'cp_zmb.d3dbsp.colmap.hkx'), tag=TAG_SOLID,
                                     max_tris=int(os.environ.get('IWZ_MAX_TRIS', '127')),
-                                    # sections at most 1,024 units wide (IWZ_MAX_SECTION, 0 = no limit): hkcm_write.split_sections
-                                    max_extent=(float(os.environ.get('IWZ_MAX_SECTION', '1024')) * mg.HAVOK_SCALE) or None,
+                                    # IWZ_MAX_SECTION=<units>: sections no wider than that (hkcm_write.split_sections); off by default:
+                                    # the Terminus floor loss it was tried for came from the physics broadphase (map compiler)
+                                    max_extent=(float(os.environ.get('IWZ_MAX_SECTION', '0')) * mg.HAVOK_SCALE) or None,
                                     tags=[self.B.mesh.col_tag.get(i, TAG_SOLID) for i in range(len(col))])
         open(os.path.join(self.out, 'colmap.hkx'), 'wb').write(blob)
         amb = ['ambient 0.30 0.30 0.32 0.50']

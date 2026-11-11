@@ -134,9 +134,9 @@ def tri_box(t):
 
 def split_sections(tris, ids, max_tris=127, max_extent=None):
     """Recursive split: <=127 triangles and <=255 unique vertices per section; with max_extent (collision units) also
-    until a section of several triangles is no wider than that. The engine reads a section's tree boxes coarser than
-    this encoder writes them when a section is very wide: a 6,400-unit section of Station Zero lost its far part (the
-    Terminus floor beyond x 8,381 and y 8,796 was not hit by any trace, a player fell through it; build e, 11 Nov 2026)."""
+    until a section of several triangles is no wider than that (an option; it is not needed for correctness: the far
+    Terminus floor of Station Zero that went missing in the game was outside the template's physics broadphase, not a
+    section decoding fault; 11 Nov 2026)."""
     verts = {v for i in ids for v in tris[i]}
     mn, mx = bounds([tri_box(tris[i]) for i in ids])
     wide = max_extent is not None and len(ids) > 1 and max(mx[a] - mn[a] for a in range(3)) > max_extent
