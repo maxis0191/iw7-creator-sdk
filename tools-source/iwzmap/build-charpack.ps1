@@ -4,7 +4,7 @@ param(
   [string]$Characters=(Join-Path $PSScriptRoot 'characters_5_8.json'),
   [ValidatePattern('^[a-z0-9_]+$')][string]$Zone='mod',
   [string]$RuntimeDir,                          # stock dumps with techsets_*\<zone>.csv (default: machine.ps1 TemplateDump)
-  [string]$Scheduler=$env:IW7_RESOURCE_SCHEDULER,
+  [string]$Scheduler='',                         # Resource-Scheduler.Core.ps1; empty: scheduler.ps1 resolves and guards it
   [ValidateRange(0,14400)][int]$WaitForSlotSeconds=3600,
   [switch]$Build)                               # also build the pack alone as zone <zone> (a test mod: mods\<name>\mod.ff)
 # One command for a character pack: dumps what the work folder lacks (each source zone's models, materials, images and
