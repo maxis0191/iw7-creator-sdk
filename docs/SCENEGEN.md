@@ -19,6 +19,8 @@ python -I -B scenegen.py emit    scenes\station_zero.json <cp_zmb dump> <src>  #
 python -I -B scenegen.py flights <src>                                         # navigation against the stair surface
 python -I -B scenegen.py routes  <src> [--pairs a,b;c,d] [--md table.md]       # walking times between zones
 python -I -B scenegen.py pools   <src> <cp_zmb dump>                           # template pools and entities used
+python -I -B scenegen.py labplans <src> <plan folder> [--per-plan 9] [--count 2] [--chase 30]   # headless gamelab plans: survey, climbs, crossings
+python -I -B scenegen.py tests   <src> [--json f.json]                         # playtest dvars: a climb up and down every flight, a route through every opening
 python -I -B iwz_emitcheck.py check <src>                                      # the offline map gate
 python -I -B sz2_navconn.py <src>                                              # navigation connectivity
 python -B <server>\ops\iwzmap\iwzmap_ents_lint.py <src>\ents.txt --gsc <src>\cp_iwz.gsc   # stock zombies recipe
@@ -47,6 +49,7 @@ and `scene_report.json` (areas, counts, entity census, problems). The source the
    "solids":  [{"rect": [...], "z0": -384, "z1": 0, "mat": "conc_dark"}],          // solid blocks
    "enclosures": [{"id": "car1", "rect": [...], "z1": -216,                         // a room inside the zone
                    "openings": {"north": [[s0, s1, top], ...], "east": [...]}}],
+   "props": [{"model": "furniture_park_bench_01_red", "at": [x, y], "yaw": 90, "static": true, "clip": [48, 20, 20]}],
    "volumes": [[x0, y0, x1, y1], ...],         // spawn volumes when one bounding box would overlap another zone
    "spawners": {"ground": 9, "wall": 3, "ceiling": 2, "points": [{"kind": "ground", "at": [x, y], "yaw": 0}]},
    "waiting": [[x, y], ...], "skate": [[x0, y0, x1, y1], ...],   // waiting places and the Rollers' skate mask

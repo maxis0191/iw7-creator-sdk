@@ -213,7 +213,11 @@ def in_volume(vol, p):
                for h in PROBE_HEIGHTS)
 
 
-def check(maps_dir, mapname, plan=None, require_spawners=False, gap_regions=(), check_all=False):
+def check(maps_dir, mapname, plan=None, require_spawners=False, gap_regions=(), check_all=False, layout=None):
+    # a scene-generated map (scenegen.py) names extra volumes of one zone <zone>_<k> and may place an opening's cells
+    # on either side of the wall: its layout says which zone each volume and each opening belongs to
+    vol_zone = {v['name']: v['zone'] for v in (layout or {}).get('volumes', [])}
+    portal_zones = {'portal:' + o['name']: set(o['zones']) for o in (layout or {}).get('openings', []) if 'zones' in o}
     base = os.path.join(maps_dir, mapname + '.d3dbsp')
     ents = parse_ents(base + '.ents')
     models = parse_ents_data(base + '.ents.data')
@@ -259,7 +263,7 @@ def check(maps_dir, mapname, plan=None, require_spawners=False, gap_regions=(), 
         if e.get('angles') and any(abs(x) > 1e-3 for x in vec3(e['angles'])):
             row['note'] = 'rotated entity: point tests skipped'
             continue
-        vol = dict(row=row, shape=sh, origin=vec3(e.get('origin', '0 0 0')), zone=e.get('script_noteworthy'))
+        vol = dict(row=row, shape=sh, origin=vec3(e.get('origin', '0 0 0')), zone=vol_zone.get(e.get('script_noteworthy'), e.get('script_noteworthy')))
         if cls == 'info_volume' and e.get('targetname') == 'spawn_volume':
             vols.append(vol)
             sp = [s for s in by_name.get(e.get('target'), []) if s.get('classname') == 'script_struct' and s.get('origin')]
@@ -288,7 +292,7 @@ def check(maps_dir, mapname, plan=None, require_spawners=False, gap_regions=(), 
             rs['cells'] += 1
             if len(hits) > 1:
                 stats['several'] += 1
-            if zone in hits:
+            if zone in hits or portal_zones.get(region, set()) & set(hits):
                 stats['own'] += 1; rs['own'] += 1
             elif region in gap_regions:
                 stats['gaps'] += 1
@@ -315,13 +319,18 @@ def main(argv=None):
     ap.add_argument('--gap-regions', default='', help='comma separated plan regions allowed outside every volume')
     ap.add_argument('--require-spawners', action='store_true', help='fail when a spawner is outside its spawn volume')
     ap.add_argument('--all', action='store_true', help='check every ?N brush entity, not only info_volume / trigger_*')
+    ap.add_argument('--layout', help='generator layout.json: zone of each volume and of each opening (scene-generated maps)')
     ap.add_argument('--json')
     a = ap.parse_args(argv)
     plan = None
     if a.plan:
         with open(a.plan) as f:
             plan = json.load(f)
-    r = check(a.maps_dir, a.map, plan, a.require_spawners, set(filter(None, a.gap_regions.split(','))), a.all)
+    layout = None
+    if a.layout:
+        with open(a.layout) as f:
+            layout = json.load(f)
+    r = check(a.maps_dir, a.map, plan, a.require_spawners, set(filter(None, a.gap_regions.split(','))), a.all, layout)
     for row in r['rows']:
         extra = ' spawners %d/%d' % (row['spawners_inside'], row['spawners']) if 'spawners' in row else ''
         print('%s %s %s %s %s shape %s bounds %s%s %s' % ('PASS' if row['ok'] else 'FAIL', row.get('classname'), row.get('targetname'),

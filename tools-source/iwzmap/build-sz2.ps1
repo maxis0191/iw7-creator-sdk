@@ -51,7 +51,7 @@ if(($c -join "`n") -notmatch 'iwzmap: wrote'){ $c | Select-Object -Last 25; thro
 if($KeepSubmodels -and (Test-Path "$Src\plan.json")){
   # gate: compiled trigger volumes must be point-testable and hold their spawners / zone cells (volume_check.py,
   # volumes agent, SDK codex/iwzmap-volumes 12f2f8f)
-  python -I "$S\volume_check.py" "$W\dump\$Map\maps\cp" $Map --plan "$Src\plan.json" --require-spawners --gap-regions 'portal:a_tunnel_platform_b,portal:d_hall_stair_a,portal:d_platform_tunnel,portal:d_platform_corridor' --json "$UmOut.volume_check.json" | Select-Object -Last 4
+  python -I "$S\volume_check.py" "$W\dump\$Map\maps\cp" $Map --plan "$Src\plan.json" --require-spawners --gap-regions 'portal:a_tunnel_platform_b,portal:d_hall_stair_a,portal:d_platform_tunnel,portal:d_platform_corridor' --layout "$Src\layout.json" --json "$UmOut.volume_check.json" | Select-Object -Last 4
   if($LASTEXITCODE){ throw 'volume_check failed' }
 }
 if($CompileOnly){ return }
