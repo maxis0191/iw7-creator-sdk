@@ -12,6 +12,7 @@ accepts (`zone_source/<zone>.csv` + `zonetool/<zone>/...`):
     each drop;
   - a string table `<table>` (default paris/characters_5_8.csv): `key,body,head,arms`, one row a character, an empty
     head for a full body: the server script reads it to know what the pack carries;
+  - the HUD portraits listed under "portraits" of each character (standalone 2d materials and their images);
   - `require` rows for the shared techset zones (ZoneTool loads them while building; they are loaded on every map).
 
 usage: char_pack.py <out dir> --dump <zone>=<dump>;<techsets dump> [--dump ...] [--characters characters_5_8.json]
@@ -72,8 +73,13 @@ def main(argv=None):
         sys.exit('no shared zone csv under ' + a.runtime_dir)
 
     report = os.path.join(a.out, 'charpack-report.json')
+    # HUD portraits of each character (2d materials of its home map's techsets zone): the mod's players8 LUI module
+    # draws them on every map (server docs/HUD8.md).
+    portraits = ['%s:%s' % (c['zone'], m) for c in chars for m in c.get('portraits', [])]
     args = [a.out, a.zone, '--models', ','.join(models), '--share-runtime', '--drop-procedural-bones',
             '--report', report] + runtime
+    if portraits:
+        args += ['--materials', ','.join(portraits)]
     for d in a.dump:
         args += ['--dump', d]
     if a.dry_run:
@@ -88,6 +94,8 @@ def main(argv=None):
     for c in chars:
         w.writerow([c['key'], c['body'], c.get('head') or '', c['arms']])
     rep['table'] = {'name': table, 'rows': len(chars)}
+    rep['portraits'] = {c['key']: {m: ('in pack' if 'material,' + m in rep.get('rows', []) else 'missing')
+                                   for m in c.get('portraits', [])} for c in chars}
     rep['characters'] = [{'key': c['key'], 'zone': c['zone'],
                           'models': {p: (c[p], 'in pack' if c[p] in rep.get('rows', []) or ('xmodel,' + c[p]) in rep.get('rows', [])
                                          else 'missing') for p in ('body', 'head', 'arms') if c.get(p)}} for c in chars]

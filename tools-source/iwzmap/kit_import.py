@@ -137,6 +137,9 @@ def main(argv=None):
     ap.add_argument('--material-map', action='append', default=[],
                     help='old=new: rename a material of the kit models (the subway train window glass to a translucent '
                          'glass of the same zone dump); also read from IWZ_KIT_MATERIAL_MAP (old=new;old=new)')
+    ap.add_argument('--materials', default='',
+                    help='<zone>:<material>,... standalone materials (HUD images: 2d materials of no model), with their '
+                         'images, state and techset, each written as a material row')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--stage-xmodels', default='', metavar='SRC',
                     help='only link the --models .xmb (+ _lod*.hkx) files into SRC/xmodel, for the map compiler to read '
@@ -189,6 +192,10 @@ def main(argv=None):
             q = ln.strip().split(',')
             if len(q) == 2 and q[1]:
                 runtime.add((q[0], q[1]))
+            elif len(q) == 3 and not q[1] and q[2] and q[0] == 'techset':
+                # a shared zone that only references a techset (2d in techsets_global): it comes from a zone loaded
+                # before every shared zone, so a reference to it resolves the same way
+                runtime.add((q[0], q[2]))
     ref_rows = []
     zone_types = {}                             # zone -> {name: {types}} from the dump csv of each of its roots
 
@@ -270,6 +277,63 @@ def main(argv=None):
     def add(src, rel):
         plan.append((src, os.path.join(dst, rel)))
 
+    def import_material(zone, mat):
+        """one material of a source zone: its json, state and constant buffer files, techset and images"""
+        if mat in seen_mat:
+            return
+        seen_mat.add(mat)
+        if ('material', mat) in have:
+            rep['materials']['shared'].append(mat); return
+        if a.share_runtime and ('material', mat) in runtime:
+            ref('material', mat); rep['materials']['shared'].append(mat); return
+        mj = find(zone, os.path.join('materials', mat + '.json'))
+        md = json.load(open(mj))
+        add(mj, os.path.join('materials', mat + '.json'))
+        rep['materials']['new'].append(mat)
+        tech = md.get('techniqueSet->name') or ''
+        if tech:
+            for sub, exts, need in (('state', ('.stateinfo', '.statebits', '.statebitsmap'), ('.statebits', '.statebitsmap')),
+                                    ('constantbuffer', ('.cbi', '.cbt'), ())):
+                for ext in exts:
+                    p = find(zone, os.path.join('techsets', sub, tech, mat + ext))
+                    if p:
+                        add(p, os.path.join('techsets', sub, tech, mat + ext))
+                    elif ext in need or (sub == 'constantbuffer' and md.get('constantTable')):
+                        missing.append('%s %s/%s%s' % (sub, tech, mat, ext))
+            if ('techset', tech) in have or ('techset', tech) in runtime:
+                ref('techset', tech)
+                if tech not in rep['techsets']['shared']:
+                    rep['techsets']['shared'].append(tech)
+            elif tech not in rep['techsets']['embedded'] and tech not in rep['techsets']['required']:
+                if not embed_techset(zone, tech):
+                    if a.allow_require:
+                        rep['techsets']['required'][tech] = zone; req_zones.add(zone)
+                    else:
+                        missing.append('techset:%s (no techsets_%s dump)' % (tech, zone))
+        for t in md.get('textureTable', []):
+            img = t.get('image')
+            if not img or img in seen_img:
+                continue
+            seen_img.add(img)
+            if ('image', img) in have:
+                rep['images']['shared'] += 1; continue
+            if img.startswith('$'):               # an engine image ($identitynormalmap...): always loaded
+                ref('image', img); rep['images']['shared'] += 1; continue
+            ip = find(zone, os.path.join('images', img + '.iw7Image'))
+            if ip:
+                add(ip, os.path.join('images', img + '.iw7Image'))
+            else:
+                # ported / authored models (x64-zt-extensions env-model): the pixels are embedded from a .dds
+                ip = find(zone, os.path.join('images', img + '.dds'))
+                if not ip and a.share_runtime and ',image' in types_of(zone, img) and 'image' not in types_of(zone, img):
+                    # the source zones themselves only reference it (no dump defines it): referenced the same way
+                    ref('image', img); rep['images'].setdefault('referencedOnly', []).append(img); continue
+                if not ip:
+                    missing.append('image:' + img); continue
+                add(ip, os.path.join('images', img + '.dds'))
+                rep['images']['embedded'] = rep['images'].get('embedded', 0) + 1
+            rep['images']['new'] += 1; rep['images']['bytes'] += os.path.getsize(ip)
+
     for name, zone in sorted(models.items()):
         if not dumps.get(zone or ''):
             missing.append('zone dump for %s (%s)' % (name, zone)); continue
@@ -347,62 +411,20 @@ def main(argv=None):
         if not info['surfaces']:
             missing.append('xsurface:' + name)
         for mat in info['materials']:
-            if mat in seen_mat:
-                continue
-            seen_mat.add(mat)
-            if ('material', mat) in have:
-                rep['materials']['shared'].append(mat); continue
-            if a.share_runtime and ('material', mat) in runtime:
-                ref('material', mat); rep['materials']['shared'].append(mat); continue
-            mj = find(zone, os.path.join('materials', mat + '.json'))
-            md = json.load(open(mj))
-            add(mj, os.path.join('materials', mat + '.json'))
-            rep['materials']['new'].append(mat)
-            tech = md.get('techniqueSet->name') or ''
-            if tech:
-                for sub, exts, need in (('state', ('.stateinfo', '.statebits', '.statebitsmap'), ('.statebits', '.statebitsmap')),
-                                        ('constantbuffer', ('.cbi', '.cbt'), ())):
-                    for ext in exts:
-                        p = find(zone, os.path.join('techsets', sub, tech, mat + ext))
-                        if p:
-                            add(p, os.path.join('techsets', sub, tech, mat + ext))
-                        elif ext in need or (sub == 'constantbuffer' and md.get('constantTable')):
-                            missing.append('%s %s/%s%s' % (sub, tech, mat, ext))
-                if ('techset', tech) in have or ('techset', tech) in runtime:
-                    ref('techset', tech)
-                    if tech not in rep['techsets']['shared']:
-                        rep['techsets']['shared'].append(tech)
-                elif tech not in rep['techsets']['embedded'] and tech not in rep['techsets']['required']:
-                    if not embed_techset(zone, tech):
-                        if a.allow_require:
-                            rep['techsets']['required'][tech] = zone; req_zones.add(zone)
-                        else:
-                            missing.append('techset:%s (no techsets_%s dump)' % (tech, zone))
-            for t in md.get('textureTable', []):
-                img = t.get('image')
-                if not img or img in seen_img:
-                    continue
-                seen_img.add(img)
-                if ('image', img) in have:
-                    rep['images']['shared'] += 1; continue
-                if img.startswith('$'):               # an engine image ($identitynormalmap...): always loaded
-                    ref('image', img); rep['images']['shared'] += 1; continue
-                ip = find(zone, os.path.join('images', img + '.iw7Image'))
-                if ip:
-                    add(ip, os.path.join('images', img + '.iw7Image'))
-                else:
-                    # ported / authored models (x64-zt-extensions env-model): the pixels are embedded from a .dds
-                    ip = find(zone, os.path.join('images', img + '.dds'))
-                    if not ip and a.share_runtime and ',image' in types_of(zone, img) and 'image' not in types_of(zone, img):
-                        # the source zones themselves only reference it (no dump defines it): referenced the same way
-                        ref('image', img); rep['images'].setdefault('referencedOnly', []).append(img); continue
-                    if not ip:
-                        missing.append('image:' + img); continue
-                    add(ip, os.path.join('images', img + '.dds'))
-                    rep['images']['embedded'] = rep['images'].get('embedded', 0) + 1
-                rep['images']['new'] += 1; rep['images']['bytes'] += os.path.getsize(ip)
+            import_material(zone, mat)
         rep['models'][name] = info
         rows.append('xmodel,' + name)
+
+    for spec in [m for m in a.materials.split(',') if m]:
+        zone, mat = spec.split(':', 1)
+        if not dumps.get(zone):
+            missing.append('zone dump for %s (%s)' % (mat, zone)); continue
+        if not find(zone, os.path.join('materials', mat + '.json')):
+            missing.append('material:' + mat); continue
+        new = mat not in seen_mat and ('material', mat) not in have
+        import_material(zone, mat)
+        if new and ('material', mat) not in have and 'material,' + mat not in rows:
+            rows.append('material,' + mat)
 
     rep['missing'] = missing
     rep['rows'] = rows
@@ -433,7 +455,7 @@ def main(argv=None):
         json.dump(rep, open(a.report, 'w'), indent=1)
     print('kit import: %d models, %d new materials (%d shared), %d new image headers (%d shared), '
           '%d techsets embedded %s, %d shared, surfaces %.1f MB, linked %d files; missing %s'
-          % (len(rows), len(rep['materials']['new']), len(rep['materials']['shared']), rep['images']['new'],
+          % (sum(1 for r in rows if r.startswith('xmodel,')), len(rep['materials']['new']), len(rep['materials']['shared']), rep['images']['new'],
              rep['images']['shared'], len(rep['techsets']['embedded']), rep['require'], len(rep['techsets']['shared']),
              rep['surfaceBytes'] / 1e6, linked, missing[:12]))
     return 1 if missing else 0
