@@ -1,4 +1,4 @@
-"""Which enemies a captured frame really shows, as data (package E2: "78 zombies drawn on the client").
+"""Which enemies a captured frame really shows, as data (counts engine agents drawn on the client).
 
 The game prints where every living enemy stands at the moment of a capture (server repository gamelab library
 crowd78.gsc, `cr_positions`: lines `GL CRPOS name=<set> kind=<agent|crowd> id=<n> x= y= z= yaw=`). For each enemy this

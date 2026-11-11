@@ -1,3 +1,5 @@
+> **Note (11 Nov 2026):** the hybrid crowd described in this document (2.2 and every mention of crowd bodies) is withdrawn. The crowd module was removed on 11 Nov 2026 because script-moved bodies are not real zombies; real capacity is engine work (server repository docs/ZOMBIE-CAPACITY.md).
+
 # 07 · ENEMIES
 
 Contents: the ordinary dead of Station Zero; seventy-eight at once (what it means, how, the proof); the mini

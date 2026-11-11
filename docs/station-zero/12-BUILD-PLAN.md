@@ -1,3 +1,5 @@
+> **Note (11 Nov 2026):** the hybrid crowd parts of this plan (E1/E2 crowd bodies) are withdrawn. The crowd module was removed on 11 Nov 2026 because script-moved bodies are not real zombies; real capacity is engine work (server repository docs/ZOMBIE-CAPACITY.md).
+
 # 12 · BUILD PLAN
 
 The bible cut into packages for sub-threads. Rules that bind every package (owner's rules and the project's

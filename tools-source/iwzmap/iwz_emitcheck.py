@@ -570,9 +570,17 @@ def check_graph(emit):
                     'count': 1, 'bbox': list(o) + list(o), 'detail': 'spawner cannot path to a player start: ' + why})
     islands = [(n, c) for c, n in sizes.items() if c != home]
     if islands:
+        # where each island is (the warning used to say only how many): the box of its cells' centres
+        boxes = []
+        for n, c in sorted(islands):
+            pts = [emit.nav.a[k].get('c') or emit.nav.a[k].get('center') for k in emit.nav.a if comp.get(k) == c]
+            pts = [p for p in pts if p]
+            if pts:
+                boxes.append('%d cells at %s' % (n, [round(min(p[0] for p in pts)), round(min(p[1] for p in pts)), round(min(p[2] for p in pts)),
+                                                     round(max(p[0] for p in pts)), round(max(p[1] for p in pts))]))
         out.append({'code': 'NAV_ISLANDS', 'severity': 'warn', 'where': 'map', 'count': len(islands),
-                    'bbox': [], 'detail': '%d nav islands not connected to the start island (%d cells in total)'
-                    % (len(islands), sum(n for n, _c in islands))})
+                    'bbox': [], 'detail': '%d nav islands not connected to the start island (%d cells in total)%s'
+                    % (len(islands), sum(n for n, _c in islands), (': ' + '; '.join(boxes)) if boxes else '')})
     return out
 
 
