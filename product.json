@@ -73,6 +73,7 @@
     "tools-source/iwzmap/sz_modules.py",
     "tools-source/iwzmap/sz_q1t1.py",
     "tools-source/iwzmap/tests/test_sz_q1t1.py",
+    "tools-source/iwzmap/tests/test_scheduler_core.py",
     "tools-source/worldkit/iw7_see.py",
     "tools-source/worldkit/tests/test_see.py",
     "docs/SEE.md",
@@ -521,6 +522,7 @@
     "tools-source/iwzmap/darkness/integration/README.md",
     "tools-source/iwzmap/darkness/runs/README.md",
     "tools-source/iwzmap/machine.ps1",
+    "tools-source/iwzmap/scheduler.ps1",
     "tools-source/iwzmap/zt_timeline.py",
     "tools-source/iwzmap/iwz_ledger.py",
     "tools-source/iwzmap/tests/test_iwz_ledger.py",
@@ -534,7 +536,7 @@
     {
       "id": "iw7-mod-components",
       "repository": "https://github.com/maxis0191/iw7-mod-components.git",
-      "revision": "8f8da005230bed04b6461e33dadf4184f1240703",
+      "revision": "a0990f32393381dcba59504d84f79c08780650e2",
       "files": [
         "ops/Base-Client.Core.ps1",
         "ops/Get-ServerInfo.ps1",
@@ -545,6 +547,7 @@
         "ops/Lab-RunPlan.ps1",
         "ops/Memory-Budget.ps1",
         "ops/Resource-Memory.ps1",
+        "ops/Resource-OwnedProcess.Core.ps1",
         "ops/Resource-RecorderOwnedProcess.Core.ps1",
         "ops/Resource-Scheduler.Core.ps1",
         "ops/check_boundaries.py",
