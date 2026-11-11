@@ -72,7 +72,7 @@ if($CompileOnly){ return }
 Lap 'compile'
 # -Incremental: the stock links and what the modules added stay when the modules ran with the same arguments last time
 # (the key below); only the generated world is linked again and the modules run again over the kept tree.
-$modKey=(@($D,$AudioSdk,$AudioBank,$AudioModels,$KitModels,$KitJson,$KitTier,$KitZones,($KitDumps -join '|'),($KitRuntimeCsv -join '|'),$FxImport,($FxDumps -join '|'),$FxNcsSkip,[string][bool]$Darkness,$DarkArgs,[string][bool]$Crowd,$CrowdModel) -join "`n")
+$modKey=(@($D,$AudioSdk,$AudioBank,$AudioModels,$KitModels,$KitJson,$KitTier,$KitZones,($KitDumps -join '|'),($KitRuntimeCsv -join '|'),$FxImport,($FxDumps -join '|'),$FxNcsSkip,[string][bool]$Darkness,$DarkArgs,[string][bool]$Crowd,$CrowdModel,$DeadeyeScriptable) -join "`n")
 $keyFile="$W\zonetool\$Map\.iwz_modules.key"
 $inc=@()
 if($Incremental -and (Test-Path -LiteralPath $keyFile) -and ((Get-Content -LiteralPath $keyFile -Raw) -eq $modKey)){ $inc=@('--incremental'); 'incremental assembly: same modules as the kept tree' }
