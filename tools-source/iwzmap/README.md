@@ -201,8 +201,27 @@ Measured 11 Nov 2026 (ZoneTool main 26382dd unless said):
 | --- | --- | --- | --- |
 | Light bake (`bake\lmbake.py`, 256 rays, 3 bounces, Station Zero g27dw) | 225 s (recorded) | 250 s, measured with `bake\New-BakeEnv.ps1`'s environment | only when the render world changes; `-ReuseBake` keeps it otherwise |
 | Zone step, prefab room (ZoneTool itself) | 518 s | 49 s | ZoneTool's log went through PowerShell's `Start-Process` redirection; every unbuffered line waited on that pipe (the sampler: 90 % of the main thread in `NtWriteFile`). `zt.ps1` now redirects to the file through cmd.exe. Indexed asset and script string lookups (x64-zt `claude/zone-build-speed`) took it from 518 to 337 s before that |
-| Zone step, Station Zero g27dw | 482 s | see the table below | same |
+| Zone step, Station Zero (core: world, collision, navigation, entities, baked light, custom materials; 476 MB) | 482 s (g27dw with kit, effects, audio) | 41 to 63 s | same |
 | Assemble (135,676 stock hard links, prefab room) | 166 s | seconds with `-Incremental` | `assemble.py --incremental` keeps the stock links of the previous assembly made from the same dumps and links only the generated world again; `build-sz2.ps1 -Incremental` also keeps what the modules (kit, effects, audio, darkness) added when they ran with the same arguments |
+
+**A one-room change, measured end to end** (11 Nov 2026, Station Zero core from the compiler-landing input plus the
+audio module, one prop of one room moved 32 units in `smodels.txt`, x64-zt main with the indexed lookups,
+`build-sz2.ps1 -KeepSubmodels -AudioSdk ...`; seconds of work, without the waits for the build reservation):
+
+| Build | Compile | Assemble (+ modules) | Zone | Total | Load headless (command to verdict) |
+| --- | --- | --- | --- | --- | --- |
+| full, fresh work folder | 7 s | 232 to 297 s | 41 to 63 s | about 5 minutes | 59 s, PASS 13/13 |
+| incremental (`-Incremental` after a build of the unchanged source) | 7 s | 1 s | 44 s | **52 s** | 57 s, the map in play (13/13 steps) |
+
+One-room change to a loaded map: **about 110 s** (52 s rebuild + 57 s headless load), against about 20 minutes before
+(bake reused in both). `ff_compare.py` on the full and the incremental zone: same content (64,724 differing bytes,
+all pointer residue, 0 content bytes); the sound bank files are byte-identical. The same tool between the unchanged
+and the changed source finds exactly the 2 bytes of the moved prop's coordinate. A run without the audio module
+gave the same result (64 s, same content) but its level script needs the module to start.
+The waits were the real cost on 11 Nov: the full build waited 2,584 s and the base build about 1,500 s for the build
+reservation behind other agents' sessions (quality ledger: the scheduler has no fairness rule for builds).
+Not covered: a change of the render world needs the bake again (250 s for the whole map; no per-room bake yet); the
+kit, effects and darkness modules were not in the timed runs.
 
 `ff_compare.py <a.ff> <b.ff>` says whether two built zones hold the same map: it decompresses both and separates
 pointer residue (leftover addresses of ZoneTool's own process in fields the game rebuilds at load; they change with
