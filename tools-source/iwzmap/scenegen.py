@@ -1191,7 +1191,11 @@ class Emitter:
             if kind == 'perk':
                 org, yaw = self.place(z, it, 40)
                 name = 'perk_machine_' + it['perk']
-                self.istruct(name, org, yaw, z.id, parameters='requires_power')
+                # 'powered': on from match start, like a stock area generator that is on (the Cordon's Up 'N Atoms)
+                if it.get('powered'):
+                    self.istruct(name, org, yaw, z.id)
+                else:
+                    self.istruct(name, org, yaw, z.id, parameters='requires_power')
                 self.relocations.append('%s 0 %g %g %g %g' % (self.PERK_SCRIPTABLE[it['perk']], org[0], org[1], org[2], yaw))
             elif kind == 'wall_buy':
                 org, yaw = self.place(z, it, 8)
