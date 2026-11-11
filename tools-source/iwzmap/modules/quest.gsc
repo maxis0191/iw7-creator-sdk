@@ -574,18 +574,20 @@ q1_conductor_spawn()
     if ( !isdefined( m ) )
         return;
     sp = q1_spawner_near( m[3] );
+    // he waits for a free agent (the 24 can be full of the clocks' bursts) and comes as soon as one is free: he cannot be lost
     z = undefined;
-    for ( i = 0; i < 20 && !isdefined( z ); i++ )
+    waited = 0;
+    while ( !isdefined( z ) )
     {
         if ( isdefined( sp ) )
             z = sp scripts\cp\zombies\zombies_spawning::spawn_wave_enemy( "generic_zombie", 1 );
         if ( !isdefined( z ) )
+        {
+            if ( waited == 5 )
+                q1_log( "CONDUCTOR waiting_for_agent alive=" + q1_alive_zombies() );
+            waited++;
             wait 1;
-    }
-    if ( !isdefined( z ) )
-    {
-        q1_log( "CONDUCTOR spawn_failed" );
-        return;
+        }
     }
     z.is_reserved = 1;
     level.current_num_spawned_enemies--;
