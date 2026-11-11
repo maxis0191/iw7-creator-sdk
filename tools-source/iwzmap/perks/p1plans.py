@@ -265,6 +265,10 @@ def main(argv=None):
         ex += [exp('use:c_%s.spent' % k[13:], 'eq', PRICE[k] if k != 'perk_machine_revive' else 500, '%s at its price' % k) for k in first]
         ex += [exp('use:c_%s.spent' % k[13:], 'eq', PRICE[k], '%s at its price' % k) for k in ['perk_machine_bakers', 'perk_machine_voyage', 'perk_machine_grudge', 'perk_machine_double']]
         ex += [exp('probe:c_new.count', 'eq', 6, 'six: the four new perks, Up N Atoms, Deadeye'), exp('probe:c_hits.bakers_count', 'eq', 12, 'twelve hits on the counter')]
+        # the same session for the official client (no UI dump there): the same purchases and frames, the HUD judged on frames
+        off = [s for s in st if s.get('do') != 'ui']
+        json.dump(plan('p1_client_official', 'P1: the official client buys all ten (no UI dump: frames only).', off + ex),
+                  open(os.path.join(out, 'p1_client_official.json'), 'w'), indent=1)
         json.dump(plan('p1_client', 'P1: a real player buys all ten (six, four sold back, the four new); HUD as data and machine frames (client).', st + ex),
                   open(os.path.join(out, 'p1_client.json'), 'w'), indent=1)
     print('wrote p1 plans to %s (given=%s)' % (out, given))
