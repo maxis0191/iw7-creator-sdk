@@ -21,11 +21,22 @@ python -I -B scenegen.py routes  <src> [--pairs a,b;c,d] [--md table.md]       #
 python -I -B scenegen.py pools   <src> <cp_zmb dump>                           # template pools and entities used
 python -I -B scenegen.py importprops <scene> <old layout.json> old=new[|new2][:dx,dy,dz] ... --out <props file>   # kept rooms: an older map's static props, where they stand
 python -I -B scenegen.py labplans <src> <plan folder> [--per-plan 9] [--count 2] [--chase 30]   # headless gamelab plans: survey, climbs, crossings
+python -I -B scenegen.py labreport <src> <run folders...>                      # the lab plans' cases: arrivals against the number spawned, player walks, survey per zone
+python -I -B scenegen.py walkplan <src> <plan folder> [--pairs a,b;c,d]        # a client plan: a real walk (forward key held) along three routes
+python -I -B scenegen.py walkreport <src> <run folders...>                     # measured walking speed; the speed that turns nav length into walking time
+python -I -B scenegen.py w1bplans <src> <plan folder>                          # headless systems plans: power, perks, wall weapons, wheel, trap, rounds
+python -I -B scenegen.py stressprops <scene> <kits.json> <n> <out scene>       # ST1: a copy of the scene with n static stock props spread by floor area
+python -I -B st1_report.py --perf <components>\ops\engine-map\iw7_perf.py LABEL=<run> ... [--base LABEL]   # frame time per spawn zone (gamelab perfzones), parity
 python -I -B scenegen.py tests   <src> [--json f.json]                         # playtest dvars: a climb up and down every flight, a route through every opening
 python -I -B iwz_emitcheck.py check <src>                                      # the offline map gate
 python -I -B sz2_navconn.py <src>                                              # navigation connectivity
 python -B <server>\ops\iwzmap\iwzmap_ents_lint.py <src>\ents.txt --gsc <src>\cp_iwz.gsc   # stock zombies recipe
 ```
+
+Lab plans are packed into sessions by their estimated time (a session holds 600 s) and every case is judged by its
+expectation (zombies arrived at least as many as spawned; the chase is `allow_partial`). The wall weapons keep the
+price of their place: the level script sets the stock cost of a weapon to the price of the place the player stands at
+(`iwz_wall_prices`, from `//@PRICES@`). The Third Rail's use entity is `iwz_trap_third_rail_use`.
 
 `<cp_zmb dump>` is the stock template dump (`IWZ_TEMPLATE_DUMP`, default `IW7-Runtime\iwz-map-ref-a\dump\cp_zmb`).
 `emit` writes `world.bin`, `colmap.hkx`, `navgraph.bin`, `ents.txt`, `triggers.txt`, `scriptables.txt`,
