@@ -37,10 +37,10 @@ TREAD = (14.5, 20.0)  # accepted tread depth (a 32-unit nav cell on the slope th
 NAV_LIFT = 2.0       # navigation above the clip sheet / floor
 HEAD = 96            # least headroom over any walkable point
 TAG_SOLID = 382
-# Stock stair surface tags (clip sheet 411, riser 387, tread 402) mix several surface runs in one collision section. The
-# first 19-zone build with them crashed the dedicated server twice in Havok geometry code (sub_1410AD7F0, called from
-# sub_14100D000) while a zombie on a flight closed on the player (W1a runs hl-a, 11 Nov 2026). Default: one solid tag,
-# as the old map's passing stairs had; IWZ_STAIR_TAGS=stock brings the tags back for an A/B.
+# Stock stair surface tags (clip sheet 411, riser 387, tread 402) put several surface runs in one collision section. They
+# are off by default (one solid tag, as the old map's passing stairs had). The first 19-zone build with them crashed the
+# dedicated server in Havok geometry code (sub_1410AD7F0, from sub_14100D000); the build without them crashed the same way
+# (W1a runs hl-a and hl-b, 11 Nov 2026), so the tags are not the cause; the crash is open. IWZ_STAIR_TAGS=stock: A/B.
 if os.environ.get('IWZ_STAIR_TAGS') == 'stock':
     TAG_STAIR_CLIP, TAG_RISER, TAG_TREAD = 411, 387, 402
 else:
