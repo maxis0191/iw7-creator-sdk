@@ -195,7 +195,8 @@ class Zone:
         self.far = bool(d.get('far'))
         self.areas = [dict(a, rect=tuple(float(v) for v in a['rect'])) for a in d.get('areas', [])]
         self.flights = [Flight(self.id, f) for f in d.get('flights', [])]
-        self.solids = [dict(s, rect=tuple(float(v) for v in s['rect'])) for s in d.get('solids', [])]
+        self.solids = [dict(s, rect=tuple(float(v) for v in s['rect'])) for s in d.get('solids', []) if 'quad' not in s]
+        self.panels = [s for s in d.get('solids', []) if 'quad' in s]     # flat panels (signs, posters): render only
         self.enclosures = [dict(e, rect=tuple(float(v) for v in e['rect'])) for e in d.get('enclosures', [])]
         self.props = d.get('props', [])       # {model, at [x, y], z (default the floor), yaw, pitch, roll, static, clip [hx, hy, hz]}
         self.spawners = d.get('spawners', {})
@@ -741,6 +742,13 @@ class Emitter:
                 else:
                     facing = 1 if lo_r[1] >= pa - 0.5 else -1
                 self.vquad(z.id, 'conc_dark', ax, pa, facing, lo, hi, min(za_, zb_), max(za_, zb_))
+        for s in z.panels:
+            # a flat panel (sign, poster, light face): four corners counter-clockwise seen from the front, starting
+            # bottom left; "fit" maps the whole image once onto it (signs), otherwise world-aligned like a wall
+            pts = [tuple(float(c) for c in p) for p in s['quad']]
+            uvs = [(0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0)] if s.get('fit', True) else None
+            self.B.quad(s.get('mat', 'conc_wall'), z.id, pts, n=tuple(float(c) for c in s['normal']), uvs=uvs,
+                        collide=bool(s.get('collide', False)))
         for s in z.solids:
             x0, y0, x1, y1 = s['rect']
             self.B.box((x0, y0, float(s.get('z0', z.zmin()))), (x1, y1, float(s.get('z1', z.ceiling))), s.get('mat', 'conc_wall'), z.id)
@@ -754,7 +762,11 @@ class Emitter:
                 self.smodels.append('%s %g %g %g %g %g %g %g' % (pr['model'], x, y, zz, ang[0], ang[1], ang[2], float(pr.get('scale', 1))))
             else:
                 self.prop_ents.append((pr['model'], (x, y, zz), ang, pr.get('targetname')))
-            if pr.get('clip'):
+            if pr.get('clip_box'):
+                # an absolute clip box (szdress: the prop's turned bounds on the floor under it)
+                cb = [float(v) for v in pr['clip_box']]
+                self.B.collision_box((cb[0], cb[1], cb[2]), (cb[3], cb[4], cb[5]))
+            elif pr.get('clip'):
                 hx, hy, hz = (float(v) for v in pr['clip'])
                 self.B.collision_box((x - hx, y - hy, zz), (x + hx, y + hy, zz + 2 * hz))
             self.layout.setdefault('decor', []).append({'zone': z.id, 'model': pr['model'], 'origin': [x, y, zz], 'yaw': ang[1],

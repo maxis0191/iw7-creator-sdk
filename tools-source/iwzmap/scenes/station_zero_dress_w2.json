@@ -1,0 +1,5796 @@
+{
+ "schema": "iwz.dress/1",
+ "about": "W2 dressing of Station Zero's spawn zone and the three zones a player reaches first (the build plan's order: W2's Fare Hall, then W3a's Cordon, Escalator Hall, Arcade). Every group says what it is in the story (docs/station-zero/02-WORLD.md section 4, wiki pages). Stock models of the template map only; architecture as solids; signs as fitted panels. Built by szdress.py.",
+ "vignettes": {
+  "decon_corridor": {
+   "note": "Lodestar's foam decontamination corridor (the Decon Foam trap's tent): two tarp walls on posts, a tin roof, a spray bar, open at both ends. Local x along the corridor.",
+   "items": [
+    {
+     "m": "dns_fence_tarp_01",
+     "at": [
+      -156,
+      80
+     ],
+     "yaw": 0,
+     "clip": true,
+     "row": {
+      "n": 3,
+      "step": [
+       104,
+       0
+      ]
+     },
+     "id": "n_lo"
+    },
+    {
+     "m": "dns_fence_tarp_01",
+     "at": [
+      -156,
+      -78
+     ],
+     "yaw": 0,
+     "clip": true,
+     "row": {
+      "n": 3,
+      "step": [
+       104,
+       0
+      ]
+     },
+     "id": "s_lo"
+    },
+    {
+     "m": "pipe_metal_painted_straight_128_gray",
+     "at": [
+      -150,
+      50
+     ],
+     "yaw": 270,
+     "h": 104,
+     "clip": false,
+     "id": "bar1",
+     "note": "spray bar"
+    },
+    {
+     "m": "pipe_metal_painted_straight_128_gray",
+     "at": [
+      24,
+      50
+     ],
+     "yaw": 270,
+     "h": 104,
+     "clip": false,
+     "id": "bar2"
+    },
+    {
+     "m": "beacon_hose_straight_128_gray",
+     "at": [
+      -110,
+      -52
+     ],
+     "yaw": 0,
+     "clip": false,
+     "id": "hose"
+    },
+    {
+     "m": "bucket_plastic",
+     "at": [
+      132,
+      60
+     ],
+     "clip": false,
+     "id": "bucket"
+    },
+    {
+     "m": "sign_wet_floor",
+     "at": [
+      150,
+      -50
+     ],
+     "yaw": 200,
+     "clip": false,
+     "id": "wet"
+    },
+    {
+     "m": "light_bulb_incandescent_on",
+     "at": [
+      0,
+      0
+     ],
+     "h": 113,
+     "clip": false,
+     "near_ok": true,
+     "id": "bulb"
+    }
+   ],
+   "solids": [
+    {
+     "rect": [
+      -162,
+      76,
+      -156,
+      84
+     ],
+     "h0": 0,
+     "h1": 124,
+     "mat": "steel_trim_sheet"
+    },
+    {
+     "rect": [
+      156,
+      76,
+      162,
+      84
+     ],
+     "h0": 0,
+     "h1": 124,
+     "mat": "steel_trim_sheet"
+    },
+    {
+     "rect": [
+      -162,
+      -84,
+      -156,
+      -76
+     ],
+     "h0": 0,
+     "h1": 124,
+     "mat": "steel_trim_sheet"
+    },
+    {
+     "rect": [
+      156,
+      -84,
+      162,
+      -76
+     ],
+     "h0": 0,
+     "h1": 124,
+     "mat": "steel_trim_sheet"
+    },
+    {
+     "rect": [
+      -166,
+      -88,
+      166,
+      88
+     ],
+     "h0": 124,
+     "h1": 128,
+     "mat": "corrugated"
+    }
+   ],
+   "lights": [
+    {
+     "at": [
+      0,
+      0
+     ],
+     "h": 110,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.78,
+      0.5
+     ],
+     "radius": 220,
+     "intensity": 0.22,
+     "fixture": "light_bulb_incandescent_on"
+    }
+   ]
+  },
+  "staging_tent": {
+   "note": "Lodestar's staging tent over the PLAZA hoist: tarp walls on three sides (open to local -x), the yellow hoist frame over the Victorian tube mouth, the crews' kit. Origin = the hatch.",
+   "items": [
+    {
+     "m": "dns_fence_tarp_01",
+     "at": [
+      -150,
+      150
+     ],
+     "yaw": 0,
+     "clip": true,
+     "row": {
+      "n": 3,
+      "step": [
+       104,
+       0
+      ]
+     },
+     "id": "n_lo"
+    },
+    {
+     "m": "dns_fence_tarp_01",
+     "at": [
+      -150,
+      -148
+     ],
+     "yaw": 0,
+     "clip": true,
+     "row": {
+      "n": 3,
+      "step": [
+       104,
+       0
+      ]
+     },
+     "id": "s_lo"
+    },
+    {
+     "m": "dns_fence_tarp_01",
+     "at": [
+      164,
+      -156
+     ],
+     "yaw": 90,
+     "clip": true,
+     "row": {
+      "n": 3,
+      "step": [
+       0,
+       104
+      ]
+     },
+     "id": "e_lo"
+    },
+    {
+     "m": "rope_hanging",
+     "at": [
+      0,
+      0
+     ],
+     "h": 118,
+     "clip": false,
+     "near_ok": true,
+     "id": "chain"
+    },
+    {
+     "m": "beacon_pallet_01",
+     "at": [
+      100,
+      95
+     ],
+     "clip": false,
+     "id": "pallet1"
+    },
+    {
+     "m": "crr_deckbox_01",
+     "at": [
+      84,
+      95
+     ],
+     "yaw": 90,
+     "on": "pallet1",
+     "h": 8,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "case1"
+    },
+    {
+     "m": "crr_deckbox_01",
+     "at": [
+      116,
+      95
+     ],
+     "yaw": 90,
+     "h": 8,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "case2"
+    },
+    {
+     "m": "crr_deckbox_03",
+     "at": [
+      100,
+      112
+     ],
+     "yaw": 10,
+     "h": 44,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "case3"
+    },
+    {
+     "m": "beacon_pallet_01",
+     "at": [
+      100,
+      -95
+     ],
+     "clip": false,
+     "id": "pallet2"
+    },
+    {
+     "m": "p7_box_cardboard_a_closed",
+     "at": [
+      90,
+      -95
+     ],
+     "h": 8,
+     "yaw": 5,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "box1"
+    },
+    {
+     "m": "p7_box_cardboard_a_closed",
+     "at": [
+      90,
+      -95
+     ],
+     "h": 37,
+     "yaw": 95,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "box2"
+    },
+    {
+     "m": "p7_box_cardboard_d_open01",
+     "at": [
+      120,
+      -110
+     ],
+     "h": 8,
+     "yaw": 30,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "box3"
+    },
+    {
+     "m": "equipment_industrial_toolbox_01",
+     "at": [
+      40,
+      -125
+     ],
+     "yaw": 80,
+     "clip": false,
+     "id": "tools"
+    },
+    {
+     "m": "equipment_oxygen_tank_01",
+     "at": [
+      140,
+      40
+     ],
+     "clip": false,
+     "id": "tank1"
+    },
+    {
+     "m": "equipment_oxygen_tank_01",
+     "at": [
+      146,
+      52
+     ],
+     "clip": false,
+     "id": "tank2"
+    },
+    {
+     "m": "zombies_clipboard_wpaper",
+     "at": [
+      40,
+      120
+     ],
+     "yaw": 25,
+     "clip": false,
+     "id": "clip"
+    },
+    {
+     "m": "light_bulb_incandescent_on",
+     "at": [
+      60,
+      0
+     ],
+     "h": 116,
+     "clip": false,
+     "id": "bulb"
+    }
+   ],
+   "solids": [
+    {
+     "rect": [
+      -74,
+      -4,
+      -66,
+      4
+     ],
+     "h0": 0,
+     "h1": 176,
+     "mat": "beam_yellow",
+     "note": "hoist frame"
+    },
+    {
+     "rect": [
+      66,
+      -4,
+      74,
+      4
+     ],
+     "h0": 0,
+     "h1": 176,
+     "mat": "beam_yellow"
+    },
+    {
+     "rect": [
+      -78,
+      -6,
+      78,
+      6
+     ],
+     "h0": 168,
+     "h1": 180,
+     "mat": "beam_yellow"
+    },
+    {
+     "rect": [
+      -156,
+      146,
+      -150,
+      154
+     ],
+     "h0": 0,
+     "h1": 124,
+     "mat": "steel_trim_sheet"
+    },
+    {
+     "rect": [
+      -156,
+      -154,
+      -150,
+      -146
+     ],
+     "h0": 0,
+     "h1": 124,
+     "mat": "steel_trim_sheet"
+    },
+    {
+     "rect": [
+      -160,
+      -158,
+      172,
+      158
+     ],
+     "h0": 182,
+     "h1": 186,
+     "mat": "corrugated"
+    }
+   ],
+   "lights": [
+    {
+     "at": [
+      60,
+      0
+     ],
+     "h": 112,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.8,
+      0.55
+     ],
+     "radius": 260,
+     "intensity": 0.3,
+     "fixture": "light_bulb_incandescent_on"
+    },
+    {
+     "at": [
+      0,
+      0
+     ],
+     "h": 160,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 20,
+     "outer": 45,
+     "color": [
+      1.0,
+      0.72,
+      0.25
+     ],
+     "radius": 260,
+     "pool": 0.35
+    }
+   ]
+  },
+  "memorial": {
+   "note": "Candles, notes and presents at the barrier, replaced each week for a year by a woman nobody sees (wiki the-cordon). One blue balloon from New Year's Eve tied to the barrier.",
+   "items": [
+    {
+     "m": "p7_candle_01",
+     "at": [
+      0,
+      0
+     ],
+     "clip": false,
+     "id": "c1"
+    },
+    {
+     "m": "p7_candle_02",
+     "at": [
+      10,
+      6
+     ],
+     "clip": false,
+     "id": "c2"
+    },
+    {
+     "m": "p7_candle_01",
+     "at": [
+      -12,
+      9
+     ],
+     "clip": false,
+     "id": "c3"
+    },
+    {
+     "m": "p7_candle_02",
+     "at": [
+      22,
+      -4
+     ],
+     "clip": false,
+     "id": "c4"
+    },
+    {
+     "m": "p7_candle_01",
+     "at": [
+      -26,
+      -6
+     ],
+     "clip": false,
+     "id": "c5"
+    },
+    {
+     "m": "p7_candle_02",
+     "at": [
+      34,
+      10
+     ],
+     "clip": false,
+     "id": "c6"
+    },
+    {
+     "m": "p7_candle_01",
+     "at": [
+      46,
+      -2
+     ],
+     "clip": false,
+     "id": "c7"
+    },
+    {
+     "m": "p7_candle_02",
+     "at": [
+      -40,
+      8
+     ],
+     "clip": false,
+     "id": "c8"
+    },
+    {
+     "m": "p7_candle_01",
+     "at": [
+      58,
+      8
+     ],
+     "clip": false,
+     "id": "c9"
+    },
+    {
+     "m": "p7_candle_02",
+     "at": [
+      -52,
+      -2
+     ],
+     "clip": false,
+     "id": "c10"
+    },
+    {
+     "m": "toy_gift_wrap_02",
+     "at": [
+      -70,
+      14
+     ],
+     "yaw": 20,
+     "clip": false,
+     "id": "g1"
+    },
+    {
+     "m": "toy_gift_wrap_02",
+     "at": [
+      76,
+      16
+     ],
+     "yaw": -35,
+     "clip": false,
+     "id": "g2"
+    },
+    {
+     "m": "cnd_paper_cia_01",
+     "at": [
+      4,
+      22
+     ],
+     "yaw": 12,
+     "clip": false,
+     "id": "n1"
+    },
+    {
+     "m": "cnd_paper_cia_01",
+     "at": [
+      -22,
+      26
+     ],
+     "yaw": -20,
+     "clip": false,
+     "id": "n2"
+    },
+    {
+     "m": "cnd_paper_cia_01",
+     "at": [
+      30,
+      28
+     ],
+     "yaw": 40,
+     "clip": false,
+     "id": "n3"
+    },
+    {
+     "m": "misc_bottle_wine_01",
+     "at": [
+      64,
+      -10
+     ],
+     "clip": false,
+     "id": "b1"
+    },
+    {
+     "m": "balloon_on_string_1_blue",
+     "at": [
+      -90,
+      20
+     ],
+     "yaw": 90,
+     "h": 44,
+     "clip": false,
+     "id": "balloon"
+    }
+   ],
+   "lights": [
+    {
+     "at": [
+      0,
+      4
+     ],
+     "h": 10,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.62,
+      0.3
+     ],
+     "radius": 110,
+     "intensity": 0.06
+    }
+   ]
+  },
+  "flood": {
+   "note": "a sodium floodlight on its stand, pointing down into the bowl",
+   "items": [
+    {
+     "m": "light_exterior_post_01_off",
+     "at": [
+      0,
+      0
+     ],
+     "clip": true,
+     "id": "post"
+    },
+    {
+     "m": "electrical_box02_iw6",
+     "at": [
+      0,
+      14
+     ],
+     "yaw": 90,
+     "h": 30,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "ballast"
+    }
+   ],
+   "lights": [
+    {
+     "at": [
+      12,
+      0
+     ],
+     "h": 244,
+     "type": "spot",
+     "dir": [
+      0.45,
+      0,
+      -0.89
+     ],
+     "inner": 18,
+     "outer": 48,
+     "color": [
+      1.0,
+      0.58,
+      0.3
+     ],
+     "radius": 700,
+     "pool": 0.42,
+     "fixture": "light_exterior_post_01_off"
+    }
+   ]
+  },
+  "banquet_table": {
+   "note": "a trestle of the inauguration banquet: three tables end to end, chairs pushed back or knocked over when the guests went down to board at 23:30; glasses and bottles still on it. Local x along the table.",
+   "items": [
+    {
+     "m": "lab_desk_02",
+     "at": [
+      -102,
+      0
+     ],
+     "yaw": 90,
+     "id": "t1"
+    },
+    {
+     "m": "lab_desk_02",
+     "at": [
+      0,
+      0
+     ],
+     "yaw": 90,
+     "id": "t2"
+    },
+    {
+     "m": "lab_desk_02",
+     "at": [
+      102,
+      0
+     ],
+     "yaw": 90,
+     "id": "t3"
+    },
+    {
+     "m": "com_restaurantchair_1",
+     "at": [
+      -120,
+      40
+     ],
+     "yaw": 270,
+     "id": "ch1"
+    },
+    {
+     "m": "com_restaurantchair_1",
+     "at": [
+      -60,
+      52
+     ],
+     "yaw": 250,
+     "id": "ch2"
+    },
+    {
+     "m": "com_restaurantchair_1",
+     "at": [
+      0,
+      64
+     ],
+     "roll": 90,
+     "yaw": 200,
+     "clip": false,
+     "id": "ch3",
+     "note": "knocked over"
+    },
+    {
+     "m": "com_restaurantchair_1",
+     "at": [
+      70,
+      44
+     ],
+     "yaw": 285,
+     "id": "ch4"
+    },
+    {
+     "m": "com_restaurantchair_1",
+     "at": [
+      128,
+      72
+     ],
+     "pitch": -90,
+     "yaw": 90,
+     "clip": false,
+     "id": "ch5",
+     "note": "on its back"
+    },
+    {
+     "m": "com_restaurantchair_1",
+     "at": [
+      -128,
+      -44
+     ],
+     "yaw": 95,
+     "id": "ch6"
+    },
+    {
+     "m": "com_restaurantchair_1",
+     "at": [
+      -58,
+      -70
+     ],
+     "roll": 90,
+     "yaw": 20,
+     "clip": false,
+     "id": "ch7"
+    },
+    {
+     "m": "com_restaurantchair_1",
+     "at": [
+      10,
+      -42
+     ],
+     "yaw": 80,
+     "id": "ch8"
+    },
+    {
+     "m": "com_restaurantchair_1",
+     "at": [
+      76,
+      -48
+     ],
+     "yaw": 110,
+     "id": "ch9"
+    },
+    {
+     "m": "misc_bottle_wine_01",
+     "at": [
+      -110,
+      6
+     ],
+     "h": 35,
+     "clip": false,
+     "id": "w1"
+    },
+    {
+     "m": "misc_bottle_wine_01",
+     "at": [
+      -30,
+      -8
+     ],
+     "h": 35,
+     "clip": false,
+     "id": "w2"
+    },
+    {
+     "m": "misc_bottle_wine_01",
+     "at": [
+      52,
+      4
+     ],
+     "h": 35,
+     "roll": 90,
+     "yaw": 30,
+     "clip": false,
+     "id": "w3",
+     "note": "on its side"
+    },
+    {
+     "m": "p7_cup_glass_tumbler",
+     "at": [
+      -90,
+      -14
+     ],
+     "h": 35,
+     "clip": false,
+     "id": "g1"
+    },
+    {
+     "m": "p7_cup_glass_tumbler",
+     "at": [
+      -70,
+      12
+     ],
+     "h": 35,
+     "clip": false,
+     "id": "g2"
+    },
+    {
+     "m": "p7_cup_glass_tumbler",
+     "at": [
+      -12,
+      14
+     ],
+     "h": 35,
+     "clip": false,
+     "id": "g3"
+    },
+    {
+     "m": "p7_cup_glass_tumbler",
+     "at": [
+      24,
+      -16
+     ],
+     "h": 35,
+     "clip": false,
+     "id": "g4"
+    },
+    {
+     "m": "p7_cup_glass_tumbler",
+     "at": [
+      66,
+      16
+     ],
+     "h": 35,
+     "clip": false,
+     "id": "g5"
+    },
+    {
+     "m": "p7_cup_glass_tumbler",
+     "at": [
+      118,
+      -10
+     ],
+     "h": 35,
+     "clip": false,
+     "id": "g6"
+    },
+    {
+     "m": "metal_serving_tray_01",
+     "at": [
+      -50,
+      0
+     ],
+     "h": 35,
+     "clip": false,
+     "id": "tr1"
+    },
+    {
+     "m": "food_snacks_iw6_cookiesstack01",
+     "at": [
+      -50,
+      2
+     ],
+     "h": 37,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "ck"
+    },
+    {
+     "m": "metal_serving_tray_01",
+     "at": [
+      96,
+      -2
+     ],
+     "h": 35,
+     "yaw": 20,
+     "clip": false,
+     "id": "tr2"
+    },
+    {
+     "m": "food_snacks_iw6_donutsstack01",
+     "at": [
+      96,
+      0
+     ],
+     "h": 37,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "dn"
+    },
+    {
+     "m": "p7_candle_01",
+     "at": [
+      -20,
+      0
+     ],
+     "h": 35,
+     "clip": false,
+     "id": "cd1"
+    },
+    {
+     "m": "p7_candle_02",
+     "at": [
+      30,
+      2
+     ],
+     "h": 35,
+     "clip": false,
+     "id": "cd2"
+    },
+    {
+     "m": "p7_diner_table_napkin_clean",
+     "at": [
+      140,
+      0
+     ],
+     "h": 35,
+     "clip": false,
+     "id": "nap"
+    }
+   ]
+  },
+  "band_corner": {
+   "note": "the brass band's corner: an arc of folding chairs, two knocked down, sheet music on the floor, the stands, the PA",
+   "items": [
+    {
+     "m": "chair_folding_wood",
+     "at": [
+      0,
+      80
+     ],
+     "yaw": 270,
+     "id": "c1"
+    },
+    {
+     "m": "chair_folding_wood",
+     "at": [
+      56,
+      66
+     ],
+     "yaw": 240,
+     "id": "c2"
+    },
+    {
+     "m": "chair_folding_wood",
+     "at": [
+      112,
+      6
+     ],
+     "roll": 90,
+     "yaw": 210,
+     "clip": false,
+     "id": "c3"
+    },
+    {
+     "m": "chair_folding_wood",
+     "at": [
+      -56,
+      66
+     ],
+     "yaw": 300,
+     "id": "c4"
+    },
+    {
+     "m": "chair_folding_wood",
+     "at": [
+      -100,
+      24
+     ],
+     "yaw": 330,
+     "id": "c5"
+    },
+    {
+     "m": "chair_folding_wood_folded",
+     "at": [
+      -120,
+      -30
+     ],
+     "pitch": -90,
+     "yaw": 30,
+     "clip": false,
+     "id": "c6"
+    },
+    {
+     "m": "vertical_hook_stand",
+     "at": [
+      10,
+      30
+     ],
+     "yaw": 90,
+     "clip": false,
+     "id": "s1",
+     "note": "music stand"
+    },
+    {
+     "m": "vertical_hook_stand",
+     "at": [
+      -40,
+      28
+     ],
+     "yaw": 70,
+     "clip": false,
+     "id": "s2"
+    },
+    {
+     "m": "vertical_hook_stand",
+     "at": [
+      -90,
+      -60
+     ],
+     "roll": 90,
+     "yaw": 120,
+     "clip": false,
+     "id": "s3",
+     "note": "knocked over"
+    },
+    {
+     "m": "cnd_paper_cia_01",
+     "at": [
+      30,
+      -10
+     ],
+     "yaw": 15,
+     "clip": false,
+     "id": "p1"
+    },
+    {
+     "m": "cnd_paper_cia_01",
+     "at": [
+      44,
+      -24
+     ],
+     "yaw": 70,
+     "clip": false,
+     "id": "p2"
+    },
+    {
+     "m": "cnd_paper_cia_01",
+     "at": [
+      -14,
+      -18
+     ],
+     "yaw": -40,
+     "clip": false,
+     "id": "p3"
+    },
+    {
+     "m": "cnd_paper_cia_01",
+     "at": [
+      -60,
+      -4
+     ],
+     "yaw": 100,
+     "clip": false,
+     "id": "p4"
+    },
+    {
+     "m": "ehq_speaker_monitor_01",
+     "at": [
+      -30,
+      -80
+     ],
+     "yaw": 80,
+     "id": "pa1"
+    },
+    {
+     "m": "ehq_speaker_monitor_01",
+     "at": [
+      60,
+      -76
+     ],
+     "yaw": 100,
+     "id": "pa2"
+    },
+    {
+     "m": "zmb_dj_mic",
+     "at": [
+      14,
+      -60
+     ],
+     "yaw": 90,
+     "clip": false,
+     "id": "mic"
+    },
+    {
+     "m": "ground_wires_01",
+     "at": [
+      100,
+      -70
+     ],
+     "yaw": 180,
+     "clip": false,
+     "id": "lead",
+     "overlap_ok": true
+    }
+   ]
+  },
+  "token_booth": {
+   "note": "a 1931 token booth refitted in 1978: a dark counter base, wired glass on three sides, a token machine at its side and the clerk's register still open. Opens to local +x.",
+   "items": [
+    {
+     "m": "park_cash_register",
+     "at": [
+      40,
+      10
+     ],
+     "yaw": 0,
+     "h": 42,
+     "clip": false,
+     "id": "reg"
+    },
+    {
+     "m": "pb_money_stack_01",
+     "at": [
+      44,
+      -16
+     ],
+     "h": 42,
+     "yaw": 30,
+     "clip": false,
+     "id": "money",
+     "note": "the night's takings, never collected"
+    },
+    {
+     "m": "stool_bar_padded_01_green",
+     "at": [
+      -20,
+      4
+     ],
+     "id": "stool"
+    },
+    {
+     "m": "park_token_machine",
+     "at": [
+      20,
+      -64
+     ],
+     "yaw": 0,
+     "id": "tokens"
+    },
+    {
+     "m": "furniture_rack_forms_iw6",
+     "at": [
+      40,
+      36
+     ],
+     "h": 42,
+     "yaw": 0,
+     "clip": false,
+     "id": "forms"
+    }
+   ],
+   "solids": [
+    {
+     "rect": [
+      30,
+      -44,
+      62,
+      44
+     ],
+     "h0": 0,
+     "h1": 42,
+     "mat": "panel_dark",
+     "note": "counter"
+    },
+    {
+     "rect": [
+      -60,
+      -44,
+      62,
+      -40
+     ],
+     "h0": 0,
+     "h1": 42,
+     "mat": "panel_dark"
+    },
+    {
+     "rect": [
+      -60,
+      40,
+      62,
+      44
+     ],
+     "h0": 0,
+     "h1": 42,
+     "mat": "panel_dark"
+    },
+    {
+     "rect": [
+      -64,
+      -48,
+      66,
+      48
+     ],
+     "h0": 120,
+     "h1": 128,
+     "mat": "metal_black",
+     "note": "roof"
+    },
+    {
+     "rect": [
+      60,
+      -48,
+      66,
+      -42
+     ],
+     "h0": 42,
+     "h1": 120,
+     "mat": "chrome_trim"
+    },
+    {
+     "rect": [
+      60,
+      42,
+      66,
+      48
+     ],
+     "h0": 42,
+     "h1": 120,
+     "mat": "chrome_trim"
+    }
+   ],
+   "panels": [
+    {
+     "at": [
+      64,
+      0
+     ],
+     "yaw": 0,
+     "w": 84,
+     "ht": 76,
+     "h": 43,
+     "mat": "glass",
+     "fit": false
+    },
+    {
+     "at": [
+      0,
+      45
+     ],
+     "yaw": 90,
+     "w": 120,
+     "ht": 76,
+     "h": 43,
+     "mat": "glass",
+     "fit": false
+    },
+    {
+     "at": [
+      0,
+      -45
+     ],
+     "yaw": 270,
+     "w": 120,
+     "ht": 76,
+     "h": 43,
+     "mat": "glass",
+     "fit": false
+    },
+    {
+     "at": [
+      66.5,
+      0
+     ],
+     "yaw": 0,
+     "w": 84,
+     "ht": 6,
+     "h": 112,
+     "mat": "light_line_yellow"
+    }
+   ],
+   "lights": [
+    {
+     "at": [
+      0,
+      0
+     ],
+     "h": 110,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.82,
+      0.55
+     ],
+     "radius": 200,
+     "intensity": 0.14
+    }
+   ]
+  },
+  "column": {
+   "note": "one of the Fare Hall's three 1931 columns: charcoal tile to the dado, white tile above, a steel band",
+   "solids": [
+    {
+     "rect": [
+      -22,
+      -22,
+      22,
+      22
+     ],
+     "h0": 0,
+     "h1": 102,
+     "mat": "tile_charcoal"
+    },
+    {
+     "rect": [
+      -23,
+      -23,
+      23,
+      23
+     ],
+     "h0": 102,
+     "h1": 110,
+     "mat": "steel_trim_sheet"
+    },
+    {
+     "rect": [
+      -20,
+      -20,
+      20,
+      20
+     ],
+     "h0": 110,
+     "h1": 320,
+     "mat": "tile_white"
+    }
+   ]
+  },
+  "shop_mouth": {
+   "note": "a 1978 shop front: the roll shutter left half up, a neon strip under it. Origin = middle of the bay mouth on the passage line; local +x into the shop (north)",
+   "solids": [
+    {
+     "rect": [
+      0,
+      -160,
+      12,
+      160
+     ],
+     "h0": 150,
+     "h1": 256,
+     "mat": "rollup"
+    }
+   ],
+   "panels": []
+  },
+  "planter_island": {
+   "note": "a 1978 planter island in the middle of the underpass: the flowers dead a year, a bench back to back each side, an ashtray bin. Local x along the passage.",
+   "items": [
+    {
+     "m": "p7_foliage_distictis_flowers_ground_192",
+     "at": [
+      -96,
+      6
+     ],
+     "h": 26,
+     "yaw": 0,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "flowers"
+    },
+    {
+     "m": "furniture_park_bench_01_yellow",
+     "at": [
+      0,
+      60
+     ],
+     "yaw": 270,
+     "id": "bN"
+    },
+    {
+     "m": "furniture_park_bench_01_yellow",
+     "at": [
+      0,
+      -60
+     ],
+     "yaw": 90,
+     "id": "bS"
+    },
+    {
+     "m": "fac_trash_bin",
+     "at": [
+      118,
+      0
+     ],
+     "id": "ash"
+    },
+    {
+     "m": "food_trash_bag_candy_02",
+     "at": [
+      30,
+      44
+     ],
+     "h": 20,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "w1"
+    }
+   ],
+   "solids": [
+    {
+     "rect": [
+      -104,
+      -26,
+      104,
+      26
+     ],
+     "h0": 0,
+     "h1": 26,
+     "mat": "wood_trim"
+    },
+    {
+     "rect": [
+      -100,
+      -22,
+      100,
+      22
+     ],
+     "h0": 26,
+     "h1": 27,
+     "mat": "ballast"
+    }
+   ]
+  },
+  "cabinet_island": {
+   "note": "the underpass's own arcade corner: four cabinets back to back, screens dead, a table game and its stool",
+   "items": [
+    {
+     "m": "park_arcade_standing_02_off",
+     "at": [
+      -16,
+      21
+     ],
+     "yaw": 90,
+     "id": "c1"
+    },
+    {
+     "m": "park_arcade_standing_05_off",
+     "at": [
+      16,
+      21
+     ],
+     "yaw": 90,
+     "id": "c2"
+    },
+    {
+     "m": "park_arcade_standing_08_off",
+     "at": [
+      -16,
+      -21
+     ],
+     "yaw": 270,
+     "id": "c3"
+    },
+    {
+     "m": "park_arcade_standing_01_off",
+     "at": [
+      16,
+      -21
+     ],
+     "yaw": 270,
+     "id": "c4"
+    },
+    {
+     "m": "park_arcade_table_top_01",
+     "at": [
+      110,
+      0
+     ],
+     "yaw": 0,
+     "id": "tbl"
+    },
+    {
+     "m": "stool_bar_padded_01_green",
+     "at": [
+      110,
+      44
+     ],
+     "id": "st"
+    },
+    {
+     "m": "zmb_arcade_toy_robot_black",
+     "at": [
+      110,
+      -4
+     ],
+     "h": 31,
+     "clip": false,
+     "id": "toy",
+     "note": "a prize left on the table"
+    }
+   ],
+   "lights": [
+    {
+     "at": [
+      0,
+      0
+     ],
+     "h": 70,
+     "type": "omni",
+     "color": [
+      0.55,
+      0.7,
+      1.0
+     ],
+     "radius": 140,
+     "intensity": 0.05,
+     "note": "standby glow of the cabinets"
+    }
+   ]
+  },
+  "coat_check": {
+   "note": "the gala's cloakroom: a rack of coats nobody came back for, the ticket table",
+   "items": [
+    {
+     "m": "ac_prs_imp_com_clothing_rack_1",
+     "at": [
+      0,
+      0
+     ],
+     "yaw": 0,
+     "id": "rack"
+    },
+    {
+     "m": "clothes_tshirts_hanging_group_01",
+     "at": [
+      -28,
+      0
+     ],
+     "h": 74,
+     "yaw": 90,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "coats1"
+    },
+    {
+     "m": "clothes_tshirts_hanging_03",
+     "at": [
+      4,
+      0
+     ],
+     "h": 74,
+     "yaw": 90,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "coats2"
+    },
+    {
+     "m": "clothes_tshirts_hanging_01",
+     "at": [
+      30,
+      0
+     ],
+     "h": 74,
+     "yaw": 90,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "coats3"
+    },
+    {
+     "m": "furniture_restaurant_table_01",
+     "at": [
+      0,
+      -56
+     ],
+     "id": "tbl"
+    },
+    {
+     "m": "zombies_clipboard_wpaper",
+     "at": [
+      -4,
+      -56
+     ],
+     "h": 32,
+     "yaw": 15,
+     "clip": false,
+     "id": "tickets"
+    },
+    {
+     "m": "baseball_cap_group_01",
+     "at": [
+      10,
+      -50
+     ],
+     "h": 32,
+     "yaw": 60,
+     "clip": false,
+     "id": "hats"
+    }
+   ]
+  },
+  "podium": {
+   "note": "the dignitaries' podium facing the banquet, where the line was declared open at 23:30; the speaker's mic still on its stand",
+   "items": [
+    {
+     "m": "zmb_altar_table_01",
+     "at": [
+      0,
+      0
+     ],
+     "yaw": 0,
+     "id": "lectern"
+    },
+    {
+     "m": "zmb_dj_mic",
+     "at": [
+      6,
+      0
+     ],
+     "h": 42,
+     "yaw": 0,
+     "clip": false,
+     "id": "mic"
+    },
+    {
+     "m": "cnd_paper_cia_01",
+     "at": [
+      -4,
+      8
+     ],
+     "h": 42,
+     "yaw": 5,
+     "clip": false,
+     "id": "speech"
+    },
+    {
+     "m": "ehq_speaker_monitor_01",
+     "at": [
+      -10,
+      64
+     ],
+     "yaw": 20,
+     "id": "spk1"
+    },
+    {
+     "m": "ehq_speaker_monitor_01",
+     "at": [
+      -10,
+      -64
+     ],
+     "yaw": -20,
+     "id": "spk2"
+    }
+   ]
+  }
+ },
+ "zones": {
+  "cordon": {
+   "budget": 330,
+   "items": [
+    {
+     "note": "the rim: crowd barriers of the Transit Police along the north wall, broken where the wall weapons and spawners are"
+    },
+    {
+     "m": "barrier_pedestrian_01",
+     "wall": "north",
+     "s": -820,
+     "yaw": 0,
+     "id": "rimB"
+    },
+    {
+     "m": "barrier_pedestrian_01",
+     "wall": "north",
+     "s": -420,
+     "yaw": 0,
+     "row": {
+      "n": 4,
+      "step": [
+       140,
+       0
+      ]
+     },
+     "id": "rimC"
+    },
+    {
+     "m": "barrier_pedestrian_01",
+     "wall": "north",
+     "s": 420,
+     "yaw": 0,
+     "row": {
+      "n": 3,
+      "step": [
+       140,
+       0
+      ]
+     },
+     "id": "rimD"
+    },
+    {
+     "m": "barrier_pedestrian_01",
+     "wall": "north",
+     "s": 1400,
+     "yaw": 0,
+     "row": {
+      "n": 4,
+      "step": [
+       140,
+       0
+      ]
+     },
+     "id": "rimE"
+    },
+    {
+     "m": "dns_fence_tarp_01",
+     "wall": "north",
+     "s": -480,
+     "yaw": 0,
+     "h": 46,
+     "gap": 3,
+     "clip": false,
+     "row": {
+      "n": 3,
+      "step": [
+       104,
+       0
+      ]
+     },
+     "id": "rimtarpC"
+    },
+    {
+     "m": "dns_fence_tarp_01",
+     "wall": "north",
+     "s": 1340,
+     "yaw": 0,
+     "h": 46,
+     "gap": 3,
+     "clip": false,
+     "row": {
+      "n": 3,
+      "step": [
+       104,
+       0
+      ]
+     },
+     "id": "rimtarpE"
+    },
+    {
+     "v": "memorial",
+     "at": [
+      -120,
+      5740
+     ],
+     "yaw": 0
+    },
+    {
+     "note": "Channel 9's crew car, parked at the barrier on the last night, mast up, its feed cable run to the barrier"
+    },
+    {
+     "m": "veh_civ_lnd_periph_wagon_black",
+     "at": [
+      760,
+      5640
+     ],
+     "yaw": 180,
+     "id": "ch9car"
+    },
+    {
+     "m": "beacon_runningpipe_str_128",
+     "at": [
+      700,
+      5640
+     ],
+     "h": 71,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "mast1"
+    },
+    {
+     "m": "beacon_runningpipe_str_128",
+     "at": [
+      700,
+      5640
+     ],
+     "h": 199,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "mast2"
+    },
+    {
+     "m": "light_interior_ceiling_industrial_lamp_01_base",
+     "at": [
+      710,
+      5640
+     ],
+     "h": 285,
+     "pitch": 0,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "mastlamp"
+    },
+    {
+     "m": "ground_wires_01",
+     "at": [
+      620,
+      5610
+     ],
+     "yaw": 160,
+     "clip": false,
+     "id": "feed",
+     "overlap_ok": true
+    },
+    {
+     "m": "equipment_aid_tool_bag_01",
+     "at": [
+      600,
+      5560
+     ],
+     "h": 25,
+     "yaw": 70,
+     "clip": false,
+     "id": "camerabag"
+    },
+    {
+     "m": "traffic_cone_sml_01",
+     "at": [
+      610,
+      5520
+     ],
+     "clip": false,
+     "id": "cone_ch9"
+    },
+    {
+     "note": "the police detail's car and its cones at the hoist stair"
+    },
+    {
+     "m": "veh_civ_lnd_80s_police",
+     "at": [
+      1250,
+      5020
+     ],
+     "yaw": 75,
+     "id": "copcar"
+    },
+    {
+     "m": "traffic_cone_sml_01",
+     "at": [
+      1440,
+      5110
+     ],
+     "clip": false,
+     "id": "cone1"
+    },
+    {
+     "m": "traffic_cone_sml_01",
+     "at": [
+      1520,
+      5130
+     ],
+     "clip": false,
+     "id": "cone2"
+    },
+    {
+     "m": "traffic_cone_sml_01",
+     "at": [
+      1745,
+      5150
+     ],
+     "clip": false,
+     "id": "cone3"
+    },
+    {
+     "m": "traffic_cone_sml_01",
+     "at": [
+      1780,
+      4980
+     ],
+     "roll": 90,
+     "yaw": 40,
+     "clip": false,
+     "id": "cone4"
+    },
+    {
+     "m": "barrier_metal_scissor_01",
+     "at": [
+      1760,
+      4860
+     ],
+     "yaw": 0,
+     "id": "scissor"
+    },
+    {
+     "m": "barrier_queue_post",
+     "at": [
+      1470,
+      5100
+     ],
+     "clip": false,
+     "id": "bollard1"
+    },
+    {
+     "m": "barrier_queue_post",
+     "at": [
+      1714,
+      5100
+     ],
+     "clip": false,
+     "id": "bollard2"
+    },
+    {
+     "note": "the street clock, stopped at 23:47 (not a quest clock)"
+    },
+    {
+     "note": "Up 'N Atoms' trailer generator against the west wall (its struct is the generator marker), cables to the perk machine and the floods"
+    },
+    {
+     "m": "electrical_industrial_air_vent_box_01",
+     "yaw": 90,
+     "id": "genset",
+     "wall": "west",
+     "s": 5690,
+     "gap": 0
+    },
+    {
+     "m": "fac_sort_machine_fuse_box_set_01",
+     "wall": "west",
+     "s": 5340,
+     "h": 60,
+     "clip": false,
+     "id": "genfuses"
+    },
+    {
+     "m": "ground_wires_01",
+     "at": [
+      -1250,
+      5360
+     ],
+     "yaw": 70,
+     "clip": false,
+     "id": "gencable1",
+     "overlap_ok": true
+    },
+    {
+     "m": "ground_wires_01",
+     "at": [
+      -1265,
+      5585
+     ],
+     "yaw": 190,
+     "clip": false,
+     "id": "gencable2",
+     "overlap_ok": true
+    },
+    {
+     "m": "p7_barrel_keg_beer_metal",
+     "at": [
+      -1240,
+      5700
+     ],
+     "id": "fuel1",
+     "note": "fuel drum"
+    },
+    {
+     "m": "p7_barrel_keg_beer_metal",
+     "at": [
+      -1236,
+      5742
+     ],
+     "id": "fuel2"
+    },
+    {
+     "m": "container_paint_can_01",
+     "at": [
+      -1210,
+      5722
+     ],
+     "clip": false,
+     "id": "oilcan"
+    },
+    {
+     "note": "the plaza's own 1931 lamps, dead"
+    },
+    {
+     "m": "paris_street_lamp_freestanding_03",
+     "at": [
+      -1050,
+      5050
+     ],
+     "id": "lamp1"
+    },
+    {
+     "m": "paris_street_lamp_freestanding_03",
+     "at": [
+      200,
+      4980
+     ],
+     "id": "lamp2"
+    },
+    {
+     "m": "paris_street_lamp_freestanding_03",
+     "at": [
+      1050,
+      5500
+     ],
+     "id": "lamp3"
+    },
+    {
+     "m": "paris_street_lamp_freestanding_03",
+     "at": [
+      -400,
+      5560
+     ],
+     "id": "lamp4"
+    },
+    {
+     "note": "sodium floods on stands"
+    },
+    {
+     "v": "flood",
+     "at": [
+      -1250,
+      4720
+     ],
+     "yaw": 40
+    },
+    {
+     "v": "flood",
+     "at": [
+      -560,
+      4960
+     ],
+     "yaw": 330
+    },
+    {
+     "v": "flood",
+     "at": [
+      960,
+      4720
+     ],
+     "yaw": 150
+    },
+    {
+     "v": "flood",
+     "at": [
+      2080,
+      5200
+     ],
+     "yaw": 180
+    },
+    {
+     "v": "flood",
+     "at": [
+      -80,
+      5420
+     ],
+     "yaw": 250
+    },
+    {
+     "note": "the two Lodestar tents"
+    },
+    {
+     "v": "decon_corridor",
+     "at": [
+      -900,
+      5500
+     ],
+     "yaw": 0
+    },
+    {
+     "v": "staging_tent",
+     "at": [
+      1900,
+      5500
+     ],
+     "yaw": 0
+    },
+    {
+     "note": "the film's poster hoarding between the two plugged entrances, rubbish piled at its foot"
+    },
+    {
+     "m": "com_trashbag2_black",
+     "at": [
+      140,
+      4640
+     ],
+     "yaw": 20,
+     "id": "bag1"
+    },
+    {
+     "m": "com_trashbag2_black",
+     "at": [
+      180,
+      4650
+     ],
+     "yaw": 110,
+     "overlap_ok": true,
+     "id": "bag2"
+    },
+    {
+     "m": "com_trashbag2_green",
+     "at": [
+      470,
+      4640
+     ],
+     "yaw": 60,
+     "id": "bag3"
+    },
+    {
+     "m": "trashbin_01_iw6",
+     "at": [
+      560,
+      4630
+     ],
+     "id": "bin1"
+    },
+    {
+     "m": "com_trashbag2_black",
+     "at": [
+      -1360,
+      4800
+     ],
+     "yaw": 200,
+     "id": "bag4"
+    },
+    {
+     "m": "com_trashbag2_black",
+     "at": [
+      -1350,
+      4850
+     ],
+     "yaw": 290,
+     "overlap_ok": true,
+     "id": "bag5"
+    },
+    {
+     "m": "com_trashbag2_green",
+     "at": [
+      2150,
+      5400
+     ],
+     "yaw": 10,
+     "id": "bag6"
+    },
+    {
+     "m": "trashbin_01_iw6_green",
+     "at": [
+      -700,
+      5180
+     ],
+     "id": "bin2"
+    },
+    {
+     "m": "furniture_park_bench_01_blue",
+     "at": [
+      1500,
+      5560
+     ],
+     "yaw": 90,
+     "id": "bench2"
+    },
+    {
+     "note": "a few balloons from the gala below have drifted up and caught under the canopy"
+    },
+    {
+     "m": "balloon_on_string_1_blue",
+     "at": [
+      -200,
+      5000
+     ],
+     "ceil": 2,
+     "clip": false,
+     "id": "bl1"
+    },
+    {
+     "m": "balloon_on_string_1_blue",
+     "at": [
+      1350,
+      5300
+     ],
+     "ceil": 2,
+     "yaw": 120,
+     "clip": false,
+     "id": "bl2"
+    },
+    {
+     "note": "a year of weather: newspapers, food wrappers, cups"
+    },
+    {
+     "note": "an abandoned sedan under the canopy, left in the bowl when the city walled it"
+    },
+    {
+     "m": "veh_civ_lnd_periph_sedan_silver",
+     "at": [
+      -260,
+      5240
+     ],
+     "yaw": 12,
+     "id": "sedan"
+    },
+    {
+     "m": "com_trashbag2_black",
+     "at": [
+      -80,
+      5340
+     ],
+     "yaw": 40,
+     "id": "bag7"
+    },
+    {
+     "note": "Lodestar's kit carts and supply drop by the staging tent"
+    },
+    {
+     "m": "crr_industrial_cart_sm",
+     "at": [
+      1560,
+      5320
+     ],
+     "yaw": 180,
+     "id": "cart1"
+    },
+    {
+     "m": "beacon_pallet_01",
+     "at": [
+      1600,
+      5650
+     ],
+     "id": "pal3"
+    },
+    {
+     "m": "p7_box_cardboard_a_closed",
+     "at": [
+      1590,
+      5650
+     ],
+     "h": 8,
+     "yaw": 3,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "pal3b1"
+    },
+    {
+     "m": "p7_box_cardboard_a_closed",
+     "at": [
+      1620,
+      5652
+     ],
+     "h": 8,
+     "yaw": 91,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "pal3b2"
+    },
+    {
+     "m": "p7_box_cardboard_c_closed",
+     "at": [
+      1600,
+      5650
+     ],
+     "h": 37,
+     "yaw": 20,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "pal3b3"
+    },
+    {
+     "m": "crr_deckbox_01",
+     "at": [
+      1680,
+      5700
+     ],
+     "yaw": 30,
+     "id": "case4"
+    },
+    {
+     "note": "police cordon line round the entrance canopy"
+    },
+    {
+     "m": "barrier_pedestrian_01",
+     "at": [
+      -450,
+      5180
+     ],
+     "yaw": 90,
+     "id": "polA"
+    },
+    {
+     "m": "barrier_pedestrian_01",
+     "at": [
+      60,
+      5180
+     ],
+     "yaw": 80,
+     "id": "polB"
+    },
+    {
+     "m": "traffic_cone_sml_01",
+     "at": [
+      -400,
+      5120
+     ],
+     "clip": false,
+     "id": "cone5"
+    },
+    {
+     "m": "traffic_cone_sml_01",
+     "at": [
+      20,
+      5110
+     ],
+     "clip": false,
+     "id": "cone6"
+    },
+    {
+     "m": "sign_wet_floor",
+     "at": [
+      -30,
+      5050
+     ],
+     "yaw": 100,
+     "clip": false,
+     "id": "aframe",
+     "note": "a sandwich board left at the stair"
+    },
+    {
+     "scatter": {
+      "n": 26,
+      "rect": [
+       -1300,
+       4750,
+       2100,
+       5650
+      ],
+      "seed": 3,
+      "min_gap": 60,
+      "pick": [
+       "com_debris_paper_iw6_02",
+       "food_trash_bag_chips_01",
+       "food_trash_container_02_open",
+       "cup_paper_open_iw6",
+       "food_trash_bag_paper_01",
+       "p7_bottle_plastic_16oz_cola"
+      ]
+     }
+    }
+   ],
+   "solids": [
+    {
+     "note": "STATION 0 entrance canopy over the stair (posts and a roof)",
+     "rect": [
+      -324,
+      5086,
+      -316,
+      5094
+     ],
+     "h0": 0,
+     "h1": 176,
+     "mat": "metal_black"
+    },
+    {
+     "rect": [
+      -100,
+      5086,
+      -92,
+      5094
+     ],
+     "h0": 0,
+     "h1": 176,
+     "mat": "metal_black"
+    },
+    {
+     "rect": [
+      -330,
+      4610,
+      -86,
+      5100
+     ],
+     "h0": 176,
+     "h1": 184,
+     "mat": {
+      "top": "corrugated",
+      "bottom": "metal_black",
+      "side": "steel_trim_sheet"
+     }
+    },
+    {
+     "note": "Lodestar hoist stair frame (yellow) over the D2 well",
+     "rect": [
+      1478,
+      5086,
+      1486,
+      5094
+     ],
+     "h0": 0,
+     "h1": 168,
+     "mat": "beam_yellow"
+    },
+    {
+     "rect": [
+      1698,
+      5086,
+      1706,
+      5094
+     ],
+     "h0": 0,
+     "h1": 168,
+     "mat": "beam_yellow"
+    },
+    {
+     "rect": [
+      1478,
+      5084,
+      1706,
+      5096
+     ],
+     "h0": 160,
+     "h1": 172,
+     "mat": "beam_yellow"
+    },
+    {
+     "note": "concrete barrier slabs closing the plaza rim west and east",
+     "rect": [
+      -1396,
+      4980,
+      -1372,
+      5120
+     ],
+     "h0": 0,
+     "h1": 72,
+     "mat": "conc_lined"
+    },
+    {
+     "rect": [
+      2172,
+      4900,
+      2196,
+      5040
+     ],
+     "h0": 0,
+     "h1": 72,
+     "mat": "conc_lined"
+    },
+    {
+     "rect": [
+      2172,
+      5660,
+      2196,
+      5790
+     ],
+     "h0": 0,
+     "h1": 72,
+     "mat": "conc_lined"
+    },
+    {
+     "note": "the street clock's post",
+     "rect": [
+      -703,
+      4797,
+      -697,
+      4803
+     ],
+     "h0": 0,
+     "h1": 150,
+     "mat": "metal_black"
+    },
+    {
+     "note": "the poster hoarding",
+     "rect": [
+      100,
+      4600,
+      520,
+      4610
+     ],
+     "h0": 0,
+     "h1": 168,
+     "mat": "wood_planks"
+    },
+    {
+     "note": "canopy poles",
+     "rect": [
+      -705,
+      5195,
+      -695,
+      5205
+     ],
+     "h0": 0,
+     "h1": 428,
+     "mat": "metal_black"
+    },
+    {
+     "rect": [
+      895,
+      5195,
+      905,
+      5205
+     ],
+     "h0": 0,
+     "h1": 428,
+     "mat": "metal_black"
+    },
+    {
+     "rect": [
+      -5,
+      4895,
+      5,
+      4905
+     ],
+     "h0": 0,
+     "h1": 428,
+     "mat": "metal_black"
+    },
+    {
+     "note": "canopy beams",
+     "rect": [
+      -1400,
+      4896,
+      2200,
+      4904
+     ],
+     "h0": 412,
+     "h1": 428,
+     "mat": "ibeam"
+    },
+    {
+     "rect": [
+      -1400,
+      5196,
+      2200,
+      5204
+     ],
+     "h0": 412,
+     "h1": 428,
+     "mat": "ibeam"
+    },
+    {
+     "rect": [
+      -1400,
+      5496,
+      2200,
+      5504
+     ],
+     "h0": 412,
+     "h1": 428,
+     "mat": "ibeam"
+    }
+   ],
+   "panels": [
+    {
+     "at": [
+      -208,
+      5100.6
+     ],
+     "yaw": 90,
+     "w": 200,
+     "ht": 50,
+     "h": 186,
+     "mat": "sign_station_zero",
+     "note": "STATION 0 on the canopy fascia"
+    },
+    {
+     "at": [
+      -208,
+      4850
+     ],
+     "yaw": 0,
+     "w": 230,
+     "ht": 470,
+     "z": 375.4,
+     "mat": "lamp_warm",
+     "note": "lamp face under the canopy roof"
+    },
+    {
+     "at": [
+      -700,
+      4803.6
+     ],
+     "yaw": 90,
+     "w": 40,
+     "ht": 40,
+     "h": 150,
+     "mat": "story_clock_big"
+    },
+    {
+     "at": [
+      -700,
+      4796.4
+     ],
+     "yaw": 270,
+     "w": 40,
+     "ht": 40,
+     "h": 150,
+     "mat": "story_clock_big"
+    },
+    {
+     "at": [
+      200,
+      4610.6
+     ],
+     "yaw": 90,
+     "w": 72,
+     "ht": 108,
+     "h": 40,
+     "mat": "poster_station_zero"
+    },
+    {
+     "at": [
+      300,
+      4610.6
+     ],
+     "yaw": 90,
+     "w": 72,
+     "ht": 108,
+     "h": 40,
+     "mat": "poster_station_zero"
+    },
+    {
+     "at": [
+      420,
+      4610.6
+     ],
+     "yaw": 90,
+     "w": 72,
+     "ht": 108,
+     "h": 40,
+     "mat": "poster_lasttrain"
+    }
+   ],
+   "lights": [
+    {
+     "at": [
+      -208,
+      4900
+     ],
+     "z": 360,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.86,
+      0.62
+     ],
+     "radius": 420,
+     "intensity": 0.55,
+     "note": "the lit entrance"
+    },
+    {
+     "at": [
+      -208,
+      5160
+     ],
+     "h": 150,
+     "type": "spot",
+     "dir": [
+      0,
+      -0.6,
+      0.8
+     ],
+     "inner": 25,
+     "outer": 60,
+     "color": [
+      1.0,
+      0.86,
+      0.62
+     ],
+     "radius": 260,
+     "intensity": 0.12,
+     "note": "light on the STATION 0 sign"
+    },
+    {
+     "at": [
+      760,
+      5560
+     ],
+     "h": 290,
+     "type": "spot",
+     "dir": [
+      -0.35,
+      -0.85,
+      -0.4
+     ],
+     "inner": 14,
+     "outer": 34,
+     "color": [
+      0.78,
+      0.86,
+      1.0
+     ],
+     "radius": 900,
+     "pool": 0.3,
+     "note": "the news crew's lamp on the entrance"
+    },
+    {
+     "at": [
+      1592,
+      5060
+     ],
+     "h": 150,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.68,
+      0.2
+     ],
+     "radius": 240,
+     "intensity": 0.2,
+     "note": "Lodestar amber beacon on the hoist frame"
+    }
+   ]
+  },
+  "fare_hall": {
+   "budget": 360,
+   "items": [
+    {
+     "v": "column",
+     "at": [
+      -640,
+      3950
+     ]
+    },
+    {
+     "v": "column",
+     "at": [
+      -60,
+      3960
+     ]
+    },
+    {
+     "v": "column",
+     "at": [
+      520,
+      3950
+     ]
+    },
+    {
+     "note": "the fare gates in front of D3: two banks of turnstiles, the middle gate where the ribbon was cut"
+    },
+    {
+     "m": "park_turn_style_blue",
+     "at": [
+      -760,
+      3370
+     ],
+     "yaw": 90,
+     "row": {
+      "n": 3,
+      "step": [
+       42,
+       0
+      ]
+     },
+     "id": "tsW"
+    },
+    {
+     "m": "park_turn_style_blue",
+     "at": [
+      -324,
+      3370
+     ],
+     "yaw": 90,
+     "row": {
+      "n": 3,
+      "step": [
+       42,
+       0
+      ]
+     },
+     "id": "tsE"
+    },
+    {
+     "m": "queue_pole_iw6",
+     "at": [
+      -640,
+      3372
+     ],
+     "id": "rpole1"
+    },
+    {
+     "m": "queue_pole_iw6",
+     "at": [
+      -360,
+      3372
+     ],
+     "pitch": 90,
+     "yaw": 250,
+     "clip": false,
+     "id": "rpole2",
+     "note": "knocked down"
+    },
+    {
+     "m": "queue_pole_rope_b_iw6",
+     "at": [
+      -632,
+      3380
+     ],
+     "roll": 90,
+     "yaw": -10,
+     "clip": false,
+     "id": "ribbon1",
+     "note": "the cut ribbon on the floor"
+    },
+    {
+     "m": "queue_pole_rope_b_iw6",
+     "at": [
+      -430,
+      3360
+     ],
+     "roll": 90,
+     "yaw": 160,
+     "clip": false,
+     "id": "ribbon2"
+    },
+    {
+     "v": "token_booth",
+     "at": [
+      -1000,
+      3460
+     ],
+     "yaw": 0
+    },
+    {
+     "v": "token_booth",
+     "at": [
+      80,
+      3460
+     ],
+     "yaw": 180
+    },
+    {
+     "note": "the inauguration banquet"
+    },
+    {
+     "v": "banquet_table",
+     "at": [
+      -820,
+      4260
+     ],
+     "yaw": 0
+    },
+    {
+     "v": "banquet_table",
+     "at": [
+      -360,
+      4220
+     ],
+     "yaw": 8
+    },
+    {
+     "v": "band_corner",
+     "at": [
+      640,
+      4300
+     ],
+     "yaw": 270
+    },
+    {
+     "note": "Lost Property window on the east wall"
+    },
+    {
+     "m": "park_lost_found_sign_01_on",
+     "wall": "east",
+     "s": 4400,
+     "h": 168,
+     "clip": false,
+     "id": "lostsign"
+    },
+    {
+     "m": "misc_luxury_bag_01_blue",
+     "at": [
+      980,
+      4360
+     ],
+     "h": 42,
+     "yaw": 80,
+     "clip": false,
+     "id": "lp1"
+    },
+    {
+     "m": "misc_zom_duffelbag_03",
+     "at": [
+      976,
+      4430
+     ],
+     "h": 48,
+     "yaw": 95,
+     "clip": false,
+     "id": "lp2"
+    },
+    {
+     "m": "baseball_cap_02",
+     "at": [
+      984,
+      4470
+     ],
+     "h": 42,
+     "yaw": 30,
+     "clip": false,
+     "id": "lp3"
+    },
+    {
+     "m": "park_concessions_cart_umbrella_closed",
+     "at": [
+      940,
+      4340
+     ],
+     "pitch": -12,
+     "yaw": 0,
+     "clip": false,
+     "id": "umbrella",
+     "note": "a forgotten umbrella leaning at the window"
+    },
+    {
+     "m": "toy_gift_wrap_01",
+     "at": [
+      978,
+      4300
+     ],
+     "h": 42,
+     "yaw": 0,
+     "clip": false,
+     "id": "lp4"
+    },
+    {
+     "note": "benches and bins along the walls"
+    },
+    {
+     "m": "furniture_park_bench_01_red",
+     "wall": "north",
+     "s": -780,
+     "yaw": 90,
+     "id": "bench1"
+    },
+    {
+     "m": "furniture_park_bench_01_red",
+     "wall": "north",
+     "s": -620,
+     "yaw": 90,
+     "id": "bench2"
+    },
+    {
+     "m": "trashbin_01_iw6",
+     "at": [
+      -600,
+      3990
+     ],
+     "id": "bin1"
+    },
+    {
+     "m": "trashbin_01_iw6",
+     "at": [
+      560,
+      3990
+     ],
+     "id": "bin2"
+    },
+    {
+     "note": "red emergency lamps (the only light before power, with the board)"
+    },
+    {
+     "m": "pnr_beacon_light_plasticcase_red_on",
+     "wall": "north",
+     "s": 40,
+     "h": 230,
+     "clip": false,
+     "id": "em1"
+    },
+    {
+     "m": "pnr_beacon_light_plasticcase_red_on",
+     "wall": "west",
+     "s": 3700,
+     "h": 230,
+     "clip": false,
+     "id": "em2"
+    },
+    {
+     "m": "pnr_beacon_light_plasticcase_red_on",
+     "wall": "east",
+     "s": 3800,
+     "h": 230,
+     "clip": false,
+     "id": "em3"
+    },
+    {
+     "note": "the tube rows: warm, one in three dead"
+    },
+    {
+     "m": "mp_dart_lightfluo_on",
+     "at": [
+      -900,
+      3600
+     ],
+     "ceil": 0,
+     "yaw": 0,
+     "clip": false,
+     "row": {
+      "n": 6,
+      "step": [
+       340,
+       0
+      ]
+     },
+     "vary": {
+      "m": [
+       "mp_dart_lightfluo_on",
+       "mp_dart_lightfluo_on",
+       "mp_dart_lightfluo"
+      ]
+     },
+     "id": "tubeA"
+    },
+    {
+     "m": "mp_dart_lightfluo_on",
+     "at": [
+      -900,
+      4400
+     ],
+     "ceil": 0,
+     "yaw": 0,
+     "clip": false,
+     "row": {
+      "n": 6,
+      "step": [
+       340,
+       0
+      ]
+     },
+     "vary": {
+      "m": [
+       "mp_dart_lightfluo",
+       "mp_dart_lightfluo_on",
+       "mp_dart_lightfluo_on"
+      ]
+     },
+     "id": "tubeB"
+    },
+    {
+     "note": "New Year's Eve: strings of bulbs across the hall, balloons caught on the ceiling"
+    },
+    {
+     "m": "light_string_bulb_a",
+     "at": [
+      -1180,
+      3800
+     ],
+     "yaw": 270,
+     "ceil": 4,
+     "clip": false,
+     "row": {
+      "n": 10,
+      "step": [
+       210,
+       0
+      ]
+     },
+     "id": "strA"
+    },
+    {
+     "m": "light_string_bulb_a",
+     "at": [
+      -1180,
+      4190
+     ],
+     "yaw": 270,
+     "ceil": 4,
+     "clip": false,
+     "row": {
+      "n": 4,
+      "step": [
+       210,
+       0
+      ]
+     },
+     "id": "strB"
+    },
+    {
+     "m": "light_string_bulb_a",
+     "at": [
+      -180,
+      4190
+     ],
+     "yaw": 270,
+     "ceil": 4,
+     "clip": false,
+     "row": {
+      "n": 5,
+      "step": [
+       210,
+       0
+      ]
+     },
+     "id": "strC"
+    },
+    {
+     "m": "balloon_on_string_1_blue",
+     "at": [
+      -900,
+      3850
+     ],
+     "ceil": 2,
+     "clip": false,
+     "row": {
+      "n": 4,
+      "step": [
+       520,
+       30
+      ]
+     },
+     "vary": {
+      "yaw": [
+       0,
+       140,
+       260,
+       60
+      ]
+     },
+     "id": "bal"
+    },
+    {
+     "m": "balloon_on_string_1_blue",
+     "at": [
+      -470,
+      3540
+     ],
+     "ceil": 2,
+     "yaw": 200,
+     "clip": false,
+     "id": "balx"
+    },
+    {
+     "note": "the party's leavings"
+    },
+    {
+     "v": "coat_check",
+     "at": [
+      250,
+      4540
+     ],
+     "yaw": 0
+    },
+    {
+     "v": "podium",
+     "at": [
+      -560,
+      3700
+     ],
+     "yaw": 90
+    },
+    {
+     "m": "furniture_park_bench_01_red",
+     "at": [
+      -640,
+      4010
+     ],
+     "yaw": 0,
+     "id": "colbench1"
+    },
+    {
+     "m": "furniture_park_bench_01_red",
+     "at": [
+      520,
+      3890
+     ],
+     "yaw": 180,
+     "id": "colbench2"
+    },
+    {
+     "m": "furniture_park_bench_01_red",
+     "at": [
+      -60,
+      4020
+     ],
+     "yaw": 0,
+     "id": "colbench3"
+    },
+    {
+     "scatter": {
+      "n": 34,
+      "rect": [
+       -1150,
+       3520,
+       950,
+       4520
+      ],
+      "seed": 7,
+      "min_gap": 50,
+      "pick": [
+       "food_trash_bag_candy_01",
+       "food_trash_bag_candy_02",
+       "cup_paper_open_iw6",
+       "p7_bottle_plastic_16oz_cola",
+       "popcorn_container_small_iw6",
+       "com_debris_paper_iw6_02",
+       "misc_bottle_wine_01",
+       "zmb_candybox_up_closed",
+       "zmb_candybox_tuff_closed",
+       "trash_bag_small_empty"
+      ]
+     }
+    }
+   ],
+   "solids": [
+    {
+     "note": "the split-flap board over the fare gates",
+     "rect": [
+      -620,
+      3200,
+      -380,
+      3214
+     ],
+     "z0": 232,
+     "z1": 306,
+     "mat": "panel_dark"
+    },
+    {
+     "rect": [
+      -624,
+      3200,
+      -376,
+      3216
+     ],
+     "z0": 226,
+     "z1": 232,
+     "mat": "steel_trim_sheet"
+    },
+    {
+     "note": "Lost Property counter and window frame",
+     "rect": [
+      956,
+      4320,
+      1000,
+      4480
+     ],
+     "h0": 0,
+     "h1": 42,
+     "mat": "wood_trim"
+    },
+    {
+     "rect": [
+      990,
+      4316,
+      1000,
+      4484
+     ],
+     "h0": 42,
+     "h1": 150,
+     "mat": "panel_dark"
+    },
+    {
+     "note": "ON AIR booth window frame high on the east wall",
+     "rect": [
+      992,
+      3640,
+      1000,
+      3780
+     ],
+     "z0": 226,
+     "z1": 300,
+     "mat": "steel_trim_sheet"
+    }
+   ],
+   "panels": [
+    {
+     "at": [
+      -560,
+      3214.6
+     ],
+     "yaw": 90,
+     "w": 110,
+     "ht": 5,
+     "z": 288,
+     "mat": "light_line_yellow",
+     "note": "board line: DEPARTURE 1"
+    },
+    {
+     "at": [
+      -445,
+      3214.6
+     ],
+     "yaw": 90,
+     "w": 90,
+     "ht": 5,
+     "z": 288,
+     "mat": "light_line_yellow"
+    },
+    {
+     "at": [
+      -520,
+      3214.6
+     ],
+     "yaw": 90,
+     "w": 190,
+     "ht": 5,
+     "z": 272,
+     "mat": "light_line_yellow",
+     "note": "POWER: G-2 OFFLINE"
+    },
+    {
+     "at": [
+      -540,
+      3214.6
+     ],
+     "yaw": 90,
+     "w": 150,
+     "ht": 5,
+     "z": 256,
+     "mat": "light_line_yellow",
+     "note": "CONVERTER HALL"
+    },
+    {
+     "at": [
+      -430,
+      3214.6
+     ],
+     "yaw": 90,
+     "w": 30,
+     "ht": 5,
+     "z": 256,
+     "mat": "light_line_yellow"
+    },
+    {
+     "at": [
+      -500,
+      3214.6
+     ],
+     "yaw": 90,
+     "w": 200,
+     "ht": 5,
+     "z": 240,
+     "mat": "light_line_yellow"
+    },
+    {
+     "wall": "north",
+     "s": -208,
+     "w": 200,
+     "ht": 50,
+     "z": 236,
+     "mat": "sign_station_zero"
+    },
+    {
+     "wall": "south",
+     "s": -820,
+     "w": 150,
+     "ht": 38,
+     "h": 196,
+     "mat": "sign_to_platforms"
+    },
+    {
+     "wall": "west",
+     "s": 3560,
+     "w": 76,
+     "ht": 114,
+     "h": 56,
+     "mat": "poster_mindgap"
+    },
+    {
+     "wall": "west",
+     "s": 3680,
+     "w": 76,
+     "ht": 114,
+     "h": 56,
+     "mat": "poster_lasttrain"
+    },
+    {
+     "wall": "west",
+     "s": 4460,
+     "w": 160,
+     "ht": 120,
+     "h": 70,
+     "mat": "sign_network_map"
+    },
+    {
+     "wall": "north",
+     "s": 200,
+     "w": 76,
+     "ht": 114,
+     "h": 56,
+     "mat": "poster_station_zero"
+    },
+    {
+     "wall": "north",
+     "s": -1080,
+     "w": 76,
+     "ht": 114,
+     "h": 56,
+     "mat": "poster_station_zero"
+    },
+    {
+     "wall": "west",
+     "s": 3300,
+     "w": 120,
+     "ht": 32,
+     "h": 232,
+     "mat": "sign_staff_only",
+     "note": "over the Lodestar hoarding (D6)"
+    },
+    {
+     "wall": "east",
+     "s": 3710,
+     "w": 130,
+     "ht": 66,
+     "z": 230,
+     "gap": 9,
+     "mat": "black",
+     "fit": false,
+     "note": "the dark booth window"
+    },
+    {
+     "wall": "east",
+     "s": 3710,
+     "w": 40,
+     "ht": 10,
+     "z": 304,
+     "gap": 9,
+     "mat": "lamp_red",
+     "note": "ON AIR"
+    },
+    {
+     "wall": "east",
+     "s": 4400,
+     "w": 150,
+     "ht": 100,
+     "h": 45,
+     "gap": 11,
+     "mat": "chainlink",
+     "fit": false,
+     "note": "the Lost Property grille"
+    }
+   ],
+   "lights": [
+    {
+     "at": [
+      -500,
+      3260
+     ],
+     "z": 250,
+     "type": "spot",
+     "dir": [
+      0,
+      -0.5,
+      -0.86
+     ],
+     "inner": 30,
+     "outer": 70,
+     "color": [
+      1.0,
+      0.62,
+      0.18
+     ],
+     "radius": 360,
+     "intensity": 0.18,
+     "note": "the board's amber glow"
+    },
+    {
+     "at": [
+      -900,
+      3600
+     ],
+     "ceil": 8,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 20,
+     "outer": 60,
+     "color": [
+      1.0,
+      0.86,
+      0.66
+     ],
+     "pool": 0.3
+    },
+    {
+     "at": [
+      -560,
+      3600
+     ],
+     "ceil": 8,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 20,
+     "outer": 60,
+     "color": [
+      1.0,
+      0.86,
+      0.66
+     ],
+     "pool": 0.3
+    },
+    {
+     "at": [
+      120,
+      3600
+     ],
+     "ceil": 8,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 20,
+     "outer": 60,
+     "color": [
+      1.0,
+      0.86,
+      0.66
+     ],
+     "pool": 0.3
+    },
+    {
+     "at": [
+      460,
+      3600
+     ],
+     "ceil": 8,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 20,
+     "outer": 60,
+     "color": [
+      1.0,
+      0.86,
+      0.66
+     ],
+     "pool": 0.3
+    },
+    {
+     "at": [
+      -560,
+      4400
+     ],
+     "ceil": 8,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 20,
+     "outer": 60,
+     "color": [
+      1.0,
+      0.86,
+      0.66
+     ],
+     "pool": 0.3
+    },
+    {
+     "at": [
+      -220,
+      4400
+     ],
+     "ceil": 8,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 20,
+     "outer": 60,
+     "color": [
+      1.0,
+      0.86,
+      0.66
+     ],
+     "pool": 0.3
+    },
+    {
+     "at": [
+      460,
+      4400
+     ],
+     "ceil": 8,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 20,
+     "outer": 60,
+     "color": [
+      1.0,
+      0.86,
+      0.66
+     ],
+     "pool": 0.3
+    },
+    {
+     "at": [
+      800,
+      4400
+     ],
+     "ceil": 8,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 20,
+     "outer": 60,
+     "color": [
+      1.0,
+      0.86,
+      0.66
+     ],
+     "pool": 0.3
+    },
+    {
+     "at": [
+      960,
+      3710
+     ],
+     "z": 262,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.12,
+      0.08
+     ],
+     "radius": 160,
+     "intensity": 0.12,
+     "note": "ON AIR"
+    },
+    {
+     "at": [
+      940,
+      4400
+     ],
+     "h": 175,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.75,
+      0.45
+     ],
+     "radius": 220,
+     "intensity": 0.15,
+     "note": "the lost and found sign"
+    },
+    {
+     "at": [
+      -208,
+      4560
+     ],
+     "h": 200,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.15,
+      0.1
+     ],
+     "radius": 200,
+     "intensity": 0.08
+    },
+    {
+     "at": [
+      -1160,
+      3700
+     ],
+     "h": 230,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.15,
+      0.1
+     ],
+     "radius": 200,
+     "intensity": 0.08
+    },
+    {
+     "at": [
+      960,
+      3800
+     ],
+     "h": 230,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.15,
+      0.1
+     ],
+     "radius": 200,
+     "intensity": 0.08
+    }
+   ]
+  },
+  "escalator_hall": {
+   "budget": 70,
+   "items": [
+    {
+     "note": "ceiling tubes high over the shaft"
+    },
+    {
+     "m": "mp_dart_lightfluo_on",
+     "at": [
+      -700,
+      2640
+     ],
+     "ceil": 0,
+     "yaw": 90,
+     "clip": false,
+     "id": "t1"
+    },
+    {
+     "m": "mp_dart_lightfluo",
+     "at": [
+      -700,
+      2960
+     ],
+     "ceil": 0,
+     "yaw": 90,
+     "clip": false,
+     "id": "t2"
+    },
+    {
+     "m": "mp_dart_lightfluo_on",
+     "at": [
+      -380,
+      2620
+     ],
+     "ceil": 0,
+     "yaw": 90,
+     "clip": false,
+     "id": "t3"
+    },
+    {
+     "m": "mp_dart_lightfluo_on",
+     "at": [
+      -380,
+      3020
+     ],
+     "ceil": 0,
+     "yaw": 90,
+     "clip": false,
+     "id": "t4"
+    },
+    {
+     "m": "mp_dart_lightfluo_on",
+     "at": [
+      -560,
+      3120
+     ],
+     "ceil": 0,
+     "yaw": 0,
+     "clip": false,
+     "id": "t5"
+    },
+    {
+     "note": "dropped on the way down: the last guests' litter on the landings"
+    },
+    {
+     "scatter": {
+      "n": 8,
+      "rect": [
+       -780,
+       3104,
+       -220,
+       3190
+      ],
+      "seed": 11,
+      "min_gap": 40,
+      "pick": [
+       "food_trash_bag_candy_01",
+       "cup_paper_open_iw6",
+       "com_debris_paper_iw6_02",
+       "misc_bottle_wine_01"
+      ]
+     }
+    },
+    {
+     "scatter": {
+      "n": 6,
+      "rect": [
+       -780,
+       2404,
+       -220,
+       2450
+      ],
+      "seed": 12,
+      "min_gap": 40,
+      "pick": [
+       "com_debris_paper_iw6_02",
+       "food_trash_container_02_open",
+       "cup_paper_open_iw6"
+      ]
+     }
+    },
+    {
+     "m": "balloon_on_string_1_blue",
+     "at": [
+      -640,
+      2800
+     ],
+     "ceil": 2,
+     "yaw": 30,
+     "clip": false,
+     "id": "bal1"
+    },
+    {
+     "m": "signage_exit_sign_emergency_light_on",
+     "wall": "south",
+     "s": -500,
+     "z": -60,
+     "clip": false,
+     "id": "exit",
+     "note": "over the escalator foot"
+    }
+   ],
+   "solids": [
+    {
+     "note": "balustrades: the hall is three lanes, two dead escalators and a stair between",
+     "rect": [
+      -608,
+      2456,
+      -592,
+      2536
+     ],
+     "z0": -328,
+     "z1": -242,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -608,
+      2536,
+      -592,
+      2616
+     ],
+     "z0": -288,
+     "z1": -202,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -608,
+      2616,
+      -592,
+      2696
+     ],
+     "z0": -248,
+     "z1": -162,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -608,
+      2696,
+      -592,
+      2776
+     ],
+     "z0": -208,
+     "z1": -122,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -608,
+      2776,
+      -592,
+      2856
+     ],
+     "z0": -168,
+     "z1": -82,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -608,
+      2856,
+      -592,
+      2936
+     ],
+     "z0": -128,
+     "z1": -42,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -608,
+      2936,
+      -592,
+      3016
+     ],
+     "z0": -88,
+     "z1": -2,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -608,
+      3016,
+      -592,
+      3070
+     ],
+     "z0": -48,
+     "z1": 38,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -408,
+      2456,
+      -392,
+      2536
+     ],
+     "z0": -328,
+     "z1": -242,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -408,
+      2536,
+      -392,
+      2616
+     ],
+     "z0": -288,
+     "z1": -202,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -408,
+      2616,
+      -392,
+      2696
+     ],
+     "z0": -248,
+     "z1": -162,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -408,
+      2696,
+      -392,
+      2776
+     ],
+     "z0": -208,
+     "z1": -122,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -408,
+      2776,
+      -392,
+      2856
+     ],
+     "z0": -168,
+     "z1": -82,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -408,
+      2856,
+      -392,
+      2936
+     ],
+     "z0": -128,
+     "z1": -42,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -408,
+      2936,
+      -392,
+      3016
+     ],
+     "z0": -88,
+     "z1": -2,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "rect": [
+      -408,
+      3016,
+      -392,
+      3070
+     ],
+     "z0": -48,
+     "z1": 38,
+     "mat": {
+      "top": "rubber_mat",
+      "side": "brushed",
+      "bottom": "brushed"
+     }
+    },
+    {
+     "note": "advertising box frames down both walls",
+     "rect": [
+      -800,
+      2504,
+      -794,
+      2616
+     ],
+     "z0": -230,
+     "z1": -146,
+     "mat": "panel_dark"
+    },
+    {
+     "rect": [
+      -800,
+      2704,
+      -794,
+      2816
+     ],
+     "z0": -130,
+     "z1": -46,
+     "mat": "panel_dark"
+    },
+    {
+     "rect": [
+      -800,
+      2904,
+      -794,
+      3016
+     ],
+     "z0": -30,
+     "z1": 54,
+     "mat": "panel_dark"
+    },
+    {
+     "rect": [
+      -206,
+      2584,
+      -200,
+      2696
+     ],
+     "z0": -190,
+     "z1": -106,
+     "mat": "panel_dark"
+    },
+    {
+     "rect": [
+      -206,
+      2784,
+      -200,
+      2896
+     ],
+     "z0": -90,
+     "z1": -6,
+     "mat": "panel_dark"
+    },
+    {
+     "rect": [
+      -206,
+      2984,
+      -200,
+      3096
+     ],
+     "z0": 10,
+     "z1": 94,
+     "mat": "panel_dark"
+    }
+   ],
+   "panels": [
+    {
+     "wall": "west",
+     "s": 2560,
+     "w": 100,
+     "ht": 72,
+     "z": -224,
+     "gap": 6.6,
+     "mat": "poster_lasttrain"
+    },
+    {
+     "wall": "west",
+     "s": 2760,
+     "w": 100,
+     "ht": 72,
+     "z": -124,
+     "gap": 6.6,
+     "mat": "panel_dark",
+     "fit": false,
+     "note": "a dead box"
+    },
+    {
+     "wall": "west",
+     "s": 2960,
+     "w": 100,
+     "ht": 72,
+     "z": -24,
+     "gap": 6.6,
+     "mat": "poster_station_zero"
+    },
+    {
+     "wall": "east",
+     "s": 2640,
+     "w": 100,
+     "ht": 72,
+     "z": -184,
+     "gap": 6.6,
+     "mat": "poster_mindgap"
+    },
+    {
+     "wall": "east",
+     "s": 2840,
+     "w": 100,
+     "ht": 72,
+     "z": -84,
+     "gap": 6.6,
+     "mat": "poster_station_zero"
+    },
+    {
+     "wall": "east",
+     "s": 3040,
+     "w": 100,
+     "ht": 72,
+     "z": 16,
+     "gap": 6.6,
+     "mat": "panel_dark",
+     "fit": false
+    }
+   ],
+   "lights": [
+    {
+     "at": [
+      -760,
+      2560
+     ],
+     "z": -188,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.9,
+      0.75
+     ],
+     "radius": 160,
+     "intensity": 0.1,
+     "note": "lit advertising box"
+    },
+    {
+     "at": [
+      -760,
+      2960
+     ],
+     "z": 12,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.9,
+      0.75
+     ],
+     "radius": 160,
+     "intensity": 0.1
+    },
+    {
+     "at": [
+      -240,
+      2640
+     ],
+     "z": -148,
+     "type": "omni",
+     "color": [
+      0.9,
+      0.95,
+      1.0
+     ],
+     "radius": 160,
+     "intensity": 0.1
+    },
+    {
+     "at": [
+      -240,
+      2840
+     ],
+     "z": -48,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.9,
+      0.75
+     ],
+     "radius": 160,
+     "intensity": 0.1
+    },
+    {
+     "at": [
+      -700,
+      2640
+     ],
+     "z": 312,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 12,
+     "outer": 34,
+     "color": [
+      1.0,
+      0.86,
+      0.66
+     ],
+     "radius": 800,
+     "pool": 0.28
+    },
+    {
+     "at": [
+      -380,
+      2620
+     ],
+     "z": 312,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 12,
+     "outer": 34,
+     "color": [
+      1.0,
+      0.86,
+      0.66
+     ],
+     "radius": 800,
+     "pool": 0.28
+    },
+    {
+     "at": [
+      -380,
+      3020
+     ],
+     "z": 312,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 12,
+     "outer": 34,
+     "color": [
+      1.0,
+      0.86,
+      0.66
+     ],
+     "radius": 500,
+     "pool": 0.28
+    },
+    {
+     "at": [
+      -560,
+      3120
+     ],
+     "z": 312,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 18,
+     "outer": 50,
+     "color": [
+      1.0,
+      0.86,
+      0.66
+     ],
+     "radius": 400,
+     "pool": 0.25
+    },
+    {
+     "at": [
+      -500,
+      2420
+     ],
+     "z": -220,
+     "type": "spot",
+     "dir": [
+      0,
+      0.7,
+      0.3
+     ],
+     "inner": 30,
+     "outer": 70,
+     "color": [
+      0.85,
+      0.92,
+      1.0
+     ],
+     "radius": 700,
+     "intensity": 0.5,
+     "note": "the train's light from below"
+    }
+   ]
+  },
+  "arcade": {
+   "budget": 330,
+   "items": [
+    {
+     "note": "NEEDLE DROP, records (bay 1)"
+    },
+    {
+     "m": "shop_display_rack_01",
+     "at": [
+      -2800,
+      4420
+     ],
+     "yaw": 90,
+     "id": "nd_rack1"
+    },
+    {
+     "m": "shop_display_rack_02",
+     "at": [
+      -2900,
+      4370
+     ],
+     "id": "nd_rack2"
+    },
+    {
+     "m": "shop_display_rack_02",
+     "at": [
+      -2690,
+      4370
+     ],
+     "id": "nd_rack3"
+    },
+    {
+     "m": "lab_desk_02",
+     "wall": "north",
+     "box": 1,
+     "s": -2770,
+     "yaw": 90,
+     "id": "nd_counter"
+    },
+    {
+     "m": "park_cash_register",
+     "at": [
+      -2740,
+      4584
+     ],
+     "h": 35,
+     "yaw": 270,
+     "clip": false,
+     "id": "nd_reg"
+    },
+    {
+     "m": "ehq_speaker_monitor_01",
+     "at": [
+      -2810,
+      4584
+     ],
+     "h": 35,
+     "yaw": 270,
+     "clip": false,
+     "id": "nd_spk1"
+    },
+    {
+     "m": "ehq_speaker_monitor_01",
+     "at": [
+      -2700,
+      4580
+     ],
+     "h": 35,
+     "yaw": 270,
+     "clip": false,
+     "id": "nd_spk2"
+    },
+    {
+     "m": "p7_box_cardboard_c_open01",
+     "at": [
+      -2930,
+      4500
+     ],
+     "yaw": 20,
+     "clip": false,
+     "id": "nd_box1"
+    },
+    {
+     "m": "p7_box_cardboard_c_closed",
+     "at": [
+      -2928,
+      4470
+     ],
+     "yaw": 5,
+     "clip": false,
+     "id": "nd_box2"
+    },
+    {
+     "m": "office_book_set_iw6",
+     "at": [
+      -2800,
+      4420
+     ],
+     "h": 64,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "nd_lps",
+     "note": "a stack of sleeves on the rack"
+    },
+    {
+     "note": "COPY STOP (bay 2): the wheel stands at its back"
+    },
+    {
+     "m": "lab_desk_02",
+     "wall": "west",
+     "box": 2,
+     "s": 4410,
+     "yaw": 0,
+     "id": "cs_desk1"
+    },
+    {
+     "m": "equipment_old_computer",
+     "at": [
+      -2610,
+      4390
+     ],
+     "h": 35,
+     "yaw": 0,
+     "clip": false,
+     "id": "cs_m1"
+    },
+    {
+     "m": "zmb_tv_crt_01",
+     "at": [
+      -2610,
+      4440
+     ],
+     "h": 35,
+     "yaw": 0,
+     "clip": false,
+     "id": "cs_m2"
+    },
+    {
+     "m": "office_paper_stack01_iw6",
+     "at": [
+      -2612,
+      4480
+     ],
+     "h": 35,
+     "yaw": 10,
+     "clip": false,
+     "id": "cs_paper1"
+    },
+    {
+     "m": "furniture_filing_cabinet",
+     "wall": "east",
+     "box": 2,
+     "s": 4360,
+     "id": "cs_file1"
+    },
+    {
+     "m": "furniture_filing_cabinet",
+     "wall": "east",
+     "box": 2,
+     "s": 4400,
+     "id": "cs_file2"
+    },
+    {
+     "m": "office_paper_stack01_iw6",
+     "at": [
+      -2330,
+      4360
+     ],
+     "h": 33,
+     "clip": false,
+     "id": "cs_paper2"
+    },
+    {
+     "v": "planter_island",
+     "at": [
+      -2660,
+      3900
+     ],
+     "yaw": 0
+    },
+    {
+     "v": "cabinet_island",
+     "at": [
+      -1980,
+      3880
+     ],
+     "yaw": 0
+    },
+    {
+     "m": "shop_display_rack_03",
+     "at": [
+      -2720,
+      4470
+     ],
+     "id": "nd_rack4"
+    },
+    {
+     "m": "p7_box_cardboard_d_open01",
+     "at": [
+      -2860,
+      4560
+     ],
+     "yaw": 70,
+     "clip": false,
+     "id": "nd_box3"
+    },
+    {
+     "m": "sketch_board_01",
+     "wall": "west",
+     "box": 1,
+     "s": 4360,
+     "h": 50,
+     "clip": false,
+     "id": "nd_board"
+    },
+    {
+     "scatter": {
+      "n": 18,
+      "rect": [
+       -2600,
+       4310,
+       -2340,
+       4460
+      ],
+      "seed": 21,
+      "min_gap": 22,
+      "pick": [
+       "cnd_paper_cia_01"
+      ]
+     },
+     "note": "the same page, printed forty times"
+    },
+    {
+     "note": "HOLE NUMBER NINE, doughnuts and coffee (bay 3)"
+    },
+    {
+     "m": "misc_coffee_machine",
+     "at": [
+      -2250,
+      4462
+     ],
+     "h": 44,
+     "yaw": 270,
+     "clip": false,
+     "id": "h9_coffee"
+    },
+    {
+     "m": "misc_coffee_machine_pot",
+     "at": [
+      -2228,
+      4462
+     ],
+     "h": 44,
+     "clip": false,
+     "id": "h9_pot"
+    },
+    {
+     "m": "ma_cup_stack",
+     "at": [
+      -2200,
+      4466
+     ],
+     "h": 44,
+     "clip": false,
+     "id": "h9_cups1"
+    },
+    {
+     "m": "ma_cup_stack",
+     "at": [
+      -2194,
+      4456
+     ],
+     "h": 44,
+     "clip": false,
+     "id": "h9_cups2"
+    },
+    {
+     "m": "food_snacks_iw6_donutsstack01",
+     "at": [
+      -2160,
+      4460
+     ],
+     "h": 44,
+     "clip": false,
+     "id": "h9_d1"
+    },
+    {
+     "m": "food_snacks_iw6_donutsstack01",
+     "at": [
+      -2140,
+      4466
+     ],
+     "h": 44,
+     "yaw": 40,
+     "clip": false,
+     "id": "h9_d2"
+    },
+    {
+     "m": "p7_diner_table_napkin_clean",
+     "at": [
+      -2112,
+      4460
+     ],
+     "h": 44,
+     "clip": false,
+     "id": "h9_nap"
+    },
+    {
+     "m": "zmb_candybox_racin_closed",
+     "at": [
+      -2090,
+      4466
+     ],
+     "h": 44,
+     "yaw": 270,
+     "clip": false,
+     "id": "h9_c1"
+    },
+    {
+     "m": "zmb_candybox_quickies_closed",
+     "at": [
+      -2084,
+      4466
+     ],
+     "h": 44,
+     "yaw": 270,
+     "clip": false,
+     "id": "h9_c2"
+    },
+    {
+     "m": "zmb_candybox_tuff_closed",
+     "at": [
+      -2078,
+      4466
+     ],
+     "h": 44,
+     "yaw": 270,
+     "clip": false,
+     "id": "h9_c3"
+    },
+    {
+     "m": "zmb_candybox_up_closed",
+     "at": [
+      -2072,
+      4466
+     ],
+     "h": 44,
+     "yaw": 270,
+     "clip": false,
+     "id": "h9_c4"
+    },
+    {
+     "m": "stool_bar_padded_01_green",
+     "at": [
+      -2240,
+      4400
+     ],
+     "id": "h9_s1"
+    },
+    {
+     "m": "stool_bar_padded_01_green",
+     "at": [
+      -2170,
+      4396
+     ],
+     "id": "h9_s2"
+    },
+    {
+     "m": "stool_bar_padded_01_green",
+     "at": [
+      -2090,
+      4408
+     ],
+     "roll": 90,
+     "yaw": 60,
+     "clip": false,
+     "id": "h9_s3"
+    },
+    {
+     "m": "park_soda_machine",
+     "wall": "north",
+     "box": 3,
+     "s": -2032,
+     "id": "h9_soda"
+    },
+    {
+     "m": "p7_cafe_wall_menu_01",
+     "wall": "north",
+     "box": 3,
+     "s": -2240,
+     "h": 120,
+     "clip": false,
+     "id": "h9_menu1"
+    },
+    {
+     "m": "p7_cafe_wall_menu_01",
+     "wall": "north",
+     "box": 3,
+     "s": -2200,
+     "h": 120,
+     "clip": false,
+     "id": "h9_menu2"
+    },
+    {
+     "note": "HEEL & KEY (bay 4): shoe boxes waiting on the shelves, key blanks on hooks"
+    },
+    {
+     "m": "com_restaurantstainlessteelshelf_02",
+     "wall": "north",
+     "box": 4,
+     "s": -1900,
+     "id": "hk_shelf1"
+    },
+    {
+     "m": "com_restaurantstainlessteelshelf_02",
+     "wall": "north",
+     "box": 4,
+     "s": -1840,
+     "id": "hk_shelf2"
+    },
+    {
+     "m": "p7_box_cardboard_c_closed",
+     "at": [
+      -1900,
+      4575
+     ],
+     "h": 71,
+     "yaw": 2,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "hk_b1"
+    },
+    {
+     "m": "p7_box_cardboard_c_closed",
+     "at": [
+      -1840,
+      4575
+     ],
+     "h": 71,
+     "yaw": 88,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "hk_b2"
+    },
+    {
+     "m": "p7_box_cardboard_d_closed",
+     "at": [
+      -1900,
+      4575
+     ],
+     "h": 80,
+     "yaw": 3,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "hk_b3"
+    },
+    {
+     "m": "p7_box_cardboard_c_closed",
+     "at": [
+      -1842,
+      4575
+     ],
+     "h": 80,
+     "yaw": 1,
+     "clip": false,
+     "overlap_ok": true,
+     "id": "hk_b4"
+    },
+    {
+     "m": "lab_desk_02",
+     "at": [
+      -1810,
+      4440
+     ],
+     "yaw": 90,
+     "id": "hk_counter"
+    },
+    {
+     "m": "toolbox_small01_iw6",
+     "at": [
+      -1840,
+      4440
+     ],
+     "h": 35,
+     "yaw": 90,
+     "clip": false,
+     "id": "hk_tools"
+    },
+    {
+     "m": "equipment_industrial_screwdriver_01",
+     "at": [
+      -1790,
+      4436
+     ],
+     "h": 35,
+     "yaw": 30,
+     "clip": false,
+     "id": "hk_sd"
+    },
+    {
+     "m": "equipment_industrial_rivet_tool_01",
+     "at": [
+      -1770,
+      4446
+     ],
+     "h": 35,
+     "yaw": 110,
+     "clip": false,
+     "id": "hk_rv"
+    },
+    {
+     "m": "square_hook",
+     "wall": "west",
+     "box": 4,
+     "s": 4380,
+     "h": 120,
+     "clip": false,
+     "row": {
+      "n": 4,
+      "step": [
+       24,
+       0
+      ]
+     },
+     "id": "hk_hookA"
+    },
+    {
+     "m": "square_hook",
+     "wall": "west",
+     "box": 4,
+     "s": 4380,
+     "h": 140,
+     "clip": false,
+     "row": {
+      "n": 4,
+      "step": [
+       24,
+       0
+      ]
+     },
+     "id": "hk_hookB"
+    },
+    {
+     "m": "square_hook",
+     "wall": "west",
+     "box": 4,
+     "s": 4380,
+     "h": 160,
+     "clip": false,
+     "row": {
+      "n": 4,
+      "step": [
+       24,
+       0
+      ]
+     },
+     "id": "hk_hookC"
+    },
+    {
+     "note": "the photo booth bay (Double Takes)"
+    },
+    {
+     "m": "zmb_theater_curtain_02",
+     "at": [
+      -1556,
+      4515
+     ],
+     "yaw": 0,
+     "h": 24,
+     "clip": false,
+     "id": "pb_curtain"
+    },
+    {
+     "m": "trash_can3",
+     "at": [
+      -1600,
+      4420
+     ],
+     "clip": false,
+     "id": "pb_strip",
+     "note": "a dropped strip"
+    },
+    {
+     "note": "the passage: 1978 arcade cabinets, benches, the night cleaner's abandoned kit"
+    },
+    {
+     "m": "park_arcade_standing_02_off",
+     "wall": "south",
+     "s": -2850,
+     "id": "cab1"
+    },
+    {
+     "m": "park_arcade_standing_01_off",
+     "wall": "south",
+     "s": -2780,
+     "id": "cab4"
+    },
+    {
+     "m": "furniture_park_bench_01_yellow",
+     "wall": "south",
+     "s": -2130,
+     "yaw": 0,
+     "id": "bench1"
+    },
+    {
+     "m": "park_soda_machine_2",
+     "wall": "south",
+     "s": -1300,
+     "id": "soda2"
+    },
+    {
+     "m": "trashbin_01_iw6",
+     "at": [
+      -2200,
+      3540
+     ],
+     "id": "bin1"
+    },
+    {
+     "m": "trashbin_01_iw6_green",
+     "at": [
+      -1500,
+      4280
+     ],
+     "id": "bin2"
+    },
+    {
+     "m": "com_janitor_bucket_mop_iw6",
+     "at": [
+      -1820,
+      4180
+     ],
+     "yaw": 30,
+     "id": "jan_bucket"
+    },
+    {
+     "m": "sign_wet_floor",
+     "at": [
+      -1890,
+      4230
+     ],
+     "yaw": 70,
+     "clip": false,
+     "id": "jan_sign1"
+    },
+    {
+     "m": "sign_wet_floor",
+     "at": [
+      -1730,
+      4120
+     ],
+     "yaw": 250,
+     "clip": false,
+     "id": "jan_sign2"
+    },
+    {
+     "m": "bucket_plastic",
+     "at": [
+      -1780,
+      4150
+     ],
+     "clip": false,
+     "id": "jan_b"
+    },
+    {
+     "m": "p7_bottle_plastic_cleaner",
+     "at": [
+      -1790,
+      4200
+     ],
+     "clip": false,
+     "id": "jan_cl"
+    },
+    {
+     "scatter": {
+      "n": 26,
+      "rect": [
+       -2950,
+       3560,
+       -1260,
+       4260
+      ],
+      "seed": 31,
+      "min_gap": 60,
+      "pick": [
+       "food_trash_bag_candy_01",
+       "food_trash_bag_chips_01",
+       "cup_paper_open_iw6",
+       "com_debris_paper_iw6_02",
+       "food_trash_container_02_open",
+       "popcorn_container_small_iw6",
+       "p7_bottle_plastic_16oz_lime"
+      ]
+     }
+    }
+   ],
+   "solids": [
+    {
+     "note": "Hole Number Nine's counter",
+     "rect": [
+      -2280,
+      4440,
+      -2060,
+      4484
+     ],
+     "h0": 0,
+     "h1": 40,
+     "mat": "wood_green"
+    },
+    {
+     "rect": [
+      -2284,
+      4436,
+      -2056,
+      4488
+     ],
+     "h0": 40,
+     "h1": 44,
+     "mat": "brushed"
+    },
+    {
+     "note": "the photo booth",
+     "rect": [
+      -1636,
+      4440,
+      -1560,
+      4596
+     ],
+     "h0": 0,
+     "h1": 100,
+     "mat": "panel_dark"
+    },
+    {
+     "rect": [
+      -1640,
+      4436,
+      -1556,
+      4600
+     ],
+     "h0": 100,
+     "h1": 106,
+     "mat": "chrome_trim"
+    },
+    {
+     "note": "half-raised roll shutters over the five shop mouths",
+     "rect": [
+      -2960,
+      4300,
+      -2640,
+      4310
+     ],
+     "h0": 150,
+     "h1": 256,
+     "mat": "rollup"
+    },
+    {
+     "rect": [
+      -2630,
+      4300,
+      -2310,
+      4310
+     ],
+     "h0": 166,
+     "h1": 256,
+     "mat": "rollup"
+    },
+    {
+     "rect": [
+      -2300,
+      4300,
+      -1980,
+      4310
+     ],
+     "h0": 140,
+     "h1": 256,
+     "mat": "rollup"
+    },
+    {
+     "rect": [
+      -1970,
+      4300,
+      -1650,
+      4310
+     ],
+     "h0": 158,
+     "h1": 256,
+     "mat": "rollup"
+    },
+    {
+     "rect": [
+      -1640,
+      4300,
+      -1320,
+      4310
+     ],
+     "h0": 172,
+     "h1": 256,
+     "mat": "rollup"
+    }
+   ],
+   "panels": [
+    {
+     "at": [
+      -2800,
+      4299.4
+     ],
+     "yaw": 270,
+     "w": 300,
+     "ht": 6,
+     "z": 142,
+     "mat": "lamp_red",
+     "note": "Needle Drop neon"
+    },
+    {
+     "at": [
+      -2470,
+      4299.4
+     ],
+     "yaw": 270,
+     "w": 300,
+     "ht": 6,
+     "z": 158,
+     "mat": "lamp_green",
+     "note": "Copy Stop"
+    },
+    {
+     "at": [
+      -2140,
+      4299.4
+     ],
+     "yaw": 270,
+     "w": 300,
+     "ht": 6,
+     "z": 132,
+     "mat": "lamp_cool",
+     "note": "Hole Number Nine"
+    },
+    {
+     "at": [
+      -1810,
+      4299.4
+     ],
+     "yaw": 270,
+     "w": 300,
+     "ht": 6,
+     "z": 150,
+     "mat": "lamp_warm",
+     "note": "Heel & Key"
+    },
+    {
+     "at": [
+      -1480,
+      4299.4
+     ],
+     "yaw": 270,
+     "w": 300,
+     "ht": 6,
+     "z": 164,
+     "mat": "neon_orange",
+     "note": "photo booth"
+    },
+    {
+     "at": [
+      -1559.4,
+      4560
+     ],
+     "yaw": 0,
+     "w": 30,
+     "ht": 50,
+     "h": 40,
+     "mat": "light_panel",
+     "note": "booth flash panel"
+    },
+    {
+     "wall": "west",
+     "box": 1,
+     "s": 4450,
+     "w": 60,
+     "ht": 90,
+     "h": 70,
+     "mat": "poster_lasttrain"
+    },
+    {
+     "wall": "east",
+     "box": 1,
+     "s": 4450,
+     "w": 60,
+     "ht": 90,
+     "h": 70,
+     "mat": "poster_mindgap"
+    },
+    {
+     "wall": "south",
+     "s": -2950,
+     "w": 60,
+     "ht": 90,
+     "h": 60,
+     "mat": "poster_station_zero"
+    },
+    {
+     "wall": "north",
+     "s": -1260,
+     "w": 60,
+     "ht": 90,
+     "h": 60,
+     "mat": "poster_mindgap"
+    },
+    {
+     "wall": "south",
+     "s": -1980,
+     "w": 60,
+     "ht": 90,
+     "h": 60,
+     "mat": "poster_lasttrain"
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -2900,
+      3700
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "light_panel",
+     "fit": true
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -2700,
+      3700
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "light_panel",
+     "fit": true
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -2500,
+      3700
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "panel_dark",
+     "fit": false
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -2300,
+      3700
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "light_panel",
+     "fit": true
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -2100,
+      3700
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "panel_dark",
+     "fit": false
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -1900,
+      3700
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "panel_dark",
+     "fit": false
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -1700,
+      3700
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "light_panel",
+     "fit": true
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -1500,
+      3700
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "light_panel",
+     "fit": true
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -1300,
+      3700
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "panel_dark",
+     "fit": false
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -2900,
+      4100
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "panel_dark",
+     "fit": false
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -2700,
+      4100
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "panel_dark",
+     "fit": false
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -2500,
+      4100
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "light_panel",
+     "fit": true
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -2300,
+      4100
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "light_panel",
+     "fit": true
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -2100,
+      4100
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "panel_dark",
+     "fit": false
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -1900,
+      4100
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "light_panel",
+     "fit": true
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -1700,
+      4100
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "light_panel",
+     "fit": true
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -1500,
+      4100
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "panel_dark",
+     "fit": false
+    },
+    {
+     "ceiling": true,
+     "at": [
+      -1300,
+      4100
+     ],
+     "w": 96,
+     "ht": 48,
+     "mat": "light_panel",
+     "fit": true
+    }
+   ],
+   "lights": [
+    {
+     "at": [
+      -2800,
+      4280
+     ],
+     "z": 136,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.2,
+      0.15
+     ],
+     "radius": 260,
+     "intensity": 0.16,
+     "note": "Needle Drop red"
+    },
+    {
+     "at": [
+      -2470,
+      4280
+     ],
+     "z": 150,
+     "type": "omni",
+     "color": [
+      0.3,
+      1.0,
+      0.45
+     ],
+     "radius": 260,
+     "intensity": 0.14,
+     "note": "Copy Stop green"
+    },
+    {
+     "at": [
+      -2470,
+      4420
+     ],
+     "z": 60,
+     "type": "omni",
+     "color": [
+      0.8,
+      1.0,
+      0.9
+     ],
+     "radius": 220,
+     "intensity": 0.12,
+     "note": "a copier's lamp under its lid"
+    },
+    {
+     "at": [
+      -2140,
+      4280
+     ],
+     "z": 126,
+     "type": "omni",
+     "color": [
+      0.45,
+      0.65,
+      1.0
+     ],
+     "radius": 260,
+     "intensity": 0.16,
+     "note": "Hole Number Nine blue"
+    },
+    {
+     "at": [
+      -2170,
+      4440
+     ],
+     "z": 230,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 25,
+     "outer": 60,
+     "color": [
+      1.0,
+      0.86,
+      0.62
+     ],
+     "pool": 0.3,
+     "note": "over the counter"
+    },
+    {
+     "at": [
+      -1810,
+      4280
+     ],
+     "z": 144,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.95,
+      0.9
+     ],
+     "radius": 260,
+     "intensity": 0.14,
+     "note": "Heel & Key white"
+    },
+    {
+     "at": [
+      -1480,
+      4280
+     ],
+     "z": 158,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.55,
+      0.15
+     ],
+     "radius": 260,
+     "intensity": 0.16,
+     "note": "photo booth orange"
+    },
+    {
+     "at": [
+      -1556,
+      4560
+     ],
+     "z": 60,
+     "type": "omni",
+     "color": [
+      0.9,
+      0.95,
+      1.0
+     ],
+     "radius": 140,
+     "intensity": 0.1
+    },
+    {
+     "at": [
+      -2800,
+      3700
+     ],
+     "z": 250,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 25,
+     "outer": 65,
+     "color": [
+      0.88,
+      1.0,
+      0.86
+     ],
+     "pool": 0.22,
+     "note": "ceiling panels, half dead, slightly green"
+    },
+    {
+     "at": [
+      -2200,
+      4100
+     ],
+     "z": 250,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 25,
+     "outer": 65,
+     "color": [
+      0.88,
+      1.0,
+      0.86
+     ],
+     "pool": 0.22
+    },
+    {
+     "at": [
+      -1800,
+      3700
+     ],
+     "z": 250,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 25,
+     "outer": 65,
+     "color": [
+      0.88,
+      1.0,
+      0.86
+     ],
+     "pool": 0.22
+    },
+    {
+     "at": [
+      -1400,
+      4100
+     ],
+     "z": 250,
+     "type": "spot",
+     "dir": [
+      0,
+      0,
+      -1
+     ],
+     "inner": 25,
+     "outer": 65,
+     "color": [
+      0.88,
+      1.0,
+      0.86
+     ],
+     "pool": 0.22
+    },
+    {
+     "at": [
+      -2400,
+      3560
+     ],
+     "z": 120,
+     "type": "omni",
+     "color": [
+      0.6,
+      0.7,
+      1.0
+     ],
+     "radius": 160,
+     "intensity": 0.06,
+     "note": "the cabinets' dead screens catch the panels"
+    }
+   ]
+  }
+ }
+}
