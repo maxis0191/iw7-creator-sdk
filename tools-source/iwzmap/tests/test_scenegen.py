@@ -124,6 +124,20 @@ class SceneRuleTests(unittest.TestCase):
             d['zones'][0]['props'] = [{'model': 'm', 'at': [5000, 5000]}]
         self.assertTrue(any('prop 0' in m for m in errors(scene(mut))))
 
+    def test_props_come_over_from_an_old_layout_only_where_they_stand(self):
+        tmp = tempfile.mkdtemp()
+        sp, lp = os.path.join(tmp, 's.json'), os.path.join(tmp, 'old.json')
+        json.dump(BASE, open(sp, 'w'))
+        decor = [{'zone': 'old', 'model': 'bench', 'origin': [200, 200, 0], 'yaw': 90, 'static': True},        # kept
+                 {'zone': 'old', 'model': 'rubble_pile', 'origin': [300, 300, 0], 'static': True},          # excluded name
+                 {'zone': 'old', 'model': 'crate', 'origin': [480, 700, 0], 'static': True},                # in front of D1
+                 {'zone': 'old', 'model': 'kit', 'origin': [250, 250, 0], 'static': False},                 # not static
+                 {'zone': 'old', 'model': 'lamp', 'origin': [5000, 5000, 0], 'static': True}]              # off the zone
+        json.dump({'decor': decor}, open(lp, 'w'))
+        props, rep = sg.import_props(sp, lp, ['old=hall'])
+        self.assertEqual([p['model'] for p in props['hall']], ['bench'])
+        self.assertEqual(rep['kept'], 1)
+
     def test_headroom_is_checked(self):
         def mut(d):
             d['zones'][0]['ceiling'] = 60

@@ -233,7 +233,15 @@ class Scene:
         self.d, self.path = d, path
         self.map = d.get('map', 'cp_iwz')
         self.zones = collections.OrderedDict()
+        # props kept in their own files ({zone: [props]}, next to the scene): added to the zones' own props
+        extra = collections.defaultdict(list)
+        for pf in d.get('props_files', []):
+            with open(os.path.join(os.path.dirname(os.path.abspath(path)) if path else '.', pf), encoding='utf-8') as f:
+                for zid, items in json.load(f).items():
+                    extra[zid] += items
         for zd in d['zones']:
+            if extra.get(zd['id']):
+                zd = dict(zd, props=list(zd.get('props', [])) + extra[zd['id']])
             z = Zone(zd)
             if z.id in self.zones:
                 raise SceneError('zone %s defined twice' % z.id)
@@ -1453,6 +1461,57 @@ def test_args(src, inset=20.0, depth=96.0):
     return {'climbs': '|'.join(climbs), 'routes': '|'.join(routes), 'climb_cases': len(climbs), 'route_cases': len(routes)}
 
 
+def import_props(scene_path, old_layout, mapping, exclude=r'rubble|plank|barricade|debris', clear=96.0):
+    """props for kept rooms from an older generated map's layout.json decor: compiled static models of zone A moved into
+    zone B (mapping 'old=new[:dx,dy,dz]'). A prop is kept when it lands on a floor of its new zone at the height it had,
+    clear of every opening and flight by `clear`, and its name does not match `exclude`. -> {zone: [props]}, report"""
+    import re
+    sc = Scene.load(scene_path)
+    ops = [sc.locate(o) for o in sc.openings()]
+    lay = json.load(open(old_layout, encoding='utf-8'))
+    maps = {}
+    for m in mapping:
+        old, rest = m.split('=')
+        new, _, off = rest.partition(':')
+        maps[old] = (new, tuple(float(v) for v in off.split(',')) if off else (0.0, 0.0, 0.0))
+    out, rep = collections.defaultdict(list), collections.Counter()
+    for d in lay.get('decor', []):
+        if d.get('zone') not in maps:
+            continue
+        news, (dx, dy, dz) = maps[d['zone']]
+        if not d.get('static') or re.search(exclude, d['model']):
+            rep['skipped: not static or excluded'] += 1
+            continue
+        x, y, oz = d['origin'][0] + dx, d['origin'][1] + dy, d['origin'][2] + dz
+        new = next((n for n in news.split('|') if sc.zones[n].floor_at(x, y) is not None), news.split('|')[0])
+        z = sc.zones[new]
+        fz = z.floor_at(x, y)
+        if fz is None or any(f.rect[0] - clear <= x <= f.rect[2] + clear and f.rect[1] - clear <= y <= f.rect[3] + clear for f in z.flights):
+            rep['skipped: off a floor of the zone or on a flight'] += 1
+            continue
+        if abs(fz - oz) > 24 and abs(fz - (oz - dz)) > 24:
+            rep['skipped: floor height differs'] += 1
+            continue
+        near = False
+        for o in ops:
+            if new not in o['zones']:
+                continue
+            p = o['planes'][new]
+            u, v = (x, y) if o['axis'] == 'x' else (y, x)
+            if o['span'][0] - clear <= u <= o['span'][1] + clear and abs(v - p) <= clear + 48:
+                near = True
+        if near:
+            rep['skipped: in front of an opening'] += 1
+            continue
+        pr = {'model': d['model'], 'at': [round(x, 2), round(y, 2)], 'z': round(oz, 2), 'yaw': d.get('yaw', 0),
+              'pitch': d.get('pitch', 0), 'roll': d.get('roll', 0), 'static': True, 'from': d['zone']}
+        if d.get('clip'):
+            pr['clip'] = d['clip']
+        out[new].append(pr)
+        rep['kept'] += 1
+    return dict(out), dict(rep)
+
+
 def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
     """headless gamelab plans (iw7-paris-server ops/gamelab/Invoke-GameLabHeadless.ps1 -UsermapDir) from an emit:
     doors opened, then for every flight a zombie climb up and down (zombies placed at the foot or the head, the bot at
@@ -1582,6 +1641,8 @@ def main(argv=None):
     p.add_argument('--pairs', help='a,b;c,d (zone ids); default every pair')
     p = sub.add_parser('pools'); p.add_argument('src'); p.add_argument('template'); p.add_argument('--json')
     p = sub.add_parser('tests'); p.add_argument('src'); p.add_argument('--json')
+    p = sub.add_parser('importprops'); p.add_argument('scene'); p.add_argument('old_layout'); p.add_argument('mapping', nargs='+')
+    p.add_argument('--out', help='write {zone: [props]} (one prop a line); name it in the props_files of the scene')
     p = sub.add_parser('labplans'); p.add_argument('src'); p.add_argument('out'); p.add_argument('--per-plan', type=int, default=26)
     p.add_argument('--count', type=int, default=3); p.add_argument('--chase', type=int, default=45)
     p = sub.add_parser('labreport'); p.add_argument('src'); p.add_argument('runs', nargs='+'); p.add_argument('--json')
@@ -1638,6 +1699,13 @@ def main(argv=None):
             path = os.path.join(a.out, pl['name'] + '.json')
             json.dump(pl, open(path, 'w'), indent=1)
             print('%s: %d steps' % (path, len(pl['steps'])))
+        return 0
+    if a.cmd == 'importprops':
+        props, rep = import_props(a.scene, a.old_layout, a.mapping)
+        print(json.dumps(rep), {k: len(v) for k, v in props.items()})
+        if a.out:
+            with open(a.out, 'w', encoding='utf-8', newline=chr(10)) as f:
+                f.write('{' + chr(10) + (',' + chr(10)).join(' %s: [' % json.dumps(z) + chr(10) + (',' + chr(10)).join('  ' + json.dumps(p) for p in ps) + chr(10) + ' ]' for z, ps in props.items()) + chr(10) + '}' + chr(10))
         return 0
     if a.cmd == 'tests':
         r = test_args(a.src)
