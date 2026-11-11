@@ -1761,6 +1761,9 @@ def walk_plan(src, mapname=None, pairs=None):
         name = ('walk_%s_%s' % (a, b))[:40]
         steps.append({'do': 'walk', 'name': name, 'path': pts, 's': min(300, int(ln / 120.0 + 20))})
         expects.append({'do': 'expect', 'that': 'walk:%s.reached' % name, 'eq': len(pts) - 1, 'why': 'a player walks from %s to %s' % (a, b)})
+    # the client answers the last key release only if the session is still running (11 Nov 2026: BUTTON_NOT_PRESSED on
+    # the final release of a plan that ended with the walk)
+    steps.append({'do': 'wait', 's': 3})
     return {'schema': 'iw7.gamelab-plan/1', 'name': '%s_walk' % mapname, 'map': mapname,
             'about': 'Scene-generated map: a real walk (forward key held) along three routes, to calibrate the walking-time table.',
             'steps': steps + expects}
@@ -1850,9 +1853,11 @@ def w1b_plans(src, mapname=None, start_weapon='iw7_g18_zm'):
         bx = trap['box']
         mid = [round((bx[0] + bx[3]) / 2.0), round((bx[1] + bx[4]) / 2.0), bx[2]]
         a += [{'do': 'spawn', 'tag': 'pit', 'at': mid, 'count': 4}, {'do': 'mark', 'name': 'trap_before'},
-              {'do': 'use', 'name': 'trap', 'ent': 'iwz_trap_third_rail_use', 'near': trap['origin'], 's': 3},
+              {'do': 'use', 'name': 'trap', 'ent': 'iwz_trap_third_rail_use', 'near': trap['origin'], 's': 6},
               {'do': 'mark', 'name': 'trap_after'}, {'do': 'kill'}]
+        # deaths: every death of a plan zombie, whatever killed it (the trap has no attacker); the marks also print each body
         ea += [{'do': 'expect', 'that': 'trap_before.alive', 'ge': 1, 'why': 'zombies stand in the track pit'},
+               {'do': 'expect', 'that': 'trap_after.deaths', 'gt': '@trap_before.deaths', 'why': 'the Third Rail kills zombies in the pit'},
                {'do': 'expect', 'that': 'trap_after.alive', 'eq': 0, 'why': 'the Third Rail kills every zombie in the pit'},
                {'do': 'expect', 'that': 'use:trap.spent', 'eq': 750, 'why': 'the trap costs 750'}]
     a.append({'do': 'state', 'name': 'end_systems'})
