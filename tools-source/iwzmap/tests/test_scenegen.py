@@ -119,6 +119,11 @@ class SceneRuleTests(unittest.TestCase):
             d['zones'][2]['boxes'] = [[5000, 5000, 5600, 5600]]
         self.assertEqual(errors(scene(far)), [])
 
+    def test_a_prop_outside_its_zone_is_refused(self):
+        def mut(d):
+            d['zones'][0]['props'] = [{'model': 'm', 'at': [5000, 5000]}]
+        self.assertTrue(any('prop 0' in m for m in errors(scene(mut))))
+
     def test_headroom_is_checked(self):
         def mut(d):
             d['zones'][0]['ceiling'] = 60
@@ -159,6 +164,12 @@ class EmitTests(unittest.TestCase):
     def test_every_zone_is_walkable_from_the_start(self):
         t = sg.routes(self.out)
         self.assertTrue(t and all(v is not None for v in t.values()), t)
+
+    def test_playtest_cases_cover_every_flight_and_opening(self):
+        r = sg.test_args(self.out)
+        self.assertEqual((r['climb_cases'], r['route_cases']), (2, 2))
+        self.assertIn('low_steps_up=', r['climbs'])
+        self.assertTrue(r['routes'].startswith('D1='))
 
     def test_the_level_script_carries_the_doors(self):
         gsc = open(os.path.join(self.out, 'cp_iwz.gsc')).read()

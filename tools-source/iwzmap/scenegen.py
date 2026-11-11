@@ -176,6 +176,7 @@ class Zone:
         self.flights = [Flight(self.id, f) for f in d.get('flights', [])]
         self.solids = [dict(s, rect=tuple(float(v) for v in s['rect'])) for s in d.get('solids', [])]
         self.enclosures = [dict(e, rect=tuple(float(v) for v in e['rect'])) for e in d.get('enclosures', [])]
+        self.props = d.get('props', [])       # {model, at [x, y], z (default the floor), yaw, pitch, roll, static, clip [hx, hy, hz]}
         self.spawners = d.get('spawners', {})
         self.plate = bool(d.get('plate', not self.far))
         self.probe = tuple(d.get('probe', (0.9, 0.9, 0.95, 0.6)))
@@ -308,6 +309,10 @@ def check_scene(sc):
             for nb, rb in flatparts[i + 1:]:
                 if rect_inter(ra, rb):
                     err('zone %s: %s and %s overlap' % (z.id, na, nb))
+        for k, pr in enumerate(z.props):
+            x, y = pr['at'][0], pr['at'][1]
+            if z.floor_at(x, y) is None and 'z' not in pr:
+                err('zone %s: prop %d (%s) at (%g, %g) is outside the zone' % (z.id, k, pr.get('model'), x, y))
         for f in z.flights:
             if abs(f.rise - RISE) > 2.0:
                 err('flight %s: riser %.1f (stock about 8)' % (f.id, f.rise))
@@ -449,6 +454,7 @@ class Emitter:
         self.layout = {'map': sc.map, 'scene': os.path.basename(sc.path), 'zones': {}, 'doors': [], 'spawners': [], 'starts': [],
                        'interactions': [], 'markers': [], 'stairs': self.stairs}
         self.report = {'schema': 'iw7.scenegen/1'}
+        self.smodels, self.prop_ents = [], []
 
     # ---------------------------------------------------------------- render helpers
     def quad(self, mat, zone, pts, n, collide=True):
@@ -553,6 +559,19 @@ class Emitter:
             self.B.box((x0, y0, float(s.get('z0', z.zmin()))), (x1, y1, float(s.get('z1', z.ceiling))), s.get('mat', 'conc_wall'), z.id)
         for e in z.enclosures:
             self.build_enclosure(z, e)
+        for pr in z.props:
+            x, y = float(pr['at'][0]), float(pr['at'][1])
+            zz = float(pr['z']) if 'z' in pr else z.floor_at(x, y)
+            ang = (float(pr.get('pitch', 0)), float(pr.get('yaw', 0)), float(pr.get('roll', 0)))
+            if pr.get('static', True):
+                self.smodels.append('%s %g %g %g %g %g %g %g' % (pr['model'], x, y, zz, ang[0], ang[1], ang[2], float(pr.get('scale', 1))))
+            else:
+                self.prop_ents.append((pr['model'], (x, y, zz), ang, pr.get('targetname')))
+            if pr.get('clip'):
+                hx, hy, hz = (float(v) for v in pr['clip'])
+                self.B.collision_box((x - hx, y - hy, zz), (x + hx, y + hy, zz + 2 * hz))
+            self.layout.setdefault('decor', []).append({'zone': z.id, 'model': pr['model'], 'origin': [x, y, zz], 'yaw': ang[1],
+                                                        'clip': pr.get('clip'), 'static': pr.get('static', True)})
         for f in z.flights:
             self.build_flight(z, f)
 
@@ -944,6 +963,11 @@ class Emitter:
             self.ent(classname='script_model', targetname=tn, model='tag_origin', origin='0 0 -3000', angles='0 0 0')
         self.ent(classname='script_struct', targetname='hidden_room_spot', origin='0 0 -3000', angles='0 0 0')
         self.ent(classname='script_struct', targetname='brute_hide_org', origin='0 0 -2000')
+        for model, org, ang, tn in self.prop_ents:
+            kw = {'targetname': tn} if tn else {}
+            self.ent(classname='script_model', model=model, origin=self.fmt(org), angles='%g %g %g' % ang, **kw)
+        if self.smodels:
+            open(os.path.join(self.out, 'smodels.txt'), 'w', newline='\n').write('\n'.join(self.smodels) + '\n')
         open(os.path.join(self.out, 'ents.txt'), 'w', newline='\n').write(mg.ents_text(ws, self.ents))
         open(os.path.join(self.out, 'triggers.txt'), 'w', newline='\n').write('\n'.join(self.triggers) + '\n')
         open(os.path.join(self.out, 'scriptables.txt'), 'w', newline='\n').write('\n'.join(self.relocations) + ('\n' if self.relocations else ''))
@@ -1389,6 +1413,38 @@ def routes(src, speed=190.0, pairs=None):
     return table
 
 
+def test_args(src, inset=20.0, depth=96.0):
+    """playtest dvars from an emit (iw7-paris-server ops/iwzmap/Test-IWZMapPlaytest.ps1 -ExtraArgs): a climb case up
+    and down every flight (paris_iwz_pt_climbs) and a route through every door and link (paris_iwz_pt_routes): the
+    player walks it both ways and a zombie follows from its start"""
+    lay = json.load(open(os.path.join(src, 'layout.json')))
+    pt = lambda x, y, z: '%d,%d,%d' % (round(x), round(y), round(z))
+    climbs = []
+    for st in lay.get('stairs', []):
+        a0, a1 = st['span']
+        cm = (st['c'][0] + st['c'][1]) / 2
+        lo_at_a0 = abs(st['ramp_from'][0] - a0) < abs(st['ramp_from'][0] - a1)
+        lo_s, hi_s = (a0 + inset, a1 - inset) if lo_at_a0 else (a1 - inset, a0 + inset)
+        P = (lambda s_, z_: pt(s_, cm, z_)) if st['axis'] == 'x' else (lambda s_, z_: pt(cm, s_, z_))
+        lo, hi = P(lo_s, st['z'][0]), P(hi_s, st['z'][1])
+        climbs.append('%s_up=%s/%s' % (st['space'], lo, hi))
+        climbs.append('%s_down=%s/%s' % (st['space'], hi, lo))
+    routes = []
+    for o in lay.get('openings', []):
+        za, zb = o['zones']
+        pa, pb = o['walls'][za], o['walls'][zb]
+        sa = -1 if pb >= pa else 1          # zone a lies on this side of its wall plane
+        if abs(pb - pa) < 0.5:              # zero gap: which side from the zone boxes
+            b = lay['zones'][za]['box']
+            k = 0 if o['axis'] == 'y' else 1
+            sa = 1 if (b[k] + b[k + 3]) / 2 > pa else -1
+        mid = (o['a'] + o['b']) / 2
+        z = o['z0']
+        q = (lambda c_: pt(c_, mid, z)) if o['axis'] == 'y' else (lambda c_: pt(mid, c_, z))
+        routes.append('%s=%s/%s/%s' % (o['name'], q(pa + sa * depth), q((pa + pb) / 2), q(pb - sa * depth)))
+    return {'climbs': '|'.join(climbs), 'routes': '|'.join(routes), 'climb_cases': len(climbs), 'route_cases': len(routes)}
+
+
 def pools(src, tpl):
     """what the emit takes from the template's finite pools, and the entity count"""
     import re
@@ -1426,6 +1482,7 @@ def main(argv=None):
     p = sub.add_parser('routes'); p.add_argument('src'); p.add_argument('--speed', type=float, default=190.0); p.add_argument('--md')
     p.add_argument('--pairs', help='a,b;c,d (zone ids); default every pair')
     p = sub.add_parser('pools'); p.add_argument('src'); p.add_argument('template'); p.add_argument('--json')
+    p = sub.add_parser('tests'); p.add_argument('src'); p.add_argument('--json')
     a = ap.parse_args(argv)
     if a.cmd == 'check':
         sc = Scene.load(a.scene)
@@ -1462,6 +1519,12 @@ def main(argv=None):
         if a.md:
             open(a.md, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
         return 1 if any(v is None for v in t.values()) else 0
+    if a.cmd == 'tests':
+        r = test_args(a.src)
+        print('+set paris_iwz_pt_climbs "%s" +set paris_iwz_pt_routes "%s"' % (r['climbs'], r['routes']))
+        if a.json:
+            json.dump(r, open(a.json, 'w'), indent=1)
+        return 0
     if a.cmd == 'pools':
         r = pools(a.src, a.template)
         print(json.dumps(r, indent=1))
