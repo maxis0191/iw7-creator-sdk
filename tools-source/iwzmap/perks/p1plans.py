@@ -14,7 +14,7 @@ Plans (all headless, gamelab library "szperks" of iw7-paris-server, map cp_iwz):
             revive (every perk lost, bought again), rounds (perks and counters survive)
   p1_hurt   what a zombie's hit takes at rounds 1 to 30 (Double Takes' threshold decision)
 """
-import json, os, sys
+import json, math, os, sys
 
 RIFLE = 'iw7_m4_zm'
 WW = 'iw7_facemelter_zm'
@@ -42,14 +42,23 @@ def main(argv=None):
     given = '--given' in argv
     L = json.load(open(os.path.join(src, 'layout.json')))
     at = {}
+    yaw_of = {}
     for i in L['interactions']:
         if i['kind'].startswith('perk_machine_') or i['kind'] == 'generator':
             at[i['kind']] = [round(v, 1) for v in i['origin']]
+            yaw_of[i['kind']] = i.get('yaw', 0)
     zp = L['zone_points']
     trap = next(i for i in L['interactions'] if i['kind'] == 'trap_third_rail')
     box = L['trap_third_rail']['box']
     pit = [(box[0] + box[3]) / 2 + 600, (box[1] + box[4]) / 2, box[2] + 4]
     os.makedirs(out, exist_ok=True)
+
+    def frame(kind):
+        # a frame of the machine from 140 units in front of it, eye on the machine: what a player walking up sees
+        o, y = at[kind], math.radians(yaw_of.get(kind, 0))
+        p = [round(o[0] + 140 * math.cos(y), 1), round(o[1] + 140 * math.sin(y), 1), o[2]]
+        return [{'do': 'tp', 'at': p, 'snap': True}, {'do': 'lookat', 'at': [o[0], o[1], o[2] + 48]}, {'do': 'wait', 's': 1},
+                {'do': 'capture', 'name': 'm_' + kind[13:], 'pause': 0.5}, {'do': 'ui', 'name': 'm_' + kind[13:]}]
 
     def use(name, kind, s=4):
         return {'do': 'use', 'name': name, 'kind': kind, 'near': at[kind], 's': s}
@@ -239,12 +248,12 @@ def main(argv=None):
               call('szp_setup', 'c_setup'), use('power', 'generator', 6), {'do': 'wait', 's': 3}]
         first = ['perk_machine_revive', 'perk_machine_tough', 'perk_machine_run', 'perk_machine_rat_a_tat', 'perk_machine_flash', 'perk_machine_deadeye']
         for k in first:
-            st += [use('c_' + k[13:], k, 5), {'do': 'capture', 'name': 'm_' + k[13:], 'pause': 0.5}]
+            st += [use('c_' + k[13:], k, 5)] + frame(k)
         st += [call('szp_state', 'c_six'), {'do': 'ui', 'name': 'six'}]
         for k in ['perk_machine_tough', 'perk_machine_run', 'perk_machine_rat_a_tat', 'perk_machine_flash']:
             st += [use('c_back_' + k[13:], k, 3)]
         for k in ['perk_machine_bakers', 'perk_machine_voyage', 'perk_machine_grudge', 'perk_machine_double']:
-            st += [use('c_' + k[13:], k, 5), {'do': 'capture', 'name': 'm_' + k[13:], 'pause': 0.5}]
+            st += [use('c_' + k[13:], k, 5)] + frame(k)
         st += [call('szp_state', 'c_new'), {'do': 'spawn', 'tag': 'ck', 'at': at['perk_machine_double'], 'count': 1, 'place': True},
                call('szp_hold', 'ck', 1), {'do': 'give', 'weapon': RIFLE}, call('szp_hits', 'ck12', 'ck', 12, 10, RIFLE, 1, s=2),
                call('szp_state', 'c_hits'), call('szp_ticket', 'c_ticket'), {'do': 'wait', 's': 1}, {'do': 'ui', 'name': 'new'}, {'do': 'capture', 'name': 'hud_new', 'pause': 0.5}]

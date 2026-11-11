@@ -324,6 +324,10 @@ machine_power()
         }
     }
     self.powered_on = 1;
+    // the icon's anchor: an invisible model over the machine (a waypoint on a world position was not drawn by the client,
+    // UI dump of run c2; the stock revive icon follows an entity)
+    self.szp_sign = spawn( "script_model", self.origin + ( 0, 0, 96 ) );
+    self.szp_sign setmodel( "tag_origin" );
     print( "[IWZ perks] MACHINE_ON perk=" + self.perk_type + " body=" + isdefined( self.szp_body ) + " origin=" + self.origin );
     if ( isdefined( self.szp_body ) )
         playsoundatpos( self.szp_body.origin, "power_buy_neon_vending_turn_on" );
@@ -341,19 +345,19 @@ machine_icons()
         {
             foreach ( name, s in level.szp.machines_on )
             {
-                if ( !isdefined( self.szp_machine_icons[name] ) )
+                if ( !isdefined( self.szp_machine_icons[name] ) && isdefined( s.szp_sign ) )
                 {
                     e = newclienthudelem( self );
                     e.archived = 1;
-                    e.x = s.origin[0];
-                    e.y = s.origin[1];
-                    e.z = s.origin[2] + 92;
                     e.alpha = 0;
-                    e setshader( level.szp.icon[name], 12, 12 );
-                    e setwaypoint( 0, 0, 0, 1 );
+                    e setshader( level.szp.icon[name], 16, 16 );
+                    e setwaypoint( 1, 0 );
+                    e settargetent( s.szp_sign );
                     self.szp_machine_icons[name] = e;
                 }
                 e = self.szp_machine_icons[name];
+                if ( !isdefined( e ) )
+                    continue;
                 want = 0;
                 if ( distancesquared( self.origin, s.origin ) < 490000 )
                     want = 0.9;
