@@ -72,9 +72,7 @@ wall-weapon spots; 4 traps; a target of 78 zombies. Numbers and their sources: `
 
 - **The map**: not yet by itself. Receiving a custom map from a public server is unproven on the official
   client; until that is proven or fixed in the client, the recommendation is private test servers only.
-- **Seventy-eight zombies**: the target. On the official client it can only be the "hybrid crowd" (78 bodies
-  of which at most 24, and 18 once specials are about, are engine zombies at a moment), and only if its first probes pass; otherwise the cap stays 24
-  until the client itself can hold more. Real 78 needs a client change.
+- **Seventy-eight zombies**: the target. The cap stays 24 until the engine itself holds more. The crowd module was removed on 11 Nov 2026 because script-moved bodies are not real zombies; real capacity is engine work (server repository docs/ZOMBIE-CAPACITY.md). Real 78 needs a client change.
 - **The full Tab screen and the emote wheel**: a server-drawn version (text pages and a simple picker). The
   designed screens need a client that loads Lua menus from a download.
 - **Emotes**: none until four unproven steps pass (our animations playing in the game, on a real player, in
