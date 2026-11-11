@@ -298,6 +298,25 @@ referenced, not copied; other techsets are embedded from the techsets dump (`.te
 ZoneTool. Scriptable movers (the subway train's) are dropped from a patched `.xmb` copy (`--keep-scriptable` keeps
 them and then needs the scriptable dump and its dependencies).
 
+### Kit and authored models as static models (TF10)
+
+A kit model (another shipped map) or an authored model (a port folder of `x64-zt-extensions` asset-bridge) can be
+placed in `smodels.txt` like a stock model: compiled into the map as a static model, lit by the light grid, not an
+entity. It needs the map compiler of x64-zt `main` after the TF10 change (a model with no light grid lit instance in
+the template map gets a neutral, fitted draw instance; before, it copied another model's, whose material index read
+past a smaller model's material list and crashed the client at `iw7_ship+0xDCE6E7`). The compiler reads the
+model's `.xmb` from `<source>\xmodel`; `kit_import.py --stage-xmodels <source>` links it there, and the normal kit
+import then puts the model itself into the zone. `build-prefab-room.ps1` does both:
+
+```powershell
+.\build-prefab-room.ps1 -Src <src with smodels.txt rows for the models> -UmOut <dir> -Work <work> -ZoneToolExe <zonetool> `
+  -TemplateDump <dumps> -KitModels 'cp_disco_worn_subway_bench,train:iwz_fire_hose_cabinet' `
+  -KitDumps 'cp_disco=<W>\dump\cp_disco;<W>\dump\techsets_cp_disco','train=<port folder>'
+```
+
+The proof plan is the server repository's `tests/scenarios/gamelab/tf10-static-models.json` (frames with depth for
+`iw7_see.py visible`, bullet traces, the entity census).
+
 ## Ambient FX (fx/)
 
 Stock IW7 effects render in a usermap through the ordinary script route (`loadfx` in `main()`, then

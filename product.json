@@ -60,6 +60,7 @@
     "tools-source/iwzmap/scenes/station_zero_kit_select.json",
     "tools-source/iwzmap/scenes/station_zero_kits.json",
     "tools-source/iwzmap/tests/test_kit_lists.py",
+    "tools-source/iwzmap/tests/test_kit_import_stage.py",
     "docs/STATION-ZERO-KITS.md",
     "tools-source/worldkit/iw7_see.py",
     "tools-source/worldkit/tests/test_see.py",
