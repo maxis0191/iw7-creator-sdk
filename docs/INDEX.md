@@ -16,6 +16,7 @@ One page that routes a reader. Paths are relative to the repository root. The ch
 | build the server spawn tip example | [tools-source/gsc-spawn-tip/README.md](../tools-source/gsc-spawn-tip/README.md) | `tools-source/gsc-spawn-tip` | `tools-source-gsc-spawn-tip`, `Test-SpawnTip`, `Test-SpawnTipHost` |
 | know that every script still parses after an edit | header of `tools-source/compile_check.py` | `tools-source/compile_check.py` | `tools-source-compiles` |
 | know what is proven and what is not | [MODDING-CAPABILITIES.md](MODDING-CAPABILITIES.md) (evidence as of 2026-10-16), [CREATION-TOOLS.md](CREATION-TOOLS.md) (the map tools) | | |
+| read the design of the custom map Station Zero (lore, world, quest, weapons, audio, build plan, client needs) | [station-zero/README.md](station-zero/README.md), then [station-zero/12-BUILD-PLAN.md](station-zero/12-BUILD-PLAN.md) | | |
 | know why and in what order | [ENGINE-MODDING-STRATEGY.md](ENGINE-MODDING-STRATEGY.md) | | |
 | test in the game, measure, find a tool | server repository (iw7-paris-server): `docs/DEVKIT.md`, `docs/TOOLS-INDEX.md` | | |
 | know the rules for working here | [AGENTS.md](../AGENTS.md) | | |
