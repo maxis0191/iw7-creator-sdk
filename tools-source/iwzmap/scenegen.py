@@ -1526,8 +1526,6 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45, player=True):
             continue
         name, pts = c.split('=')
         p = [[float(v) for v in q.split(',')] for q in pts.split('/')]
-        if zone_at(p[0]) not in ground and zone_at(p[-1]) in ground:
-            p = p[::-1]
         cases.append((name, p[0], p[-1], p))
     lay = json.load(open(os.path.join(src, 'layout.json')))
     mapname = mapname or lay.get('map', 'cp_iwz')
@@ -1555,6 +1553,8 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45, player=True):
         steps = [{'do': 'waves', 'on': False}, {'do': 'doors'}]
         expects = []
         for name, a, b, pts in cases[k:k + per_plan]:
+            if zone_at(a) not in ground and zone_at(b) in ground:
+                a, b, pts = b, a, pts[::-1]
             tag = re.sub(r'[^a-z0-9_]', '_', name.lower())[:40]
             # round-1 zombies walk about 34 units a second (measured, W1a runs hl-b, 11 Nov 2026) and start after
             # about 3 s: the chase gets the navigation length at 20 u/s plus 10 s, at least chase_s
