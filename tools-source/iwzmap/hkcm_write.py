@@ -132,16 +132,20 @@ def tri_box(t):
     return [min(v[a] for v in t) for a in range(3)], [max(v[a] for v in t) for a in range(3)]
 
 
-def split_sections(tris, ids, max_tris=127):
-    """Recursive split: <=127 triangles and <=255 unique vertices per section."""
+def split_sections(tris, ids, max_tris=127, max_extent=None):
+    """Recursive split: <=127 triangles and <=255 unique vertices per section; with max_extent (collision units) also
+    until a section of several triangles is no wider than that. The engine reads a section's tree boxes coarser than
+    this encoder writes them when a section is very wide: a 6,400-unit section of Station Zero lost its far part (the
+    Terminus floor beyond x 8,381 and y 8,796 was not hit by any trace, a player fell through it; build e, 11 Nov 2026)."""
     verts = {v for i in ids for v in tris[i]}
-    if len(ids) <= max_tris and len(verts) <= 255:
-        return [ids]
     mn, mx = bounds([tri_box(tris[i]) for i in ids])
+    wide = max_extent is not None and len(ids) > 1 and max(mx[a] - mn[a] for a in range(3)) > max_extent
+    if len(ids) <= max_tris and len(verts) <= 255 and not wide:
+        return [ids]
     ax = max(range(3), key=lambda a: mx[a] - mn[a])
     s = sorted(ids, key=lambda i: sum(v[ax] for v in tris[i]))
     h = len(s) // 2
-    return split_sections(tris, s[:h], max_tris) + split_sections(tris, s[h:], max_tris)
+    return split_sections(tris, s[:h], max_tris, max_extent) + split_sections(tris, s[h:], max_tris, max_extent)
 
 
 class Writer:
@@ -156,7 +160,7 @@ class Writer:
         if count: self.local.append((at, target))
 
 
-def encode(tris, template_path, tag=0, max_tris=127, tags=None):
+def encode(tris, template_path, tag=0, max_tris=127, tags=None, max_extent=None):
     """tags: optional per-triangle surface-table index (into the template's HavokPhysicsShapeList table, which
     carries contents and surface flags); default `tag` for every triangle."""
     tags = list(tags) if tags is not None else [tag] * len(tris)
@@ -181,7 +185,7 @@ def encode(tris, template_path, tag=0, max_tris=127, tags=None):
         q = [int(round((p[a] - dmn[a]) / span[a] * (0x1FFFFF if a < 2 else 0x3FFFFF))) for a in range(3)]
         return q[0] | q[1] << 21 | q[2] << 42
     shared = []
-    sections = split_sections(tris, list(range(len(tris))), max_tris)
+    sections = split_sections(tris, list(range(len(tris))), max_tris, max_extent)
     sec_boxes = [bounds([tri_box(tris[i]) for i in s]) for s in sections]
     top_root = bvh([(k, sec_boxes[k][0], sec_boxes[k][1]) for k in range(len(sections))])
     top_bytes, leaf_node = emit_axis5(top_root, dmn, dmx)

@@ -157,5 +157,5 @@ as opaque, whether the over-bright props of the moved build spoil the room, and 
 | `tools-source/iwzmap/prefab_place.py` | prefab to compile sources (world writer, prop and light lines, collision, navigation cells), `props-check`, `pose`, `collision`, `info` |
 | `tools-source/iwzmap/prefab_room.py` | the Prefab Room map generator |
 | `tools-source/iwzmap/prefab_proof.py` | the pair of test plans and the comparison of the two sessions |
-| `tools-source/iwzmap/build-prefab-room.ps1`, `new-work-from-stock.ps1`, `zt.ps1` | build under the shared reservation; no machine path (parameters; the scheduler defaults to `IW7_RESOURCE_SCHEDULER`, then `machine.ps1`) |
+| `tools-source/iwzmap/build-prefab-room.ps1`, `new-work-from-stock.ps1`, `zt.ps1` | build under the shared reservation; no machine path (parameters; the scheduler core comes from `-Scheduler`, `IW7_RESOURCE_SCHEDULER`, the prepared workspace or `IWZ_COMPONENTS`, through `scheduler.ps1`, which refuses a core without the waiting order and the fit rule) |
 | `tools-source/iwzmap/tests/test_prefab_place.py` | tests on a synthetic prefab (no game data) |

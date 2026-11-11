@@ -9,7 +9,7 @@ param(
 #   Runtime         $env:IWZ_RUNTIME          else <Documents>\IW7-Runtime          work folders, dumps, runs
 #   Products        $env:IWZ_PRODUCTS         else <Documents>\IW7-Products         checkouts of the products
 #   Server          $env:IWZ_SERVER           else <Documents>\IW7-Paris-Server     server checkout (local runner)
-#   Components      $env:IWZ_COMPONENTS       else <Products>\iw7-mod-components    resource scheduler
+#   Components      $env:IWZ_COMPONENTS       no default: a components worktree (the scheduler core is found by scheduler.ps1)
 #   ZoneToolExe     $env:IWZ_ZONETOOL_EXE     else <Products>\worktrees\<Child>\build\bin\x64\Release\zonetool.exe
 #   ZoneToolSource  $env:IWZ_ZONETOOL_SOURCE  else <Products>\worktrees\<Child>
 #   TemplateDump    $env:IWZ_TEMPLATE_DUMP    else <Runtime>\iwz-map-ref-a\dump     stock dumps (cp_zmb, techsets_*)
@@ -34,7 +34,10 @@ switch($Name){
   'Products'       { $path=$products }
   'Server'         { $path=Pick $variable (Join-Path $documents 'IW7-Paris-Server') }
   'BakePython'     { $path=Pick $variable (Join-Path $runtime 'iwzmap-bake-venv') }
-  'Components'     { $path=Pick $variable (Join-Path $products 'iw7-mod-components') }
+  'Components'     {
+    $path=Pick $variable ''
+    if(!$path){ throw "Set `$env:IWZ_COMPONENTS to a components worktree. No default: the main components checkout lags behind; the scheduler core comes from scheduler.ps1." }
+  }
   'TemplateDump'   { $path=Pick $variable (Join-Path $runtime 'iwz-map-ref-a\dump') }
   'ZoneToolExe'    { $path=Pick $variable (Join-Path $products "worktrees\$Child\build\bin\x64\Release\zonetool.exe"); $Child='' }
   'ZoneToolSource' { $path=Pick $variable (Join-Path $products "worktrees\$Child"); $Child='' }

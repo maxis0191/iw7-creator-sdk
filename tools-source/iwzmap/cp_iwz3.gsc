@@ -59,7 +59,10 @@ main()
     level thread iwz_door_dressing();
     level thread iwz_hide_door_blockers();
     level thread iwz_report();
+    //@CROWD@
     //@AUDIO@
+    // game-script modules (sz_modules.py: modules/*.gsc, e.g. the Q1 quest and the T1 Capsule Post)
+    //@MODULES@
 }
 
 // Wall weapons: one price per place (the scene's), although several places sell the same weapon. The stock purchase and

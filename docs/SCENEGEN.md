@@ -28,6 +28,9 @@ python -I -B scenegen.py w1bplans <src> <plan folder>                          #
 python -I -B scenegen.py stressprops <scene> <kits.json> <n> <out scene>       # ST1: a copy of the scene with n static stock props spread by floor area
 python -I -B st1_report.py --perf <components>\ops\engine-map\iw7_perf.py LABEL=<run> ... [--base LABEL]   # frame time per spawn zone (gamelab perfzones), parity
 python -I -B scenegen.py tests   <src> [--json f.json]                         # playtest dvars: a climb up and down every flight, a route through every opening
+python -I -B sz_modules.py <src> [--out <folder>]                              # the game-script modules of <src> again (custom scripts for a test)
+python -I -B sz_q1t1.py plans <src> <plan folder>                              # Q1/T1 headless plans (library szq of the server repository)
+python -I -B sz_q1t1.py report <run folders...> [--json f.json]               # every ride sample's zone, the Q1/T1 events, the script errors
 python -I -B iwz_emitcheck.py check <src>                                      # the offline map gate
 python -I -B sz2_navconn.py <src>                                              # navigation connectivity
 python -B <server>\ops\iwzmap\iwzmap_ents_lint.py <src>\ents.txt --gsc <src>\cp_iwz.gsc   # stock zombies recipe
@@ -79,7 +82,20 @@ or `t` (0 to 1) + `off` (distance from the wall); `box` picks the box of a sever
 by class (`pistol`, `carbine`, `smg`, `rifle`, `shotgun`, `marksman`, `lmg`, `heavy_shotgun`, `heavy`, `revolver`);
 the generator takes the stock weapon of that class from Spaceland's wall-buy list, and marks a stand-in when the list
 has none. Markers are positions kept in `layout.json` for later packages (new perks, hatches, clocks, traps that
-need their own script).
+need their own script); a marker may carry an `area` `[x0, y0, z0, x1, y1, z1]` (car 1's box, the Terminus).
+
+## Game-script modules
+
+A package's game script is a module: `tools-source/iwzmap/modules/<name>.gsc` (today `quest.gsc`, Q1, and `post.gsc`,
+T1; [STATION-ZERO-Q1-T1](STATION-ZERO-Q1-T1.md)). `emit` fills two tables in each (`//@MARKERS@`: every placed marker
+as `[ kind, id, zone, origin, yaw ( , lo, hi ) ]`; `//@VOLUMES@`: every spawn volume as `[ name, zone, lo, hi ]`),
+writes `<src>/modules/<map>_<name>.gsc`, and the level script starts each one (`//@MODULES@` becomes
+`level thread scripts\cp\maps\<map>\<map>_<name>::init();`). `sz2_assemble.py` puts them in the zone as rawfiles
+next to the level script. A module calls nothing of another module or of the level script by path, so the same file
+also runs as a server custom script on a map already built: `python -I -B sz_modules.py <src> --out <folder>`, then
+a headless run with `-ServerCopy '<file>|iw7-mod/custom_scripts/cp/<file name>'`. A script change is tested in about
+3 minutes of session instead of a map build (about 6 minutes of zone step plus the wait for the build slot). A new
+module needs no other change: drop the file in `modules/` and emit.
 
 ## What `check` refuses
 
