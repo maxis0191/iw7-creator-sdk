@@ -2406,8 +2406,11 @@ def bake(src, out, quick=False, rays=144, bounces=3, texel=8.0, denoise=1, check
             use = os.path.join(tmp, 'src')
             os.makedirs(use)
             for f in os.listdir(src):
-                if os.path.isfile(os.path.join(src, f)) and f != 'layout.json':
-                    shutil.copyfile(os.path.join(src, f), os.path.join(use, f))
+                p = os.path.join(src, f)
+                if os.path.isfile(p) and f != 'layout.json':
+                    shutil.copyfile(p, os.path.join(use, f))
+                elif os.path.isdir(p) and f not in ('lightmap', 'bake_tmp'):
+                    shutil.copytree(p, os.path.join(use, f))      # modules/: the level script needs them
             lay2 = json.loads(json.dumps(lay))
             for l in lay2['lights']:
                 if l.get('fill') and l['zone'] in fill_report:
@@ -2424,6 +2427,11 @@ def bake(src, out, quick=False, rays=144, bounces=3, texel=8.0, denoise=1, check
         shutil.rmtree(tmp, ignore_errors=True)
     run([py, '-I', '-B', os.path.abspath(__file__), 'bakereport', out, '--json', os.path.join(out, 'bake_zones.json')], 'bakereport')
     gates = {}
+    # the baked source must hold everything the source holds (the modules folder was once left behind)
+    lost = sorted(set(os.listdir(src)) - set(os.listdir(out)))
+    gates['complete_copy'] = 1 if lost else 0
+    if lost:
+        log('ERROR: the baked copy lacks %s of the source' % lost)
     if checks:
         for name, cmd in (('iwz_emitcheck', [sys.executable, '-I', '-B', os.path.join(HERE, 'iwz_emitcheck.py'), 'check', out]),
                           ('sz2_navconn', [sys.executable, '-I', '-B', os.path.join(HERE, 'sz2_navconn.py'), out])):
