@@ -54,6 +54,7 @@ The table above explains the main pieces. The three tables below list every file
 | `hkpack.py`, `hkcm.py`, `hkcm_write.py` | Havok 2014 packfile reader; decoder and encoder of the compressed mesh collision |
 | `assemble.py` | assembles `zonetool/<map>/` (hard links) and `zone_source/<map>.csv` |
 | `kit_import.py`, `kit_proof.py` | stock models of other zones into a usermap zone; drawn / textured / lit proof on capture frames |
+| `char_pack.py`, `build-charpack.ps1` | stock player characters of other zones (body, head, arms) as the source of a mod zone, with their table; one command dumps, packs and builds (see "Character pack") |
 | `build_art.py`, `make_art.py` | map browser art zone and its images from engine renders |
 | `iwz_emitcheck.py`, `iwz_zonecheck.py`, `iwz_probe_forensics.py` | offline gates on an emit and on a zone tree; forensics of recorded route probes (tests in `tests/`) |
 | `volume_check.py`, `test_volume_check.py` | offline check of a compiled map's trigger and spawn volumes, and its unit tests |
@@ -61,6 +62,7 @@ The table above explains the main pieces. The three tables below list every file
 | `tome_read.py` | reads an Umbra format-20 tome header |
 | `tome_cull.py` | the generated map's culling data: per-prop cull distances by size, a check of the tome against every door sightline before the zone step, and the game's depth of door captures ([CULLING](../../docs/CULLING.md)) |
 | `machine.ps1` | resolves the machine locations of the build and run scripts (see "Machine locations") |
+| `scheduler.ps1` | finds the resource scheduler core for `zt.ps1`, `build-zt.ps1`, `darkness\build-g-dark.ps1` and refuses a core without the waiting order and the fit rule (see "The scheduler core") |
 | `zt.ps1` | runs ZoneTool in a work folder under the shared resource lease |
 | `build-zt.ps1` | builds the ZoneTool fork under the lease |
 | `new-work.ps1` | makes a ZoneTool work folder from a game folder: copies the executable set, hard-links the zone files |
@@ -105,6 +107,7 @@ The table above explains the main pieces. The three tables below list every file
 | `probe_colours.json` | from the views of one build (`sz2_probecheck.py`); the source is named in the file | `station_zero2.py` |
 | `sz2_submodels.json` | `sz2_submodels.py` | `station_zero2.py` |
 | `sz2_lm_table.json` | `sz2_lmpick.py` | `station_zero2.py` |
+| `characters_5_8.json` | by hand (the four guest characters: key, source zone, body, head, arms; the table name) | `char_pack.py`, `build-charpack.ps1` |
 
 ### Sub-folders
 
@@ -133,7 +136,7 @@ No script of this folder holds a path of one machine. A location comes from a pa
 | `IWZ_RUNTIME` | `<Documents>\IW7-Runtime` | work folders, dumps, runs, the Python environments of the stage |
 | `IWZ_PRODUCTS` | `<Documents>\IW7-Products` | checkouts of the products |
 | `IWZ_SERVER` | `<Documents>\IW7-Paris-Server` | server checkout that holds the local runner (`ops\iwzmap`) |
-| `IWZ_COMPONENTS` | `<IWZ_PRODUCTS>\iw7-mod-components` | resource scheduler (`ops\Resource-Scheduler.Core.ps1`) |
+| `IWZ_COMPONENTS` | none | a components worktree; last place `scheduler.ps1` looks for the scheduler core (see "The scheduler core") |
 | `IWZ_ZONETOOL_EXE` | `<IWZ_PRODUCTS>\worktrees\<worktree the script names>\build\bin\x64\Release\zonetool.exe` | the ZoneTool build to use |
 | `IWZ_ZONETOOL_SOURCE` | `<IWZ_PRODUCTS>\worktrees\x64-zt-iwz-map` | ZoneTool source built by `build-zt.ps1` |
 | `IWZ_TEMPLATE_DUMP` | `<IWZ_RUNTIME>\iwz-map-ref-a\dump` | stock dumps (`cp_zmb`, `techsets_*`) |
@@ -155,6 +158,23 @@ The records in `darkness/integration/` keep the paths of the runs they describe;
 
 This landed without a map build: every script parses and every default was compared with the path it replaced.
 The first agent that builds or runs a map after this change reports the result.
+
+## The scheduler core
+
+Every build script of this folder takes the machine-wide build reservation with the scheduler core of
+iw7-mod-components (`ops\Resource-Scheduler.Core.ps1`), found by `scheduler.ps1` in this order:
+
+1. the script's `-Scheduler` parameter (`zt.ps1`, `build-prefab-room.ps1`), else `$env:IW7_RESOURCE_SCHEDULER`;
+2. the core of the prepared workspace the script runs from (`./bootstrap.ps1 -Output runtime/<name>` composes it at
+   the components pin of `product.json`);
+3. `$env:IWZ_COMPONENTS\ops\Resource-Scheduler.Core.ps1`.
+
+There is no default checkout. Until 11 Nov 2026 the default was the main components checkout, 11 commits behind and
+without the waiting order: a zone build started with it took the machine ahead of every queued caller.
+`scheduler.ps1` then refuses, with a sentence naming the path and what to do, a core that does not define
+`Assert-IW7QueueTurn` (the waiting order, components PR 129) and `Test-IW7TicketCanFit` (the fit rule, components
+PR 130, pin `pin/server-447c1ad-shareable` a0990f32). It reads the file text only, so nothing of a refused core runs.
+`tests/test_scheduler_core.py` holds the guard to that, and accepts the core of the workspace the checks run in.
 
 ## Build
 
@@ -395,6 +415,39 @@ import then puts the model itself into the zone. `build-prefab-room.ps1` does bo
 
 The proof plan is the server repository's `tests/scenarios/gamelab/tf10-static-models.json` (frames with depth for
 `iw7_see.py visible`, bullet traces, the entity census).
+
+## Character pack: stock player characters in a mod zone
+
+The guest player characters of IW7 Zombies each live in one map zone (the DJ in cp_zmb, Kevin in cp_rave, Pam in
+cp_disco, Elvira in cp_town). `build-charpack.ps1` packs their body, head and arms models into the source of a mod
+zone, which loads on every map, so each character can be a player character on all five maps. One command:
+
+```powershell
+# dumps what the work folder lacks (one zt.ps1 run per source map: techsets_<map>, <map>, patch_<map>), writes the pack,
+# and with -Build compiles it alone as zone "mod" (a test mod: copy <Out>\mod.ff to mods\<name>\mod.ff)
+.\build-charpack.ps1 -Work <ZoneTool work folder from new-work-from-stock.ps1> -Out <new folder> -Build `
+  [-Characters characters_5_8.json] [-Scheduler <prepared inputs>\ops\Resource-Scheduler.Core.ps1] [-WaitForSlotSeconds 3600]
+```
+
+Measured 11 Nov 2026: the four characters (9 models) give a 22,364,464-byte `mod.ff` in 12 s once the dumps exist;
+gate and loader readback clean. One dump run per map, because four patch zones in one run hit the game's limit of 16
+`animclass` assets (a hidden fatal dialog; `zt.ps1` now ends such a run at once with the dialog's text). A finished map
+leaves `dump\.charpack-<map>.done`.
+
+- `characters_5_8.json`: the characters (`key`, source `zone`, `body`, `head` (empty for a full body), `arms`) and
+  the name of the table the pack carries (`paris/characters_5_8.csv`, rows `key,body,head,arms`).
+- `char_pack.py <out> --dump <zone>=<dump>;<techsets dump>;<patch dump> ...`: the pack itself. It calls `kit_import.py`
+  with `--share-runtime` and `--drop-procedural-bones`. A material or physics asset that a zone loaded on every map
+  defines (`techsets_*` of common/global, `global_core_mp`, `global_cp`, `global`) becomes a reference row; the others
+  are copied with their image headers (pixels stream from the base `imagefile*.pak`) and their techsets when no shared
+  zone has them. Nothing is referenced into a map zone: the mod zone outlives the map. Every procedural bone set
+  (shoulder twist helpers) is dropped from a patched copy of the model: x64-zt registers that asset type, even as a
+  reference, only in zones `paris_enemy_*`. Scriptable parts are dropped as for kit props. Images that the source zones
+  themselves only reference are referenced the same way. The pack's csv starts with `require` rows for the shared
+  techset zones. Report: `<out>\charpack-report.json` (each drop and reference is named there).
+- `kit_import.py` fills a zone csv with no world rows (no `com_map,` row) by appending: that is how a mod zone takes it.
+- The Paris mod takes the pack with `Build-ParisMod.ps1 -CharacterPack <Out>` (server repository,
+  `docs/CHARACTER-PACK.md` there, with the measured size, memory and per-map proof).
 
 ## Ambient FX (fx/)
 

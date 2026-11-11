@@ -66,7 +66,7 @@ if($ReuseBake){
   Get-ChildItem $src -File | Where-Object { $_.Name -notin @('world.bin','lighting.txt') } | ForEach-Object { Copy-Item $_.FullName (Join-Path $build $_.Name) -Force }
   "bake reused from $BakeFrom"
 } else {
-  . (& "$PSScriptRoot\..\machine.ps1" Components 'ops\Resource-Scheduler.Core.ps1' -MustExist)
+  . (& "$PSScriptRoot\..\scheduler.ps1")
   for($i=0;$i -lt 900;$i++){ try { $lease=Enter-IW7ResourceLease -Scope "$DK\bake" -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner 'IWZ darkness agent: dark light bake'; break } catch { if($_.Exception.Message -match 'busy|reserved|wait'){ Start-Sleep 60; continue }; throw } }
   try {
     if(Test-Path $build){ Remove-Item $build -Recurse -Force }
