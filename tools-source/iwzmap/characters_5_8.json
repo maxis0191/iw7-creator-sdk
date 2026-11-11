@@ -1,9 +1,9 @@
 {
  "table": "paris/characters_5_8.csv",
  "characters": [
-  {"key": "dj", "zone": "cp_zmb", "body": "body_zmb_hero_dj", "head": "head_zmb_dj", "arms": "viewmodel_zmb_hero_dj"},
-  {"key": "pam", "zone": "cp_disco", "body": "cp_disco_female_boss_pam_grier_hero", "head": "", "arms": "cp_disco_female_boss_pam_grier_viewmodel_arms"},
-  {"key": "kevin", "zone": "cp_rave", "body": "zmb_hero_k_smith", "head": "", "arms": "viewmodel_zmb_hero_k_smith"},
-  {"key": "elvira", "zone": "cp_town", "body": "fullbody_zmb_hero_elvira_player", "head": "", "arms": "viewmodel_zmb_hero_elvira"}
+  {"key": "dj", "zone": "cp_zmb", "body": "body_zmb_hero_dj", "head": "head_zmb_dj", "arms": "viewmodel_zmb_hero_dj", "portraits": ["zm_pc_score_team_plyr_5", "zm_pc_score_team_plyr_5b", "zm_pc_score_team_plyr_5c", "zm_pc_score_team_plyr_5d", "zm_pc_score_main_plyr_5", "zm_pc_score_main_plyr_5b", "zm_pc_score_main_plyr_5c", "zm_pc_score_main_plyr_5d"]},
+  {"key": "pam", "zone": "cp_disco", "body": "cp_disco_female_boss_pam_grier_hero", "head": "", "arms": "cp_disco_female_boss_pam_grier_viewmodel_arms", "portraits": ["zm_team_plyr_5_dlc2", "zm_team_plyr_5c_dlc2", "zm_team_plyr_5d_dlc2", "zm_main_plyr_5_dlc2", "zm_main_plyr_5c_dlc2", "zm_main_plyr_5d_dlc2"]},
+  {"key": "kevin", "zone": "cp_rave", "body": "zmb_hero_k_smith", "head": "", "arms": "viewmodel_zmb_hero_k_smith", "portraits": ["zm_team_plyr_5_dlc1", "zm_team_plyr_5b_dlc1", "zm_team_plyr_5c_dlc1", "zm_team_plyr_5d_dlc1", "zm_main_plyr_5_dlc1", "zm_main_plyr_5b_dlc1", "zm_main_plyr_5c_dlc1", "zm_main_plyr_5d_dlc1"]},
+  {"key": "elvira", "zone": "cp_town", "body": "fullbody_zmb_hero_elvira_player", "head": "", "arms": "viewmodel_zmb_hero_elvira", "portraits": ["zm_team_plyr_5_dlc3", "zm_team_plyr_5c_dlc3", "zm_team_plyr_5d_dlc3", "zm_main_plyr_5d_dlc3"]}
  ]
 }

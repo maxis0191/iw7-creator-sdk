@@ -93,6 +93,42 @@ class CharPackTest(unittest.TestCase):
         with open(os.path.join(self.dump, 'xmodel', 'hero_body.xmb'), 'rb') as f:
             self.assertTrue(f.read().endswith(self.body_tail))
 
+    def test_portraits_are_standalone_materials(self):
+        # a HUD portrait: a 2d material of no model, its techset only referenced by a shared techsets zone
+        with open(os.path.join(self.dump, 'materials', 'hud_hero.json'), 'w') as f:
+            json.dump({'techniqueSet->name': '2d', 'textureTable': [{'image': 'hud_hero'}]}, f)
+        with open(os.path.join(self.dump, 'images', 'hud_hero.iw7Image'), 'wb') as f:
+            f.write(b'P')
+        os.makedirs(os.path.join(self.dump, 'techsets', 'state', '2d'))
+        for ext in ('.statebits', '.statebitsmap'):
+            with open(os.path.join(self.dump, 'techsets', 'state', '2d', 'hud_hero' + ext), 'wb') as f:
+                f.write(b'1')
+        with open(os.path.join(self.runtime, 'techsets_global', 'techsets_global.csv'), 'a') as f:
+            f.write('techset,,2d\n')
+        with open(self.spec, 'w') as f:
+            json.dump({'table': 'paris/chars.csv', 'characters': [
+                {'key': 'hero', 'zone': 'zone_a', 'body': 'hero_body', 'head': '', 'arms': 'hero_arms',
+                 'portraits': ['hud_hero']}]}, f)
+        code, out = self.run_pack()
+        self.assertEqual(code, 0, out)
+        rows = open(os.path.join(self.out, 'zone_source', 'mod.csv')).read().split()
+        self.assertIn('material,hud_hero', rows)
+        self.assertIn('techset,,2d', rows)
+        tree = os.path.join(self.out, 'zonetool', 'mod')
+        self.assertTrue(os.path.isfile(os.path.join(tree, 'materials', 'hud_hero.json')))
+        self.assertTrue(os.path.isfile(os.path.join(tree, 'images', 'hud_hero.iw7Image')))
+        with open(os.path.join(self.out, 'charpack-report.json')) as f:
+            self.assertEqual(json.load(f)['portraits'], {'hero': {'hud_hero': 'in pack'}})
+
+    def test_missing_portrait_fails(self):
+        with open(self.spec, 'w') as f:
+            json.dump({'table': 'paris/chars.csv', 'characters': [
+                {'key': 'hero', 'zone': 'zone_a', 'body': 'hero_body', 'head': '', 'arms': 'hero_arms',
+                 'portraits': ['hud_none']}]}, f)
+        code, out = self.run_pack()
+        self.assertEqual(code, 1, out)
+        self.assertIn('material:hud_none', out)
+
     def test_unknown_tail_layout_is_refused(self):
         with open(os.path.join(self.dump, 'xmodel', 'hero_body.xmb'), 'ab') as f:
             f.write(b'\x08\x00')                                # one array too many: the drop is not safe
