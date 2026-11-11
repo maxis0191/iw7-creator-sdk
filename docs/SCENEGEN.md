@@ -19,6 +19,7 @@ python -I -B scenegen.py emit    scenes\station_zero.json <cp_zmb dump> <src>  #
 python -I -B scenegen.py flights <src>                                         # navigation against the stair surface
 python -I -B scenegen.py routes  <src> [--pairs a,b;c,d] [--md table.md]       # walking times between zones
 python -I -B scenegen.py pools   <src> <cp_zmb dump>                           # template pools and entities used
+python -I -B scenegen.py labplans <src> <plan folder> [--per-plan 9] [--count 2] [--chase 30]   # headless gamelab plans: survey, climbs, crossings
 python -I -B scenegen.py tests   <src> [--json f.json]                         # playtest dvars: a climb up and down every flight, a route through every opening
 python -I -B iwz_emitcheck.py check <src>                                      # the offline map gate
 python -I -B sz2_navconn.py <src>                                              # navigation connectivity

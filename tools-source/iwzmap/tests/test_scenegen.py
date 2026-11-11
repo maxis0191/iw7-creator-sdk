@@ -171,6 +171,14 @@ class EmitTests(unittest.TestCase):
         self.assertIn('low_steps_up=', r['climbs'])
         self.assertTrue(r['routes'].startswith('D1='))
 
+    def test_lab_plans_cover_every_case_with_an_expectation(self):
+        plans = sg.lab_plans(self.out, per_plan=3)
+        self.assertEqual(plans[0]['name'], 'cp_test_w1a_survey')
+        expects = [st for pl in plans for st in pl['steps'] if st['do'] == 'expect']
+        self.assertEqual(len(expects), 4)
+        tags = [st['tag'] for pl in plans for st in pl['steps'] if st['do'] == 'spawn']
+        self.assertTrue(all(t.replace('_', '').isalnum() and t == t.lower() for t in tags), tags)
+
     def test_the_level_script_carries_the_doors(self):
         gsc = open(os.path.join(self.out, 'cp_iwz.gsc')).read()
         self.assertIn('iwz_door( "D1", "iwz_door_D1"', gsc)

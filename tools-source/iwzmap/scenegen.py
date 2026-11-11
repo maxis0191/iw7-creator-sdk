@@ -1445,6 +1445,42 @@ def test_args(src, inset=20.0, depth=96.0):
     return {'climbs': '|'.join(climbs), 'routes': '|'.join(routes), 'climb_cases': len(climbs), 'route_cases': len(routes)}
 
 
+def lab_plans(src, mapname='cp_iwz', per_plan=26, count=3, chase_s=45):
+    """headless gamelab plans (iw7-paris-server ops/gamelab/Invoke-GameLabHeadless.ps1 -UsermapDir) from an emit:
+    doors opened, then for every flight a zombie climb up and down (zombies placed at the foot or the head, the bot at
+    the other end) and for every door and link a zombie crossing (zombies placed in one zone, the bot in the other);
+    each case expects every zombie to arrive. The first plan also surveys the navigation from the start and counts
+    the map's entities. Cases are split over plans of at most per_plan cases."""
+    import re
+    t = test_args(src)
+    cases = []
+    for c in t['climbs'].split('|') + t['routes'].split('|'):
+        if not c:
+            continue
+        name, pts = c.split('=')
+        p = [[float(v) for v in q.split(',')] for q in pts.split('/')]
+        cases.append((name, p[0], p[-1]))
+    lay = json.load(open(os.path.join(src, 'layout.json')))
+    start = lay['starts'][0]
+    plans = [{'schema': 'iw7.gamelab-plan/1', 'name': '%s_w1a_survey' % mapname, 'map': mapname,
+              'about': 'Scene-generated map: every door opened, the navigation surveyed from the start, the entities counted.',
+              'steps': [{'do': 'waves', 'on': False}, {'do': 'doors'}, {'do': 'tp', 'at': list(start)}, {'do': 'ents', 'name': 'all'},
+                        {'do': 'survey', 'name': 'map', 'step': 128, 'max': 6000}]}]
+    for k in range(0, len(cases), per_plan):
+        steps = [{'do': 'waves', 'on': False}, {'do': 'doors'}]
+        expects = []
+        for name, a, b in cases[k:k + per_plan]:
+            tag = re.sub(r'[^a-z0-9_]', '_', name.lower())[:40]
+            steps += [{'do': 'tp', 'at': b}, {'do': 'spawn', 'tag': tag, 'at': a, 'count': count},
+                      {'do': 'chase', 'tag': tag, 's': chase_s}, {'do': 'kill', 'tag': tag}]
+            expects.append({'do': 'expect', 'that': 'chase:%s.reached' % tag, 'eq': '@chase:%s.total' % tag,
+                            'why': 'every zombie gets from %s to the player at %s (%s)' % (a, b, name)})
+        plans.append({'schema': 'iw7.gamelab-plan/1', 'name': '%s_w1a_%d' % (mapname, len(plans)), 'map': mapname,
+                      'about': 'Scene-generated map: zombie climbs on every flight and crossings of every door and link, '
+                               'headless (scenegen.py labplans).', 'steps': steps + expects})
+    return plans
+
+
 def pools(src, tpl):
     """what the emit takes from the template's finite pools, and the entity count"""
     import re
@@ -1483,6 +1519,8 @@ def main(argv=None):
     p.add_argument('--pairs', help='a,b;c,d (zone ids); default every pair')
     p = sub.add_parser('pools'); p.add_argument('src'); p.add_argument('template'); p.add_argument('--json')
     p = sub.add_parser('tests'); p.add_argument('src'); p.add_argument('--json')
+    p = sub.add_parser('labplans'); p.add_argument('src'); p.add_argument('out'); p.add_argument('--per-plan', type=int, default=26)
+    p.add_argument('--count', type=int, default=3); p.add_argument('--chase', type=int, default=45)
     a = ap.parse_args(argv)
     if a.cmd == 'check':
         sc = Scene.load(a.scene)
@@ -1519,6 +1557,14 @@ def main(argv=None):
         if a.md:
             open(a.md, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
         return 1 if any(v is None for v in t.values()) else 0
+    if a.cmd == 'labplans':
+        os.makedirs(a.out, exist_ok=True)
+        lay = json.load(open(os.path.join(a.src, 'layout.json')))
+        for pl in lab_plans(a.src, lay.get('map', 'cp_iwz'), a.per_plan, a.count, a.chase):
+            path = os.path.join(a.out, pl['name'] + '.json')
+            json.dump(pl, open(path, 'w'), indent=1)
+            print('%s: %d steps' % (path, len(pl['steps'])))
+        return 0
     if a.cmd == 'tests':
         r = test_args(a.src)
         print('+set paris_iwz_pt_climbs "%s" +set paris_iwz_pt_routes "%s"' % (r['climbs'], r['routes']))
