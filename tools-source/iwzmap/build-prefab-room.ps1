@@ -40,7 +40,7 @@ $times.compile=[int]((Get-Date)-$t).TotalSeconds
 $full = Get-ChildItem "$W\zt-*.out.log" | Sort-Object LastWriteTime | Select-Object -Last 1
 if($full){ Copy-Item $full.FullName "$UmOut.compile.log" -Force -ErrorAction SilentlyContinue }
 if(($c -join "`n") -notmatch 'iwzmap: wrote'){ $c | Select-Object -Last 25; throw 'iwzcompile failed' }
-($c | Select-String 'iwzmap: wrote|static models|no template instance|IWZ_SMODEL_DONOR|Umbra tome|not in the template|not used by the template').Line | Select-Object -First 12
+($c | Select-String 'iwzmap: wrote|iwzmap: [0-9]+ static models|no template instance|IWZ_SMODEL_DONOR|Umbra tome|not in the template|not used by the template').Line | Select-Object -First 12
 }
 if($CompileOnly){ return }
 if($ZoneBuildExe){ Copy-Item -LiteralPath $ZoneBuildExe -Destination "$W\zonetool.exe" -Force }

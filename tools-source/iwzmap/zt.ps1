@@ -10,7 +10,17 @@ if($WaitForSlotSeconds -gt 0){
   $until=[datetime]::UtcNow.AddSeconds($WaitForSlotSeconds)
   while(@((Get-IW7ResourceStatus).Leases).Count -and [datetime]::UtcNow -lt $until){ Start-Sleep -Seconds 5 }
 }
-$lease=Enter-IW7ResourceLease -Scope $Work -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner $Owner
+# A compiler or extractor running without a reservation (another agent's build, a check run) refuses the admission
+# too; while the wait lasts, that refusal and a busy slot are asked again every 5 s (the scheduler's own queued-job rule).
+$lease=$null
+while(-not $lease){
+  try{ $lease=Enter-IW7ResourceLease -Scope $Work -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner $Owner }
+  catch{
+    $busy=$_.Exception.Message -like 'Resource busy:*' -or $_.Exception.Message -like 'An existing compiler/extractor/Java analysis is running;*'
+    if(!$busy -or $WaitForSlotSeconds -le 0 -or [datetime]::UtcNow -ge $until){ throw }
+    Start-Sleep -Seconds 5
+  }
+}
 try{
   $tag=[DateTime]::UtcNow.ToString('HHmmss')
   $p=Start-Process -FilePath "$Work\zonetool.exe" -ArgumentList (@('-headless','-unbuffered-io')+$ZtArgs) -WorkingDirectory $Work -RedirectStandardOutput "$Work\zt-$tag.out.log" -RedirectStandardError "$Work\zt-$tag.err.log" -PassThru -NoNewWindow
