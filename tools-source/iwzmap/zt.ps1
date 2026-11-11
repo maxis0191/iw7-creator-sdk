@@ -1,18 +1,18 @@
 param([Parameter(Mandatory)][string]$Work,[Parameter(Mandatory)][string[]]$ZtArgs,[string]$Owner='IWZ custom map zonetool',[int]$TimeoutSec=1200,
   [string]$Scheduler=$env:IW7_RESOURCE_SCHEDULER,        # Resource-Scheduler.Core.ps1 of iw7-mod-components (or of prepared inputs: <inputs>\ops)
-  [ValidateRange(0,14400)][int]$WaitForSlotSeconds=0)    # wait this long for the shared reservation to be free (read-only look every 5 s), then ask once
-# One ZoneTool run under the machine-wide build reservation. Nothing here retries a refused reservation.
+  [ValidateRange(0,14400)][int]$WaitForSlotSeconds=0)    # wait this long for the shared reservation, asking the scheduler every 5 s
+# One ZoneTool run under the machine-wide build reservation.
 $ErrorActionPreference='Stop'
 if(!$Scheduler){ $Scheduler=(& "$PSScriptRoot\machine.ps1" Components 'ops\Resource-Scheduler.Core.ps1' -MustExist) }
 if(!(Test-Path -LiteralPath $Scheduler)){ throw "Resource scheduler not found: $Scheduler" }
 . $Scheduler
 $waitClock=[Diagnostics.Stopwatch]::StartNew()
-if($WaitForSlotSeconds -gt 0){
-  $until=[datetime]::UtcNow.AddSeconds($WaitForSlotSeconds)
-  while(@((Get-IW7ResourceStatus).Leases).Count -and [datetime]::UtcNow -lt $until){ Start-Sleep -Seconds 5 }
-}
-# A compiler or extractor running without a reservation (another agent's build, a check run) refuses the admission
-# too; while the wait lasts, that refusal and a busy slot are asked again every 5 s (the scheduler's own queued-job rule).
+$until=[datetime]::UtcNow.AddSeconds($WaitForSlotSeconds)
+# Ask the scheduler itself every 5 s, never only look at its status: since 11 Nov 2026 a refused request that asks
+# again keeps its place in the scheduler's waiting order, and a waiting build stops new sessions until it is served.
+# A build that only looked at the status until nothing was held never got a place and waited 25 to 75 minutes behind
+# other agents' back-to-back sessions. A busy slot and a compiler or extractor running without a reservation are
+# asked again; any other refusal is thrown at once.
 $lease=$null
 while(-not $lease){
   try{ $lease=Enter-IW7ResourceLease -Scope $Work -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner $Owner }
