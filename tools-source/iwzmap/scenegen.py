@@ -1571,10 +1571,13 @@ def lab_report(src, runs):
     survey points per zone (which zones the navigation reaches from the start with every door open)"""
     import glob, re
     lay = json.load(open(os.path.join(src, 'layout.json')))
-    cases, verdicts, survey, made = {}, {}, None, {}
+    cases, verdicts, survey, made, moves = {}, {}, None, {}, {}
     for run in runs:
         for log in glob.glob(os.path.join(run, '**', 'client.stdout.log'), recursive=True) + glob.glob(os.path.join(run, '**', 'server.stdout.log'), recursive=True):
             for ln in open(log, encoding='utf-8', errors='replace'):
+                m = re.search(r'GL MOVE i=\d+ name=(\S+) legs=(\d+) reached=(\d+) result=(\S+)', ln)
+                if m:
+                    moves[m.group(1)] = (int(m.group(3)), int(m.group(2)), m.group(4))
                 m = re.search(r'GL SPAWN i=\d+ tag=(\S+) made=(\d+)', ln)
                 if m:
                     made[m.group(1)] = int(m.group(2))
@@ -1600,11 +1603,16 @@ def lab_report(src, runs):
     tag = lambda n: re.sub(r'[^a-z0-9_]', '_', n.lower())[:40]
     rows = [(n, cases.get(tag(n))) for n in names]
     ok = lambda c: bool(c) and c['reached'] >= (c.get('made') or c['total']) > 0
-    for _n, c in rows:
+    for n, c in rows:
         if c:
             c['pass'] = ok(c)
+            for w in ('fwd', 'bck'):
+                mv = moves.get(tag(n)[:36] + '_' + w)
+                if mv:
+                    c['player_' + w] = '%d/%d %s' % mv
     return {'cases': rows, 'passed': sum(1 for _n, c in rows if ok(c)),
             'run': sum(1 for _n, c in rows if c), 'expected': len(rows), 'verdicts': verdicts,
+            'player_walks': {'run': len(moves), 'reached': sum(1 for v in moves.values() if v[0] == v[1])},
             'survey': {'points': len(survey['points']) if survey else 0, 'per_zone': dict(per_zone),
                        'zones_missing': [z for z, zd in zones.items() if not zd.get('far') and not per_zone.get(z)] if survey else None}}
 
@@ -1692,10 +1700,10 @@ def main(argv=None):
     if a.cmd == 'labreport':
         r = lab_report(a.src, a.runs)
         for n, c in r['cases']:
-            print('CASE %-32s %s' % (n, 'not run' if not c else '%s %d/%d reached (spawned %s), died %d, %d ms' % ('PASS' if c['pass'] else 'FAIL', c['reached'], c['total'], c.get('made'), c['died'], c['ms'])))
+            print('CASE %-32s %s' % (n, 'not run' if not c else '%s %d/%d reached (spawned %s), died %d, %d ms; player %s / %s' % ('PASS' if c['pass'] else 'FAIL', c['reached'], c['total'], c.get('made'), c['died'], c['ms'], c.get('player_fwd', '-'), c.get('player_bck', '-'))))
         print('verdicts', r['verdicts'])
         print('survey points %d; per zone %s; zones not reached %s' % (r['survey']['points'], r['survey']['per_zone'], r['survey']['zones_missing']))
-        print('cases: %d expected, %d run, %d with every zombie arriving' % (r['expected'], r['run'], r['passed']))
+        print('cases: %d expected, %d run, %d with every zombie arriving; player walks %d, %d reached the end' % (r['expected'], r['run'], r['passed'], r['player_walks']['run'], r['player_walks']['reached']))
         if a.json:
             json.dump(r, open(a.json, 'w'), indent=1)
         return 0 if r['passed'] == r['expected'] else 1
