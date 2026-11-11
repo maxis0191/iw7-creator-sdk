@@ -46,6 +46,18 @@ souvenir glow on the zombie's head; the Sour Grudges rim is four thin green bars
 | Rounds 1 to 3 (stock spawning) | every perk and Baker's counter (5) survive |
 | Down (a lethal hit, two players) and revive | every perk lost (2 to 0); revived; Tuff 'Nuff bought again for 2500 |
 
+## 2b. What the player sees (client session, HUD read as data)
+
+A real player (lab client, the stock HUD Lua unchanged) bought all ten at their machines in one session: the six of the first group, four sold back, then the four new ones (run c2, PASS 18/18). The UI dump (`iw7_ui.py find --id PerkIcon`) read the stock perk row:
+
+- after the first six: six icons at y 669, 43 x 43 each, x 534 to 707: `cp_zmb_perk_icon_revive`, `_tough`, `_run`, `_ratatat`, `_flash`, `_deadeye`;
+- after the four new: `cp_zmb_perk_icon_revive`, `cp_zmb_perk_icon_deadeye`, `iwz_perk_icon_bakers`, `iwz_perk_icon_voyage`, `iwz_perk_icon_grudge`, `iwz_perk_icon_double`, drawn by the stock row from the zone's table rows 18 to 21;
+- the Baker's counter (server-drawn, `12`) at 898,658 28 x 29, the Validated Ticket line at 27,525; `iw7_ui.py check` found no overlap or off-screen defect in any of them.
+
+The official client runs the same stock HUD Lua and reads the same table from the downloaded map zone, so the same row is expected there; the official client binary itself was not run (the lab client is the official client plus the dump).
+
+An independent reviewer on the frames of run c2 found: the stock machines and the perk row correct; the five placeholder bodies not recognisable as perk machines (scores 1 to 2 of 10: two arcade cabinets read as arcade games, the Exchange and Parlour spots too dark, the frames taken too close), no floating icon drawn over them (fixed after: the icon now follows an anchor entity, see run c3), the four new icons readable but small at 25 px (the face and figure pictograms hard to read), and a raw string key `COOP_PERK_MACHINES_REMOVE_PERK` on screen at a machine (the map zone carries no localized strings: ledger).
+
 ## 3. Measured: the four new perks
 
 | Perk | What was measured |
