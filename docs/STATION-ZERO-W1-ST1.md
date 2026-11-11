@@ -87,3 +87,11 @@ parity line 2.92 ms: about 0.75 microseconds a prop), i.e. about 55 a zone, agai
 figure. The renderer's visible-model limit lies between 2,000 and 6,000. With per-zone visibility cells (TF5) the budget
 becomes per view: recommended until TF5 is measured, **55 props a zone**, and no zone dressed beyond W2's two rooms
 before TF5 is measured on this map.
+
+**TF5 result (11 Nov 2026, afternoon; [CULLING](CULLING.md)).** The generated map culled nothing because the compiler gave
+every tome object the whole scene as bounds and no distance. With each prop's own bounds and a size-rule cull distance
+the same stress maps measure, three sessions each against Spaceland's 422.9 the same afternoon: 2,000 props
+**493.9 fps (116.8 %)**, was 77.7 %; 6,000 props **332.4 fps (78.6 %)**, was 58.9 %. Door sightlines checked before the
+zone step (0 errors) and in the game's depth (no prop dropped by the culling). New budget: **about 5,000 props map-wide
+at parity; 4,000 recommended** until four players and 78 zombies are measured. A full zone of 640 to 720 props needs
+occlusion (cells and portals), the next step.
