@@ -20,10 +20,10 @@ param(
   [string]$FxImport='',                                                                               # fx\fx_import.py: foreign-zone vfx '<zone>:<vfx>,...'
   [string[]]$FxDumps=@(),                                                                             # '<zone>=<vfx dump root>;<kit dump root>;<techsets dump root>'
   [string]$FxReport='',
-  [switch]$Crowd, [string]$CrowdModel='police_officer_zombie',                                    # crowd\add_crowd.py: zombies beyond the 24 agents (E2), crowd body = a copy of CrowdModel with no scriptable
   [switch]$Darkness, [string]$DarkArgs='',                                                         # (DarkArgs: add_darkness options, e.g. "--dark-exposure 8 --exposures 4,6")                                                                                  # darkness\add_darkness.py: darkness + flashlight modules (generator IWZ_DARK=1)
   [string]$FxNcsSkip='',                                                                             # experiment: imported effects left out of the level effect list
   [switch]$ReuseCompile,                                                                             # keep the previous iwzcompile output of the same -Src (dump\<map>)
+  [string]$DeadeyeImage=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\assets\dumps\cp_disco\images\cp_zmb_perk_icon_deadeye.iw7Image'),  # P1: Deadeye Dewdrops' HUD icon (not in the template zone)
   [switch]$Incremental)                                                                              # keep the stock links and the module outputs of the previous assembly (same modules and dumps)
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
@@ -62,7 +62,7 @@ if($CompileOnly){ return }
 Lap 'compile'
 # -Incremental: the stock links and what the modules added stay when the modules ran with the same arguments last time
 # (the key below); only the generated world is linked again and the modules run again over the kept tree.
-$modKey=(@($D,$AudioSdk,$AudioBank,$AudioModels,$KitModels,$KitJson,$KitTier,$KitZones,($KitDumps -join '|'),($KitRuntimeCsv -join '|'),$FxImport,($FxDumps -join '|'),$FxNcsSkip,[string][bool]$Darkness,$DarkArgs,[string][bool]$Crowd,$CrowdModel) -join "`n")
+$modKey=(@($D,$AudioSdk,$AudioBank,$AudioModels,$KitModels,$KitJson,$KitTier,$KitZones,($KitDumps -join '|'),($KitRuntimeCsv -join '|'),$FxImport,($FxDumps -join '|'),$FxNcsSkip,[string][bool]$Darkness,$DarkArgs) -join "`n")
 $keyFile="$W\zonetool\$Map\.iwz_modules.key"
 $inc=@()
 if($Incremental -and (Test-Path -LiteralPath $keyFile) -and ((Get-Content -LiteralPath $keyFile -Raw) -eq $modKey)){ $inc=@('--incremental'); 'incremental assembly: same modules as the kept tree' }
@@ -71,6 +71,11 @@ python -I "$S\assemble.py" $W $Map "$Src\cp_iwz.gsc" "$D\patch_cp_zmb" "$D\techs
 if($LASTEXITCODE){ throw 'assemble failed' }
 python -I "$S\sz2_assemble.py" $W $Map $Src
 if($LASTEXITCODE){ throw 'sz2_assemble failed' }
+# perks module (P1, perks\README.md): scripts, HUD icons, the bit table's new rows; always, the level script calls it
+$pa=@("$W\zone_source\$Map.csv","$W\zonetool\$Map",$Map,'--template-dump',$D)
+if($DeadeyeImage -and (Test-Path $DeadeyeImage)){ $pa+=@('--deadeye-image',$DeadeyeImage) }
+python -I "$S\perks\add_perks.py" @pa
+if($LASTEXITCODE){ throw 'add_perks failed' }
 if($AudioSdk){
   # audio module (audio agent): placement script from this layout, bank + teddy model + scripts into the zone
   python -I "$AudioSdk\audio_layout.py" --layout "$Src\layout.json" --spec "$AudioSdk\station_zero_audio_layout.json" --bank "$AudioSdk\station_zero_audio.json" --out "$W\cp_iwz_audio_layout.gsc" --report "$UmOut.audio_positions.json"
@@ -92,11 +97,6 @@ if($KitModels -or $KitJson){
   foreach($rcsv in @($KitRuntimeCsv)){ if($rcsv -and (Test-Path $rcsv)){ $ka+=@("--runtime-csv",$rcsv) } }
   python -I "$S\kit_import.py" @ka
   if($LASTEXITCODE){ throw 'kit_import failed' }
-}
-if($Crowd){
-  # crowd module (E2): the crowd body model without a scriptable, the module script, the level script's call
-  python -I "$S\crowd\add_crowd.py" "$W\zone_source\$Map.csv" "$W\zonetool\$Map" $Map --stock-xmodel "$D\cp_zmb\xmodel" --model $CrowdModel
-  if($LASTEXITCODE){ throw 'add_crowd failed' }
 }
 if($Darkness){
   # darkness module + weapon flashlight (darkness agent): rawfiles after the level script row

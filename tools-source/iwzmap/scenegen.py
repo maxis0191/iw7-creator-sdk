@@ -47,6 +47,19 @@ else:
     TAG_STAIR_CLIP = TAG_RISER = TAG_TREAD = None
 LM = (0.8018, 0.5645)  # a lit texel of the template lightmap (neutral)
 SIDES = ('south', 'north', 'west', 'east')
+# Lights and the bake (docs/SCENEGEN.md "Lights and the bake"). An unbaked emit lights every surface with the template texel LM:
+# decoded (bake/lm_decode.py on the cp_zmb atlas) its irradiance is E = A + B * Dz = (0.1623, 0.1575, 0.1272), luminance
+# 0.156, the same on every floor, wall and ceiling. A zone without lights gets fill lights that bake to about that.
+FLAT_E = (0.1623, 0.1575, 0.1272)
+FLAT_LUMA = 0.2126 * FLAT_E[0] + 0.7152 * FLAT_E[1] + 0.0722 * FLAT_E[2]
+FILL_COLOR = tuple(round(c / max(FLAT_E), 3) for c in FLAT_E)     # the template texel's own tint (1, 0.97, 0.78)
+BAKE_POWER, BAKE_RADIUS_SCALE, BAKE_AMBIENT = 3.0, 2.5, 0.02       # layout_lights.py: layout units -> baker units
+FILL_BOUNCE = 1.4      # baked mean E / unoccluded direct estimate of the fill grids: median of 19 zones 1.39 (docs/SCENEGEN.md)
+LIGHT_TYPES = ('omni', 'spot')
+
+
+def lum(c):
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
 
 
 class SceneError(Exception):
@@ -182,13 +195,16 @@ class Zone:
         self.far = bool(d.get('far'))
         self.areas = [dict(a, rect=tuple(float(v) for v in a['rect'])) for a in d.get('areas', [])]
         self.flights = [Flight(self.id, f) for f in d.get('flights', [])]
-        self.solids = [dict(s, rect=tuple(float(v) for v in s['rect'])) for s in d.get('solids', [])]
+        self.solids = [dict(s, rect=tuple(float(v) for v in s['rect'])) for s in d.get('solids', []) if 'quad' not in s]
+        self.panels = [s for s in d.get('solids', []) if 'quad' in s]     # flat panels (signs, posters): render only
         self.enclosures = [dict(e, rect=tuple(float(v) for v in e['rect'])) for e in d.get('enclosures', [])]
         self.props = d.get('props', [])       # {model, at [x, y], z (default the floor), yaw, pitch, roll, static, clip [hx, hy, hz]}
         self.spawners = d.get('spawners', {})
         self.plate = bool(d.get('plate', not self.far))
         self.probe = tuple(d.get('probe', (0.9, 0.9, 0.95, 0.6)))
         self.volumes = d.get('volumes')
+        self.lights = list(d.get('lights', []))   # {at [x, y], z | h, type omni|spot, color, radius, intensity, dir, inner, outer, fixture}
+        self.fill = d.get('fill')                  # None: fill lights when the zone has no lights of its own
 
     def bbox(self):
         return (min(b[0] for b in self.boxes), min(b[1] for b in self.boxes), max(b[2] for b in self.boxes), max(b[3] for b in self.boxes))
@@ -227,6 +243,139 @@ class Zone:
         """(rect, z, kind) of every flat floor of the zone"""
         return [(r, self.floor, 'base') for r in self.base_pieces()] + [(a['rect'], float(a['z']), 'area:' + a['id']) for a in self.areas]
 
+    # ---------------------------------------------------------------- lights
+    def light_records(self):
+        """the zone's own lights as layout.json records (origin resolved); SceneError on a light the bake cannot take"""
+        out = []
+        for k, l in enumerate(self.lights):
+            tag = 'zone %s: light %d' % (self.id, k)
+            try:
+                x, y = float(l['at'][0]), float(l['at'][1])
+            except (KeyError, IndexError, TypeError, ValueError):
+                raise SceneError('%s: needs "at": [x, y]' % tag)
+            if not self.inside(x, y):
+                raise SceneError('%s at (%g, %g) is outside the zone' % (tag, x, y))
+            fz = self.floor_at(x, y)
+            if 'z' in l:
+                zz = float(l['z'])
+            elif 'h' in l:
+                zz = fz + float(l['h'])
+            else:
+                zz = self.ceiling - 16
+            if not (fz < zz < self.ceiling):
+                raise SceneError('%s: z %g is not between the floor %g and the ceiling %g there' % (tag, zz, fz, self.ceiling))
+            typ = l.get('type', 'omni')
+            if typ not in LIGHT_TYPES:
+                raise SceneError('%s: type %s (omni or spot)' % (tag, typ))
+            col = [float(c) for c in l.get('color', (1, 1, 1))]
+            if len(col) != 3 or min(col) < 0 or max(col) <= 0:
+                raise SceneError('%s: color must be three values >= 0, not all 0' % tag)
+            rad, inten = float(l.get('radius', 384)), float(l.get('intensity', 1.0))
+            if rad <= 0 or inten < 0:
+                raise SceneError('%s: radius must be > 0 and intensity >= 0' % tag)
+            rec = {'zone': self.id, 'origin': [x, y, zz], 'type': typ, 'color': col, 'radius': rad, 'intensity': inten,
+                   'fixture': l.get('fixture', '')}
+            if typ == 'spot':
+                d = [float(v) for v in l.get('dir', (0, 0, -1))]
+                if len(d) != 3 or math.sqrt(sum(v * v for v in d)) < 1e-6:
+                    raise SceneError('%s: spot dir must be a non-zero [x, y, z]' % tag)
+                inner, outer = float(l.get('inner', 25)), float(l.get('outer', 60))
+                if not (0 <= inner <= outer < 90):
+                    raise SceneError('%s: spot cone needs 0 <= inner <= outer < 90 (degrees)' % tag)
+                rec.update(dir=d, inner=inner, outer=outer)
+            for key in ('group', 'name', 'fixture_z', 'fixture_yaw'):
+                if key in l:
+                    rec[key] = l[key]
+            out.append(rec)
+        return out
+
+    def wants_fill(self):
+        return bool(self.fill) if self.fill is not None else not self.lights
+
+    def fill_lights(self):
+        """Fill lights of a zone without lights: per box a grid of omni lights at mid height of the free space, spacing
+        about the room height (each surface then sees several lights at similar distances: soft, even light with mild
+        pools), radius = spacing (the bake window reaches 2.5 spacings), the template texel's tint, and one intensity
+        for the zone chosen so that the baked mean irradiance over its floor, walls and ceiling is the flat texel's
+        (FLAT_LUMA): unoccluded direct light on sample points of those surfaces, times FILL_BOUNCE (measured)."""
+        recs = []
+        for b in self.boxes:
+            fz_mid = self.floor_at((b[0] + b[2]) / 2, (b[1] + b[3]) / 2)
+            head = self.ceiling - (self.floor if fz_mid is None else fz_mid)
+            sp = max(256.0, min(448.0, head))
+            nx, ny = max(1, int(round((b[2] - b[0]) / sp))), max(1, int(round((b[3] - b[1]) / sp)))
+            for i in range(nx):
+                for j in range(ny):
+                    x = b[0] + (i + 0.5) * (b[2] - b[0]) / nx
+                    y = b[1] + (j + 0.5) * (b[3] - b[1]) / ny
+                    fz = self.floor_at(x, y)
+                    zz = (fz + self.ceiling) / 2
+                    if any(s['rect'][0] - 16 <= x <= s['rect'][2] + 16 and s['rect'][1] - 16 <= y <= s['rect'][3] + 16 and
+                           float(s.get('z0', self.zmin())) - 16 <= zz <= float(s.get('z1', self.ceiling)) + 16 for s in self.solids):
+                        continue
+                    recs.append({'zone': self.id, 'origin': [round(x, 1), round(y, 1), round(zz, 1)], 'type': 'omni',
+                                 'color': list(FILL_COLOR), 'radius': round(sp), 'intensity': 1.0, 'fixture': '', 'fill': True})
+        if recs:
+            per_unit = self.direct_estimate(recs)
+            want = max(0.0, FLAT_LUMA - BAKE_AMBIENT * 0.8)       # the baker's ambient fill (AO about 0.8) is there already
+            inten = round(want / (per_unit * FILL_BOUNCE), 4) if per_unit > 0 else 0.0
+            for r in recs:
+                r['intensity'] = inten
+                r['fill_estimate'] = round(per_unit, 5)
+        return recs
+
+    def surface_samples(self, step=96.0):
+        """(point, normal) samples spread evenly over the zone's floors, ceiling and outer walls (openings ignored)"""
+        pts = []
+
+        def grid(r):
+            nx, ny = max(1, int((r[2] - r[0]) // step)), max(1, int((r[3] - r[1]) // step))
+            return [(r[0] + (i + 0.5) * (r[2] - r[0]) / nx, r[1] + (j + 0.5) * (r[3] - r[1]) / ny) for i in range(nx) for j in range(ny)]
+        for r, zz, _k in self.floor_pieces():
+            pts += [((x, y, zz), (0, 0, 1)) for x, y in grid(r)]
+        for f in self.flights:
+            pts += [((x, y, f.z_at(x, y)), (0, 0, 1)) for x, y in grid(f.rect)]
+        for b in self.boxes:
+            pts += [((x, y, self.ceiling), (0, 0, -1)) for x, y in grid(b)]
+            for (ax, fixed, n, s0, s1) in (('x', b[1], (0, 1, 0), b[0], b[2]), ('x', b[3], (0, -1, 0), b[0], b[2]),
+                                           ('y', b[0], (1, 0, 0), b[1], b[3]), ('y', b[2], (-1, 0, 0), b[1], b[3])):
+                ns = max(1, int((s1 - s0) // step))
+                for i in range(ns):
+                    s = s0 + (i + 0.5) * (s1 - s0) / ns
+                    x, y = (s, fixed) if ax == 'x' else (fixed, s)
+                    xi, yi = x + n[0] * 8, y + n[1] * 8
+                    if any(ob is not b and ob[0] - 0.5 <= x - n[0] * 8 <= ob[2] + 0.5 and ob[1] - 0.5 <= y - n[1] * 8 <= ob[3] + 0.5
+                           for ob in self.boxes):
+                        continue                      # a join with another box of the zone: no wall there
+                    fz = self.floor_at(xi, yi)
+                    fz = self.floor if fz is None else fz
+                    nz = max(1, int((self.ceiling - fz) // step))
+                    pts += [((x, y, fz + (k + 0.5) * (self.ceiling - fz) / nz), n) for k in range(nz)]
+        return pts
+
+    def direct_estimate(self, recs, samples=None):
+        """mean luminance of the unoccluded direct irradiance (baker units, the baker's falloff and window) over the
+        surface samples, per unit of layout intensity"""
+        samples = samples or self.surface_samples()
+        tot = 0.0
+        for (p, n) in samples:
+            e = 0.0
+            for r in recs:
+                o = r['origin']
+                dx, dy, dz = o[0] - p[0], o[1] - p[1], o[2] - p[2]
+                d2 = dx * dx + dy * dy + dz * dz
+                d = math.sqrt(d2)
+                R = r['radius'] * BAKE_RADIUS_SCALE
+                if d < 1e-3 or d > R:
+                    continue
+                cos = (dx * n[0] + dy * n[1] + dz * n[2]) / d
+                if cos <= 0:
+                    continue
+                q = (d / R) ** 4
+                e += BAKE_POWER * lum(r['color']) * 1e4 / max(d2, 256.0) * cos * (1 - q) ** 2   # layout_lights: I * max(c) * power, c / max(c)
+            tot += e
+        return tot / max(1, len(samples))
+
 
 class Scene:
     def __init__(self, d, path=''):
@@ -235,13 +384,30 @@ class Scene:
         self.zones = collections.OrderedDict()
         # props kept in their own files ({zone: [props]}, next to the scene): added to the zones' own props
         extra = collections.defaultdict(list)
+        base = os.path.dirname(os.path.abspath(path)) if path else '.'
         for pf in d.get('props_files', []):
-            with open(os.path.join(os.path.dirname(os.path.abspath(path)) if path else '.', pf), encoding='utf-8') as f:
+            with open(os.path.join(base, pf), encoding='utf-8') as f:
                 for zid, items in json.load(f).items():
                     extra[zid] += items
+        # dressing kept in its own files ({zone: {props, lights, solids}}, next to the scene): props after the
+        # props_files props, lights and solids after the zone's own
+        dress = collections.defaultdict(lambda: {'props': [], 'lights': [], 'solids': []})
+        for df in d.get('dress_files', []):
+            with open(os.path.join(base, df), encoding='utf-8') as f:
+                for zid, rec in json.load(f).items():
+                    if not isinstance(rec, dict) or set(rec) - {'props', 'lights', 'solids'}:
+                        raise SceneError('dress file %s: zone %s must be {"props": [...], "lights": [...], "solids": [...]}' % (df, zid))
+                    for k in ('props', 'lights', 'solids'):
+                        dress[zid][k] += list(rec.get(k, []))
+        known = {zd['id'] for zd in d['zones']}
+        self.dress_unknown = sorted(z for z in dress if z not in known)
         for zd in d['zones']:
             if extra.get(zd['id']):
                 zd = dict(zd, props=list(zd.get('props', [])) + extra[zd['id']])
+            if zd['id'] in dress:
+                dr = dress[zd['id']]
+                zd = dict(zd, props=list(zd.get('props', [])) + dr['props'], lights=list(zd.get('lights', [])) + dr['lights'],
+                          solids=list(zd.get('solids', [])) + dr['solids'])
             z = Zone(zd)
             if z.id in self.zones:
                 raise SceneError('zone %s defined twice' % z.id)
@@ -305,7 +471,13 @@ def check_scene(sc):
     def note(m):
         out.append(('NOTE', m))
     zl = list(sc.zones.values())
+    for zid in getattr(sc, 'dress_unknown', []):
+        err('dress files: unknown zone %s' % zid)
     for z in zl:
+        try:
+            z.light_records()
+        except SceneError as e:
+            err(str(e))
         for b in z.boxes:
             if not (b[2] > b[0] and b[3] > b[1]):
                 err('zone %s: empty box %s' % (z.id, b))
@@ -468,7 +640,7 @@ class Emitter:
         self.stairs = []
         self.ents, self.triggers, self.relocations = [], [], []
         self.layout = {'map': sc.map, 'scene': os.path.basename(sc.path), 'zones': {}, 'doors': [], 'spawners': [], 'starts': [],
-                       'interactions': [], 'markers': [], 'stairs': self.stairs}
+                       'interactions': [], 'markers': [], 'stairs': self.stairs, 'lights': []}
         self.report = {'schema': 'iw7.scenegen/1'}
         self.smodels, self.prop_ents = [], []
 
@@ -570,6 +742,13 @@ class Emitter:
                 else:
                     facing = 1 if lo_r[1] >= pa - 0.5 else -1
                 self.vquad(z.id, 'conc_dark', ax, pa, facing, lo, hi, min(za_, zb_), max(za_, zb_))
+        for s in z.panels:
+            # a flat panel (sign, poster, light face): four corners counter-clockwise seen from the front, starting
+            # bottom left; "fit" maps the whole image once onto it (signs), otherwise world-aligned like a wall
+            pts = [tuple(float(c) for c in p) for p in s['quad']]
+            uvs = [(0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (0.0, 0.0)] if s.get('fit', True) else None
+            self.B.quad(s.get('mat', 'conc_wall'), z.id, pts, n=tuple(float(c) for c in s['normal']), uvs=uvs,
+                        collide=bool(s.get('collide', False)))
         for s in z.solids:
             x0, y0, x1, y1 = s['rect']
             self.B.box((x0, y0, float(s.get('z0', z.zmin()))), (x1, y1, float(s.get('z1', z.ceiling))), s.get('mat', 'conc_wall'), z.id)
@@ -583,13 +762,59 @@ class Emitter:
                 self.smodels.append('%s %g %g %g %g %g %g %g' % (pr['model'], x, y, zz, ang[0], ang[1], ang[2], float(pr.get('scale', 1))))
             else:
                 self.prop_ents.append((pr['model'], (x, y, zz), ang, pr.get('targetname')))
-            if pr.get('clip'):
+            if pr.get('clip_box'):
+                # an absolute clip box (szdress: the prop's turned bounds on the floor under it)
+                cb = [float(v) for v in pr['clip_box']]
+                self.B.collision_box((cb[0], cb[1], cb[2]), (cb[3], cb[4], cb[5]))
+            elif pr.get('clip'):
                 hx, hy, hz = (float(v) for v in pr['clip'])
                 self.B.collision_box((x - hx, y - hy, zz), (x + hx, y + hy, zz + 2 * hz))
             self.layout.setdefault('decor', []).append({'zone': z.id, 'model': pr['model'], 'origin': [x, y, zz], 'yaw': ang[1],
                                                         'clip': pr.get('clip'), 'static': pr.get('static', True)})
+        self.place_lights(z)
         for f in z.flights:
             self.build_flight(z, f)
+
+    def place_lights(self, z):
+        """layout.json lights of the zone (bake/layout_lights.py reads them): its own, else the fill grid; a light's
+        fixture model is a static model at the light (fixture_z: its height, fixture_yaw: its yaw)"""
+        recs = z.light_records()
+        if z.wants_fill():
+            recs += z.fill_lights()
+        for r in recs:
+            if r.get('fixture'):
+                x, y, zz = r['origin']
+                fzz = float(r.get('fixture_z', zz))
+                self.smodels.append('%s %g %g %g %g %g %g %g' % (r['fixture'], x, y, fzz, 0, float(r.get('fixture_yaw', 0)), 0, 1))
+                self.layout.setdefault('decor', []).append({'zone': z.id, 'model': r['fixture'], 'origin': [x, y, fzz],
+                                                            'yaw': float(r.get('fixture_yaw', 0)), 'clip': None, 'static': True, 'light': True})
+            self.layout['lights'].append(r)
+
+    def size_culls(self, lines):
+        """Every static prop gets the size-rule cull distance (docs/CULLING.md: the distance where it covers 30 pixels
+        of a 1080p frame). Without it a prop keeps its template donor's distance and pops while still large on screen
+        (W2: 134 door-view pops on 577 props before this). Model bounds from the template's worldkit database
+        (IWZ_MODELS_DB, default <IWZ_RUNTIME>/worldkit/cp_zmb.sqlite); refused loudly when it is missing."""
+        import sqlite3
+        import tome_cull
+        db = os.environ.get('IWZ_MODELS_DB') or os.path.join(os.environ.get('IWZ_RUNTIME') or os.path.join(os.path.expanduser('~'), 'Documents', 'IW7-Runtime'), 'worldkit', 'cp_zmb.sqlite')
+        if not os.path.isfile(db):
+            self.log('WARNING: no models database at %s: props keep their donors\' cull distances (they can pop); set IWZ_MODELS_DB' % db)
+            self.report['cull_distances'] = 'donor (no models database)'
+            return lines
+        half = {}
+        for name, x0, y0, z0, x1, y1, z1 in sqlite3.connect(db).execute('SELECT name, bmin_x, bmin_y, bmin_z, bmax_x, bmax_y, bmax_z FROM models'):
+            if x0 is not None:
+                half[name] = 0.5 * math.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2 + (z1 - z0) ** 2)
+        out, n = [], 0
+        for ln in lines:
+            p = ln.split()
+            if p[0] in half and not any(f.startswith('cull=') for f in p[8:]):
+                ln = ln + ' cull=%d' % min(65535, tome_cull.size_cull(half[p[0]] * float(p[7])))
+                n += 1
+            out.append(ln)
+        self.report['cull_distances'] = 'size rule on %d of %d props' % (n, len(lines))
+        return out
 
     def reveal(self, o):
         """the opening through a wall gap: floor, jambs and soffit (doors and arches); nothing for a zero gap"""
@@ -983,7 +1208,7 @@ class Emitter:
             kw = {'targetname': tn} if tn else {}
             self.ent(classname='script_model', model=model, origin=self.fmt(org), angles='%g %g %g' % ang, **kw)
         if self.smodels:
-            open(os.path.join(self.out, 'smodels.txt'), 'w', newline='\n').write('\n'.join(self.smodels) + '\n')
+            open(os.path.join(self.out, 'smodels.txt'), 'w', newline='\n').write('\n'.join(self.size_culls(self.smodels)) + '\n')
         open(os.path.join(self.out, 'ents.txt'), 'w', newline='\n').write(mg.ents_text(ws, self.ents))
         open(os.path.join(self.out, 'triggers.txt'), 'w', newline='\n').write('\n'.join(self.triggers) + '\n')
         open(os.path.join(self.out, 'scriptables.txt'), 'w', newline='\n').write('\n'.join(self.relocations) + ('\n' if self.relocations else ''))
@@ -1173,6 +1398,12 @@ class Emitter:
                        'rat_a_tat': 'perk_machine_bang_bangs_sign', 'flash': 'perk_machine_quickies_sign', 'zap': 'perk_machine_blue_bolts_sign',
                        'boom': 'perk_machine_bombstoppers_sign', 'more': 'perk_machine_mule_munchies_sign', 'smack': 'perk_machine_slappy_taffy_sign',
                        'fwoosh': 'perk_machine_trail_blazers_sign'}
+    # the bible's perks with no stock machine in the template map (06-PERKS.md): interaction name, placeholder body
+    PERK_NEW = {'deadeye_dewdrops': ('perk_machine_deadeye', 'park_soda_machine'),
+                'bakers_dozens': ('perk_machine_bakers', 'popcorn_machine_iw6'),
+                'bon_voyages': ('perk_machine_voyage', 'zmb_mobile_ticket_booth'),
+                'sour_grudges': ('perk_machine_grudge', 'park_arcade_standing_09'),
+                'double_takes': ('perk_machine_double', 'park_arcade_standing_05_off')}
     WHEEL_SCRIPTABLES = ['pf141_auto1', 'pf161_auto1', 'pf162_auto1', 'pf142_auto1', 'pf154_auto1', 'pf158_auto1', 'pf160_auto1', 'pf135_auto1', 'pf165_auto1']
     # wall weapons by class: the stock weapons of Spaceland's wall-buy list (02-WORLD.md section 4); a class the list
     # lacks gets a stand-in, recorded in the layout
@@ -1250,6 +1481,14 @@ class Emitter:
             else:
                 org, yaw = None, None
             layout['markers'].append(dict(m, origin=org, yaw=yaw))
+            if m['kind'] == 'perk_new' and org is not None and m['id'] in self.PERK_NEW:
+                # P1 (perks/cp_iwz_perks.gsc): the perk's stock interaction struct (needs power) and a placeholder body
+                # (a stock model the template zone has) until P2's machine models
+                name, body = self.PERK_NEW[m['id']]
+                self.istruct(name, org, yaw, z.id, parameters='requires_power')
+                self.ent(classname='script_model', targetname='iwz_perk_body', noteworthy=name, model=body,
+                         origin=self.fmt(org), angles='0 %g 0' % yaw)
+                layout['interactions'][-1].update({'perk_new': m['id'], 'body': body})
 
     def istruct(self, kind, origin, yaw, zone, **kw):
         self.ent(classname='script_struct', targetname='interaction', noteworthy=kind, origin=self.fmt(origin), angles='0 %g 0' % yaw, **kw)
@@ -1367,7 +1606,10 @@ class Emitter:
             'inspection_plates': len(self.layout['inspection_plates']),
             'world': {'vertices': nv, 'indices': ni, 'surfaces': ns, 'quads': self.B.quads, 'materials': len(self.B.used)},
             'collision': {'triangles': len(col), 'havok': info, 'bytes': len(blob)},
-            'entities': self.entity_census(), 'problems': self.problems})
+            'entities': self.entity_census(), 'problems': self.problems,
+            'lights': {'own': sum(1 for l in self.layout['lights'] if not l.get('fill')),
+                       'fill': sum(1 for l in self.layout['lights'] if l.get('fill')),
+                       'filled_zones': sorted({l['zone'] for l in self.layout['lights'] if l.get('fill')})}})
         json.dump(self.report, open(os.path.join(self.out, 'scene_report.json'), 'w'), indent=1, default=list)
         self.log('scenegen %s: %d zones, %d volumes, %d doors (%d points), %d links, %d flights, gross %d m2, walkable %d m2, '
                  '%d nav cells, %d spawners, %d surfaces, %d collision triangles, %d problems' % (
@@ -1957,7 +2199,34 @@ def main(argv=None):
     p = sub.add_parser('stressprops', help='ST1: a copy of the scene with n stock static props spread by floor area')
     p.add_argument('scene'); p.add_argument('kits'); p.add_argument('n', type=int); p.add_argument('out_scene')
     p.add_argument('--seed', type=int, default=1)
+    p = sub.add_parser('bake', help='the light bake of an emit (bake venv python): <out> = baked copy of <src>')
+    p.add_argument('src'); p.add_argument('out'); p.add_argument('--quick', action='store_true')
+    p.add_argument('--rays', type=int, default=144); p.add_argument('--bounces', type=int, default=3)
+    p.add_argument('--texel', type=float, default=8.0); p.add_argument('--denoise', type=int, default=1)
+    p.add_argument('--no-checks', action='store_true', help='skip iwz_emitcheck and sz2_navconn on the baked copy')
+    p.add_argument('--no-fill-pass', action='store_true', help='bake the fill lights as emitted (no quick measuring pass)')
+    p.add_argument('--emissive', type=float, default=0.25, help='radiance of lamp materials (layout_lights.py --emissive)')
+    p = sub.add_parser('bakereport', help='per-zone baked irradiance against the flat texel (needs numpy: the bake python)')
+    p.add_argument('out'); p.add_argument('--json')
     a = ap.parse_args(argv)
+    if a.cmd == 'bake':
+        try:
+            st = bake(a.src, a.out, a.quick, a.rays, a.bounces, a.texel, a.denoise, not a.no_checks, not a.no_fill_pass, a.emissive)
+        except SceneError as e:
+            print(e, file=sys.stderr)
+            return 1
+        return 1 if any(st['gates_exit'].values()) else 0
+    if a.cmd == 'bakereport':
+        r = bake_report(a.out)
+        for n, v in r['zones'].items():
+            print('%-16s own %2d fill %2d  mean %.4f (x%.2f of flat)  cv %.2f  p10 %.4f p90 %.4f  floor %s wall %s ceiling %s' % (
+                n, v['own_lights'], v['fill_lights'], v['mean'], v['ratio_to_flat'], v['cv'], v['p10'], v['p90'],
+                v['by_class']['floor'], v['by_class']['wall'], v['by_class']['ceiling']))
+        print('filled zones %s; fill bounce measured %s (used %s); unassigned texels %d' % (
+            r['filled_zones'], r['fill_bounce']['median'], r['fill_bounce']['used'], r['unassigned_texels']))
+        if a.json:
+            json.dump(r, open(a.json, 'w'), indent=1)
+        return 0
     if a.cmd == 'stressprops':
         props, counts = stress_props(a.scene, a.kits, a.n, a.seed)
         base = os.path.dirname(os.path.abspath(a.scene))
@@ -2058,6 +2327,190 @@ def main(argv=None):
         if a.json:
             json.dump(r, open(a.json, 'w'), indent=1)
         return 0
+
+
+# =========================================================================== the light bake of an emit
+def bake_python():
+    """the light baker's Python (numba, numpy, scipy, pillow): IWZ_BAKE_PYTHON, else the venv of machine.ps1 BakePython"""
+    if os.environ.get('IWZ_BAKE_PYTHON'):
+        return os.environ['IWZ_BAKE_PYTHON']
+    rt_ = os.environ.get('IWZ_RUNTIME') or os.path.join(os.path.expanduser('~'), 'Documents', 'IW7-Runtime')
+    venv = os.environ.get('IWZ_BAKE_VENV') or os.path.join(rt_, 'iwzmap-bake-venv')
+    return os.path.join(venv, 'Scripts', 'python.exe') if os.name == 'nt' else os.path.join(venv, 'bin', 'python')
+
+
+def bake(src, out, quick=False, rays=144, bounces=3, texel=8.0, denoise=1, checks=True, fill_pass=True, emissive=0.25, log=print):
+    """layout.json lights -> bake/layout_lights.py -> bake/lmbake.py: <out> is a copy of <src> with the baked lightmap
+    (lightmap/*.dds, world.bin lightmap coordinates, lighting.txt light grid), lights.json, bake_zones.json (per-zone
+    baked irradiance against the flat texel) and bake_step.json (seconds, gates).
+
+    fill_pass: a quick bake first measures each filled zone's mean baked irradiance; the zone's fill intensity is then
+    scaled so the final bake meets the flat texel (FLAT_LUMA). The baked copy's layout.json holds the scaled lights.
+    emissive: radiance of the lamp materials (layout_lights.py --emissive; its default 1.5 suits small lamp faces,
+    a whole luminous ceiling such as the Terminus light panel then outshines the flat look six times)."""
+    import shutil, subprocess, tempfile, time
+    py = bake_python()
+    if not os.path.isfile(py):
+        raise SceneError('bake python not found: %s (make it with bake\\New-BakeEnv.ps1 or set IWZ_BAKE_PYTHON)' % py)
+    if os.path.abspath(src) == os.path.abspath(out):
+        raise SceneError('bake: the output must be another folder than the source')
+    if os.path.isdir(out) and os.listdir(out):
+        if not os.path.isfile(os.path.join(out, 'bake_step.json')) and not os.path.isfile(os.path.join(out, 'bake.json')):
+            raise SceneError('bake: %s exists and is not an earlier bake' % out)
+        shutil.rmtree(out)
+    lay = json.load(open(os.path.join(src, 'layout.json')))
+    if not lay.get('lights'):
+        raise SceneError('bake: %s has no layout lights (emit it with this scenegen)' % src)
+    bk = os.path.join(HERE, 'bake')
+    tmp = tempfile.mkdtemp(prefix='iwzbake_')
+    secs, t0 = {}, time.time()
+    fill_report = None
+
+    def run(cmd, name):
+        t = time.time()
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        secs[name] = round(secs.get(name, 0) + time.time() - t, 1)
+        for ln in (r.stdout or '').splitlines()[-8:]:
+            log('  %s: %s' % (name, ln))
+        if r.returncode:
+            log((r.stderr or '')[-3000:])
+        return r.returncode
+
+    def lights_json(s, lj, name):
+        if run([py, '-I', '-B', os.path.join(bk, 'layout_lights.py'), s, lj, '--power', str(BAKE_POWER), '--radius-scale',
+                str(BAKE_RADIUS_SCALE), '--ambient', str(BAKE_AMBIENT), '--texel', str(texel), '--emissive', str(emissive)], name):
+            raise SceneError('bake: layout_lights.py failed')
+
+    def lmbake(s, lj, o, q, name):
+        cmd = [py, '-I', '-B', os.path.join(bk, 'lmbake.py'), s, lj, o, '--rays', str(rays), '--bounces', str(bounces),
+               '--denoise', str(denoise)] + (['--quick'] if q else [])
+        if run(cmd, name):
+            raise SceneError('bake: lmbake.py failed')
+    try:
+        use = src
+        if fill_pass and any(l.get('fill') for l in lay['lights']):
+            lj0, q0 = os.path.join(tmp, 'lights0.json'), os.path.join(tmp, 'pass1')
+            lights_json(src, lj0, 'layout_lights')
+            lmbake(src, lj0, q0, True, 'fill_pass_bake')
+            if run([py, '-I', '-B', os.path.abspath(__file__), 'bakereport', q0, '--json', os.path.join(tmp, 'pass1.json')], 'fill_pass_report'):
+                raise SceneError('bake: the fill pass report failed')
+            rep1 = json.load(open(os.path.join(tmp, 'pass1.json')))
+            amb = BAKE_AMBIENT * 0.875          # the baker's ambient fill x mean AO (lmbake prints it; 0.875 on Station Zero)
+            fill_report = {}
+            for n, r in rep1['zones'].items():
+                if not r['fill_lights'] or r['own_lights']:
+                    continue
+                s = max(0.0, FLAT_LUMA - amb) / max(r['mean'] - amb, 1e-4)
+                s = max(0.0, min(4.0, s))
+                fill_report[n] = {'pass1_mean': r['mean'], 'scale': round(s, 3)}
+            use = os.path.join(tmp, 'src')
+            os.makedirs(use)
+            for f in os.listdir(src):
+                p = os.path.join(src, f)
+                if os.path.isfile(p) and f != 'layout.json':
+                    shutil.copyfile(p, os.path.join(use, f))
+                elif os.path.isdir(p) and f not in ('lightmap', 'bake_tmp'):
+                    shutil.copytree(p, os.path.join(use, f))      # modules/: the level script needs them
+            lay2 = json.loads(json.dumps(lay))
+            for l in lay2['lights']:
+                if l.get('fill') and l['zone'] in fill_report:
+                    l['intensity_emit'] = l['intensity']
+                    l['intensity'] = round(l['intensity'] * fill_report[l['zone']]['scale'], 4)
+            lay2['fill_pass'] = fill_report
+            json.dump(lay2, open(os.path.join(use, 'layout.json'), 'w'), indent=1, default=list)
+            shutil.rmtree(q0, ignore_errors=True)
+        lj = os.path.join(tmp, 'lights.json')
+        lights_json(use, lj, 'layout_lights')
+        lmbake(use, lj, out, quick, 'lmbake')
+        shutil.copyfile(lj, os.path.join(out, 'lights.json'))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    run([py, '-I', '-B', os.path.abspath(__file__), 'bakereport', out, '--json', os.path.join(out, 'bake_zones.json')], 'bakereport')
+    gates = {}
+    # the baked source must hold everything the source holds (the modules folder was once left behind)
+    lost = sorted(set(os.listdir(src)) - set(os.listdir(out)))
+    gates['complete_copy'] = 1 if lost else 0
+    if lost:
+        log('ERROR: the baked copy lacks %s of the source' % lost)
+    if checks:
+        for name, cmd in (('iwz_emitcheck', [sys.executable, '-I', '-B', os.path.join(HERE, 'iwz_emitcheck.py'), 'check', out]),
+                          ('sz2_navconn', [sys.executable, '-I', '-B', os.path.join(HERE, 'sz2_navconn.py'), out])):
+            gates[name] = run(cmd, name)
+    step = {'schema': 'iw7.scenegen.bake/1', 'src': os.path.abspath(src), 'quick': quick, 'rays': rays, 'bounces': bounces,
+            'texel': texel, 'emissive': emissive, 'lights': len(lay['lights']), 'fill_lights': sum(1 for l in lay['lights'] if l.get('fill')),
+            'fill_pass': fill_report, 'seconds': dict(secs, total=round(time.time() - t0, 1)), 'gates_exit': gates}
+    bj = os.path.join(out, 'bake.json')
+    if os.path.isfile(bj):
+        b = json.load(open(bj))
+        step.update(atlas=b.get('atlas'), texels=b.get('texels'), charts=b.get('charts'), timing_s=b.get('timing_s'))
+    json.dump(step, open(os.path.join(out, 'bake_step.json'), 'w'), indent=1)
+    log('bake %s: %d lights (%d fill), atlas %s, %s s; gates %s' % (out, step['lights'], step['fill_lights'], step.get('atlas'),
+                                                                     step['seconds']['total'], gates or 'not run'))
+    return step
+
+
+def bake_report(out):
+    """per zone: the baked irradiance of its surfaces (E = A + B * Dz, luminance) against the flat texel's FLAT_LUMA:
+    mean, ratio, spread (CV), p10 / p50 / p90, and the mean per surface class (floor, wall, ceiling). Needs numpy."""
+    import numpy as np
+    z = np.load(os.path.join(out, 'bake.npz'))
+    x, y = z['tx_x'], z['tx_y']
+    A, B, D = z['A'][y, x], z['B'][y, x], z['D'][y, x]
+    a_ = D[:, 0] * 2 - 1; b_ = D[:, 1] * 2 - 1
+    dx, dy = (a_ + b_) * 0.5, (a_ - b_) * 0.5
+    dz = 1 - np.abs(dx) - np.abs(dy)
+    dz = np.clip(dz / np.sqrt(dx * dx + dy * dy + dz * dz), 0, 1)
+    E = A + B * dz[:, None]
+    L = E @ np.array([0.2126, 0.7152, 0.0722])
+    P, N = z['tx_pos'], z['tx_n']
+    lay = json.load(open(os.path.join(out, 'layout.json')))
+    zid = np.full(len(L), -1)
+    names = list(lay['zones'])
+    for pad in (0.5, 20.0):
+        for k, n in enumerate(names):
+            zr = lay['zones'][n]
+            zin = (P[:, 2] >= zr['box'][2] - 1) & (P[:, 2] <= zr['box'][5] + 1)
+            for b in zr['boxes']:
+                m = (zid < 0) & zin & (P[:, 0] >= b[0] - pad) & (P[:, 0] <= b[2] + pad) & (P[:, 1] >= b[1] - pad) & (P[:, 1] <= b[3] + pad)
+                zid[m] = k
+    cls = np.where(N[:, 2] > 0.7, 0, np.where(N[:, 2] < -0.7, 2, 1))
+    lights = collections.Counter(l['zone'] for l in lay.get('lights', []) if not l.get('fill'))
+    fills = collections.Counter(l['zone'] for l in lay.get('lights', []) if l.get('fill'))
+    zones = {}
+    for k, n in enumerate(names):
+        m = zid == k
+        if not m.any():
+            continue
+        v = L[m]
+        mean = float(v.mean())
+        zones[n] = {'texels': int(m.sum()), 'own_lights': lights.get(n, 0), 'fill_lights': fills.get(n, 0),
+                    'mean': round(mean, 4), 'ratio_to_flat': round(mean / FLAT_LUMA, 3), 'cv': round(float(v.std() / max(mean, 1e-9)), 3),
+                    'p10': round(float(np.percentile(v, 10)), 4), 'p50': round(float(np.percentile(v, 50)), 4),
+                    'p90': round(float(np.percentile(v, 90)), 4),
+                    'by_class': {c: round(float(L[m & (cls == i)].mean()), 4) if (m & (cls == i)).any() else None
+                                 for i, c in enumerate(('floor', 'wall', 'ceiling'))}}
+    filled = [r for r in zones.values() if r['fill_lights'] and not r['own_lights']]
+    rep = {'schema': 'iw7.scenegen.bakereport/1', 'flat_luma': round(FLAT_LUMA, 4), 'unassigned_texels': int((zid < 0).sum()),
+           'zones': zones,
+           'filled_zones': {'count': len(filled), 'ratio_median': round(float(np.median([r['ratio_to_flat'] for r in filled])), 3) if filled else None,
+                            'ratio_min': min((r['ratio_to_flat'] for r in filled), default=None),
+                            'ratio_max': max((r['ratio_to_flat'] for r in filled), default=None)}}
+    cal = fill_calibration(lay, rep)
+    rep['fill_bounce'] = {'per_zone': cal, 'median': round(float(np.median(list(cal.values()))), 3) if cal else None,
+                          'used': FILL_BOUNCE}
+    return rep
+
+
+def fill_calibration(lay, report):
+    """measured bounce factor of the fill grids per filled zone: (baked mean - ambient) / (intensity x the emit's
+    unoccluded direct estimate); FILL_BOUNCE is their median"""
+    out = {}
+    for n, r in report['zones'].items():
+        ls = [l for l in lay.get('lights', []) if l['zone'] == n]
+        if not ls or not all(l.get('fill') for l in ls) or not ls[0].get('fill_estimate') or not ls[0]['intensity']:
+            continue
+        out[n] = round((r['mean'] - BAKE_AMBIENT * 0.8) / (ls[0]['fill_estimate'] * ls[0]['intensity']), 3)
+    return out
 
 
 if __name__ == '__main__':
