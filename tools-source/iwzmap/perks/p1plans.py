@@ -144,6 +144,7 @@ def main(argv=None):
           exp('probe:bk_punch.bakers_last_extra', 'eq', 2, 'the punch passes through two more zombies'),
           exp('probe:bkline.lost1', 'gt', 0, 'the second zombie on the line is hit'),
           exp('probe:bkline.lost2', 'gt', 0, 'the third zombie on the line is hit'),
+          exp('probe:bkline.lost1', 'eq', '@probe:bkline.lost0', 'the zombies behind take the punched damage, not more'),
           exp('probe:bk_punch.bakers_last_bonus', 'gt', 0, 'the punched hit pays its points again'),
           exp('probe:bk_ww.bakers_count', 'eq', 0, 'wonder-weapon hits neither count nor punch'),
           exp('probe:bk_ww.bakers_punches', 'eq', 1, 'no punch from a wonder weapon'),

@@ -115,7 +115,10 @@ punch_through( first, dmg, mod, weapon, point, dir )
         along[best] = -1;
         if ( isdefined( z ) && isalive( z ) )
         {
+            z.szp_bk_force = dmg;       // the stock multipliers already made dmg: the hook returns it as it is (no second headshot)
             z dodamage( dmg, z.origin + ( 0, 0, 40 ), self, self, mod, weapon );
+            if ( isdefined( z ) )
+                z.szp_bk_force = undefined;
             n++;
         }
     }

@@ -275,15 +275,24 @@ revive_price_watch()
 
 // ---- machines of the perks that have no stock machine on this map --------------------------------------------------
 
+// the stock interaction set-up calls each perk's init_func with no struct (the stock ones look their structs up by name):
+// the first call starts every machine of the five perks, the others return (run b2 11 Nov 2026: a per-name lookup on
+// self found nothing and the five machines never powered on)
 machines_init()
 {
-    s = self;
-    if ( isdefined( s.script_noteworthy ) )
-        name = s.script_noteworthy;
-    else
+    if ( isdefined( level.szp.machines_started ) )
         return;
-    foreach ( st in scripts\engine\utility::getstructarray( name, "script_noteworthy" ) )
-        st thread machine_power();
+    level.szp.machines_started = 1;
+    n = 0;
+    foreach ( name in level.szp.newperks )
+    {
+        foreach ( st in scripts\engine\utility::getstructarray( name, "script_noteworthy" ) )
+        {
+            st thread machine_power();
+            n++;
+        }
+    }
+    print( "[IWZ perks] MACHINES structs=" + n );
 }
 
 machine_power()
@@ -406,6 +415,8 @@ damage_hooks()
 
 on_zombie_damage( inflictor, attacker, damage, flags, mod, weapon, point, dir, hitloc, timeoffset, modelindex, partname )
 {
+    if ( isdefined( self.szp_bk_force ) )
+        return self.szp_bk_force;      // Baker's Dozens: a punch passing through deals the punched damage exactly
     if ( isdefined( level.szp.prev_zombie_damage ) )
         damage = [[ level.szp.prev_zombie_damage ]]( inflictor, attacker, damage, flags, mod, weapon, point, dir, hitloc, timeoffset, modelindex, partname );
     if ( isdefined( attacker ) && isplayer( attacker ) )
