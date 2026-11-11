@@ -15,15 +15,20 @@ Encoding (stock facts read 2026-11-11 from the GfxImage headers of 485 stock cam
 struct offset 0x18; the pixels themselves are streamed and not in the dumps):
 * stock camo images use BC1_UNORM (_c 190 of 210, _e 36 of 45), BC7_UNORM (_n), BC3_UNORM (_sg), BC4_UNORM (_o);
   no sRGB formats. Sizes 512 (camo_01) to 2048 (camo_211.._215), full mip chains.
-* colour and emissive are stored as sqrt(linear) (the stock weapon shaders square colour on read; measured on
-  the base layer's shader, assumed for layer 1).
-* material: camo_01 clone; emissivePara 1323547990 = emissive scale (stock camos use 1 to 1000), secondarySam
-  4044143062 = [s, s, 0, 0] camo UV scale (s = camo_uv_mm_per_unit / tile_mm); secondarySam 28846999 is left as
-  stock ([0, 0, 0, 0]; stock camo_100 sets 10 and camo_242 [0, 1]: possibly the scroll/motion parameters).
-* _sg: RGB specular colour (sqrt of linear F0), A gloss decoded as specular power 2^(20 (1 - sqrt(1 - A))) + 2
-  (the weapon packed_nog gloss curve). NOT read from a stock camo texel: stock camo pixels are streamed.
-* _n: "hybrid" by default: R = x, B = z, and G/A = the 45-degree octahedral pair of the stock packed_nog
-  (x = (G + A) / 2, y = (G - A) / 2 after 2v - 1). "rgb" (R, G, B = xyz) and "octa" are spec options.
+* Channel use READ FROM THE SHADER (2026-11-11, pixel shader 6ff80a5207557f38 of the 2-UV weapon lit technique,
+  see shader_read.py and notes engine-camo-shading.md): layer 1 is sampled at one UV for all five maps.
+  _c (t5): RGB squared = linear albedo x colorTint1; A = camo coverage mask (x the gun's own _packed_a mask).
+  _n (t4): G and A only, 2v - 1, 45-degree octahedral pair (x = (G+A)/2, y = (G-A)/2, z = 1 - |x| - |y|), rotated
+  into the base frame by TEXCOORD11 and ADDED to the base pair x mask; R and B are not read.
+  _sg (t6): RGB squared = specular F0 colour; A = gloss, linear, power 2^(20 (1 - sqrt(1 - A))) + 2.
+  _o (t7): R only, squared on read (stored here as sqrt(occlusion)); feeds the specular-occlusion lookup.
+  _e (t8): RGB squared x emissivePara 1323547990 .x x a code exposure constant x mask.
+* material: camo_01 clone; emissivePara 1323547990 = emissive scale (stock camos use 1 to 1000). Layer-1 UV, read
+  from vertex shader eaaca8ffa5a53c35: uv1 = S * (R(a + w t) (uv2 + O) + V t), t = game time in seconds;
+  secondarySam 4044143062 = [S.u, S.v, V.u, V.v] (V in pre-scale units: the texture moves S*V tiles a second),
+  secondarySam 28846999 = [a radians, w radians/s, O.u, O.v]. Stock camo_02 scrolls [1, 1, 0.1, 0.1], camo_242
+  rotates [0, 1, 0, 0]. The whole layer (all five maps) moves together; a separately moving layer-M is not in the
+  stock shader.
 Geometry is in millimetres on a tile of tile_mm; every primitive is drawn with wrap-around, so each image tiles.
 """
 import argparse
@@ -695,7 +700,7 @@ def pack(spec, cfg, L):
         "n": np.clip(encode_normal(nrm, spec.get("normal_encoding", "hybrid")), 0, 1),
         "sg": np.clip(sg, 0, 1),
         "e": np.clip(np.sqrt(np.clip(L["emissive"], 0, 1)), 0, 1),
-        "o": np.clip(L["occlusion"], 0, 1)[..., None].repeat(3, -1),
+        "o": np.sqrt(np.clip(L["occlusion"], 0, 1))[..., None].repeat(3, -1),     # the shader squares R
         "_normal": nrm,
     }
 
@@ -846,7 +851,9 @@ def motion_preview(name, L, packed, cfg, spec, outdir, frames=48, fps=12, size=3
             "visible_share_max": round(max(stats), 4), "visible_share_mean": round(float(np.mean(stats)), 4)}
 
 
-def build_material(stock, img, uv_scale, emissive_scale):
+def build_material(stock, img, uv_scale, emissive_scale, scroll_uv_s=(0.0, 0.0), rotation=(0.0, 0.0)):
+    """camo_01 clone on our images. scroll_uv_s: texture tiles per second along U, V (on the gun); rotation:
+    (start angle rad, rad/s). Both land in the layer-1 UV transform of the weapon vertex shader."""
     m = copy.deepcopy(stock)
     slots = {3054311504: img + "_c", 2486480606: img + "_n", 3532022562: img + "_sg", 3230247958: img + "_e",
              1253113093: img + "_o"}
@@ -857,7 +864,10 @@ def build_material(stock, img, uv_scale, emissive_scale):
         if c["name"] == "emissivePara" and c["nameHash"] == 1323547990:
             c["literal"] = [float(emissive_scale), 0.0, 0.0, 0.0]
         if c["name"] == "secondarySam" and c["nameHash"] == 4044143062:
-            c["literal"] = [float(uv_scale), float(uv_scale), 0.0, 0.0]
+            c["literal"] = [float(uv_scale), float(uv_scale), float(scroll_uv_s[0]) / float(uv_scale),
+                            float(scroll_uv_s[1]) / float(uv_scale)]
+        if c["name"] == "secondarySam" and c["nameHash"] == 28846999:
+            c["literal"] = [float(rotation[0]), float(rotation[1]), c["literal"][2], c["literal"][3]]
         if c["name"] == "colorTint1":
             c["literal"] = [1.0, 1.0, 1.0, 1.0]
     return m
@@ -945,7 +955,9 @@ def main(argv=None):
         if stock is not None:
             os.makedirs(mat_dir, exist_ok=True)
             uv_scale = round(float(spec["camo_uv_mm_per_unit"]) / float(spec["tile_mm"]), 4)
-            m = build_material(stock, img, uv_scale, cfg["emissive_max_strength"])
+            mm = cfg.get("material_motion", {})
+            m = build_material(stock, img, uv_scale, cfg["emissive_max_strength"], mm.get("scroll_uv_s", (0.0, 0.0)),
+                               mm.get("rotation", (0.0, 0.0)))
             mp = os.path.join(mat_dir, mat + ".json")
             with open(mp, "w", encoding="utf-8") as f:
                 json.dump(m, f, indent=4)

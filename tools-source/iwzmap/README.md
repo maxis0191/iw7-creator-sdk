@@ -121,6 +121,7 @@ The table above explains the main pieces. The three tables below list every file
 | `fx/` | effect placement, import, variants and proof; `fx/agent/` holds one agent's run scripts and probes (see its `README.txt`) |
 | `native/` | diagnostic DLL sources for an owned private test client (`error_journal.c`, `iw7_fxperf.c`, `build.cmd`) |
 | `tests/` | unit tests of the three `iwz_*` gates |
+| `weapons/` | weapon content: `camo_gen.py` (Pack-a-Punch camo images + material JSONs, scroll/rotation constants), `shader_read.py` (disassemble stock .cso, read a technique's binding table and a material's .cbt constant buffers, check that a D3D11 WARP device accepts a shader) and `dxbc.py` (DXBC container rebuild + checksum, the base of a bytecode patch); tests `test_*.py` |
 
 `hkcm_write.py` cites `hktree_check.py` in its header; the file is `hktree_check5.py`.
 

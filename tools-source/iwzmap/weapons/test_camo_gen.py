@@ -163,6 +163,10 @@ class Encoding(unittest.TestCase):
         consts = {(c["name"], c["nameHash"]): c["literal"] for c in m["constantTable"]}
         self.assertEqual(consts[("emissivePara", 1323547990)], [6.0, 0.0, 0.0, 0.0])
         self.assertEqual(consts[("secondarySam", 4044143062)], [1.2056, 1.2056, 0.0, 0.0])
+        moving = cg.build_material(stock, "iwz_camo_carrier", 2.0, 6.0, (0.5, -0.25), (0.0, 1.5))
+        consts = {(c["name"], c["nameHash"]): c["literal"] for c in moving["constantTable"]}
+        self.assertEqual(consts[("secondarySam", 4044143062)], [2.0, 2.0, 0.25, -0.125])  # S * V = tiles/s
+        self.assertEqual(consts[("secondarySam", 28846999)][:2], [0.0, 1.5])
         self.assertEqual(m["techniqueSet->name"], stock["techniqueSet->name"])
 
 
