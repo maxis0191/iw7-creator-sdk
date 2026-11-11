@@ -790,6 +790,32 @@ class Emitter:
                                                             'yaw': float(r.get('fixture_yaw', 0)), 'clip': None, 'static': True, 'light': True})
             self.layout['lights'].append(r)
 
+    def size_culls(self, lines):
+        """Every static prop gets the size-rule cull distance (docs/CULLING.md: the distance where it covers 30 pixels
+        of a 1080p frame). Without it a prop keeps its template donor's distance and pops while still large on screen
+        (W2: 134 door-view pops on 577 props before this). Model bounds from the template's worldkit database
+        (IWZ_MODELS_DB, default <IWZ_RUNTIME>/worldkit/cp_zmb.sqlite); refused loudly when it is missing."""
+        import sqlite3
+        import tome_cull
+        db = os.environ.get('IWZ_MODELS_DB') or os.path.join(os.environ.get('IWZ_RUNTIME') or os.path.join(os.path.expanduser('~'), 'Documents', 'IW7-Runtime'), 'worldkit', 'cp_zmb.sqlite')
+        if not os.path.isfile(db):
+            self.log('WARNING: no models database at %s: props keep their donors\' cull distances (they can pop); set IWZ_MODELS_DB' % db)
+            self.report['cull_distances'] = 'donor (no models database)'
+            return lines
+        half = {}
+        for name, x0, y0, z0, x1, y1, z1 in sqlite3.connect(db).execute('SELECT name, bmin_x, bmin_y, bmin_z, bmax_x, bmax_y, bmax_z FROM models'):
+            if x0 is not None:
+                half[name] = 0.5 * math.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2 + (z1 - z0) ** 2)
+        out, n = [], 0
+        for ln in lines:
+            p = ln.split()
+            if p[0] in half and not any(f.startswith('cull=') for f in p[8:]):
+                ln = ln + ' cull=%d' % min(65535, tome_cull.size_cull(half[p[0]] * float(p[7])))
+                n += 1
+            out.append(ln)
+        self.report['cull_distances'] = 'size rule on %d of %d props' % (n, len(lines))
+        return out
+
     def reveal(self, o):
         """the opening through a wall gap: floor, jambs and soffit (doors and arches); nothing for a zero gap"""
         za, zb = o['zones']
@@ -1182,7 +1208,7 @@ class Emitter:
             kw = {'targetname': tn} if tn else {}
             self.ent(classname='script_model', model=model, origin=self.fmt(org), angles='%g %g %g' % ang, **kw)
         if self.smodels:
-            open(os.path.join(self.out, 'smodels.txt'), 'w', newline='\n').write('\n'.join(self.smodels) + '\n')
+            open(os.path.join(self.out, 'smodels.txt'), 'w', newline='\n').write('\n'.join(self.size_culls(self.smodels)) + '\n')
         open(os.path.join(self.out, 'ents.txt'), 'w', newline='\n').write(mg.ents_text(ws, self.ents))
         open(os.path.join(self.out, 'triggers.txt'), 'w', newline='\n').write('\n'.join(self.triggers) + '\n')
         open(os.path.join(self.out, 'scriptables.txt'), 'w', newline='\n').write('\n'.join(self.relocations) + ('\n' if self.relocations else ''))
