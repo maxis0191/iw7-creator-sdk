@@ -28,6 +28,7 @@ records (`iw7-paris-server`: `ops/iwzmap/`, `tests/fixtures/iwzmap_*`,
 | `bake/iw7image.py`, `bake/lm_decode.py` | iw7Image/DDS IO, texconv encode/decode; HDR decode of a lightmap set (A/B/D/S terms) |
 | `bake/lm_measure.py` | engine frames against a bake: camera fit, visibility-tested texel projection, per-wall luma CV, rendered-vs-baked correlation, calibration patches |
 | `tome_read.py` | reads an Umbra format-20 tome header |
+| `tome_cull.py` | the generated map's culling data: per-prop cull distances by size, a check of the tome against every door sightline before the zone step, and the game's depth of door captures ([CULLING](../../docs/CULLING.md)) |
 | `iwz_emitcheck.py` | offline gate on an emit: collision, nav, links, stairs, spawners, routes, build-to-build diff |
 | `iwz_zonecheck.py` | offline gate between "emitted" and "packed": everything built is listed, present in the source tree, and the compiled file is newer than its sources |
 | `iwz_probe_forensics.py` | recorded probe logs to per-zombie classes, verdicts, trust flags, flaky cases, hotspots |
@@ -58,6 +59,7 @@ The table above explains the main pieces. The three tables below list every file
 | `volume_check.py`, `test_volume_check.py` | offline check of a compiled map's trigger and spawn volumes, and its unit tests |
 | `lightmap_read.py` | decodes the template lightmap atlas to pick texels (its output feeds `sz2_lmpick.py`; the HDR decode is `bake/lm_decode.py`) |
 | `tome_read.py` | reads an Umbra format-20 tome header |
+| `tome_cull.py` | the generated map's culling data: per-prop cull distances by size, a check of the tome against every door sightline before the zone step, and the game's depth of door captures ([CULLING](../../docs/CULLING.md)) |
 | `machine.ps1` | resolves the machine locations of the build and run scripts (see "Machine locations") |
 | `zt.ps1` | runs ZoneTool in a work folder under the shared resource lease |
 | `build-zt.ps1` | builds the ZoneTool fork under the lease |
