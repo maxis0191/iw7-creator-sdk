@@ -1471,6 +1471,11 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
     lay = json.load(open(os.path.join(src, 'layout.json')))
     mapname = mapname or lay.get('map', 'cp_iwz')
     start = lay['starts'][0]
+    try:
+        import iwz_emitcheck as EC
+        nav = EC.Emit.load(src).nav
+    except Exception:
+        nav = None
     plans = [{'schema': 'iw7.gamelab-plan/1', 'name': '%s_w1a_survey' % mapname, 'map': mapname,
               'about': 'Scene-generated map: every door opened, the navigation surveyed from the start, the entities counted.',
               'steps': [{'do': 'waves', 'on': False}, {'do': 'doors'}, {'do': 'tp', 'at': list(start)}, {'do': 'ents', 'name': 'all'},
@@ -1480,8 +1485,14 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
         expects = []
         for name, a, b in cases[k:k + per_plan]:
             tag = re.sub(r'[^a-z0-9_]', '_', name.lower())[:40]
+            # round-1 zombies walk about 34 units a second (measured, W1a runs hl-b, 11 Nov 2026) and start after
+            # about 3 s: the chase gets the navigation length at 20 u/s plus 10 s, at least chase_s
+            ln = None
+            if nav is not None:
+                ln, _p = nav.route(nav.nearest(*a), nav.nearest(*b))
+            s = max(chase_s, int(math.ceil((ln or 0) / 20.0 + 10)))
             steps += [{'do': 'kill'}, {'do': 'tp', 'at': b}, {'do': 'spawn', 'tag': tag, 'at': a, 'count': count},
-                      {'do': 'chase', 'tag': tag, 's': chase_s}, {'do': 'kill', 'tag': tag}]
+                      {'do': 'chase', 'tag': tag, 's': s}, {'do': 'kill', 'tag': tag}]
             expects.append({'do': 'expect', 'that': 'chase:%s.reached' % tag, 'eq': '@chase:%s.total' % tag,
                             'why': 'every zombie gets from %s to the player at %s (%s)' % (a, b, name)})
         plans.append({'schema': 'iw7.gamelab-plan/1', 'name': '%s_w1a_%d' % (mapname, len(plans)), 'map': mapname,
