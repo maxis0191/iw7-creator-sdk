@@ -28,6 +28,8 @@ python -I -B scenegen.py w1bplans <src> <plan folder>                          #
 python -I -B scenegen.py stressprops <scene> <kits.json> <n> <out scene>       # ST1: a copy of the scene with n static stock props spread by floor area
 python -I -B st1_report.py --perf <components>\ops\engine-map\iw7_perf.py LABEL=<run> ... [--base LABEL]   # frame time per spawn zone (gamelab perfzones), parity
 python -I -B scenegen.py tests   <src> [--json f.json]                         # playtest dvars: a climb up and down every flight, a route through every opening
+python -I -B scenegen.py bake    <src> <baked src> [--quick] [--rays 144] [--bounces 3] [--texel 8] [--no-fill-pass] [--emissive 0.25]   # the light bake (below)
+<bake python> -I -B scenegen.py bakereport <baked src> [--json f.json]        # per-zone baked irradiance against the flat look (needs numpy)
 python -I -B iwz_emitcheck.py check <src>                                      # the offline map gate
 python -I -B sz2_navconn.py <src>                                              # navigation connectivity
 python -B <server>\ops\iwzmap\iwzmap_ents_lint.py <src>\ents.txt --gsc <src>\cp_iwz.gsc   # stock zombies recipe
@@ -65,9 +67,14 @@ and `scene_report.json` (areas, counts, entity census, problems). The source the
    "volumes": [[x0, y0, x1, y1], ...],         // spawn volumes when one bounding box would overlap another zone
    "spawners": {"ground": 9, "wall": 3, "ceiling": 2, "points": [{"kind": "ground", "at": [x, y], "yaw": 0}]},
    "waiting": [[x, y], ...], "skate": [[x0, y0, x1, y1], ...],   // waiting places and the Rollers' skate mask
+   "lights": [{"at": [x, y], "z": 300, "type": "spot", "color": [1, 0.72, 0.42], "radius": 420, "intensity": 2.2,   // or "h": above the floor there
+               "dir": [0, 0, -1], "inner": 14, "outer": 32, "fixture": "<model>", "fixture_z": 316, "fixture_yaw": 0}],
+   "fill": null,                                // null: fill lights when the zone has no lights; true / false forces it
    "far": false, "plate": true }],
  "doors": [{"id": "D1", "zones": ["a", "b"], "price": 750, "span": [s0, s1], "sill": 0, "height": 224}],
  "links": [{"id": "L1", "zones": ["a", "b"], "kind": "open|arch", "openings": [{"span": [...], "sill": -320}]}],
+ "props_files": ["kept_props.json"],            // {zone: [props]} appended to the zones' props
+ "dress_files": ["w2_dress.json"],              // {zone: {"props": [...], "lights": [...], "solids": [...]}} appended after them
  "interactions": [{"kind": "perk|wall_buy|wheel|power|pap|trap_third_rail", "zone": "...", "wall": "north", "s": 600, "off": 8}],
  "markers": [{"kind": "hatch", "id": "PLAZA", "zone": "cordon", "at": [x, y]}]
 }
@@ -115,6 +122,62 @@ from a wall and 128 from an opening), spawn volumes that overlap.
 - Spawners are placed by a deterministic farthest-point sample over flat cells; every zone that is not far gets two
   brute / goon spots per spawn volume, two respawn points, an inspection plate on its first ground spawner, a
   standing point (`zone_points`, used by `routes`), waiting places and a skate mask.
+
+## Lights and the bake
+
+An unbaked emit lights every surface with one texel of the template lightmap (`LM` in `scenegen.py`). Decoded
+(`bake/lm_decode.py` on the cp_zmb atlas), that texel is E = A + B x Dz = (0.162, 0.158, 0.127), luminance 0.156
+(`FLAT_LUMA`), the same on every floor, wall and ceiling: rooms read flat. The bake replaces it.
+
+**Scene keys.** A zone's `lights` (format above): `at` [x, y] inside the zone, `z` absolute or `h` above the floor at
+that point (default 16 under the ceiling), `type` omni or spot, `color`, `radius` (the runtime falloff radius; the bake
+reaches 2.5 x), `intensity`, for a spot `dir`, `inner`, `outer` (degrees, under 90), optional `fixture` (a static
+model placed at the light, `fixture_z`, `fixture_yaw`), and `group` / `name` passed through for the darkness build.
+`check` refuses a light outside its zone, above the ceiling or under the floor, an unknown type, a bad colour or
+cone. `dress_files` (paths relative to the scene, like `props_files`): `{zone: {"props": [...], "lights": [...],
+"solids": [...]}}`; props come after the `props_files` props, lights and solids after the zone's own; an unknown zone
+or key is refused.
+
+**layout.json `lights`** (what `bake/layout_lights.py` reads), one record a light:
+`{"zone", "origin": [x, y, z], "type": "omni"|"spot", "color": [r, g, b], "radius", "intensity", "fixture": "" or a
+model, "dir", "inner", "outer" (spots), "group", "name" (when given), "fill": true, "fill_estimate" (fill lights)}`.
+The baked copy's `layout.json` keeps the intensities it was baked with (`intensity_emit` holds the emitted one,
+`fill_pass` the per-zone scale).
+
+**Fill lights.** A zone without lights (`fill` not false) gets, per box, a grid of omni lights at mid height of
+the free space (half way between the floor at that point and the ceiling), spacing = the room height clamped to
+256..448, radius = spacing, the flat texel's own tint (1, 0.97, 0.78). At mid height every floor, wall and ceiling
+point sees several lights at similar distances, so the light is soft and even (lights under the ceiling would put
+hot spots 10 to 150 times brighter on the ceiling). The emit picks one intensity a zone from the unoccluded direct
+light on sample points of its floors, walls and ceiling, times `FILL_BOUNCE` 1.4 (median measured baked / direct
+ratio over 19 zones: 1.39; per zone 1.01 to 1.81: open stair wells low, closed rooms high). The bake then corrects
+that spread by measurement: a quick bake (16 rays) reads each filled zone's mean, and the zone's fill is scaled to
+`FLAT_LUMA` before the real bake.
+
+**The bake step.** `scenegen.py bake <src> <out>`: the bake Python (`IWZ_BAKE_PYTHON`, else
+`<IWZ_RUNTIME>\iwzmap-bake-venv`, `machine.ps1 BakePython`) runs `layout_lights.py` (power 3, radius x 2.5, ambient
+0.02, lamp material radiance `--emissive` 0.25 instead of its 1.5: the Terminus ceiling is a lamp material) and
+`lmbake.py` (144 rays, 3 bounces, texel 8), then `bakereport` and the gates `iwz_emitcheck check` and `sz2_navconn` on
+the baked copy (exit 1 when a gate fails). `<out>` holds `lightmap\*.dds`, the rewritten `world.bin` lightmap
+coordinates, the light grid in `lighting.txt`, `lights.json`, `bake_zones.json`, `bake_step.json`. `lmbake.py`
+reads scenegen's `world.bin` as it is (same writer, `mapgen.write_world`). `build-sz2.ps1 -Src <out>` ships the
+lightmap: the compile log says `iwzmap: baked lightmap 2048 x 2048 installed`.
+
+Measured 11 Nov 2026 (Station Zero, 19 zones; the four W2 zones with a test set of 47 warm lights, the other 15
+filled, 192 fill lights): bake 241 s in all (fill pass 43 s, bake 181 s, gates 11 s), atlas 2048 x 2048, 1.68 M
+texels, 2,002 charts; gates 0 errors, 0 failures. `bake_zones.json`: the 15 filled zones at 0.97 to 1.01 of the
+flat texel (Terminus 1.44: its luminous ceiling alone is brighter), spread (CV) 0.24 to 0.34 in rooms, 0.57 to 0.86
+where stair wells and pits stand in a zone (Staff Stair, Platform East, Signal Cabin, Breach); the lit W2 zones at
+0.44 to 0.49 of flat with p10 0.02 to 0.03 (dark between the pools), the escalator 0.93 (its ten pools overlap on the
+narrow flight).
+
+Built and loaded (11 Nov 2026): `build-sz2.ps1 -KeepSubmodels -Incremental` with the culling compiler
+(`zonetool-cull-b.exe`, x64-zt main 21efbe3 tree) in a fresh work folder: compile 10 s (log: `iwzmap: baked lightmap
+2048 x 2048 installed`; secondary 2048 x 4096 BC6H, primary BC4 and secondunorm R8G8 at 2048 x 2048), volume check 48 /
+48, assemble 282 s (first assembly of that folder), zone step 79 s of ZoneTool work (956 s with the wait for the build
+slot), ff 446,574,528 bytes. Headless load (`Invoke-GameLabHeadless.ps1`, plan: floors under the Cordon and the Fare
+Hall, three zombies from a Cordon spawner): PASS 5 / 5 expectations, 53 s. Not yet seen in a client: no frame of the
+baked map has been captured or measured.
 
 ## Proven so far
 

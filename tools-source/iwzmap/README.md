@@ -48,7 +48,7 @@ The table above explains the main pieces. The three tables below list every file
 
 | File | Role |
 | --- | --- |
-| `scenegen.py`, `cp_iwz3.gsc`, `scenes/` | a whole zombies map from a scene description (zones, heights, doors, flights, spawners, interactions as data): checks, emit, flight / route / pool readers (`docs/SCENEGEN.md`); `scenes/station_zero.json` is the bible's 19 zones |
+| `scenegen.py`, `cp_iwz3.gsc`, `scenes/` | a whole zombies map from a scene description (zones, heights, doors, flights, spawners, interactions, lights and dressing files as data): checks, emit, light bake (`scenegen.py bake`), flight / route / pool readers (`docs/SCENEGEN.md`); `scenes/station_zero.json` is the bible's 19 zones |
 | `mapgen.py` | iwzcompile sources from a box-based map description: render mesh, nav graph, entity text |
 | `brushkit.py` | brush library: textured quads, boxes, wedges, banded walls with openings, stairs |
 | `hkpack.py`, `hkcm.py`, `hkcm_write.py` | Havok 2014 packfile reader; decoder and encoder of the compressed mesh collision |
@@ -175,6 +175,13 @@ python -I bake\layout_lights.py <src> <src>\lights.json   # or: lights.json from
 python -I bake\lm_measure.py out\sz_baked "<views>" <run dir> measure.json --frames-flat <flat run> --viz <dir> `
        --eye 58.45 --fov 133.14   # frames of a local run vs the bake (camera of the base client, 1280x720)
 ```
+
+Scene-generated maps (`scenegen.py`, `docs/SCENEGEN.md` "Lights and the bake"): `python -I -B scenegen.py bake <src>
+<baked src>` runs both steps with the bake Python (`IWZ_BAKE_PYTHON`, else `machine.ps1 BakePython`), a quick
+measuring pass first for the fill lights of zones without lights, then `iwz_emitcheck check` and `sz2_navconn` on the
+baked copy, and writes `bake_zones.json` (per-zone baked irradiance against the flat texel) and `bake_step.json`
+(seconds, gates). Station Zero, 19 zones, 239 lights: 241 s (fill pass 43 s, bake 181 s at 144 rays); the baked
+source builds with `build-sz2.ps1 -Src <baked src>` like any other.
 
 The compiler (`iwzmap_lightmap.cpp`, x64-zt branch `codex/iwzmap-lightmaps`) replaces the template lightmap
 images (`*lightmap0_primary/secondary/secondunorm`: same names, own size) when the source has
