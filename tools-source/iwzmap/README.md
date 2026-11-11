@@ -248,6 +248,8 @@ One-room change to a loaded map: **about 110 s** (52 s rebuild + 57 s headless l
 all pointer residue, 0 content bytes); the sound bank files are byte-identical. The same tool between the unchanged
 and the changed source finds exactly the 2 bytes of the moved prop's coordinate. A run without the audio module
 gave the same result (64 s, same content) but its level script needs the module to start.
+**One reservation for the whole build** (11 Nov 2026, evening): `build-sz2.ps1` now takes one build reservation and runs the compile, the assembly and the zone step under it (`zt.ps1 -HeldLease`). Before, the zone step asked again after the compile and went back to the end of the machine's waiting order: W2 build b waited 1,721 s for the compile and 2,371 s more for the zone step (4,573 s of wall time). W2 build c with the change: one wait (2,396 s, the queue), then assembly 857 s and zone 65 s with no second wait. A busy scheduler admission lock is a wait, not a failure, in both scripts.
+
 The waits were the real cost on 11 Nov: the full build waited 2,584 s and the base build about 1,500 s for the build
 reservation behind other agents' sessions (quality ledger: the scheduler has no fairness rule for builds).
 Not covered: a change of the render world needs the bake again (250 s for the whole map; no per-room bake yet); the
