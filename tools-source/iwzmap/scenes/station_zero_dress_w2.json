@@ -2403,6 +2403,139 @@
      "note": "a sandwich board left at the stair"
     },
     {
+     "note": "the bowl's retaining walls: the plaza's own wall lamps (one in three still on the trailer's feed), rain pipes, storm gratings"
+    },
+    {
+     "m": "light_exterior_wall_semi_cylinder_01",
+     "wall": "north",
+     "s": -1000,
+     "h": 236,
+     "clip": false,
+     "id": "wl1"
+    },
+    {
+     "m": "light_exterior_wall_semi_cylinder_01_on",
+     "wall": "north",
+     "s": -200,
+     "h": 236,
+     "clip": false,
+     "id": "wl2"
+    },
+    {
+     "m": "light_exterior_wall_semi_cylinder_01",
+     "wall": "north",
+     "s": 600,
+     "h": 236,
+     "clip": false,
+     "id": "wl3"
+    },
+    {
+     "m": "light_exterior_wall_semi_cylinder_01_on",
+     "wall": "north",
+     "s": 1600,
+     "h": 236,
+     "clip": false,
+     "id": "wl4"
+    },
+    {
+     "m": "light_exterior_wall_semi_cylinder_01",
+     "wall": "west",
+     "s": 4900,
+     "h": 236,
+     "clip": false,
+     "id": "wl5"
+    },
+    {
+     "m": "light_exterior_wall_semi_cylinder_01_on",
+     "wall": "east",
+     "s": 5400,
+     "h": 236,
+     "clip": false,
+     "id": "wl6"
+    },
+    {
+     "m": "beacon_runningpipe_str_128",
+     "wall": "north",
+     "s": 980,
+     "clip": false,
+     "id": "dp1a"
+    },
+    {
+     "m": "beacon_runningpipe_str_128",
+     "wall": "north",
+     "s": 980,
+     "h": 128,
+     "clip": false,
+     "id": "dp1b"
+    },
+    {
+     "m": "beacon_runningpipe_str_128",
+     "wall": "north",
+     "s": 980,
+     "h": 256,
+     "clip": false,
+     "id": "dp1c"
+    },
+    {
+     "m": "beacon_runningpipe_str_128",
+     "wall": "east",
+     "s": 5560,
+     "clip": false,
+     "id": "dp2a"
+    },
+    {
+     "m": "beacon_runningpipe_str_128",
+     "wall": "east",
+     "s": 5560,
+     "h": 128,
+     "clip": false,
+     "id": "dp2b"
+    },
+    {
+     "m": "beacon_runningpipe_str_128",
+     "wall": "east",
+     "s": 5560,
+     "h": 256,
+     "clip": false,
+     "id": "dp2c"
+    },
+    {
+     "m": "grate_catwalk_metal_02",
+     "at": [
+      1200,
+      4740
+     ],
+     "z": 192.3,
+     "yaw": 0,
+     "clip": false,
+     "near_ok": true,
+     "id": "storm1"
+    },
+    {
+     "m": "grate_catwalk_metal_02",
+     "at": [
+      2110,
+      4920
+     ],
+     "z": 192.3,
+     "yaw": 90,
+     "clip": false,
+     "near_ok": true,
+     "id": "storm2"
+    },
+    {
+     "m": "grate_catwalk_metal_02",
+     "at": [
+      -944,
+      5660
+     ],
+     "z": 192.3,
+     "yaw": 0,
+     "clip": false,
+     "near_ok": true,
+     "id": "storm3"
+    },
+    {
      "scatter": {
       "n": 26,
       "rect": [
@@ -2783,6 +2916,52 @@
      "radius": 240,
      "intensity": 0.2,
      "note": "Lodestar amber beacon on the hoist frame"
+    },
+    {
+     "at": [
+      -200,
+      5770
+     ],
+     "h": 230,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.6,
+      0.32
+     ],
+     "radius": 300,
+     "intensity": 0.12,
+     "note": "wall lamp"
+    },
+    {
+     "at": [
+      1600,
+      5770
+     ],
+     "h": 230,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.6,
+      0.32
+     ],
+     "radius": 300,
+     "intensity": 0.12
+    },
+    {
+     "at": [
+      2170,
+      5400
+     ],
+     "h": 230,
+     "type": "omni",
+     "color": [
+      1.0,
+      0.6,
+      0.32
+     ],
+     "radius": 300,
+     "intensity": 0.12
     }
    ]
   },
@@ -3249,6 +3428,81 @@
      ],
      "yaw": 0,
      "id": "colbench3"
+    },
+    {
+     "note": "ZERO's PA horns (the Three-Tone comes out of these), exit signs over the doors, extinguishers"
+    },
+    {
+     "m": "misc_wall_mounted_loudspeaker_01",
+     "wall": "west",
+     "s": 4100,
+     "h": 250,
+     "clip": false,
+     "id": "pa1"
+    },
+    {
+     "m": "misc_wall_mounted_loudspeaker_01",
+     "wall": "east",
+     "s": 4250,
+     "h": 250,
+     "clip": false,
+     "id": "pa2"
+    },
+    {
+     "m": "misc_wall_mounted_loudspeaker_01",
+     "wall": "south",
+     "s": 300,
+     "h": 250,
+     "clip": false,
+     "id": "pa3"
+    },
+    {
+     "m": "misc_wall_mounted_loudspeaker_01",
+     "wall": "north",
+     "s": -700,
+     "h": 250,
+     "clip": false,
+     "id": "pa4"
+    },
+    {
+     "m": "signage_exit_sign_emergency_light",
+     "wall": "west",
+     "s": 3896,
+     "h": 232,
+     "clip": false,
+     "id": "ex1"
+    },
+    {
+     "m": "signage_exit_sign_emergency_light",
+     "wall": "east",
+     "s": 3996,
+     "h": 232,
+     "clip": false,
+     "id": "ex2"
+    },
+    {
+     "m": "clk_fire_extinguisher_lrg_scaled",
+     "wall": "west",
+     "s": 4060,
+     "h": 30,
+     "clip": false,
+     "id": "fx1"
+    },
+    {
+     "m": "clk_fire_extinguisher_lrg_scaled",
+     "wall": "east",
+     "s": 3700,
+     "h": 30,
+     "clip": false,
+     "id": "fx2"
+    },
+    {
+     "m": "com_fire_bell_iw6",
+     "wall": "south",
+     "s": -900,
+     "h": 210,
+     "clip": false,
+     "id": "bell"
     },
     {
      "scatter": {
@@ -3838,6 +4092,22 @@
     },
     {
      "note": "dropped on the way down: the last guests' litter on the landings"
+    },
+    {
+     "m": "misc_wall_mounted_loudspeaker_01",
+     "wall": "west",
+     "s": 3060,
+     "h": 230,
+     "clip": false,
+     "id": "pa1"
+    },
+    {
+     "m": "misc_wall_mounted_loudspeaker_01",
+     "wall": "east",
+     "s": 2900,
+     "h": 230,
+     "clip": false,
+     "id": "pa2"
     },
     {
      "scatter": {
@@ -4655,6 +4925,46 @@
      "h": 50,
      "clip": false,
      "id": "nd_board"
+    },
+    {
+     "m": "misc_wall_mounted_loudspeaker_01",
+     "wall": "south",
+     "s": -2200,
+     "h": 220,
+     "clip": false,
+     "id": "pa1"
+    },
+    {
+     "m": "misc_wall_mounted_loudspeaker_01",
+     "wall": "south",
+     "s": -1500,
+     "h": 220,
+     "clip": false,
+     "id": "pa2"
+    },
+    {
+     "m": "signage_exit_sign_emergency_light",
+     "wall": "east",
+     "s": 3896,
+     "h": 228,
+     "clip": false,
+     "id": "ex1"
+    },
+    {
+     "m": "signage_exit_sign_emergency_light",
+     "wall": "west",
+     "s": 3996,
+     "h": 228,
+     "clip": false,
+     "id": "ex2"
+    },
+    {
+     "m": "clk_fire_extinguisher_lrg_scaled",
+     "wall": "south",
+     "s": -2700,
+     "h": 30,
+     "clip": false,
+     "id": "fx1"
     },
     {
      "scatter": {

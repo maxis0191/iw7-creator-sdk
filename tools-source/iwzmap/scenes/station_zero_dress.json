@@ -1889,6 +1889,171 @@
 "id": "aframe"
 },
 {
+"model": "light_exterior_wall_semi_cylinder_01",
+"at": [
+-1000.0,
+5799.5
+],
+"z": 435.37,
+"yaw": 270.0,
+"static": true,
+"id": "wl1"
+},
+{
+"model": "light_exterior_wall_semi_cylinder_01_on",
+"at": [
+-200.0,
+5799.5
+],
+"z": 435.37,
+"yaw": 270.0,
+"static": true,
+"id": "wl2"
+},
+{
+"model": "light_exterior_wall_semi_cylinder_01",
+"at": [
+600.0,
+5799.5
+],
+"z": 435.37,
+"yaw": 270.0,
+"static": true,
+"id": "wl3"
+},
+{
+"model": "light_exterior_wall_semi_cylinder_01_on",
+"at": [
+1600.0,
+5799.5
+],
+"z": 435.37,
+"yaw": 270.0,
+"static": true,
+"id": "wl4"
+},
+{
+"model": "light_exterior_wall_semi_cylinder_01",
+"at": [
+-1399.5,
+4900.0
+],
+"z": 435.37,
+"yaw": 0.0,
+"static": true,
+"id": "wl5"
+},
+{
+"model": "light_exterior_wall_semi_cylinder_01_on",
+"at": [
+2199.5,
+5400.0
+],
+"z": 435.37,
+"yaw": 180.0,
+"static": true,
+"id": "wl6"
+},
+{
+"model": "beacon_runningpipe_str_128",
+"at": [
+980.0,
+5799.5
+],
+"z": 192.0,
+"yaw": 270.0,
+"static": true,
+"id": "dp1a"
+},
+{
+"model": "beacon_runningpipe_str_128",
+"at": [
+980.0,
+5799.5
+],
+"z": 320.0,
+"yaw": 270.0,
+"static": true,
+"id": "dp1b"
+},
+{
+"model": "beacon_runningpipe_str_128",
+"at": [
+980.0,
+5799.5
+],
+"z": 448.0,
+"yaw": 270.0,
+"static": true,
+"id": "dp1c"
+},
+{
+"model": "beacon_runningpipe_str_128",
+"at": [
+2199.5,
+5560.0
+],
+"z": 192.0,
+"yaw": 180.0,
+"static": true,
+"id": "dp2a"
+},
+{
+"model": "beacon_runningpipe_str_128",
+"at": [
+2199.5,
+5560.0
+],
+"z": 320.0,
+"yaw": 180.0,
+"static": true,
+"id": "dp2b"
+},
+{
+"model": "beacon_runningpipe_str_128",
+"at": [
+2199.5,
+5560.0
+],
+"z": 448.0,
+"yaw": 180.0,
+"static": true,
+"id": "dp2c"
+},
+{
+"model": "grate_catwalk_metal_02",
+"at": [
+1200.0,
+4740.0
+],
+"z": 192.3,
+"yaw": 0.0,
+"static": true,
+"id": "storm1"
+},
+{
+"model": "grate_catwalk_metal_02",
+"at": [
+2110.0,
+4920.0
+],
+"z": 192.3,
+"yaw": 90.0,
+"static": true,
+"id": "storm2"
+},
+{
+"model": "grate_catwalk_metal_02",
+"at": [
+-944.0,
+5660.0
+],
+"z": 192.3,
+"yaw": 0.0,
+"static": true,
+"id": "storm3"
+},
+{
 "model": "food_trash_container_02_open",
 "at": [
 -490.92,
@@ -2120,17 +2285,6 @@
 "id": "scatter20"
 },
 {
-"model": "food_trash_bag_paper_01",
-"at": [
--951.25,
-5625.6
-],
-"z": 192.07,
-"yaw": 97.67,
-"static": true,
-"id": "scatter21"
-},
-{
 "model": "food_trash_container_02_open",
 "at": [
 856.59,
@@ -2139,7 +2293,7 @@
 "z": 191.99,
 "yaw": 157.48,
 "static": true,
-"id": "scatter22"
+"id": "scatter21"
 },
 {
 "model": "food_trash_container_02_open",
@@ -2150,7 +2304,7 @@
 "z": 191.99,
 "yaw": 4.12,
 "static": true,
-"id": "scatter23"
+"id": "scatter22"
 },
 {
 "model": "p7_bottle_plastic_16oz_cola",
@@ -2161,7 +2315,7 @@
 "z": 192.01,
 "yaw": 225.84,
 "static": true,
-"id": "scatter24"
+"id": "scatter23"
 },
 {
 "model": "food_trash_container_02_open",
@@ -2171,6 +2325,17 @@
 ],
 "z": 191.99,
 "yaw": 219.19,
+"static": true,
+"id": "scatter24"
+},
+{
+"model": "food_trash_container_02_open",
+"at": [
+998.47,
+5616.98
+],
+"z": 191.99,
+"yaw": 226.07,
 "static": true,
 "id": "scatter25"
 }
@@ -2437,6 +2602,52 @@
 5060.0
 ],
 "z": 342.0
+},
+{
+"type": "omni",
+"color": [
+1.0,
+0.6,
+0.32
+],
+"radius": 300,
+"intensity": 0.12,
+"note": "wall lamp",
+"at": [
+-200.0,
+5770.0
+],
+"z": 422.0
+},
+{
+"type": "omni",
+"color": [
+1.0,
+0.6,
+0.32
+],
+"radius": 300,
+"intensity": 0.12,
+"at": [
+1600.0,
+5770.0
+],
+"z": 422.0
+},
+{
+"type": "omni",
+"color": [
+1.0,
+0.6,
+0.32
+],
+"radius": 300,
+"intensity": 0.12,
+"at": [
+2170.0,
+5400.0
+],
+"z": 422.0
 }
 ],
 "solids": [
@@ -5068,6 +5279,105 @@
 ]
 },
 {
+"model": "misc_wall_mounted_loudspeaker_01",
+"at": [
+-1198.94,
+4100.0
+],
+"z": 263.11,
+"yaw": 0.0,
+"static": true,
+"id": "pa1"
+},
+{
+"model": "misc_wall_mounted_loudspeaker_01",
+"at": [
+998.94,
+4250.0
+],
+"z": 263.11,
+"yaw": 180.0,
+"static": true,
+"id": "pa2"
+},
+{
+"model": "misc_wall_mounted_loudspeaker_01",
+"at": [
+300.0,
+3201.06
+],
+"z": 263.11,
+"yaw": 90.0,
+"static": true,
+"id": "pa3"
+},
+{
+"model": "misc_wall_mounted_loudspeaker_01",
+"at": [
+-700.0,
+4598.94
+],
+"z": 263.11,
+"yaw": 270.0,
+"static": true,
+"id": "pa4"
+},
+{
+"model": "signage_exit_sign_emergency_light",
+"at": [
+-1199.5,
+3896.0
+],
+"z": 232.95,
+"yaw": 0.0,
+"static": true,
+"id": "ex1"
+},
+{
+"model": "signage_exit_sign_emergency_light",
+"at": [
+999.5,
+3996.0
+],
+"z": 232.95,
+"yaw": 180.0,
+"static": true,
+"id": "ex2"
+},
+{
+"model": "clk_fire_extinguisher_lrg_scaled",
+"at": [
+-1197.0,
+4060.0
+],
+"z": 30.01,
+"yaw": 270.0,
+"static": true,
+"id": "fx1"
+},
+{
+"model": "clk_fire_extinguisher_lrg_scaled",
+"at": [
+997.0,
+3700.0
+],
+"z": 30.01,
+"yaw": 90.0,
+"static": true,
+"id": "fx2"
+},
+{
+"model": "com_fire_bell_iw6",
+"at": [
+-900.0,
+3200.5
+],
+"z": 214.15,
+"yaw": 90.0,
+"static": true,
+"id": "bell"
+},
+{
 "model": "food_trash_bag_candy_01",
 "at": [
 -469.95,
@@ -6879,6 +7189,28 @@
 "id": "t5"
 },
 {
+"model": "misc_wall_mounted_loudspeaker_01",
+"at": [
+-798.94,
+3060.0
+],
+"z": 233.11,
+"yaw": 0.0,
+"static": true,
+"id": "pa1"
+},
+{
+"model": "misc_wall_mounted_loudspeaker_01",
+"at": [
+-201.06,
+2900.0
+],
+"z": 153.11,
+"yaw": 180.0,
+"static": true,
+"id": "pa2"
+},
+{
 "model": "com_debris_paper_iw6_02",
 "at": [
 -335.93,
@@ -8207,6 +8539,61 @@
 "yaw": 0.0,
 "static": true,
 "id": "nd_board"
+},
+{
+"model": "misc_wall_mounted_loudspeaker_01",
+"at": [
+-2200.0,
+3501.06
+],
+"z": 233.11,
+"yaw": 90.0,
+"static": true,
+"id": "pa1"
+},
+{
+"model": "misc_wall_mounted_loudspeaker_01",
+"at": [
+-1500.0,
+3501.06
+],
+"z": 233.11,
+"yaw": 90.0,
+"static": true,
+"id": "pa2"
+},
+{
+"model": "signage_exit_sign_emergency_light",
+"at": [
+-1200.5,
+3896.0
+],
+"z": 228.95,
+"yaw": 180.0,
+"static": true,
+"id": "ex1"
+},
+{
+"model": "signage_exit_sign_emergency_light",
+"at": [
+-2999.5,
+3996.0
+],
+"z": 228.95,
+"yaw": 0.0,
+"static": true,
+"id": "ex2"
+},
+{
+"model": "clk_fire_extinguisher_lrg_scaled",
+"at": [
+-2700.0,
+3503.0
+],
+"z": 30.01,
+"yaw": 0.0,
+"static": true,
+"id": "fx1"
 },
 {
 "model": "cnd_paper_cia_01",
