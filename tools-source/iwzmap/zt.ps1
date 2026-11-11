@@ -6,6 +6,7 @@ $ErrorActionPreference='Stop'
 if(!$Scheduler){ $Scheduler=(& "$PSScriptRoot\machine.ps1" Components 'ops\Resource-Scheduler.Core.ps1' -MustExist) }
 if(!(Test-Path -LiteralPath $Scheduler)){ throw "Resource scheduler not found: $Scheduler" }
 . $Scheduler
+$waitClock=[Diagnostics.Stopwatch]::StartNew()
 if($WaitForSlotSeconds -gt 0){
   $until=[datetime]::UtcNow.AddSeconds($WaitForSlotSeconds)
   while(@((Get-IW7ResourceStatus).Leases).Count -and [datetime]::UtcNow -lt $until){ Start-Sleep -Seconds 5 }
@@ -21,15 +22,25 @@ while(-not $lease){
     Start-Sleep -Seconds 5
   }
 }
+"waited for the build reservation $([int]$waitClock.Elapsed.TotalSeconds) s"
 try{
   $tag=[DateTime]::UtcNow.ToString('HHmmss')
-  $p=Start-Process -FilePath "$Work\zonetool.exe" -ArgumentList (@('-headless','-unbuffered-io')+$ZtArgs) -WorkingDirectory $Work -RedirectStandardOutput "$Work\zt-$tag.out.log" -RedirectStandardError "$Work\zt-$tag.err.log" -PassThru -NoNewWindow
+  # The log goes straight to a file through cmd.exe. Start-Process -RedirectStandardOutput pipes it through PowerShell,
+  # and ZoneTool writes every line unbuffered: on 11 Nov 2026 the prefab room's zone step took 337 s that way and 49 s
+  # with this redirection, same content (ff_compare.py). Standard input is NUL: nothing reads it in a headless run.
+  $q={ param($a) if($a -match '[\s"]'){ '"'+($a -replace '"','\"')+'"' } else { $a } }
+  $line=((@("$Work\zonetool.exe",'-headless','-unbuffered-io')+$ZtArgs) | ForEach-Object { & $q $_ }) -join ' '
+  $p=Start-Process -FilePath "$env:ComSpec" -ArgumentList "/d /s /c `"$line < NUL > `"$Work\zt-$tag.out.log`" 2> `"$Work\zt-$tag.err.log`"`"" -WorkingDirectory $Work -PassThru -WindowStyle Hidden
+  $zt=$null; for($k=0;$k -lt 50 -and -not $zt;$k++){ $zt=Get-CimInstance Win32_Process -Filter "ParentProcessId=$($p.Id) AND Name='zonetool.exe'" | Select-Object -First 1; if(-not $zt){ Start-Sleep -Milliseconds 200 } }
+  if($zt){ try{ Add-IW7ResourceProcess -Token $lease.Token -ProcessId $zt.ProcessId | Out-Null }catch{} }
   try{ Add-IW7ResourceProcess -Token $lease.Token -ProcessId $p.Id | Out-Null }catch{}
+  # time stamps for every log line (zt_timeline.py report <file> says where the minutes went)
+  try{ Start-Process -FilePath python -ArgumentList @('-I',"`"$PSScriptRoot\zt_timeline.py`"",'follow',"`"$Work\zt-$tag.out.log`"","`"$Work\zt-$tag.timeline.tsv`"",'--pid',"$($p.Id)") -WindowStyle Hidden | Out-Null }catch{}
   $deadline=[datetime]::UtcNow.AddSeconds($TimeoutSec)
   while(-not $p.WaitForExit(2000)){
     $log = Get-Content "$Work\zt-$tag.out.log" -Raw -ErrorAction SilentlyContinue
-    if($log -and $log.Contains('[ FATAL ]')){ Start-Sleep 2; if(-not $p.HasExited){ $p.Kill() }; "FATAL"; break }
-    if([datetime]::UtcNow -gt $deadline){ $p.Kill(); "TIMEOUT"; break }
+    if($log -and $log.Contains('[ FATAL ]')){ Start-Sleep 2; if(-not $p.HasExited){ if($zt){ Stop-Process -Id $zt.ProcessId -Force -ErrorAction SilentlyContinue }; $p.Kill() }; "FATAL"; break }
+    if([datetime]::UtcNow -gt $deadline){ if($zt){ Stop-Process -Id $zt.ProcessId -Force -ErrorAction SilentlyContinue }; $p.Kill(); "TIMEOUT"; break }
   }
   $p.WaitForExit(10000) | Out-Null
   "exit $($p.ExitCode)"; Get-Content "$Work\zt-$tag.out.log" -Tail 25; Get-Content "$Work\zt-$tag.err.log" -Tail 10

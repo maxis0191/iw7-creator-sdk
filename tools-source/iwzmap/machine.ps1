@@ -1,6 +1,6 @@
 param(
   [Parameter(Mandatory, Position=0)]
-  [ValidateSet('Runtime','Products','Server','Components','ZoneToolExe','ZoneToolSource','TemplateDump','GameRoot')]
+  [ValidateSet('Runtime','Products','Server','Components','ZoneToolExe','ZoneToolSource','TemplateDump','GameRoot','BakePython')]
   [string]$Name,
   [Parameter(Position=1)][string]$Child='',
   [switch]$MustExist)
@@ -14,6 +14,7 @@ param(
 #   ZoneToolSource  $env:IWZ_ZONETOOL_SOURCE  else <Products>\worktrees\<Child>
 #   TemplateDump    $env:IWZ_TEMPLATE_DUMP    else <Runtime>\iwz-map-ref-a\dump     stock dumps (cp_zmb, techsets_*)
 #   GameRoot        $env:IWZ_GAME_ROOT        no default: name a bench root, never the owner's game folder
+#   BakePython      $env:IWZ_BAKE_VENV        else <Runtime>\iwzmap-bake-venv     the light baker's Python environment (bake\New-BakeEnv.ps1)
 #
 # <Child> is appended to the location, except for ZoneToolExe and ZoneToolSource where it names the default
 # worktree and a set variable wins as it is. A script parameter passed by the caller never reaches this file.
@@ -27,11 +28,12 @@ $documents=[Environment]::GetFolderPath('MyDocuments')
 $runtime=Pick 'IWZ_RUNTIME' (Join-Path $documents 'IW7-Runtime')
 $products=Pick 'IWZ_PRODUCTS' (Join-Path $documents 'IW7-Products')
 $variable=@{Runtime='IWZ_RUNTIME';Products='IWZ_PRODUCTS';Server='IWZ_SERVER';Components='IWZ_COMPONENTS';
-  ZoneToolExe='IWZ_ZONETOOL_EXE';ZoneToolSource='IWZ_ZONETOOL_SOURCE';TemplateDump='IWZ_TEMPLATE_DUMP';GameRoot='IWZ_GAME_ROOT'}[$Name]
+  ZoneToolExe='IWZ_ZONETOOL_EXE';ZoneToolSource='IWZ_ZONETOOL_SOURCE';TemplateDump='IWZ_TEMPLATE_DUMP';GameRoot='IWZ_GAME_ROOT';BakePython='IWZ_BAKE_VENV'}[$Name]
 switch($Name){
   'Runtime'        { $path=$runtime }
   'Products'       { $path=$products }
   'Server'         { $path=Pick $variable (Join-Path $documents 'IW7-Paris-Server') }
+  'BakePython'     { $path=Pick $variable (Join-Path $runtime 'iwzmap-bake-venv') }
   'Components'     { $path=Pick $variable (Join-Path $products 'iw7-mod-components') }
   'TemplateDump'   { $path=Pick $variable (Join-Path $runtime 'iwz-map-ref-a\dump') }
   'ZoneToolExe'    { $path=Pick $variable (Join-Path $products "worktrees\$Child\build\bin\x64\Release\zonetool.exe"); $Child='' }

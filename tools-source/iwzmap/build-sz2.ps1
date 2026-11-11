@@ -22,11 +22,14 @@ param(
   [string]$FxReport='',
   [switch]$Darkness, [string]$DarkArgs='',                                                           # (DarkArgs: add_darkness options, e.g. "--dark-exposure 8 --exposures 4,6")                                                                                  # darkness\add_darkness.py: darkness + flashlight modules (generator IWZ_DARK=1)
   [string]$FxNcsSkip='',                                                                             # experiment: imported effects left out of the level effect list
-  [switch]$ReuseCompile)                                                                              # keep the previous iwzcompile output of the same -Src (dump\<map>)
+  [switch]$ReuseCompile,                                                                             # keep the previous iwzcompile output of the same -Src (dump\<map>)
+  [switch]$Incremental)                                                                              # keep the stock links and the module outputs of the previous assembly (same modules and dumps)
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
 $ErrorActionPreference='Stop'
 $S=$PSScriptRoot; $W=$Work; $D=$TemplateDump
+$times=[ordered]@{}; $t0=Get-Date; $tp=Get-Date
+function Lap([string]$Name){ $script:times[$Name]=[int]((Get-Date)-$script:tp).TotalSeconds; $script:tp=Get-Date }
 function Invoke-Zt([string[]]$a,[int]$t){
   for($k=0;$k -lt $Tries;$k++){
     try { return (& "$S\zt.ps1" -Work $W -ZtArgs $a -TimeoutSec $t -Owner $(if($env:IWZ_BUILD_OWNER){$env:IWZ_BUILD_OWNER}else{'IWZ Station Zero v2 level build'})) }
@@ -55,8 +58,15 @@ if($KeepSubmodels -and (Test-Path "$Src\plan.json")){
   if($LASTEXITCODE){ throw 'volume_check failed' }
 }
 if($CompileOnly){ return }
-if(Test-Path "$W\zonetool\$Map"){ Remove-Item -LiteralPath "$W\zonetool\$Map" -Recurse -Force }
-python -I "$S\assemble.py" $W $Map "$Src\cp_iwz.gsc" "$D\patch_cp_zmb" "$D\techsets_cp_zmb" "$D\techsets_global_cp" "$D\techsets_global" "$D\cp_zmb" | Select-Object -Last 3
+Lap 'compile'
+# -Incremental: the stock links and what the modules added stay when the modules ran with the same arguments last time
+# (the key below); only the generated world is linked again and the modules run again over the kept tree.
+$modKey=(@($D,$AudioSdk,$AudioBank,$AudioModels,$KitModels,$KitJson,$KitTier,$KitZones,($KitDumps -join '|'),($KitRuntimeCsv -join '|'),$FxImport,($FxDumps -join '|'),$FxNcsSkip,[string][bool]$Darkness,$DarkArgs) -join "`n")
+$keyFile="$W\zonetool\$Map\.iwz_modules.key"
+$inc=@()
+if($Incremental -and (Test-Path -LiteralPath $keyFile) -and ((Get-Content -LiteralPath $keyFile -Raw) -eq $modKey)){ $inc=@('--incremental'); 'incremental assembly: same modules as the kept tree' }
+elseif(Test-Path "$W\zonetool\$Map"){ if($Incremental){ 'incremental asked, but the modules or their arguments changed: assembling everything' }; Remove-Item -LiteralPath "$W\zonetool\$Map" -Recurse -Force }
+python -I "$S\assemble.py" $W $Map "$Src\cp_iwz.gsc" "$D\patch_cp_zmb" "$D\techsets_cp_zmb" "$D\techsets_global_cp" "$D\techsets_global" "$D\cp_zmb" @inc | Select-Object -Last 3
 if($LASTEXITCODE){ throw 'assemble failed' }
 python -I "$S\sz2_assemble.py" $W $Map $Src
 if($LASTEXITCODE){ throw 'sz2_assemble failed' }
@@ -103,7 +113,10 @@ $csv="$W\zone_source\$Map.csv"; $lines=Get-Content $csv
 $req=@('techsets_common','techsets_global','techsets_common_core_mp','techsets_global_core_mp','techsets_common_mp','techsets_global_mp','techsets_common_cp','techsets_global_cp','techsets_cp_zmb')|ForEach-Object {"require,$_"}
 Set-Content $csv (@($lines[0])+$req+$lines[1..($lines.Count-1)]) -Encoding ascii
 foreach($ext in 'ff','sabl','sabs'){ if(Test-Path "$W\zone\$Map.$ext"){ Remove-Item "$W\zone\$Map.$ext" } }
+[IO.File]::WriteAllText($keyFile,$modKey)
+Lap 'assemble'
 $b = Invoke-Zt @('-buildzone',$Map) 2400
+Lap 'zone'
 $b | Select-String -Pattern 'FATAL|TIMEOUT|ERROR|Successfully compiled' | Select-Object -First 15
 if(!(Test-Path "$W\zone\$Map.ff")){ $b | Select-Object -Last 30; throw 'buildzone produced no fastfile' }
 New-Item -ItemType Directory $UmOut -Force | Out-Null
@@ -114,4 +127,6 @@ foreach($ext in 'sabl','sabs'){
   if($AudioSdk -and (Test-Path "$W\zone\$Map.$ext")){ Copy-Item "$W\zone\$Map.$ext" "$UmOut\$Map.$ext" -Force }
 }
 if($Arena -and (Test-Path $Arena)){ Copy-Item $Arena "$UmOut\$Map.arena" -Force }
-"built $UmOut\$Map.ff $((Get-Item "$UmOut\$Map.ff").Length) bytes"
+$times.total=[int]((Get-Date)-$t0).TotalSeconds
+[ordered]@{map=$Map;ff_bytes=(Get-Item "$UmOut\$Map.ff").Length;incremental=[bool]$inc;seconds=$times;zonetool=$ZoneToolExe} | ConvertTo-Json | Set-Content "$UmOut.build.json"
+"built $UmOut\$Map.ff $((Get-Item "$UmOut\$Map.ff").Length) bytes in $($times.total) s (compile $($times.compile), assemble $($times.assemble), zone $($times.zone))"
