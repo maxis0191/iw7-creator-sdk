@@ -187,6 +187,33 @@ tome; required for complete rooms), `IWZ_KEEP_ENTSHAPES` (template entity
 shapes for the reused trigger model), `IWZ_LOG_PROBES`, `IWZ_DUMP_TOME`.
 Older routes (`IWZ_KEEP_UMBRA`, `IWZ_SLOT_SURFACES`) are superseded.
 
+### Build time: where it goes and the fast rebuild (TF4)
+
+Every ZoneTool run of `zt.ps1` prints how long it waited for the build reservation and writes
+`zt-<time>.timeline.tsv` beside its log (each line with the second it appeared); `python -I zt_timeline.py report
+<file>` lists the longest gaps and the time per message source. `build-sz2.ps1` and `build-prefab-room.ps1` write
+`<um>.build.json` with compile, assemble and zone seconds. `python -I proc_sample.py <pid>` samples any of your own
+running programs (stacks named from the .pdb with `--symbols`).
+
+Measured 11 Nov 2026 (ZoneTool main 26382dd unless said):
+
+| Step | Before | Now | What changed |
+| --- | --- | --- | --- |
+| Light bake (`bake\lmbake.py`, 256 rays, 3 bounces, Station Zero g27dw) | 225 s (recorded) | 250 s, measured with `bake\New-BakeEnv.ps1`'s environment | only when the render world changes; `-ReuseBake` keeps it otherwise |
+| Zone step, prefab room (ZoneTool itself) | 518 s | 49 s | ZoneTool's log went through PowerShell's `Start-Process` redirection; every unbuffered line waited on that pipe (the sampler: 90 % of the main thread in `NtWriteFile`). `zt.ps1` now redirects to the file through cmd.exe. Indexed asset and script string lookups (x64-zt `claude/zone-build-speed`) took it from 518 to 337 s before that |
+| Zone step, Station Zero g27dw | 482 s | see the table below | same |
+| Assemble (135,676 stock hard links, prefab room) | 166 s | seconds with `-Incremental` | `assemble.py --incremental` keeps the stock links of the previous assembly made from the same dumps and links only the generated world again; `build-sz2.ps1 -Incremental` also keeps what the modules (kit, effects, audio, darkness) added when they ran with the same arguments |
+
+`ff_compare.py <a.ff> <b.ff>` says whether two built zones hold the same map: it decompresses both and separates
+pointer residue (leftover addresses of ZoneTool's own process in fields the game rebuilds at load; they change with
+the heap of the run) from content. Two builds of the same source by the same binary differed in 58,613 bytes, all
+residue; the zone built with the direct log and with the indexed lookups has the same content as the main-line one
+(prefab room and Station Zero g27dw). Needs `pip install lz4`.
+
+Light baker environment: `pwsh bake\New-BakeEnv.ps1` makes `<IWZ_RUNTIME>\iwzmap-bake-venv` (numba, numpy, scipy,
+pillow at the versions of `bake\requirements.txt`, 22 s) and prints its python; `machine.ps1 BakePython` names it;
+texconv is `IWZ_TEXCONV` or `<Documents>\IW7-Tools\texconv-may2026\texconv.exe`.
+
 ## Check before you build (seconds, no game)
 
 The generator output (`colmap.hkx`, `navgraph.bin`, `layout.json`) already
