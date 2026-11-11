@@ -1,0 +1,9 @@
+{
+ "table": "paris/characters_5_8.csv",
+ "characters": [
+  {"key": "dj", "zone": "cp_zmb", "body": "body_zmb_hero_dj", "head": "head_zmb_dj", "arms": "viewmodel_zmb_hero_dj"},
+  {"key": "pam", "zone": "cp_disco", "body": "cp_disco_female_boss_pam_grier_hero", "head": "", "arms": "cp_disco_female_boss_pam_grier_viewmodel_arms"},
+  {"key": "kevin", "zone": "cp_rave", "body": "zmb_hero_k_smith", "head": "", "arms": "viewmodel_zmb_hero_k_smith"},
+  {"key": "elvira", "zone": "cp_town", "body": "fullbody_zmb_hero_elvira_player", "head": "", "arms": "viewmodel_zmb_hero_elvira"}
+ ]
+}

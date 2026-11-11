@@ -31,6 +31,7 @@ usage: kit_import.py <work dir> <map> --dump <zone>=<dump root>[;<root>...] [--d
        [--tier core] [--zones cp_disco,cp_final]) [--runtime-csv <csv> ...] [--allow-require] [--report report.json]
        [--dry-run]
        dump roots of a zone: the -dumpzonetypes dump of <zone> and the -dumpzone dump of techsets_<zone>
+A zone csv with no world rows (`com_map,`) gets the rows at its end: the same import fills a mod zone (char_pack.py).
 Exit 1 when a model, surface, material, state file or image is missing (nothing is written to the csv then).
 """
 import argparse, json, os, re, sys
@@ -40,34 +41,39 @@ HEX16 = re.compile(r'^[0-9a-f]{16}$')
 BADPATH = set(':*?"<>|\\')                     # strings of the .xmb that cannot be asset file names
 
 
+def _tail_ok(data, j):
+    """True when data[j:] (just after a model's last asset token, its proceduralBones) is exactly: aim-assist bone
+    strings, then the three trailing arrays (unknown03: 1-byte entries, unknownVec3: 12-byte vectors, unknown04 null).
+    No OFFSET token can then refer to a later entry, so an asset token before it can be dropped safely."""
+    m = re.compile(rb'(\x06\x01[^\x00]*\x00)*', re.S).match(data, j)
+    j = m.end()
+    for size in (1, 12):
+        m = re.compile(rb'\x08(\x00|\x01(....))', re.S).match(data, j)
+        if not m:
+            return False
+        j = m.end() + (size * int.from_bytes(m.group(2), 'little') if m.group(2) else 0)
+    return data[j:] == b'\x08\x00'
+
+
 def drop_scriptable(data, name):
     """XModel dump (.xmb) with its scriptableMoverDef token `07 01 <name> 00` replaced by the null token `07 00`.
-    The tail after it must be exactly: proceduralBones asset token, aim-assist bone strings, the three arrays
-    (unknown03 null, unknownVec3 null or 12-byte vectors, unknown04 null) - no OFFSET token can then refer to a
-    later entry, so dropping one entry is safe. Returns None when the layout differs."""
+    After it: the proceduralBones asset token, then the tail of _tail_ok. Returns None when the layout differs."""
     tok = b'\x07\x01' + name.encode() + b'\x00'
     i = data.rfind(tok)
     if i < 0:
         return None
-    j = i + len(tok)
-    def take(pat):
-        nonlocal j
-        m = re.compile(pat, re.S).match(data, j)
-        if not m:
-            return None
-        j = m.end(); return m
-    if not take(rb'\x07(\x00|\x01[^\x00]*\x00)'):
+    m = re.compile(rb'\x07(\x00|\x01[^\x00]*\x00)', re.S).match(data, i + len(tok))
+    if not m or not _tail_ok(data, m.end()):
         return None
-    while take(rb'\x06\x01[^\x00]*\x00'):
-        pass
-    if not take(rb'\x08\x00'):
-        return None
-    m = take(rb'\x08(\x00|\x01(....))')
-    if not m:
-        return None
-    if m.group(2):
-        j += 12 * int.from_bytes(m.group(2), 'little')
-    if data[j:] != b'\x08\x00':
+    return data[:i] + b'\x07\x00' + data[i + len(tok):]
+
+
+def drop_procedural_bones(data, name):
+    """XModel dump with its proceduralBones token (the last asset token) replaced by the null token `07 00`: the
+    model then has no procedural bone constraints (twist helpers). None when the layout differs."""
+    tok = b'\x07\x01' + name.encode() + b'\x00'
+    i = data.rfind(tok)
+    if i < 0 or not _tail_ok(data, i + len(tok)):
         return None
     return data[:i] + b'\x07\x00' + data[i + len(tok):]
 
@@ -120,6 +126,13 @@ def main(argv=None):
     ap.add_argument('--report', default='')
     ap.add_argument('--runtime-csv', action='append', default=[], help='dump csv of a zone loaded at runtime (shared techsets/shaders)')
     ap.add_argument('--allow-require', action='store_true', help='techset without a dump: require,techsets_<zone> (ZoneTool loads it)')
+    ap.add_argument('--share-runtime', action='store_true',
+                    help='a material, physics asset or procedural bone set that a --runtime-csv zone defines gets a '
+                         '`<type>,,<name>` reference row instead of a copy (a mod zone: the shared zones every map loads)')
+    ap.add_argument('--drop-procedural-bones', action='store_true',
+                    help='every procedural bone set of a model is dropped from a patched copy of the .xmb (ZoneTool '
+                         'handles procedural bones, even as a reference, only in enemy packs; the model then has no '
+                         'twist-helper constraints)')
     ap.add_argument('--keep-scriptable', action='store_true', help='keep the scriptable mover of the models (needs its dump and dependencies)')
     ap.add_argument('--material-map', action='append', default=[],
                     help='old=new: rename a material of the kit models (the subway train window glass to a translucent '
@@ -177,6 +190,22 @@ def main(argv=None):
             if len(q) == 2 and q[1]:
                 runtime.add((q[0], q[1]))
     ref_rows = []
+    zone_types = {}                             # zone -> {name: {types}} from the dump csv of each of its roots
+
+    def types_of(zone, n):
+        if zone not in zone_types:
+            zone_types[zone] = {}
+            for r in dumps.get(zone or '', []):
+                c = os.path.join(r, os.path.basename(os.path.normpath(r)) + '.csv')
+                if os.path.isfile(c):
+                    with open(c, errors='replace') as f:
+                        for ln in f:
+                            q = ln.strip().split(',')
+                            if len(q) == 2 and q[1]:
+                                zone_types[zone].setdefault(q[1], set()).add(q[0])
+                            elif len(q) == 3 and not q[1] and q[2]:
+                                zone_types[zone].setdefault(q[2], set()).add(',' + q[0])   # only referenced
+        return zone_types[zone].get(n, set())
 
     def ref(t, n):
         if (t, n) not in have:
@@ -272,9 +301,23 @@ def main(argv=None):
         for s in strs:
             if find(zone, os.path.join('materials', s + '.json')) or find(zone, os.path.join('xsurface', s + '.xsb')):
                 known.add(s)
+        shared_here = set()
         for s in sorted(strs - known - {name}):
             if b'\x07\x01' + s.encode() + b'\x00' not in xdata or set(s) & BADPATH:
                 continue
+            # Procedural bones first: ZoneTool (x64-zt zone.cpp) registers that asset type only in enemy packs
+            # (zones paris_enemy_*), so in any other zone even a `proceduralbones,,<name>` reference row is dropped
+            # without a word and the model is written with none (measured 11 Nov 2026: loader readback of the pack).
+            # The drop says so in the .xmb and in the report instead.
+            if a.drop_procedural_bones and ('proceduralbones' in types_of(zone, s) or ('proceduralbones', s) in runtime):
+                patched = drop_procedural_bones(xdata, s)
+                if patched is None:
+                    missing.append('procedural bones %s of %s (layout not understood)' % (s, name)); continue
+                xdata = patched; info['droppedProceduralBones'] = s; continue
+            if a.share_runtime:
+                t = next((t for t in ('physicsasset', 'physicsfxshape', 'proceduralbones') if (t, s) in runtime), None)
+                if t:
+                    ref(t, s); shared_here.add(s); info.setdefault('shared', []).append('%s,%s' % (t, s)); continue
             if find_all(zone, 'physicsasset', s) or find_all(zone, 'physicsfxshape', s) or find_all(zone, 'proceduralbones', s):
                 continue
             if a.keep_scriptable:
@@ -287,7 +330,7 @@ def main(argv=None):
             if patched is None:
                 missing.append('asset %s of %s (not a droppable scriptable mover)' % (s, name)); continue
             xdata = patched; info['droppedScriptable'] = s
-        if xdata is not None and (info.get('droppedScriptable') or remapped):
+        if xdata is not None and (info.get('droppedScriptable') or info.get('droppedProceduralBones') or remapped):
             writes.append((xdata, os.path.join(dst, 'xmodel', name + '.xmb')))
         else:
             add(xm, os.path.join('xmodel', name + '.xmb'))
@@ -297,7 +340,7 @@ def main(argv=None):
                 add(xs, os.path.join('xsurface', s + '.xsb')); info['surfaces'].append(s)
                 rep['surfaceBytes'] += os.path.getsize(xs)
             for sub in ('physicsasset', 'physicsfxshape', 'proceduralbones'):
-                for pp, rel in (find_all(zone, sub, s) if s and not set(s) & BADPATH else []):
+                for pp, rel in (find_all(zone, sub, s) if s and not set(s) & BADPATH and s not in shared_here else []):
                     add(pp, rel); info['physics'].append(rel.replace(os.sep, '/'))
             if find(zone, os.path.join('materials', s + '.json')):
                 info['materials'].append(s)
@@ -309,6 +352,8 @@ def main(argv=None):
             seen_mat.add(mat)
             if ('material', mat) in have:
                 rep['materials']['shared'].append(mat); continue
+            if a.share_runtime and ('material', mat) in runtime:
+                ref('material', mat); rep['materials']['shared'].append(mat); continue
             mj = find(zone, os.path.join('materials', mat + '.json'))
             md = json.load(open(mj))
             add(mj, os.path.join('materials', mat + '.json'))
@@ -340,12 +385,17 @@ def main(argv=None):
                 seen_img.add(img)
                 if ('image', img) in have:
                     rep['images']['shared'] += 1; continue
+                if img.startswith('$'):               # an engine image ($identitynormalmap...): always loaded
+                    ref('image', img); rep['images']['shared'] += 1; continue
                 ip = find(zone, os.path.join('images', img + '.iw7Image'))
                 if ip:
                     add(ip, os.path.join('images', img + '.iw7Image'))
                 else:
                     # ported / authored models (x64-zt-extensions env-model): the pixels are embedded from a .dds
                     ip = find(zone, os.path.join('images', img + '.dds'))
+                    if not ip and a.share_runtime and ',image' in types_of(zone, img) and 'image' not in types_of(zone, img):
+                        # the source zones themselves only reference it (no dump defines it): referenced the same way
+                        ref('image', img); rep['images'].setdefault('referencedOnly', []).append(img); continue
                     if not ip:
                         missing.append('image:' + img); continue
                     add(ip, os.path.join('images', img + '.dds'))
@@ -374,7 +424,8 @@ def main(argv=None):
         req = [r for r in ('require,' + z for z in rep['require']) if r not in lines]
         last_req = max([i for i, l in enumerate(lines) if l.startswith('require,')], default=0)
         lines[last_req + 1:last_req + 1] = req
-        at = next(i for i, l in enumerate(lines) if l.startswith(WORLD_FIRST))
+        # a map: before its world rows; a zone with no world (a mod zone): at the end
+        at = next((i for i, l in enumerate(lines) if l.startswith(WORLD_FIRST)), len(lines))
         lines[at:at] = [r for r in ref_rows + rows if r not in lines]
         open(csvp, 'w', newline='\n').write('\n'.join(lines) + '\n')
     rep['linked'] = linked
