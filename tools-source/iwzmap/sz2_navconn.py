@@ -14,7 +14,8 @@ Checks:
   2. every zone's cells are one component of their own, or join one component together with the cells of the
      zones they are linked to by doors / portals (a zone split by a stair is still one zone component through it);
   3. named routes: pit -> well_w -> deck, pit -> well_e -> deck, deck west half -> deck east half, ticket hall ->
-     stair_a -> platform_a (cell paths must exist).
+     stair_a -> platform_a (cell paths must exist), and the routes a scene-generated map lists in layout.json
+     (navconn_routes: the start zone to every other zone).
 Exit status 1 on any failure.
 """
 import argparse, collections, json, os, sys
@@ -93,9 +94,13 @@ def main():
         fails.append('nav seam ' + s_)
     if len(seams) > 10:
         fails.append('... %d nav seams in total' % len(seams))
+    far = set((lay or {}).get('far_zones', []))      # boxes reached only by script (a teleport): their own component
     for c in comps_sorted[1:]:
         m = comps[c]
         zones = collections.Counter(region_zone.get(cells[k][1], cells[k][1]) for k in m)
+        if far and set(zones) <= far:
+            notes.append('far zone component of %d cells: %s' % (len(m), dict(zones)))
+            continue
         regions = collections.Counter(cells[k][1] for k in m)
         ex = m[0]
         where = '(%d, %d, %d)' % ((ex[0] + 0.5) * CELL, (ex[1] + 0.5) * CELL, cells[ex][0])
@@ -122,6 +127,8 @@ def main():
     routes = [('pit', 'deck', ('pit', 'well_w', 'deck_mid', 'deck')), ('pit', 'deck', ('pit', 'well_e', 'deck_mid', 'deck_east', 'deck')),
               ('hall', 'deck', None), ('tunnel_a', 'deck', None)]
     routes += [('deck', r_, None) for r_ in sorted(set(v[1] for v in cells.values())) if r_.startswith('car_aisle')]   # hero car: zombies enter
+    # a scene-generated map (scenegen.py) names its own routes: the start zone to every other zone
+    routes += [(a_, b_, None) for a_, b_ in (lay or {}).get('navconn_routes', [])]
     rres = {}
     for ra, rb, via in routes:
         if ra not in region_zone or rb not in region_zone:
@@ -143,9 +150,10 @@ def main():
         for v in nbrs(u):
             if v not in seen and cells[v][1] in deck_regions:
                 seen.add(v); q.append(v)
-    rres['deck west->east on the deck'] = ok
-    if not ok:
-        fails.append('route deck west -> east on the deck has no cell path')
+    if west:      # the hand-built v2 map's deck regions (absent from a scene-generated map)
+        rres['deck west->east on the deck'] = ok
+        if not ok:
+            fails.append('route deck west -> east on the deck has no cell path')
     # (g27, coordinator 2026-11-08) corridor arch -> power switch: from the generator room cells at the corridor arch,
     # a cell within 80 of the power switch (layout interaction 'generator') on generator-room cells only
     sw = next((it for it in lay.get('interactions', []) if it.get('kind') == 'generator'), None) if lay else None
