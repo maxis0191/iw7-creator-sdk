@@ -1398,6 +1398,12 @@ class Emitter:
                        'rat_a_tat': 'perk_machine_bang_bangs_sign', 'flash': 'perk_machine_quickies_sign', 'zap': 'perk_machine_blue_bolts_sign',
                        'boom': 'perk_machine_bombstoppers_sign', 'more': 'perk_machine_mule_munchies_sign', 'smack': 'perk_machine_slappy_taffy_sign',
                        'fwoosh': 'perk_machine_trail_blazers_sign'}
+    # the bible's perks with no stock machine in the template map (06-PERKS.md): interaction name, placeholder body
+    PERK_NEW = {'deadeye_dewdrops': ('perk_machine_deadeye', 'park_soda_machine'),
+                'bakers_dozens': ('perk_machine_bakers', 'popcorn_machine_iw6'),
+                'bon_voyages': ('perk_machine_voyage', 'zmb_mobile_ticket_booth'),
+                'sour_grudges': ('perk_machine_grudge', 'park_arcade_standing_09'),
+                'double_takes': ('perk_machine_double', 'park_arcade_standing_05_off')}
     WHEEL_SCRIPTABLES = ['pf141_auto1', 'pf161_auto1', 'pf162_auto1', 'pf142_auto1', 'pf154_auto1', 'pf158_auto1', 'pf160_auto1', 'pf135_auto1', 'pf165_auto1']
     # wall weapons by class: the stock weapons of Spaceland's wall-buy list (02-WORLD.md section 4); a class the list
     # lacks gets a stand-in, recorded in the layout
@@ -1475,6 +1481,14 @@ class Emitter:
             else:
                 org, yaw = None, None
             layout['markers'].append(dict(m, origin=org, yaw=yaw))
+            if m['kind'] == 'perk_new' and org is not None and m['id'] in self.PERK_NEW:
+                # P1 (perks/cp_iwz_perks.gsc): the perk's stock interaction struct (needs power) and a placeholder body
+                # (a stock model the template zone has) until P2's machine models
+                name, body = self.PERK_NEW[m['id']]
+                self.istruct(name, org, yaw, z.id, parameters='requires_power')
+                self.ent(classname='script_model', targetname='iwz_perk_body', noteworthy=name, model=body,
+                         origin=self.fmt(org), angles='0 %g 0' % yaw)
+                layout['interactions'][-1].update({'perk_new': m['id'], 'body': body})
 
     def istruct(self, kind, origin, yaw, zone, **kw):
         self.ent(classname='script_struct', targetname='interaction', noteworthy=kind, origin=self.fmt(origin), angles='0 %g 0' % yaw, **kw)
