@@ -36,7 +36,15 @@ RISE = 8.0           # stock riser height
 TREAD = (14.5, 20.0)  # accepted tread depth (a 32-unit nav cell on the slope then steps at most 17.7 of the 18 allowed)
 NAV_LIFT = 2.0       # navigation above the clip sheet / floor
 HEAD = 96            # least headroom over any walkable point
-TAG_SOLID, TAG_STAIR_CLIP, TAG_RISER, TAG_TREAD = 382, 411, 387, 402
+TAG_SOLID = 382
+# Stock stair surface tags (clip sheet 411, riser 387, tread 402) mix several surface runs in one collision section. The
+# first 19-zone build with them crashed the dedicated server twice in Havok geometry code (sub_1410AD7F0, called from
+# sub_14100D000) while a zombie on a flight closed on the player (W1a runs hl-a, 11 Nov 2026). Default: one solid tag,
+# as the old map's passing stairs had; IWZ_STAIR_TAGS=stock brings the tags back for an A/B.
+if os.environ.get('IWZ_STAIR_TAGS') == 'stock':
+    TAG_STAIR_CLIP, TAG_RISER, TAG_TREAD = 411, 387, 402
+else:
+    TAG_STAIR_CLIP = TAG_RISER = TAG_TREAD = None
 LM = (0.8018, 0.5645)  # a lit texel of the template lightmap (neutral)
 SIDES = ('south', 'north', 'west', 'east')
 
@@ -1472,7 +1480,7 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
         expects = []
         for name, a, b in cases[k:k + per_plan]:
             tag = re.sub(r'[^a-z0-9_]', '_', name.lower())[:40]
-            steps += [{'do': 'tp', 'at': b}, {'do': 'spawn', 'tag': tag, 'at': a, 'count': count},
+            steps += [{'do': 'kill'}, {'do': 'tp', 'at': b}, {'do': 'spawn', 'tag': tag, 'at': a, 'count': count},
                       {'do': 'chase', 'tag': tag, 's': chase_s}, {'do': 'kill', 'tag': tag}]
             expects.append({'do': 'expect', 'that': 'chase:%s.reached' % tag, 'eq': '@chase:%s.total' % tag,
                             'why': 'every zombie gets from %s to the player at %s (%s)' % (a, b, name)})
@@ -1487,13 +1495,19 @@ def lab_report(src, runs):
     survey points per zone (which zones the navigation reaches from the start with every door open)"""
     import glob, re
     lay = json.load(open(os.path.join(src, 'layout.json')))
-    cases, verdicts, survey = {}, {}, None
+    cases, verdicts, survey, made = {}, {}, None, {}
     for run in runs:
         for log in glob.glob(os.path.join(run, '**', 'client.stdout.log'), recursive=True) + glob.glob(os.path.join(run, '**', 'server.stdout.log'), recursive=True):
             for ln in open(log, encoding='utf-8', errors='replace'):
+                m = re.search(r'GL SPAWN i=\d+ tag=(\S+) made=(\d+)', ln)
+                if m:
+                    made[m.group(1)] = int(m.group(2))
                 m = re.search(r'SP_END case=(\S+) result=(\d+)/(\d+) \S+ died=(\d+) ms=(\d+)', ln)
                 if m:
-                    cases[m.group(1)] = {'reached': int(m.group(2)), 'total': int(m.group(3)), 'died': int(m.group(4)), 'ms': int(m.group(5))}
+                    # the chase counts every zombie alive (strays of earlier cases too): a case passes when as many
+                    # arrive as the case spawned
+                    cases[m.group(1)] = {'reached': int(m.group(2)), 'total': int(m.group(3)), 'died': int(m.group(4)), 'ms': int(m.group(5)),
+                                         'made': made.get(m.group(1))}
         for res in glob.glob(os.path.join(run, '**', 'gamelab.result.json'), recursive=True):
             d = json.load(open(res, encoding='utf-8'))
             verdicts[os.path.basename(os.path.dirname(os.path.dirname(res)))] = d.get('verdict') or d.get('class')
@@ -1509,7 +1523,11 @@ def lab_report(src, runs):
     names = [c.split('=')[0] for c in (expected['climbs'] + '|' + expected['routes']).split('|') if c]
     tag = lambda n: re.sub(r'[^a-z0-9_]', '_', n.lower())[:40]
     rows = [(n, cases.get(tag(n))) for n in names]
-    return {'cases': rows, 'passed': sum(1 for _n, c in rows if c and c['total'] and c['reached'] == c['total']),
+    ok = lambda c: bool(c) and c['reached'] >= (c.get('made') or c['total']) > 0
+    for _n, c in rows:
+        if c:
+            c['pass'] = ok(c)
+    return {'cases': rows, 'passed': sum(1 for _n, c in rows if ok(c)),
             'run': sum(1 for _n, c in rows if c), 'expected': len(rows), 'verdicts': verdicts,
             'survey': {'points': len(survey['points']) if survey else 0, 'per_zone': dict(per_zone),
                        'zones_missing': [z for z, zd in zones.items() if not zd.get('far') and not per_zone.get(z)] if survey else None}}
@@ -1595,7 +1613,7 @@ def main(argv=None):
     if a.cmd == 'labreport':
         r = lab_report(a.src, a.runs)
         for n, c in r['cases']:
-            print('CASE %-32s %s' % (n, 'not run' if not c else '%d/%d reached, died %d, %d ms' % (c['reached'], c['total'], c['died'], c['ms'])))
+            print('CASE %-32s %s' % (n, 'not run' if not c else '%s %d/%d reached (spawned %s), died %d, %d ms' % ('PASS' if c['pass'] else 'FAIL', c['reached'], c['total'], c.get('made'), c['died'], c['ms'])))
         print('verdicts', r['verdicts'])
         print('survey points %d; per zone %s; zones not reached %s' % (r['survey']['points'], r['survey']['per_zone'], r['survey']['zones_missing']))
         print('cases: %d expected, %d run, %d with every zombie arriving' % (r['expected'], r['run'], r['passed']))
