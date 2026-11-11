@@ -1512,7 +1512,7 @@ def import_props(scene_path, old_layout, mapping, exclude=r'rubble|plank|barrica
     return dict(out), dict(rep)
 
 
-def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
+def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45, player=True):
     """headless gamelab plans (iw7-paris-server ops/gamelab/Invoke-GameLabHeadless.ps1 -UsermapDir) from an emit:
     doors opened, then for every flight a zombie climb up and down (zombies placed at the foot or the head, the bot at
     the other end) and for every door and link a zombie crossing (zombies placed in one zone, the bot in the other);
@@ -1526,7 +1526,7 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
             continue
         name, pts = c.split('=')
         p = [[float(v) for v in q.split(',')] for q in pts.split('/')]
-        cases.append((name, p[0], p[-1]))
+        cases.append((name, p[0], p[-1], p))
     lay = json.load(open(os.path.join(src, 'layout.json')))
     mapname = mapname or lay.get('map', 'cp_iwz')
     start = lay['starts'][0]
@@ -1542,7 +1542,7 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
     for k in range(0, len(cases), per_plan):
         steps = [{'do': 'waves', 'on': False}, {'do': 'doors'}]
         expects = []
-        for name, a, b in cases[k:k + per_plan]:
+        for name, a, b, pts in cases[k:k + per_plan]:
             tag = re.sub(r'[^a-z0-9_]', '_', name.lower())[:40]
             # round-1 zombies walk about 34 units a second (measured, W1a runs hl-b, 11 Nov 2026) and start after
             # about 3 s: the chase gets the navigation length at 20 u/s plus 10 s, at least chase_s
@@ -1550,6 +1550,12 @@ def lab_plans(src, mapname=None, per_plan=26, count=3, chase_s=45):
             if nav is not None:
                 ln, _p = nav.route(nav.nearest(*a), nav.nearest(*b))
             s = max(chase_s, int(math.ceil((ln or 0) / 20.0 + 10)))
+            if player:
+                # the player walks it both ways with player physics (gamelab move step), before the zombies come
+                steps += [{'do': 'kill'}, {'do': 'move', 'name': tag[:36] + '_fwd', 'path': pts},
+                          {'do': 'move', 'name': tag[:36] + '_bck', 'path': pts[::-1]}]
+                expects += [{'do': 'expect', 'that': 'move:%s_%s.reached' % (tag[:36], w), 'eq': len(pts) - 1,
+                             'why': 'the player walks %s %s' % (name, 'forward' if w == 'fwd' else 'back')} for w in ('fwd', 'bck')]
             steps += [{'do': 'kill'}, {'do': 'tp', 'at': b}, {'do': 'spawn', 'tag': tag, 'at': a, 'count': count},
                       {'do': 'chase', 'tag': tag, 's': s}, {'do': 'kill', 'tag': tag}]
             expects.append({'do': 'expect', 'that': 'chase:%s.reached' % tag, 'eq': '@chase:%s.total' % tag,
@@ -1645,6 +1651,7 @@ def main(argv=None):
     p.add_argument('--out', help='write {zone: [props]} (one prop a line); name it in the props_files of the scene')
     p = sub.add_parser('labplans'); p.add_argument('src'); p.add_argument('out'); p.add_argument('--per-plan', type=int, default=26)
     p.add_argument('--count', type=int, default=3); p.add_argument('--chase', type=int, default=45)
+    p.add_argument('--no-player', action='store_true', help='zombie cases only (no player walks)')
     p = sub.add_parser('labreport'); p.add_argument('src'); p.add_argument('runs', nargs='+'); p.add_argument('--json')
     a = ap.parse_args(argv)
     if a.cmd == 'check':
@@ -1695,7 +1702,7 @@ def main(argv=None):
     if a.cmd == 'labplans':
         os.makedirs(a.out, exist_ok=True)
         lay = json.load(open(os.path.join(a.src, 'layout.json')))
-        for pl in lab_plans(a.src, lay.get('map', 'cp_iwz'), a.per_plan, a.count, a.chase):
+        for pl in lab_plans(a.src, lay.get('map', 'cp_iwz'), a.per_plan, a.count, a.chase, not a.no_player):
             path = os.path.join(a.out, pl['name'] + '.json')
             json.dump(pl, open(path, 'w'), indent=1)
             print('%s: %d steps' % (path, len(pl['steps'])))
