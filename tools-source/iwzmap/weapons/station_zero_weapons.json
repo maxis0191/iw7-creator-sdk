@@ -25,6 +25,7 @@
         "penetrateType": 3,
         "damage": 120,
         "mid3Damage": 120,
+        "ammoDropStockMin": 0,
         "iStartAmmo": 12,
         "iMaxAmmo": 12,
         "iReloadAmmoAdd": 12,
@@ -36,7 +37,6 @@
       "top": {
         "iClipSize": 12,
         "penetrateMultiplier": 4.0,
-        "ammoDropStockMin": 0,
         "ammoDropStockMax": 0,
         "szLootTable": "",
         "attachments": ["spasslugpap1"],

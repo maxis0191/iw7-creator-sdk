@@ -209,8 +209,10 @@ class Module:
         src = open(g["src"], encoding="utf-8").read()
         src = src.replace("scripts\\cp\\maps\\cp_iwz\\cp_iwz_", "scripts\\cp\\maps\\%s\\%s_" % (self.map, self.map))
         level = os.path.join(self.root, "scripts", "cp", "maps", self.map, self.map + ".gsc")
-        if not self.need(level, "level script") or self.check:
+        if self.check:          # before assembly the level script is not in the tree yet: checked at the real run
             self.report["gsc"].append({"module": mod})
+            return
+        if not self.need(level, "level script"):
             return
         fresh_write(os.path.join(self.root, *rel.split("/")), src)
         text = open(level, encoding="utf-8").read()

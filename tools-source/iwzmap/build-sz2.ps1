@@ -40,6 +40,14 @@ function Invoke-Zt([string[]]$a,[int]$t){
   }
   throw 'resource lease not obtained'
 }
+if($Weapons){
+  # the weapons recipe is checked before anything waits for the build slot: a wrong field fails here in a second,
+  # not after the compile (11 Nov 2026: a recipe field error surfaced after 35 minutes of queue and compile)
+  $wc=@($W,$Map,$Weapons,'--check','--var',"HERE=$(Split-Path -Parent (Resolve-Path $Weapons))",'--var',"DUMP=$D")
+  foreach($v in $WeaponVars){ $wc+=@('--var',$v) }
+  python -I "$S\weapons\add_weapons.py" @wc
+  if($LASTEXITCODE){ throw 'add_weapons --check failed: fix the recipe before the build' }
+}
 Copy-Item $ZoneToolExe "$W\zonetool.exe" -Force
 if($ReuseCompile -and (Test-Path "$W\dump\$Map\maps\cp\$Map.d3dbsp.ents")){ "reusing compiled $W\dump\$Map" } else {
 if(Test-Path "$W\iwz_src"){ Remove-Item "$W\iwz_src" -Recurse -Force }
