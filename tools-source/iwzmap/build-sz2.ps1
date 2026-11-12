@@ -44,10 +44,12 @@ Copy-Item $ZoneToolExe "$W\zonetool.exe" -Force
 # compile and 2,371 s for the zone (4,573 s of wall time for about 7 minutes of work). The assembly between them is
 # held too: about 1 s incremental, 5 to 8 minutes for a full one.
 . (& "$S\scheduler.ps1" '')
+# The whole build (compile, assembly, zone) runs zonetool in $W: it holds that folder, not the machine.
+$named=@{}; if((Get-Command Enter-IW7ResourceLease).Parameters.ContainsKey('Resources')){ $named.Resources=@("zonetool:$W") }
 $held=$null; $heldClock=[Diagnostics.Stopwatch]::StartNew()
 $ownerName=if($env:IWZ_BUILD_OWNER){$env:IWZ_BUILD_OWNER}else{'IWZ Station Zero v2 level build'}
 while(-not $held){
-  try{ $held=Enter-IW7ResourceLease -Scope $W -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner $ownerName }
+  try{ $held=Enter-IW7ResourceLease -Scope $W -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner $ownerName @named }
   catch{
     $busy=if(Get-Command Test-IW7RetryableRefusal -ErrorAction SilentlyContinue){ (Test-IW7RetryableRefusal $_.Exception.Message) -or $_.Exception.Message -like 'Resource admission lock busy*' }else{ $_.Exception.Message -match 'Resource busy|busy' }
     if(!$busy -or $heldClock.Elapsed.TotalSeconds -gt $Tries*15){ throw }
