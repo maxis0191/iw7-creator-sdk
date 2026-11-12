@@ -20,7 +20,6 @@ param(
   [string]$FxImport='',                                                                               # fx\fx_import.py: foreign-zone vfx '<zone>:<vfx>,...'
   [string[]]$FxDumps=@(),                                                                             # '<zone>=<vfx dump root>;<kit dump root>;<techsets dump root>'
   [string]$FxReport='',
-  [switch]$Crowd, [string]$CrowdModel='police_officer_zombie',                                    # crowd\add_crowd.py: zombies beyond the 24 agents (E2), crowd body = a copy of CrowdModel with no scriptable
   [switch]$Darkness, [string]$DarkArgs='',                                                         # (DarkArgs: add_darkness options, e.g. "--dark-exposure 8 --exposures 4,6")                                                                                  # darkness\add_darkness.py: darkness + flashlight modules (generator IWZ_DARK=1)
   [string]$FxNcsSkip='',                                                                             # experiment: imported effects left out of the level effect list
   [switch]$ReuseCompile,                                                                             # keep the previous iwzcompile output of the same -Src (dump\<map>)
@@ -43,12 +42,29 @@ $times=[ordered]@{}; $t0=Get-Date; $tp=Get-Date
 function Lap([string]$Name){ $script:times[$Name]=[int]((Get-Date)-$script:tp).TotalSeconds; $script:tp=Get-Date }
 function Invoke-Zt([string[]]$a,[int]$t){
   for($k=0;$k -lt $Tries;$k++){
-    try { return (& "$S\zt.ps1" -Work $W -ZtArgs $a -TimeoutSec $t -Owner $(if($env:IWZ_BUILD_OWNER){$env:IWZ_BUILD_OWNER}else{'IWZ Station Zero v2 level build'})) }
+    try { return (& "$S\zt.ps1" -Work $W -ZtArgs $a -TimeoutSec $t -HeldLease $script:held -Owner $(if($env:IWZ_BUILD_OWNER){$env:IWZ_BUILD_OWNER}else{'IWZ Station Zero v2 level build'})) }
     catch { if($_.Exception.Message -match 'Resource busy|Heavy job already reserved|busy|wait before heavy admission|wait for its owner'){ Start-Sleep 15; continue }; throw }
   }
   throw 'resource lease not obtained'
 }
 Copy-Item $ZoneToolExe "$W\zonetool.exe" -Force
+# One build reservation for the whole build (compile, assembly, zone). Each ZoneTool run used to take its own, so the
+# zone step went back to the end of the machine's waiting order after the compile: W2 build b waited 1,721 s for the
+# compile and 2,371 s for the zone (4,573 s of wall time for about 7 minutes of work). The assembly between them is
+# held too: about 1 s incremental, 5 to 8 minutes for a full one.
+. (& "$S\scheduler.ps1" '')
+$held=$null; $heldClock=[Diagnostics.Stopwatch]::StartNew()
+$ownerName=if($env:IWZ_BUILD_OWNER){$env:IWZ_BUILD_OWNER}else{'IWZ Station Zero v2 level build'}
+while(-not $held){
+  try{ $held=Enter-IW7ResourceLease -Scope $W -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner $ownerName }
+  catch{
+    $busy=if(Get-Command Test-IW7RetryableRefusal -ErrorAction SilentlyContinue){ (Test-IW7RetryableRefusal $_.Exception.Message) -or $_.Exception.Message -like 'Resource admission lock busy*' }else{ $_.Exception.Message -match 'Resource busy|busy' }
+    if(!$busy -or $heldClock.Elapsed.TotalSeconds -gt $Tries*15){ throw }
+    Start-Sleep -Seconds 5
+  }
+}
+"waited for the build reservation $([int]$heldClock.Elapsed.TotalSeconds) s (held for compile, assembly and zone)"
+try {
 if($ReuseCompile -and (Test-Path "$W\dump\$Map\maps\cp\$Map.d3dbsp.ents")){ "reusing compiled $W\dump\$Map" } else {
 if(Test-Path "$W\iwz_src"){ Remove-Item "$W\iwz_src" -Recurse -Force }
 Copy-Item -Recurse $Src "$W\iwz_src"
@@ -72,7 +88,7 @@ if($CompileOnly){ return }
 Lap 'compile'
 # -Incremental: the stock links and what the modules added stay when the modules ran with the same arguments last time
 # (the key below); only the generated world is linked again and the modules run again over the kept tree.
-$modKey=(@($D,$AudioSdk,$AudioBank,$AudioModels,$KitModels,$KitJson,$KitTier,$KitZones,($KitDumps -join '|'),($KitRuntimeCsv -join '|'),$FxImport,($FxDumps -join '|'),$FxNcsSkip,[string][bool]$Darkness,$DarkArgs,[string][bool]$Crowd,$CrowdModel,$DeadeyeScriptable) -join "`n")
+$modKey=(@($D,$AudioSdk,$AudioBank,$AudioModels,$KitModels,$KitJson,$KitTier,$KitZones,($KitDumps -join '|'),($KitRuntimeCsv -join '|'),$FxImport,($FxDumps -join '|'),$FxNcsSkip,[string][bool]$Darkness,$DarkArgs,$DeadeyeScriptable) -join "`n")
 $keyFile="$W\zonetool\$Map\.iwz_modules.key"
 $inc=@()
 if($Incremental -and (Test-Path -LiteralPath $keyFile) -and ((Get-Content -LiteralPath $keyFile -Raw) -eq $modKey)){ $inc=@('--incremental'); 'incremental assembly: same modules as the kept tree' }
@@ -113,11 +129,6 @@ if($deScr -and (Test-Path $deScr)){
   # P1: Deadeye Dewdrops' own machine (cp_disco scriptable) on the spare template perk scriptable scenegen relocated
   python -I "$S\perks\add_deadeye_machine.py" "$W\zone_source\$Map.csv" "$W\zonetool\$Map" $Map --scriptable $deScr --report "$UmOut.deadeye.json"
   if($LASTEXITCODE){ throw 'add_deadeye_machine failed' }
-}
-if($Crowd){
-  # crowd module (E2): the crowd body model without a scriptable, the module script, the level script's call
-  python -I "$S\crowd\add_crowd.py" "$W\zone_source\$Map.csv" "$W\zonetool\$Map" $Map --stock-xmodel "$D\cp_zmb\xmodel" --model $CrowdModel
-  if($LASTEXITCODE){ throw 'add_crowd failed' }
 }
 if($Darkness){
   # darkness module + weapon flashlight (darkness agent): rawfiles after the level script row
@@ -167,3 +178,11 @@ if($Arena -and (Test-Path $Arena)){ Copy-Item $Arena "$UmOut\$Map.arena" -Force 
 $times.total=[int]((Get-Date)-$t0).TotalSeconds
 [ordered]@{map=$Map;ff_bytes=(Get-Item "$UmOut\$Map.ff").Length;incremental=[bool]$inc;seconds=$times;zonetool=$ZoneToolExe} | ConvertTo-Json | Set-Content "$UmOut.build.json"
 "built $UmOut\$Map.ff $((Get-Item "$UmOut\$Map.ff").Length) bytes in $($times.total) s (compile $($times.compile), assemble $($times.assemble), zone $($times.zone))"
+} finally {
+  # release the build reservation; the scheduler keeps it while a compiler of ours may still be ending
+  $relUntil=[datetime]::UtcNow.AddMinutes(30); $done=$false
+  while(-not $done){
+    try{ Exit-IW7ResourceLease -Token $held.Token | Out-Null; $done=$true }
+    catch{ if($_.Exception.Message -notlike 'Heavy child may still be alive*' -or [datetime]::UtcNow -ge $relUntil){ throw }; Start-Sleep -Seconds 5 }
+  }
+}

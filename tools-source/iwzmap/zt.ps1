@@ -1,6 +1,7 @@
 param([Parameter(Mandatory)][string]$Work,[Parameter(Mandatory)][string[]]$ZtArgs,[string]$Owner='IWZ custom map zonetool',[int]$TimeoutSec=1200,
   [string]$Scheduler='',                                 # Resource-Scheduler.Core.ps1; empty: scheduler.ps1 resolves and guards it
-  [ValidateRange(0,14400)][int]$WaitForSlotSeconds=0)    # wait this long for the shared reservation, asking the scheduler every 5 s
+  [ValidateRange(0,14400)][int]$WaitForSlotSeconds=0,   # wait this long for the shared reservation, asking the scheduler every 5 s
+  [object]$HeldLease=$null)                            # a build lease the caller already holds (build-sz2.ps1: one lease for compile, assembly and zone): run under it, leave it held
 # One ZoneTool run under the machine-wide build reservation.
 $ErrorActionPreference='Stop'
 . (& "$PSScriptRoot\scheduler.ps1" $Scheduler)
@@ -11,14 +12,14 @@ $until=[datetime]::UtcNow.AddSeconds($WaitForSlotSeconds)
 # A build that only looked at the status until nothing was held never got a place and waited 25 to 75 minutes behind
 # other agents' back-to-back sessions. A busy slot and a compiler or extractor running without a reservation are
 # asked again; any other refusal is thrown at once.
-$lease=$null
+$lease=$HeldLease
 while(-not $lease){
   try{ $lease=Enter-IW7ResourceLease -Scope $Work -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner $Owner }
   catch{
     # The scheduler names its own retryable refusals (Test-IW7RetryableRefusal, with the waiting order): use them. On
     # 11 Nov 2026 a dump stopped on 'Reserved process identity unavailable; reservation retained.' (another agent's
     # leased process ending), a refusal the scheduler counts as a wait, while this loop knew only two others.
-    $busy=if(Get-Command Test-IW7RetryableRefusal -ErrorAction SilentlyContinue){ Test-IW7RetryableRefusal $_.Exception.Message }
+    $busy=if(Get-Command Test-IW7RetryableRefusal -ErrorAction SilentlyContinue){ (Test-IW7RetryableRefusal $_.Exception.Message) -or $_.Exception.Message -like 'Resource admission lock busy*' }
       else{ $_.Exception.Message -like 'Resource busy:*' -or $_.Exception.Message -like 'An existing compiler/extractor/Java analysis is running;*' }
     # the scheduler's admission lock held by another caller for its 5 s bound is a moment of contention, not a refusal
     # (11 Nov 2026: a queued P1 dump stopped on it after 20 min of waiting; server runners: PR #478)
@@ -80,7 +81,8 @@ r=b.ToString();return false;},IntPtr.Zero);return r;}}
 } finally {
   # The scheduler keeps a Build lease while ANY compiler runs on the machine, ours or not ('Heavy child may still be
   # alive'). Once our ZoneTool has exited, ask again every 5 s for up to 30 min instead of leaving the lease behind.
-  $released=$false; $exitUntil=[datetime]::UtcNow.AddMinutes(30)
+  $released=[bool]$HeldLease                              # a held lease is the caller's to release
+  $exitUntil=[datetime]::UtcNow.AddMinutes(30)
   while(-not $released){
     try{ Exit-IW7ResourceLease -Token $lease.Token | Out-Null; $released=$true }
     catch{

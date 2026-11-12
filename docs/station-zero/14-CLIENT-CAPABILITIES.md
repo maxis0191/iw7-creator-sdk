@@ -1,3 +1,5 @@
+> **Note (11 Nov 2026):** the "hybrid crowd" in this document is withdrawn. The crowd module was removed on 11 Nov 2026 because script-moved bodies are not real zombies; real capacity is engine work (server repository docs/ZOMBIE-CAPACITY.md).
+
 # 14 · WHAT THE PLAYER'S GAME MUST BE ABLE TO DO
 
 Owner's principle (11 Nov 2026): everything must be playable by real players on the public servers, with good
