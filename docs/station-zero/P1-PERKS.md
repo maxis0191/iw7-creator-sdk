@@ -14,11 +14,11 @@ not measured here).
 | Racin' Stripes | Platform A West | 2000 | power | stock machine | stock |
 | Bang Bangs | Transit Police Post | 2000 | power | stock machine | stock |
 | Quickies | Car Barn | 3000 | power | stock machine | stock |
-| Deadeye Dewdrops | Signal Cabin | 1500 | power | PLACEHOLDER body `park_soda_machine` + the perk's icon over it | stock icon (image from the cp_disco dump) |
-| Baker's Dozens | Lodestar Exchange | 3000 | power | PLACEHOLDER body `popcorn_machine_iw6` + icon | PLACEHOLDER icon |
-| Bon Voyages | the Parlour | 2000 | power | PLACEHOLDER body `zmb_mobile_ticket_booth` + icon | PLACEHOLDER icon |
-| Sour Grudges | the Boneyard | 2500 | power | PLACEHOLDER body `park_arcade_standing_09` + icon | PLACEHOLDER icon |
-| Double Takes | Underpass Arcade | 3000 | power | PLACEHOLDER body `park_arcade_standing_05_off` + icon | PLACEHOLDER icon, a dim copy while it recharges |
+| Deadeye Dewdrops | Signal Cabin | 1500 | power | the game's own Deadeye machine (cp_disco scriptable `zm_perk_machine_deadeye_sign`, models `cp_disco_perk_dewdrops[_off]`) on the spare template perk scriptable; the stock Deadeye machine code runs its sign and lights (from build p2) | stock icon (image from the cp_disco dump) |
+| Baker's Dozens | Lodestar Exchange | 3000 | power | authored machine `iwz_perk_machine_bakers` (perks/machines) + icon over it (from build p2) | vector icon (to redraw with P2) |
+| Bon Voyages | the Parlour | 2000 | power | authored machine `iwz_perk_machine_voyage` + icon (from build p2) | vector icon |
+| Sour Grudges | the Boneyard | 2500 | power | authored machine `iwz_perk_machine_grudge` + icon (from build p2) | vector icon |
+| Double Takes | Underpass Arcade | 3000 | power | authored machine `iwz_perk_machine_double` + icon (from build p2) | vector icon, a dim copy while it recharges |
 
 Rules on this map: at most six perks; every perk is lost on going down (the stock rule; the new perks are in the stock
 perk table, so it applies to them); a perk used again at its machine is sold back for nothing (stock); the Validated

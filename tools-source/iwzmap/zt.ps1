@@ -84,7 +84,11 @@ r=b.ToString();return false;},IntPtr.Zero);return r;}}
   while(-not $released){
     try{ Exit-IW7ResourceLease -Token $lease.Token | Out-Null; $released=$true }
     catch{
-      if(-not ($p -and $p.HasExited) -or $_.Exception.Message -notlike 'Heavy child may still be alive*' -or [datetime]::UtcNow -ge $exitUntil){ throw }
+      # a busy admission lock is a moment of contention too: before 12 Nov 2026 it was thrown here, the build's Invoke-Zt
+      # took it for a busy slot and asked again while its own lease was still held ('Heavy job already reserved, including
+      # this worktree'), holding the machine for an hour
+      $retry=$_.Exception.Message -like 'Heavy child may still be alive*' -or $_.Exception.Message -like 'Resource admission lock busy*'
+      if(-not ($p -and $p.HasExited) -or -not $retry -or [datetime]::UtcNow -ge $exitUntil){ throw }
       Start-Sleep -Seconds 5
     }
   }
