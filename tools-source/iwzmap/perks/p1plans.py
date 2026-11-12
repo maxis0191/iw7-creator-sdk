@@ -103,7 +103,11 @@ def main(argv=None):
           exp('use:flash_full.perks1', 'eq', 6, 'still six')]
     if not given:
         ex += [exp('use:b_%s.spent' % k[13:], 'eq', PRICE[k], '%s at %d' % (k, PRICE[k])) for k in ['perk_machine_deadeye', 'perk_machine_bakers', 'perk_machine_voyage', 'perk_machine_grudge']]
-        ex += [exp('use:double_full.spent', 'eq', 0, 'Double Takes refused at six'), exp('probe:assets.bodies', 'eq', 5, 'five placeholder machine bodies'),
+        ex += [exp('use:double_full.spent', 'eq', 0, 'Double Takes refused at six'), exp('probe:assets.bodies', 'eq', 4, 'the four authored machines are in the map'),
+               exp('probe:assets.deadeye_scriptable', 'eq', 1, 'Deadeye stands in its own cp_disco machine'),
+               exp('probe:b_setup.module', 'eq', 1, 'module'),
+               ] + [exp('probe:assets.snd%d' % i, 'eq', 1, 'stock perk sound alias %d is in the map bank' % i) for i in (0, 1, 2, 4, 6, 7, 8, 9)] + [
+               exp('probe:assets.tuff_jingle_ms', 'gt', 10000, 'the Tuff Nuff jingle has its stock length'),
                exp('probe:assets.bit_bakers', 'eq', 18, "Baker's Dozens has its HUD bit row in the zone's table"),
                exp('probe:assets.bit_double_cd', 'eq', 22, "Double Takes' recharging icon row")]
     json.dump(plan('p1_buy', 'P1: the ten machines, prices, power, limit of six, sold back, Validated Ticket (headless).', st + ex),
@@ -261,6 +265,10 @@ def main(argv=None):
         ex += [exp('use:c_%s.spent' % k[13:], 'eq', PRICE[k] if k != 'perk_machine_revive' else 500, '%s at its price' % k) for k in first]
         ex += [exp('use:c_%s.spent' % k[13:], 'eq', PRICE[k], '%s at its price' % k) for k in ['perk_machine_bakers', 'perk_machine_voyage', 'perk_machine_grudge', 'perk_machine_double']]
         ex += [exp('probe:c_new.count', 'eq', 6, 'six: the four new perks, Up N Atoms, Deadeye'), exp('probe:c_hits.bakers_count', 'eq', 12, 'twelve hits on the counter')]
+        # the same session for the official client (no UI dump there): the same purchases and frames, the HUD judged on frames
+        off = [s for s in st if s.get('do') != 'ui']
+        json.dump(plan('p1_client_official', 'P1: the official client buys all ten (no UI dump: frames only).', off + ex),
+                  open(os.path.join(out, 'p1_client_official.json'), 'w'), indent=1)
         json.dump(plan('p1_client', 'P1: a real player buys all ten (six, four sold back, the four new); HUD as data and machine frames (client).', st + ex),
                   open(os.path.join(out, 'p1_client.json'), 'w'), indent=1)
     print('wrote p1 plans to %s (given=%s)' % (out, given))
