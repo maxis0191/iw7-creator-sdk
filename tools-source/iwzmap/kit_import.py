@@ -385,6 +385,8 @@ def main(argv=None):
                 seen_img.add(img)
                 if ('image', img) in have:
                     rep['images']['shared'] += 1; continue
+                if a.share_runtime and ('image', img) in runtime:
+                    ref('image', img); rep['images']['shared'] += 1; continue
                 if img.startswith('$'):               # an engine image ($identitynormalmap...): always loaded
                     ref('image', img); rep['images']['shared'] += 1; continue
                 ip = find(zone, os.path.join('images', img + '.iw7Image'))
@@ -425,8 +427,16 @@ def main(argv=None):
         last_req = max([i for i, l in enumerate(lines) if l.startswith('require,')], default=0)
         lines[last_req + 1:last_req + 1] = req
         # a map: before its world rows; a zone with no world (a mod zone): at the end
-        at = next((i for i, l in enumerate(lines) if l.startswith(WORLD_FIRST)), len(lines))
-        lines[at:at] = [r for r in ref_rows + rows if r not in lines]
+        at = next((i for i, l in enumerate(lines) if l.startswith(WORLD_FIRST)), None)
+        if at is not None:
+            lines[at:at] = [r for r in ref_rows + rows if r not in lines]
+        else:
+            # a zone with no world (a mod zone): references right after the require rows, before every asset row,
+            # since a model met earlier can pull them first (Pam's model -> its scriptable -> the effect's materials
+            # -> their images: a reference listed after that was too late, and ZoneTool wrote an empty image)
+            top = max([i + 1 for i, l in enumerate(lines) if l.startswith('require,')], default=0)
+            lines[top:top] = [r for r in ref_rows if r not in lines]
+            lines += [r for r in rows if r not in lines]
         open(csvp, 'w', newline='\n').write('\n'.join(lines) + '\n')
     rep['linked'] = linked
     if a.report:

@@ -20,6 +20,9 @@ while(-not $lease){
     # leased process ending), a refusal the scheduler counts as a wait, while this loop knew only two others.
     $busy=if(Get-Command Test-IW7RetryableRefusal -ErrorAction SilentlyContinue){ Test-IW7RetryableRefusal $_.Exception.Message }
       else{ $_.Exception.Message -like 'Resource busy:*' -or $_.Exception.Message -like 'An existing compiler/extractor/Java analysis is running;*' }
+    # The lock around the scheduler's state is held by another caller for a moment: ask again (11 Nov 2026 evening, a
+    # dump that had waited 9 minutes in the queue ended on 'Resource admission lock busy; retry later.').
+    if($_.Exception.Message -like 'Resource admission lock busy*'){ $busy=$true }
     if(!$busy -or $WaitForSlotSeconds -le 0 -or [datetime]::UtcNow -ge $until){ throw }
     Start-Sleep -Seconds 5
   }
@@ -81,7 +84,11 @@ r=b.ToString();return false;},IntPtr.Zero);return r;}}
   while(-not $released){
     try{ Exit-IW7ResourceLease -Token $lease.Token | Out-Null; $released=$true }
     catch{
-      if(-not ($p -and $p.HasExited) -or $_.Exception.Message -notlike 'Heavy child may still be alive*' -or [datetime]::UtcNow -ge $exitUntil){ throw }
+      # The scheduler's state lock held by another caller for a moment is a wait too: on 12 Nov 2026 a pack build ended
+      # on 'Resource admission lock busy' here and left its Build lease behind, holding the whole machine.
+      $lockBusy=$_.Exception.Message -like 'Resource admission lock busy*'
+      if(!$lockBusy -and (-not ($p -and $p.HasExited) -or $_.Exception.Message -notlike 'Heavy child may still be alive*')){ throw }
+      if([datetime]::UtcNow -ge $exitUntil){ throw }
       Start-Sleep -Seconds 5
     }
   }

@@ -44,6 +44,11 @@ def main(argv=None):
     ap.add_argument('--ncs-out', default='')
     ap.add_argument('--ncs-skip', default='', help='comma list of imported effects NOT appended to the level list (experiment: is the list needed)')
     ap.add_argument('--report', default='')
+    ap.add_argument('--no-ncs', action='store_true',
+                    help='a mod zone: write no level effect list (an effect named by a scriptable event is a pointer of '
+                         'that scriptable, not a loadfx name); rows go at the end of a zone with no world rows')
+    ap.add_argument('--share-runtime', action='store_true',
+                    help='a material or image that a --runtime-csv zone defines gets a `<type>,,<name>` reference row')
     ap.add_argument('--dry-run', action='store_true')
     a = ap.parse_args(argv)
 
@@ -125,6 +130,8 @@ def main(argv=None):
         seen_mat.add(mat)
         if ('material', mat) in have:
             rep['materials']['shared'].append(mat); return
+        if a.share_runtime and ('material', mat) in runtime:
+            ref('material', mat); rep['materials']['shared'].append(mat); return
         mj = find(zone, os.path.join('materials', mat + '.json'))
         if not mj:
             missing.append('material:' + mat); return
@@ -154,6 +161,8 @@ def main(argv=None):
             seen_img.add(img)
             if ('image', img) in have:
                 rep['images']['shared'] += 1; continue
+            if a.share_runtime and ('image', img) in runtime:
+                ref('image', img); rep['images']['shared'] += 1; continue
             ip = find(zone, os.path.join('images', img + '.iw7Image'))
             if not ip:
                 missing.append('image:' + img); continue
@@ -215,12 +224,24 @@ def main(argv=None):
                 continue
             os.makedirs(os.path.dirname(d), exist_ok=True)
             os.link(src, d)
-        if os.path.exists(ncs_p):
-            os.remove(ncs_p)                   # hardlink into the stock dump: never write through it
-        os.makedirs(os.path.dirname(ncs_p), exist_ok=True)
-        json.dump(ncs, open(ncs_p, 'w'), indent=4)
-        at = next(i for i, l in enumerate(lines) if l.startswith(WORLD_FIRST))
-        lines[at:at] = [r for r in ref_rows + rows if r not in lines]
+        if not a.no_ncs:
+            if os.path.exists(ncs_p):
+                os.remove(ncs_p)               # hardlink into the stock dump: never write through it
+            os.makedirs(os.path.dirname(ncs_p), exist_ok=True)
+            with open(ncs_p, 'w') as f:
+                json.dump(ncs, f, indent=4)
+        else:
+            rep['ncs_added'] = []
+        at = next((i for i, l in enumerate(lines) if l.startswith(WORLD_FIRST)), None)
+        if at is not None:
+            lines[at:at] = [r for r in ref_rows + rows if r not in lines]
+        else:
+            # a zone with no world (a mod zone): references right after the require rows, before every asset row,
+            # since a model met earlier can pull them first (Pam's model -> its scriptable -> the effect's materials
+            # -> their images: a reference listed after that was too late, and ZoneTool wrote an empty image)
+            top = max([i + 1 for i, l in enumerate(lines) if l.startswith('require,')], default=0)
+            lines[top:top] = [r for r in ref_rows if r not in lines]
+            lines += [r for r in rows if r not in lines]
         open(csvp, 'w', newline='\n').write('\n'.join(lines) + '\n')
     if a.ncs_out:
         json.dump({'stringType': 5, 'stringList': lst}, open(a.ncs_out, 'w'), indent=1)

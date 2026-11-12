@@ -422,23 +422,30 @@ zone, which loads on every map, so each character can be a player character on a
   [-Characters characters_5_8.json] [-Scheduler <prepared inputs>\ops\Resource-Scheduler.Core.ps1] [-WaitForSlotSeconds 3600]
 ```
 
-Measured 11 Nov 2026: the four characters (9 models) give a 22,364,464-byte `mod.ff` in 12 s once the dumps exist;
-gate and loader readback clean. One dump run per map, because four patch zones in one run hit the game's limit of 16
-`animclass` assets (a hidden fatal dialog; `zt.ps1` now ends such a run at once with the dialog's text). A finished map
-leaves `dump\.charpack-<map>.done`.
+The bodies are whole, as the game's own playable bodies are (12 Nov 2026): procedural bones (shoulder twist helpers),
+physics assets, and the scriptable a body names (Pam's `pam_grier`) with the effect it plays. Measured: 9 models, a
+20,309,096-byte `mod.ff`; build-log gate and loader readback clean; per-map proof in the server's
+`docs/CHARACTER-PACK.md`. The ZoneTool must have x64-zt's procedural bones in any zone and `-assetsloaded`.
+
+Dumps, all recorded by marker files in `dump\`: one run per source map (`techsets_<map>`, `<map>`, `patch_<map>`;
+four patch zones in one run hit the game's limit of 16 `animclass` assets), then one run of
+`proceduralbones,scriptable,vfx,particlesimanimation` for each map whose models name a procedural bone set or a
+scriptable that no shared zone defines (`char_pack.py --needs` reads it from the models: cp_disco only). When the pack
+finds materials, techsets or images in no dump, ZoneTool's `-assetsloaded` says which the zones loaded at start hold
+(`common`, `techsets_common`: no dump can list a loaded zone); they go to `dump\startup\startup.csv` and become
+references, and the pack is made again.
 
 - `characters_5_8.json`: the characters (`key`, source `zone`, `body`, `head` (empty for a full body), `arms`) and
   the name of the table the pack carries (`paris/characters_5_8.csv`, rows `key,body,head,arms`).
-- `char_pack.py <out> --dump <zone>=<dump>;<techsets dump>;<patch dump> ...`: the pack itself. It calls `kit_import.py`
-  with `--share-runtime` and `--drop-procedural-bones`. A material or physics asset that a zone loaded on every map
-  defines (`techsets_*` of common/global, `global_core_mp`, `global_cp`, `global`) becomes a reference row; the others
-  are copied with their image headers (pixels stream from the base `imagefile*.pak`) and their techsets when no shared
-  zone has them. Nothing is referenced into a map zone: the mod zone outlives the map. Every procedural bone set
-  (shoulder twist helpers) is dropped from a patched copy of the model: x64-zt registers that asset type, even as a
-  reference, only in zones `paris_enemy_*`. Scriptable parts are dropped as for kit props. Images that the source zones
-  themselves only reference are referenced the same way. The pack's csv starts with `require` rows for the shared
-  techset zones. Report: `<out>\charpack-report.json` (each drop and reference is named there).
-- `kit_import.py` fills a zone csv with no world rows (no `com_map,` row) by appending: that is how a mod zone takes it.
+- `char_pack.py <out> --dump <zone>=<dump>;<techsets dump>;<patch dump> ... [--runtime-extra <dir>]`: the pack. It calls
+  `kit_import.py --share-runtime --keep-scriptable`, then `fx/fx_import.py --no-ncs --share-runtime` for the effects a
+  kept scriptable plays. A material, image, physics asset or procedural bone set that a zone loaded on every map
+  defines (`techsets_*` of common/global, `common`, `global_core_mp`, `global_cp`, `global`, the `startup` list) is a
+  reference row; the rest is carried (image headers only; pixels stream from the base `imagefile*.pak`). Nothing is
+  referenced into a map zone: the mod zone outlives the map. In a zone with no world rows the reference rows go right
+  after the `require` rows, before every asset row (a model can pull its scriptable's effect and its images first).
+  Names of a scriptable that are no asset (sound aliases, parts, states) are listed in `<out>\charpack-report.json`.
+- `kit_import.py --drop-procedural-bones` and `drop_scriptable` remain for static kit props.
 - The Paris mod takes the pack with `Build-ParisMod.ps1 -CharacterPack <Out>` (server repository,
   `docs/CHARACTER-PACK.md` there, with the measured size, memory and per-map proof).
 

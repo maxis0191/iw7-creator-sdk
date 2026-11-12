@@ -10,6 +10,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 import char_pack  # noqa: E402
+import kit_import  # noqa: E402
 
 
 def asset(name):
@@ -21,7 +22,8 @@ class CharPackTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         d = self.tmp.name
         self.dump = os.path.join(d, 'dump', 'zone_a')
-        for sub in ('xmodel', 'xsurface', 'materials', 'images', 'techsets/state/ts_new', 'techsets/state/ts_shared'):
+        for sub in ('xmodel', 'xsurface', 'materials', 'images', 'techsets/state/ts_new', 'techsets/state/ts_shared',
+                    'proceduralbones', 'scriptable', 'particlesystem/vfx/test'):
             os.makedirs(os.path.join(self.dump, sub))
 
         def write(rel, data):
@@ -43,6 +45,10 @@ class CharPackTest(unittest.TestCase):
         write('images/img_body.iw7Image', b'H')
         write('techsets/state/ts_shared/mtl_body.statebits', b'1')
         write('techsets/state/ts_shared/mtl_body.statebitsmap', b'1')
+        # the body's own procedural bones and scriptable, and the effect the scriptable plays (a material shared)
+        write('proceduralbones/pb_female', b'PB')
+        write('scriptable/boss_scriptable', b'SC\x00movement\x00teleport\x00poof_sound\x00vfx/test/boom\x00')
+        write('particlesystem/vfx/test/boom.iw7VFX', b'VFX\x00vfx/test/boom\x00mtl_shared\x00')
         self.runtime = os.path.join(d, 'runtime')
         os.makedirs(os.path.join(self.runtime, 'techsets_global'))
         with open(os.path.join(self.runtime, 'techsets_global', 'techsets_global.csv'), 'w') as f:
@@ -74,7 +80,7 @@ class CharPackTest(unittest.TestCase):
         self.assertIn('material,,mtl_shared', rows)          # defined by a shared zone: a reference
         self.assertIn('techset,,ts_shared', rows)
         self.assertNotIn('material,,mtl_body', rows)         # own material: copied
-        self.assertEqual(rows[-3:], ['xmodel,hero_arms', 'xmodel,hero_body', 'stringtable,paris/chars.csv'])
+        self.assertEqual(rows[-4:], ['xmodel,hero_arms', 'xmodel,hero_body', 'vfx,vfx/test/boom', 'stringtable,paris/chars.csv'])
         tree = os.path.join(self.out, 'zonetool', 'mod')
         self.assertTrue(os.path.isfile(os.path.join(tree, 'materials', 'mtl_body.json')))
         self.assertFalse(os.path.exists(os.path.join(tree, 'materials', 'mtl_shared.json')))
@@ -86,19 +92,34 @@ class CharPackTest(unittest.TestCase):
             rep = json.load(f)
         self.assertEqual(rep['characters'][0]['models']['body'], ['hero_body', 'in pack'])
         body = rep['models']['hero_body']
-        self.assertEqual((body['droppedScriptable'], body['droppedProceduralBones']), ('boss_scriptable', 'pb_female'))
-        with open(os.path.join(tree, 'xmodel', 'hero_body.xmb'), 'rb') as f:   # a patched copy, not the dump's file
-            self.assertTrue(f.read().endswith(asset('ragdoll_shared') + b'\x07\x00\x07\x00\x07\x00'
-                                              + b'\x08\x01\x02\x00\x00\x00\x07\x0e\x08\x00\x08\x00'))
-        with open(os.path.join(self.dump, 'xmodel', 'hero_body.xmb'), 'rb') as f:
+        self.assertNotIn('droppedScriptable', body)              # the body is whole: nothing dropped
+        self.assertNotIn('droppedProceduralBones', body)
+        for rel in ('xmodel/hero_body.xmb', 'proceduralbones/pb_female', 'scriptable/boss_scriptable',
+                    'particlesystem/vfx/test/boom.iw7VFX'):
+            self.assertTrue(os.path.isfile(os.path.join(tree, *rel.split('/'))), rel)
+        with open(os.path.join(tree, 'xmodel', 'hero_body.xmb'), 'rb') as f:   # the dump's model, unchanged
             self.assertTrue(f.read().endswith(self.body_tail))
+        self.assertIn('vfx,vfx/test/boom', rows)                 # the scriptable's effect
+        first_asset = min(i for i, r in enumerate(rows) if not r.startswith('require,') and ',,' not in r)
+        self.assertTrue(all(i < first_asset for i, r in enumerate(rows) if ',,' in r), rows)   # references first
+        self.assertFalse(os.path.exists(os.path.join(tree, 'netconststrings')))   # a mod zone: no level effect list
+        self.assertIn('poof_sound', rep['scriptableNames']['scriptable/boss_scriptable'])
 
-    def test_unknown_tail_layout_is_refused(self):
-        with open(os.path.join(self.dump, 'xmodel', 'hero_body.xmb'), 'ab') as f:
-            f.write(b'\x08\x00')                                # one array too many: the drop is not safe
-        code, out = self.run_pack()
-        self.assertEqual(code, 1)
-        self.assertIn('pb_female of hero_body', out)
+    def test_needs_names_the_zone_with_own_bones_and_scriptable(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = char_pack.main(['unused', '--needs', '--dump', 'zone_a=' + self.dump, '--characters', self.spec,
+                                   '--runtime-dir', self.runtime])
+        self.assertEqual(code, 0)
+        self.assertTrue(out.getvalue().startswith('zone_a ' + char_pack.EXTRA_TYPES), out.getvalue())
+        self.assertIn('proceduralbones pb_female', out.getvalue())
+        self.assertIn('scriptable boss_scriptable', out.getvalue())
+
+    def test_procedural_bones_drop_needs_a_known_tail(self):
+        data = b'XMB' + asset('hero_body_lod0') + self.body_tail
+        self.assertTrue(kit_import.drop_procedural_bones(data, 'pb_female').endswith(
+            b'\x07\x00\x08\x01\x02\x00\x00\x00\x07\x0e\x08\x00\x08\x00'))
+        self.assertIsNone(kit_import.drop_procedural_bones(data + b'\x08\x00', 'pb_female'))
 
     def test_missing_model_writes_no_table(self):
         os.remove(os.path.join(self.dump, 'xmodel', 'hero_arms.xmb'))
