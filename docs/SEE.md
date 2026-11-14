@@ -182,6 +182,22 @@ props outside the box is listed. After the restore: 0 disappeared (one surface l
 **P5, cost.** In the game: a capture without depth is the picture copy the game's own capture already cost (median 14.4 ms in the renderer); the depth adds a median of 9.6 ms, so a capture with depth is one long frame of about 25 ms (the first one of a session 0.2 to 0.6 s: the depth target is looked up once). With no capture pending the frame time is unchanged within the noise (listener on, off, on, off: medians 7.41, 7.88, 7.80, 7.26 ms in one session and 6.35, 6.53, 5.51, 6.12 ms in another). Files per frame: picture 3.7 MB, depth 3.7 MB, camera 33 KB. Details: components `docs/SEE.md`. The tool: `objects` 7.9 s the first time for a view (the database is drawn once and kept in
 the cache folder), 2.3 s after; `at` 0.7 s; `visible --model` 1.5 s for 99 props; `floor` 0.8 s.
 
+## Which enemies a frame shows: `crowd_seen.py`
+
+`python -B tools-source/worldkit/crowd_seen.py --log <client.stdout.log> --view <frame.bmp>:<set before>[:<set after>] [--view ...] [--min-pixels N] [--json]`
+counts the engine agents a frame draws. The game prints every living enemy's position at each capture (gamelab library
+`GL CRPOS` lines); the tool puts each one in the frame with the frame's own camera and reads the engine's depth buffer.
+
+**What "drawn" means (changed 14 Nov 2026).** A depth pixel belongs to at most one enemy: the one whose body volume (a
+vertical cylinder of 18 units around the feet origin, from 4 units under to 76 above, widened by the depth tolerance)
+contains the point the depth puts at that pixel, the nearest axis first. An enemy is DRAWN when at least 40 pixels
+(`--min-pixels`) are its own. The earlier rule (any depth up to 22 units in front of one point of the axis) counted every
+enemy packed behind a front one: it said 54 drawn for a frame of a 78-zombie pile that shows about six heads; the rule now
+says 7 on that frame (test `test_real_frame_crowd_in_front`, built from it). An enemy with fewer pixels is ABSENT when at
+least three axis points are in the frame and the depth there is farther than the axis (a body the server has and the client
+does not draw), otherwise OCCLUDED, or OUTSIDE (never in view). Limits: the 40 pixel threshold and the 18 unit radius are
+choices, a body very far away may have fewer pixels than the threshold, and the tool counts surfaces, not how they look.
+
 ## What is not covered
 
 - **Transparent things, effects, decals.** They write no depth, so a frame's depth shows what is behind them: glass
@@ -217,5 +233,6 @@ the cache folder), 2.3 s after; `at` 0.7 s; `visible --model` 1.5 s for 99 props
 | File | Role |
 |---|---|
 | `tools-source/worldkit/iw7_see.py` | the tool |
+| `tools-source/worldkit/crowd_seen.py`, `tests/test_crowd_seen.py`, `tests/data/crowd_b0_*` | the enemy counter and its tests (a real 78-zombie frame, depth cut at 300 units) |
 | `tools-source/worldkit/tests/test_see.py` | 22 tests on the synthetic world: a made-up camera, a depth image drawn by the tool and then changed |
 | `<db>.models.npz` | written by `index` beside the database: the props' triangles (machine-local, never committed) |
