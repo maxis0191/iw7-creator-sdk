@@ -14,20 +14,20 @@ not measured here).
 | Racin' Stripes | Platform A West | 2000 | power | stock machine | stock |
 | Bang Bangs | Transit Police Post | 2000 | power | stock machine | stock |
 | Quickies | Car Barn | 3000 | power | stock machine | stock |
-| Deadeye Dewdrops | Signal Cabin | 1500 | power | PLACEHOLDER body `park_soda_machine` + the perk's icon over it | stock icon (image from the cp_disco dump) |
-| Baker's Dozens | Lodestar Exchange | 3000 | power | PLACEHOLDER body `popcorn_machine_iw6` + icon | PLACEHOLDER icon |
-| Bon Voyages | the Parlour | 2000 | power | PLACEHOLDER body `zmb_mobile_ticket_booth` + icon | PLACEHOLDER icon |
-| Sour Grudges | the Boneyard | 2500 | power | PLACEHOLDER body `park_arcade_standing_09` + icon | PLACEHOLDER icon |
-| Double Takes | Underpass Arcade | 3000 | power | PLACEHOLDER body `park_arcade_standing_05_off` + icon | PLACEHOLDER icon, a dim copy while it recharges |
+| Deadeye Dewdrops | Signal Cabin | 1500 | power | the game's own Deadeye machine (cp_disco scriptable `zm_perk_machine_deadeye_sign`, models `cp_disco_perk_dewdrops[_off]`) on the spare template perk scriptable; the stock Deadeye machine code runs its sign and lights (from build p2) | stock icon (image from the cp_disco dump) |
+| Baker's Dozens | Lodestar Exchange | 3000 | power | authored machine `iwz_perk_machine_bakers` (perks/machines) + icon over it (from build p2) | vector icon (to redraw with P2) |
+| Bon Voyages | the Parlour | 2000 | power | authored machine `iwz_perk_machine_voyage` + icon (from build p2) | vector icon |
+| Sour Grudges | the Boneyard | 2500 | power | authored machine `iwz_perk_machine_grudge` + icon (from build p2) | vector icon |
+| Double Takes | Underpass Arcade | 3000 | power | authored machine `iwz_perk_machine_double` + icon (from build p2) | vector icon, a dim copy while it recharges |
 
 Rules on this map: at most six perks; every perk is lost on going down (the stock rule; the new perks are in the stock
 perk table, so it applies to them); a perk used again at its machine is sold back for nothing (stock); the Validated
 Ticket makes one purchase free and does not raise the limit.
 
-What is placeholder, plainly: the five bodies are stock props until P2's authored machines; the four new icons are
-vector pictograms in the map's icon style (`perks/make_perk_icons.py`) until P2; the new perks' jingles do not exist
-(only the stock candy-box sound plays); Deadeye Dewdrops' jingle and candy gesture are not in this map's zone (its
-sound aliases and gesture weapon belong to another map); the Double Takes image is the shooting gallery's flat
+What is not finished, plainly (state of build p2, 14 Nov 2026, section 2c): the four authored machines score a
+median 6 of 10 against the stock machines (target 7: bodies too dark, no self-lit neon topper); the four new icons are
+vector pictograms (`perks/make_perk_icons.py`); the new perks' jingles do not exist (to make as sound effects);
+Deadeye Dewdrops' candy gesture is not in this map's zone; the Double Takes image is the shooting gallery's flat
 civilian cut-out `zmb_civilian_target_02`, not the player's own figure; the Sour Grudges mark is the stock green
 souvenir glow on the zombie's head; the Sour Grudges rim is four thin green bars on the screen edges.
 
@@ -57,6 +57,26 @@ A real player (lab client, the stock HUD Lua unchanged) bought all ten at their 
 The official client runs the same stock HUD Lua and reads the same table from the downloaded map zone, so the same row is expected there; the official client binary itself was not run (the lab client is the official client plus the dump).
 
 An independent reviewer on the frames of run c2 found: the stock machines and the perk row correct; the five placeholder bodies not recognisable as perk machines (scores 1 to 2 of 10: two arcade cabinets read as arcade games, the Exchange and Parlour spots too dark, the frames taken too close), no floating icon drawn over them (fixed after: the icon now follows an anchor entity, see run c3), the four new icons readable but small at 25 px (the face and figure pictograms hard to read), and a raw string key `COOP_PERK_MACHINES_REMOVE_PERK` on screen at a machine (the map zone carries no localized strings: ledger).
+
+## 2c. Build p2: machines, sounds and strings in the map (14 Nov 2026)
+
+Build p2 (`build-sz2.ps1` on main, 475 MB zone, 2,199 s: compile 1,473, assembly 683, zone 42) carries the four
+authored machines, Deadeye's own cp_disco machine, 12 stock perk sounds in the map bank (sabl 1.9 MB, sabs 6.2 MB) and
+449 localized strings. Runs on it, zone scripts only (no loose files):
+
+| Run | Conditions | Result |
+|---|---|---|
+| d1 p1_buy (headless) | one dedicated server, no client, zombies held, player protected | 38/39: bodies 4, Deadeye scriptable 1 (`DEADEYE_MACHINE stock=1`), 10 of 10 sound aliases present, HUD bits 18/9/22; `tuff_jingle_ms` 0 (the probe asks a dedicated server, which loads no audio: the bank report gives 14.275 s; ledger) |
+| d1 p1_effect (headless) | same | PASS 27/27 |
+| d1 p1_edge (headless) | same, two players, rounds 1-3, a lethal hit | PASS 20/20 |
+| c5 p1_client (lab client) | one client + private server on loopback, waves off, zombies ignore the player, no damage | PASS 18/18, 11 frames; no raw string key in any of the 12 UI dumps; at a new machine the use prompt is the stock price widget (`3000`) |
+| o2 p1_client_official | same plan, the official stable client (aurora-update-20261017) | not in game: the client reports `Map "cp_iwz" doesn't exist` with the map in `usermaps\cp_iwz\`, where the lab client loads it (ledger) |
+
+Machine frames of c5, two independent reviewers (Sonnet 5.5) against the stock machines: Baker's 6 and 8, Bon Voyages
+6 and 5, Sour Grudges 4 and 7, Double Takes 5 and 6; median 6. Both: the bodies are near black below the sign and
+there is no self-lit topper like the stock neon signs. The floating machine icons show at the top centre of the frame
+(the anchor 96 units up is above the view from 140 units away); the UI dump lists the waypoint elements as not drawn,
+so the dump does not see them.
 
 ## 3. Measured: the four new perks
 

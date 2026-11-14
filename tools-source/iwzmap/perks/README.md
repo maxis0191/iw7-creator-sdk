@@ -16,6 +16,10 @@ balance table: `docs/station-zero/P1-PERKS.md`.
 | `add_perks.py` | build step (always run by `build-sz2.ps1`): the scripts as rawfiles after the level script, one 2D icon material per new perk, Deadeye's stock icon material (image from the cp_disco dump), five new rows in the stock HUD bit table |
 | `make_perk_icons.py` | the new perks' icons (vector-drawn placeholders, 128 x 128 TGA, and a contact sheet); `add_perks.py` draws them into the work folder when missing |
 | `p1plans.py` | the headless test plans (library `szperks` of iw7-paris-server) |
+| `add_localize.py`, `strings.json` | build step: every localized string the zone's scripts use, from the dumped English language zones (`zonetool -dumpzonetypes eng_cp_zmb localize`, `eng_patch_cp_zmb`; the zones must be under `<work>\zone\english`), plus the new perks' own hint strings; a usermap loads no language zone of its template, so without it raw keys show |
+| `add_perk_sounds.py` | build step: the stock perk jingles (attract, purchase) of the six stock perks and the machine power-on sound into the map's bank (aliases from the cp_zmb and cp_disco alias tables, audio from the stock banks) |
+| `add_deadeye_machine.py` | build step: Deadeye Dewdrops' own machine (the cp_disco scriptable `zm_perk_machine_deadeye_sign`, its two models by the kit import) on the spare template perk scriptable `perk_machine_blue_bolts_sign` that scenegen relocates; the stock Deadeye machine code then runs it |
+| `machines/` | the four new perks' machines, authored: textures drawn in code, geometry in headless Blender, ported with env-model `t7_env_port.py` (`machines/README.md`) |
 
 Shared files changed by one or a few lines: `cp_iwz3.gsc` (`init()` in `main()`, `register()` after the stock
 registry, the Third Rail's price and owner rule), `scenegen.py` (the five perks without a stock machine become
