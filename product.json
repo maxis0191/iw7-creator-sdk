@@ -449,6 +449,7 @@
     "tools-source/iwzmap/make_art.py",
     "tools-source/iwzmap/mapgen.py",
     "tools-source/iwzmap/material_dims.json",
+    "tools-source/iwzmap/modules/cap.gsc",
     "tools-source/iwzmap/modules/post.gsc",
     "tools-source/iwzmap/modules/quest.gsc",
     "tools-source/iwzmap/mood_dark_ok.json",
