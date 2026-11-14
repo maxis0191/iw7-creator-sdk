@@ -12,9 +12,11 @@ $until=[datetime]::UtcNow.AddSeconds($WaitForSlotSeconds)
 # A build that only looked at the status until nothing was held never got a place and waited 25 to 75 minutes behind
 # other agents' back-to-back sessions. A busy slot and a compiler or extractor running without a reservation are
 # asked again; any other refusal is thrown at once.
+# zonetool.exe runs in $Work and writes zone\ and dump\ there; it shares only memory with other work (named resources, 12 Nov 2026).
+$named=@{}; if((Get-Command Enter-IW7ResourceLease).Parameters.ContainsKey('Resources')){ $named.Resources=@("zonetool:$Work") }
 $lease=$HeldLease
 while(-not $lease){
-  try{ $lease=Enter-IW7ResourceLease -Scope $Work -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner $Owner }
+  try{ $lease=Enter-IW7ResourceLease -Scope $Work -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner $Owner @named }
   catch{
     # The scheduler names its own retryable refusals (Test-IW7RetryableRefusal, with the waiting order): use them. On
     # 11 Nov 2026 a dump stopped on 'Reserved process identity unavailable; reservation retained.' (another agent's
