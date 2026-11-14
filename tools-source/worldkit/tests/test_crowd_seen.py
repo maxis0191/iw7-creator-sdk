@@ -82,7 +82,10 @@ class CrowdSeenTest(unittest.TestCase):
         of them as drawn because their head points fall behind the front heads; the frame shows about six heads."""
         data = os.path.join(HERE, 'data')
         frame = self.S.Frame(os.path.join(data, 'crowd_b0_camera.json'))
-        z = np.load(os.path.join(data, 'crowd_b0_z.npz'))['z'].astype(np.float64)
+        import base64
+        import io
+        raw = base64.b64decode(open(os.path.join(data, 'crowd_b0_z.b64.txt')).read())
+        z = np.load(io.BytesIO(raw))['z'].astype(np.float64)
         frame.depth, frame._z = z, z
         frame.set_size(z.shape[1], z.shape[0])
         pos = self.C.read_positions(open(os.path.join(data, 'crowd_b0_positions.txt')).read())
