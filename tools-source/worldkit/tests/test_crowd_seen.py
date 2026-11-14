@@ -77,6 +77,25 @@ class CrowdSeenTest(unittest.TestCase):
         self.assertEqual(state[('agent', 40)], 'outside')
         self.assertEqual(r['total'], {'listed': 4, 'drawn': 1, 'occluded': 1, 'absent': 1, 'outside': 1})
 
+    def test_real_frame_crowd_in_front(self):
+        """A frame of a real run (78 zombies packed around the player, the view toward a roof): the old rule counted 54
+        of them as drawn because their head points fall behind the front heads; the frame shows about six heads."""
+        data = os.path.join(HERE, 'data')
+        frame = self.S.Frame(os.path.join(data, 'crowd_b0_camera.json'))
+        z = np.load(os.path.join(data, 'crowd_b0_z.npz'))['z'].astype(np.float64)
+        frame.depth, frame._z = z, z
+        frame.set_size(z.shape[1], z.shape[0])
+        pos = self.C.read_positions(open(os.path.join(data, 'crowd_b0_positions.log')).read())
+        r = self.C.judge([(frame, 'b0_pre', 'b0_post')], pos)
+        self.assertEqual(r['total']['listed'], 78)
+        self.assertEqual(r['total']['drawn'], 7)
+        self.assertEqual(r['total']['absent'], 0)
+        drawn = sorted(b['id'] for b in r['bodies'] if b['state'] == 'drawn')
+        self.assertEqual(drawn, [19, 31, 46, 50, 78, 84, 86])
+        # one drawn surface belongs to one body: the pixel counts of all bodies never exceed the frame
+        total = sum(b['views'][frame.name]['pixels'] for b in r['bodies'])
+        self.assertLessEqual(total, z.shape[0] * z.shape[1])
+
     def test_command_line(self):
         out = os.path.join(self.tmp.name, 'v.bmp')
         code = self.C.main(['--log', self.log, '--view', out + ':pre:post', '--json'])
