@@ -85,7 +85,7 @@ class CrowdSeenTest(unittest.TestCase):
         z = np.load(os.path.join(data, 'crowd_b0_z.npz'))['z'].astype(np.float64)
         frame.depth, frame._z = z, z
         frame.set_size(z.shape[1], z.shape[0])
-        pos = self.C.read_positions(open(os.path.join(data, 'crowd_b0_positions.log')).read())
+        pos = self.C.read_positions(open(os.path.join(data, 'crowd_b0_positions.txt')).read())
         r = self.C.judge([(frame, 'b0_pre', 'b0_post')], pos)
         self.assertEqual(r['total']['listed'], 78)
         self.assertEqual(r['total']['drawn'], 7)
