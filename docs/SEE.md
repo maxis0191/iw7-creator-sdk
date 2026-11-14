@@ -184,8 +184,8 @@ the cache folder), 2.3 s after; `at` 0.7 s; `visible --model` 1.5 s for 99 props
 
 ## Which enemies a frame shows: `crowd_seen.py`
 
-`python -B tools-source/worldkit/crowd_seen.py --log <client.stdout.log> --view <frame.bmp>:<set before>[:<set after>] [--view ...] [--min-pixels N] [--json]`
-counts the engine agents a frame draws. The game prints every living enemy's position at each capture (gamelab library
+`py -3.12 -B tools-source/worldkit/crowd_seen.py --log <client.stdout.log> --view <frame.bmp>:<set before>[:<set after>] [--view ...] [--min-pixels N] [--json]`
+counts the engine agents a frame draws. It and `iw7_see.py` need numpy: the interpreter that has it is the machine's Python 3.12 (`py -3.12`, `C:\Users\ezvalo\AppData\Local\Programs\Python\Python312\python.exe`); the uv Python 3.11 has none, and a bare `python` can resolve to it, which gives "iw7_see needs numpy" (the message now names the interpreter and this command). The game prints every living enemy's position at each capture (gamelab library
 `GL CRPOS` lines); the tool puts each one in the frame with the frame's own camera and reads the engine's depth buffer.
 
 **What "drawn" means (changed 14 Nov 2026).** A depth pixel belongs to at most one enemy: the one whose body volume (a

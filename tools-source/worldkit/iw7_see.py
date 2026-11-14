@@ -52,7 +52,7 @@ class SeeError(WorldError):
 
 def need_numpy():
     if np is None:
-        raise SeeError('iw7_see needs numpy')
+        raise SeeError('iw7_see needs numpy, and this interpreter (%s) has none: run the tool with the machine\'s Python 3.12, `py -3.12 -B <tool> ...` (numpy installed there); nothing is installed into the system Python' % sys.executable)
 
 
 def prop_id(i):
