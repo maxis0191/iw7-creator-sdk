@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][string]$Tag, [switch]$SkipPick, [switch]$Bake, [string]$LightArgs='', [int]$Rays=256, [switch]$Audio, [switch]$NavObstacles, [switch]$ReuseBake, [string]$BakeFrom='', [switch]$Kit, [switch]$Lights, [switch]$Smodels, [switch]$KitBaseline, [switch]$Fx, [string]$FxTxt='', [switch]$NeutralProbes, [string]$ProbeScale='', [switch]$Train, [ValidateSet('g27','stock')][string]$StairStyle='g27', [switch]$GateOnly, [ValidateSet('g27','g27d','g27e')][string]$TrainSet='g27', [switch]$BakeLoose, [string]$ZoneToolExe='', [switch]$WithP1, [int]$ConsistEndX=2540)
+param([Parameter(Mandatory)][string]$Tag, [switch]$SkipPick, [switch]$Bake, [string]$LightArgs='', [int]$Rays=256, [switch]$Audio, [switch]$NavObstacles, [switch]$ReuseBake, [string]$BakeFrom='', [switch]$Kit, [switch]$Lights, [switch]$Smodels, [switch]$KitBaseline, [switch]$Fx, [string]$FxTxt='', [switch]$NeutralProbes, [string]$ProbeScale='', [switch]$Train, [ValidateSet('g27','stock')][string]$StairStyle='g27', [switch]$GateOnly, [ValidateSet('g27','g27d','g27e')][string]$TrainSet='g27', [switch]$BakeLoose, [string]$ZoneToolExe='', [switch]$WithP1, [int]$ConsistEndX=1800)
 # Station Zero v2 level build <Tag>: generator -> (compile-only pass: sub-model log -> pick door blocker sub-model ->
 # regenerate) -> optional light bake (layout_lights + lmbake, Build lease) -> full build with kept sub-models and own
 # lightmap, using the merged door-brushmodel + lightmap zonetool. Output: level\src_<Tag>[_lm], level\um_<Tag>.
@@ -64,6 +64,9 @@ python -I "$S\sz2_seams.py" $src --json "$L\seams_$Tag.json" | Select-Object -La
 if($LASTEXITCODE -ne 0){ throw "seam check failed: $L\seams_$Tag.json" }
 python -I "$S\sz2_navconn.py" $src --json "$L\navconn_$Tag.json" | Select-Object -Last 6
 if($LASTEXITCODE -ne 0){ throw "nav connectivity failed: $L\navconn_$Tag.json" }
+# (a85, 18 Nov 2026) reach audit: every spawner and every pit cell must walk to the player start and the deck, and the wells must connect the pit to the deck
+python -I "$S\iwz_emitcheck.py" reach $src --all-spawners --grid pits --json "$L\reach_$Tag.json" | Select-Object -Last 4
+if($LASTEXITCODE -ne 0){ throw "reach audit failed (a spawner or a pit cell cannot walk out): $L\reach_$Tag.json" }
 python -I "$S\sz2_flatness.py" $src | Select-Object -Last 1
 if($LASTEXITCODE -ne 0){ throw "flatness failed" }
 if($Audio){   # (g27) audio anchors (decor / light / interaction names) checked before the bake, not after it
