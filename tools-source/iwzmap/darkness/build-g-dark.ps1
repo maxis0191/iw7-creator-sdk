@@ -11,6 +11,7 @@ param([Parameter(Mandatory)][string]$Tag, [switch]$ReuseBake, [string]$BakeFrom=
 # Dark vision args: env IWZ_DARK_ARGS (pwsh -File cannot take a value that starts with --).
 # Output darkness\src_<Tag>[_lm], darkness\um_<Tag>. Reads level\ files (props_g27.json, train ports), never writes them.
 $ErrorActionPreference='Stop'
+$env:PYTHONHASHSEED='0'     # the generator's output depends on the hash seed (a set order): without a fixed seed two runs of the same source differ (a85, 18 Nov 2026: 2,552 nav cells, 32,046 collision triangles)
 $DK=(& "$PSScriptRoot\..\machine.ps1" Runtime 'iwz-stage2\darkness')
 $L=(& "$PSScriptRoot\..\machine.ps1" Runtime 'iwz-stage2\level')
 $S=(Resolve-Path "$PSScriptRoot\..").Path

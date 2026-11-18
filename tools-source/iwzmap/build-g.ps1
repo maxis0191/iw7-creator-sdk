@@ -3,6 +3,7 @@ param([Parameter(Mandatory)][string]$Tag, [switch]$SkipPick, [switch]$Bake, [str
 # regenerate) -> optional light bake (layout_lights + lmbake, Build lease) -> full build with kept sub-models and own
 # lightmap, using the merged door-brushmodel + lightmap zonetool. Output: level\src_<Tag>[_lm], level\um_<Tag>.
 $ErrorActionPreference='Stop'
+$env:PYTHONHASHSEED='0'     # the generator's output depends on the hash seed (a set order): without a fixed seed two runs of the same source differ (a85, 18 Nov 2026: 2,552 nav cells, 32,046 collision triangles)
 if($ReuseBake -and $BakeFrom -and $BakeFrom -eq $Tag){ throw "-BakeFrom $BakeFrom names the tag being built: the bake source would be deleted before it is copied. Name another tag, or leave -BakeFrom out to reuse src_$Tag`_lm in place." }
 $L=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level')
 $RT=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2')

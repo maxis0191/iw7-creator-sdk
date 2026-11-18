@@ -2686,6 +2686,24 @@ PERKS = [   # (interaction, scriptable, origin, yaw, zone)
     ('perk_machine_run', 'perk_machine_racin_stripes_sign', (2630, 2900, -320), 0, 'generator_room'),
     ('perk_machine_rat_a_tat', 'perk_machine_bang_bangs_sign', (-3570, 2800, -384), 0, 'platform_b'),
 ]
+# (a85, lead decision 18 Nov 2026) the P1 perks ported into the g27 line from scenegen / cp_iwz3: Deadeye Dewdrops (the game's
+# cp_disco machine on the spare template scriptable perk_machine_blue_bolts_sign, relocated like the stock four) and the four
+# authored machines (rigid script models iwz_perk_body, perks/machines; origin at the floor centre, front +x, model footprint
+# x -16..+24, y -20..+20, 88 high). Placement rule: the room that matches scenegen's bible placement, else against a wall of
+# the concourse or a powered room; never in the pits, on stairs or the train path, never at a door; every spot checked with
+# a85/perkspots.py (nothing within 100 of decor / interactions, wall behind, 90 clear in front) and emitcheck route.
+#   Deadeye (bible: Signal Cabin, the overwatch room) -> control_room east wall, stock machine offset 30 from the wall
+#   Baker's Dozens (Lodestar Exchange) -> ticket_hall east wall (the concourse), 3rd machine of the hall beside Up 'N Atoms
+#   Bon Voyages (the Parlour) -> platform_a deck north wall (ticket / postage theme: the platform)
+#   Sour Grudges (the Boneyard) -> generator_room north wall (powered room, east of the control-room door)
+#   Double Takes (Underpass Arcade) -> ticket_hall east wall, north of Baker's (the west wall is full: turnstiles, vending machine)
+PERKS_P1 = [   # (interaction, donor scriptable or None, body model or None, origin, yaw, zone, id)
+    ('perk_machine_deadeye', 'perk_machine_blue_bolts_sign', None, (3570, 3500, -320), 180, 'control_room', 'deadeye_dewdrops'),
+    ('perk_machine_bakers', None, 'iwz_perk_machine_bakers', (382, 3750, 0), 180, 'ticket_hall', 'bakers_dozens'),
+    ('perk_machine_voyage', None, 'iwz_perk_machine_voyage', (-1900, 2382, -320), 270, 'platform_a', 'bon_voyages'),
+    ('perk_machine_grudge', None, 'iwz_perk_machine_grudge', (3350, 3182, -320), 270, 'generator_room', 'sour_grudges'),
+    ('perk_machine_double', None, 'iwz_perk_machine_double', (382, 4200, 0), 180, 'ticket_hall', 'double_takes'),
+]
 FX = [   # ambient kit FX (assets/kit/fx_kit.tsv, cp_zmb) kept after the engine check sz2_fxcheck.py (run g12-views-a: only
          # vfx_zb_trash_a_ch renders measurably; dust, fog, drips, generator_idle, hanging smoke and bolts were not detected)
     {'fx': 'vfx/iw7/core/zombie/environment/vfx_zb_trash_a_ch', 'origin': (-100, 4440, 10), 'zone': 'ticket_hall', 'repeat': True},
@@ -2995,6 +3013,20 @@ for weapon, wm, origin, yaw, zone in WALL_BUYS:
 for kind, scriptable, origin, yaw, zone in PERKS:
     istruct(kind, origin, yaw, parameters='requires_power')
     relocations.append('%s 0 %g %g %g %g' % (scriptable, origin[0], origin[1], origin[2], yaw))
+for kind, donor, body, origin, yaw, zone, pid in PERKS_P1:
+    istruct(kind, origin, yaw, parameters='requires_power')
+    layout['interactions'][-1].update({'perk_new': pid, 'zone': zone})
+    if donor:
+        relocations.append('%s 0 %g %g %g %g' % (donor, origin[0], origin[1], origin[2], yaw))
+        layout['interactions'][-1]['scriptable'] = donor
+    else:
+        ents.append(ent(classname='script_model', targetname='iwz_perk_body', noteworthy=kind, model=body, origin=fmt(origin), angles='0 %g 0' % yaw))
+        layout['interactions'][-1]['body'] = body
+        # the imported model has no collision of its own: a clip box (local x -16..+24, y -20..+20, 88 high), nav cut
+        c_, s_ = round(math.cos(math.radians(yaw))), round(math.sin(math.radians(yaw)))
+        xs_ = [origin[0] + c_ * a - s_ * b for a in (-16, 24) for b in (-20, 20)]
+        ys_ = [origin[1] + s_ * a + c_ * b for a in (-16, 24) for b in (-20, 20)]
+        B.collision_box((min(xs_), min(ys_), origin[2]), (max(xs_), max(ys_), origin[2] + 88))
 istruct('weapon_upgrade', PAP['origin'], PAP['yaw'], parameters='requires_power', target='iwz_pap_spot')
 relocations.append('pap_machine 0 %g %g %g %g' % (PAP['origin'][0], PAP['origin'][1] + 10, PAP['origin'][2], PAP['yaw']))
 ents.append(ent(classname='script_struct', targetname='iwz_pap_spot', origin=fmt((PAP['origin'][0], PAP['origin'][1] + 20, PAP['origin'][2] + 14)),
