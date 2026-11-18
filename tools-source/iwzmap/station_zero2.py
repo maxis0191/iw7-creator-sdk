@@ -2650,7 +2650,9 @@ SPAWNERS = [   # >= 48 from walls/props, inside the zone volume, on the navmesh 
     ('ticket_hall', 320, 4320, 0, 'ground', 225), ('ticket_hall', -1100, 3480, 0, 'ground', 45),
     ('ticket_hall', -1136, 3480, 0, 'wall', 0),     # (g27d, BLOQUANT 2: at y 3300 its vent sat in the stair B door: the white block)
      ('ticket_hall', 336, 3300, 0, 'wall', 180), ('ticket_hall', -400, 4300, 320, 'ceiling', 270),
-    ('stair_a', -600, 2460, -320, 'ground', 90), ('stair_a', -700, 2470, -320, 'ground', 90), ('stair_a', -500, 2470, -320, 'ground', 90),
+    # (a85, 18 Nov 2026) the three ground spawners of stair A's foot (y 2460..2470) and the two of stair B's (x -1990) stood ON the first
+    # steps of the ramp: the stair crowd probe (6 zombies from the stair A foot spawner) lost 6 of 6 under the ramp, and stair B's
+    # single zombie died at its spawner. Removed; the top landing spawners stay.
     ('stair_a', -600, 3150, 0, 'ground', 270), ('stair_a', -470, 3150, 0, 'ground', 270), ('stair_a', -600, 3140, 288, 'ceiling', 270),
     ('platform_a', 2250, 2000, -320, 'ground', 180), ('platform_a', 1150, 1700, -320, 'ground', 90),
     ('platform_a', -2250, 2000, -320, 'ground', 0), ('platform_a', -1600, 2352, -320, 'wall', 270),
@@ -2671,8 +2673,8 @@ SPAWNERS = [   # >= 48 from walls/props, inside the zone volume, on the navmesh 
     ('platform_b', -3500, 2700, -384, 'ground', 45), ('platform_b', -2150, 2700, -384, 'ground', 135),
     ('platform_b', -3552, 3120, -384, 'wall', 0), ('platform_b', -2700, 3130, -384, 'ground', 270),     # (g27d) out of the trackbed
     ('platform_b', -2900, 2700, -384, 'ground', 90), ('platform_b', -2800, 3000, -32, 'ceiling', 270),
-    ('stair_b', -1990, 3250, -384, 'ground', 0), ('stair_b', -1290, 3300, 0, 'ground', 180),
-    ('stair_b', -1990, 3170, -384, 'ground', 0), ('stair_b', -1290, 3170, 0, 'ground', 180),
+    ('stair_b', -1290, 3300, 0, 'ground', 180),
+    ('stair_b', -1290, 3170, 0, 'ground', 180),
     ('stair_b', -1270, 3250, 288, 'ceiling', 180),
 ]
 DOG_SPAWNERS = {   # goon / brute landing spots (2-4 per zone)
