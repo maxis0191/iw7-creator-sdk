@@ -88,7 +88,7 @@ OPENINGS = [
      'a': 1704, 'b': 1896, 'z0': -320, 'z1': -112, 'cost': 1000, 'zones': ('platform_a', 'maint_corridor'),
      'scriptable': 'pf7_auto213', 'sign': 'sign_staff_only'},
     {'name': 'o_corridor_bend', 'kind': 'open', 'axis': 'x', 'walls': {'corridor_a': 1920, 'corridor_b': 1920},
-     'a': 2976, 'b': 3184, 'z0': -320, 'z1': -96},
+     'a': 2976, 'b': 3200, 'z0': -320, 'z1': -96},      # (a85 reach audit) was 3184: a 16-unit wall stub at the east corner crossed a nav link (emitcheck LINK_BLOCKED)
     {'name': 'a_corridor_generator', 'kind': 'arch', 'axis': 'x', 'walls': {'corridor_b': 2384, 'generator': 2400},
      'a': 2992, 'b': 3168, 'z0': -320, 'z1': -112},
     {'name': 'd_generator_control', 'kind': 'door', 'axis': 'x', 'walls': {'generator': 3184, 'control': 3200},
@@ -1328,7 +1328,7 @@ for xw_, fc_ in ((-2400, +1), (2400, -1)):
     B.slab_y(1200, 1600, xw_, -96, -72, 12, 'conc_painted', Z, fc_, collide=False, nav=False)
 ceiling_grid(Z, -2400, 1200, 2400, 2400, PCEIL, step_y=400, depth=28)
 region('deck', Z, (-2400, 1760, 2400, 2400), DECK_Z, (16, 0, 16, 16))
-region('deck_mid', Z, (-2192, EDGE_Y, 1904, 1760), DECK_Z, (0, 0, 0, 0))
+region('deck_mid', Z, (-2192, EDGE_Y, 1904, 1760), DECK_Z, (0, 0, 16, 0))     # (a85) x1 margin 16: a deck cell over the well top corner floated 64 above the pit (emitcheck NAV_FLOATING well_e)
 # (g27b engine stair probe) the deck_east cells touched the east well's bottom landing column 64 below them, and the
 # seam rule removed the landing: zombies then entered the flight from the pit side at mid-height and ended under the
 # treads. A 32 margin keeps deck_east one cell off the well end, so the landing stays (as on the west well)
@@ -1929,6 +1929,9 @@ def train_kit():
             dn_ = 'car_door_%d' % len(cars)
             region(an_, 'platform_a', (cx - TRAIN_AISLE_END, cy - 16, cx + TRAIN_AISLE_END, cy + 16), fz_, (0, 0, 0, 0))
             region(dn_, 'platform_a', (d0_, cy + 16, d1_, EDGE_Y), fz_, (0, 0, 0, 0))
+            # (a85 reach audit) the door threshold: a clip plate over the gap between the car side and the platform edge, so the
+            # door-bay nav cells rest on collision (emitcheck NAV_FLOATING platform_a, 49 above the ballast)
+            B.collision_quad([(d0_, cy + 16, fz_), (d1_, cy + 16, fz_), (d1_, EDGE_Y, fz_), (d0_, EDGE_Y, fz_)], n=(0, 0, 1))
             adjacent(an_, dn_)
             adjacent(dn_, 'deck_mid')
         c, s_ = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))

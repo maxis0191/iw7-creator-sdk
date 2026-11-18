@@ -117,5 +117,34 @@ class CliTests(unittest.TestCase):
                 ec.Emit.load(tmp)
 
 
+class ReachTest(unittest.TestCase):
+    def emit(self, link_both=True, wall=False):
+        # a row of three cells; the third is joined to the second one-way or not at all; the start is on the first
+        a = cell(0.0, 0.0, 0.0, (2,))
+        b = cell(32.0, 0.0, 0.0, (1, 3) if link_both else (1,))
+        c = cell(64.0, 0.0, 0.0, (2,) if link_both else ())
+        areas = {1: a, 2: b, 3: c}
+        extra = [t for t in quad(48.0, 0.0, 49.0, 128.0, 0.0)] if False else []
+        tris = quad(0.0, 0.0, 128.0, 128.0, 0.0) + extra
+        layout = {'starts': [(16.0, 16.0, 0.0)],
+                  'spawners': [{'zone': 'z', 'origin': (80.0, 16.0, 0.0), 'kind': 'ground'}]}
+        return ec.Emit(tris, areas, layout, 'synthetic')
+
+    def test_connected_spawner_reaches(self):
+        rows, fails = ec.reach(self.emit(True), pits=False)
+        self.assertEqual(fails, [])
+        self.assertEqual(rows[0]['to'], 64)
+
+    def test_island_spawner_is_a_failure_with_a_reason(self):
+        rows, fails = ec.reach(self.emit(False), pits=False)
+        self.assertEqual(len(fails), 1)
+        self.assertIn('no route', fails[0]['why'])
+
+    def test_too_long_route_is_a_failure(self):
+        rows, fails = ec.reach(self.emit(True), max_len=30.0, pits=False)
+        self.assertEqual(len(fails), 1)
+        self.assertIn('over 30', fails[0]['why'])
+
+
 if __name__ == '__main__':
     unittest.main()
