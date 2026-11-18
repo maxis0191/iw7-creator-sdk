@@ -739,10 +739,11 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     """Stair along `axis` from lo_end (z_lo) to hi_end (z_hi); lo_end/hi_end are the end wall planes (either order).
     Render: treads and risers. Collision: low landing, smooth ramp through the nosings, high landing.
     Walls: banded side walls parallel to the slope; ceiling `head` above the nosing line."""
-    fix_ = WELL_FIX.get(space, '')
-    style_ = 'stock' if (STAIR_STYLE == 'stock' or fix_ == 'stock') else STAIR_STYLE
-    if fix_.startswith('land'):
-        land_lo = float(fix_[4:])
+    fix_ = set(WELL_FIX.get(space, '').split('+')) - {''}        # variants combine: "stock+land96"
+    style_ = 'stock' if (STAIR_STYLE == 'stock' or 'stock' in fix_) else STAIR_STYLE
+    for f_ in fix_:
+        if f_.startswith('land'):
+            land_lo = float(f_[4:])
     if style_ == 'stock':     # ~8-unit risers, treads no shallower than 16 (artlint floor-streak)
         n_steps = max(n_steps, min(int(round(abs(z_hi - z_lo) / STOCK_RISE)),
                                    int((abs(hi_end - lo_end) - land_lo - land_hi) // 16)))
@@ -802,7 +803,7 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     cq(lo_end, r0, z_lo, z_lo)
     cq(r0, r1, z_lo, z_hi, tag=TAG_STAIR_CLIP if stock_ else None)
     cq(r1, hi_end, z_hi, z_hi)
-    if fix_ != 'nofloor':
+    if 'nofloor' not in fix_:
         cq(r0, s_a, z_lo, z_lo)
     # zombies (scripted agents) do not climb the smooth ramp: solid steps under it (treads at their true height,
     # risers facing down the stair; all on or below the nosing line, so players and downward traces still meet the
