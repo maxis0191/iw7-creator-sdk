@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][string]$Tag, [switch]$SkipPick, [switch]$Bake, [string]$LightArgs='', [int]$Rays=256, [switch]$Audio, [switch]$NavObstacles, [switch]$ReuseBake, [string]$BakeFrom='', [switch]$Kit, [switch]$Lights, [switch]$Smodels, [switch]$KitBaseline, [switch]$Fx, [string]$FxTxt='', [switch]$NeutralProbes, [string]$ProbeScale='', [switch]$Train, [ValidateSet('g27','stock')][string]$StairStyle='g27', [switch]$GateOnly, [ValidateSet('g27','g27d','g27e')][string]$TrainSet='g27', [switch]$BakeLoose, [string]$ZoneToolExe='', [switch]$WithP1)
+param([Parameter(Mandatory)][string]$Tag, [switch]$SkipPick, [switch]$Bake, [string]$LightArgs='', [int]$Rays=256, [switch]$Audio, [switch]$NavObstacles, [switch]$ReuseBake, [switch]$NoStageCache, [string]$BakeFrom='', [switch]$Kit, [switch]$Lights, [switch]$Smodels, [switch]$KitBaseline, [switch]$Fx, [string]$FxTxt='', [switch]$NeutralProbes, [string]$ProbeScale='', [switch]$Train, [ValidateSet('g27','stock')][string]$StairStyle='g27', [switch]$GateOnly, [ValidateSet('g27','g27d','g27e')][string]$TrainSet='g27', [switch]$BakeLoose, [string]$ZoneToolExe='', [switch]$WithP1)
 # Station Zero v2 level build <Tag>: generator -> (compile-only pass: sub-model log -> pick door blocker sub-model ->
 # regenerate) -> optional light bake (layout_lights + lmbake, Build lease) -> full build with kept sub-models and own
 # lightmap, using the merged door-brushmodel + lightmap zonetool. Output: level\src_<Tag>[_lm], level\um_<Tag>.
@@ -94,13 +94,30 @@ elseif($Bake){
   . (& "$S\scheduler.ps1")
   $lj="$L\lights_$Tag.json"
   & $PY -I "$B\layout_lights.py" $src $lj @($LightArgs -split ' ' | Where-Object { $_ })
+  # Stage cache (machine-wide, tools-source/iwzmap/stage_cache.py): the bake is a function of the render world, the light
+  # list, the bake arguments and the bake tools. A source that differs only in entities, scripts, collision or nav gets the
+  # earlier bake (the overlay -ReuseBake does by hand) and never bakes again. -NoStageCache bakes anyway.
+  $build="$src`_lm"; $bkKey=''; $bkHit=$false
+  if(-not $NoStageCache){
+    $bkKey=(& python -I "$S\stage_cache.py" key --stage bake --file "$src\world.bin" --file $lj --text "rays=$Rays;bounces=3;denoise=1" --tree $B --skip __pycache__ | Select-Object -Last 1)
+    if($bkKey){
+      if(Test-Path $build){ Remove-Item $build -Recurse -Force }
+      & python -I "$S\stage_cache.py" restore --stage bake --key $bkKey --dest $build
+      $bkHit=($LASTEXITCODE -eq 0)
+    }
+  }
+  if($bkHit){
+    Get-ChildItem $src -File | Where-Object { $_.Name -notin @('world.bin','lighting.txt') } | ForEach-Object { Copy-Item $_.FullName (Join-Path $build $_.Name) -Force }
+    "bake restored from the stage cache ($($bkKey.Substring(0,12))): no new bake"
+  } else {
   for($k=0;$k -lt 900;$k++){ try { $lease=Enter-IW7ResourceLease -Scope "$L\bake" -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner 'IWZ Station Zero level: light bake'; break } catch { if($_.Exception.Message -match 'busy|reserved|wait'){ Start-Sleep 15; continue }; throw } }
   try {
-    $build="$src`_lm"
     if(Test-Path $build){ Remove-Item $build -Recurse -Force }
     & $PY -I "$B\lmbake.py" $src $lj $build --rays $Rays --bounces 3 --denoise 1 2>&1 | Select-Object -Last 8
   } finally { Exit-IW7ResourceLease -Token $lease.Token | Out-Null }
   if(!(Test-Path "$build\lightmap\secondary.dds")){ throw 'bake produced no lightmap' }
+  if($bkKey){ & python -I "$S\stage_cache.py" save --stage bake --key $bkKey --src $build; & python -I "$S\stage_cache.py" prune --stage bake --max-gb 20 }
+  }
 }
 if($NavObstacles){ $A['NavObstacles']=$true }
 # the P1 perk machines (build-sz2 default) need scenegen's relocated perk scriptables; the g27 generator output has none: not part of g27e

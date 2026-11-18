@@ -22,7 +22,7 @@ param(
   [string]$FxReport='',
   [switch]$Darkness, [string]$DarkArgs='',                                                         # (DarkArgs: add_darkness options, e.g. "--dark-exposure 8 --exposures 4,6")                                                                                  # darkness\add_darkness.py: darkness + flashlight modules (generator IWZ_DARK=1)
   [string]$FxNcsSkip='',                                                                             # experiment: imported effects left out of the level effect list
-  [switch]$ReuseCompile,                                                                             # keep the previous iwzcompile output of the same -Src (dump\<map>)
+  [switch]$NoStageCache, [switch]$ReuseCompile,                                                                             # keep the previous iwzcompile output of the same -Src (dump\<map>)
   [string]$DeadeyeImage=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\assets\dumps\cp_disco\images\cp_zmb_perk_icon_deadeye.iw7Image'),  # P1: Deadeye Dewdrops' HUD icon (not in the template zone)
   [string]$PerkMachines=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\p1\machines\port'),       # P1: the four authored perk machines (perks\machines\README.md)
   [string]$DeadeyeKitDump=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\kitimport\ztwork\dump'),        # P1: cp_disco dump with Deadeye's machine (models, scriptable)
@@ -65,7 +65,21 @@ while(-not $held){
 }
 "waited for the build reservation $([int]$heldClock.Elapsed.TotalSeconds) s (held for compile, assembly and zone)"
 try {
-if($ReuseCompile -and (Test-Path "$W\dump\$Map\maps\cp\$Map.d3dbsp.ents")){ "reusing compiled $W\dump\$Map" } else {
+# Stage cache (tools-source/iwzmap/stage_cache.py): the compile is a function of every generated source file, the IWZ_*
+# switches, the compile arguments and the ZoneTool executable. The same inputs restore the compiled map (a few seconds)
+# instead of compiling again. -NoStageCache compiles anyway; -ReuseCompile still keeps the folder as it is.
+$ccKey=''; $ccHit=$false
+if(-not $ReuseCompile -and -not $NoStageCache){
+  $envText=@(Get-ChildItem Env: | Where-Object { $_.Name -like 'IWZ_*' } | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ';'
+  $ccKey=(& python -I "$S\stage_cache.py" key --stage compile --tree $Src --skip __pycache__ --file $ZoneToolExe --text "map=$Map;keep=$KeepSubmodels;nav=$NavObstacles;tpl=$D" --text $envText | Select-Object -Last 1)
+  if($ccKey){
+    if(Test-Path "$W\dump\$Map"){ Remove-Item -LiteralPath "$W\dump\$Map" -Recurse -Force }
+    & python -I "$S\stage_cache.py" restore --stage compile --key $ccKey --dest "$W\dump\$Map"
+    $ccHit=($LASTEXITCODE -eq 0)
+  }
+}
+if($ccHit){ "compile restored from the stage cache ($($ccKey.Substring(0,12))): iwzcompile not run" }
+elseif($ReuseCompile -and (Test-Path "$W\dump\$Map\maps\cp\$Map.d3dbsp.ents")){ "reusing compiled $W\dump\$Map" } else {
 if(Test-Path "$W\iwz_src"){ Remove-Item "$W\iwz_src" -Recurse -Force }
 Copy-Item -Recurse $Src "$W\iwz_src"
 if(Test-Path "$W\dump\$Map"){ Remove-Item -LiteralPath "$W\dump\$Map" -Recurse -Force }
@@ -77,6 +91,7 @@ $full = Get-ChildItem "$W\zt-*.out.log" | Sort-Object LastWriteTime | Select-Obj
 if($full){ Copy-Item $full.FullName "$UmOut.compile.log" -Force -ErrorAction SilentlyContinue }
 if(($c -join "`n") -notmatch 'iwzmap: wrote'){ $c | Select-Object -Last 25; throw 'iwzcompile failed' }
 ($c | Select-String 'iwzmap: wrote|relit|brush models|generated trigger|lightmap').Line | Select-Object -First 30
+if($ccKey){ & python -I "$S\stage_cache.py" save --stage compile --key $ccKey --src "$W\dump\$Map"; & python -I "$S\stage_cache.py" prune --stage compile --max-gb 20 }
 }
 if($KeepSubmodels -and (Test-Path "$Src\plan.json")){
   # gate: compiled trigger volumes must be point-testable and hold their spawners / zone cells (volume_check.py,
