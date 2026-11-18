@@ -725,6 +725,12 @@ STAIR_STYLE = os.environ.get('IWZ_STAIR_STYLE', 'g27')
 TAG_SOLID, TAG_STAIR_CLIP, TAG_RISER, TAG_TREAD = 382, 411, 387, 402
 STOCK_RISE = 8.0
 WELL_SOLID = os.environ.get('IWZ_WELL_SOLID', '0') == '1'     # (g27e) solid well steps: OFF, the g27dw probe got 0/10 and agents fell under the deck (NOTES PAUSED 2026-11-09)
+# (a85, QA g27d far-goal well climbs: a coin flip per attempt, the zombies end under the flight, 14 of 30 reached) per-stair
+# collision variants, for building two candidates in one build: IWZ_WELL_FIX="well_w=stock,well_e=nofloor"
+#   stock    : the stock-style flight (stair clip sheet over 8-unit risers, treads clipshot only) for that stair only
+#   nofloor  : no floor sheet under the ramp start (r0..first riser): nothing for an agent to stand on below the ramp
+#   landN    : bottom landing N units long (default WELL_LAND)
+WELL_FIX = dict(kv.split('=', 1) for kv in os.environ.get('IWZ_WELL_FIX', '').split(',') if '=' in kv)
 STAIRS = []        # (g27) every stair flight: zone, space, open sides and their stringers (artlint stair-soffit)
 
 
@@ -733,7 +739,11 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     """Stair along `axis` from lo_end (z_lo) to hi_end (z_hi); lo_end/hi_end are the end wall planes (either order).
     Render: treads and risers. Collision: low landing, smooth ramp through the nosings, high landing.
     Walls: banded side walls parallel to the slope; ceiling `head` above the nosing line."""
-    if STAIR_STYLE == 'stock':     # ~8-unit risers, treads no shallower than 16 (artlint floor-streak)
+    fix_ = WELL_FIX.get(space, '')
+    style_ = 'stock' if (STAIR_STYLE == 'stock' or fix_ == 'stock') else STAIR_STYLE
+    if fix_.startswith('land'):
+        land_lo = float(fix_[4:])
+    if style_ == 'stock':     # ~8-unit risers, treads no shallower than 16 (artlint floor-streak)
         n_steps = max(n_steps, min(int(round(abs(z_hi - z_lo) / STOCK_RISE)),
                                    int((abs(hi_end - lo_end) - land_lo - land_hi) // 16)))
     d = 1 if hi_end > lo_end else -1
@@ -782,7 +792,7 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     # collision: nosing line z(s) = z_lo + rise + (s - s_a) * rise / run, from s_a - run (z_lo) to s_b - run (z_hi)
     r0, r1 = s_a - run, s_b - run
 
-    stock_ = STAIR_STYLE == 'stock'
+    stock_ = style_ == 'stock'
 
     def cq(sa, sb, za, zb, tag=None):
         pts = [P(sa, c0, za), P(sb, c0, zb), P(sb, c1, zb), P(sa, c1, za)]
@@ -792,7 +802,8 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
     cq(lo_end, r0, z_lo, z_lo)
     cq(r0, r1, z_lo, z_hi, tag=TAG_STAIR_CLIP if stock_ else None)
     cq(r1, hi_end, z_hi, z_hi)
-    cq(r0, s_a, z_lo, z_lo)
+    if fix_ != 'nofloor':
+        cq(r0, s_a, z_lo, z_lo)
     # zombies (scripted agents) do not climb the smooth ramp: solid steps under it (treads at their true height,
     # risers facing down the stair; all on or below the nosing line, so players and downward traces still meet the
     # ramp first) give agents 10.7-unit step-ups, matching the render treads.
@@ -820,7 +831,7 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
             B.collision_box(tuple(min(u, v) for u, v in zip(mn_, mx_)), tuple(max(u, v) for u, v in zip(mn_, mx_)), nav=False)
         STAIRS[-1]['solid'] = True
     STAIRS[-1]['ramp_from'] = [r0, z_lo]
-    STAIRS[-1]['style'] = STAIR_STYLE
+    STAIRS[-1]['style'] = style_
     STAIRS[-1]['steps'] = n_steps
 
     def zline(s):

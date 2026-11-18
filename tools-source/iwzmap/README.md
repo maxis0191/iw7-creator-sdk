@@ -80,6 +80,7 @@ The table above explains the main pieces. The three tables below list every file
 | `sz2_submodels.py` | picks the door blocker sub-model from a compile log made with `IWZ_KEEP_SUBMODELS=1`; writes `sz2_submodels.json` |
 | `sz2_kitzone.py` | adds kit models of other CP zones to an assembled map zone |
 | `sz2_tables.py` | Markdown tables of a generated layout (zones, doors, interactions, spawners, quest spots, lights) |
+| `build-g.ps1` | the Station Zero level build the level builder used for every `g` build (generator, door blockers, artlint / seams / navconn gates, light bake, kit, FX, audio, train set `-TrainSet g27e`, zone), now in the repository and resolving its paths through `machine.ps1` (compiler: `compiler-landing\zonetool-playeranim-1dcd449.exe` unless `-ZoneToolExe` / `IWZ_ZONETOOL_EXE`; scheduler core: `scheduler.ps1`). `-GateOnly` runs the offline gates only (about 1 minute). `IWZ_WELL_FIX='well_w=stock,well_e=nofloor'` builds one well-collision variant per well |
 | `build-sz2.ps1`, `run-sz2.ps1` | v2 build (own ZoneTool work folder, leased) and private local run (views, walk, gameplay modes) |
 | `sz2_plan.py` | offline: plan image and nav / data consistency (exit 1 on failure) |
 | `sz2_navconn.py` | offline: nav connectivity of the generated source (stairs, decks) |
