@@ -45,6 +45,20 @@ server repository. The `ops/bench`, `ops/gamelab`, `ops/enginelab`, `ops/netlab`
 are not in this repository: they live in the server repository (iw7-paris-server) or in iw7-mod-components; that
 index says which.
 
+## Test conditions come first - owner rule 2026-11-11
+
+No test in the game starts before its conditions and its tier are chosen; the gamelab runners refuse a run without them.
+
+- Tier: the lightest that answers. No game (a file or data check), then headless (a server and one bot: about 1.1 GB,
+  usually under 3 minutes), then one client (5 to 7 GB), then several clients. A heavier tier needs a reason.
+- Conditions: preset `quiet` (no zombie but the test's own), `ignored` (zombies there, ignoring the player), `normal`
+  (zombies attack, the player cannot be hurt), `exposed` (real damage: downs and deaths); or the switches `zombies`,
+  `damage`, `kick`, `rounds`, `points`, `companions`. Every preset turns the inactivity kick off.
+- The game measures them before the first step and stops in seconds when one did not take (verdict `conditions`).
+- A failure caused by the environment and not by the thing tested (a kick, a death, a crowd, rounds, a join stall, a
+  busy machine) is fixed in the tools first and written in the quality ledger.
+- How: iw7-paris-server `docs/GAMELAB.md`, "Test conditions"; which tool for which question: its `docs/DEVKIT.md`.
+
 ## 1. What this repository is
 
 - The creator side of the IW7 products: map and content creation tools (`tools-source/iwzmap`,
