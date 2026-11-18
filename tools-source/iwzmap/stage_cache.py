@@ -9,8 +9,7 @@ A key is the SHA-256 of every input of the stage. A stage whose inputs did not c
     bake      key = the render world (world.bin), the light list, the bake arguments and the bake tool files
               output = the baked source folder (lightmaps and the baked world.bin)
               A change of entities, scripts, collision, nav or any other generated file keeps the key: no new bake.
-    compile   key = every generated source file, the compile switches and the ZoneTool executable
-              output = the compiled map folder (dump/<map>)
+    other     any stage with a key of its own (the compile takes 7 s and the zone 41 to 63 s: not cached today)
 
 Commands (exit 0 = done / hit, 3 = miss, 2 = bad use):
     key     --stage S [--file F]... [--tree D [--skip NAME]...]... [--text T]...   print the key

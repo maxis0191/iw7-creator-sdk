@@ -352,6 +352,7 @@
     "tools-source/iwzmap/bake/rt.py",
     "tools-source/iwzmap/brushkit.py",
     "tools-source/iwzmap/build-charpack.ps1",
+    "tools-source/iwzmap/build-g.ps1",
     "tools-source/iwzmap/build-map-wait.ps1",
     "tools-source/iwzmap/build-prefab-room.ps1",
     "tools-source/iwzmap/build-sz2.ps1",
