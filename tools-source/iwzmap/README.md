@@ -255,6 +255,16 @@ reservation behind other agents' sessions (quality ledger: the scheduler has no 
 Not covered: a change of the render world needs the bake again (250 s for the whole map; no per-room bake yet); the
 kit, effects and darkness modules were not in the timed runs.
 
+**Stage cache (18 Nov 2026).** `stage_cache.py` keeps the output of a build stage in the machine-wide build cache
+(`C:\IW7-Cache\stages\<stage>\<key>`, `$env:IW7_BUILD_CACHE`; the same folder as the lab client packages) under the hash
+of the stage's inputs. The bake is the one stage that costs minutes (250 s) and depends on little: the render world
+(`world.bin`), the light list, the bake arguments and the bake tools. `build-g.ps1 -Bake` asks the cache first (hook
+in the Station Zero branch, see the pull request): a source that differs only in entities, scripts, collision or
+nav has the same key and gets the earlier bake in under a second (measured on g27: key identical after a script
+change, different after a world change; 138,405,594 bytes of baked folder stored and restored, 0 s each way),
+and the overlay `-ReuseBake` does by hand is done by the script. `-NoStageCache` bakes anyway. The compile (7 s) and
+the zone step (41 to 63 s) are not cached: a restore would not be shorter than the work.
+
 `ff_compare.py <a.ff> <b.ff>` says whether two built zones hold the same map: it decompresses both and separates
 pointer residue (leftover addresses of ZoneTool's own process in fields the game rebuilds at load; they change with
 the heap of the run) from content. Two builds of the same source by the same binary differed in 58,613 bytes, all
