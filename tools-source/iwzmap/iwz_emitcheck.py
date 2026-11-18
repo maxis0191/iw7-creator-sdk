@@ -18,6 +18,10 @@ questions that used to cost one zone build plus one game launch each:
           inside solid geometry), to read a stuck or sunk agent without a launch.
   route   nav path length and walking time between two points, to size a probe
           timeout before spending a launch on it.
+  reach   every spawner and a grid of pit-floor cells against the hubs (player starts, the deck): the
+          walking distance there and back, "no route" with the place where the graph breaks and why
+          (link blocked by collision, step too high, one-way link, no link generated). Exit 1 on any
+          source with no route or a route over --max-len. Run it before every build.
 
 The walk simulation is a model, not the engine: 16-unit columns, an 18-unit
 step, a centre-line wall test.  A clean report removes whole defect classes
@@ -852,6 +856,206 @@ def parse_point(text):
     return p
 
 
+# --------------------------------------------------------------------------- reach
+def _dijkstra(nav, seeds, reverse=False, cutoff=None):
+    """Walking distance over the directed nav links from `seeds` (or, reversed, to them)."""
+    adj = collections.defaultdict(list)
+    if reverse:
+        for k, ar in nav.a.items():
+            for nb in ar['nbrs']:
+                if nb in nav.a:
+                    adj[nb].append(k)
+    dist = {k: 0.0 for k in seeds}
+    heap = [(0.0, k) for k in seeds]
+    heapq.heapify(heap)
+    while heap:
+        d, cur = heapq.heappop(heap)
+        if d > dist.get(cur, 1e18) or (cutoff is not None and d > cutoff):
+            continue
+        cc = nav.a[cur]['c']
+        for nb in (adj[cur] if reverse else [n for n in nav.a[cur]['nbrs'] if n in nav.a]):
+            nd = d + math.dist(cc, nav.a[nb]['c'])
+            if nd < dist.get(nb, 1e18):
+                dist[nb] = nd
+                heapq.heappush(heap, (nd, nb))
+    return dist
+
+
+def _snap(nav, p, kind='ground', tol=40.0):
+    """Nav cell under a source, strictly (within `tol` of the point), so a source with no cell of its own is reported."""
+    if kind != 'ground':
+        return nav.below(*p)
+    k = nav.at(p[0], p[1], p[2], tol)
+    if k is not None:
+        return k
+    best = None
+    for dx in (-32, 0, 32):
+        for dy in (-32, 0, 32):
+            kk = nav.at(p[0] + dx, p[1] + dy, p[2], tol)
+            if kk is not None:
+                d = math.hypot(nav.a[kk]['c'][0] - p[0], nav.a[kk]['c'][1] - p[1])
+                if best is None or d < best[0]:
+                    best = (d, kk)
+    return best[1] if best else None
+
+
+def _why_broken(emit, src_cell, good, reverse=False, cutoff=None):
+    """Where the graph breaks for a cell with no route: the nearest places where the cells it can reach come close
+    to cells that do reach the hub, and what keeps them apart."""
+    nav = emit.nav
+    mine = set(_dijkstra(nav, [src_cell], reverse=reverse, cutoff=cutoff))
+    near = []
+    for k in mine:
+        c = nav.a[k]['c']
+        ix, iy = int(math.floor(c[0] / nav.g)), int(math.floor(c[1] / nav.g))
+        for dx in range(-2, 3):
+            for dy in range(-2, 3):
+                for kk in nav.grid.get((ix + dx, iy + dy), ()):
+                    if kk in mine or kk not in good:
+                        continue
+                    c2 = nav.a[kk]['c']
+                    dh = math.hypot(c2[0] - c[0], c2[1] - c[1])
+                    dz = c2[2] - c[2]
+                    if dh > 56 or abs(dz) > 90:
+                        continue
+                    near.append((dh + abs(dz) * 0.25, k, kk, dh, dz))
+    near.sort()
+    out, seen = [], []
+    for _s, k, kk, dh, dz in near:
+        c, c2 = nav.a[k]['c'], nav.a[kk]['c']
+        if any(math.dist(c, q) < 96 for q in seen):
+            continue
+        seen.append(c)
+        mid_z = max(c[2], c2[2]) + 24.0
+        if emit.col.blocked((c[0], c[1], mid_z), (c2[0], c2[1], mid_z)):
+            why = 'link blocked by collision'
+        elif abs(dz) > STEP:
+            why = 'step %.0f too high' % abs(dz)
+        elif kk in nav.a[k]['nbrs'] or k in nav.a[kk]['nbrs']:
+            why = 'one-way link'
+        else:
+            why = 'no link generated (gap or margin between regions)'
+        out.append('%s at (%.0f, %.0f, %.0f) -> (%.0f, %.0f, %.0f)' % (why, c[0], c[1], c[2], c2[0], c2[1], c2[2]))
+        if len(out) >= 3:
+            break
+    return len(mine), out
+
+
+def pitbox_ok(lay, c):
+    b = lay.get('zones', {}).get('platform_a', {}).get('box')
+    return bool(b) and b[0] <= c[0] <= b[3] and b[1] <= c[1] <= b[4]
+
+
+def reach(emit, max_len=6000.0, spawners=True, pits=True, stride=4, pit_z=-350.0, pit_max_len=2800.0):
+    """Walking distance between every source and the hubs (the player starts and the deck), both ways.
+    Returns (rows, failures); a failure is a row with no route or a route over max_len."""
+    nav, lay = emit.nav, emit.layout
+    hubs = {}
+    for i, s in enumerate(lay.get('starts', [])[:3]):
+        k = _snap(nav, s, 'ground', 64.0) or nav.nearest(*s)
+        if k is not None:
+            hubs['start%d' % i] = k
+    deck = lay.get('zones', {}).get('platform_a', {}).get('box')
+    if deck:
+        k = None
+        for dz in (-320.0, -319.0):
+            k = nav.at((deck[0] + deck[3]) / 2.0, deck[4] - 400.0, dz, 40.0)
+            if k is not None:
+                break
+        if k is not None:
+            hubs['deck'] = k
+    if not hubs:
+        return [], [{'source': 'hubs', 'why': 'no player start or deck cell on the nav'}]
+    to_hub = _dijkstra(nav, list(hubs.values()), reverse=True)
+    from_hub = _dijkstra(nav, list(hubs.values()))
+    srcs = []
+    if spawners:
+        for sp in lay.get('spawners', []):
+            srcs.append(('spawner %s %s' % (sp.get('zone'), sp.get('kind', 'ground')), sp['origin'], sp.get('kind', 'ground'), sp.get('zone')))
+    if pits:
+        pick = {}
+        pitbox = lay.get('zones', {}).get('platform_a', {}).get('box')
+        for k in sorted((k for k, ar in nav.a.items() if ar['c'][2] < pit_z and (not pitbox or pitbox[0] <= ar['c'][0] <= pitbox[3] and pitbox[1] <= ar['c'][1] <= pitbox[4])),
+                        key=lambda k: (round(nav.a[k]['c'][0]), round(nav.a[k]['c'][1]))):
+            c = nav.a[k]['c']
+            key = (int(c[0] // (nav.g * stride)), int(c[1] // (nav.g * stride)), round(c[2] / 24.0))
+            if key not in pick:
+                pick[key] = k
+        for k in pick.values():
+            c = nav.a[k]['c']
+            srcs.append(('pit cell', c, 'cell', emit.where(*c)))
+    good_to, good_from = set(to_hub), set(from_hub)
+    if pits:
+        for st in lay.get('stairs', []):
+            if not str(st.get('space', '')).startswith('well'):
+                continue
+            (a0, a1), (c0, c1), (z0, z1) = sorted(st['span']), sorted(st['c']), sorted(st['z'])
+            foot_end = a0 if st['axis'] == 'x' and False else None
+            # the foot is the end of the span nearest the low floor: the cell column under the landing at z0
+            foot = None
+            for ax in (a0 + 16.0, a1 - 16.0):
+                kk = nav.at(ax, (c0 + c1) / 2.0, z0, 8.0) if st['axis'] == 'x' else nav.at((c0 + c1) / 2.0, ax, z0, 8.0)
+                if kk is not None:
+                    foot = kk
+            srcs.append(('well foot %s' % st['space'], list(nav.a[foot]['c']) if foot else [(a0 + a1) / 2, (c0 + c1) / 2, z0], 'foot', st['space']))
+    # a pit cell must walk out onto the deck: its hub is every deck cell (the wells are the way out)
+    deck_cells = [k for k, ar in nav.a.items() if pitbox_ok(lay, ar['c']) and ar['c'][2] > -330.0] if pits else []
+    to_deck = _dijkstra(nav, deck_cells, reverse=True) if deck_cells else {}
+    from_deck = _dijkstra(nav, deck_cells) if deck_cells else {}
+    rows, fails = [], []
+    for name, p, kind, zone in srcs:
+        k = None
+        if kind == 'foot':
+            # the foot landing must walk to the pit floor south of the well (z0 level, outside the well's own span) within 800 units
+            k = nav.nearest(p[0], p[1], p[2], 16.0)
+            pitc = [kk for kk, ar in nav.a.items() if abs(ar['c'][2] - p[2]) < 6 and ar['c'][1] < p[1] - 100 and abs(ar['c'][0] - p[0]) < 700 and pitbox_ok(lay, ar['c'])]
+            best = None
+            if k is not None and pitc:
+                dd = _dijkstra(nav, [k], cutoff=800.0)
+                best = min((dd[q] for q in pitc if q in dd), default=None)
+            row = {'source': name, 'at': [round(v) for v in p], 'zone': zone, 'to': round(best) if best is not None else None, 'from': None, 'why': ''}
+            if best is None:
+                n_, w_ = _why_broken(emit, k, set(pitc), cutoff=800.0) if (k is not None and pitc) else (0, [])
+                row['why'] = ('the foot landing has no walk of 800 units or less to the pit floor south of the well; nearest places where it comes close to pit cells: '
+                              + ('; '.join(w_) if w_ else 'none within 56 units (no pit cell near the foot)'))
+                fails.append(row)
+            rows.append(row)
+            continue
+        if kind == 'cell':
+            for kk, ar in nav.a.items():
+                if ar['c'] is p or ar['c'] == p:
+                    k = kk
+                    break
+        else:
+            k = _snap(nav, p, kind)
+        row = {'source': name, 'at': [round(v) for v in p], 'zone': zone, 'to': None, 'from': None, 'why': ''}
+        if k is None:
+            row['why'] = 'no nav cell under the source'
+            fails.append(row)
+            rows.append(row)
+            continue
+        td, fd = (to_deck, from_deck) if (kind == 'cell' and deck_cells) else (to_hub, from_hub)
+        row['to'] = round(td[k]) if k in td else None
+        row['from'] = round(fd[k]) if k in fd else None
+        bad = []
+        limit = pit_max_len if kind == 'cell' else max_len
+        if row['to'] is None:
+            n, w = _why_broken(emit, k, good_to)
+            bad.append('no route to a hub (%d cells reachable from it); breaks: %s' % (n, '; '.join(w) or 'no near miss'))
+        elif row['to'] > limit:
+            bad.append('route to %s %d units (over %d)' % ('the deck' if kind == 'cell' else 'a hub', row['to'], limit))
+        if row['from'] is None:
+            n, w = _why_broken(emit, k, good_from, reverse=True)
+            bad.append('no route from a hub (%d cells reach it); breaks: %s' % (n, '; '.join(w) or 'no near miss'))
+        elif row['from'] > limit:
+            bad.append('route from %s %d units (over %d)' % ('the deck' if kind == 'cell' else 'a hub', row['from'], limit))
+        row['why'] = ' | '.join(bad)
+        rows.append(row)
+        if bad:
+            fails.append(row)
+    return rows, fails
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     sub = ap.add_subparsers(dest='cmd', required=True)
@@ -875,6 +1079,14 @@ def main(argv=None):
     p.add_argument('start', type=parse_point)
     p.add_argument('goal', type=parse_point)
     p.add_argument('--speed', type=float, default=35.0, help='units per second (a walking zombie is about 35)')
+    p = sub.add_parser('reach')
+    p.add_argument('src')
+    p.add_argument('--all-spawners', action='store_true', help='every spawner of the layout')
+    p.add_argument('--grid', choices=('pits',), help='a grid of pit-floor cells (nav below z -350), one every --stride cells')
+    p.add_argument('--stride', type=int, default=4)
+    p.add_argument('--max-len', type=float, default=6000.0, help='longest accepted walk, in units')
+    p.add_argument('--pit-max-len', type=float, default=2800.0, help='longest accepted walk from a pit cell to a hub (the pit is 4,800 long: its far end is about 2,400 from the nearest well)')
+    p.add_argument('--json')
     args = ap.parse_args(argv)
 
     if args.cmd == 'check':
@@ -916,6 +1128,21 @@ def main(argv=None):
         for pt in args.points:
             print(json.dumps(explain(emit, *pt)))
         return 0
+    if args.cmd == 'reach':
+        emit = Emit.load(args.src)
+        rows, fails = reach(emit, args.max_len, spawners=args.all_spawners or not args.grid, pits=args.grid == 'pits', stride=args.stride, pit_max_len=args.pit_max_len)
+        print('%-30s %-22s %-16s %8s %8s  %s' % ('source', 'at', 'zone', 'to hub', 'from hub', 'verdict'))
+        for r in rows:
+            if r['source'] != 'pit cell' or r['why']:
+                print('%-30s %-22s %-16s %8s %8s  %s' % (r['source'], tuple(r['at']), str(r['zone'])[:16],
+                      r['to'] if r['to'] is not None else '-', r['from'] if r['from'] is not None else '-', r['why'] or 'ok'))
+        pit = [r for r in rows if r['source'] == 'pit cell']
+        if pit:
+            print('pit cells: %d sampled, %d with a route both ways under %d units' % (len(pit), len([r for r in pit if not r['why']]), args.pit_max_len))
+        print('reach: %d sources, %d without a route or over %d units' % (len(rows), len(fails), args.max_len))
+        if args.json:
+            json.dump({'rows': rows, 'failures': fails}, open(args.json, 'w', encoding='utf-8'), indent=1)
+        return 1 if fails else 0
     if args.cmd == 'route':
         emit = Emit.load(args.src)
         a = emit.nav.nearest(*args.start) or emit.nav.below(*args.start)
