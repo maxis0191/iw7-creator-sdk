@@ -857,7 +857,7 @@ def parse_point(text):
 
 
 # --------------------------------------------------------------------------- reach
-def _dijkstra(nav, seeds, reverse=False, cutoff=None):
+def _dijkstra(nav, seeds, reverse=False, cutoff=None, prev=None):
     """Walking distance over the directed nav links from `seeds` (or, reversed, to them)."""
     adj = collections.defaultdict(list)
     if reverse:
@@ -877,6 +877,8 @@ def _dijkstra(nav, seeds, reverse=False, cutoff=None):
             nd = d + math.dist(cc, nav.a[nb]['c'])
             if nd < dist.get(nb, 1e18):
                 dist[nb] = nd
+                if prev is not None:
+                    prev[nb] = cur
                 heapq.heappush(heap, (nd, nb))
     return dist
 
@@ -941,12 +943,84 @@ def _why_broken(emit, src_cell, good, reverse=False, cutoff=None):
     return len(mine), out
 
 
+# Route quality (a85, 18 Nov 2026): a route that exists on paper but that a scripted agent cannot walk.
+AGENT_WIDTH = 44.0      # narrowest free width accepted along a route (an agent is 30 across; the 32-unit single cell of the
+                        # west well foot killed zombies, stairs 400 wide, wells 160, doors 192, corridors 240)
+SLOPE_NZ_MAX = 0.885    # steepest floor a route may cross: the stock stairs' 26 degrees (nz 0.894); Station Zero's passing stairs
+                        # (A, B at 26.6 degrees, wells at 24) and the ballast shoulders (26.7) are all at or under it, so a floor
+                        # steeper than this is something the passing stairs do not prove walkable
+
+
+def _free_width(emit, c, heading):
+    """Free width across a route cell, perpendicular to the heading, at shin and chest height (max 2 x 64)."""
+    hx, hy = heading
+    ln = math.hypot(hx, hy)
+    if ln < 1e-6:
+        return 128.0
+    nx, ny = -hy / ln, hx / ln
+    w = 0.0
+    for sgn in (1.0, -1.0):
+        free = 64.0
+        for d in range(4, 65, 4):
+            hit = False
+            for h in (20.0, 48.0):
+                p = (c[0] + EX, c[1] + EY, c[2] + h)
+                q = (c[0] + EX + sgn * nx * d, c[1] + EY + sgn * ny * d, c[2] + h)
+                if emit.col.blocked(p, q):
+                    hit = True
+                    break
+            if hit:
+                free = float(d - 4)
+                break
+        w += free
+    return w
+
+
+def route_flags(emit, prev, cells):
+    """For route cells (a set of area ids, `prev` = next cell toward the hub): {cell: [reasons]}."""
+    nav = emit.nav
+    flags = {}
+    for k in cells:
+        c = nav.a[k]['c']
+        nxt = prev.get(k)
+        why = []
+        if nxt is not None and nxt in nav.a:
+            c2 = nav.a[nxt]['c']
+            if abs(c2[2] - c[2]) > STEP + 0.5:
+                why.append('step %.0f higher than the %.0f an agent steps' % (abs(c2[2] - c[2]), STEP))
+            wdt = _free_width(emit, c, (c2[0] - c[0], c2[1] - c[1]))
+            if wdt < AGENT_WIDTH:
+                why.append('free width %.0f under the agent width %.0f' % (wdt, AGENT_WIDTH))
+            # the width of the NAV across the route: a one-cell passage (32) is narrower than the agent whatever the collision says
+            hx, hy = c2[0] - c[0], c2[1] - c[1]
+            ln = math.hypot(hx, hy) or 1.0
+            nx, ny = -hy / ln, hx / ln
+            n_ = 1
+            for sgn in (1.0, -1.0):
+                for i in (1, 2, 3):
+                    if nav.at(c[0] + sgn * nx * nav.g * i, c[1] + sgn * ny * nav.g * i, c[2], 24.0) is None:
+                        break
+                    n_ += 1
+            if n_ * nav.g < AGENT_WIDTH:
+                why.append('nav %d cell wide (%.0f) across the route, under the agent width %.0f' % (n_, n_ * nav.g, AGENT_WIDTH))
+        # a floor steeper than the stock stairs
+        layers = emit.col.column(c[0], c[1])
+        here = [(z, nz) for z, nz in layers if abs(z - c[2]) <= 4.0 and nz > 0.5]
+        if here:
+            z0, nz0 = min(here, key=lambda l: abs(l[0] - c[2]))
+            if nz0 < SLOPE_NZ_MAX:
+                why.append('floor slope nz %.2f steeper than the stock stairs (%.3f)' % (nz0, SLOPE_NZ_MAX))
+        if why:
+            flags[k] = why
+    return flags
+
+
 def pitbox_ok(lay, c):
     b = lay.get('zones', {}).get('platform_a', {}).get('box')
     return bool(b) and b[0] <= c[0] <= b[3] and b[1] <= c[1] <= b[4]
 
 
-def reach(emit, max_len=6000.0, spawners=True, pits=True, stride=4, pit_z=-350.0, pit_max_len=2800.0):
+def reach(emit, max_len=6000.0, spawners=True, pits=True, stride=4, pit_z=-350.0, pit_max_len=2800.0, quality=True, strict=False):
     """Walking distance between every source and the hubs (the player starts and the deck), both ways.
     Returns (rows, failures); a failure is a row with no route or a route over max_len."""
     nav, lay = emit.nav, emit.layout
@@ -966,7 +1040,8 @@ def reach(emit, max_len=6000.0, spawners=True, pits=True, stride=4, pit_z=-350.0
             hubs['deck'] = k
     if not hubs:
         return [], [{'source': 'hubs', 'why': 'no player start or deck cell on the nav'}]
-    to_hub = _dijkstra(nav, list(hubs.values()), reverse=True)
+    nxt_hub = {}
+    to_hub = _dijkstra(nav, list(hubs.values()), reverse=True, prev=nxt_hub)      # nxt_hub[k] = next cell toward the nearest hub
     from_hub = _dijkstra(nav, list(hubs.values()))
     srcs = []
     if spawners:
@@ -1000,7 +1075,8 @@ def reach(emit, max_len=6000.0, spawners=True, pits=True, stride=4, pit_z=-350.0
             srcs.append(('well foot %s' % st['space'], list(nav.a[foot]['c']) if foot else [(a0 + a1) / 2, (c0 + c1) / 2, z0], 'foot', st['space']))
     # a pit cell must walk out onto the deck: its hub is every deck cell (the wells are the way out)
     deck_cells = [k for k, ar in nav.a.items() if pitbox_ok(lay, ar['c']) and ar['c'][2] > -330.0] if pits else []
-    to_deck = _dijkstra(nav, deck_cells, reverse=True) if deck_cells else {}
+    nxt_deck = {}
+    to_deck = _dijkstra(nav, deck_cells, reverse=True, prev=nxt_deck) if deck_cells else {}
     from_deck = _dijkstra(nav, deck_cells) if deck_cells else {}
     rows, fails = [], []
     for name, p, kind, zone in srcs:
@@ -1049,10 +1125,57 @@ def reach(emit, max_len=6000.0, spawners=True, pits=True, stride=4, pit_z=-350.0
             bad.append('no route from a hub (%d cells reach it); breaks: %s' % (n, '; '.join(w) or 'no near miss'))
         elif row['from'] > limit:
             bad.append('route from %s %d units (over %d)' % ('the deck' if kind == 'cell' else 'a hub', row['from'], limit))
+        if quality and not bad:
+            pv = nxt_deck if (kind == 'cell' and deck_cells) else nxt_hub
+            path, cur, guard = [], k, 0
+            while cur is not None and guard < 4000:
+                path.append(cur)
+                cur = pv.get(cur)
+                guard += 1
+            row['_path'] = path
         row['why'] = ' | '.join(bad)
         rows.append(row)
         if bad:
             fails.append(row)
+    if quality:
+        used = set()
+        for r in rows:
+            used.update(r.get('_path', ()))
+        pv = dict(nxt_hub)
+        pv.update({k: v for k, v in nxt_deck.items()})
+        flags = route_flags(emit, pv, used)
+        places = {}
+        for r in rows:
+            for kk in r.pop('_path', ()):
+                if kk in flags:
+                    r.setdefault('route_flags', []).append(kk)
+        for r in rows:
+            fl = r.get('route_flags')
+            if not fl:
+                continue
+            first = fl[0]
+            c = nav.a[first]['c']
+            reasons = '; '.join(sorted({w for kk in fl for w in flags[kk]}))
+            note = 'the route has %d cells under the agent limits, first at (%.0f, %.0f, %.0f): %s' % (len(fl), c[0], c[1], c[2], reasons)
+            if strict:
+                r['why'] = (r['why'] + ' | ' if r['why'] else '') + note
+                fails.append(r)
+            else:
+                r['note'] = note
+            for kk in fl:
+                places[kk] = flags[kk]
+        for r in rows:
+            r.pop('route_flags', None)
+        # the places themselves, clustered, for the report
+        out = []
+        seen = []
+        for kk in sorted(places, key=lambda q: (round(nav.a[q]['c'][0]), round(nav.a[q]['c'][1]))):
+            c = nav.a[kk]['c']
+            if any(math.dist(c, q) < 96 for q in seen):
+                continue
+            seen.append(c)
+            out.append({'at': [round(v) for v in c], 'why': places[kk], 'where': emit.where(*c)})
+        emit.bad_places = out
     return rows, fails
 
 
@@ -1085,6 +1208,8 @@ def main(argv=None):
     p.add_argument('--grid', choices=('pits',), help='a grid of pit-floor cells (nav below z -350), one every --stride cells')
     p.add_argument('--stride', type=int, default=4)
     p.add_argument('--max-len', type=float, default=6000.0, help='longest accepted walk, in units')
+    p.add_argument('--strict', action='store_true', help='a route through a cell under the agent limits (width, step, slope) is a failure; without it those are listed as places and do not fail')
+    p.add_argument('--no-quality', action='store_true', help='skip the route quality checks (width, step, slope sheet)')
     p.add_argument('--pit-max-len', type=float, default=2800.0, help='longest accepted walk from a pit cell to a hub (the pit is 4,800 long: its far end is about 2,400 from the nearest well)')
     p.add_argument('--json')
     args = ap.parse_args(argv)
@@ -1130,7 +1255,7 @@ def main(argv=None):
         return 0
     if args.cmd == 'reach':
         emit = Emit.load(args.src)
-        rows, fails = reach(emit, args.max_len, spawners=args.all_spawners or not args.grid, pits=args.grid == 'pits', stride=args.stride, pit_max_len=args.pit_max_len)
+        rows, fails = reach(emit, args.max_len, spawners=args.all_spawners or not args.grid, pits=args.grid == 'pits', stride=args.stride, pit_max_len=args.pit_max_len, quality=not args.no_quality, strict=args.strict)
         print('%-30s %-22s %-16s %8s %8s  %s' % ('source', 'at', 'zone', 'to hub', 'from hub', 'verdict'))
         for r in rows:
             if r['source'] != 'pit cell' or r['why']:
@@ -1139,7 +1264,9 @@ def main(argv=None):
         pit = [r for r in rows if r['source'] == 'pit cell']
         if pit:
             print('pit cells: %d sampled, %d with a route both ways under %d units' % (len(pit), len([r for r in pit if not r['why']]), args.pit_max_len))
-        print('reach: %d sources, %d without a route or over %d units' % (len(rows), len(fails), args.max_len))
+        for bp in getattr(emit, 'bad_places', []):
+            print('  place %-22s %-18s %s' % (tuple(bp['at']), bp['where'], '; '.join(bp['why'])))
+        print('reach: %d sources, %d without a route or over %d units' % (len(rows), len(set(id(f) for f in fails)), args.max_len))
         if args.json:
             json.dump({'rows': rows, 'failures': fails}, open(args.json, 'w', encoding='utf-8'), indent=1)
         return 1 if fails else 0

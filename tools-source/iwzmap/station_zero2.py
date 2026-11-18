@@ -1932,6 +1932,10 @@ def train_kit():
             # (a85 reach audit) the door threshold: a clip plate over the gap between the car side and the platform edge, so the
             # door-bay nav cells rest on collision (emitcheck NAV_FLOATING platform_a, 49 above the ballast)
             B.collision_quad([(d0_, cy + 16, fz_), (d1_, cy + 16, fz_), (d1_, EDGE_Y, fz_), (d0_, EDGE_Y, fz_)], n=(0, 0, 1))
+            # the slot beside the hero car under its platform-side skirt (ballast bed, car side to the edge panel) is filled: a clip
+            # brush from the bed to 8 under the car floor (a floor 37 above the ballast: no agent can stand in the slot and the walk
+            # model agrees; a top higher than -328 would leave the ballast a 40 units headroom floor inside the brush)
+            B.collision_box((cx - 20, cy + 40, TRAIN_BED), (cx + 120, EDGE_Y - 8, fz_ - 8), nav=False)
             adjacent(an_, dn_)
             adjacent(dn_, 'deck_mid')
         c, s_ = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
