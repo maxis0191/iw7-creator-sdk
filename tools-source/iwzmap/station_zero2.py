@@ -2434,7 +2434,7 @@ tpl, out = sys.argv[1], sys.argv[2]
 #   Sour Grudges (the Boneyard) -> generator_room north wall (powered room, east of the control-room door)
 #   Double Takes (Underpass Arcade) -> ticket_hall east wall, north of Baker's (the west wall is full: turnstiles, vending machine)
 PERKS_P1 = [   # (interaction, donor scriptable or None, body model or None, origin, yaw, zone, id)
-    ('perk_machine_deadeye', 'perk_machine_blue_bolts_sign', None, (3570, 3500, -320), 180, 'control_room', 'deadeye_dewdrops'),
+    ('perk_machine_deadeye', 'perk_machine_blue_bolts_sign', None, (3570, 3650, -320), 180, 'control_room', 'deadeye_dewdrops'),     # (a85) was y 3500: a desk, a CRT and a tipped chair 143 in front of it hid the machine (review C)
     ('perk_machine_bakers', None, 'iwz_perk_machine_bakers', (382, 3750, 0), 180, 'ticket_hall', 'bakers_dozens'),
     ('perk_machine_voyage', None, 'iwz_perk_machine_voyage', (-1900, 2382, -320), 270, 'platform_a', 'bon_voyages'),
     ('perk_machine_grudge', None, 'iwz_perk_machine_grudge', (3350, 3182, -320), 270, 'generator_room', 'sour_grudges'),
