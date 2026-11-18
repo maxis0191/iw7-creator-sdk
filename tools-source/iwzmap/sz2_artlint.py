@@ -164,7 +164,12 @@ def g27_rules(lay, quads, fails, bounds):
     for ch in spec.get('channels', []):
         for xe in (ch['x0'], ch['x1']):
             ok = any(o['kind'] == 'door' and o['axis'] == 'y' and any(abs(w - xe) <= 64 for w in o['walls'].values())
-                     and o['a'] <= ch['y0'] + 1 and o['b'] >= ch['y1'] - 1 for o in lay.get('openings', []))
+                     and ((o['a'] <= ch['y0'] + 1 and o['b'] >= ch['y1'] - 1)
+                          # (a85, 18 Nov 2026) a tunnel mouth narrowed to one stock blocker tile (138): it still spans the rails and the
+                          # third rail (8 to spare) and the north rail's centre (4 short of its far edge), the wall closes the ballast shoulders beside it
+                          or (o['a'] <= min(spec.get('third_rail_y', ch['centre_y']), spec.get('rail_y', [ch['centre_y']])[0]) - 8
+                              and o['b'] >= max(spec.get('third_rail_y', ch['centre_y']), spec.get('rail_y', [ch['centre_y']])[-1]) - 4))
+                     for o in lay.get('openings', []))
             ok = ok or bool(tspec.get('buffer') and abs(tspec['buffer'][0] - xe) <= 64)
             ok = ok or any(g['mins'][0] - 64 <= xe <= g['maxs'][0] + 64 and g['mins'][1] <= ch['centre_y'] <= g['maxs'][1] for g in ends_ok)
             if not ok:

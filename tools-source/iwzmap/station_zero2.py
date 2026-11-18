@@ -95,7 +95,12 @@ OPENINGS = [
      'a': 3004, 'b': 3196, 'z0': -320, 'z1': -96, 'cost': 1250, 'zones': ('generator_room', 'control_room'),
      'scriptable': 'pf7_auto237', 'sign': 'sign_signal_control'},
     {'name': 'd_platform_tunnel', 'kind': 'door', 'axis': 'y', 'walls': {'pit': -2400, 'tunnel_a': -2416},
-     'a': 1392, 'b': 1584, 'z0': -384, 'z1': -160, 'cost': 1000, 'zones': ('platform_a', 'service_tunnel'),
+     # (a85, 18 Nov 2026) was 1392..1584: the door's runtime nav obstacle is a bounding sphere of radius 106.7 around each of its two
+     # tiles (sz2_submodels.json: radius 106.7), which cut the west well's foot cells (-2384, 1584..1616) while the door was closed:
+     # 1 of 10 pit zombies climbed the west well (10 of 10 with the door bought). One tile (138 wide, the stock blocker) centred
+     # on y 1448 keeps the foot cell, its only link (-2384, 1552) and the strip out of the sphere (a tile centred on y 1480 still cut (-2384, 1552));
+     # the wall closes the rest of the old opening; the opening still holds the third rail (1431) and the north rail (1516).
+     'a': 1383, 'b': 1513, 'z0': -384, 'z1': -160, 'cost': 1000, 'zones': ('platform_a', 'service_tunnel'),
      'scriptable': 'pf7_auto238', 'sign': 'sign_to_old_station'},
     {'name': 'o_tunnel_bend', 'kind': 'open', 'axis': 'x', 'walls': {'tunnel_a': 1584, 'tunnel_b': 1584},
      'a': -3600, 'b': -3216, 'z0': -384, 'z1': -96},
@@ -2419,6 +2424,36 @@ if GALLERY:
 os.makedirs(sys.argv[2], exist_ok=True)
 tpl, out = sys.argv[1], sys.argv[2]
 
+# (a85, lead decision 18 Nov 2026) the P1 perks ported into the g27 line from scenegen / cp_iwz3: Deadeye Dewdrops (the game's
+# cp_disco machine on the spare template scriptable perk_machine_blue_bolts_sign, relocated like the stock four) and the four
+# authored machines (rigid script models iwz_perk_body, perks/machines; origin at the floor centre, front +x, model footprint
+# x -16..+24, y -20..+20, 88 high). Placement rule: the room that matches scenegen's bible placement, else against a wall of
+# the concourse or a powered room; never in the pits, on stairs or the train path, never at a door; every spot checked with
+# a85/perkspots.py (nothing within 100 of decor / interactions, wall behind, 90 clear in front) and emitcheck route.
+#   Deadeye (bible: Signal Cabin, the overwatch room) -> control_room east wall, stock machine offset 30 from the wall
+#   Baker's Dozens (Lodestar Exchange) -> ticket_hall east wall (the concourse), 3rd machine of the hall beside Up 'N Atoms
+#   Bon Voyages (the Parlour) -> platform_a deck north wall (ticket / postage theme: the platform)
+#   Sour Grudges (the Boneyard) -> generator_room north wall (powered room, east of the control-room door)
+#   Double Takes (Underpass Arcade) -> ticket_hall east wall, north of Baker's (the west wall is full: turnstiles, vending machine)
+PERKS_P1 = [   # (interaction, donor scriptable or None, body model or None, origin, yaw, zone, id)
+    ('perk_machine_deadeye', 'perk_machine_blue_bolts_sign', None, (3570, 3500, -320), 180, 'control_room', 'deadeye_dewdrops'),
+    ('perk_machine_bakers', None, 'iwz_perk_machine_bakers', (382, 3750, 0), 180, 'ticket_hall', 'bakers_dozens'),
+    ('perk_machine_voyage', None, 'iwz_perk_machine_voyage', (-1900, 2382, -320), 270, 'platform_a', 'bon_voyages'),
+    ('perk_machine_grudge', None, 'iwz_perk_machine_grudge', (3350, 3182, -320), 270, 'generator_room', 'sour_grudges'),
+    ('perk_machine_double', None, 'iwz_perk_machine_double', (382, 4200, 0), 180, 'ticket_hall', 'double_takes'),
+]
+
+# the authored machines have no collision of their own: a clip box (local x -16..+24, y -20..+20, 88 high) per body, made HERE, before the nav
+# cells are computed (a box made after them straddles nav cells: sz2_plan 10 fails)
+for _k, _donor, _body, _o, _yaw, _zone, _pid in PERKS_P1:
+    if _donor:
+        continue
+    _c, _s = round(math.cos(math.radians(_yaw))), round(math.sin(math.radians(_yaw)))
+    _xs = [_o[0] + _c * _a - _s * _b for _a in (-16, 24) for _b in (-20, 20)]
+    _ys = [_o[1] + _s * _a + _c * _b for _a in (-16, 24) for _b in (-20, 20)]
+    B.collision_box((min(_xs), min(_ys), _o[2]), (max(_xs), max(_ys), _o[2] + 88))
+
+
 # nav cells: one z per 32-unit cell from the region list (first region wins), minus solid blockers
 # art drop-ins at fixed spots (sz2_art_hooks.py; each line is skipped while its image is missing)
 ART_PLACE = [
@@ -2695,24 +2730,6 @@ PERKS = [   # (interaction, scriptable, origin, yaw, zone)
     ('perk_machine_tough', 'perk_machine_tuff_nuff_sign', (1100, 2370, -320), 270, 'platform_a'),
     ('perk_machine_run', 'perk_machine_racin_stripes_sign', (2630, 2900, -320), 0, 'generator_room'),
     ('perk_machine_rat_a_tat', 'perk_machine_bang_bangs_sign', (-3570, 2800, -384), 0, 'platform_b'),
-]
-# (a85, lead decision 18 Nov 2026) the P1 perks ported into the g27 line from scenegen / cp_iwz3: Deadeye Dewdrops (the game's
-# cp_disco machine on the spare template scriptable perk_machine_blue_bolts_sign, relocated like the stock four) and the four
-# authored machines (rigid script models iwz_perk_body, perks/machines; origin at the floor centre, front +x, model footprint
-# x -16..+24, y -20..+20, 88 high). Placement rule: the room that matches scenegen's bible placement, else against a wall of
-# the concourse or a powered room; never in the pits, on stairs or the train path, never at a door; every spot checked with
-# a85/perkspots.py (nothing within 100 of decor / interactions, wall behind, 90 clear in front) and emitcheck route.
-#   Deadeye (bible: Signal Cabin, the overwatch room) -> control_room east wall, stock machine offset 30 from the wall
-#   Baker's Dozens (Lodestar Exchange) -> ticket_hall east wall (the concourse), 3rd machine of the hall beside Up 'N Atoms
-#   Bon Voyages (the Parlour) -> platform_a deck north wall (ticket / postage theme: the platform)
-#   Sour Grudges (the Boneyard) -> generator_room north wall (powered room, east of the control-room door)
-#   Double Takes (Underpass Arcade) -> ticket_hall east wall, north of Baker's (the west wall is full: turnstiles, vending machine)
-PERKS_P1 = [   # (interaction, donor scriptable or None, body model or None, origin, yaw, zone, id)
-    ('perk_machine_deadeye', 'perk_machine_blue_bolts_sign', None, (3570, 3500, -320), 180, 'control_room', 'deadeye_dewdrops'),
-    ('perk_machine_bakers', None, 'iwz_perk_machine_bakers', (382, 3750, 0), 180, 'ticket_hall', 'bakers_dozens'),
-    ('perk_machine_voyage', None, 'iwz_perk_machine_voyage', (-1900, 2382, -320), 270, 'platform_a', 'bon_voyages'),
-    ('perk_machine_grudge', None, 'iwz_perk_machine_grudge', (3350, 3182, -320), 270, 'generator_room', 'sour_grudges'),
-    ('perk_machine_double', None, 'iwz_perk_machine_double', (382, 4200, 0), 180, 'ticket_hall', 'double_takes'),
 ]
 FX = [   # ambient kit FX (assets/kit/fx_kit.tsv, cp_zmb) kept after the engine check sz2_fxcheck.py (run g12-views-a: only
          # vfx_zb_trash_a_ch renders measurably; dust, fog, drips, generator_idle, hanging smoke and bolts were not detected)
@@ -3032,11 +3049,6 @@ for kind, donor, body, origin, yaw, zone, pid in PERKS_P1:
     else:
         ents.append(ent(classname='script_model', targetname='iwz_perk_body', noteworthy=kind, model=body, origin=fmt(origin), angles='0 %g 0' % yaw))
         layout['interactions'][-1]['body'] = body
-        # the imported model has no collision of its own: a clip box (local x -16..+24, y -20..+20, 88 high), nav cut
-        c_, s_ = round(math.cos(math.radians(yaw))), round(math.sin(math.radians(yaw)))
-        xs_ = [origin[0] + c_ * a - s_ * b for a in (-16, 24) for b in (-20, 20)]
-        ys_ = [origin[1] + s_ * a + c_ * b for a in (-16, 24) for b in (-20, 20)]
-        B.collision_box((min(xs_), min(ys_), origin[2]), (max(xs_), max(ys_), origin[2] + 88))
 istruct('weapon_upgrade', PAP['origin'], PAP['yaw'], parameters='requires_power', target='iwz_pap_spot')
 relocations.append('pap_machine 0 %g %g %g %g' % (PAP['origin'][0], PAP['origin'][1] + 10, PAP['origin'][2], PAP['yaw']))
 ents.append(ent(classname='script_struct', targetname='iwz_pap_spot', origin=fmt((PAP['origin'][0], PAP['origin'][1] + 20, PAP['origin'][2] + 14)),

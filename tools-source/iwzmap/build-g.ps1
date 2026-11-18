@@ -56,6 +56,7 @@ if(-not $SkipPick){
   python -I "$S\station_zero2.py" "$D\cp_zmb" $src | Select-Object -Last 1
 }
 python -I "$S\sz2_plan.py" $src | Select-Object -Last 1
+if($LASTEXITCODE -ne 0){ throw "plan check failed (a collision box straddles nav cells or a cell is unreachable): $src\plan_check.json" }     # (a85) it printed "fails 10" for every P1 build without stopping
 # g25 gate: static art lint (fake objects, voids, trim aspect, anchors, intersections, tone, colour casts)
 $AS="$RT\assets"
 python -I "$S\sz2_artlint.py" $src --json "$L\artlint_$Tag.json" --catalog "$AS\catalog.json" --kit "$AS\kit\kit_final.json" | Select-Object -Last 1

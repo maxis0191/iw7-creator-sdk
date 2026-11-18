@@ -1179,6 +1179,120 @@ def reach(emit, max_len=6000.0, spawners=True, pits=True, stride=4, pit_z=-350.0
     return rows, fails
 
 
+# Door obstacles (a85, 18 Nov 2026): a closed door is a set of collision-only script brush models (layout `blockers`, one per
+# tile) and, at runtime, a navmesh obstacle. The obstacle is the sub-model's bounding sphere (sz2_submodels.json `radius`, 106.7
+# for the stock blocker `*12` of 138 x 15 x 162): measured on Station Zero, where a door tile's sphere reached the west well's
+# foot cells (a pit zombie of the west well climbed 1 time in 10 with the door closed, 10 of 10 with it bought).
+def door_cells(emit, extra=0.0):
+    """Nav cells inside a closed door's obstacle: {door target: [area ids]} (the emitted navgraph has no obstacles)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    try:
+        sm = {m['model']: m for m in json.load(open(os.path.join(here, 'sz2_submodels.json'), encoding='utf-8')).get('blockers', [])}
+    except (OSError, ValueError):
+        return {}
+    out = {}
+    for b in emit.layout.get('blockers', []):
+        m = sm.get(b['model'])
+        if not m:
+            continue
+        (mx, my, mz), r = m['mid'], m.get('radius', 0.0) + extra
+        ox, oy, oz = b['origin']
+        lx, ly = (mx, my) if int(b.get('yaw', 0)) % 180 == 0 else (-my, mx)
+        cx, cy, cz = ox + lx, oy + ly, oz + mz
+        for k, ar in emit.nav.a.items():
+            c = ar['c']
+            if math.dist((c[0], c[1], c[2]), (cx, cy, cz)) <= r:
+                out.setdefault(b['target'], set()).add(k)
+    return {t: sorted(v) for t, v in out.items()}
+
+
+def _dijkstra_blocked(nav, seeds, blocked, reverse=False, cutoff=None):
+    """_dijkstra over the nav with the `blocked` cells removed."""
+    adj = collections.defaultdict(list)
+    for k, ar in nav.a.items():
+        if k in blocked:
+            continue
+        for nb in ar['nbrs']:
+            if nb in nav.a and nb not in blocked:
+                if reverse:
+                    adj[nb].append(k)
+                else:
+                    adj[k].append(nb)
+    dist = {k: 0.0 for k in seeds if k not in blocked}
+    heap = [(0.0, k) for k in dist]
+    heapq.heapify(heap)
+    while heap:
+        d, cur = heapq.heappop(heap)
+        if d > dist.get(cur, 1e18) or (cutoff is not None and d > cutoff):
+            continue
+        cc = nav.a[cur]['c']
+        for nb in adj[cur]:
+            nd = d + math.dist(cc, nav.a[nb]['c'])
+            if nd < dist.get(nb, 1e18):
+                dist[nb] = nd
+                heapq.heappush(heap, (nd, nb))
+    return dist
+
+
+def reach_doors(emit, pit_max_len=2800.0, stride=4):
+    """Second pass of `reach`: every door CLOSED (its obstacle cut out of the nav). The pit cells and the well feet are in the platform zone
+    the players are in from the start, so they must still walk out to the deck through the wells; the zones behind doors are not judged.
+    Returns (rows, failures, cut) with `cut` = {door: [cells]}."""
+    nav, lay = emit.nav, emit.layout
+    cut = door_cells(emit)
+    blocked = {k for v in cut.values() for k in v}
+    pitbox = lay.get('zones', {}).get('platform_a', {}).get('box')
+    deck = [k for k, ar in nav.a.items() if pitbox_ok(lay, ar['c']) and ar['c'][2] > -330.0 and k not in blocked]
+    to_deck = _dijkstra_blocked(nav, deck, blocked, reverse=True)
+    rows, fails = [], []
+    pick = {}
+    for k in sorted((k for k, ar in nav.a.items() if ar['c'][2] < -350.0 and pitbox_ok(lay, ar['c'])), key=lambda k: (round(nav.a[k]['c'][0]), round(nav.a[k]['c'][1]))):
+        c = nav.a[k]['c']
+        key = (int(c[0] // (nav.g * stride)), int(c[1] // (nav.g * stride)), round(c[2] / 24.0))
+        pick.setdefault(key, k)
+    for k in pick.values():
+        c = nav.a[k]['c']
+        row = {'source': 'pit cell, doors closed', 'at': [round(v) for v in c], 'zone': emit.where(*c), 'to': None, 'from': None, 'why': ''}
+        if k in blocked:
+            continue            # under the door itself: closed means closed, not a defect
+        elif k not in to_deck:
+            row['why'] = 'no route to the deck with every door closed'
+        else:
+            row['to'] = round(to_deck[k])
+            if row['to'] > pit_max_len:
+                row['why'] = 'route to the deck %d units with every door closed (over %d)' % (row['to'], pit_max_len)
+        rows.append(row)
+        if row['why']:
+            fails.append(row)
+    for st in lay.get('stairs', []):
+        if not str(st.get('space', '')).startswith('well'):
+            continue
+        (a0, a1), (c0, c1), (z0, z1) = sorted(st['span']), sorted(st['c']), sorted(st['z'])
+        foot = None
+        for ax in (a0 + 16.0, a1 - 16.0):
+            kk = nav.at(ax, (c0 + c1) / 2.0, z0, 8.0) if st['axis'] == 'x' else nav.at((c0 + c1) / 2.0, ax, z0, 8.0)
+            if kk is not None:
+                foot = kk
+        if foot is None:
+            continue
+        c = nav.a[foot]['c']
+        row = {'source': 'well foot %s, doors closed' % st['space'], 'at': [round(v) for v in c], 'zone': st['space'], 'to': None, 'from': None, 'why': ''}
+        cutting = sorted(t for t, v in cut.items() if foot in v)
+        pitc = [kk for kk, ar in nav.a.items() if abs(ar['c'][2] - c[2]) < 6 and ar['c'][1] < c[1] - 100 and abs(ar['c'][0] - c[0]) < 700 and pitbox_ok(lay, ar['c']) and kk not in blocked]
+        dd = _dijkstra_blocked(nav, [foot], blocked, cutoff=800.0) if foot not in blocked else {}
+        best = min((dd[q] for q in pitc if q in dd), default=None)
+        if foot in blocked:
+            row['why'] = 'the foot cell is inside the obstacle of the closed door %s' % ', '.join(cutting)
+        elif best is None:
+            row['why'] = 'with every door closed the foot has no walk of 800 units or less to the pit floor (cut cells near it: %s)' % (', '.join('%s %d' % (t, len(v)) for t, v in cut.items()) or 'none')
+        else:
+            row['to'] = round(best)
+        rows.append(row)
+        if row['why']:
+            fails.append(row)
+    return rows, fails, cut
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     sub = ap.add_subparsers(dest='cmd', required=True)
@@ -1209,6 +1323,7 @@ def main(argv=None):
     p.add_argument('--stride', type=int, default=4)
     p.add_argument('--max-len', type=float, default=6000.0, help='longest accepted walk, in units')
     p.add_argument('--strict', action='store_true', help='a route through a cell under the agent limits (width, step, slope) is a failure; without it those are listed as places and do not fail')
+    p.add_argument('--doors', choices=('closed',), help='also judge the pit cells and the well feet with every door closed (a closed door is a nav obstacle of the sub-model radius)')
     p.add_argument('--no-quality', action='store_true', help='skip the route quality checks (width, step, slope sheet)')
     p.add_argument('--pit-max-len', type=float, default=2800.0, help='longest accepted walk from a pit cell to a hub (the pit is 4,800 long: its far end is about 2,400 from the nearest well)')
     p.add_argument('--json')
@@ -1266,6 +1381,16 @@ def main(argv=None):
             print('pit cells: %d sampled, %d with a route both ways under %d units' % (len(pit), len([r for r in pit if not r['why']]), args.pit_max_len))
         for bp in getattr(emit, 'bad_places', []):
             print('  place %-22s %-18s %s' % (tuple(bp['at']), bp['where'], '; '.join(bp['why'])))
+        drows, dfails = [], []
+        if args.doors == 'closed':
+            drows, dfails, cut = reach_doors(emit, args.pit_max_len, args.stride)
+            for r in drows:
+                if r['source'].startswith('well foot') or r['why']:
+                    print('%-30s %-22s %-16s %8s %8s  %s' % (r['source'][:30], tuple(r['at']), str(r['zone'])[:16], r['to'] if r['to'] is not None else '-', '-', r['why'] or 'ok'))
+            print('doors closed: obstacle cuts %s' % (', '.join('%s %d cells' % (t, len(v)) for t, v in cut.items()) or 'nothing'))
+            print('pit cells with every door closed: %d sampled, %d walk out to the deck' % (len([r for r in drows if r['source'].startswith('pit')]), len([r for r in drows if r['source'].startswith('pit') and not r['why']])))
+            rows = rows + drows
+            fails = fails + dfails
         print('reach: %d sources, %d without a route or over %d units' % (len(rows), len(set(id(f) for f in fails)), args.max_len))
         if args.json:
             json.dump({'rows': rows, 'failures': fails}, open(args.json, 'w', encoding='utf-8'), indent=1)
