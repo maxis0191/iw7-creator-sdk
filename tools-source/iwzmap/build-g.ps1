@@ -1,8 +1,9 @@
-param([Parameter(Mandatory)][string]$Tag, [switch]$SkipPick, [switch]$Bake, [string]$LightArgs='', [int]$Rays=256, [switch]$Audio, [switch]$NavObstacles, [switch]$ReuseBake, [string]$BakeFrom='', [switch]$Kit, [switch]$Lights, [switch]$Smodels, [switch]$KitBaseline, [switch]$Fx, [string]$FxTxt='', [switch]$NeutralProbes, [string]$ProbeScale='', [switch]$Train, [ValidateSet('g27','stock')][string]$StairStyle='g27', [switch]$GateOnly, [ValidateSet('g27','g27d','g27e')][string]$TrainSet='g27', [switch]$BakeLoose, [string]$ZoneToolExe='')
+param([Parameter(Mandatory)][string]$Tag, [switch]$SkipPick, [switch]$Bake, [string]$LightArgs='', [int]$Rays=256, [switch]$Audio, [switch]$NavObstacles, [switch]$ReuseBake, [string]$BakeFrom='', [switch]$Kit, [switch]$Lights, [switch]$Smodels, [switch]$KitBaseline, [switch]$Fx, [string]$FxTxt='', [switch]$NeutralProbes, [string]$ProbeScale='', [switch]$Train, [ValidateSet('g27','stock')][string]$StairStyle='g27', [switch]$GateOnly, [ValidateSet('g27','g27d','g27e')][string]$TrainSet='g27', [switch]$BakeLoose, [string]$ZoneToolExe='', [switch]$WithP1)
 # Station Zero v2 level build <Tag>: generator -> (compile-only pass: sub-model log -> pick door blocker sub-model ->
 # regenerate) -> optional light bake (layout_lights + lmbake, Build lease) -> full build with kept sub-models and own
 # lightmap, using the merged door-brushmodel + lightmap zonetool. Output: level\src_<Tag>[_lm], level\um_<Tag>.
 $ErrorActionPreference='Stop'
+if($ReuseBake -and $BakeFrom -and $BakeFrom -eq $Tag){ throw "-BakeFrom $BakeFrom names the tag being built: the bake source would be deleted before it is copied. Name another tag, or leave -BakeFrom out to reuse src_$Tag`_lm in place." }
 $L=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level')
 $RT=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2')
 $S=$PSScriptRoot                       # the checkout this script is in (no other SDK worktree)
@@ -101,6 +102,8 @@ elseif($Bake){
   if(!(Test-Path "$build\lightmap\secondary.dds")){ throw 'bake produced no lightmap' }
 }
 if($NavObstacles){ $A['NavObstacles']=$true }
+# the P1 perk machines (build-sz2 default) need scenegen's relocated perk scriptables; the g27 generator output has none: not part of g27e
+if(-not $WithP1){ $A['PerkMachines']=''; $A['DeadeyeKitDump']=''; $A['DeadeyeScriptable']='' }
 if($Kit){
   $km=@((Get-Content "$src\layout.json" -Raw | ConvertFrom-Json).kit_models | Where-Object { -not $_.StartsWith('iwz_') })
   $KD="$RT\kitimport\ztwork\dump"
