@@ -95,12 +95,10 @@ OPENINGS = [
      'a': 3004, 'b': 3196, 'z0': -320, 'z1': -96, 'cost': 1250, 'zones': ('generator_room', 'control_room'),
      'scriptable': 'pf7_auto237', 'sign': 'sign_signal_control'},
     {'name': 'd_platform_tunnel', 'kind': 'door', 'axis': 'y', 'walls': {'pit': -2400, 'tunnel_a': -2416},
-     # (a85, 18 Nov 2026) was 1392..1584: the door's runtime nav obstacle is a bounding sphere of radius 106.7 around each of its two
-     # tiles (sz2_submodels.json: radius 106.7), which cut the west well's foot cells (-2384, 1584..1616) while the door was closed:
-     # 1 of 10 pit zombies climbed the west well (10 of 10 with the door bought). One tile (138 wide, the stock blocker) centred
-     # on y 1448 keeps the foot cell, its only link (-2384, 1552) and the strip out of the sphere (a tile centred on y 1480 still cut (-2384, 1552));
-     # the wall closes the rest of the old opening; the opening still holds the third rail (1431) and the north rail (1516).
-     'a': 1383, 'b': 1513, 'z0': -384, 'z1': -160, 'cost': 1000, 'zones': ('platform_a', 'service_tunnel'),
+     # (a85, 18 Nov 2026) NOT narrowed: a 130-wide mouth centred on y 1448 (one stock tile, the tool's sphere model of the door obstacle
+     # cleared the west well foot) left the west well's closed-door stall unchanged (g27e4: same 8 deaths at (-2357,1549); with the door
+     # bought 10 of 10): the obstacle is not what stops them, and the narrowed mouth was an art change for nothing.
+     'a': 1392, 'b': 1584, 'z0': -384, 'z1': -160, 'cost': 1000, 'zones': ('platform_a', 'service_tunnel'),
      'scriptable': 'pf7_auto238', 'sign': 'sign_to_old_station'},
     {'name': 'o_tunnel_bend', 'kind': 'open', 'axis': 'x', 'walls': {'tunnel_a': 1584, 'tunnel_b': 1584},
      'a': -3600, 'b': -3216, 'z0': -384, 'z1': -96},
