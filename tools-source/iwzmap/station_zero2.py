@@ -2948,6 +2948,13 @@ if os.path.isfile(_smj):
 BLOCKERS = []
 
 
+DOORVAR = {}
+for _it in (os.environ.get('IWZ_DOORVAR') or '').split(','):
+    if ':' in _it:
+        _t, _v = _it.split(':', 1)
+        DOORVAR[_t] = _v.split('+')
+
+
 def door_blockers(targetname, axis, plane, a, b, z0, z1):
     """Tile the opening (span a..b along the wall, z0..z1, wall plane `plane`) with copies of the chosen sub-model."""
     if not SUBMODELS:
@@ -2974,8 +2981,16 @@ def door_blockers(targetname, axis, plane, a, b, z0, z1):
                 yaw = 90 if wide_x else 0
                 lx, ly = (mx, my) if yaw == 0 else (-my, mx)
                 org = (plane - lx, c - ly, zc - mz)
-            ents.append(ent(classname='script_brushmodel', targetname=targetname, model=sm['model'], origin=fmt(org),
-                            angles='0 %g 0' % yaw, spawnflags='1', dummy=sm.get('dummy', 'ScriptBrushModelDummyFixed')))
+            kw = dict(classname='script_brushmodel', targetname=targetname, model=sm['model'], origin=fmt(org),
+                      angles='0 %g 0' % yaw, spawnflags='1', dummy=sm.get('dummy', 'ScriptBrushModelDummyFixed'))
+            # (a85, 20 Nov 2026) diagnostic: IWZ_DOORVAR='target:na+sf0,...' tries a variant per door (na: no angles key when yaw is 0, as the stock
+            # door entities have none; sf0: spawnflags 0). The door tiles gave the player no collision in every g27e build.
+            for v_ in DOORVAR.get(targetname, []):
+                if v_ == 'na' and yaw == 0:
+                    kw.pop('angles')
+                if v_ == 'sf0':
+                    kw['spawnflags'] = '0'
+            ents.append(ent(**kw))
             BLOCKERS.append({'target': targetname, 'model': sm['model'], 'origin': org, 'yaw': yaw})
             count += 1
     return count
