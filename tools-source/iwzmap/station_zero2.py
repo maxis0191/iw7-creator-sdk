@@ -2070,7 +2070,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     for k_, (x0_, y0_) in enumerate(DESKS[:3]):
         decor('control_room', 'chair_folding_iw6', x0_ + 120, y0_ - 50, -320, 35 + k_ * 70, roll=90 if k_ != 1 else 0, pitch=0 if k_ != 1 else 80)
         decor('control_room', 'office_paper_stack01_iw6', x0_ + 40 + k_ * 30, y0_ - 70, -320, k_ * 50)
-        decor('control_room', 'com_debris_paper_iw6_02', x0_ + 160, y0_ - 110, -320, k_ * 90 + 20)
+        decor('control_room', 'com_debris_paper_iw6_02', x0_ + (160 if k_ < 2 else -40), y0_ - 110, -320, k_ * 90 + 20)  # (a85) the third desk's paper sat in the Deadeye approach
         decor('control_room', 'newspaper_single_fn_01', x0_ - 30, y0_ - 90, -320, k_ * 40)
     decor('generator_room', 'mp_dart_workbench_01', 3770, 2950, -320, 0, (16, 44, 22))
     if KIT:     # (g27d, review item 19: white two-door cabinets) worn green subway lockers (cp_disco kit; back at model x 0,
