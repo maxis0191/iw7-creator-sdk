@@ -242,6 +242,7 @@ iwz_pap_quest()
             relays[relays.size] = s;
     }
     wait 1;
+    iwz_pap_gate( 1 );
     foreach ( s in relays )
     {
         s.lamp = spawnfx( level._effect["iwz_relay_red"], s.origin + anglestoforward( s.angles ) * 6 + ( 0, 0, 30 ) );
@@ -265,11 +266,28 @@ iwz_pap_quest()
     iwz_open_pap_shutter();
 }
 
+// The Pack-a-Punch machine is not usable until the relay quest has opened the shutter. The shutter tiles stop zombies (a navmesh obstacle) but
+// have no player collision (20 Nov 2026: a player walked through the closed shutter and the tunnel door), so the machine's interaction is disabled
+// here, the stock way (can_use_interaction refuses a struct with .disabled), and enabled again when the shutter opens.
+iwz_pap_gate( off )
+{
+    n = 0;
+    foreach ( s in level.all_interaction_structs )
+    {
+        if ( !isdefined( s.script_noteworthy ) || !issubstr( s.script_noteworthy, "weapon_upgrade" ) )
+            continue;
+        s.disabled = off;
+        n++;
+    }
+    print( "[IWZ level] PAP_GATE disabled=" + off + " structs=" + n );
+}
+
 iwz_open_pap_shutter()
 {
     if ( isdefined( level.iwz_pap_open ) )
         return;
     level.iwz_pap_open = 1;
+    iwz_pap_gate( 0 );
     shutter = getentarray( "iwz_pap_shutter", "targetname" );
     if ( shutter.size )
         playsoundatpos( shutter[0].origin, "zmb_sliding_door_open" );
