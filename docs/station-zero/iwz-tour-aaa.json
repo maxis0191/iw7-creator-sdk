@@ -1,0 +1,314 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "iwz_tour_aaa",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "about": "Station Zero AAA elevation W1 (iw7-creator-sdk docs/STATION-ZERO-AAA-W1.md): two review cameras of each of the nine zones (the generator VIEWS), the story vignettes, the departure board glow and three light views; each view taken twice so a flickering surface shows as a difference. Run the same plan on the -NoElevation twin for the A/B pairs.",
+ "steps": [
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "doors"
+  },
+  {
+   "do": "cmd",
+   "text": "cg_draw2D 0"
+  },
+  {
+   "do": "tour",
+   "twice": true,
+   "settle": 2.5,
+   "views": [
+    {
+     "name": "ticket_hall_0",
+     "at": [
+      -1100,
+      4300,
+      0
+     ],
+     "yaw": 315,
+     "pitch": 5
+    },
+    {
+     "name": "ticket_hall_1",
+     "at": [
+      300,
+      3300,
+      0
+     ],
+     "yaw": 135,
+     "pitch": 5
+    },
+    {
+     "name": "stair_a_0",
+     "at": [
+      -600,
+      3150,
+      0
+     ],
+     "yaw": 270,
+     "pitch": 20
+    },
+    {
+     "name": "stair_a_1",
+     "at": [
+      -600,
+      2460,
+      -320
+     ],
+     "yaw": 90,
+     "pitch": -20
+    },
+    {
+     "name": "platform_a_0",
+     "at": [
+      -2300,
+      2300,
+      -320
+     ],
+     "yaw": 345,
+     "pitch": 5
+    },
+    {
+     "name": "platform_a_1",
+     "at": [
+      2300,
+      2300,
+      -320
+     ],
+     "yaw": 195,
+     "pitch": 5
+    },
+    {
+     "name": "maint_corridor_0",
+     "at": [
+      2460,
+      1800,
+      -320
+     ],
+     "yaw": 0,
+     "pitch": 0
+    },
+    {
+     "name": "maint_corridor_1",
+     "at": [
+      3150,
+      1760,
+      -320
+     ],
+     "yaw": 90,
+     "pitch": 0
+    },
+    {
+     "name": "generator_room_0",
+     "at": [
+      2660,
+      2440,
+      -320
+     ],
+     "yaw": 40,
+     "pitch": 5
+    },
+    {
+     "name": "generator_room_1",
+     "at": [
+      3740,
+      3140,
+      -320
+     ],
+     "yaw": 220,
+     "pitch": 5
+    },
+    {
+     "name": "control_room_0",
+     "at": [
+      2660,
+      3260,
+      -320
+     ],
+     "yaw": 45,
+     "pitch": 5
+    },
+    {
+     "name": "control_room_1",
+     "at": [
+      3540,
+      3940,
+      -320
+     ],
+     "yaw": 225,
+     "pitch": 5
+    },
+    {
+     "name": "service_tunnel_0",
+     "at": [
+      -2460,
+      1400,
+      -384
+     ],
+     "yaw": 180,
+     "pitch": 0
+    },
+    {
+     "name": "service_tunnel_1",
+     "at": [
+      -3500,
+      1300,
+      -384
+     ],
+     "yaw": 0,
+     "pitch": 0
+    },
+    {
+     "name": "platform_b_0",
+     "at": [
+      -3540,
+      2660,
+      -384
+     ],
+     "yaw": 40,
+     "pitch": 5
+    },
+    {
+     "name": "platform_b_1",
+     "at": [
+      -2120,
+      3340,
+      -384
+     ],
+     "yaw": 220,
+     "pitch": 5
+    },
+    {
+     "name": "stair_b_0",
+     "at": [
+      -2020,
+      3250,
+      -384
+     ],
+     "yaw": 0,
+     "pitch": -15
+    },
+    {
+     "name": "stair_b_1",
+     "at": [
+      -1260,
+      3300,
+      0
+     ],
+     "yaw": 180,
+     "pitch": 20
+    },
+    {
+     "name": "story_departure_board",
+     "at": [
+      0,
+      3648,
+      0
+     ],
+     "yaw": 0,
+     "pitch": -14
+    },
+    {
+     "name": "story_control_desk",
+     "at": [
+      2760,
+      3720,
+      -320
+     ],
+     "yaw": 270,
+     "pitch": 18
+    },
+    {
+     "name": "story_printout",
+     "at": [
+      3060,
+      3860,
+      -320
+     ],
+     "yaw": 215,
+     "pitch": 22
+    },
+    {
+     "name": "story_last_shift",
+     "at": [
+      2960,
+      1800,
+      -320
+     ],
+     "yaw": 168,
+     "pitch": 16
+    },
+    {
+     "name": "light_generator_pools",
+     "at": [
+      3080,
+      2440,
+      -320
+     ],
+     "yaw": 40,
+     "pitch": 2
+    },
+    {
+     "name": "light_service_tunnel",
+     "at": [
+      -2460,
+      1400,
+      -384
+     ],
+     "yaw": 180,
+     "pitch": 0
+    },
+    {
+     "name": "light_train_flank",
+     "at": [
+      600,
+      1700,
+      -320
+     ],
+     "yaw": 200,
+     "pitch": 6
+    }
+   ]
+  },
+  {
+   "do": "expect",
+   "that": "framediff(story_control_desk,story_control_desk_b)",
+   "lt": 0.03,
+   "why": "a still view must not change between two frames"
+  },
+  {
+   "do": "expect",
+   "that": "framediff(light_generator_pools,light_generator_pools_b)",
+   "lt": 0.03,
+   "why": "a still view must not change between two frames"
+  },
+  {
+   "do": "tp",
+   "at": [
+    -2000,
+    2200,
+    -320
+   ],
+   "yaw": 0
+  },
+  {
+   "do": "dolly",
+   "name": "platform_run",
+   "to": [
+    2000,
+    2200,
+    -320
+   ],
+   "speed": 600,
+   "shots": 6,
+   "pause": 0.6
+  },
+  {
+   "do": "cmd",
+   "text": "cg_draw2D 1"
+  }
+ ]
+}

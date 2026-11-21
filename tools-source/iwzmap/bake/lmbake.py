@@ -492,9 +492,13 @@ def light_grid(cfg, w, Lfinal, n, scene, tri_lm, tri_mat, tid, W, H, L, quick):
     uvh = (1 - bu - bv)[..., None] * a + bu[..., None] * b + bv[..., None] * c
     xi = np.clip((uvh[..., 0] * W).astype(np.int64), 0, W - 1); yi = np.clip((uvh[..., 1] * H).astype(np.int64), 0, H - 1)
     h = tid[yi, xi]
-    bad = (side < 0) | (tri < 0) | (tri_mat[np.maximum(tri, 0)] < 0)
+    # an occluder hit (decor box) is black light, not a sign of being inside solid: counting it as "bad" dropped every
+    # cell between a train car's underframe and roof slabs (21 Nov 2026, 4 of 4 per car); a cell inside a box still
+    # sees its back faces (side < 0)
+    occ = (tri >= 0) & (tri_mat[np.maximum(tri, 0)] < 0)
+    bad = (side < 0) | (tri < 0)
     keep = bad.mean(1) < 0.25
-    idx = np.where(tri < 0, n, np.where(bad, n + 1, h))
+    idx = np.where(tri < 0, n, np.where(bad | occ, n + 1, h))
     rad = Lfinal[idx]                                       # (cells, rays, 3)
     c0 = rad.mean(1) * 4 * math.pi * Y00
     c10 = (rad * dirs[None, :, 2:3]).mean(1) * 4 * math.pi * Y1

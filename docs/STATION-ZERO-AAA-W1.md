@@ -37,8 +37,9 @@ output and from light bakes, offline. The frames of a built map are still the pr
 | Story vignettes | `station_zero2.py`, models the map already loads, no clip | 23:55, "Control informed": the night controller's desk with a cold mug, the roster, a paper cup by the radio, the evening paper; ZERO's uncollected printout spilled towards the alcove; in the staff corridor under DO NOT RESTART, June 1985, Lodestar's last cleanup shift: a body under a decontamination sheet and the crew's bag. 10 decor records (8 static models, 2 entities) |
 | One A/B switch | `build-g.ps1 -NoElevation` (`IWZ_ELEV=0`) | builds the g27e5 look with the same code |
 | Bake meter | `tools-source/iwzmap/bake/bake_zone_contrast.py` (new) | per zone, from any bake in seconds: floor E, ceiling / floor, upper wall / floor, pool p90 / median, dark share, bounce share, cast; `--ref` prints the change |
-| Baker fix | `bake/lmbake.py` | `tx_pos` saved as the positions; `texel_positions()` rebuilds them for old bakes (used by the meter and by `sz2_mood_predict.py`) |
-| Voice script | `docs/station-zero/STATION-ZERO-VOICE-SCRIPT.json`, checked by `tools-source/iwzmap/audio/voice_script_check.py` | 273 lines in English and French: the Voice of the Rapid (77: slots V01 to V50 of `11-AUDIO-DIRECTION` 5.1, six PA rotation lines for the slots the map plays today, five lines for the g27 relay quest and purchases, 14 glue words), Strand's eight tapes (the wiki text), the Night Inspector (8), the Conductor (3), the photo booth (5), pay-phone oddities (4), the four heroes in their film roles (42 each: the 40 slots of 5.2 and two for the g27 quest). Every line names its trigger and whether it exists in the map today (39 lines), comes from the stock mode (52), needs wiring of a built thing (16) or waits for a future zone (166). Voice design prompts per speaker; voice ids stay empty until a voice is designed or listed |
+| Baker fixes | `bake/lmbake.py` | `tx_pos` saved as the positions; `texel_positions()` rebuilds them for old bakes (used by the meter and by `sz2_mood_predict.py`); the light grid no longer drops a cell because its rays hit an occluder (see below) |
+| Tour plan | `docs/station-zero/iwz-tour-aaa.json` | a Forge / gamelab client plan: two review cameras of each zone, the story views, three light views |
+| Voice script | `docs/station-zero/STATION-ZERO-VOICE-SCRIPT.json`, checked by `tools-source/iwzmap/audio/voice_script_check.py` | 273 lines in English and French: the Voice of the Rapid (77: slots V01 to V50 of `11-AUDIO-DIRECTION` 5.1, six PA rotation lines for the slots the map plays today, five lines for the g27 relay quest and purchases, 14 glue words), Strand's eight tapes (the wiki text), the Night Inspector (8), the Conductor (3), the photo booth (5), pay-phone oddities (4), the four heroes in their film roles (42 each: the 40 slots of 5.2 and two for the g27 quest). Every line names its trigger and its status: plays today through a slot the map has (8 lines; 4 hero lines on the same events wait for routing), event exists and needs a play call (13), stock mode event (52), a built thing to wire (16), a zone or mechanic not built yet (180). Voice design prompts per speaker; voice ids stay empty until a voice is designed or listed |
 | Tests | `tools-source/iwzmap/tests/test_sz_elevation.py` | occluder rules, the light pass's contract (nothing removed or reordered, runtime fields untouched), the committed voice script passes its checker |
 
 ## Checked offline (no game, no build)
@@ -70,6 +71,35 @@ new; the meter on the real g27e5dv bake (256 rays) gives the same picture for th
 | Platform B | 0.154 -> 0.162 | 0.42 -> 0.20 | 0.49 -> 0.37 | 2.71 -> 3.37 | 0.19 -> 0.26 | 1.36 -> 1.39 |
 | stair B | 0.256 -> 0.146 | 0.32 -> 0.17 | 0.38 -> 0.33 | 2.57 -> 5.27 | 0.17 -> 0.39 | 1.02 -> 1.11 |
 
+Predicted frames (`sz2_mood_predict.py`: the real g27e5 bake and its engine frames of `level\runs\g27e5-views-a`
+fit a tone curve, the new bake's irradiance is pushed through it). The control run, the old light list in the same
+quick bake, predicts no change (control room median 0.410 -> 0.406), so the numbers below are the light change, not
+bake noise:
+
+| View group | median sRGB luma (old -> new) | block contrast p90 / p10 |
+| --- | --- | --- |
+| ticket hall | 0.303 -> 0.259 | 4.10 -> 4.63 |
+| stair A | 0.255 -> 0.237 | 4.36 -> 4.12 |
+| Platform A | 0.285 -> 0.264 | 4.26 -> 4.91 |
+| maint corridor | 0.318 -> 0.262 | 2.30 -> 3.14 |
+| generator room / G-2 views | 0.428 -> 0.336 / 0.526 -> 0.378 | 2.48 -> 2.75 / 3.85 -> 4.24 |
+| control room | 0.410 -> 0.335 | 3.43 -> 4.46 |
+| service tunnel | 0.245 -> 0.212 | 4.09 -> 4.47 |
+| Platform B | 0.361 -> 0.324 | 2.93 -> 2.91 |
+| stair B | 0.296 -> 0.257 | 3.55 -> 3.41 |
+| interaction views | 0.405 -> 0.354 | 4.08 -> 5.15 |
+
+Readability at the 35 interaction and quest points (`--points layout`, gate 0.22): 34 pass. The one under is the
+teddy-bear secret inside the hero car (0.357 -> 0.157): the point is measured on the track-bed texels under the car,
+which the train's underframe now shadows; the bear itself is a model lit by the light grid. Its frame is to be looked
+at in the tour.
+
+The light grid (what lights every model, zombie and the train) was checked as well: with occluders the baker dropped
+every grid cell inside the three train cars (4 of 4 each: it counted a ray that hit an occluder as "inside solid"),
+so the 23:47's interior would have taken an outside cell's light. Fixed in `lmbake.py` (an occluder hit is black
+light, a back face still marks solid): the cars keep 4 of 4 cells again and Platform A 778 of 778 (1,880 kept
+map-wide against 1,901 before; the 21 fewer are cells inside prop boxes).
+
 Read: in the work rooms and tunnels the walls above head height now get a quarter to a half of the light they had
 against the floor, the floor has two to three times more of its area in real darkness, and the pools stand out. The
 over-bright stairs are darker on purpose (review B). The ticket hall's floor median falls to 58 % with much stronger
@@ -89,20 +119,54 @@ the warm lamp colour and warm bounce, not from the light's shape); the control r
 - **Door collision and the pit wells** are the a85 package's work (`claude/a85-station-zero`, 4 commits not on
   main: the Deadeye machine moved clear, the PaP interaction gated, the door-tile variants). This package does not
   touch those lines; the Coordinator merges both.
-- **The voice lines are not generated.** The first batch (39 lines whose trigger exists today, the six PA slots
-  first) needs voices designed (`voice_design_prompt` per speaker) and the ElevenLabs credits checked: the whole
-  script is 16,069 English and 18,832 French characters, more than one month of the Starter plan (30,000). Hero
-  lines need their own aliases and a per-character routing, which `11-AUDIO-DIRECTION` 5.2 lists as unproven.
+- **The voice lines are not generated.** 8 lines play today through slots the map has (PA01 to PA06 replace the six
+  BO3 clips of the PA rotation; V17 and V16 are the power sequence's announcement); 5 more (V51 to V55: relays, PaP
+  shutter, doors, trap) have their event in `cp_iwz2.gsc` and need one play call each; the rest wait for the stock
+  routing or for zones that are not built. Voices must be designed first (`voice_design_prompt` per speaker) and the
+  credits checked: the whole script is 16,069 English and 18,832 French characters, more than one month of the
+  Starter plan (30,000). Hero lines carry `routing: unproven` (own aliases and a per-character routing,
+  `11-AUDIO-DIRECTION` 5.2).
+- **The darkness build** (`darkness/dark_build.py`, the dark-before-power bake) writes its own light list and ignores
+  the `bake` blocks: a darkness build of this source bakes its power lights as omni lights again. It needs the same
+  four lines `layout_lights.py` got.
+- **The warm cast** of the maint corridor (1.96 -> 2.34) and generator room (1.83 -> 1.96) is worse in the bake: with
+  less white light on the upper walls the warm lamps and the amber cues weigh more. Next: a neutral key in the
+  generator room (the work light) and a check of the warm albedo guesses of `layout_lights.py`.
+
+## The A/B switch and the merge, checked
+
+- `IWZ_ELEV=0` (what `-NoElevation` sets) on this branch against origin/main: every emitted file byte-identical
+  except `layout.json` (only the informational `mount` keys of the lights and the port `boxes` of ported decor are
+  added) and `plan.json` (the same adjacency set in another order); `layout_lights.py` without `--occluders` writes a
+  lights.json byte-identical to the g27e5 one. The A/B is one variable.
+- g27e5dv is reproduced exactly by the a85 branch (`claude/a85-station-zero` 9f08d2c) with
+  `IWZ_WELL_FIX=well_w=stock,well_e=stock`: world.bin byte-identical to `level\src_g27e5dv`, layout.json identical.
+  That branch merged with this one (no conflict): every gate of `build-g.ps1` passes, world.bin, colmap.hkx,
+  navgraph.bin and cp_iwz.gsc are byte-identical to g27e5dv, `iwz_emitcheck diff` 0 collision triangles and 0 nav
+  cells changed.
 
 ## Build and tour (the Coordinator)
 
 ```powershell
-# fresh bake: the light list changed (the stage cache keys on lights.json); never -ReuseBake / -BakeFrom an older tag
+# 1. one checkout with both branches: origin/main + claude/a85-station-zero + claude/sz-aaa-elevation (they merge clean)
+# 2. the g27e5dv environment (both pit wells in the stock stair style) and a fresh bake: the light list changed and the
+#    stage cache keys on lights.json; never -ReuseBake / -BakeFrom an older tag (world.bin is unchanged, the old bake
+#    would be taken)
+$env:IWZ_WELL_FIX = 'well_w=stock,well_e=stock'
 pwsh -NoProfile -File tools-source\iwzmap\build-g.ps1 -Tag g27e6aaa -SkipPick -Bake -LightArgs "--texel 6 --ambient 0.012" `
-     -Train -TrainSet g27e -NeutralProbes -Fx -Audio -NavObstacles -Lights -Smodels -Kit -StairStyle g27
-# the A/B twin from the same code: add -NoElevation and another tag
+     -Train -TrainSet g27e -NeutralProbes -Fx -Audio -NavObstacles -Lights -Smodels -Kit -StairStyle g27 -WithP1
+# 3. the A/B twin from the same code
+pwsh -NoProfile -File tools-source\iwzmap\build-g.ps1 -Tag g27e6flat ... (the same switches) -NoElevation
 ```
 
-Then the frames of both builds at the g27e5 cameras (views, walkcap and fixproof pairs, as in `vision\g27e5`),
-`sz2_mood.py --gate` on both runs (interaction views must keep a mean luma of 0.22), three independent reviewers on
-the pairs, and the Forge client tour of Station Zero with the new map folder.
+```powershell
+# inside a checkout of iw7-paris-server (origin/main): the Forge client tour of each build
+python -B C:\forge\forge.py run tests\scenarios\gamelab\iwz-tour.json --usermap <IWZ_RUNTIME>\iwz-stage2\level\um_g27e6aaa
+python -B C:\forge\forge.py run <this repo>\docs\station-zero\iwz-tour-aaa.json --usermap <IWZ_RUNTIME>\iwz-stage2\level\um_g27e6aaa
+python -B C:\forge\forge.py run <this repo>\docs\station-zero\iwz-tour-aaa.json --usermap <IWZ_RUNTIME>\iwz-stage2\level\um_g27e6flat
+```
+
+`iwz-tour-aaa.json` (25 views, each taken twice) adds to the stock tour two review cameras of every zone, the four
+story views (departure board, control desk, printout, last shift) and three light views; the same plan on both builds
+gives the A/B pairs. Then `sz2_mood.py --gate` on both runs (interaction views keep a mean luma of 0.22), three
+independent reviewers on the pairs (not this package's author), and the owner's playtest.

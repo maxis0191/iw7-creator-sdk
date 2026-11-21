@@ -19,7 +19,7 @@
   "tags": "inline tags in [brackets] are direction for eleven_v4 and are listed per speaker in tags_allowed; check them against the model guide (creative_get_model_guide) before a batch. The Voice of the Rapid takes no emotion tags: she is a recording",
   "files": "one file per line and language: <id>_<lang>.wav (48 kHz mono); for the PA chain also <id>_int_0.flac, the name soundscape_dsp.py pa reads with --voices",
   "credits": "check GET /v1/user/subscription first; voice_script_check.py prints the character count per language and speaker",
-  "order": "PA01-PA06, V16, V17, V51-V55 first (they have a trigger in the map today), then the tapes, then the rest"
+  "order": "first PA01-PA06, V16, V17 (they play today through the PA rotation and the power sequence: replace the BO3 clips), then V51-V55 (their event exists; one play call each in cp_iwz2.gsc), then the tapes, then the rest"
  },
  "hooks": {
   "power_on": {
@@ -33,24 +33,29 @@
    "where": "audio/station_zero_audio.json amb_iwz_pa_00..05 (today: BO3 zm_island facility lines through soundscape_dsp.py pa)"
   },
   "relay_on": {
-   "status": "exists",
+   "status": "event",
    "event": "level notify \"iwz_relay_on\", level.iwz_relays_on = 1..3",
    "where": "cp_iwz2.gsc iwz_relay_on()"
   },
   "pap_open": {
-   "status": "exists",
+   "status": "event",
    "event": "iwz_open_pap_shutter() (prints PAP_OPEN); add level notify \"iwz_pap_open\" there to cue",
    "where": "cp_iwz2.gsc"
   },
   "door_bought": {
-   "status": "exists",
+   "status": "event",
    "event": "iwz_debris_bought( s, p ) (every debris door)",
    "where": "cp_iwz2.gsc"
   },
   "trap_bought": {
-   "status": "exists",
+   "status": "event",
    "event": "third-rail fusebox purchase (750)",
    "where": "cp_iwz2.gsc trap thread"
+  },
+  "zero_stitch": {
+   "status": "future",
+   "event": "runtime sentence assembly by ZERO (no assembler exists: every line is generated whole; the glue words are for a later stitcher and for the seams)",
+   "where": "not built"
   },
   "round_start": {
    "status": "stock",
@@ -899,7 +904,7 @@
    "id": "G01",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "the",
    "fr": "le",
@@ -910,7 +915,7 @@
    "id": "G02",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "twenty-three",
    "fr": "vingt-trois",
@@ -921,7 +926,7 @@
    "id": "G03",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "forty-seven",
    "fr": "quarante-sept",
@@ -932,7 +937,7 @@
    "id": "G04",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "to",
    "fr": "pour",
@@ -943,7 +948,7 @@
    "id": "G05",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "Zero Line",
    "fr": "ligne Zéro",
@@ -954,7 +959,7 @@
    "id": "G06",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "is",
    "fr": "est",
@@ -965,7 +970,7 @@
    "id": "G07",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "now",
    "fr": "maintenant",
@@ -976,7 +981,7 @@
    "id": "G08",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "boarding",
    "fr": "embarquement",
@@ -987,7 +992,7 @@
    "id": "G09",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "midnight",
    "fr": "minuit",
@@ -998,7 +1003,7 @@
    "id": "G10",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "late",
    "fr": "en retard",
@@ -1009,7 +1014,7 @@
    "id": "G11",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "thirteen",
    "fr": "treize",
@@ -1020,7 +1025,7 @@
    "id": "G12",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "minutes",
    "fr": "minutes",
@@ -1031,7 +1036,7 @@
    "id": "G13",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "please",
    "fr": "s'il vous plaît",
@@ -1042,7 +1047,7 @@
    "id": "G14",
    "speaker": "VOR",
    "group": "glue words",
-   "hook": "pa_ambient",
+   "hook": "zero_stitch",
    "when": "",
    "en": "edge",
    "fr": "bordure",
@@ -1322,7 +1327,8 @@
    "when": "",
    "en": "Halcyon Plaza, twenty-three forty-seven. Officer on scene. God help the officer.",
    "fr": "Halcyon Plaza, vingt-trois heures quarante-sept. Agent sur place. Que Dieu aide l'agent.",
-   "max_s": 8
+   "max_s": 8,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC02",
@@ -1332,7 +1338,8 @@
    "when": "",
    "en": "I wrote 'gas' on a form. This is not gas.",
    "fr": "J'ai écrit « gaz » sur un rapport. Ce n'est pas du gaz.",
-   "max_s": 8
+   "max_s": 8,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC03",
@@ -1342,7 +1349,8 @@
    "when": "",
    "en": "Another departure. Nobody ever arrives.",
    "fr": "Encore un départ. Personne n'arrive jamais.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC04",
@@ -1352,7 +1360,8 @@
    "when": "",
    "en": "Running dry. Requesting backup that is not coming.",
    "fr": "Je suis à sec. Je demande des renforts qui ne viendront pas.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC05",
@@ -1362,7 +1371,8 @@
    "when": "",
    "en": "Last mag. Make it count, Officer.",
    "fr": "Dernier chargeur. Fais-le compter, agent.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC06",
@@ -1372,7 +1382,8 @@
    "when": "",
    "en": "On your feet. That's an order, citizen.",
    "fr": "Debout. C'est un ordre, citoyen.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC07",
@@ -1382,7 +1393,8 @@
    "when": "",
    "en": "Stay with me. I'm not writing up another one.",
    "fr": "Reste avec moi. Je ne rédige pas un rapport de plus.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC08",
@@ -1392,7 +1404,8 @@
    "when": "",
    "en": "Noted. You're in my report. The good part.",
    "fr": "Noté. Tu seras dans mon rapport. Dans la bonne partie.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC09",
@@ -1402,7 +1415,8 @@
    "when": "",
    "en": "[shouting] Officer down! Officer down, Platform A!",
    "fr": "[shouting] Agent à terre ! Agent à terre, quai A !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC10",
@@ -1412,7 +1426,8 @@
    "when": "",
    "en": "[shouting] Ten-thirteen! Anybody! Ten-thirteen!",
    "fr": "[shouting] Agent en détresse ! N'importe qui !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC11",
@@ -1422,7 +1437,8 @@
    "when": "",
    "en": "Can't... somebody get me up before they punch my ticket.",
    "fr": "Je peux pas... Relevez-moi avant qu'ils poinçonnent mon billet.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC12",
@@ -1432,7 +1448,8 @@
    "when": "",
    "en": "Double Takes. Twice the look, twice the evidence.",
    "fr": "Double Takes. Deux regards, deux fois plus de preuves.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC13",
@@ -1442,7 +1459,8 @@
    "when": "",
    "en": "Baker's Dozens. Cops and doughnuts. Don't say it.",
    "fr": "Baker's Dozens. Les flics et les beignets. Ne dis rien.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC14",
@@ -1452,7 +1470,8 @@
    "when": "",
    "en": "Bon Voyages. Travel sweets. Evidence I'm losing my mind.",
    "fr": "Bon Voyages. Des bonbons de voyage. La preuve que je perds la tête.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC15",
@@ -1462,7 +1481,8 @@
    "when": "",
    "en": "Sour Grudges. I've got a few of those on file.",
    "fr": "Sour Grudges. J'en ai quelques-unes en dossier.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC16",
@@ -1472,7 +1492,8 @@
    "when": "",
    "en": "A gun that charges a fare. The Rapid finally armed us.",
    "fr": "Un flingue qui fait payer le trajet. La Rapid nous a enfin armés.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC17",
@@ -1482,7 +1503,8 @@
    "when": "",
    "en": "Live rail, portable. Stand clear of the officer.",
    "fr": "Du rail sous tension, portatif. Écartez-vous de l'agent.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC18",
@@ -1492,7 +1514,8 @@
    "when": "",
    "en": "Stamp, address, send. Finally, a system that works.",
    "fr": "Tampon, adresse, envoi. Enfin un système qui marche.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC19",
@@ -1502,7 +1525,8 @@
    "when": "",
    "en": "Spray paint. I've arrested men for less.",
    "fr": "De la bombe de peinture. J'ai arrêté des types pour moins que ça.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC20",
@@ -1512,7 +1536,8 @@
    "when": "",
    "en": "Skaters! On the platform! That's a citation!",
    "fr": "Des patineurs ! Sur le quai ! C'est une contravention !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC21",
@@ -1522,7 +1547,8 @@
    "when": "",
    "en": "Conga line inbound. Hold the line!",
    "fr": "Une chenille en approche. Tenez la ligne !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC22",
@@ -1532,7 +1558,8 @@
    "when": "",
    "en": "That's an inspector. Thirty-one years and he's still on shift.",
    "fr": "Un contrôleur. Trente et un ans de service, toujours de garde.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC23",
@@ -1542,7 +1569,8 @@
    "when": "",
    "en": "He's checking my ticket. I never bought one.",
    "fr": "Il contrôle mon billet. Je n'en ai jamais acheté.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC24",
@@ -1552,7 +1580,8 @@
    "when": "",
    "en": "Inspection over. Case closed.",
    "fr": "Contrôle terminé. Affaire classée.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC25",
@@ -1562,7 +1591,8 @@
    "when": "",
    "en": "The conductor. He's got the handle. Take him down.",
    "fr": "Le chef de bord. Il a la manette. On le neutralise.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC26",
@@ -1572,7 +1602,8 @@
    "when": "",
    "en": "Lights are on. Now I can see everything I wrote down wrong.",
    "fr": "La lumière revient. Maintenant je vois tout ce que j'ai mal écrit.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC27",
@@ -1582,7 +1613,8 @@
    "when": "",
    "en": "One clock moving. Write down the time.",
    "fr": "Une horloge repart. Note l'heure.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC28",
@@ -1592,7 +1624,8 @@
    "when": "",
    "en": "Thirteen minutes. That's all they were short.",
    "fr": "Treize minutes. C'est tout ce qui leur manquait.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC29",
@@ -1602,7 +1635,8 @@
    "when": "",
    "en": "Road set. Like a crime scene, but on rails.",
    "fr": "Itinéraire formé. Comme une scène de crime, mais sur rails.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC30",
@@ -1612,7 +1646,8 @@
    "when": "",
    "en": "Got the handle. Bagging it as evidence.",
    "fr": "J'ai la manette. Je la mets sous scellés.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC31",
@@ -1622,7 +1657,8 @@
    "when": "",
    "en": "We're boarding. Somebody tell my sergeant.",
    "fr": "On embarque. Que quelqu'un prévienne mon sergent.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC32",
@@ -1632,7 +1668,8 @@
    "when": "",
    "en": "Footprints on the floor. Ours. I didn't sign off on this.",
    "fr": "Des traces de pas au sol. Les nôtres. Je n'ai rien signé de tout ça.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC33",
@@ -1642,7 +1679,8 @@
    "when": "",
    "en": "Back on the platform. The clocks say we never left.",
    "fr": "Retour sur le quai. Les horloges disent qu'on n'est jamais partis.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC34",
@@ -1652,7 +1690,8 @@
    "when": "",
    "en": "The underpass. I used to chase kids out of here.",
    "fr": "Le passage souterrain. J'en chassais les gamins, avant.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC35",
@@ -1662,7 +1701,8 @@
    "when": "",
    "en": "A Victorian waiting room under my beat. Nobody told me.",
    "fr": "Une salle d'attente victorienne sous mon secteur. Personne ne m'a rien dit.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC36",
@@ -1672,7 +1712,8 @@
    "when": "",
    "en": "That's not a ventilator. That's a lung.",
    "fr": "Ce n'est pas un ventilateur. C'est un poumon.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC37",
@@ -1682,7 +1723,8 @@
    "when": "",
    "en": "A pay phone ringing in a sealed station. Don't.",
    "fr": "Un téléphone public qui sonne dans une station scellée. Non.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC38",
@@ -1692,7 +1734,8 @@
    "when": "",
    "en": "Transit Police... Hello? It's reading the roster.",
    "fr": "Police des transports... Allô ? Ça lit la feuille de service.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC39",
@@ -1702,7 +1745,8 @@
    "when": "",
    "en": "A tape. Somebody tried to tell the truth down here.",
    "fr": "Une cassette. Quelqu'un a essayé de dire la vérité, ici.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC40",
@@ -1712,7 +1756,8 @@
    "when": "",
    "en": "There's music. Nobody file a noise complaint.",
    "fr": "De la musique. Que personne ne porte plainte pour tapage.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC41",
@@ -1722,7 +1767,8 @@
    "when": "",
    "en": "Relay's green. One less red light in my life.",
    "fr": "Le relais passe au vert. Un feu rouge de moins dans ma vie.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "TC42",
@@ -1732,7 +1778,8 @@
    "when": "",
    "en": "Control room's open. Whatever's in there, I'm not taking its statement.",
    "fr": "La salle de commande est ouverte. Ce qu'il y a dedans, je ne prends pas sa déposition.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK01",
@@ -1742,7 +1789,8 @@
    "when": "",
    "en": "That's the cleanest train in the city. Not for long.",
    "fr": "C'est le train le plus propre de la ville. Plus pour longtemps.",
-   "max_s": 8
+   "max_s": 8,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK02",
@@ -1752,7 +1800,8 @@
    "when": "",
    "en": "Zero Kings never died, baby. We just went underground.",
    "fr": "Les Zero Kings sont jamais morts, bébé. On est juste passés sous terre.",
-   "max_s": 8
+   "max_s": 8,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK03",
@@ -1762,7 +1811,8 @@
    "when": "",
    "en": "Another wave. Another wall. I got paint for all of 'em.",
    "fr": "Encore une vague. Encore un mur. J'ai de la peinture pour tout le monde.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK04",
@@ -1772,7 +1822,8 @@
    "when": "",
    "en": "Out of shots. Never out of style.",
    "fr": "Plus de balles. Mais le style, jamais.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK05",
@@ -1782,7 +1833,8 @@
    "when": "",
    "en": "Can's almost empty. The gun! I mean the gun!",
    "fr": "La bombe est presque vide. Le flingue ! Je veux dire le flingue !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK06",
@@ -1792,7 +1844,8 @@
    "when": "",
    "en": "Get up! You're smudging my floor.",
    "fr": "Lève-toi ! Tu salis mon sol.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK07",
@@ -1802,7 +1855,8 @@
    "when": "",
    "en": "Up, up! Nobody leaves the crew on my watch.",
    "fr": "Debout, debout ! Personne ne lâche le crew sous ma garde.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK08",
@@ -1812,7 +1866,8 @@
    "when": "",
    "en": "Respect. I'm putting your name on a wall.",
    "fr": "Respect. Je vais écrire ton nom sur un mur.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK09",
@@ -1822,7 +1877,8 @@
    "when": "",
    "en": "[shouting] I'm down! Somebody, I'm down!",
    "fr": "[shouting] Je suis à terre ! Quelqu'un, je suis à terre !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK10",
@@ -1832,7 +1888,8 @@
    "when": "",
    "en": "Don't let 'em paint over me!",
    "fr": "Les laissez pas me repeindre par-dessus !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK11",
@@ -1842,7 +1899,8 @@
    "when": "",
    "en": "[panicked] Yo! The King needs a hand! Now!",
    "fr": "[panicked] Yo ! Le King a besoin d'un coup de main ! Maintenant !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK12",
@@ -1852,7 +1910,8 @@
    "when": "",
    "en": "Double Takes! Two shots, one signature.",
    "fr": "Double Takes ! Deux coups, une signature.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK13",
@@ -1862,7 +1921,8 @@
    "when": "",
    "en": "Baker's Dozens. Thirteen! That's my lucky number now.",
    "fr": "Baker's Dozens. Treize ! C'est mon chiffre porte-bonheur maintenant.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK14",
@@ -1872,7 +1932,8 @@
    "when": "",
    "en": "Bon Voyages! Sweets for the road. I don't do roads.",
    "fr": "Bon Voyages ! Des bonbons pour la route. Moi, je fais pas la route.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK15",
@@ -1882,7 +1943,8 @@
    "when": "",
    "en": "Sour Grudges. I been holding these since seventy-nine.",
    "fr": "Sour Grudges. Je les garde depuis soixante-dix-neuf.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK16",
@@ -1892,7 +1954,8 @@
    "when": "",
    "en": "A gun that eats tokens? I been jumping turnstiles my whole life!",
    "fr": "Un flingue à jetons ? J'ai sauté des tourniquets toute ma vie !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK17",
@@ -1902,7 +1965,8 @@
    "when": "",
    "en": "Third rail in my hands. Don't try this at home, kids.",
    "fr": "Le troisième rail dans mes mains. Faites pas ça chez vous, les gosses.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK18",
@@ -1912,7 +1976,8 @@
    "when": "",
    "en": "Stamp 'em and send 'em! Return to sender!",
    "fr": "On tamponne et on expédie ! Retour à l'envoyeur !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK19",
@@ -1922,7 +1987,8 @@
    "when": "",
    "en": "[laughing] Top to Bottom! Undercoat, this one's for you!",
    "fr": "[laughing] Top to Bottom ! Undercoat, celle-là, c'est pour toi !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK20",
@@ -1932,7 +1998,8 @@
    "when": "",
    "en": "Skaters! Oh, they got moves. I got more.",
    "fr": "Des patineurs ! Ils ont du mouvement. Moi, j'en ai plus.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK21",
@@ -1942,7 +2009,8 @@
    "when": "",
    "en": "Disco's dead, man! Stay dead!",
    "fr": "Le disco est mort, mec ! Restez morts !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK22",
@@ -1952,7 +2020,8 @@
    "when": "",
    "en": "Inspector! Run! Old habits, man, old habits.",
    "fr": "Un contrôleur ! Cours ! Vieilles habitudes, mec, vieilles habitudes.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK23",
@@ -1962,7 +2031,8 @@
    "when": "",
    "en": "He wants my ticket. I ain't never had a ticket!",
    "fr": "Il veut mon billet. J'ai jamais eu de billet de ma vie !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK24",
@@ -1972,7 +2042,8 @@
    "when": "",
    "en": "Fare dodged. Permanently.",
    "fr": "Fraude réussie. Définitivement.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK25",
@@ -1982,7 +2053,8 @@
    "when": "",
    "en": "Conductor's got the handle. I want that handle.",
    "fr": "Le chef de bord a la manette. Je la veux, cette manette.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK26",
@@ -1992,7 +2064,8 @@
    "when": "",
    "en": "Lights on! Now everybody can see my work.",
    "fr": "La lumière ! Maintenant tout le monde peut voir mon œuvre.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK27",
@@ -2002,7 +2075,8 @@
    "when": "",
    "en": "One clock ticking. Tick, tick, King.",
    "fr": "Une horloge qui tourne. Tic, tac, le King.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK28",
@@ -2012,7 +2086,8 @@
    "when": "",
    "en": "Midnight's coming. Finally, a party.",
    "fr": "Minuit approche. Enfin une fête.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK29",
@@ -2022,7 +2097,8 @@
    "when": "",
    "en": "Road's set. A line's a line, man. I know lines.",
    "fr": "Itinéraire posé. Une ligne, c'est une ligne, mec. Je connais les lignes.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK30",
@@ -2032,7 +2108,8 @@
    "when": "",
    "en": "Got the handle! Train's mine now.",
    "fr": "J'ai la manette ! Le train est à moi maintenant.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK31",
@@ -2042,7 +2119,8 @@
    "when": "",
    "en": "All aboard the King's express!",
    "fr": "Tout le monde à bord de l'express du King !",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK32",
@@ -2052,7 +2130,8 @@
    "when": "",
    "en": "Paper. Everything's paper. Somebody give me a marker.",
    "fr": "Du papier. Tout est en papier. Quelqu'un me file un marqueur.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK33",
@@ -2062,7 +2141,8 @@
    "when": "",
    "en": "We back. Did we even leave?",
    "fr": "On est de retour. On est seulement partis ?",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK34",
@@ -2072,7 +2152,8 @@
    "when": "",
    "en": "The underpass! Best walls in Halcyon. Look at 'em. Untouched.",
    "fr": "Le passage ! Les meilleurs murs de Halcyon. Regarde-les. Intacts.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK35",
@@ -2082,7 +2163,8 @@
    "when": "",
    "en": "Gold leaf, velvet... somebody already tagged this place in eighteen-ninety.",
    "fr": "Feuille d'or, velours... quelqu'un a déjà tagué cet endroit en mille huit cent quatre-vingt-dix.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK36",
@@ -2092,7 +2174,8 @@
    "when": "",
    "en": "That thing's breathing. Walls don't breathe. Usually.",
    "fr": "Ce truc respire. Les murs respirent pas. D'habitude.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK37",
@@ -2102,7 +2185,8 @@
    "when": "",
    "en": "Phone's ringing. Probably my mom.",
    "fr": "Le téléphone sonne. Sûrement ma mère.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK38",
@@ -2112,7 +2196,8 @@
    "when": "",
    "en": "Yeah? ... Who's this? ... It hung up. It hung up on me.",
    "fr": "Ouais ? ... C'est qui ? ... Ça a raccroché. Ça m'a raccroché au nez.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK39",
@@ -2122,7 +2207,8 @@
    "when": "",
    "en": "A tape! Tell me it's a mixtape. Please be a mixtape.",
    "fr": "Une cassette ! Dis-moi que c'est une mixtape. Pitié, une mixtape.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK40",
@@ -2132,7 +2218,8 @@
    "when": "",
    "en": "Now that's a jam. Somebody hit the lights!",
    "fr": "Ça, c'est un son. Quelqu'un, les lumières !",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK41",
@@ -2142,7 +2229,8 @@
    "when": "",
    "en": "Relay's green. Green's a good color. Ask me.",
    "fr": "Relais au vert. Le vert, c'est une bonne couleur. Demande-moi.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "GK42",
@@ -2152,7 +2240,8 @@
    "when": "",
    "en": "Door's open! VIP room, Zero Kings only.",
    "fr": "La porte est ouverte ! Carré VIP, Zero Kings seulement.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE01",
@@ -2162,7 +2251,8 @@
    "when": "",
    "en": "The diagram says it is approaching. The diagram has no right to.",
    "fr": "Le schéma dit qu'il est en approche. Le schéma n'a pas le droit.",
-   "max_s": 8
+   "max_s": 8,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE02",
@@ -2172,7 +2262,8 @@
    "when": "",
    "en": "I was sent to pull one fuse. One. I have a clipboard.",
    "fr": "On m'a envoyé retirer un fusible. Un seul. J'ai un porte-bloc.",
-   "max_s": 8
+   "max_s": 8,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE03",
@@ -2182,7 +2273,8 @@
    "when": "",
    "en": "Departure logged. Arrival pending. That is a fault condition.",
    "fr": "Départ enregistré. Arrivée en attente. C'est une condition de défaut.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE04",
@@ -2192,7 +2284,8 @@
    "when": "",
    "en": "Ammunition below threshold. Recommend immediate replenishment.",
    "fr": "Munitions sous le seuil. Réapprovisionnement immédiat recommandé.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE05",
@@ -2202,7 +2295,8 @@
    "when": "",
    "en": "I'm nearly out. This was not in the work order.",
    "fr": "Je suis presque à court. Ce n'était pas dans l'ordre de travail.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE06",
@@ -2212,7 +2306,8 @@
    "when": "",
    "en": "Hold still. I'm restoring your circuit.",
    "fr": "Ne bougez pas. Je rétablis votre circuit.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE07",
@@ -2222,7 +2317,8 @@
    "when": "",
    "en": "Come on, come on. Proving... proving... proved!",
    "fr": "Allez, allez. Contrôle... contrôle... contrôle établi !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE08",
@@ -2232,7 +2328,8 @@
    "when": "",
    "en": "Thank you. I've logged it. With a gold star.",
    "fr": "Merci. Je l'ai consigné. Avec une étoile dorée.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE09",
@@ -2242,7 +2339,8 @@
    "when": "",
    "en": "[panicked] I'm down! This is a failure state! Help!",
    "fr": "[panicked] Je suis à terre ! C'est un état de défaillance ! À l'aide !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE10",
@@ -2252,7 +2350,8 @@
    "when": "",
    "en": "Help! Somebody reset me!",
    "fr": "À l'aide ! Quelqu'un, réinitialisez-moi !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE11",
@@ -2262,7 +2361,8 @@
    "when": "",
    "en": "Please, please, I haven't finished my report!",
    "fr": "S'il vous plaît, je n'ai pas fini mon rapport !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE12",
@@ -2272,7 +2372,8 @@
    "when": "",
    "en": "Double Takes. Redundancy. I approve of redundancy.",
    "fr": "Double Takes. La redondance. J'approuve la redondance.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE13",
@@ -2282,7 +2383,8 @@
    "when": "",
    "en": "Baker's Dozens. Every thirteenth. A counter. I love a counter.",
    "fr": "Baker's Dozens. Tous les treize. Un compteur. J'adore les compteurs.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE14",
@@ -2292,7 +2394,8 @@
    "when": "",
    "en": "Bon Voyages. For transit. Fitting, technically.",
    "fr": "Bon Voyages. Pour le transport. Approprié, techniquement.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE15",
@@ -2302,7 +2405,8 @@
    "when": "",
    "en": "Sour Grudges. I'm adding them to my list.",
    "fr": "Sour Grudges. Je les ajoute à ma liste.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE16",
@@ -2312,7 +2416,8 @@
    "when": "",
    "en": "It deducts a fare per discharge. Accounting would be thrilled.",
    "fr": "Il déduit un tarif à chaque tir. La comptabilité serait ravie.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE17",
@@ -2322,7 +2427,8 @@
    "when": "",
    "en": "A portable live rail. Six hundred volts, give or take my nerves.",
    "fr": "Un rail sous tension portatif. Six cents volts, à mes nerfs près.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE18",
@@ -2332,7 +2438,8 @@
    "when": "",
    "en": "Addressed and dispatched. That is correct procedure.",
    "fr": "Adressé et expédié. C'est la procédure correcte.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE19",
@@ -2342,7 +2449,8 @@
    "when": "",
    "en": "The livery code. Colour as instruction. The dead obey the paint.",
    "fr": "Le code des livrées. La couleur comme instruction. Les morts obéissent à la peinture.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE20",
@@ -2352,7 +2460,8 @@
    "when": "",
    "en": "Unbraked rolling stock on the platform!",
    "fr": "Matériel roulant non freiné sur le quai !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE21",
@@ -2362,7 +2471,8 @@
    "when": "",
    "en": "They can't stop! They have no stopping distance!",
    "fr": "Ils ne peuvent pas s'arrêter ! Ils n'ont aucune distance de freinage !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE22",
@@ -2372,7 +2482,8 @@
    "when": "",
    "en": "A fare inspector. Is my ticket valid? Is anything valid?",
    "fr": "Un contrôleur. Mon billet est-il valable ? Est-ce que quelque chose l'est ?",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE23",
@@ -2382,7 +2493,8 @@
    "when": "",
    "en": "He's marked me! I have a staff pass! Somewhere!",
    "fr": "Il m'a marqué ! J'ai une carte d'agent ! Quelque part !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE24",
@@ -2392,7 +2504,8 @@
    "when": "",
    "en": "Inspection terminated. Abnormally.",
    "fr": "Contrôle interrompu. Anormalement.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE25",
@@ -2402,7 +2515,8 @@
    "when": "",
    "en": "That's the conductor of 047. He has the controller key.",
    "fr": "C'est le chef de bord du 047. Il a la clé du manipulateur.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE26",
@@ -2412,7 +2526,8 @@
    "when": "",
    "en": "G-2 is running. I restarted a generator tagged do not restart. I'm so sorry.",
    "fr": "Le G-2 tourne. J'ai redémarré un groupe étiqueté « ne pas redémarrer ». Je suis vraiment désolé.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE27",
@@ -2422,7 +2537,8 @@
    "when": "",
    "en": "One clock advanced. The others are still wrong. Correctly wrong.",
    "fr": "Une horloge avancée. Les autres sont toujours fausses. Exactement fausses.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE28",
@@ -2432,7 +2548,8 @@
    "when": "",
    "en": "Thirteen minutes restored. ZERO expects the run now.",
    "fr": "Treize minutes rétablies. ZERO attend le train, maintenant.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE29",
@@ -2442,7 +2559,8 @@
    "when": "",
    "en": "The road is set. Points locked, signal clear. Beautiful.",
    "fr": "L'itinéraire est formé. Aiguilles verrouillées, signal ouvert. Magnifique.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE30",
@@ -2452,7 +2570,8 @@
    "when": "",
    "en": "The dead-man's handle. An ironic name, in context.",
    "fr": "La manette d'homme mort. Un nom ironique, dans le contexte.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE31",
@@ -2462,7 +2581,8 @@
    "when": "",
    "en": "We're boarding. The train is not moving. And yet.",
    "fr": "On embarque. Le train ne bouge pas. Et pourtant.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE32",
@@ -2472,7 +2592,8 @@
    "when": "",
    "en": "The floor is a timetable. These are our times. These are our footprints.",
    "fr": "Le sol est un horaire. Ce sont nos horaires. Ce sont nos traces de pas.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE33",
@@ -2482,7 +2603,8 @@
    "when": "",
    "en": "Same second. The same second! Somebody write that down!",
    "fr": "La même seconde. La même seconde ! Que quelqu'un le note !",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE34",
@@ -2492,7 +2614,8 @@
    "when": "",
    "en": "The seventy-eight refit. Original fluorescent ballasts. Mostly dead.",
    "fr": "La rénovation de soixante-dix-huit. Ballasts fluorescents d'origine. Presque tous morts.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE35",
@@ -2502,7 +2625,8 @@
    "when": "",
    "en": "Vayle's salon. Those are tuning forks. The whole wall is tuned.",
    "fr": "Le salon de Vayle. Ce sont des diapasons. Tout le mur est accordé.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE36",
@@ -2512,7 +2636,8 @@
    "when": "",
    "en": "The Bellows. If that blower starts, the whole main sings.",
    "fr": "La Soufflerie. Si ce ventilateur démarre, toute la conduite se met à chanter.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE37",
@@ -2522,7 +2647,8 @@
    "when": "",
    "en": "That phone's line was cut in January. I signed the docket.",
    "fr": "La ligne de ce téléphone a été coupée en janvier. J'ai signé le bon.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE38",
@@ -2532,7 +2658,8 @@
    "when": "",
    "en": "Hello, Signals? ... It's the Voice. She's reading me timetables.",
    "fr": "Allô, la signalisation ? ... C'est la Voix. Elle me lit des horaires.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE39",
@@ -2542,7 +2669,8 @@
    "when": "",
    "en": "A Lodestar micro-cassette. Dr. Strand's. She was right, wasn't she.",
    "fr": "Une microcassette Lodestar. Celle du docteur Strand. Elle avait raison, n'est-ce pas.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE40",
@@ -2552,7 +2680,8 @@
    "when": "",
    "en": "That's not on any frequency we use.",
    "fr": "Ce n'est sur aucune des fréquences qu'on utilise.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE41",
@@ -2562,7 +2691,8 @@
    "when": "",
    "en": "Relay proving. Green lamp. I could cry.",
    "fr": "Le relais est en contrôle. Lampe verte. Je pourrais pleurer.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "SE42",
@@ -2572,7 +2702,8 @@
    "when": "",
    "en": "All three relays proving. The control-room shutter is released.",
    "fr": "Les trois relais en contrôle. Le rideau de la salle de commande est libéré.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP01",
@@ -2582,7 +2713,8 @@
    "when": "",
    "en": "Channel 9 Night Desk, one year after the gas incident, and I am standing in the gas incident.",
    "fr": "Channel 9, Night Desk, un an après l'incident du gaz, et je me tiens en plein dans l'incident du gaz.",
-   "max_s": 8
+   "max_s": 8,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP02",
@@ -2592,7 +2724,8 @@
    "when": "",
    "en": "We're live. We're... still live? Keep rolling.",
    "fr": "On est en direct. On est... toujours en direct ? Continue de tourner.",
-   "max_s": 8
+   "max_s": 8,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP03",
@@ -2602,7 +2735,8 @@
    "when": "",
    "en": "Breaking news: they keep coming. Back to you, studio. Studio?",
    "fr": "Flash spécial : ils continuent d'arriver. À vous les studios. Les studios ?",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP04",
@@ -2612,7 +2746,8 @@
    "when": "",
    "en": "Running low! Somebody cut to commercial!",
    "fr": "Je suis presque à sec ! Qu'on passe une page de pub !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP05",
@@ -2622,7 +2757,8 @@
    "when": "",
    "en": "Last round. If I miss, that's a wrap.",
    "fr": "Dernière cartouche. Si je rate, c'est la fin de l'émission.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP06",
@@ -2632,7 +2768,8 @@
    "when": "",
    "en": "Stay with me! You're my only witness.",
    "fr": "Reste avec moi ! Tu es mon seul témoin.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP07",
@@ -2642,7 +2779,8 @@
    "when": "",
    "en": "Up! I need you on camera.",
    "fr": "Debout ! J'ai besoin de toi à l'image.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP08",
@@ -2652,7 +2790,8 @@
    "when": "",
    "en": "Thank you. You'll get a credit. Small font.",
    "fr": "Merci. Tu seras au générique. En petits caractères.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP09",
@@ -2662,7 +2801,8 @@
    "when": "",
    "en": "[panicked] I'm down! Is the camera still on? Help me!",
    "fr": "[panicked] Je suis à terre ! La caméra tourne encore ? Aidez-moi !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP10",
@@ -2672,7 +2812,8 @@
    "when": "",
    "en": "Somebody! This is not the story I pitched!",
    "fr": "Quelqu'un ! Ce n'est pas le sujet que j'avais proposé !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP11",
@@ -2682,7 +2823,8 @@
    "when": "",
    "en": "[sobbing] Help! Please, I'm not done yet!",
    "fr": "[sobbing] À l'aide ! Je vous en prie, je n'ai pas fini !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP12",
@@ -2692,7 +2834,8 @@
    "when": "",
    "en": "Double Takes. Every reporter needs a second take.",
    "fr": "Double Takes. Toute reporter a besoin d'une deuxième prise.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP13",
@@ -2702,7 +2845,8 @@
    "when": "",
    "en": "Baker's Dozens. The doughnut stand outlived the station.",
    "fr": "Baker's Dozens. Le stand de beignets a survécu à la station.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP14",
@@ -2712,7 +2856,8 @@
    "when": "",
    "en": "Bon Voyages. A sponsored segment. I'm keeping it.",
    "fr": "Bon Voyages. Un segment sponsorisé. Je le garde.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP15",
@@ -2722,7 +2867,8 @@
    "when": "",
    "en": "Sour Grudges. I have a list. It's alphabetical.",
    "fr": "Sour Grudges. J'ai une liste. Elle est alphabétique.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP16",
@@ -2732,7 +2878,8 @@
    "when": "",
    "en": "A gun that charges a fare. That's the story of this city.",
    "fr": "Un flingue qui fait payer le trajet. C'est toute l'histoire de cette ville.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP17",
@@ -2742,7 +2889,8 @@
    "when": "",
    "en": "Live rail. Do not touch the talent.",
    "fr": "Rail sous tension. On ne touche pas à la vedette.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP18",
@@ -2752,7 +2900,8 @@
    "when": "",
    "en": "Stamped and sent. I've always wanted to do that to a producer.",
    "fr": "Tamponné et expédié. J'ai toujours rêvé de faire ça à un producteur.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP19",
@@ -2762,7 +2911,8 @@
    "when": "",
    "en": "Magenta. It's not my colour. It's theirs now.",
    "fr": "Magenta. Ce n'est pas ma couleur. C'est la leur, maintenant.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP20",
@@ -2772,7 +2922,8 @@
    "when": "",
    "en": "The Orbit Rink party! They chartered car six. I have the press release.",
    "fr": "La soirée de l'Orbit Rink ! Ils avaient la voiture six. J'ai le communiqué.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP21",
@@ -2782,7 +2933,8 @@
    "when": "",
    "en": "Skates. Of course there are skates.",
    "fr": "Des patins. Évidemment qu'il y a des patins.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP22",
@@ -2792,7 +2944,8 @@
    "when": "",
    "en": "That's... a fare inspector. With a lamp for a head. Are you getting this?",
    "fr": "C'est... un contrôleur. Avec une lanterne pour tête. Tu filmes ?",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP23",
@@ -2802,7 +2955,8 @@
    "when": "",
    "en": "He's coming for me. I put my ticket on expenses!",
    "fr": "Il vient pour moi. J'ai mis mon billet en note de frais !",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP24",
@@ -2812,7 +2966,8 @@
    "when": "",
    "en": "The inspector is down. You heard it here first.",
    "fr": "Le contrôleur est à terre. Vous l'avez appris ici en premier.",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP25",
@@ -2822,7 +2977,8 @@
    "when": "",
    "en": "The conductor of the twenty-three forty-seven. Smiling. Why is he smiling?",
    "fr": "Le chef de bord du vingt-trois heures quarante-sept. Il sourit. Pourquoi il sourit ?",
-   "max_s": 5.5
+   "max_s": 5.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP26",
@@ -2832,7 +2988,8 @@
    "when": "",
    "en": "The lights are back. My cameraman isn't.",
    "fr": "La lumière est revenue. Mon caméraman, non.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP27",
@@ -2842,7 +2999,8 @@
    "when": "",
    "en": "One clock moving. Get a shot of that.",
    "fr": "Une horloge repart. Fais-moi un plan là-dessus.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP28",
@@ -2852,7 +3010,8 @@
    "when": "",
    "en": "Midnight, after a year. Channel 9 had it first.",
    "fr": "Minuit, après un an. Channel 9 l'a eu en premier.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP29",
@@ -2862,7 +3021,8 @@
    "when": "",
    "en": "Road set. I have no idea what that means and I'm reporting it anyway.",
    "fr": "Itinéraire formé. Je n'ai aucune idée de ce que ça veut dire et je l'annonce quand même.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP30",
@@ -2872,7 +3032,8 @@
    "when": "",
    "en": "We have the handle. Exclusive.",
    "fr": "On a la manette. En exclusivité.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP31",
@@ -2882,7 +3043,8 @@
    "when": "",
    "en": "We're boarding the twenty-three forty-seven. If this airs, I want the eleven o'clock slot.",
    "fr": "On embarque dans le vingt-trois heures quarante-sept. Si ça passe à l'antenne, je veux le créneau de vingt-trois heures.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP32",
@@ -2892,7 +3054,8 @@
    "when": "",
    "en": "A platform made of printout. Our names are on it. [whispering] Keep rolling.",
    "fr": "Un quai fait de listings. Nos noms sont dessus. [whispering] Continue de tourner.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP33",
@@ -2902,7 +3065,8 @@
    "when": "",
    "en": "We're back. Same second. Nobody will believe the tape.",
    "fr": "On est revenus. La même seconde. Personne ne croira la cassette.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP34",
@@ -2912,7 +3076,8 @@
    "when": "",
    "en": "The underpass arcade. I did a piece here on the refit, in seventy-eight.",
    "fr": "La galerie du passage souterrain. J'ai fait un sujet ici sur la rénovation, en soixante-dix-huit.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP35",
@@ -2922,7 +3087,8 @@
    "when": "",
    "en": "Gaslight, gold leaf, and nobody knew. That's a lead.",
    "fr": "Lustres à gaz, feuille d'or, et personne ne savait. Ça, c'est une piste.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP36",
@@ -2932,7 +3098,8 @@
    "when": "",
    "en": "Something down here is breathing. I can hear it on the mic.",
    "fr": "Quelque chose respire, ici. Je l'entends dans le micro.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP37",
@@ -2942,7 +3109,8 @@
    "when": "",
    "en": "Who calls a sealed station on New Year's Eve?",
    "fr": "Qui appelle une station scellée un soir de réveillon ?",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP38",
@@ -2952,7 +3120,8 @@
    "when": "",
    "en": "Channel 9 Night Desk... She's reading the departures. To me.",
    "fr": "Channel 9, Night Desk... Elle lit les départs. Pour moi.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP39",
@@ -2962,7 +3131,8 @@
    "when": "",
    "en": "Dr. Strand's tape. This is the story. This was always the story.",
    "fr": "La cassette du docteur Strand. Voilà le sujet. Ça a toujours été le sujet.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP40",
@@ -2972,7 +3142,8 @@
    "when": "",
    "en": "Is that... music? Somebody get the boom mic.",
    "fr": "C'est... de la musique ? Qu'on m'apporte la perche.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP41",
@@ -2982,7 +3153,8 @@
    "when": "",
    "en": "Relay restored. I'm narrating rewiring now. This is my career.",
    "fr": "Relais rétabli. Je commente du câblage, maintenant. Voilà ma carrière.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
   {
    "id": "RP42",
@@ -2992,7 +3164,8 @@
    "when": "",
    "en": "The control room is open. Whatever's in there, it's on the record.",
    "fr": "La salle de commande est ouverte. Quoi qu'il y ait dedans, c'est officiel.",
-   "max_s": 7.5
+   "max_s": 7.5,
+   "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   }
  ]
 }
