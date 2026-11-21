@@ -734,6 +734,10 @@ WELL_SOLID = os.environ.get('IWZ_WELL_SOLID', '0') == '1'     # (g27e) solid wel
 #   nofloor  : no floor sheet under the ramp start (r0..first riser): nothing for an agent to stand on below the ramp
 #   landN    : bottom landing N units long (default WELL_LAND)
 WELL_FIX = dict(kv.split('=', 1) for kv in os.environ.get('IWZ_WELL_FIX', '').split(',') if '=' in kv)
+# (sz-finish, 21 Nov 2026) stair A is built in the stock construction by default: with the g27 flight 2 of 5 zombies from the
+# foot went under the treads at (-608, 2673) (g27h accept_wells_stairs_stairs: 3 of 5 and 4 of 5 up, 'sub_surface'); g27j with
+# stair_a=stock: 5 of 5 up and down. IWZ_WELL_FIX='stair_a=' (empty) builds the old flight.
+WELL_FIX.setdefault('stair_a', 'stock')
 STAIRS = []        # (g27) every stair flight: zone, space, open sides and their stringers (artlint stair-soffit)
 
 
