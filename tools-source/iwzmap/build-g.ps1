@@ -217,5 +217,13 @@ if($Darkness){
   $A['Darkness']=$true
   $A['DarkArgs']='--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --lit fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3'
 }
+# Capsule Post (modules/post.gsc, package T1): station_zero2.py writes modules/cp_iwz_post.gsc into $src (unless IWZ_POST=0) and the level
+# script starts it. The bake overlays above copy top-level files only, so the module folder is carried over to $build here (a stale
+# cached copy is replaced); sz2_assemble.py puts it into the zone as scripts/cp/maps/cp_iwz/cp_iwz_post.gsc.
+if($env:IWZ_POST -ne '0'){
+  if(-not (Test-Path "$src\modules\cp_iwz_post.gsc")){ throw "Capsule Post module missing: $src\modules\cp_iwz_post.gsc (station_zero2.py writes it unless IWZ_POST=0)" }
+  if($build -ne $src){ if(Test-Path "$build\modules"){ Remove-Item "$build\modules" -Recurse -Force }; Copy-Item "$src\modules" "$build\modules" -Recurse -Force }
+  "capsule post module: $build\modules\cp_iwz_post.gsc"
+} elseif(Test-Path "$build\modules\cp_iwz_post.gsc"){ Remove-Item "$build\modules\cp_iwz_post.gsc" -Force }
 & "$S\build-sz2.ps1" -Src $build -UmOut $um -ZoneToolExe $Z -KeepSubmodels @A
 (Get-FileHash "$um\cp_iwz.ff" -Algorithm SHA256).Hash

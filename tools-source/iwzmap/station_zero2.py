@@ -2765,6 +2765,24 @@ QUEST = {   # Pack-a-Punch relays (gameplay agent: logic), trap and EE spots (da
     'teddy_bear': {'zone': 'platform_a', 'origin': TEDDY_SPOT, 'yaw': 90, 'note': 'hero car floor, far track-side anchor, behind a duffel bag' if TRAIN else 'platform floor by the luggage'},
 }
 
+# ============================================================================ Capsule Post (package T1, modules/post.gsc)
+# Four hatches on a ring (the order is the BLOW direction: 250 / 400 / 550 points for 1 / 2 / 3 segments) and the Bellows
+# lever, in four of the nine zones, so the map has a transport between its far-apart areas. IWZ_POST=0 leaves the layout,
+# the entities and the level script as they were (and removes a stale modules/cp_iwz_post.gsc from the output).
+# Every point: open floor against a wall, 96+ from every door, stair, arch, perk machine, wall buy, wheel, Pack-a-Punch,
+# relay, power switch, trap, spawner and player start; iwz_emitcheck.py at says on_floor, on the navmesh, for the hatch and
+# for its arrival point 40 units out along the yaw. The yaw faces into the room (270 looks south, 90 looks north).
+POST = os.environ.get('IWZ_POST', '1') != '0'
+POST_MODULE = 'post'
+POST_HATCHES = [   # (id, zone, origin, yaw): the ids are single words (they name entities and test probes)
+    ('HALL', 'ticket_hall', (-640, 4368, 0), 270),                  # north wall, below the Station Zero sign, 490 from the player starts
+    ('OLD_STATION', 'platform_b', (-2456, 2632, -384), 90),          # south wall, between the Bang Bangs bay and the stair B arch
+    ('GENERATOR', 'generator_room', (2824, 2432, -320), 90),        # south wall, west of the corridor arch
+    ('SIGNALS', 'control_room', (3320, 3984, -320), 270),           # north wall, east of the Pack-a-Punch alcove
+]
+POST_LEVER = ('BELLOWS', 'control_room', (2832, 3984, -320), 270)   # the signal lever: north wall, west of the Pack-a-Punch alcove
+POST_MODELS = ['pipe_metal_painted_bend_90_lrg_blue']   # spawned by post.gsc at run time (the lever's model is the power switch's): parked below so the zone links it
+
 ws = mapgen.stock_worldspawn(os.path.join(tpl, 'maps/cp/cp_zmb.d3dbsp.ents'))
 ents, relocations, triggers = [], [], []
 layout = {'zones': {}, 'doors': [], 'spawners': [], 'starts': [], 'interactions': [], 'quest': QUEST, 'lights': LIGHTS,
@@ -3098,6 +3116,13 @@ for name, q in QUEST.items():
                         origin=fmt((o_[0], o_[1], o_[2] + 40)), angles='0 %g 0' % q['yaw']))
         ents.append(ent(classname='script_model', targetname='iwz_' + name + '_beacon', model='beacon_light_plasticcase_red_on',
                         origin=fmt((o_[0], o_[1], o_[2] + 54)), angles='0 %g 0' % q['yaw']))
+if POST:    # Capsule Post: the markers and the spawn volumes post.gsc reads (sz_modules.py fills its tables), the model it spawns kept loaded
+    layout['markers'] = [{'kind': 'hatch', 'id': i_, 'zone': z_, 'origin': list(o_), 'yaw': y_} for i_, z_, o_, y_ in POST_HATCHES] + \
+                        [{'kind': 'post_lever', 'id': POST_LEVER[0], 'zone': POST_LEVER[1], 'origin': list(POST_LEVER[2]), 'yaw': POST_LEVER[3]}]
+    layout['volumes'] = [{'name': z_, 'zone': z_, 'box': list(zd_['box'])} for z_, zd_ in ZONES.items()]    # the spawn volumes above: name = zone = linkname
+    layout['modules'] = [POST_MODULE]
+    for m_ in POST_MODELS:
+        ents.append(ent(classname='script_model', model=m_, origin='0 0 -3000', angles='0 0 0'))
 # stock fast-travel / hidden-room init runs on every map: give its lookups parked entities so its threads idle
 # instead of looping on undefined (gameplay REPORT defect 7)
 for tn in ('hidden_room_portal', 'center_portal', 'fast_travel_tube_start', 'fast_travel_tube_end', 'hidden_travel_tube_start',
@@ -3218,6 +3243,11 @@ door_lines = ['    doors[doors.size] = iwz_door( "%s", "%s", %d, %g, %g, %g, %g,
 link_lines = ['    links[links.size] = [ "%s", "%s" ];' % l for l in ZONE_LINKS]
 gsc = gsc.replace('//@DOORS@', '\n'.join(door_lines)).replace('//@LINKS@', '\n'.join(link_lines))
 gsc = gsc.replace('//@INITIAL@', 'level.initial_active_volumes = [ %s ];' % ', '.join('"%s"' % z for z in INITIAL_ZONES))
+if POST:     # the module is written below; the level script starts it
+    import sz_modules
+    gsc = gsc.replace('//@POST@', sz_modules.calls([POST_MODULE], 'cp_iwz')[0].lstrip())
+else:
+    gsc = gsc.replace('    //@POST@\n', '')
 gsc = gsc.replace('//@WHEEL@', '"%s"' % WHEELS[0][3])
 gsc = gsc.replace('//@FXLOAD@', chr(10).join('    level._effect["iwz_fx_%d"] = loadfx( "%s" );' % (k, f['fx']) for k, f in enumerate(FX)))
 gsc = gsc.replace('//@FXPLACE@', chr(10).join('    fx[fx.size] = iwz_fx( "iwz_fx_%d", ( %g, %g, %g ), %d );' % (k, *f['origin'], 1 if f['repeat'] else 0)
@@ -3232,6 +3262,11 @@ gsc = gsc.replace('//@TRAPMIN@', '( %g, %g, %g )' % tb[:3]).replace('//@TRAPMAX@
 gsc = gsc.replace('//@TRAPRAILY@', '%g' % THIRD_Y)
 gsc = gsc.replace('//@TRAPRAILZ@', '%g' % ((-356.31 + 3.5) if TRAIN else (PIT_Z + 12)))   # train kit third rail top / old bed line
 open(os.path.join(out, 'cp_iwz.gsc'), 'w', newline='\n').write(gsc)
+_pm = os.path.join(out, 'modules', 'cp_iwz_' + POST_MODULE + '.gsc')
+if POST:     # only the Capsule Post module: modules/quest.gsc and cap.gsc belong to the 19-zone line
+    sz_modules.emit(os.path.join(out, 'modules'), layout['markers'], layout['volumes'], 'cp_iwz', only=[POST_MODULE])
+elif os.path.isfile(_pm):
+    os.remove(_pm)
 
 # ============================================================================ capture views, walk path, summaries
 VIEWS = {   # 5 per zone: (x, y, z eye-ish origin of the player, yaw, pitch)

@@ -51,6 +51,16 @@ for f in mods:
         os.remove(out)
     shutil.copyfile(os.path.join(src, 'modules', f), out)
     mrows.append('rawfile,' + rel)
+# the level script of the nine-zone line starts the Capsule Post by path: a zone without that file fails to link (the map
+# shuts down at load, as with the baked source that lost modules/), so the call goes when the module is not in the zone
+lvl = os.path.join(dst, 'scripts', 'cp', 'maps', mapname, mapname + '.gsc')
+post_call = '    level thread scripts\\cp\\maps\\%s\\%s_post::init();' % (mapname, mapname)
+if os.path.isfile(lvl) and not any(f == '%s_post.gsc' % mapname for f in mods):
+    text = open(lvl).read()
+    if post_call in text:
+        os.remove(lvl)      # never write through a hardlink
+        open(lvl, 'w', newline='\n').write(text.replace(post_call, '    // (sz2_assemble: no modules/%s_post.gsc in the source, the Capsule Post call was dropped)' % mapname))
+        print('WARNING: the level script starts the Capsule Post but %s/modules has no %s_post.gsc: the call was dropped from the zone copy' % (src, mapname))
 if mrows:
     level_row = 'rawfile,scripts/cp/maps/%s/%s.gsc' % (mapname, mapname)
     at = lines.index(level_row) + 1

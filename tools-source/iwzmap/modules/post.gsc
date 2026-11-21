@@ -39,6 +39,25 @@ init()
     s.riding = 0;
     s.events = 0;
     s.markers = t1_markers();
+    // a map whose hatches carry other addresses than the four above (Station Zero g27: HALL, OLD_STATION, GENERATOR, SIGNALS):
+    // the hatch markers, in their order, are the ring (ids are single words: they name entities and test probes)
+    ids = [];
+    foreach ( m in s.markers )
+    {
+        if ( m[0] == "hatch" )
+            ids[ids.size] = m[1];
+    }
+    named = 0;
+    foreach ( r in s.ring )
+    {
+        foreach ( i in ids )
+        {
+            if ( i == r )
+                named++;
+        }
+    }
+    if ( ids.size == 4 && named < 4 )
+        s.ring = ids;
     level.iwz_post_ride = ::t1_test_ride;
     level thread t1_main();
 }

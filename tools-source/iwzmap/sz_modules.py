@@ -10,6 +10,7 @@ call no function of each other or of the level script by path, so the same file 
 
 usage: sz_modules.py <src>                 regenerate <src>/modules from <src>/layout.json (same output as the emit)
        sz_modules.py <src> --out <dir>     write them elsewhere (a custom_scripts folder for a test session)
+       sz_modules.py <src> --only post     only the named modules (the nine-zone g27 line starts the Capsule Post alone)
 """
 import argparse, glob, json, os, sys
 
@@ -42,16 +43,17 @@ def volume_lines(vols):
     return out
 
 
-def names():
-    return sorted(os.path.splitext(os.path.basename(p))[0] for p in glob.glob(os.path.join(MODULES, '*.gsc')))
+def names(only=None):
+    found = sorted(os.path.splitext(os.path.basename(p))[0] for p in glob.glob(os.path.join(MODULES, '*.gsc')))
+    return found if not only else [n for n in found if n in only]
 
 
-def emit(out_dir, markers, vols, mapname):
-    """write every module with its tables filled; returns the module names"""
+def emit(out_dir, markers, vols, mapname, only=None):
+    """write every module (or only those named in `only`) with its tables filled; returns the module names"""
     os.makedirs(out_dir, exist_ok=True)
     ml, vl = '\n'.join(marker_lines(markers)), '\n'.join(volume_lines(vols))
     done = []
-    for n in names():
+    for n in names(only):
         src = open(os.path.join(MODULES, n + '.gsc'), encoding='utf-8').read()
         src = src.replace('//@MARKERS@', ml.lstrip()).replace('//@VOLUMES@', vl.lstrip())
         with open(os.path.join(out_dir, '%s_%s.gsc' % (mapname, n)), 'w', encoding='utf-8', newline='\n') as f:
@@ -69,11 +71,12 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('src')
     ap.add_argument('--out')
+    ap.add_argument('--only', action='append', help='a module name (repeatable); default: every module')
     a = ap.parse_args(argv)
     lay = json.load(open(os.path.join(a.src, 'layout.json')))
     mapname = lay.get('map', 'cp_iwz')
     out = a.out or os.path.join(a.src, 'modules')
-    mods = emit(out, lay.get('markers', []), lay.get('volumes', []), mapname)
+    mods = emit(out, lay.get('markers', []), lay.get('volumes', []), mapname, a.only)
     print('modules: %s -> %s' % (', '.join(mods), out))
     return 0
 
