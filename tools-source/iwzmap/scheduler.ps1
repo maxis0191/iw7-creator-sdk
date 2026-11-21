@@ -26,10 +26,18 @@ else{
   } elseif($env:IWZ_COMPONENTS){
     $Path=Join-Path $env:IWZ_COMPONENTS 'ops\Resource-Scheduler.Core.ps1'; $from='$env:IWZ_COMPONENTS'
   } else {
-    throw ("No resource scheduler core named. Run the map tools from a prepared workspace (./bootstrap.ps1 -Output runtime/<name>, " +
-      "then tools-source\iwzmap there), or set `$env:IW7_RESOURCE_SCHEDULER to ops\Resource-Scheduler.Core.ps1 of a components " +
-      "worktree that has the waiting order and the fit rule (pin/server-447c1ad-shareable, or origin/main once components PR 130 " +
-      "is merged). The main components checkout is not used by default.")
+    $candidates=@(Join-Path (Split-Path $root -Parent) 'iw7-mod-components\ops\Resource-Scheduler.Core.ps1')
+    $machine=Join-Path $PSScriptRoot 'machine.ps1'
+    if(Test-Path -LiteralPath $machine -PathType Leaf){
+      try{ $mc=& $machine Products 'iw7-mod-components\ops\Resource-Scheduler.Core.ps1'; if($mc){ $candidates+=$mc } }catch{}
+    }
+    $found=$candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -First 1
+    if($found){
+      $Path=$found; $from="components checkout ($found)"
+    } else {
+      throw ("No resource scheduler core named. Run from a prepared workspace, keep iw7-mod-components up to date, " +
+        "or set `$env:IW7_RESOURCE_SCHEDULER to ops\Resource-Scheduler.Core.ps1.")
+    }
   }
 }
 if(!(Test-Path -LiteralPath $Path -PathType Leaf)){ throw "Resource scheduler core not found: $Path (from $from)." }
