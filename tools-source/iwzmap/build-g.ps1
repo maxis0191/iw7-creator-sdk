@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][string]$Tag, [switch]$SkipPick, [switch]$Bake, [string]$LightArgs='', [int]$Rays=256, [switch]$Audio, [switch]$NavObstacles, [switch]$ReuseBake, [switch]$NoStageCache, [string]$BakeFrom='', [switch]$Kit, [switch]$Lights, [switch]$Smodels, [switch]$KitBaseline, [switch]$Fx, [string]$FxTxt='', [switch]$NeutralProbes, [string]$ProbeScale='', [switch]$Train, [ValidateSet('g27','stock')][string]$StairStyle='g27', [switch]$GateOnly, [ValidateSet('g27','g27d','g27e')][string]$TrainSet='g27', [switch]$BakeLoose, [string]$ZoneToolExe='', [switch]$WithP1, [int]$ConsistEndX=1800)
+param([Parameter(Mandatory)][string]$Tag, [switch]$SkipPick, [switch]$Bake, [string]$LightArgs='', [int]$Rays=256, [switch]$Audio, [switch]$NavObstacles, [switch]$ReuseBake, [switch]$NoStageCache, [string]$BakeFrom='', [switch]$Kit, [switch]$Lights, [switch]$Smodels, [switch]$KitBaseline, [switch]$Fx, [string]$FxTxt='', [switch]$NeutralProbes, [string]$ProbeScale='', [switch]$Train, [ValidateSet('g27','stock')][string]$StairStyle='g27', [switch]$GateOnly, [ValidateSet('g27','g27d','g27e')][string]$TrainSet='g27', [switch]$BakeLoose, [string]$ZoneToolExe='', [switch]$WithP1, [int]$ConsistEndX=1800, [switch]$Darkness, [switch]$DarkZoneFill, [string]$DarkZoneFillSpec='maint_corridor:3.5:0.35:-40,service_tunnel:3.5:0.35:-40,stair_b:3.5:0.35:-40,platform_b:3.5:0.35:-40')
 # Station Zero v2 level build <Tag>: generator -> (compile-only pass: sub-model log -> pick door blocker sub-model ->
 # regenerate) -> optional light bake (layout_lights + lmbake, Build lease) -> full build with kept sub-models and own
 # lightmap, using the merged door-brushmodel + lightmap zonetool. Output: level\src_<Tag>[_lm], level\um_<Tag>.
@@ -49,6 +49,9 @@ if($Audio){
 }
 # (g27) the generator reads the FX placement file too (fx-fixture / fx-source lint, leaks under drip FX)
 if($Fx -and $FxTxt){ $env:IWZ_FX_TXT=$FxTxt } else { Remove-Item Env:IWZ_FX_TXT -ErrorAction SilentlyContinue }
+# -Darkness: the generator makes the power fittings with dark diffusers / unlit + lit fixture models and fills the //@DARK@ hook of cp_iwz2.gsc
+# (level thread ...cp_iwz_darkness::init()); see darkness\README.md. Without it IWZ_DARK is removed (the lit build is unchanged).
+if($Darkness){ $env:IWZ_DARK='1' } else { Remove-Item Env:IWZ_DARK -ErrorAction SilentlyContinue }
 python -I "$S\station_zero2.py" "$D\cp_zmb" $src | Select-Object -Last 1
 if(-not $SkipPick){
   & "$S\build-sz2.ps1" -Src $src -UmOut $um -ZoneToolExe $Z -KeepSubmodels -CompileOnly
@@ -75,6 +78,18 @@ if($Audio){   # (g27) audio anchors (decor / light / interaction names) checked 
   if($LASTEXITCODE -ne 0){ throw "audio layout anchors failed: $L\audio_check_$Tag.json" }
 }
 if($GateOnly){ Write-Output "gate-only: $src"; return }
+# -Darkness: dark split of the layout lights (darkness\dark_build.py). The bake gets the emergency lights and the dimmed amber cue
+# glows only; the power lights (and with -DarkZoneFill the lit-state corridor fill) become named scriptable lights in
+# $src\lights.txt, switched bank by bank at power-on by cp_iwz_darkness.gsc. Runs before the bake and before a bake reuse
+# (lights.txt is not baked, it is overlaid from $src). A reused bake must itself be a darkness bake (dark.bake marker).
+if($Darkness){
+  $LightsFull="$L\lights_full_$Tag.json"; $DarkLights="$L\lights_dark_$Tag.json"
+  & $PY -I "$B\layout_lights.py" $src $LightsFull @($LightArgs -split ' ' | Where-Object { $_ })
+  if($LASTEXITCODE){ throw 'layout_lights failed' }
+  & $PY -I "$S\darkness\dark_build.py" $src $LightsFull $DarkLights --ambient 0.025 --scale 840 --radius-scale 1.8 --cue-scale 0.35 @(if($DarkZoneFill){'--zone-fill',$DarkZoneFillSpec})
+  if($LASTEXITCODE){ throw 'dark_build failed' }
+  $darkHash=(Get-FileHash $DarkLights -Algorithm SHA256).Hash
+}
 $build=$src
 if($ReuseBake){
   # the bake only depends on the render world: -BakeFrom <tag> reuses that tag's bake when the generated world.bin is
@@ -82,6 +97,7 @@ if($ReuseBake){
   $build="$src`_lm"
   if($BakeFrom){
     $from="$L\src_$BakeFrom"
+    if($Darkness){ $dm="$from`_lm\dark.bake"; if(!(Test-Path $dm) -or ((Get-Content $dm -Raw).Trim() -ne $darkHash)){ throw "-Darkness -ReuseBake: $from`_lm is not a darkness bake of this dark light list (no dark.bake marker, or its hash differs from lights_dark_$Tag.json). Reusing a lit bake would light the dark map. Bake again with -Bake, or name a tag whose bake was made with -Darkness." } }
     # -BakeLoose (A/B builds only: a material swap, same geometry): the bake source's world.bin with renamed materials
     if(-not $BakeLoose -and (Get-FileHash "$from\world.bin").Hash -ne (Get-FileHash "$src\world.bin").Hash){ throw "render world differs from ${BakeFrom}: bake again" }
     if(Test-Path $build){ Remove-Item $build -Recurse -Force }
@@ -93,17 +109,19 @@ if($ReuseBake){
     "bake reused from $BakeFrom"
   }
   if(!(Test-Path "$build\lightmap\secondary.dds")){ throw 'no bake to reuse' }
+  if($Darkness -and -not $BakeFrom){ $dm="$build\dark.bake"; if(!(Test-Path $dm) -or ((Get-Content $dm -Raw).Trim() -ne $darkHash)){ throw "-Darkness -ReuseBake: $build is not a darkness bake of this dark light list (no dark.bake marker, or its hash differs). Bake again with -Bake." } }
 }
 elseif($Bake){
   . (& "$S\scheduler.ps1")
   $lj="$L\lights_$Tag.json"
-  & $PY -I "$B\layout_lights.py" $src $lj @($LightArgs -split ' ' | Where-Object { $_ })
+  if($Darkness){ $lj=$DarkLights }     # darkness: emergency lights + cue glows only (the bake key below hashes this list)
+  else { & $PY -I "$B\layout_lights.py" $src $lj @($LightArgs -split ' ' | Where-Object { $_ }) }
   # Stage cache (machine-wide, tools-source/iwzmap/stage_cache.py): the bake is a function of the render world, the light
   # list, the bake arguments and the bake tools. A source that differs only in entities, scripts, collision or nav gets the
   # earlier bake (the overlay -ReuseBake does by hand) and never bakes again. -NoStageCache bakes anyway.
   $build="$src`_lm"; $bkKey=''; $bkHit=$false
   if(-not $NoStageCache){
-    $bkKey=(& python -I "$S\stage_cache.py" key --stage bake --file "$src\world.bin" --file $lj --text "rays=$Rays;bounces=3;denoise=1" --tree $B --skip __pycache__ | Select-Object -Last 1)
+    $bkKey=(& python -I "$S\stage_cache.py" key --stage bake --file "$src\world.bin" --file $lj --text "rays=$Rays;bounces=3;denoise=1$(if($Darkness){';dark=1'})" --tree $B --skip __pycache__ | Select-Object -Last 1)
     if($bkKey){
       if(Test-Path $build){ Remove-Item $build -Recurse -Force }
       & python -I "$S\stage_cache.py" restore --stage bake --key $bkKey --dest $build
@@ -113,6 +131,7 @@ elseif($Bake){
   if($bkHit){
     Get-ChildItem $src -File | Where-Object { $_.Name -notin @('world.bin','lighting.txt') } | ForEach-Object { Copy-Item $_.FullName (Join-Path $build $_.Name) -Force }
     "bake restored from the stage cache ($($bkKey.Substring(0,12))): no new bake"
+    if($Darkness){ Set-Content "$build\dark.bake" $darkHash }
   } else {
   for($k=0;$k -lt 900;$k++){ try { $lease=Enter-IW7ResourceLease -Scope "$L\bake" -Kind Build -PhysicalBytes 6GB -CommitBytes 8GB -Owner 'IWZ Station Zero level: light bake'; break } catch { if($_.Exception.Message -match 'busy|reserved|wait'){ Start-Sleep 15; continue }; throw } }
   try {
@@ -120,11 +139,12 @@ elseif($Bake){
     & $PY -I "$B\lmbake.py" $src $lj $build --rays $Rays --bounces 3 --denoise 1 2>&1 | Select-Object -Last 8
   } finally { Exit-IW7ResourceLease -Token $lease.Token | Out-Null }
   if(!(Test-Path "$build\lightmap\secondary.dds")){ throw 'bake produced no lightmap' }
+  if($Darkness){ Set-Content "$build\dark.bake" $darkHash }     # marker: this bake was made from the dark list (checked by -Darkness -ReuseBake)
   if($bkKey){ & python -I "$S\stage_cache.py" save --stage bake --key $bkKey --src $build; & python -I "$S\stage_cache.py" prune --stage bake --max-gb 20 }
   }
 }
 if($NavObstacles){ $A['NavObstacles']=$true }
-# the P1 perk machines (build-sz2 default) need scenegen's relocated perk scriptables; the g27 generator output has none: not part of g27e
+# the P1 perk machines (build-sz2 default) need scenegen's relocated perk scriptables: they are part of g27e only with -WithP1 (without it the opt-out below leaves them out)
 if(-not $WithP1){ $A['PerkMachines']=''; $A['DeadeyeKitDump']=''; $A['DeadeyeScriptable']='' }
 if($Kit){
   $km=@((Get-Content "$src\layout.json" -Raw | ConvertFrom-Json).kit_models | Where-Object { -not $_.StartsWith('iwz_') })
@@ -173,5 +193,37 @@ if($Fx){
   python -I "$S\fx\fx_place.py" $FxTxt $build @ncs --fixture-out "$build\fxproof.gsc" --manifest-out "$build\fx_manifest.json" | Select-Object -Last 3
   if($LASTEXITCODE){ throw 'fx_place failed' }
 }
+# -Darkness: flashlight effects (one LIGHT_SPOT particle from the cp_disco train front light, life 100000 s): six copies of the
+# beam, its 30 % lit-state copy, the wide dim halo cone and its lit copy; the dark vision (manual exposure -3) under
+# cp_zmb_int_basement and the lit map vision (no fog veil / volumetrics / veiling glare, auto exposure adapting at 0.3).
+# The compiler stays the default one (it already has the named scriptable lights).
+if($Darkness){
+  $DV="$L\darkvfx\$Tag"; if(Test-Path $DV){ Remove-Item $DV -Recurse -Force }
+  $TL="$RT\fx\ztwork\dump\cp_disco\particlesystem\vfx\iw7\levels\cp_disco\subway_train\vfx_train_front_light_ch.iw7VFX"
+  $fl=@()
+  foreach($v in @(@('vfx/iwz/vfx_iwz_flashlight_world','40','2','3.5','1','900'),@('vfx/iwz/vfx_iwz_flashlight_world_b','40','2','3.5','1','900'),
+                  @('vfx/iwz/vfx_iwz_flashlight_world_c','40','2','3.5','1','900'),@('vfx/iwz/vfx_iwz_flashlight_world_d','40','2','3.5','1','900'),
+                  @('vfx/iwz/vfx_iwz_flashlight_world_e','40','2','3.5','1','900'),@('vfx/iwz/vfx_iwz_flashlight_world_f','40','2','3.5','1','900'),
+                  @('vfx/iwz/vfx_iwz_flashlight_lit','40','2','1.05','1','900'),@('vfx/iwz/vfx_iwz_flashlight_halo','64','0','0.88','0','700'),
+                  @('vfx/iwz/vfx_iwz_flashlight_halo_lit','64','0','0.26','0','700'))){
+    $fn=$v[0]; $ff=$v[1]; $fi=$v[2]; $fb=$v[3]; $fs=$v[4]; $fr=$v[5]
+    & $PY -I "$S\darkness\make_vfx_light.py" $TL $DV $fn --fov $ff --inner $fi --radius $fr --color 1,0.92,0.80 --brightness $fb --shadow $fs --near 8 --life 100000 | Out-Null
+    if($LASTEXITCODE){ throw "make_vfx_light failed for $fn" }
+    $fl+="iwz:$fn"
+  }
+  $A['FxImport']=((@($A['FxImport']) + $fl) | Where-Object { $_ }) -join ','
+  $A['FxDumps']=@(@($A['FxDumps']) + @("iwz=$DV") | Where-Object { $_ })
+  if(-not $A['FxReport']){ $A['FxReport']="$um.fx_import.json" }
+  $A['Darkness']=$true
+  $A['DarkArgs']='--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --lit fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3'
+}
+# Capsule Post (modules/post.gsc, package T1): station_zero2.py writes modules/cp_iwz_post.gsc into $src (unless IWZ_POST=0) and the level
+# script starts it. The bake overlays above copy top-level files only, so the module folder is carried over to $build here (a stale
+# cached copy is replaced); sz2_assemble.py puts it into the zone as scripts/cp/maps/cp_iwz/cp_iwz_post.gsc.
+if($env:IWZ_POST -ne '0'){
+  if(-not (Test-Path "$src\modules\cp_iwz_post.gsc")){ throw "Capsule Post module missing: $src\modules\cp_iwz_post.gsc (station_zero2.py writes it unless IWZ_POST=0)" }
+  if($build -ne $src){ if(Test-Path "$build\modules"){ Remove-Item "$build\modules" -Recurse -Force }; Copy-Item "$src\modules" "$build\modules" -Recurse -Force }
+  "capsule post module: $build\modules\cp_iwz_post.gsc"
+} elseif(Test-Path "$build\modules\cp_iwz_post.gsc"){ Remove-Item "$build\modules\cp_iwz_post.gsc" -Force }
 & "$S\build-sz2.ps1" -Src $build -UmOut $um -ZoneToolExe $Z -KeepSubmodels @A
 (Get-FileHash "$um\cp_iwz.ff" -Algorithm SHA256).Hash

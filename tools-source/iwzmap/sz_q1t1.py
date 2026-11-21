@@ -16,8 +16,10 @@
 """
 import argparse, glob, json, os, re, sys
 
-RING = ['PLAZA', 'EXCHANGE', 'BARN', 'PARLOUR']
+RING = ['PLAZA', 'EXCHANGE', 'BARN', 'PARLOUR']        # the 19-zone map; a layout with other hatch ids (Station Zero g27) replaces it in Lay
+DEFAULT_RING = list(RING)
 PRICE = {1: 250, 2: 400, 3: 550}
+T1_CONDITIONS = {'preset': 'quiet'}     # zombies off: the Capsule Post plans spawn the zombies they need (blowback) themselves
 
 
 def segs(a, b, d):
@@ -33,9 +35,12 @@ def exp(that, op, v, why):
     return {'do': 'expect', 'that': that, op: v, 'why': why}
 
 
-def plan(mapname, name, about, steps, libs=('szq',)):
-    return {'schema': 'iw7.gamelab-plan/1', 'name': '%s_%s' % (mapname, name), 'map': mapname, 'about': about,
-            'libraries': list(libs), 'steps': steps}
+def plan(mapname, name, about, steps, libs=('szq',), conditions=None):
+    pl = {'schema': 'iw7.gamelab-plan/1', 'name': '%s_%s' % (mapname, name), 'map': mapname, 'about': about,
+          'libraries': list(libs), 'steps': steps}
+    if conditions:      # the test conditions the lab now requires in the plan (zombies off: the plan spawns its own)
+        pl['conditions'] = conditions
+    return pl
 
 
 class Lay:
@@ -49,6 +54,9 @@ class Lay:
         self.gen = next(i for i in its if i['kind'] == 'generator')['origin']
         self.pap = next(i for i in its if i['kind'] == 'weapon_upgrade')['origin']
         self.hatch = {m['id']: m for m in self.m.get('hatch', [])}
+        ids = [m['id'] for m in self.m.get('hatch', [])]
+        if len(ids) == 4 and not all(r in ids for r in DEFAULT_RING):    # the hatch markers, in order, are the ring (post.gsc does the same)
+            RING[:] = ids
 
     def at(self, kind, id_=None):
         for m in self.m.get(kind, []):
@@ -236,64 +244,67 @@ def t1_routes(L):
                       exp('probe:%s.lsegs' % n, 'eq', sg, 'ring distance on %s' % d),
                       exp('probe:%s.volume' % n, 'eq', zone[b], 'the rider stands in %s' % zone[b]),
                       exp('probe:%s.hdist' % n, 'le', 80, 'at the %s hatch' % b)]
-    return plan(L.map, 't1_routes', 'T1: the four hatches unsealed, all 12 routes on BLOW, the Bellows lever, all 12 routes on DRAW; rider position and zone sampled every 0.25 s (headless).', s + e)
+    return plan(L.map, 't1_routes', 'T1: the four hatches unsealed, all 12 routes on BLOW, the Bellows lever, all 12 routes on DRAW; rider position and zone sampled every 0.25 s (headless).', s + e, conditions=T1_CONDITIONS)
 
 
 def t1_rules(L):
-    P, B, E = L.hatch['PLAZA'], L.hatch['BARN'], L.hatch['EXCHANGE']
+    # the ring's first, second and third address (PLAZA, EXCHANGE, BARN on the 19-zone map; HALL, OLD_STATION, GENERATOR on g27)
+    H0, H1, H2 = RING[0], RING[1], RING[2]
+    T0, T2 = 'iwz_t1_hatch_' + H0.lower(), 'iwz_t1_hatch_' + H2.lower()
+    P, B, E = L.hatch[H0], L.hatch[H2], L.hatch[H1]
     lv = L.at('post_lever')
     s = head(500) + [{'do': 'dvar', 'name': 'iwz_test_hold', 'value': '1'},
-                     {'do': 'use', 'name': 'nopower', 'ent': 'iwz_t1_hatch_plaza', 'near': P['origin'], 's': 1}]
+                     {'do': 'use', 'name': 'nopower', 'ent': T0, 'near': P['origin'], 's': 1}]
     s += q1_power(L)
-    s += [{'do': 'use', 'name': 'poor_unseal', 'ent': 'iwz_t1_hatch_plaza', 'near': P['origin'], 's': 1},
+    s += [{'do': 'use', 'name': 'poor_unseal', 'ent': T0, 'near': P['origin'], 's': 1},
           {'do': 'money', 'value': 500000},
-          {'do': 'use', 'name': 'unseal_plaza', 'ent': 'iwz_t1_hatch_plaza', 'near': P['origin'], 's': 1},
-          {'do': 'call', 'fn': 'szq_ride', 'args': ['to_sealed', 'PLAZA', 'BARN'], 's': 2},
-          {'do': 'use', 'name': 'unseal_barn', 'ent': 'iwz_t1_hatch_barn', 'near': B['origin'], 's': 1},
+          {'do': 'use', 'name': 'unseal_first', 'ent': T0, 'near': P['origin'], 's': 1},
+          {'do': 'call', 'fn': 'szq_ride', 'args': ['to_sealed', H0, H2], 's': 2},
+          {'do': 'use', 'name': 'unseal_third', 'ent': T2, 'near': B['origin'], 's': 1},
           {'do': 'dvar', 'name': 'iwz_test_hold', 'value': '0'},
-          {'do': 'use', 'name': 'tap1', 'ent': 'iwz_t1_hatch_plaza', 'near': P['origin'], 's': 1},
+          {'do': 'use', 'name': 'tap1', 'ent': T0, 'near': P['origin'], 's': 1},
           {'do': 'call', 'fn': 'szq_state', 'args': ['dial1'], 's': 1},
-          {'do': 'use', 'name': 'tap2', 'ent': 'iwz_t1_hatch_plaza', 'near': P['origin'], 's': 1},
+          {'do': 'use', 'name': 'tap2', 'ent': T0, 'near': P['origin'], 's': 1},
           {'do': 'call', 'fn': 'szq_state', 'args': ['dial2'], 's': 1},
           {'do': 'dvar', 'name': 'iwz_test_hold', 'value': '1'},
-          {'do': 'use', 'name': 'hold_send', 'ent': 'iwz_t1_hatch_plaza', 'near': P['origin'], 's': 7},
+          {'do': 'use', 'name': 'hold_send', 'ent': T0, 'near': P['origin'], 's': 7},
           {'do': 'call', 'fn': 'szq_state', 'args': ['sent'], 's': 1},
-          {'do': 'call', 'fn': 'szq_ride', 'args': ['rest', 'BARN', 'PLAZA'], 's': 2}]
-    e = [exp('probe:dial1.dial_plaza', 'eq', 2, 'a tap turns the dial to the only unsealed address (BARN)'),
-         exp('probe:dial2.dial_plaza', 'eq', 2, 'a tap on a dial with one address does nothing'),
+          {'do': 'call', 'fn': 'szq_ride', 'args': ['rest', H2, H0], 's': 2}]
+    e = [exp('probe:dial1.dial_' + H0.lower(), 'eq', 2, 'a tap turns the dial to the only unsealed address (the third address)'),
+         exp('probe:dial2.dial_' + H0.lower(), 'eq', 2, 'a tap on a dial with one address does nothing'),
          exp('probe:to_sealed.started', 'eq', 0, 'a sealed address is refused'), exp('probe:to_sealed.spent', 'eq', 0, 'a refusal takes nothing'),
          exp('use:poor_unseal.spent', 'eq', 0, 'not enough points to unseal: nothing taken'),
          exp('probe:sent.arrivals', 'eq', 1, 'holding Use at the hatch sends the rider'),
-         exp('probe:sent.lto', 'eq', 'BARN', 'to the dialled address'), exp('probe:sent.lprice', 'eq', 400, 'two segments: 400'),
-         exp('probe:sent.volume', 'eq', B['zone'], 'the rider stands in the Car Barn'),
+         exp('probe:sent.lto', 'eq', H2, 'to the dialled address'), exp('probe:sent.lprice', 'eq', 400, 'two segments: 400'),
+         exp('probe:sent.volume', 'eq', B['zone'], 'the rider stands in the third address zone'),
          exp('probe:rest.started', 'eq', 0, 'a rider who just arrived rests 45 s')]
-    # capsules: PLAZA has used one; one more leaves, the third is refused
-    s += [{'do': 'call', 'fn': 'szq_rest_clear', 'args': [0], 's': 0}, {'do': 'call', 'fn': 'szq_ride', 'args': ['back1', 'BARN', 'PLAZA'], 's': 9},
-          {'do': 'call', 'fn': 'szq_rest_clear', 'args': [0], 's': 0}, {'do': 'call', 'fn': 'szq_ride', 'args': ['cap2', 'PLAZA', 'BARN'], 's': 9}]
-    s += [{'do': 'call', 'fn': 'szq_ride', 'args': ['cap_x', 'BARN', 'PLAZA'], 's': 2}]   # BARN: rest not cleared -> rest
-    # the capsule rule on PLAZA: both used within 30 s
+    # capsules: the first hatch has used one; one more leaves, the third is refused
+    s += [{'do': 'call', 'fn': 'szq_rest_clear', 'args': [0], 's': 0}, {'do': 'call', 'fn': 'szq_ride', 'args': ['back1', H2, H0], 's': 9},
+          {'do': 'call', 'fn': 'szq_rest_clear', 'args': [0], 's': 0}, {'do': 'call', 'fn': 'szq_ride', 'args': ['cap2', H0, H2], 's': 9}]
+    s += [{'do': 'call', 'fn': 'szq_ride', 'args': ['cap_x', H2, H0], 's': 2}]   # third hatch: rest not cleared -> rest
+    # the capsule rule on the first hatch: both used within 30 s
     s += [{'do': 'call', 'fn': 'szq_bots', 'args': [2], 's': 10},
-          {'do': 'call', 'fn': 'szq_bot_ride', 'args': [0, 'PLAZA', 'BARN'], 's': 1}, {'do': 'call', 'fn': 'szq_state', 'args': ['caps'], 's': 1}]
-    e += [exp('probe:back1.arrived', 'eq', 1, 'BARN to PLAZA'), exp('probe:cap2.arrived', 'eq', 1, 'the second PLAZA capsule leaves'),
+          {'do': 'call', 'fn': 'szq_bot_ride', 'args': [0, H0, H2], 's': 1}, {'do': 'call', 'fn': 'szq_state', 'args': ['caps'], 's': 1}]
+    e += [exp('probe:back1.arrived', 'eq', 1, 'third address to first address'), exp('probe:cap2.arrived', 'eq', 1, 'the second capsule of the first hatch leaves'),
           exp('probe:botride_0.started', 'eq', 0, 'no third capsule within 30 s'), exp('probe:caps.r_capsule', 'ge', 1, 'refused: no capsule')]
     # changeover and the lever's reset
     s += [{'do': 'use', 'name': 'lever', 'ent': 'iwz_t1_lever', 'near': lv, 's': 1}, {'do': 'call', 'fn': 'szq_rest_clear', 'args': [0], 's': 0},
-          {'do': 'call', 'fn': 'szq_ride', 'args': ['during_change', 'PLAZA', 'BARN'], 's': 1}, {'do': 'call', 'fn': 'szq_wait_changeover', 's': 14},
+          {'do': 'call', 'fn': 'szq_ride', 'args': ['during_change', H0, H2], 's': 1}, {'do': 'call', 'fn': 'szq_wait_changeover', 's': 14},
           {'do': 'use', 'name': 'lever_again', 'ent': 'iwz_t1_lever', 'near': lv, 's': 1}, {'do': 'call', 'fn': 'szq_state', 'args': ['after_change'], 's': 1}]
     e += [exp('probe:during_change.started', 'eq', 0, 'no launch during the changeover'), exp('probe:changeover_done.dir', 'eq', 'DRAW', 'DRAW after 12 s'),
           exp('probe:after_change.throws', 'eq', 1, 'the lever cannot be thrown again for 45 s'), exp('probe:after_change.r_changeover', 'ge', 1, 'refused: changeover')]
-    # inspection: a stand-in Inspector at PLAZA closes it, and for 15 s after he goes
+    # inspection: a stand-in Inspector at the first hatch closes it, and for 15 s after he goes
     s += [{'do': 'call', 'fn': 'szq_inspector', 'args': [P['origin']], 's': 2}, {'do': 'call', 'fn': 'szq_rest_clear', 'args': [0], 's': 0},
-          {'do': 'call', 'fn': 'szq_ride', 'args': ['inspected', 'PLAZA', 'BARN'], 's': 1},
+          {'do': 'call', 'fn': 'szq_ride', 'args': ['inspected', H0, H2], 's': 1},
           {'do': 'call', 'fn': 'szq_inspector', 'args': [[8700, 8700, 0]], 's': 2}, {'do': 'call', 'fn': 'szq_state', 'args': ['insp_after'], 's': 1},
           {'do': 'wait', 's': 15}, {'do': 'call', 'fn': 'szq_state', 'args': ['insp_open'], 's': 1}]
-    e += [exp('probe:inspected.started', 'eq', 0, 'INSPECTION: the hatch sells nothing'), exp('probe:insp_after.insp_plaza', 'eq', 1, 'closed until 15 s after he moved away'),
-          exp('probe:insp_open.insp_plaza', 'eq', 0, 'open again')]
+    e += [exp('probe:inspected.started', 'eq', 0, 'INSPECTION: the hatch sells nothing'), exp('probe:insp_after.insp_' + H0.lower(), 'eq', 1, 'closed until 15 s after he moved away'),
+          exp('probe:insp_open.insp_' + H0.lower(), 'eq', 0, 'open again')]
     # downed, busy, points
-    s += [{'do': 'call', 'fn': 'szq_bot_down', 'args': [1], 's': 6}, {'do': 'call', 'fn': 'szq_bot_ride', 'args': [1, 'BARN', 'PLAZA'], 's': 1},
+    s += [{'do': 'call', 'fn': 'szq_bot_down', 'args': [1], 's': 6}, {'do': 'call', 'fn': 'szq_bot_ride', 'args': [1, H2, H0], 's': 1},
           {'do': 'call', 'fn': 'szq_busy', 'args': [1], 's': 0}, {'do': 'call', 'fn': 'szq_rest_clear', 'args': [1], 's': 0},
-          {'do': 'call', 'fn': 'szq_ride', 'args': ['busy', 'PLAZA', 'BARN'], 's': 1}, {'do': 'call', 'fn': 'szq_busy', 'args': [0], 's': 0},
-          {'do': 'money', 'value': 100}, {'do': 'call', 'fn': 'szq_ride', 'args': ['poor', 'PLAZA', 'BARN'], 's': 1}, {'do': 'money', 'value': 500000},
+          {'do': 'call', 'fn': 'szq_ride', 'args': ['busy', H0, H2], 's': 1}, {'do': 'call', 'fn': 'szq_busy', 'args': [0], 's': 0},
+          {'do': 'money', 'value': 100}, {'do': 'call', 'fn': 'szq_ride', 'args': ['poor', H0, H2], 's': 1}, {'do': 'money', 'value': 500000},
           {'do': 'call', 'fn': 'szq_state', 'args': ['refusals'], 's': 1}]
     e += [exp('probe:botride_1.started', 'eq', 0, 'a downed player cannot board'), exp('probe:busy.started', 'eq', 0, 'a busy player (emote, Terminus) is refused'),
           exp('probe:poor.started', 'eq', 0, 'not enough points'), exp('probe:poor.spent', 'eq', 0, 'nothing taken'),
@@ -301,19 +312,19 @@ def t1_rules(L):
           exp('probe:refusals.r_points', 'ge', 2, 'refused: points (unseal and ride)'), exp('probe:refusals.r_power', 'ge', 1, 'refused: power'),
           exp('probe:refusals.r_rest', 'ge', 2, 'refused: rest'), exp('probe:refusals.r_sealed', 'ge', 1, 'refused: sealed'),
           exp('probe:refusals.r_inspection', 'ge', 1, 'refused: inspection')]
-    # blowback: three zombies at the PLAZA mouth come out at BARN 2 s after the rider; bot 0 stands on the BARN hatch
+    # blowback: three zombies at the first hatch's mouth come out at the third 2 s after the rider; bot 0 stands on the third hatch
     s += [{'do': 'call', 'fn': 'szq_rest_clear', 'args': [1], 's': 0}, {'do': 'call', 'fn': 'szq_bot_to', 'args': [0, B['origin']], 's': 1},
-          {'do': 'call', 'fn': 'szq_hatch_zombies', 'args': ['PLAZA', 3], 's': 12},
-          {'do': 'call', 'fn': 'szq_ride', 'args': ['blowback', 'PLAZA', 'BARN'], 's': 9}, {'do': 'wait', 's': 2.5},
-          {'do': 'call', 'fn': 'szq_near_hatch', 'args': ['bb_out', 'BARN'], 's': 1}, {'do': 'call', 'fn': 'szq_kill_all', 's': 1}]
+          {'do': 'call', 'fn': 'szq_hatch_zombies', 'args': [H0, 3], 's': 12},
+          {'do': 'call', 'fn': 'szq_ride', 'args': ['blowback', H0, H2], 's': 9}, {'do': 'wait', 's': 2.5},
+          {'do': 'call', 'fn': 'szq_near_hatch', 'args': ['bb_out', H2], 's': 1}, {'do': 'call', 'fn': 'szq_kill_all', 's': 1}]
     e += [exp('probe:blowback.lbb', 'ge', 1, 'zombies at the hatch are drawn in'), exp('probe:bb_out.blowout', 'ge', 1, 'they come out of the destination hatch'),
-          exp('probe:bb_out.near', 'ge', 1, 'standing at the BARN hatch')]
+          exp('probe:bb_out.near', 'ge', 1, 'standing at the third hatch')]
     # two riders on the last capsule in the same frame; a rider who leaves mid-ride
-    s += [{'do': 'call', 'fn': 'szq_race', 'args': [0, 'PLAZA', 'BARN'], 's': 9},
-          {'do': 'call', 'fn': 'szq_ride_kick', 'args': [0, 'BARN', 'PLAZA'], 's': 10}, {'do': 'call', 'fn': 'szq_state', 'args': ['t_end'], 's': 1}]
+    s += [{'do': 'call', 'fn': 'szq_race', 'args': [0, H0, H2], 's': 9},
+          {'do': 'call', 'fn': 'szq_ride_kick', 'args': [0, H2, H0], 's': 10}, {'do': 'call', 'fn': 'szq_state', 'args': ['t_end'], 's': 1}]
     e += [exp('probe:race.first', 'eq', 1, 'the first Use wins the last capsule'), exp('probe:race.second', 'eq', 0, 'the second is refused'),
           exp('probe:ride_kick.started', 'eq', 1, 'the leaving rider had launched'), exp('probe:ride_kick.riding', 'eq', 0, 'the capsule completed empty: nobody riding')]
-    return plan(L.map, 't1_rules', 'T1: every refusal, the dial (tap and hold), capsules, rest, changeover, inspection, blowback, a player on the hatch, the last capsule raced, a rider who leaves (headless).', s + e)
+    return plan(L.map, 't1_rules', 'T1: every refusal, the dial (tap and hold), capsules, rest, changeover, inspection, blowback, a player on the hatch, the last capsule raced, a rider who leaves (headless).', s + e, conditions=T1_CONDITIONS)
 
 
 def travel_points(L):
@@ -435,6 +446,15 @@ def client(L):
             'steps': s + e}
 
 
+def post_plans(src):
+    """the plans the layout supports: the Capsule Post plans always, the Q1 and travel plans when the layout has the quest markers
+    (the nine-zone g27 line has a Capsule Post but no quest module)"""
+    L = Lay(src)
+    if 'quest_cab' in L.m:
+        return all_plans(src)
+    return [t1_routes(L), t1_rules(L)]
+
+
 def all_plans(src):
     L = Lay(src)
     return [q1_steps(L), q1_order_coop(L), q1_late_round(L), t1_routes(L), t1_rules(L)] + [travel(L, src, part=k) for k in range(3)] + [client(L)]
@@ -446,9 +466,9 @@ LINE = re.compile(r'\[IWZ level\] (Q1|T1) (\S+)(.*)')
 PAIR = re.compile(r'(\w+)=(\([^)]*\)|\S+)')
 
 
-def report(runs):
+def report(runs, zone_by_hatch=None):
     rides, samples, events, errors = {}, [], [], []
-    zone_by_hatch = {'PLAZA': 'cordon', 'EXCHANGE': 'exchange', 'BARN': 'car_barn', 'PARLOUR': 'parlour'}
+    zone_by_hatch = zone_by_hatch or {'PLAZA': 'cordon', 'EXCHANGE': 'exchange', 'BARN': 'car_barn', 'PARLOUR': 'parlour'}
     for run in runs:
         logs = glob.glob(os.path.join(run, '**', 'client.stdout.log'), recursive=True)
         for lg in logs:
@@ -496,16 +516,21 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     sub = ap.add_subparsers(dest='cmd', required=True)
     p = sub.add_parser('plans'); p.add_argument('src'); p.add_argument('out')
+    p.add_argument('--all', action='store_true', help='every plan (the 19-zone map: the Q1 quest markers must exist); default: the layout decides')
     p = sub.add_parser('report'); p.add_argument('runs', nargs='+'); p.add_argument('--json')
+    p.add_argument('--src', help='the emitted source of the map: its hatch markers give the zone of each address (default: the 19-zone map)')
     a = ap.parse_args(argv)
     if a.cmd == 'plans':
         os.makedirs(a.out, exist_ok=True)
-        for pl in all_plans(a.src):
+        for pl in (all_plans(a.src) if a.all else post_plans(a.src)):
             path = os.path.join(a.out, pl['name'] + '.json')
             json.dump(pl, open(path, 'w'), indent=1)
             print('%s: %d steps' % (path, len(pl['steps'])))
         return 0
-    r = report(a.runs)
+    hz = None
+    if a.src:
+        hz = {m['id']: m['zone'] for m in Lay(a.src).m.get('hatch', [])}
+    r = report(a.runs, hz)
     if a.json:
         json.dump(r, open(a.json, 'w'), indent=1)
     print(json.dumps({k: v for k, v in r.items() if k != 'per_ride'}, indent=1))
