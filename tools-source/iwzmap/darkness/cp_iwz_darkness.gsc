@@ -358,13 +358,17 @@ iwz_dark_vision_release( t )
 {
     level notify( "iwz_dark_vision_off" );
     level.vision_set_override = undefined;
-    visionsetnaked( "", t );
+    // (sz-rc3) private test dvar paris_iwz_lit_vision <stock vision name>: the lit state under one of the lit exposure
+    // candidates the build writes over unused stock vision names (custom names do not apply: darkness NOTES dk4 / dk6);
+    // unset, the map's own vision (empty name) as before
+    lit = getdvar( "paris_iwz_lit_vision" );
+    visionsetnaked( lit, t );
     foreach ( p in level.players )
     {
         if ( isdefined( p ) )
-            p visionsetnakedforplayer( "", t );
+            p visionsetnakedforplayer( lit, t );
     }
-    iwz_dark_log( "VISION_RELEASE " + t );
+    iwz_dark_log( "VISION_RELEASE " + t + " lit=" + lit );
 }
 
 iwz_dark_vision_apply()

@@ -124,6 +124,16 @@ t1_main()
         h = spawn( "script_model", m[3] + ( 0, 0, 52 ) );
         h setmodel( "pipe_metal_painted_bend_90_lrg_blue" );
         h.angles = ( 0, m[4], 0 );
+        // (Station Zero g27, RC2 review: the pipe bend read as a floating blue dot) a map may give the hatch a wall-mounted model:
+        // it is put on the wall behind the marker (a trace back from 52 up), facing into the room
+        if ( isdefined( level.iwz_post_hatch_model ) )
+        {
+            fb = anglestoforward( ( 0, m[4], 0 ) );
+            tr = bullettrace( m[3] + ( 0, 0, 52 ), m[3] + ( 0, 0, 52 ) - fb * 96, 0 );
+            h setmodel( level.iwz_post_hatch_model );
+            if ( tr["fraction"] < 1 )
+                h.origin = tr["position"] + fb * 1.5;
+        }
         h.targetname = "iwz_t1_hatch_" + tolower( m[1] );
         h.iwz_id = m[1];
         h.iwz_zone = m[2];

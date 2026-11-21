@@ -215,7 +215,11 @@ if($Darkness){
   $A['FxDumps']=@(@($A['FxDumps']) + @("iwz=$DV") | Where-Object { $_ })
   if(-not $A['FxReport']){ $A['FxReport']="$um.fx_import.json" }
   $A['Darkness']=$true
-  $A['DarkArgs']='--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --lit fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3'
+  $litK='fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3'
+  # (sz-rc3) lit exposure candidates, each on an unused stock vision name (paris_iwz_lit_vision picks one in a private test): the map's
+  # own lit vision auto-exposes every room to mid grey (mean luma 0.45 in every view whatever the light intensity)
+  $litV="lita:$litK;tonemapMaxExposureAdjust=0|litb:$litK;tonemapMaxExposureAdjust=-0.7;tonemapAutoExposureAdjust=-0.5|litc:$litK;tonemapMaxExposureAdjust=0.5;tonemapMidExposureAdjust=-1.2;tonemapAutoExposureAdjust=-0.3"
+  $A['DarkArgs']="--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --lit $litK --variants $litV --alias cp_zmb_int_triton_main=lita,cp_zmb_int_triton_ride=litb,cp_zmb_ghost_path=litc"
 }
 # Capsule Post (modules/post.gsc, package T1): station_zero2.py writes modules/cp_iwz_post.gsc into $src (unless IWZ_POST=0) and the level
 # script starts it. The bake overlays above copy top-level files only, so the module folder is carried over to $build here (a stale
