@@ -19,6 +19,7 @@ One page that routes a reader. Paths are relative to the repository root. The ch
 | know what is proven and what is not | [MODDING-CAPABILITIES.md](MODDING-CAPABILITIES.md) (evidence as of 2026-10-16), [CREATION-TOOLS.md](CREATION-TOOLS.md) (the map tools) | | |
 | read the design of the custom map Station Zero (lore, world, quest, weapons, audio, build plan, client needs) | [station-zero/README.md](station-zero/README.md), then [station-zero/12-BUILD-PLAN.md](station-zero/12-BUILD-PLAN.md) | | |
 | pick stock models, materials and effects for a Station Zero zone, or see which objects must be authored | [STATION-ZERO-KITS.md](STATION-ZERO-KITS.md) | `tools-source/iwzmap/scenes/kit_lists.py` | `tools-source-iwzmap-tests` |
+| light Station Zero (fixture lobes, prop shadows, accents), measure a bake per zone, or generate its voice lines | [STATION-ZERO-AAA-W1.md](STATION-ZERO-AAA-W1.md), the script [station-zero/STATION-ZERO-VOICE-SCRIPT.json](station-zero/STATION-ZERO-VOICE-SCRIPT.json) | `tools-source/iwzmap/sz2_lightdesign.py`, `tools-source/iwzmap/bake/bake_zone_contrast.py`, `tools-source/iwzmap/audio/voice_script_check.py` | `tools-source-iwzmap-tests` |
 | know why and in what order | [ENGINE-MODDING-STRATEGY.md](ENGINE-MODDING-STRATEGY.md) | | |
 | test in the game, measure, find a tool | server repository (iw7-paris-server): `docs/DEVKIT.md`, `docs/TOOLS-INDEX.md` | | |
 | know the rules for working here | [AGENTS.md](../AGENTS.md) | | |

@@ -443,7 +443,8 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
     preview(os.path.join(out, 'preview_A.png'), imgA)
     preview(os.path.join(out, 'preview_B.png'), imgB)
     np.savez_compressed(os.path.join(out, 'bake.npz'), A=imgA, B=imgB, D=imgD, S=imgS, valid=valid,
-                        tx_pos=p, tx_n=nn, tx_x=x, tx_y=y, tx_mat=tx['mat'], tx_chart=tx['chart'], Edir=Edir, Eind=Eind, ao=ao,
+                        tx_pos=tx['pos'], tx_n=nn,   # (was tx_pos=p: p is reused by the file-copy loop above, every bake.npz held a file path)
+                         tx_x=x, tx_y=y, tx_mat=tx['mat'], tx_chart=tx['chart'], Edir=Edir, Eind=Eind, ao=ao,
                         grid=grid)
     rep = {'schema': 'iwzmap.lightbake/1', 'atlas': [W, H], 'texel': texel, 'texels': n, 'charts': len(charts),
            'triangles': len(front), 'occluder_boxes': len(occ), 'lights': len(L), 'rays_per_texel': nr_, 'bounces': bounces,
@@ -459,6 +460,22 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
 
 Y00 = 0.282095
 Y1 = 0.488603
+
+
+def texel_positions(bdir, d):
+    """The texel positions of a bake folder's bake.npz (d: the loaded npz). Bakes before 21 Nov 2026 saved a file path
+    as tx_pos (the file-copy loop reused the name); the positions are rebuilt from the charts of the baked world.bin
+    and refused when they do not match the bake's texel normals."""
+    pos = d['tx_pos']
+    if pos.ndim == 2:
+        return pos.astype(np.float64)
+    w = read_world(os.path.join(bdir, 'world.bin'))
+    charts, _ = build_charts(w, json.load(open(os.path.join(bdir, 'bake.json')))['texel'])
+    W, H = pack(charts)
+    tx = chart_texels(charts, w, W, H)
+    if len(tx['pos']) != len(d['tx_n']) or not np.allclose(tx['n'], d['tx_n'], atol=1e-4):
+        raise ValueError('%s: tx_pos missing and the rebuilt chart texels do not match the bake' % bdir)
+    return tx['pos'].astype(np.float64)
 
 
 def light_grid(cfg, w, Lfinal, n, scene, tri_lm, tri_mat, tid, W, H, L, quick):

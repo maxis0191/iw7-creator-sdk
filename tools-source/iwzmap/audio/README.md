@@ -6,6 +6,7 @@
 | `cp_iwz_audio.gsc` | level module (rawfile `scripts/cp/maps/cp_iwz/cp_iwz_audio.gsc`): hidden-song easter egg + ambience |
 | `station_zero_audio_layout.json` | stage-2 placement: 2D bed per zone and 25 emitters anchored to the level layout (lights, decor, quest, interactions, zone fractions) |
 | `audio_layout.py` | layout.json + placement spec -> `<map>_audio_layout.gsc` rawfile (`init()` starts beds, emitters and the bear); checks aliases, zone containment, loop limits (`test_audio_layout.py`) |
+| `voice_script_check.py` | a map voice script (`iwz.voice-script/1`, e.g. `docs/station-zero/STATION-ZERO-VOICE-SCRIPT.json`) before generation: ids, speakers, triggers and their status, allowed inline tags, line length, characters per language and speaker, the lines whose trigger exists in the map today |
 | `add_audio.py` | after `assemble.py`: copies the module, bank and teddy bear sources into the zone root and inserts the zone CSV rows |
 | `graywolf_mcp.py` | stdio client of the GrayWolf MCP server; `station-zero` re-exports every BO3 source below |
 | `native/proc_loopback.cpp` | WASAPI process-loopback recorder: only the game client's own audio, wall-clock aligned |

@@ -1,0 +1,2998 @@
+{
+ "schema": "iwz.voice-script/1",
+ "map": "cp_iwz (Station Zero)",
+ "title": "Station Zero voice script, wave 1: the Voice of the Rapid (ZERO), Strand, the Night Inspector, the Conductor, the four heroes",
+ "canon": {
+  "source": "docs/station-zero/01-LORE.md wins over everything here; slots and IDs follow 11-AUDIO-DIRECTION.md section 5 (V01-V50, P1-P8, tapes 1-8, C1-C3, booth, phones, heroes 40 each)",
+  "zero": "ZERO (Zone Electronic Routing Operator) has no voice of its own. It speaks through the departure board, lamps, printers and the recorded Voice of the Rapid (Evelyn Marsh, 1984), which it assembles word by word. A line with recorded=false is a sentence she never said: ZERO stitched it, and one seam is audible.",
+  "names": "Every name is the bible's own (Port Halcyon, Halcyon Rapid Transit, Lodestar Signal & Telephone, the Zero Line). The brief's \"Group 935\" and \"Parisian\" setting are not used: 01-LORE forbids names from other games and places the map in Port Halcyon; Lodestar is the corporation that knew. The French lines are a localisation for the French-speaking servers, not a change of setting."
+ },
+ "owner_decisions": [
+  "Hero voices (11-AUDIO-DIRECTION 5.7): route (b), new voices for the 1986 film roles, is what this script is written for. Cloning or imitating the base-game actors from game audio is not done.",
+  "French: generate with the same designed voice (multilingual model) or design a French voice per speaker; default here: the same voice.",
+  "The setting stays Port Halcyon (canon). A Paris setting would be a new bible, not a wave of this one."
+ ],
+ "generation": {
+  "model": "eleven_v4",
+  "endpoint": "POST https://api.elevenlabs.io/v1/text-to-dialogue (inputs: [{text, voice_id}])",
+  "voices": "voice_id stays null until a voice is designed (creative_design_voice with the speaker's voice_design_prompt and one of its lines) and saved, or picked from creative_list_voices; never a remembered id",
+  "tags": "inline tags in [brackets] are direction for eleven_v4 and are listed per speaker in tags_allowed; check them against the model guide (creative_get_model_guide) before a batch. The Voice of the Rapid takes no emotion tags: she is a recording",
+  "files": "one file per line and language: <id>_<lang>.wav (48 kHz mono); for the PA chain also <id>_int_0.flac, the name soundscape_dsp.py pa reads with --voices",
+  "credits": "check GET /v1/user/subscription first; voice_script_check.py prints the character count per language and speaker",
+  "order": "PA01-PA06, V16, V17, V51-V55 first (they have a trigger in the map today), then the tapes, then the rest"
+ },
+ "hooks": {
+  "power_on": {
+   "status": "exists",
+   "event": "flag \"power_on\"",
+   "where": "cp_iwz2.gsc (flag_wait power_on); audio/cp_iwz_audio.gsc power sequence plays one PA line (p.pa_line)"
+  },
+  "pa_ambient": {
+   "status": "exists",
+   "event": "audio module soundscape_pa: one clip every min..max s on every PA speaker after power-on",
+   "where": "audio/station_zero_audio.json amb_iwz_pa_00..05 (today: BO3 zm_island facility lines through soundscape_dsp.py pa)"
+  },
+  "relay_on": {
+   "status": "exists",
+   "event": "level notify \"iwz_relay_on\", level.iwz_relays_on = 1..3",
+   "where": "cp_iwz2.gsc iwz_relay_on()"
+  },
+  "pap_open": {
+   "status": "exists",
+   "event": "iwz_open_pap_shutter() (prints PAP_OPEN); add level notify \"iwz_pap_open\" there to cue",
+   "where": "cp_iwz2.gsc"
+  },
+  "door_bought": {
+   "status": "exists",
+   "event": "iwz_debris_bought( s, p ) (every debris door)",
+   "where": "cp_iwz2.gsc"
+  },
+  "trap_bought": {
+   "status": "exists",
+   "event": "third-rail fusebox purchase (750)",
+   "where": "cp_iwz2.gsc trap thread"
+  },
+  "round_start": {
+   "status": "stock",
+   "event": "round change (level.wave_num increments in the stock cp wave loop); notify name to confirm in the cp_zmb dump before wiring",
+   "where": "stock scripts\\cp\\zombies"
+  },
+  "match_start": {
+   "status": "stock",
+   "event": "flag \"introscreen_over\" (read by cp_iwz2.gsc), first round",
+   "where": "cp_iwz2.gsc state log"
+  },
+  "game_over": {
+   "status": "stock",
+   "event": "stock end-of-game",
+   "where": "stock cp"
+  },
+  "last_alive": {
+   "status": "stock",
+   "event": "one player standing (stock last-stand logic)",
+   "where": "stock cp"
+  },
+  "player_vo": {
+   "status": "stock",
+   "event": "stock player VO categories (low ammo, revive, down, perk, weapon) through vo_prefix p1_..p4_ aliases; new lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2: not proven)",
+   "where": "stock cp vo system"
+  },
+  "perk_bought": {
+   "status": "to_wire",
+   "event": "P1 perk purchase (Baker's Dozens, Double Takes, Bon Voyages, Sour Grudges are built)",
+   "where": "perks/cp_iwz_perks.gsc purchase callback"
+  },
+  "clock_wound": {
+   "status": "future",
+   "event": "clock quest step (04-PAP-QUEST); g27 uses three relays instead",
+   "where": "bible 04-PAP-QUEST.md"
+  },
+  "road_set": {
+   "status": "future",
+   "event": "Signal Cabin lever frame",
+   "where": "bible 04-PAP-QUEST.md"
+  },
+  "conductor": {
+   "status": "future",
+   "event": "the Conductor of 047 appears / is killed",
+   "where": "bible 07-ENEMIES.md"
+  },
+  "terminus": {
+   "status": "future",
+   "event": "the Terminus visit (board, arrive, return)",
+   "where": "bible 04-PAP-QUEST.md, 02-WORLD.md Nowhere"
+  },
+  "capsule_post": {
+   "status": "future",
+   "event": "Capsule Post hatch use",
+   "where": "bible 03-TRANSPORT.md"
+  },
+  "inspector": {
+   "status": "future",
+   "event": "the Night Inspector (arrive, mark, punch, fine, whistle, half health, lamp, death)",
+   "where": "bible 07-ENEMIES.md"
+  },
+  "rollers": {
+   "status": "future",
+   "event": "the Roller special round",
+   "where": "bible 07-ENEMIES.md"
+  },
+  "pay_phone": {
+   "status": "future",
+   "event": "the three pay phones (Fare Hall, Police Post, Car Barn)",
+   "where": "bible 01-WIKI pay-phones.md"
+  },
+  "secret": {
+   "status": "future",
+   "event": "zero stud / manifest printer / photo booth / tape pickup / hidden song",
+   "where": "bible 01-LORE.md section 11"
+  },
+  "zone_enter": {
+   "status": "future",
+   "event": "first entry into the Arcade, the Parlour, the Bellows Vault (not in the 9-zone map)",
+   "where": "bible 02-WORLD.md"
+  },
+  "ww_obtained": {
+   "status": "future",
+   "event": "wonder weapon obtained (Exact Change, Live Rail, the Dispatcher, Top to Bottom)",
+   "where": "bible 05-WONDER-WEAPONS.md"
+  }
+ },
+ "speakers": {
+  "VOR": {
+   "name": "the Voice of the Rapid (Evelyn Marsh, recorded 14 to 16 Nov 1984)",
+   "is_zero": true,
+   "canon": "ZERO has no voice of its own (01-LORE section 3, wiki zero.md): it speaks through the boards, lamps, printers and the recorded Voice, which it assembles word by word. Every ZERO line is the Voice.",
+   "direction": "warm, exact, slightly amused; a 1984 station announcer, plain mid-Atlantic diction, never sinister, never in a hurry; \"reassuring but not sleepy\"; sounds as though she has just heard something funny and decided not to say so",
+   "voice_design_prompt": "Female voice, early thirties, American station announcer recorded in 1984, warm and exact, mid-Atlantic diction, a faint amused smile in the voice, reassuring, unhurried, close studio microphone",
+   "processing": "PA chain: soundscape_dsp.py pa (horn band 250 Hz to 4 kHz, light compression, PA click and buzz); lines marked recorded=false get one audible splice (a 40 ms room-tone seam) where ZERO stitched a word she never said",
+   "tags_allowed": [],
+   "voice_id": null
+  },
+  "STR": {
+   "name": "Dr. Imogen Strand, Lodestar lead engineer (micro-cassette diaries, 1983 to 1984)",
+   "direction": "dry, careful, tired; a voice that has rehearsed what it will say to a board; formal on tape 1, afraid but controlled on tape 6, decided on tape 7, quiet and quick on tape 8 which stops mid-word",
+   "voice_design_prompt": "Female voice, mid forties, American engineer dictating into a pocket recorder, dry and precise, tired, quiet authority, educated diction, close microphone",
+   "processing": "micro-cassette: band 300 Hz to 3.4 kHz, tape hiss, slight wow, 1 s of the room tone where the tape was recorded before the first word (11-AUDIO-DIRECTION 8.10)",
+   "tags_allowed": [
+    "[sighs]",
+    "[whispering]"
+   ],
+   "voice_id": null
+  },
+  "INS": {
+   "name": "the Night Inspector (Chief Fare Inspector Horace Pell, 31 years of service)",
+   "direction": "flat, courteous, bureaucratic baritone; never shouts; the courtesy is the threat",
+   "voice_design_prompt": "Male voice, sixties, deep flat courteous baritone of an old railway fare inspector, slow, polite, emotionless, slightly muffled as if through a lamp housing",
+   "processing": "slight metallic resonance (the lamp head), dry",
+   "tags_allowed": [],
+   "voice_id": null
+  },
+  "CON": {
+   "name": "the Conductor of 047",
+   "direction": "a guard's voice from 1984, loud and cheerful, a big chest voice that has called a thousand departures",
+   "voice_design_prompt": "Male voice, fifties, loud cheerful 1980s American railway conductor, big chest voice, projecting down a platform",
+   "processing": "platform reverb",
+   "tags_allowed": [
+    "[shouting]"
+   ],
+   "voice_id": null
+  },
+  "BTH": {
+   "name": "the photo booth patter (Underpass Arcade)",
+   "direction": "a chirpy recorded 1970s machine voice on a worn tape loop",
+   "voice_design_prompt": "Female voice, chirpy synthetic-sounding 1970s recorded machine patter, bright and over-friendly",
+   "processing": "small speaker, tape warble",
+   "tags_allowed": [],
+   "voice_id": null
+  },
+  "PHN": {
+   "name": "pay-phone oddities (non-Voice)",
+   "direction": "one each, never answered twice",
+   "voice_design_prompt": "varies per line",
+   "processing": "telephone band 300 Hz to 3.4 kHz, line hiss",
+   "tags_allowed": [
+    "[breathing]",
+    "[whispering]",
+    "[humming]"
+   ],
+   "voice_id": null
+  },
+  "TC": {
+   "name": "A.J. as the Transit Cop (film role, 1986)",
+   "direction": "dry, procedural, a man who signed a false report (\"gas\") and knows it; jokes like an incident log",
+   "voice_design_prompt": "Male voice, forties, dry tired American transit cop, procedural, deadpan, guilty undertone, New York-ish",
+   "processing": "dry, player VO",
+   "tags_allowed": [
+    "[shouting]",
+    "[panicked]",
+    "[sighs]"
+   ],
+   "voice_id": null
+  },
+  "GK": {
+   "name": "Andre as the Graffiti King (film role, 1986)",
+   "direction": "loud, cocky, delighted by a clean canvas; laughs at danger, means it about the paint",
+   "voice_design_prompt": "Male voice, twenties, loud cocky charismatic street artist from the 1980s, quick laugh, big energy",
+   "processing": "dry, player VO",
+   "tags_allowed": [
+    "[shouting]",
+    "[laughing]",
+    "[panicked]"
+   ],
+   "voice_id": null
+  },
+  "SE": {
+   "name": "Poindexter as the Signal Engineer (film role, 1986)",
+   "direction": "nervous, exact, talks to the equipment; railway signalling words are his comfort",
+   "voice_design_prompt": "Male voice, late twenties, nervous precise junior engineer, slightly nasal, speeds up when scared, polite",
+   "processing": "dry, player VO",
+   "tags_allowed": [
+    "[panicked]",
+    "[whispering]"
+   ],
+   "voice_id": null
+  },
+  "RP": {
+   "name": "Sally as the Night Desk Reporter (film role, 1986)",
+   "direction": "a broadcast voice, composed on camera, cracking off it; she narrates to keep from screaming",
+   "voice_design_prompt": "Female voice, thirties, polished 1980s TV news reporter, composed broadcast delivery that cracks into fear off camera",
+   "processing": "dry, player VO (her live microphone: a faint second, band-limited copy on her own lines is allowed)",
+   "tags_allowed": [
+    "[whispering]",
+    "[panicked]",
+    "[sobbing]"
+   ],
+   "voice_id": null
+  }
+ },
+ "lines": [
+  {
+   "id": "V01",
+   "speaker": "VOR",
+   "group": "round start",
+   "hook": "match_start",
+   "when": "first departure (round 1)",
+   "en": "Good evening. The twenty-three forty-seven Zero Line service is now boarding at Platform A. Please stand clear of the doors.",
+   "fr": "Bonsoir. Le vingt-trois heures quarante-sept, ligne Zéro, est à l'embarquement, quai A. Veuillez vous écarter des portes.",
+   "recorded": true
+  },
+  {
+   "id": "V02",
+   "speaker": "VOR",
+   "group": "round start",
+   "hook": "round_start",
+   "when": "ordinary round, variant 1",
+   "en": "The twenty-three forty-seven for Zero Line is now boarding. Please watch the edge, and each other.",
+   "fr": "Le vingt-trois heures quarante-sept, ligne Zéro, est à l'embarquement. Attention à la bordure du quai. Et les uns aux autres.",
+   "recorded": false
+  },
+  {
+   "id": "V03",
+   "speaker": "VOR",
+   "group": "round start",
+   "hook": "round_start",
+   "when": "ordinary round, variant 2",
+   "en": "Departure announced. All passengers for the Zero Line, please make your way to Platform A.",
+   "fr": "Départ annoncé. Tous les voyageurs de la ligne Zéro sont priés de se diriger vers le quai A.",
+   "recorded": true
+  },
+  {
+   "id": "V04",
+   "speaker": "VOR",
+   "group": "round start",
+   "hook": "round_start",
+   "when": "ordinary round, variant 3",
+   "en": "Boarding has resumed. Thank you for travelling with Halcyon Rapid Transit.",
+   "fr": "L'embarquement a repris. Halcyon Rapid Transit vous remercie de votre confiance.",
+   "recorded": true
+  },
+  {
+   "id": "V05",
+   "speaker": "VOR",
+   "group": "round start",
+   "hook": "round_start",
+   "when": "every fifth round",
+   "en": "A reminder that the Zero Line is never late. Departures will continue until the arrival is recorded.",
+   "fr": "Nous vous rappelons que la ligne Zéro n'est jamais en retard. Les départs se poursuivront jusqu'à l'enregistrement de l'arrivée.",
+   "recorded": false
+  },
+  {
+   "id": "V06",
+   "speaker": "VOR",
+   "group": "round start",
+   "hook": "round_start",
+   "when": "round 25 and later",
+   "en": "Platform A is very busy this evening. Please board in an orderly fashion. Everyone will be seated.",
+   "fr": "Le quai A est très fréquenté ce soir. Veuillez embarquer dans le calme. Tout le monde aura une place.",
+   "recorded": false
+  },
+  {
+   "id": "V07",
+   "speaker": "VOR",
+   "group": "round start",
+   "hook": "last_alive",
+   "when": "a single passenger left standing",
+   "en": "Passenger, you are the last one on the platform. Your train is waiting.",
+   "fr": "Voyageur, vous êtes le dernier sur le quai. Votre train vous attend.",
+   "recorded": false
+  },
+  {
+   "id": "V08",
+   "speaker": "VOR",
+   "group": "Roller round",
+   "hook": "rollers",
+   "when": "",
+   "en": "A private party service is arriving at Platform A. Skates are not permitted on the platform.",
+   "fr": "Un service privé de soirée arrive au quai A. Les patins à roulettes sont interdits sur le quai.",
+   "recorded": true
+  },
+  {
+   "id": "V09",
+   "speaker": "VOR",
+   "group": "Roller round",
+   "hook": "rollers",
+   "when": "",
+   "en": "The Orbit Rink Roll-In is now boarding at car six. Please keep to the right, and keep moving.",
+   "fr": "Le Roll-In de l'Orbit Rink embarque en voiture six. Serrez à droite, et ne vous arrêtez pas.",
+   "recorded": false
+  },
+  {
+   "id": "V10",
+   "speaker": "VOR",
+   "group": "Roller round",
+   "hook": "rollers",
+   "when": "",
+   "en": "Passengers on wheels are reminded that the platform has no brakes.",
+   "fr": "Nous rappelons aux voyageurs sur roulettes que le quai n'a pas de freins.",
+   "recorded": false
+  },
+  {
+   "id": "V11",
+   "speaker": "VOR",
+   "group": "Roller round",
+   "hook": "rollers",
+   "when": "",
+   "en": "The party service has ended. Halcyon Rapid Transit wishes you a happy New Year.",
+   "fr": "Le service de soirée est terminé. Halcyon Rapid Transit vous souhaite une bonne année.",
+   "recorded": true
+  },
+  {
+   "id": "V12",
+   "speaker": "VOR",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "",
+   "en": "Fare inspection is now in progress. Please have your ticket ready, and be honest with yourself.",
+   "fr": "Contrôle des titres de transport en cours. Préparez votre billet, et soyez honnête avec vous-même.",
+   "recorded": false
+  },
+  {
+   "id": "V13",
+   "speaker": "VOR",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "",
+   "en": "An inspector is on the platform. Passengers without a valid ticket should make themselves known.",
+   "fr": "Un contrôleur est sur le quai. Les voyageurs sans titre valable sont priés de se signaler.",
+   "recorded": true
+  },
+  {
+   "id": "V14",
+   "speaker": "VOR",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "",
+   "en": "Inspection continues. The inspector has all night.",
+   "fr": "Le contrôle se poursuit. Le contrôleur a toute la nuit.",
+   "recorded": false
+  },
+  {
+   "id": "V15",
+   "speaker": "VOR",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "",
+   "en": "Fare inspection is complete. Thank you for your cooperation.",
+   "fr": "Le contrôle est terminé. Merci de votre coopération.",
+   "recorded": true
+  },
+  {
+   "id": "V50",
+   "speaker": "VOR",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "the first inspection of a match, once",
+   "en": "Passengers found without a valid ticket will be charged a penalty fare.",
+   "fr": "Tout voyageur sans titre valable devra s'acquitter d'une amende forfaitaire.",
+   "recorded": true
+  },
+  {
+   "id": "V16",
+   "speaker": "VOR",
+   "group": "power",
+   "hook": "power_on",
+   "when": "the map's first full sentence",
+   "en": "Main power has been restored. Thank you for your patience. It has been a long time.",
+   "fr": "L'alimentation principale est rétablie. Merci de votre patience. Cela faisait longtemps.",
+   "recorded": false,
+   "slot": "audio module power sequence (p.pa_line), after the garbled V17"
+  },
+  {
+   "id": "V17",
+   "speaker": "VOR",
+   "group": "power",
+   "hook": "power_on",
+   "when": "the PA booting, garbled, before V16",
+   "en": "Main... power... is... on. Main power is... on.",
+   "fr": "Alimentation... principale... en... service. Alimentation principale... en service.",
+   "recorded": false,
+   "note": "generate each word as a separate take and stitch with gaps of 0.3 to 0.9 s and crackle (it is ZERO finding the words)"
+  },
+  {
+   "id": "V18",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "clock_wound",
+   "when": "",
+   "en": "One of four station clocks has been corrected. Thank you.",
+   "fr": "Une des quatre horloges de la station a été corrigée. Merci.",
+   "recorded": false
+  },
+  {
+   "id": "V19",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "clock_wound",
+   "when": "",
+   "en": "Two of four station clocks now agree.",
+   "fr": "Deux des quatre horloges de la station sont désormais d'accord.",
+   "recorded": false
+  },
+  {
+   "id": "V20",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "clock_wound",
+   "when": "",
+   "en": "Three of four. The time is nearly right.",
+   "fr": "Trois sur quatre. L'heure est presque juste.",
+   "recorded": false
+  },
+  {
+   "id": "V21",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "clock_wound",
+   "when": "",
+   "en": "The thirteen minutes have been accounted for. Thank you.",
+   "fr": "Les treize minutes ont été retrouvées. Merci.",
+   "recorded": false
+  },
+  {
+   "id": "V22",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "road_set",
+   "when": "",
+   "en": "The road is set. The twenty-three forty-seven has a clear signal.",
+   "fr": "L'itinéraire est formé. Le vingt-trois heures quarante-sept a le signal ouvert.",
+   "recorded": true
+  },
+  {
+   "id": "V23",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "conductor",
+   "when": "",
+   "en": "The conductor of the twenty-three forty-seven is on the platform. Please give him room.",
+   "fr": "Le chef de bord du vingt-trois heures quarante-sept est sur le quai. Merci de lui laisser de la place.",
+   "recorded": false
+  },
+  {
+   "id": "V24",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "conductor",
+   "when": "the Handle taken",
+   "en": "Lost property: one dead-man's handle, brass. It has been collected.",
+   "fr": "Objets trouvés : une manette d'homme mort, en laiton. Elle a été récupérée.",
+   "recorded": false
+  },
+  {
+   "id": "V25",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "terminus",
+   "when": "the Handle fitted",
+   "en": "The driver's position is staffed. The twenty-three forty-seven is now boarding for the Terminus. Boarding... closes... at midnight.",
+   "fr": "Le poste de conduite est occupé. Le vingt-trois heures quarante-sept embarque pour le Terminus. Fin de l'embarquement... à minuit.",
+   "recorded": false
+  },
+  {
+   "id": "V26a",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "terminus",
+   "when": "at the Terminus, reading 1",
+   "en": "The time is twenty-three fifty-nine.",
+   "fr": "Il est vingt-trois heures cinquante-neuf.",
+   "recorded": false,
+   "note": "assembled from recorded words; the only time the Voice reads at the Terminus; there is no arrival announcement"
+  },
+  {
+   "id": "V26b",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "terminus",
+   "when": "reading 2: a fraction slower",
+   "en": "The time is twenty-three fifty-nine.",
+   "fr": "Il est vingt-trois heures cinquante-neuf.",
+   "recorded": false
+  },
+  {
+   "id": "V26c",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "terminus",
+   "when": "reading 3: the seam audible",
+   "en": "The time is... twenty-three fifty-nine.",
+   "fr": "Il est... vingt-trois heures cinquante-neuf.",
+   "recorded": false
+  },
+  {
+   "id": "V27",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "terminus",
+   "when": "return to Platform A",
+   "en": "Welcome back.",
+   "fr": "Bon retour parmi nous.",
+   "recorded": false
+  },
+  {
+   "id": "V28",
+   "speaker": "VOR",
+   "group": "quest",
+   "hook": "terminus",
+   "when": "during the cooldown",
+   "en": "The Terminus service is out of service. Please wait for the next departure.",
+   "fr": "La desserte du Terminus est interrompue. Veuillez attendre le prochain départ.",
+   "recorded": false
+  },
+  {
+   "id": "V29",
+   "speaker": "VOR",
+   "group": "Capsule Post",
+   "hook": "capsule_post",
+   "when": "",
+   "en": "Insufficient postage. Please add points and try again.",
+   "fr": "Affranchissement insuffisant. Veuillez ajouter des points et réessayer.",
+   "recorded": false
+  },
+  {
+   "id": "V30",
+   "speaker": "VOR",
+   "group": "Capsule Post",
+   "hook": "capsule_post",
+   "when": "",
+   "en": "This tube is sealed. Please use another hatch.",
+   "fr": "Ce tube est scellé. Veuillez utiliser une autre trappe.",
+   "recorded": false
+  },
+  {
+   "id": "V31",
+   "speaker": "VOR",
+   "group": "Capsule Post",
+   "hook": "capsule_post",
+   "when": "",
+   "en": "No capsule at this hatch. A capsule is on its way.",
+   "fr": "Aucune capsule à cette trappe. Une capsule est en route.",
+   "recorded": false
+  },
+  {
+   "id": "V32",
+   "speaker": "VOR",
+   "group": "Capsule Post",
+   "hook": "capsule_post",
+   "when": "",
+   "en": "The tubes are changing direction. Please stand clear of the hatches.",
+   "fr": "Les tubes changent de sens. Veuillez vous écarter des trappes.",
+   "recorded": false
+  },
+  {
+   "id": "V33",
+   "speaker": "VOR",
+   "group": "Capsule Post",
+   "hook": "capsule_post",
+   "when": "",
+   "en": "Postal inspection. Riders keep their inspector's marks.",
+   "fr": "Inspection du courrier. Les marques du contrôleur restent valables.",
+   "recorded": false
+  },
+  {
+   "id": "V34",
+   "speaker": "VOR",
+   "group": "Capsule Post",
+   "hook": "capsule_post",
+   "when": "",
+   "en": "Hatch unsealed. Mind your fingers.",
+   "fr": "Trappe descellée. Attention à vos doigts.",
+   "recorded": false
+  },
+  {
+   "id": "V35",
+   "speaker": "VOR",
+   "group": "pay phone",
+   "hook": "pay_phone",
+   "when": "Fare Hall line, once a match",
+   "en": "...your call to the twenty-three forty-seven... will be... connected... shortly.",
+   "fr": "...votre appel au vingt-trois heures quarante-sept... sera... mis en relation... sous peu.",
+   "recorded": false
+  },
+  {
+   "id": "V36",
+   "speaker": "VOR",
+   "group": "pay phone",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "...all our lines are... boarding...",
+   "fr": "...toutes nos lignes sont... à l'embarquement...",
+   "recorded": false
+  },
+  {
+   "id": "V37",
+   "speaker": "VOR",
+   "group": "pay phone",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "...please hold. A passenger will be with you...",
+   "fr": "...veuillez patienter. Un voyageur va vous répondre...",
+   "recorded": false
+  },
+  {
+   "id": "V38",
+   "speaker": "VOR",
+   "group": "pay phone",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "...the number you have dialled is... on the platform...",
+   "fr": "...le numéro que vous avez composé est... sur le quai...",
+   "recorded": false
+  },
+  {
+   "id": "V39",
+   "speaker": "VOR",
+   "group": "pay phone",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "...we apologise for the... midnight...",
+   "fr": "...nous vous prions d'excuser ce... minuit...",
+   "recorded": false
+  },
+  {
+   "id": "V40",
+   "speaker": "VOR",
+   "group": "pay phone",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "...is that you? Your seat is still...",
+   "fr": "...c'est vous ? Votre place est toujours...",
+   "recorded": false,
+   "note": "never recorded: the seam should be the most audible of the set"
+  },
+  {
+   "id": "V41",
+   "speaker": "VOR",
+   "group": "pay phone",
+   "hook": "pay_phone",
+   "when": "Police Post line, the roster read out",
+   "en": "Night roster, thirty-first of December. Malone, D., signal technician. In: twenty-two hundred. Out:",
+   "fr": "Feuille de service de nuit, trente et un décembre. Malone, D., technicien signalisation. Arrivée : vingt-deux heures. Départ :",
+   "recorded": false,
+   "note": "each roster entry ends on \"Out:\" and 1.5 s of line hiss (the empty OUT column)"
+  },
+  {
+   "id": "V42",
+   "speaker": "VOR",
+   "group": "pay phone",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Prescott, token clerk. In: twenty-one thirty. Out:",
+   "fr": "Prescott, guichetière. Arrivée : vingt et une heures trente. Départ :",
+   "recorded": false
+  },
+  {
+   "id": "V43",
+   "speaker": "VOR",
+   "group": "pay phone",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Hughes, platform staff. In: twenty-three hundred. Out:",
+   "fr": "Hughes, agent de quai. Arrivée : vingt-trois heures. Départ :",
+   "recorded": false
+  },
+  {
+   "id": "V44",
+   "speaker": "VOR",
+   "group": "pay phone",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Twenty-three fifty-five. Control informed.",
+   "fr": "Vingt-trois heures cinquante-cinq. Régulation informée.",
+   "recorded": false
+  },
+  {
+   "id": "V45",
+   "speaker": "VOR",
+   "group": "pay phone",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Fifty-eight on the roster. None signed out.",
+   "fr": "Cinquante-huit agents inscrits. Aucun n'a signé son départ.",
+   "recorded": false
+  },
+  {
+   "id": "V46",
+   "speaker": "VOR",
+   "group": "pay phone",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Passengers travelling to [0.8 s] should change here.",
+   "fr": "Les voyageurs à destination de [0,8 s] sont priés de changer ici.",
+   "recorded": false,
+   "note": "the sentence with a hole: replace the bracket with 0.8 s of pure silence (no room tone); the word was never recorded"
+  },
+  {
+   "id": "V47",
+   "speaker": "VOR",
+   "group": "secrets",
+   "hook": "secret",
+   "when": "the zero stud knifed",
+   "en": "This is chainage zero. Every distance on the network is measured from here.",
+   "fr": "Vous êtes au point zéro. Toutes les distances du réseau se mesurent d'ici.",
+   "recorded": false
+  },
+  {
+   "id": "V48",
+   "speaker": "VOR",
+   "group": "secrets",
+   "hook": "secret",
+   "when": "the manifest printer",
+   "en": "Your name has been added to the passenger manifest. Thank you for travelling tonight.",
+   "fr": "Votre nom a été ajouté au manifeste des voyageurs. Merci de voyager avec nous ce soir.",
+   "recorded": false
+  },
+  {
+   "id": "V49",
+   "speaker": "VOR",
+   "group": "game over",
+   "hook": "game_over",
+   "when": "",
+   "en": "This service terminates here. Passengers should leave by the nearest exit, if there is one.",
+   "fr": "Ce service se termine ici. Les voyageurs sont priés de sortir par la sortie la plus proche, s'il y en a une.",
+   "recorded": false
+  },
+  {
+   "id": "PA01",
+   "speaker": "VOR",
+   "group": "PA rotation (g27 now)",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "We apologise for the delay. Your train will be with you shortly.",
+   "fr": "Nous vous prions d'excuser ce retard. Votre train arrivera dans quelques instants.",
+   "recorded": true,
+   "note": "replaces the BO3 zm_island facility line of this slot (borrowed audio; 01-LORE originality rule)",
+   "slot": "amb_iwz_pa_00"
+  },
+  {
+   "id": "PA02",
+   "speaker": "VOR",
+   "group": "PA rotation (g27 now)",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "This is a Zero Line service to the Terminus. All stations to the Terminus.",
+   "fr": "Ce train de la ligne Zéro est à destination du Terminus. Il dessert toutes les gares jusqu'au Terminus.",
+   "recorded": false,
+   "note": "replaces the BO3 zm_island facility line of this slot (borrowed audio; 01-LORE originality rule)",
+   "slot": "amb_iwz_pa_01"
+  },
+  {
+   "id": "PA03",
+   "speaker": "VOR",
+   "group": "PA rotation (g27 now)",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "Watch the edge between the train and the platform.",
+   "fr": "Attention à l'espace entre le train et le quai.",
+   "recorded": true,
+   "note": "replaces the BO3 zm_island facility line of this slot (borrowed audio; 01-LORE originality rule)",
+   "slot": "amb_iwz_pa_02"
+  },
+  {
+   "id": "PA04",
+   "speaker": "VOR",
+   "group": "PA rotation (g27 now)",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "Passenger, your train is waiting. Please return to your carriage.",
+   "fr": "Voyageur, votre train vous attend. Veuillez regagner votre voiture.",
+   "recorded": false,
+   "note": "replaces the BO3 zm_island facility line of this slot (borrowed audio; 01-LORE originality rule)",
+   "slot": "amb_iwz_pa_03"
+  },
+  {
+   "id": "PA05",
+   "speaker": "VOR",
+   "group": "PA rotation (g27 now)",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "Midnight has been delayed. We regret that this is not unusual.",
+   "fr": "Minuit a été retardé. Nous regrettons que cela ne soit pas inhabituel.",
+   "recorded": false,
+   "note": "replaces the BO3 zm_island facility line of this slot (borrowed audio; 01-LORE originality rule)",
+   "slot": "amb_iwz_pa_04"
+  },
+  {
+   "id": "PA06",
+   "speaker": "VOR",
+   "group": "PA rotation (g27 now)",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "Halcyon Rapid Transit reminds passengers that smoking, spitting and running are not permitted on the platform. Waiting is.",
+   "fr": "Halcyon Rapid Transit rappelle aux voyageurs qu'il est interdit de fumer, de cracher et de courir sur le quai. Attendre est autorisé.",
+   "recorded": false,
+   "note": "replaces the BO3 zm_island facility line of this slot (borrowed audio; 01-LORE originality rule)",
+   "slot": "amb_iwz_pa_05"
+  },
+  {
+   "id": "V51",
+   "speaker": "VOR",
+   "group": "g27 quest",
+   "hook": "relay_on",
+   "when": "level.iwz_relays_on == 1",
+   "en": "Signal relay one of three is proving. Thank you.",
+   "fr": "Relais de signalisation un sur trois : contrôle établi. Merci.",
+   "recorded": false
+  },
+  {
+   "id": "V52",
+   "speaker": "VOR",
+   "group": "g27 quest",
+   "hook": "relay_on",
+   "when": "level.iwz_relays_on == 2",
+   "en": "Relay two of three is proving. The road is nearly set.",
+   "fr": "Relais deux sur trois : contrôle établi. L'itinéraire est presque formé.",
+   "recorded": false
+  },
+  {
+   "id": "V53",
+   "speaker": "VOR",
+   "group": "g27 quest",
+   "hook": "pap_open",
+   "when": "the third relay: the PaP shutter opens",
+   "en": "All relays proving. The service door of the control room is now open. Please mind the gap.",
+   "fr": "Tous les relais sont en contrôle. La porte de service de la salle de commande est ouverte. Attention à la marche.",
+   "recorded": false
+  },
+  {
+   "id": "V54",
+   "speaker": "VOR",
+   "group": "g27 purchases",
+   "hook": "door_bought",
+   "when": "a door bought; at most once every 60 s",
+   "en": "Thank you. This area is now open to passengers.",
+   "fr": "Merci. Cet espace est désormais ouvert aux voyageurs.",
+   "recorded": false
+  },
+  {
+   "id": "V55",
+   "speaker": "VOR",
+   "group": "g27 purchases",
+   "hook": "trap_bought",
+   "when": "the third-rail trap armed",
+   "en": "Danger. The conductor rail is live. Please stand behind the yellow line.",
+   "fr": "Danger. Le rail conducteur est sous tension. Veuillez rester derrière la ligne jaune.",
+   "recorded": true
+  },
+  {
+   "id": "G01",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "the",
+   "fr": "le",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G02",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "twenty-three",
+   "fr": "vingt-trois",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G03",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "forty-seven",
+   "fr": "quarante-sept",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G04",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "to",
+   "fr": "pour",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G05",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "Zero Line",
+   "fr": "ligne Zéro",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G06",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "is",
+   "fr": "est",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G07",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "now",
+   "fr": "maintenant",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G08",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "boarding",
+   "fr": "embarquement",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G09",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "midnight",
+   "fr": "minuit",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G10",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "late",
+   "fr": "en retard",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G11",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "thirteen",
+   "fr": "treize",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G12",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "minutes",
+   "fr": "minutes",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G13",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "please",
+   "fr": "s'il vous plaît",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "G14",
+   "speaker": "VOR",
+   "group": "glue words",
+   "hook": "pa_ambient",
+   "when": "",
+   "en": "edge",
+   "fr": "bordure",
+   "recorded": true,
+   "note": "isolated word, neutral pitch, 0.3 s of room tone each side"
+  },
+  {
+   "id": "S1",
+   "speaker": "STR",
+   "group": "tapes",
+   "hook": "secret",
+   "when": "14 April 1983; found in the Cordon, the Channel 9 van",
+   "en": "Tape one. Strand, Lodestar, Station Zero site office. The Zero Line opens on New Year's Eve next year with no drivers, and the express bypass is the problem. The cheapest route is an arch the 1931 surveyors marked old sewer, bricked and never opened. If it holds, we save eleven months. I have asked for the drawings. I am told asking is a formality.",
+   "fr": "Cassette une. Strand, Lodestar, bureau de chantier de la station Zéro. La ligne Zéro ouvre le soir du réveillon l'an prochain, sans conducteurs, et la dérivation express est le problème. Le tracé le moins cher passe par une voûte que les géomètres de 1931 ont notée « ancien égout », murée et jamais ouverte. Si elle tient, nous gagnons onze mois. J'ai demandé les plans. On me dit que demander est une formalité.",
+   "max_s": 50
+  },
+  {
+   "id": "S2",
+   "speaker": "STR",
+   "group": "tapes",
+   "hook": "secret",
+   "when": "17 August 1983; found in the Arcade, Hole Number Nine",
+   "en": "Tape two. The cut broke through this morning. Behind it there is a salon: parquet, gas chandeliers, and a wall of tuning forks in a walnut frame. A company called the Halcyon Atmospheric ran a pneumatic parcel post here from 1893, and for one season in 1897 sent people through it in capsules. Its builder, Ambrose Vayle, left notebooks. He tuned the main like an organ pipe, to send passengers where the dead go and bring them back. I am quoting. I felt the note in my teeth.",
+   "fr": "Cassette deux. La tranchée a percé ce matin. Derrière, il y a un salon : parquet, lustres à gaz, et un mur de diapasons dans un cadre de noyer. Une compagnie appelée la Halcyon Atmospheric exploitait ici une poste pneumatique de colis depuis 1893 et, pendant une saison, en 1897, y a envoyé des gens dans des capsules. Son constructeur, Ambrose Vayle, a laissé des carnets. Il a accordé la conduite comme un tuyau d'orgue, pour envoyer les voyageurs là où vont les morts, et les ramener. Je cite. J'ai senti la note dans mes dents.",
+   "max_s": 50
+  },
+  {
+   "id": "S3",
+   "speaker": "STR",
+   "group": "tapes",
+   "hook": "secret",
+   "when": "12 October 1983; found in the Transit Police Post, an evidence tag",
+   "en": "Tape three. Test trolley, six volunteers, Carrier switched on. All six filled in the same form: they arrived before they left. One wrote his arrival time, then a departure time earlier than it, and did not seem troubled. I have sent a memo. Lodestar has filed it under the word anecdotal. I would like it noted that a form is not an anecdote.",
+   "fr": "Cassette trois. Draisine d'essai, six volontaires, Porteuse activée. Tous les six ont rempli le même formulaire : ils sont arrivés avant d'être partis. L'un a écrit son heure d'arrivée, puis une heure de départ antérieure, et n'a pas semblé troublé. J'ai envoyé une note. Lodestar l'a classée sous le mot « anecdotique ». Je voudrais qu'il soit noté qu'un formulaire n'est pas une anecdote.",
+   "max_s": 50
+  },
+  {
+   "id": "S4",
+   "speaker": "STR",
+   "group": "tapes",
+   "hook": "secret",
+   "when": "20 February 1984; found in Platform A East, a seat of car 2",
+   "en": "Tape four. The Carrier is a tone we put in the rails so that ZERO can find its trains. In the old tube it comes back, not as an echo but as an answer, on Vayle's note. Two signals that agree. On a moving train I cannot tell you where that goes. I can tell you it goes first, and returns. I told them. They kept the bypass.",
+   "fr": "Cassette quatre. La Porteuse est une tonalité que nous injectons dans les rails pour que ZERO retrouve ses trains. Dans l'ancien tube, elle revient, non pas comme un écho, mais comme une réponse, sur la note de Vayle. Deux signaux qui s'accordent. Sur un train en marche, je ne peux pas vous dire où cela mène. Je peux vous dire que cela part d'abord, et revient. Je le leur ai dit. Ils ont gardé la dérivation.",
+   "max_s": 50
+  },
+  {
+   "id": "S5",
+   "speaker": "STR",
+   "group": "tapes",
+   "hook": "secret",
+   "when": "9 August 1984; found in the Car Barn",
+   "en": "Tape five. The cars are fitted: receivers, door sensors, and a lamp-proving current that glows in a lamp the colour of a signal. The inaugural run is published. Six cars, three hundred and twelve guests, a thirteen-minute loop, home at midnight exactly. The newspapers like exactly. I have stopped saying what the loop crosses, because the next question is always whether it is on schedule.",
+   "fr": "Cassette cinq. Les voitures sont équipées : récepteurs, capteurs de portes, et un courant de contrôle de lampe qui brille dans une lampe couleur de signal. Le trajet inaugural est annoncé. Six voitures, trois cent douze invités, une boucle de treize minutes, retour à minuit pile. Les journaux aiment « pile ». J'ai cessé de dire ce que traverse la boucle, parce que la question suivante est toujours de savoir si l'on est dans les temps.",
+   "max_s": 50
+  },
+  {
+   "id": "S6",
+   "speaker": "STR",
+   "group": "tapes",
+   "hook": "secret",
+   "when": "14 December 1984; found in the Exchange",
+   "en": "Tape six. Tonight I read ZERO's log specification to the end. A run may be pending or arrived. There is no third state. The contract says no failed runs, and the engineers took that as a promise rather than a design. If 047 does not arrive, ZERO will hold it pending, and issue the departure again, and again, for as long as it has power.",
+   "fr": "Cassette six. Ce soir, j'ai lu la spécification du journal de ZERO jusqu'au bout. Un trajet peut être en attente ou arrivé. Il n'y a pas de troisième état. Le contrat dit : aucun trajet en échec, et les ingénieurs l'ont pris pour une promesse plutôt que pour une conception. Si le 047 n'arrive pas, ZERO le gardera en attente, et annoncera de nouveau le départ, encore et encore, tant qu'il aura du courant.",
+   "max_s": 50
+  },
+  {
+   "id": "S7",
+   "speaker": "STR",
+   "group": "tapes",
+   "hook": "secret",
+   "when": "29 December 1984; found in the Exchange",
+   "en": "Tape seven. I asked the chairman to postpone. He said a railway that is never late cannot start late. I asked Lodestar for grounds to refuse the run and was given a ribbon. So I will ride in the cab, with a hand on the controller. If I am right, they will all be standing on that platform, still listening to the announcement. Please find these.",
+   "fr": "Cassette sept. J'ai demandé au président de reporter. Il m'a répondu qu'un chemin de fer qui n'est jamais en retard ne peut pas commencer en retard. J'ai demandé à Lodestar des raisons de refuser le trajet, et l'on m'a donné un ruban. Alors je monterai dans la cabine, une main sur le manipulateur. Si j'ai raison, ils seront tous debout sur ce quai, à écouter encore l'annonce. Trouvez ces cassettes, s'il vous plaît.",
+   "max_s": 50
+  },
+  {
+   "id": "S8",
+   "speaker": "STR",
+   "group": "tapes",
+   "hook": "secret",
+   "when": "31 December 1984, 23:46, in the cab; found in the Terminus, bench 4 (future zone)",
+   "en": "Tape eight. Eleven forty-six. The band is playing; I can hear it through the glass. The champagne is still on the coupler. Nobody broke it. The chairman says they will do it on the return. Thirteen seconds. When the Carrier meets the note we will go somewhere first and be back in the same second, every clock in the station will say we never left, and the first thing I expect to notice is the",
+   "fr": "Cassette huit. Vingt-trois heures quarante-six. La fanfare joue ; je l'entends à travers la vitre. Le champagne est toujours sur l'attelage. Personne ne l'a cassé. Le président dit qu'ils le feront au retour. Treize secondes. Quand la Porteuse rencontrera la note, nous irons d'abord quelque part et serons de retour dans la même seconde, toutes les horloges de la station diront que nous ne sommes jamais partis, et la première chose que je m'attends à remarquer, c'est le",
+   "note": "ends mid-word: cut the audio on the last syllable, no breath after it (hook H1)",
+   "max_s": 50
+  },
+  {
+   "id": "P1",
+   "speaker": "INS",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "arrival",
+   "en": "Tickets, please.",
+   "fr": "Billets, s'il vous plaît."
+  },
+  {
+   "id": "P2",
+   "speaker": "INS",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "marked",
+   "en": "Your ticket, sir. Madam. Whoever you are.",
+   "fr": "Votre billet, monsieur. Madame. Qui que vous soyez."
+  },
+  {
+   "id": "P3",
+   "speaker": "INS",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "the Punch lands",
+   "en": "Not valid for this journey.",
+   "fr": "Non valable pour ce trajet."
+  },
+  {
+   "id": "P4",
+   "speaker": "INS",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "fine taken",
+   "en": "Penalty fare. Thank you.",
+   "fr": "Amende forfaitaire. Merci."
+  },
+  {
+   "id": "P5",
+   "speaker": "INS",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "the Whistle",
+   "en": "Passengers will remain behind the yellow line.",
+   "fr": "Les voyageurs resteront derrière la ligne jaune."
+  },
+  {
+   "id": "P6",
+   "speaker": "INS",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "under half health (faster)",
+   "en": "Tickets, please. Tickets, please.",
+   "fr": "Billets, s'il vous plaît. Billets, s'il vous plaît."
+  },
+  {
+   "id": "P7",
+   "speaker": "INS",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "the lamp opens",
+   "en": "Ah.",
+   "fr": "Ah."
+  },
+  {
+   "id": "P8",
+   "speaker": "INS",
+   "group": "Night Inspector",
+   "hook": "inspector",
+   "when": "death",
+   "en": "Valid.",
+   "fr": "Valable."
+  },
+  {
+   "id": "C1",
+   "speaker": "CON",
+   "group": "the Conductor",
+   "hook": "conductor",
+   "when": "appears",
+   "en": "[shouting] All aboard for the twenty-three forty-seven!",
+   "fr": "[shouting] En voiture pour le vingt-trois heures quarante-sept !"
+  },
+  {
+   "id": "C2",
+   "speaker": "CON",
+   "group": "the Conductor",
+   "hook": "conductor",
+   "when": "walking, as he shuts each car",
+   "en": "Doors closing. Stand clear.",
+   "fr": "Fermeture des portes. Écartez-vous."
+  },
+  {
+   "id": "C3",
+   "speaker": "CON",
+   "group": "the Conductor",
+   "hook": "conductor",
+   "when": "killed",
+   "en": "Terminus. All change.",
+   "fr": "Terminus. Tout le monde descend."
+  },
+  {
+   "id": "B1",
+   "speaker": "BTH",
+   "group": "photo booth",
+   "hook": "secret",
+   "when": "",
+   "en": "Please hold still.",
+   "fr": "Ne bougez plus, s'il vous plaît."
+  },
+  {
+   "id": "B2",
+   "speaker": "BTH",
+   "group": "photo booth",
+   "hook": "secret",
+   "when": "",
+   "en": "Three, two, one.",
+   "fr": "Trois, deux, un."
+  },
+  {
+   "id": "B3",
+   "speaker": "BTH",
+   "group": "photo booth",
+   "hook": "secret",
+   "when": "",
+   "en": "Please do not look behind you.",
+   "fr": "Veuillez ne pas regarder derrière vous."
+  },
+  {
+   "id": "B4",
+   "speaker": "BTH",
+   "group": "photo booth",
+   "hook": "secret",
+   "when": "",
+   "en": "Your strip is ready.",
+   "fr": "Vos photos sont prêtes."
+  },
+  {
+   "id": "B5",
+   "speaker": "BTH",
+   "group": "photo booth",
+   "hook": "secret",
+   "when": "",
+   "en": "Thank you for your custom.",
+   "fr": "Merci de votre visite."
+  },
+  {
+   "id": "O1",
+   "speaker": "PHN",
+   "group": "pay-phone oddities",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "[breathing]",
+   "fr": "[breathing]",
+   "note": "breath on the line, 6 s, no words"
+  },
+  {
+   "id": "O2",
+   "speaker": "PHN",
+   "group": "pay-phone oddities",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "[humming] (a child humming three falling notes, the Three-Tone)",
+   "fr": "[humming] (un enfant fredonne trois notes descendantes, le Trois-Tons)",
+   "note": "a child voice; humming only"
+  },
+  {
+   "id": "O3",
+   "speaker": "PHN",
+   "group": "pay-phone oddities",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Hello? ... Hello?",
+   "fr": "Allô ? ... Allô ?",
+   "note": "a man, twice; never answered"
+  },
+  {
+   "id": "O4",
+   "speaker": "PHN",
+   "group": "pay-phone oddities",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Number, please.",
+   "fr": "Votre numéro, s'il vous plaît.",
+   "note": "a 1950s operator's voice"
+  },
+  {
+   "id": "TC01",
+   "speaker": "TC",
+   "group": "round start (match opening)",
+   "hook": "match_start",
+   "when": "",
+   "en": "Halcyon Plaza, twenty-three forty-seven. Officer on scene. God help the officer.",
+   "fr": "Halcyon Plaza, vingt-trois heures quarante-sept. Agent sur place. Que Dieu aide l'agent.",
+   "max_s": 8
+  },
+  {
+   "id": "TC02",
+   "speaker": "TC",
+   "group": "round start (match opening)",
+   "hook": "match_start",
+   "when": "",
+   "en": "I wrote 'gas' on a form. This is not gas.",
+   "fr": "J'ai écrit « gaz » sur un rapport. Ce n'est pas du gaz.",
+   "max_s": 8
+  },
+  {
+   "id": "TC03",
+   "speaker": "TC",
+   "group": "round start (every fifth round)",
+   "hook": "round_start",
+   "when": "",
+   "en": "Another departure. Nobody ever arrives.",
+   "fr": "Encore un départ. Personne n'arrive jamais.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC04",
+   "speaker": "TC",
+   "group": "low ammo",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Running dry. Requesting backup that is not coming.",
+   "fr": "Je suis à sec. Je demande des renforts qui ne viendront pas.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC05",
+   "speaker": "TC",
+   "group": "low ammo",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Last mag. Make it count, Officer.",
+   "fr": "Dernier chargeur. Fais-le compter, agent.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC06",
+   "speaker": "TC",
+   "group": "reviving a teammate",
+   "hook": "player_vo",
+   "when": "",
+   "en": "On your feet. That's an order, citizen.",
+   "fr": "Debout. C'est un ordre, citoyen.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC07",
+   "speaker": "TC",
+   "group": "reviving a teammate",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Stay with me. I'm not writing up another one.",
+   "fr": "Reste avec moi. Je ne rédige pas un rapport de plus.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC08",
+   "speaker": "TC",
+   "group": "thanks when revived",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Noted. You're in my report. The good part.",
+   "fr": "Noté. Tu seras dans mon rapport. Dans la bonne partie.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC09",
+   "speaker": "TC",
+   "group": "downed",
+   "hook": "player_vo",
+   "when": "",
+   "en": "[shouting] Officer down! Officer down, Platform A!",
+   "fr": "[shouting] Agent à terre ! Agent à terre, quai A !",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC10",
+   "speaker": "TC",
+   "group": "downed",
+   "hook": "player_vo",
+   "when": "",
+   "en": "[shouting] Ten-thirteen! Anybody! Ten-thirteen!",
+   "fr": "[shouting] Agent en détresse ! N'importe qui !",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC11",
+   "speaker": "TC",
+   "group": "downed",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Can't... somebody get me up before they punch my ticket.",
+   "fr": "Je peux pas... Relevez-moi avant qu'ils poinçonnent mon billet.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC12",
+   "speaker": "TC",
+   "group": "perk: Double Takes",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Double Takes. Twice the look, twice the evidence.",
+   "fr": "Double Takes. Deux regards, deux fois plus de preuves.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC13",
+   "speaker": "TC",
+   "group": "perk: Baker's Dozens",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Baker's Dozens. Cops and doughnuts. Don't say it.",
+   "fr": "Baker's Dozens. Les flics et les beignets. Ne dis rien.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC14",
+   "speaker": "TC",
+   "group": "perk: Bon Voyages",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Bon Voyages. Travel sweets. Evidence I'm losing my mind.",
+   "fr": "Bon Voyages. Des bonbons de voyage. La preuve que je perds la tête.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC15",
+   "speaker": "TC",
+   "group": "perk: Sour Grudges",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Sour Grudges. I've got a few of those on file.",
+   "fr": "Sour Grudges. J'en ai quelques-unes en dossier.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC16",
+   "speaker": "TC",
+   "group": "wonder weapon: Exact Change",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "A gun that charges a fare. The Rapid finally armed us.",
+   "fr": "Un flingue qui fait payer le trajet. La Rapid nous a enfin armés.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC17",
+   "speaker": "TC",
+   "group": "wonder weapon: Live Rail",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "Live rail, portable. Stand clear of the officer.",
+   "fr": "Du rail sous tension, portatif. Écartez-vous de l'agent.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC18",
+   "speaker": "TC",
+   "group": "wonder weapon: the Dispatcher",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "Stamp, address, send. Finally, a system that works.",
+   "fr": "Tampon, adresse, envoi. Enfin un système qui marche.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC19",
+   "speaker": "TC",
+   "group": "wonder weapon: Top to Bottom",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "Spray paint. I've arrested men for less.",
+   "fr": "De la bombe de peinture. J'ai arrêté des types pour moins que ça.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC20",
+   "speaker": "TC",
+   "group": "Roller seen",
+   "hook": "rollers",
+   "when": "",
+   "en": "Skaters! On the platform! That's a citation!",
+   "fr": "Des patineurs ! Sur le quai ! C'est une contravention !",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC21",
+   "speaker": "TC",
+   "group": "Roller seen",
+   "hook": "rollers",
+   "when": "",
+   "en": "Conga line inbound. Hold the line!",
+   "fr": "Une chenille en approche. Tenez la ligne !",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC22",
+   "speaker": "TC",
+   "group": "the Night Inspector seen",
+   "hook": "inspector",
+   "when": "",
+   "en": "That's an inspector. Thirty-one years and he's still on shift.",
+   "fr": "Un contrôleur. Trente et un ans de service, toujours de garde.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC23",
+   "speaker": "TC",
+   "group": "the Night Inspector marked me",
+   "hook": "inspector",
+   "when": "",
+   "en": "He's checking my ticket. I never bought one.",
+   "fr": "Il contrôle mon billet. Je n'en ai jamais acheté.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC24",
+   "speaker": "TC",
+   "group": "the Night Inspector killed",
+   "hook": "inspector",
+   "when": "",
+   "en": "Inspection over. Case closed.",
+   "fr": "Contrôle terminé. Affaire classée.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC25",
+   "speaker": "TC",
+   "group": "the Conductor seen",
+   "hook": "conductor",
+   "when": "",
+   "en": "The conductor. He's got the handle. Take him down.",
+   "fr": "Le chef de bord. Il a la manette. On le neutralise.",
+   "max_s": 5.5
+  },
+  {
+   "id": "TC26",
+   "speaker": "TC",
+   "group": "quest: power",
+   "hook": "power_on",
+   "when": "",
+   "en": "Lights are on. Now I can see everything I wrote down wrong.",
+   "fr": "La lumière revient. Maintenant je vois tout ce que j'ai mal écrit.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC27",
+   "speaker": "TC",
+   "group": "quest: first clock",
+   "hook": "clock_wound",
+   "when": "",
+   "en": "One clock moving. Write down the time.",
+   "fr": "Une horloge repart. Note l'heure.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC28",
+   "speaker": "TC",
+   "group": "quest: last clock",
+   "hook": "clock_wound",
+   "when": "",
+   "en": "Thirteen minutes. That's all they were short.",
+   "fr": "Treize minutes. C'est tout ce qui leur manquait.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC29",
+   "speaker": "TC",
+   "group": "quest: road set",
+   "hook": "road_set",
+   "when": "",
+   "en": "Road set. Like a crime scene, but on rails.",
+   "fr": "Itinéraire formé. Comme une scène de crime, mais sur rails.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC30",
+   "speaker": "TC",
+   "group": "quest: Handle taken",
+   "hook": "conductor",
+   "when": "",
+   "en": "Got the handle. Bagging it as evidence.",
+   "fr": "J'ai la manette. Je la mets sous scellés.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC31",
+   "speaker": "TC",
+   "group": "quest: boarding",
+   "hook": "terminus",
+   "when": "",
+   "en": "We're boarding. Somebody tell my sergeant.",
+   "fr": "On embarque. Que quelqu'un prévienne mon sergent.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC32",
+   "speaker": "TC",
+   "group": "quest: Terminus arrival",
+   "hook": "terminus",
+   "when": "",
+   "en": "Footprints on the floor. Ours. I didn't sign off on this.",
+   "fr": "Des traces de pas au sol. Les nôtres. Je n'ai rien signé de tout ça.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC33",
+   "speaker": "TC",
+   "group": "quest: return",
+   "hook": "terminus",
+   "when": "",
+   "en": "Back on the platform. The clocks say we never left.",
+   "fr": "Retour sur le quai. Les horloges disent qu'on n'est jamais partis.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC34",
+   "speaker": "TC",
+   "group": "zone: the Arcade",
+   "hook": "zone_enter",
+   "when": "",
+   "en": "The underpass. I used to chase kids out of here.",
+   "fr": "Le passage souterrain. J'en chassais les gamins, avant.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC35",
+   "speaker": "TC",
+   "group": "zone: the Parlour",
+   "hook": "zone_enter",
+   "when": "",
+   "en": "A Victorian waiting room under my beat. Nobody told me.",
+   "fr": "Une salle d'attente victorienne sous mon secteur. Personne ne m'a rien dit.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC36",
+   "speaker": "TC",
+   "group": "zone: the Bellows Vault",
+   "hook": "zone_enter",
+   "when": "",
+   "en": "That's not a ventilator. That's a lung.",
+   "fr": "Ce n'est pas un ventilateur. C'est un poumon.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC37",
+   "speaker": "TC",
+   "group": "pay phone rings",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "A pay phone ringing in a sealed station. Don't.",
+   "fr": "Un téléphone public qui sonne dans une station scellée. Non.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC38",
+   "speaker": "TC",
+   "group": "pay phone answered",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Transit Police... Hello? It's reading the roster.",
+   "fr": "Police des transports... Allô ? Ça lit la feuille de service.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC39",
+   "speaker": "TC",
+   "group": "a tape picked up",
+   "hook": "secret",
+   "when": "",
+   "en": "A tape. Somebody tried to tell the truth down here.",
+   "fr": "Une cassette. Quelqu'un a essayé de dire la vérité, ici.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC40",
+   "speaker": "TC",
+   "group": "the hidden song heard",
+   "hook": "secret",
+   "when": "",
+   "en": "There's music. Nobody file a noise complaint.",
+   "fr": "De la musique. Que personne ne porte plainte pour tapage.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC41",
+   "speaker": "TC",
+   "group": "g27 quest: a relay proving",
+   "hook": "relay_on",
+   "when": "",
+   "en": "Relay's green. One less red light in my life.",
+   "fr": "Le relais passe au vert. Un feu rouge de moins dans ma vie.",
+   "max_s": 7.5
+  },
+  {
+   "id": "TC42",
+   "speaker": "TC",
+   "group": "g27 quest: the control-room shutter open",
+   "hook": "pap_open",
+   "when": "",
+   "en": "Control room's open. Whatever's in there, I'm not taking its statement.",
+   "fr": "La salle de commande est ouverte. Ce qu'il y a dedans, je ne prends pas sa déposition.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK01",
+   "speaker": "GK",
+   "group": "round start (match opening)",
+   "hook": "match_start",
+   "when": "",
+   "en": "That's the cleanest train in the city. Not for long.",
+   "fr": "C'est le train le plus propre de la ville. Plus pour longtemps.",
+   "max_s": 8
+  },
+  {
+   "id": "GK02",
+   "speaker": "GK",
+   "group": "round start (match opening)",
+   "hook": "match_start",
+   "when": "",
+   "en": "Zero Kings never died, baby. We just went underground.",
+   "fr": "Les Zero Kings sont jamais morts, bébé. On est juste passés sous terre.",
+   "max_s": 8
+  },
+  {
+   "id": "GK03",
+   "speaker": "GK",
+   "group": "round start (every fifth round)",
+   "hook": "round_start",
+   "when": "",
+   "en": "Another wave. Another wall. I got paint for all of 'em.",
+   "fr": "Encore une vague. Encore un mur. J'ai de la peinture pour tout le monde.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK04",
+   "speaker": "GK",
+   "group": "low ammo",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Out of shots. Never out of style.",
+   "fr": "Plus de balles. Mais le style, jamais.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK05",
+   "speaker": "GK",
+   "group": "low ammo",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Can's almost empty. The gun! I mean the gun!",
+   "fr": "La bombe est presque vide. Le flingue ! Je veux dire le flingue !",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK06",
+   "speaker": "GK",
+   "group": "reviving a teammate",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Get up! You're smudging my floor.",
+   "fr": "Lève-toi ! Tu salis mon sol.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK07",
+   "speaker": "GK",
+   "group": "reviving a teammate",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Up, up! Nobody leaves the crew on my watch.",
+   "fr": "Debout, debout ! Personne ne lâche le crew sous ma garde.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK08",
+   "speaker": "GK",
+   "group": "thanks when revived",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Respect. I'm putting your name on a wall.",
+   "fr": "Respect. Je vais écrire ton nom sur un mur.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK09",
+   "speaker": "GK",
+   "group": "downed",
+   "hook": "player_vo",
+   "when": "",
+   "en": "[shouting] I'm down! Somebody, I'm down!",
+   "fr": "[shouting] Je suis à terre ! Quelqu'un, je suis à terre !",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK10",
+   "speaker": "GK",
+   "group": "downed",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Don't let 'em paint over me!",
+   "fr": "Les laissez pas me repeindre par-dessus !",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK11",
+   "speaker": "GK",
+   "group": "downed",
+   "hook": "player_vo",
+   "when": "",
+   "en": "[panicked] Yo! The King needs a hand! Now!",
+   "fr": "[panicked] Yo ! Le King a besoin d'un coup de main ! Maintenant !",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK12",
+   "speaker": "GK",
+   "group": "perk: Double Takes",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Double Takes! Two shots, one signature.",
+   "fr": "Double Takes ! Deux coups, une signature.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK13",
+   "speaker": "GK",
+   "group": "perk: Baker's Dozens",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Baker's Dozens. Thirteen! That's my lucky number now.",
+   "fr": "Baker's Dozens. Treize ! C'est mon chiffre porte-bonheur maintenant.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK14",
+   "speaker": "GK",
+   "group": "perk: Bon Voyages",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Bon Voyages! Sweets for the road. I don't do roads.",
+   "fr": "Bon Voyages ! Des bonbons pour la route. Moi, je fais pas la route.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK15",
+   "speaker": "GK",
+   "group": "perk: Sour Grudges",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Sour Grudges. I been holding these since seventy-nine.",
+   "fr": "Sour Grudges. Je les garde depuis soixante-dix-neuf.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK16",
+   "speaker": "GK",
+   "group": "wonder weapon: Exact Change",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "A gun that eats tokens? I been jumping turnstiles my whole life!",
+   "fr": "Un flingue à jetons ? J'ai sauté des tourniquets toute ma vie !",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK17",
+   "speaker": "GK",
+   "group": "wonder weapon: Live Rail",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "Third rail in my hands. Don't try this at home, kids.",
+   "fr": "Le troisième rail dans mes mains. Faites pas ça chez vous, les gosses.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK18",
+   "speaker": "GK",
+   "group": "wonder weapon: the Dispatcher",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "Stamp 'em and send 'em! Return to sender!",
+   "fr": "On tamponne et on expédie ! Retour à l'envoyeur !",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK19",
+   "speaker": "GK",
+   "group": "wonder weapon: Top to Bottom",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "[laughing] Top to Bottom! Undercoat, this one's for you!",
+   "fr": "[laughing] Top to Bottom ! Undercoat, celle-là, c'est pour toi !",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK20",
+   "speaker": "GK",
+   "group": "Roller seen",
+   "hook": "rollers",
+   "when": "",
+   "en": "Skaters! Oh, they got moves. I got more.",
+   "fr": "Des patineurs ! Ils ont du mouvement. Moi, j'en ai plus.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK21",
+   "speaker": "GK",
+   "group": "Roller seen",
+   "hook": "rollers",
+   "when": "",
+   "en": "Disco's dead, man! Stay dead!",
+   "fr": "Le disco est mort, mec ! Restez morts !",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK22",
+   "speaker": "GK",
+   "group": "the Night Inspector seen",
+   "hook": "inspector",
+   "when": "",
+   "en": "Inspector! Run! Old habits, man, old habits.",
+   "fr": "Un contrôleur ! Cours ! Vieilles habitudes, mec, vieilles habitudes.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK23",
+   "speaker": "GK",
+   "group": "the Night Inspector marked me",
+   "hook": "inspector",
+   "when": "",
+   "en": "He wants my ticket. I ain't never had a ticket!",
+   "fr": "Il veut mon billet. J'ai jamais eu de billet de ma vie !",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK24",
+   "speaker": "GK",
+   "group": "the Night Inspector killed",
+   "hook": "inspector",
+   "when": "",
+   "en": "Fare dodged. Permanently.",
+   "fr": "Fraude réussie. Définitivement.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK25",
+   "speaker": "GK",
+   "group": "the Conductor seen",
+   "hook": "conductor",
+   "when": "",
+   "en": "Conductor's got the handle. I want that handle.",
+   "fr": "Le chef de bord a la manette. Je la veux, cette manette.",
+   "max_s": 5.5
+  },
+  {
+   "id": "GK26",
+   "speaker": "GK",
+   "group": "quest: power",
+   "hook": "power_on",
+   "when": "",
+   "en": "Lights on! Now everybody can see my work.",
+   "fr": "La lumière ! Maintenant tout le monde peut voir mon œuvre.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK27",
+   "speaker": "GK",
+   "group": "quest: first clock",
+   "hook": "clock_wound",
+   "when": "",
+   "en": "One clock ticking. Tick, tick, King.",
+   "fr": "Une horloge qui tourne. Tic, tac, le King.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK28",
+   "speaker": "GK",
+   "group": "quest: last clock",
+   "hook": "clock_wound",
+   "when": "",
+   "en": "Midnight's coming. Finally, a party.",
+   "fr": "Minuit approche. Enfin une fête.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK29",
+   "speaker": "GK",
+   "group": "quest: road set",
+   "hook": "road_set",
+   "when": "",
+   "en": "Road's set. A line's a line, man. I know lines.",
+   "fr": "Itinéraire posé. Une ligne, c'est une ligne, mec. Je connais les lignes.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK30",
+   "speaker": "GK",
+   "group": "quest: Handle taken",
+   "hook": "conductor",
+   "when": "",
+   "en": "Got the handle! Train's mine now.",
+   "fr": "J'ai la manette ! Le train est à moi maintenant.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK31",
+   "speaker": "GK",
+   "group": "quest: boarding",
+   "hook": "terminus",
+   "when": "",
+   "en": "All aboard the King's express!",
+   "fr": "Tout le monde à bord de l'express du King !",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK32",
+   "speaker": "GK",
+   "group": "quest: Terminus arrival",
+   "hook": "terminus",
+   "when": "",
+   "en": "Paper. Everything's paper. Somebody give me a marker.",
+   "fr": "Du papier. Tout est en papier. Quelqu'un me file un marqueur.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK33",
+   "speaker": "GK",
+   "group": "quest: return",
+   "hook": "terminus",
+   "when": "",
+   "en": "We back. Did we even leave?",
+   "fr": "On est de retour. On est seulement partis ?",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK34",
+   "speaker": "GK",
+   "group": "zone: the Arcade",
+   "hook": "zone_enter",
+   "when": "",
+   "en": "The underpass! Best walls in Halcyon. Look at 'em. Untouched.",
+   "fr": "Le passage ! Les meilleurs murs de Halcyon. Regarde-les. Intacts.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK35",
+   "speaker": "GK",
+   "group": "zone: the Parlour",
+   "hook": "zone_enter",
+   "when": "",
+   "en": "Gold leaf, velvet... somebody already tagged this place in eighteen-ninety.",
+   "fr": "Feuille d'or, velours... quelqu'un a déjà tagué cet endroit en mille huit cent quatre-vingt-dix.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK36",
+   "speaker": "GK",
+   "group": "zone: the Bellows Vault",
+   "hook": "zone_enter",
+   "when": "",
+   "en": "That thing's breathing. Walls don't breathe. Usually.",
+   "fr": "Ce truc respire. Les murs respirent pas. D'habitude.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK37",
+   "speaker": "GK",
+   "group": "pay phone rings",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Phone's ringing. Probably my mom.",
+   "fr": "Le téléphone sonne. Sûrement ma mère.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK38",
+   "speaker": "GK",
+   "group": "pay phone answered",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Yeah? ... Who's this? ... It hung up. It hung up on me.",
+   "fr": "Ouais ? ... C'est qui ? ... Ça a raccroché. Ça m'a raccroché au nez.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK39",
+   "speaker": "GK",
+   "group": "a tape picked up",
+   "hook": "secret",
+   "when": "",
+   "en": "A tape! Tell me it's a mixtape. Please be a mixtape.",
+   "fr": "Une cassette ! Dis-moi que c'est une mixtape. Pitié, une mixtape.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK40",
+   "speaker": "GK",
+   "group": "the hidden song heard",
+   "hook": "secret",
+   "when": "",
+   "en": "Now that's a jam. Somebody hit the lights!",
+   "fr": "Ça, c'est un son. Quelqu'un, les lumières !",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK41",
+   "speaker": "GK",
+   "group": "g27 quest: a relay proving",
+   "hook": "relay_on",
+   "when": "",
+   "en": "Relay's green. Green's a good color. Ask me.",
+   "fr": "Relais au vert. Le vert, c'est une bonne couleur. Demande-moi.",
+   "max_s": 7.5
+  },
+  {
+   "id": "GK42",
+   "speaker": "GK",
+   "group": "g27 quest: the control-room shutter open",
+   "hook": "pap_open",
+   "when": "",
+   "en": "Door's open! VIP room, Zero Kings only.",
+   "fr": "La porte est ouverte ! Carré VIP, Zero Kings seulement.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE01",
+   "speaker": "SE",
+   "group": "round start (match opening)",
+   "hook": "match_start",
+   "when": "",
+   "en": "The diagram says it is approaching. The diagram has no right to.",
+   "fr": "Le schéma dit qu'il est en approche. Le schéma n'a pas le droit.",
+   "max_s": 8
+  },
+  {
+   "id": "SE02",
+   "speaker": "SE",
+   "group": "round start (match opening)",
+   "hook": "match_start",
+   "when": "",
+   "en": "I was sent to pull one fuse. One. I have a clipboard.",
+   "fr": "On m'a envoyé retirer un fusible. Un seul. J'ai un porte-bloc.",
+   "max_s": 8
+  },
+  {
+   "id": "SE03",
+   "speaker": "SE",
+   "group": "round start (every fifth round)",
+   "hook": "round_start",
+   "when": "",
+   "en": "Departure logged. Arrival pending. That is a fault condition.",
+   "fr": "Départ enregistré. Arrivée en attente. C'est une condition de défaut.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE04",
+   "speaker": "SE",
+   "group": "low ammo",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Ammunition below threshold. Recommend immediate replenishment.",
+   "fr": "Munitions sous le seuil. Réapprovisionnement immédiat recommandé.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE05",
+   "speaker": "SE",
+   "group": "low ammo",
+   "hook": "player_vo",
+   "when": "",
+   "en": "I'm nearly out. This was not in the work order.",
+   "fr": "Je suis presque à court. Ce n'était pas dans l'ordre de travail.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE06",
+   "speaker": "SE",
+   "group": "reviving a teammate",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Hold still. I'm restoring your circuit.",
+   "fr": "Ne bougez pas. Je rétablis votre circuit.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE07",
+   "speaker": "SE",
+   "group": "reviving a teammate",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Come on, come on. Proving... proving... proved!",
+   "fr": "Allez, allez. Contrôle... contrôle... contrôle établi !",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE08",
+   "speaker": "SE",
+   "group": "thanks when revived",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Thank you. I've logged it. With a gold star.",
+   "fr": "Merci. Je l'ai consigné. Avec une étoile dorée.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE09",
+   "speaker": "SE",
+   "group": "downed",
+   "hook": "player_vo",
+   "when": "",
+   "en": "[panicked] I'm down! This is a failure state! Help!",
+   "fr": "[panicked] Je suis à terre ! C'est un état de défaillance ! À l'aide !",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE10",
+   "speaker": "SE",
+   "group": "downed",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Help! Somebody reset me!",
+   "fr": "À l'aide ! Quelqu'un, réinitialisez-moi !",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE11",
+   "speaker": "SE",
+   "group": "downed",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Please, please, I haven't finished my report!",
+   "fr": "S'il vous plaît, je n'ai pas fini mon rapport !",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE12",
+   "speaker": "SE",
+   "group": "perk: Double Takes",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Double Takes. Redundancy. I approve of redundancy.",
+   "fr": "Double Takes. La redondance. J'approuve la redondance.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE13",
+   "speaker": "SE",
+   "group": "perk: Baker's Dozens",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Baker's Dozens. Every thirteenth. A counter. I love a counter.",
+   "fr": "Baker's Dozens. Tous les treize. Un compteur. J'adore les compteurs.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE14",
+   "speaker": "SE",
+   "group": "perk: Bon Voyages",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Bon Voyages. For transit. Fitting, technically.",
+   "fr": "Bon Voyages. Pour le transport. Approprié, techniquement.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE15",
+   "speaker": "SE",
+   "group": "perk: Sour Grudges",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Sour Grudges. I'm adding them to my list.",
+   "fr": "Sour Grudges. Je les ajoute à ma liste.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE16",
+   "speaker": "SE",
+   "group": "wonder weapon: Exact Change",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "It deducts a fare per discharge. Accounting would be thrilled.",
+   "fr": "Il déduit un tarif à chaque tir. La comptabilité serait ravie.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE17",
+   "speaker": "SE",
+   "group": "wonder weapon: Live Rail",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "A portable live rail. Six hundred volts, give or take my nerves.",
+   "fr": "Un rail sous tension portatif. Six cents volts, à mes nerfs près.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE18",
+   "speaker": "SE",
+   "group": "wonder weapon: the Dispatcher",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "Addressed and dispatched. That is correct procedure.",
+   "fr": "Adressé et expédié. C'est la procédure correcte.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE19",
+   "speaker": "SE",
+   "group": "wonder weapon: Top to Bottom",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "The livery code. Colour as instruction. The dead obey the paint.",
+   "fr": "Le code des livrées. La couleur comme instruction. Les morts obéissent à la peinture.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE20",
+   "speaker": "SE",
+   "group": "Roller seen",
+   "hook": "rollers",
+   "when": "",
+   "en": "Unbraked rolling stock on the platform!",
+   "fr": "Matériel roulant non freiné sur le quai !",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE21",
+   "speaker": "SE",
+   "group": "Roller seen",
+   "hook": "rollers",
+   "when": "",
+   "en": "They can't stop! They have no stopping distance!",
+   "fr": "Ils ne peuvent pas s'arrêter ! Ils n'ont aucune distance de freinage !",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE22",
+   "speaker": "SE",
+   "group": "the Night Inspector seen",
+   "hook": "inspector",
+   "when": "",
+   "en": "A fare inspector. Is my ticket valid? Is anything valid?",
+   "fr": "Un contrôleur. Mon billet est-il valable ? Est-ce que quelque chose l'est ?",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE23",
+   "speaker": "SE",
+   "group": "the Night Inspector marked me",
+   "hook": "inspector",
+   "when": "",
+   "en": "He's marked me! I have a staff pass! Somewhere!",
+   "fr": "Il m'a marqué ! J'ai une carte d'agent ! Quelque part !",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE24",
+   "speaker": "SE",
+   "group": "the Night Inspector killed",
+   "hook": "inspector",
+   "when": "",
+   "en": "Inspection terminated. Abnormally.",
+   "fr": "Contrôle interrompu. Anormalement.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE25",
+   "speaker": "SE",
+   "group": "the Conductor seen",
+   "hook": "conductor",
+   "when": "",
+   "en": "That's the conductor of 047. He has the controller key.",
+   "fr": "C'est le chef de bord du 047. Il a la clé du manipulateur.",
+   "max_s": 5.5
+  },
+  {
+   "id": "SE26",
+   "speaker": "SE",
+   "group": "quest: power",
+   "hook": "power_on",
+   "when": "",
+   "en": "G-2 is running. I restarted a generator tagged do not restart. I'm so sorry.",
+   "fr": "Le G-2 tourne. J'ai redémarré un groupe étiqueté « ne pas redémarrer ». Je suis vraiment désolé.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE27",
+   "speaker": "SE",
+   "group": "quest: first clock",
+   "hook": "clock_wound",
+   "when": "",
+   "en": "One clock advanced. The others are still wrong. Correctly wrong.",
+   "fr": "Une horloge avancée. Les autres sont toujours fausses. Exactement fausses.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE28",
+   "speaker": "SE",
+   "group": "quest: last clock",
+   "hook": "clock_wound",
+   "when": "",
+   "en": "Thirteen minutes restored. ZERO expects the run now.",
+   "fr": "Treize minutes rétablies. ZERO attend le train, maintenant.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE29",
+   "speaker": "SE",
+   "group": "quest: road set",
+   "hook": "road_set",
+   "when": "",
+   "en": "The road is set. Points locked, signal clear. Beautiful.",
+   "fr": "L'itinéraire est formé. Aiguilles verrouillées, signal ouvert. Magnifique.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE30",
+   "speaker": "SE",
+   "group": "quest: Handle taken",
+   "hook": "conductor",
+   "when": "",
+   "en": "The dead-man's handle. An ironic name, in context.",
+   "fr": "La manette d'homme mort. Un nom ironique, dans le contexte.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE31",
+   "speaker": "SE",
+   "group": "quest: boarding",
+   "hook": "terminus",
+   "when": "",
+   "en": "We're boarding. The train is not moving. And yet.",
+   "fr": "On embarque. Le train ne bouge pas. Et pourtant.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE32",
+   "speaker": "SE",
+   "group": "quest: Terminus arrival",
+   "hook": "terminus",
+   "when": "",
+   "en": "The floor is a timetable. These are our times. These are our footprints.",
+   "fr": "Le sol est un horaire. Ce sont nos horaires. Ce sont nos traces de pas.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE33",
+   "speaker": "SE",
+   "group": "quest: return",
+   "hook": "terminus",
+   "when": "",
+   "en": "Same second. The same second! Somebody write that down!",
+   "fr": "La même seconde. La même seconde ! Que quelqu'un le note !",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE34",
+   "speaker": "SE",
+   "group": "zone: the Arcade",
+   "hook": "zone_enter",
+   "when": "",
+   "en": "The seventy-eight refit. Original fluorescent ballasts. Mostly dead.",
+   "fr": "La rénovation de soixante-dix-huit. Ballasts fluorescents d'origine. Presque tous morts.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE35",
+   "speaker": "SE",
+   "group": "zone: the Parlour",
+   "hook": "zone_enter",
+   "when": "",
+   "en": "Vayle's salon. Those are tuning forks. The whole wall is tuned.",
+   "fr": "Le salon de Vayle. Ce sont des diapasons. Tout le mur est accordé.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE36",
+   "speaker": "SE",
+   "group": "zone: the Bellows Vault",
+   "hook": "zone_enter",
+   "when": "",
+   "en": "The Bellows. If that blower starts, the whole main sings.",
+   "fr": "La Soufflerie. Si ce ventilateur démarre, toute la conduite se met à chanter.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE37",
+   "speaker": "SE",
+   "group": "pay phone rings",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "That phone's line was cut in January. I signed the docket.",
+   "fr": "La ligne de ce téléphone a été coupée en janvier. J'ai signé le bon.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE38",
+   "speaker": "SE",
+   "group": "pay phone answered",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Hello, Signals? ... It's the Voice. She's reading me timetables.",
+   "fr": "Allô, la signalisation ? ... C'est la Voix. Elle me lit des horaires.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE39",
+   "speaker": "SE",
+   "group": "a tape picked up",
+   "hook": "secret",
+   "when": "",
+   "en": "A Lodestar micro-cassette. Dr. Strand's. She was right, wasn't she.",
+   "fr": "Une microcassette Lodestar. Celle du docteur Strand. Elle avait raison, n'est-ce pas.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE40",
+   "speaker": "SE",
+   "group": "the hidden song heard",
+   "hook": "secret",
+   "when": "",
+   "en": "That's not on any frequency we use.",
+   "fr": "Ce n'est sur aucune des fréquences qu'on utilise.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE41",
+   "speaker": "SE",
+   "group": "g27 quest: a relay proving",
+   "hook": "relay_on",
+   "when": "",
+   "en": "Relay proving. Green lamp. I could cry.",
+   "fr": "Le relais est en contrôle. Lampe verte. Je pourrais pleurer.",
+   "max_s": 7.5
+  },
+  {
+   "id": "SE42",
+   "speaker": "SE",
+   "group": "g27 quest: the control-room shutter open",
+   "hook": "pap_open",
+   "when": "",
+   "en": "All three relays proving. The control-room shutter is released.",
+   "fr": "Les trois relais en contrôle. Le rideau de la salle de commande est libéré.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP01",
+   "speaker": "RP",
+   "group": "round start (match opening)",
+   "hook": "match_start",
+   "when": "",
+   "en": "Channel 9 Night Desk, one year after the gas incident, and I am standing in the gas incident.",
+   "fr": "Channel 9, Night Desk, un an après l'incident du gaz, et je me tiens en plein dans l'incident du gaz.",
+   "max_s": 8
+  },
+  {
+   "id": "RP02",
+   "speaker": "RP",
+   "group": "round start (match opening)",
+   "hook": "match_start",
+   "when": "",
+   "en": "We're live. We're... still live? Keep rolling.",
+   "fr": "On est en direct. On est... toujours en direct ? Continue de tourner.",
+   "max_s": 8
+  },
+  {
+   "id": "RP03",
+   "speaker": "RP",
+   "group": "round start (every fifth round)",
+   "hook": "round_start",
+   "when": "",
+   "en": "Breaking news: they keep coming. Back to you, studio. Studio?",
+   "fr": "Flash spécial : ils continuent d'arriver. À vous les studios. Les studios ?",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP04",
+   "speaker": "RP",
+   "group": "low ammo",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Running low! Somebody cut to commercial!",
+   "fr": "Je suis presque à sec ! Qu'on passe une page de pub !",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP05",
+   "speaker": "RP",
+   "group": "low ammo",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Last round. If I miss, that's a wrap.",
+   "fr": "Dernière cartouche. Si je rate, c'est la fin de l'émission.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP06",
+   "speaker": "RP",
+   "group": "reviving a teammate",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Stay with me! You're my only witness.",
+   "fr": "Reste avec moi ! Tu es mon seul témoin.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP07",
+   "speaker": "RP",
+   "group": "reviving a teammate",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Up! I need you on camera.",
+   "fr": "Debout ! J'ai besoin de toi à l'image.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP08",
+   "speaker": "RP",
+   "group": "thanks when revived",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Thank you. You'll get a credit. Small font.",
+   "fr": "Merci. Tu seras au générique. En petits caractères.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP09",
+   "speaker": "RP",
+   "group": "downed",
+   "hook": "player_vo",
+   "when": "",
+   "en": "[panicked] I'm down! Is the camera still on? Help me!",
+   "fr": "[panicked] Je suis à terre ! La caméra tourne encore ? Aidez-moi !",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP10",
+   "speaker": "RP",
+   "group": "downed",
+   "hook": "player_vo",
+   "when": "",
+   "en": "Somebody! This is not the story I pitched!",
+   "fr": "Quelqu'un ! Ce n'est pas le sujet que j'avais proposé !",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP11",
+   "speaker": "RP",
+   "group": "downed",
+   "hook": "player_vo",
+   "when": "",
+   "en": "[sobbing] Help! Please, I'm not done yet!",
+   "fr": "[sobbing] À l'aide ! Je vous en prie, je n'ai pas fini !",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP12",
+   "speaker": "RP",
+   "group": "perk: Double Takes",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Double Takes. Every reporter needs a second take.",
+   "fr": "Double Takes. Toute reporter a besoin d'une deuxième prise.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP13",
+   "speaker": "RP",
+   "group": "perk: Baker's Dozens",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Baker's Dozens. The doughnut stand outlived the station.",
+   "fr": "Baker's Dozens. Le stand de beignets a survécu à la station.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP14",
+   "speaker": "RP",
+   "group": "perk: Bon Voyages",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Bon Voyages. A sponsored segment. I'm keeping it.",
+   "fr": "Bon Voyages. Un segment sponsorisé. Je le garde.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP15",
+   "speaker": "RP",
+   "group": "perk: Sour Grudges",
+   "hook": "perk_bought",
+   "when": "",
+   "en": "Sour Grudges. I have a list. It's alphabetical.",
+   "fr": "Sour Grudges. J'ai une liste. Elle est alphabétique.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP16",
+   "speaker": "RP",
+   "group": "wonder weapon: Exact Change",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "A gun that charges a fare. That's the story of this city.",
+   "fr": "Un flingue qui fait payer le trajet. C'est toute l'histoire de cette ville.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP17",
+   "speaker": "RP",
+   "group": "wonder weapon: Live Rail",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "Live rail. Do not touch the talent.",
+   "fr": "Rail sous tension. On ne touche pas à la vedette.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP18",
+   "speaker": "RP",
+   "group": "wonder weapon: the Dispatcher",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "Stamped and sent. I've always wanted to do that to a producer.",
+   "fr": "Tamponné et expédié. J'ai toujours rêvé de faire ça à un producteur.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP19",
+   "speaker": "RP",
+   "group": "wonder weapon: Top to Bottom",
+   "hook": "ww_obtained",
+   "when": "",
+   "en": "Magenta. It's not my colour. It's theirs now.",
+   "fr": "Magenta. Ce n'est pas ma couleur. C'est la leur, maintenant.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP20",
+   "speaker": "RP",
+   "group": "Roller seen",
+   "hook": "rollers",
+   "when": "",
+   "en": "The Orbit Rink party! They chartered car six. I have the press release.",
+   "fr": "La soirée de l'Orbit Rink ! Ils avaient la voiture six. J'ai le communiqué.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP21",
+   "speaker": "RP",
+   "group": "Roller seen",
+   "hook": "rollers",
+   "when": "",
+   "en": "Skates. Of course there are skates.",
+   "fr": "Des patins. Évidemment qu'il y a des patins.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP22",
+   "speaker": "RP",
+   "group": "the Night Inspector seen",
+   "hook": "inspector",
+   "when": "",
+   "en": "That's... a fare inspector. With a lamp for a head. Are you getting this?",
+   "fr": "C'est... un contrôleur. Avec une lanterne pour tête. Tu filmes ?",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP23",
+   "speaker": "RP",
+   "group": "the Night Inspector marked me",
+   "hook": "inspector",
+   "when": "",
+   "en": "He's coming for me. I put my ticket on expenses!",
+   "fr": "Il vient pour moi. J'ai mis mon billet en note de frais !",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP24",
+   "speaker": "RP",
+   "group": "the Night Inspector killed",
+   "hook": "inspector",
+   "when": "",
+   "en": "The inspector is down. You heard it here first.",
+   "fr": "Le contrôleur est à terre. Vous l'avez appris ici en premier.",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP25",
+   "speaker": "RP",
+   "group": "the Conductor seen",
+   "hook": "conductor",
+   "when": "",
+   "en": "The conductor of the twenty-three forty-seven. Smiling. Why is he smiling?",
+   "fr": "Le chef de bord du vingt-trois heures quarante-sept. Il sourit. Pourquoi il sourit ?",
+   "max_s": 5.5
+  },
+  {
+   "id": "RP26",
+   "speaker": "RP",
+   "group": "quest: power",
+   "hook": "power_on",
+   "when": "",
+   "en": "The lights are back. My cameraman isn't.",
+   "fr": "La lumière est revenue. Mon caméraman, non.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP27",
+   "speaker": "RP",
+   "group": "quest: first clock",
+   "hook": "clock_wound",
+   "when": "",
+   "en": "One clock moving. Get a shot of that.",
+   "fr": "Une horloge repart. Fais-moi un plan là-dessus.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP28",
+   "speaker": "RP",
+   "group": "quest: last clock",
+   "hook": "clock_wound",
+   "when": "",
+   "en": "Midnight, after a year. Channel 9 had it first.",
+   "fr": "Minuit, après un an. Channel 9 l'a eu en premier.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP29",
+   "speaker": "RP",
+   "group": "quest: road set",
+   "hook": "road_set",
+   "when": "",
+   "en": "Road set. I have no idea what that means and I'm reporting it anyway.",
+   "fr": "Itinéraire formé. Je n'ai aucune idée de ce que ça veut dire et je l'annonce quand même.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP30",
+   "speaker": "RP",
+   "group": "quest: Handle taken",
+   "hook": "conductor",
+   "when": "",
+   "en": "We have the handle. Exclusive.",
+   "fr": "On a la manette. En exclusivité.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP31",
+   "speaker": "RP",
+   "group": "quest: boarding",
+   "hook": "terminus",
+   "when": "",
+   "en": "We're boarding the twenty-three forty-seven. If this airs, I want the eleven o'clock slot.",
+   "fr": "On embarque dans le vingt-trois heures quarante-sept. Si ça passe à l'antenne, je veux le créneau de vingt-trois heures.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP32",
+   "speaker": "RP",
+   "group": "quest: Terminus arrival",
+   "hook": "terminus",
+   "when": "",
+   "en": "A platform made of printout. Our names are on it. [whispering] Keep rolling.",
+   "fr": "Un quai fait de listings. Nos noms sont dessus. [whispering] Continue de tourner.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP33",
+   "speaker": "RP",
+   "group": "quest: return",
+   "hook": "terminus",
+   "when": "",
+   "en": "We're back. Same second. Nobody will believe the tape.",
+   "fr": "On est revenus. La même seconde. Personne ne croira la cassette.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP34",
+   "speaker": "RP",
+   "group": "zone: the Arcade",
+   "hook": "zone_enter",
+   "when": "",
+   "en": "The underpass arcade. I did a piece here on the refit, in seventy-eight.",
+   "fr": "La galerie du passage souterrain. J'ai fait un sujet ici sur la rénovation, en soixante-dix-huit.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP35",
+   "speaker": "RP",
+   "group": "zone: the Parlour",
+   "hook": "zone_enter",
+   "when": "",
+   "en": "Gaslight, gold leaf, and nobody knew. That's a lead.",
+   "fr": "Lustres à gaz, feuille d'or, et personne ne savait. Ça, c'est une piste.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP36",
+   "speaker": "RP",
+   "group": "zone: the Bellows Vault",
+   "hook": "zone_enter",
+   "when": "",
+   "en": "Something down here is breathing. I can hear it on the mic.",
+   "fr": "Quelque chose respire, ici. Je l'entends dans le micro.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP37",
+   "speaker": "RP",
+   "group": "pay phone rings",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Who calls a sealed station on New Year's Eve?",
+   "fr": "Qui appelle une station scellée un soir de réveillon ?",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP38",
+   "speaker": "RP",
+   "group": "pay phone answered",
+   "hook": "pay_phone",
+   "when": "",
+   "en": "Channel 9 Night Desk... She's reading the departures. To me.",
+   "fr": "Channel 9, Night Desk... Elle lit les départs. Pour moi.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP39",
+   "speaker": "RP",
+   "group": "a tape picked up",
+   "hook": "secret",
+   "when": "",
+   "en": "Dr. Strand's tape. This is the story. This was always the story.",
+   "fr": "La cassette du docteur Strand. Voilà le sujet. Ça a toujours été le sujet.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP40",
+   "speaker": "RP",
+   "group": "the hidden song heard",
+   "hook": "secret",
+   "when": "",
+   "en": "Is that... music? Somebody get the boom mic.",
+   "fr": "C'est... de la musique ? Qu'on m'apporte la perche.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP41",
+   "speaker": "RP",
+   "group": "g27 quest: a relay proving",
+   "hook": "relay_on",
+   "when": "",
+   "en": "Relay restored. I'm narrating rewiring now. This is my career.",
+   "fr": "Relais rétabli. Je commente du câblage, maintenant. Voilà ma carrière.",
+   "max_s": 7.5
+  },
+  {
+   "id": "RP42",
+   "speaker": "RP",
+   "group": "g27 quest: the control-room shutter open",
+   "hook": "pap_open",
+   "when": "",
+   "en": "The control room is open. Whatever's in there, it's on the record.",
+   "fr": "La salle de commande est ouverte. Quoi qu'il y ait dedans, c'est officiel.",
+   "max_s": 7.5
+  }
+ ]
+}

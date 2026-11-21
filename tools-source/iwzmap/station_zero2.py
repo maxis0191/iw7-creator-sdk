@@ -18,10 +18,13 @@ import mapgen, hkcm_write
 import brushkit as bk
 import sz2_materials as MT
 import sz2_art_hooks as ART_HOOKS
+import sz2_lightdesign as LD
 ART_HOOKS.register()       # art drop-ins (sz2_art_hooks.py): present images become materials, missing ones change nothing
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GALLERY = os.environ.get('IWZ_GALLERY') == '1'
+# (sz-aaa-elevation W1, docs/STATION-ZERO-AAA-W1.md) lighting design pass, story vignettes and probe chroma; 0 = the g27e5 map
+ELEV = os.environ.get('IWZ_ELEV', '1') == '1'
 
 # ============================================================================ lighting texels
 # measured texels of the template lightmap atlas (engine frames); tones: bright/mid/dark per zone
@@ -343,7 +346,8 @@ def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=2, dead=False):
     if dimmed:
         # keeps its layout light record (intensity 0, dead): the audio layout addresses fixtures by zone index
         LIGHTS.append({'zone': zone, 'origin': ((x0 + x1) / 2, (y0 + y1) / 2, z - depth - 4), 'type': 'omni',
-                       'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 384, 'intensity': 0.0, 'fixture': mat, 'dead': True})
+                       'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 384, 'intensity': 0.0, 'fixture': mat, 'dead': True,
+                       'mount': 'ceiling'})
         dead = True
     if dead:
         mat = 'panel_dark'
@@ -364,7 +368,7 @@ def strip_light(zone, x0, y0, x1, y1, z, mat='lamp_cool', depth=2, dead=False):
     coloured = mat not in ('lamp_cool', 'lamp_warm', 'light_panel')
     LIGHTS.append({'zone': zone, 'origin': ((x0 + x1) / 2, (y0 + y1) / 2, z - depth - STRIP_DROP), 'type': 'omni',
                    'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 96 if coloured else POOL_STRIP,
-                   'intensity': 0.5 if coloured else 1.0, 'fixture': mat})
+                   'intensity': 0.5 if coloured else 1.0, 'fixture': mat, 'mount': 'ceiling'})
 
 
 def wall_lamp(zone, axis, fixed, facing, s, z, mat='lamp_warm', w=24, h=12, dead=False):
@@ -404,11 +408,11 @@ def wall_lamp(zone, axis, fixed, facing, s, z, mat='lamp_warm', w=24, h=12, dead
         o = (fixed + facing * 12, s, z + h / 2)
     if dead:
         LIGHTS.append({'zone': zone, 'origin': o, 'type': 'omni', 'color': LIGHT_COLOR.get(lit_mat, (1, 1, 1)), 'radius': POOL_WALL,
-                       'intensity': 0.0, 'fixture': lit_mat, 'dead': True})
+                       'intensity': 0.0, 'fixture': lit_mat, 'dead': True, 'mount': 'wall', 'wall_axis': axis, 'wall_facing': facing})
         return
     coloured = mat not in ('lamp_cool', 'lamp_warm', 'light_panel')
     LIGHTS.append({'zone': zone, 'origin': o, 'type': 'omni', 'color': LIGHT_COLOR.get(mat, (1, 1, 1)), 'radius': 96 if coloured else POOL_WALL,
-                   'intensity': 0.5 if coloured else 1.0, 'fixture': mat})
+                   'intensity': 0.5 if coloured else 1.0, 'fixture': mat, 'mount': 'wall', 'wall_axis': axis, 'wall_facing': facing})
 
 
 def sign(zone, key, axis, fixed, facing, s, zc, width, height=None, frame=True, depth=1.5, slide=True):
@@ -2015,6 +2019,7 @@ def place_ported(spec_path):
     for e in json.load(open(spec_path)):
         x, y, z = e['origin']
         yaw = int(round(float(e.get('yaw', 0)))) % 360
+        k_decor = len(DECOR)
         decor(e['zone'], e['model'], x, y, z, yaw)
         c, s_ = round(math.cos(math.radians(yaw))), round(math.sin(math.radians(yaw)))
         boxes = json.load(open(e['boxes']))['boxes'] if e.get('boxes') and os.path.isfile(e['boxes']) else []
@@ -2033,6 +2038,9 @@ def place_ported(spec_path):
             B.blockers.append((min(v[0] for v in u_) - pad_, min(v[1] for v in u_) - pad_, max(v[3] for v in u_) + pad_,
                                max(v[4] for v in u_) + pad_, (z - 80) if e.get('wall') else z0_, max(v[5] for v in u_)))
         placed.append({'model': e['model'], 'origin': [x, y, z], 'yaw': yaw, 'boxes': len(boxes)})
+        # (sz-aaa-elevation W1) the port's world boxes travel with the decor record: bake/layout_lights.py --occluders
+        # makes them shadow casters (the ported models have no catalog bounds)
+        DECOR[k_decor]['boxes'] = [[round(v, 2) for v in b_] for b_ in u_]
     return placed
 
 
@@ -2265,6 +2273,23 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zc, 'zmb_frequency_device_radio', DESKS[0][0] + 200, DESKS[0][1] + 40, -285, 270)     # on a desk (was floating)
     for x_ in (2640, 2680):
         decor(Zc, 'furniture_filing_cabinet', x_, 3990, -320, 270, (17, 8, 17))
+    if ELEV:
+        # (sz-aaa-elevation W1) story vignettes from the bible (01-LORE section 10, wiki zero.md), with models this map
+        # already loads (no new import, no clip: nav and collision unchanged), clear of spawners, openings and buys.
+        # 23:55, 31 Dec 1984, "Control informed": the night controller's desk as the Three-Tone found it, a cold mug,
+        # the roster with an empty OUT column, a paper cup by the radio, the evening paper
+        decor(Zc, 'container_coffee_mug_01', DESKS[0][0] + 22, DESKS[0][1] + 46, -285, 30)
+        decor(Zc, 'office_paper_stack01_iw6', DESKS[0][0] + 92, DESKS[0][1] + 42, -285, 8)
+        decor(Zc, 'cup_paper_open_iw6', DESKS[0][0] + 222, DESKS[0][1] + 50, -285, 0)
+        decor(Zc, 'newspaper_single_fn_01', DESKS[0][0] + 150, DESKS[0][1] + 42, -285, 60)
+        # ZERO's printout: a year of timetables of the dead, uncollected, spilled from the desk towards the alcove
+        for k_, (px_, py_, pa_) in enumerate(((2760, 3620, 15), (2840, 3680, 40), (2930, 3740, 70))):
+            decor(Zc, 'com_debris_paper_iw6_02', px_, py_, -320, pa_)
+        # June 1985, Lodestar's last cleanup shift ("nobody signs out"): a body under a decontamination sheet and the
+        # crew's bag, in the staff corridor under the DO NOT RESTART notice
+        decor('maint_corridor', 'ls_biohazard_sheet_02', 2700, 1860, -320, 80)
+        decor('maint_corridor', 'misc_zom_duffelbag_03', 2640, 1880, -320, 20)
+        decor('maint_corridor', 'office_paper_stack01_iw6', 2735, 1885, -320, 35)
     # clutter pass (lead 2026-11-07, contact sheet g18: service wing reads empty): crates, scrap and tanks along walls,
     # clear of the walk lanes, spawners (>= 80) and doors
     decor(Zt, 'ammo_crate_01_dust', -3300, 1250, -384, 10, (24, 16, 16))
@@ -3187,8 +3212,21 @@ def _probe_box(zn, b):
 
 _pc = os.path.join(HERE, 'probe_colours.json')
 PROBE_RGB = json.load(open(_pc))['zones'] if os.path.isfile(_pc) and os.environ.get('IWZ_PROBE_MEASURED', '1') == '1' else {}
+# (sz-aaa-elevation W1) the measured probe colours (g25t frames x 0.8) carry that build's casts into every reflection
+# (generator room 0.74 / 0.59 / 0.36, maint corridor 1.04 / 0.85 / 0.56: the yellow and lime casts of reviews B and C
+# item 7). IWZ_PROBE_CHROMA (default 0.5 with the elevation pass, 1 = as measured) keeps each probe's luma and keeps
+# that share of its chroma: the reflections stay as bright and stop tinting the tiles.
+PROBE_CHROMA = float(os.environ.get('IWZ_PROBE_CHROMA', '0.5' if ELEV else '1'))
+
+
+def _probe_rgb(zn, zd):
+    r, g, b = PROBE_RGB.get(zn, zd['probe'][:3])
+    y = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    return tuple(y + PROBE_CHROMA * (c - y) for c in (r, g, b))
+
+
 open(os.path.join(out, 'probes.txt'), 'w', newline='\n').write(''.join(
-    'room %d %d %d %d %d %d %.3f %.3f %.3f %.2f\n' % (*_probe_box(zn, zd['box']), *(PROBE_RGB.get(zn, zd['probe'][:3])), zd['probe'][3])
+    'room %d %d %d %d %d %d %.3f %.3f %.3f %.2f\n' % (*_probe_box(zn, zd['box']), *_probe_rgb(zn, zd), zd['probe'][3])
     for zn, zd in ZONES.items()))
 
 # ============================================================================ level script with generated tables
@@ -3440,6 +3478,10 @@ for it_ in layout['interactions']:
             'intensity': 0.25 if it_['kind'] != 'generator' else 0.6, 'fixture': 'hint_glow', 'group': 'emergency',
             'cue': it_['kind']}
     LIGHTS.append(cue_)
+# (sz-aaa-elevation W1) lighting design pass (sz2_lightdesign.py): bake shapes per fixture and motivated accents,
+# appended after every other record (zone indexes unchanged); IWZ_ELEV=0 leaves the g27e5 light list as it was
+if ELEV:
+    layout['lighting_design'] = LD.apply(LIGHTS, SIGNS, DECOR)
 layout['light_groups'] = {g_: sum(1 for l_ in LIGHTS if l_.get('group') == g_) for g_ in ('emergency', 'power', 'flicker')}
 if 'iwz_g2_genset' in PORTED:
     layout['genset'] = {'model': 'iwz_g2_genset', 'origin': list(G2['origin']), 'yaw': G2['yaw'],

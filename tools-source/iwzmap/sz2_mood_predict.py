@@ -2,7 +2,7 @@
 
 usage: sz2_mood_predict.py <old bake dir> <new bake dir> <old views run dir> <src dir with layout.json> <out.json>
                            [--eye 58.45] [--hfov 133.14] [--baker <dir of lmbake.py/rt.py/lm_measure.py>]
-                           [--points <json list of [x,y,z]>] [--points-min 0.22]
+                           [--points layout | <json list of {name, pos: [x,y,z]}>] [--points-min 0.22]
 
 For every zone view of the old run: the old bake's texels visible from the capture camera are projected (camera and
 visibility as lm_measure.py), the frame's linear luma at those pixels is related to the old irradiance by a fitted tone
@@ -36,7 +36,7 @@ def main():
         d = np.load(os.path.join(bdir, 'bake.npz'))
         x, y = d['tx_x'], d['tx_y']
         E = (d['A'][y, x] + d['B'][y, x] * lmbake.oct_decode(d['D'][y, x])[:, 2:3]).mean(1)
-        return d['tx_pos'].astype(np.float64), d['tx_n'].astype(np.float64), E
+        return lmbake.texel_positions(bdir, d), d['tx_n'].astype(np.float64), E
 
     P0, N0, E0 = load(a.old)
     P1, N1, E1 = load(a.new)

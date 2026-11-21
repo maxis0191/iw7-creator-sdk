@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][string]$Tag, [switch]$SkipPick, [switch]$Bake, [string]$LightArgs='', [int]$Rays=256, [switch]$Audio, [switch]$NavObstacles, [switch]$ReuseBake, [switch]$NoStageCache, [string]$BakeFrom='', [switch]$Kit, [switch]$Lights, [switch]$Smodels, [switch]$KitBaseline, [switch]$Fx, [string]$FxTxt='', [switch]$NeutralProbes, [string]$ProbeScale='', [switch]$Train, [ValidateSet('g27','stock')][string]$StairStyle='g27', [switch]$GateOnly, [ValidateSet('g27','g27d','g27e')][string]$TrainSet='g27', [switch]$BakeLoose, [string]$ZoneToolExe='', [switch]$WithP1, [int]$ConsistEndX=1800)
+param([Parameter(Mandatory)][string]$Tag, [switch]$SkipPick, [switch]$Bake, [string]$LightArgs='', [int]$Rays=256, [switch]$Audio, [switch]$NavObstacles, [switch]$ReuseBake, [switch]$NoStageCache, [string]$BakeFrom='', [switch]$Kit, [switch]$Lights, [switch]$Smodels, [switch]$KitBaseline, [switch]$Fx, [string]$FxTxt='', [switch]$NeutralProbes, [string]$ProbeScale='', [switch]$Train, [ValidateSet('g27','stock')][string]$StairStyle='g27', [switch]$GateOnly, [ValidateSet('g27','g27d','g27e')][string]$TrainSet='g27', [switch]$BakeLoose, [string]$ZoneToolExe='', [switch]$WithP1, [int]$ConsistEndX=1800, [switch]$NoElevation)
 # Station Zero v2 level build <Tag>: generator -> (compile-only pass: sub-model log -> pick door blocker sub-model ->
 # regenerate) -> optional light bake (layout_lights + lmbake, Build lease) -> full build with kept sub-models and own
 # lightmap, using the merged door-brushmodel + lightmap zonetool. Output: level\src_<Tag>[_lm], level\um_<Tag>.
@@ -26,6 +26,13 @@ if($Kit){
   $env:IWZ_KIT_MATERIAL_MAP='mopw/glass_opaque_02=m/clk_glass_grunge_mild'
 } elseif(-not $KitBaseline){ Remove-Item Env:IWZ_KIT -ErrorAction SilentlyContinue }
 $env:IWZ_DOUBLE_SIDED='1'
+# (sz-aaa-elevation W1, docs/STATION-ZERO-AAA-W1.md) the lighting design pass (bake shapes per fixture, motivated accents),
+# the story vignettes, the probe chroma and the prop shadows of the bake are on; -NoElevation builds the g27e5 look
+# (one switch for the A/B). The light list changes: a build from before needs -Bake (the stage cache keys on lights.json),
+# never -ReuseBake / -BakeFrom of an older tag (the world.bin hash is unchanged, the bake would be the old one)
+if($NoElevation){ $env:IWZ_ELEV='0' } else { Remove-Item Env:IWZ_ELEV -ErrorAction SilentlyContinue }
+$AS="$RT\assets"
+$OccArgs=if($NoElevation){ @() } else { @('--occluders','--catalog',"$AS\catalog.json",'--kit',"$AS\kit\kit_final.json") }
 # stock-stair study: -StairStyle stock = cp_zmb-style clip sheet over 8-unit steps (A/B against g27c)
 $env:IWZ_STAIR_STYLE=$StairStyle
 # -Train: the train agent's track kit + hero car (SDK codex/iwzmap-hero-train 902d744, merged), BO3 ports in train\port
@@ -97,7 +104,7 @@ if($ReuseBake){
 elseif($Bake){
   . (& "$S\scheduler.ps1")
   $lj="$L\lights_$Tag.json"
-  & $PY -I "$B\layout_lights.py" $src $lj @($LightArgs -split ' ' | Where-Object { $_ })
+  & $PY -I "$B\layout_lights.py" $src $lj @($LightArgs -split ' ' | Where-Object { $_ }) @OccArgs
   # Stage cache (machine-wide, tools-source/iwzmap/stage_cache.py): the bake is a function of the render world, the light
   # list, the bake arguments and the bake tools. A source that differs only in entities, scripts, collision or nav gets the
   # earlier bake (the overlay -ReuseBake does by hand) and never bakes again. -NoStageCache bakes anyway.

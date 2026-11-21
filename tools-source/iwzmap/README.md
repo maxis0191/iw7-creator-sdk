@@ -27,6 +27,8 @@ records (`iw7-paris-server`: `ops/iwzmap/`, `tests/fixtures/iwzmap_*`,
 | `bake/rt.py` | numba BVH ray tracer of the baker and the measurements |
 | `bake/iw7image.py`, `bake/lm_decode.py` | iw7Image/DDS IO, texconv encode/decode; HDR decode of a lightmap set (A/B/D/S terms) |
 | `bake/lm_measure.py` | engine frames against a bake: camera fit, visibility-tested texel projection, per-wall luma CV, rendered-vs-baked correlation, calibration patches |
+| `bake/layout_lights.py`, `bake/occluders.py` | layout.json lights -> baker lights.json; a light's `bake` block (spot lobe, power and reach scales) shapes only its bake; `--occluders` makes every placed model a light-blocking box (catalog / kit bounds, port boxes, train slabs, genset) ([STATION-ZERO-AAA-W1](../../docs/STATION-ZERO-AAA-W1.md)) |
+| `bake/bake_zone_contrast.py` | a bake's light per zone in seconds: floor E, ceiling and upper wall against the floor, pools, dark share, bounce share, cast; `--ref` against an earlier bake |
 | `tome_read.py` | reads an Umbra format-20 tome header |
 | `tome_cull.py` | the generated map's culling data: per-prop cull distances by size, a check of the tome against every door sightline before the zone step, and the game's depth of door captures ([CULLING](../../docs/CULLING.md)) |
 | `iwz_emitcheck.py` | offline gate on an emit: collision, nav, links, stairs, spawners, routes, build-to-build diff |
@@ -75,6 +77,7 @@ The table above explains the main pieces. The three tables below list every file
 | --- | --- |
 | `station_zero.py`, `sz_interactions.py`, `cp_iwz.gsc` | v1: the compact three-zone map, its stock interactions and its level script |
 | `station_zero2.py`, `cp_iwz2.gsc` | v2: the nine-zone metro station from textured brushes and data tables; its level script template |
+| `sz2_lightdesign.py` | v2 lighting design pass (02-WORLD section 8): bake lobes per fixture, key gains per zone, motivated accents; never removes or reorders a light record; `IWZ_ELEV=0` / `build-g.ps1 -NoElevation` turns it off with the story vignettes and the probe chroma |
 | `sz2_materials.py`, `sz2_assemble.py` | v2 material table; custom world materials and their images added to the zone |
 | `sz2_art_hooks.py` | art drop-ins: an image present under its request name becomes a map material, a missing one changes nothing |
 | `sz2_submodels.py` | picks the door blocker sub-model from a compile log made with `IWZ_KEEP_SUBMODELS=1`; writes `sz2_submodels.json` |

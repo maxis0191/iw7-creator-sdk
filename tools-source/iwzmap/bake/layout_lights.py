@@ -1,15 +1,27 @@
 """Baker light list (lights.json) from a generator layout.json (the level generator's `lights` list).
 
 usage: layout_lights.py <source dir> <out lights.json> [--power 3.0] [--radius-scale 2.5] [--texel 8]
-                        [--ambient 0.02] [--emissive 1.5]
+                        [--ambient 0.02] [--emissive 1.5] [--occluders [--catalog catalog.json] [--kit kit_final.json]]
 
 <source dir> has layout.json (lights: [{origin, type omni|spot, color, radius, intensity, fixture, dir?}]) and
 world.bin (material names). The layout radius is the runtime/light-grid falloff radius; the bake uses a longer
 physical falloff (radius * radius-scale) and intensity * power in the baker's units (E = I * (100 / d)^2 * cos).
 Albedo per material is guessed from the material name (override with an "albedo" block merged from --extra).
 Lamp materials (*lamp*, *light*_on) are emissive with the colour of the nearest layout light of that fixture.
+
+Per-light bake shape (optional `bake` block of a layout light, written by a generator's lighting design pass, e.g.
+Station Zero's sz2_lightdesign.py): {"type": "spot", "dir": [x, y, z], "inner": deg, "outer": deg, "radius_scale": k,
+"power_scale": k}. It changes only how the light is baked (a ceiling fluorescent under its housing lights the floor,
+not the ceiling); the layout record itself (runtime lights, darkness, audio anchors) is left as it is.
+
+--occluders: placed models cast shadows and contact darkness in the bake. Every decor model of layout.json becomes
+an axis-aligned light-blocking box (bounds from --catalog / --kit turned by the model's yaw, else its clip box), the
+train cars of train_spec (their nav box: underframe and roof slabs only, so the interior lights still leave through
+the windows) and the hero genset footprint. Boxes under 16 tall or under 8 across are skipped (papers, cups: a black
+box would print a black square), boxes are inset 12 % (bounds are conservative), and a box that holds a light origin
+is dropped (the lamp would black itself out).
 """
-import argparse, json, os, re, sys
+import argparse, json, math, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lmbake
 
@@ -44,6 +56,9 @@ def albedo_for(name):
     return [round(a * c, 3) for c in tint]
 
 
+from occluders import model_bounds, occluder_boxes   # noqa: E402  (stdlib only, unit-tested)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('src'); ap.add_argument('out')
@@ -51,6 +66,9 @@ def main():
     ap.add_argument('--texel', type=float, default=8); ap.add_argument('--ambient', type=float, default=0.02)
     ap.add_argument('--emissive', type=float, default=1.5)
     ap.add_argument('--extra', help='json merged over the result (albedo/emissive/sun/sky overrides)')
+    ap.add_argument('--occluders', action='store_true', help='placed models cast shadows (decor, train cars, genset)')
+    ap.add_argument('--catalog', help='asset catalog.json (model bounds for --occluders)')
+    ap.add_argument('--kit', help='kit_final.json (kit model bounds for --occluders)')
     a = ap.parse_args()
     lay = json.load(open(os.path.join(a.src, 'layout.json')))
     w = lmbake.read_world(os.path.join(a.src, 'world.bin'))
@@ -60,11 +78,15 @@ def main():
         mx = max(col) or 1.0
         col = [c / mx for c in col]
         fixture_col.setdefault(l.get('fixture', ''), col)
-        rec = {'type': 'spot' if l.get('type') == 'spot' else 'point', 'origin': [float(c) for c in l['origin']],
-               'color': col, 'intensity': float(l.get('intensity', 1.0)) * mx * a.power,
-               'radius': float(l.get('radius', 384)) * a.radius_scale, 'size': 6.0, 'room': l.get('zone', '')}
+        bk = l.get('bake') or {}
+        typ = bk.get('type') or l.get('type')
+        rec = {'type': 'spot' if typ == 'spot' else 'point', 'origin': [float(c) for c in l['origin']],
+               'color': col, 'intensity': float(l.get('intensity', 1.0)) * mx * a.power * float(bk.get('power_scale', 1.0)),
+               'radius': float(l.get('radius', 384)) * a.radius_scale * float(bk.get('radius_scale', 1.0)), 'size': 6.0,
+               'room': l.get('zone', '')}
         if rec['type'] == 'spot':
-            rec.update({'dir': l.get('dir', [0, 0, -1]), 'inner': l.get('inner', 25), 'outer': l.get('outer', 60)})
+            rec.update({'dir': bk.get('dir', l.get('dir', [0, 0, -1])), 'inner': bk.get('inner', l.get('inner', 25)),
+                        'outer': bk.get('outer', l.get('outer', 60))})
         lights.append(rec)
     albedo, emissive = {}, {}
     for m in w['materials']:
@@ -76,13 +98,19 @@ def main():
             emissive[m] = [round(c * a.emissive, 3) for c in col]
     cfg = {'texel': a.texel, 'probe_cell': 128, 'albedo': albedo, 'default_albedo': [0.45, 0.45, 0.45], 'emissive': emissive,
            'sky': [0, 0, 0], 'ambient': {'color': [a.ambient, a.ambient, a.ambient * 1.1], 'ao_radius': 96}, 'lights': lights}
+    occ_note = ''
+    if a.occluders:
+        pts = [l['origin'] for l in lay.get('lights', []) if l.get('intensity', 1.0)]
+        cfg['occluders'], sk = occluder_boxes(lay, model_bounds([a.catalog, a.kit]), pts)
+        occ_note = ', %d occluder boxes (skipped: %d small, %d holding a light)' % (len(cfg['occluders']), sk['small'], sk['holds_light'])
     if a.extra:
         ex = json.load(open(a.extra))
         for k, v in ex.items():
             if isinstance(v, dict) and isinstance(cfg.get(k), dict): cfg[k].update(v)
             else: cfg[k] = v
     json.dump(cfg, open(a.out, 'w'), indent=1)
-    print('%d lights, %d materials (%d emissive) -> %s' % (len(lights), len(albedo), len(emissive), a.out))
+    nspot = sum(1 for r in lights if r['type'] == 'spot')
+    print('%d lights (%d spot), %d materials (%d emissive)%s -> %s' % (len(lights), nspot, len(albedo), len(emissive), occ_note, a.out))
 
 
 if __name__ == '__main__':
