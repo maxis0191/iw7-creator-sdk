@@ -1610,6 +1610,11 @@ for x_, y_, w_, h_, m_ in ((-3350, 2760, 200, 150, 'floor_stain'), (-3050, 2900,
     if not FLOOR_STAINS:       # (g27e) paper debris instead of the (black-reading) stains: detail on the old paving
         # and a patch of newer concrete paving where the old herringbone was repaired
         # (RC2 item 2: the hard-edged beige 'repair' rectangles read as pasted cardboard) no floor patch quad, the paper debris stays
+        # (RC3) worn paving instead: two smaller overlapping patches of dark worn concrete, an irregular outline (the floor keeps
+        # under sz2_flatness's largest-undetailed-area limit, which failed with no patch at all)
+        for (px_, py_, pw_, ph_) in ((x_ - w_ * 0.12, y_ - h_ * 0.05, w_ * 0.8, h_ * 0.65), (x_ + w_ * 0.18, y_ + h_ * 0.2, w_ * 0.6, h_ * 0.75)):
+            floor(Z, 'conc_floor', round(px_ - pw_ / 2), round(py_ - ph_ / 2), round(px_ + pw_ / 2), round(py_ + ph_ / 2), -383.7,
+                  collide=False, tone='dark')
         for k_, (dx_, dy_) in enumerate(((-w_ / 4, -h_ / 5), (w_ / 5, h_ / 4))):
             DECOR.append({'zone': Z, 'model': 'com_debris_paper_iw6_02', 'origin': (x_ + dx_, y_ + dy_, -384), 'yaw': (k_ * 137 + int(x_)) % 360,
                           'clip': None, 'targetname': None, 'pitch': 0, 'roll': 0})
