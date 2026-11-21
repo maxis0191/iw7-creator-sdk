@@ -68,7 +68,6 @@ main()
     //@DARK@
     level thread iwz_flicker();
     level thread iwz_door_dressing();
-    level thread iwz_hide_door_blockers();
     level thread iwz_report();
     //@AUDIO@
 }
@@ -266,9 +265,8 @@ iwz_pap_quest()
     iwz_open_pap_shutter();
 }
 
-// The Pack-a-Punch machine is not usable until the relay quest has opened the shutter. The shutter tiles stop zombies (a navmesh obstacle) but
-// have no player collision (20 Nov 2026: a player walked through the closed shutter and the tunnel door), so the machine's interaction is disabled
-// here, the stock way (can_use_interaction refuses a struct with .disabled), and enabled again when the shutter opens.
+// The Pack-a-Punch machine is not usable until the relay quest has opened the shutter: its interaction is disabled here, the stock way
+// (can_use_interaction refuses a struct with .disabled), so it cannot be reached through the shutter, and enabled again when the shutter opens.
 iwz_pap_gate( off )
 {
     n = 0;
@@ -565,36 +563,11 @@ iwz_flicker_lamp()
 
 
 // door dressing (g26): barricades and boarding planks in front of each closed door's blocker brushes; they go when the
-// door's blockers are gone (the stock purchase deletes them)
-// (g27 review BLOQUANT 2: the white placeholder block behind the barricades) the door blockers are template brush
-// sub-models kept for their collision; they also render (a white block in every closed door). Hidden at load: hide()
-// keeps the collision, the stock purchase makes them non-solid as before.
-iwz_hide_door_blockers()
-{
-    wait 0.5;
-    n = 0;
-    foreach ( d in iwz_door_table() )
-    {
-        foreach ( e in getentarray( d.target, "targetname" ) )
-        {
-            if ( isdefined( e.classname ) && e.classname == "script_brushmodel" )
-            {
-                e hide();
-                n++;
-            }
-        }
-    }
-    foreach ( e in getentarray( "iwz_pap_shutter", "targetname" ) )      // the PaP shutter's blockers: the gate models show it
-    {
-        if ( isdefined( e.classname ) && e.classname == "script_brushmodel" )
-        {
-            e hide();
-            n++;
-        }
-    }
-    print( "[IWZ level] DOOR_BLOCKERS_HIDDEN " + n );
-}
-
+// door is bought (iwz_door_dressing_watch).
+// (sz-finish, 21 Nov 2026) The door blockers are no longer hidden at load. On this map hide() on a blocker brush model takes
+// its player collision away (Forge szf_phys_vis: shown tiles stop a player-physics line across the door plane, hidden ones
+// do not; stock cp_zmb blockers keep it when hidden), and players walked through every closed door and the PaP shutter.
+// Shown, the tiles draw nothing a player sees (szf_door_look: 0.09 to 0.16 % of pixels change at three doors).
 iwz_door_dressing()
 {
     level endon( "game_ended" );

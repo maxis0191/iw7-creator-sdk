@@ -1143,7 +1143,11 @@ region('stair_a', Z, (-800, 2416, -400, 3184), lambda x, y: zl_a(y))
 # ---------------------------------------------------------------- 3 platform_a: deck (y 1600..2400, z -320), pit (y 1200..1600, z -384)
 Z = 'platform_a'
 DECK_Z, PIT_Z, PCEIL = -320, -384, 0
-WELLS = {'well_w': (-2400, 1600, -2192, 1760, -1), 'well_e': (1904, 1600, 2112, 1760, +1)}   # x0,y0,x1,y1, descent dir
+# (sz-finish, 21 Nov 2026) the west well mirrors the east one, 288 from the pit end wall: at (-2400..-2192) its bottom landing sat
+# against the pit end wall beside the service tunnel door, and with that door closed zombies coming from the pit wandered at the
+# landing (Forge szf_wells_*_west: 0 of 10 from the pit, 10 of 10 from the landing; a85 g27e3-westbuy: 10 of 10 with the door bought)
+WELLS = {'well_w': (-2112, 1600, -1904, 1760, -1), 'well_e': (1904, 1600, 2112, 1760, +1)}   # x0,y0,x1,y1, descent dir
+DECK_SEGS = ((-2400, -2112), (-1904, 1904), (2112, 2400))          # deck strip beside the edge, between and outside the wells
 # IWZ_TRAIN=1 (train agent, iwz-stage2/train): the hero car stands at the platform, so the platform edge comes forward
 # to EDGE_Y (car side y 1552 at track centre 1488 + BO3 mp_metro edge panel 9 deep + 5 gap); the deck overhangs the
 # trackbed channel by 34 (under-platform clearance), the panel covers the face from the ballast top to the deck
@@ -1151,14 +1155,14 @@ TRAIN = os.environ.get('IWZ_TRAIN') == '1'
 EDGE_Y = int(os.environ.get('IWZ_TRAIN_EDGE_Y', 1566)) if TRAIN else 1600
 WELL_LAND, WELL_STEPS = 64, 6      # QA g24: zombies stalled at the foot (16-unit risers, players passed): 10.7-unit risers, same slope
 # deck floor (minus the stairwells), coping and yellow safety strip at the edge
-deck_x = [(-2400, -2192), (-2192, 1904), (1904, 2112), (2112, 2400)]
+deck_x = [(-2400, -2112), (-2112, -1904), (-1904, 1904), (1904, 2112), (2112, 2400)]
 floor(Z, 'conc_tiles', -2400, 1760, 2400, 2400, DECK_Z)
-floor(Z, 'conc_tiles', -2192, EDGE_Y + 48, 1904, 1760, DECK_Z)
-floor(Z, 'conc_tiles', 2112, EDGE_Y + 48, 2400, 1760, DECK_Z)
-floor(Z, 'yellow_grip', -2192, EDGE_Y + 24, 1904, EDGE_Y + 48, DECK_Z)
-floor(Z, 'yellow_grip', 2112, EDGE_Y + 24, 2400, EDGE_Y + 48, DECK_Z)
-floor(Z, 'conc_painted', -2192, EDGE_Y, 1904, EDGE_Y + 24, DECK_Z)
-floor(Z, 'conc_painted', 2112, EDGE_Y, 2400, EDGE_Y + 24, DECK_Z)
+for x0_, x1_ in DECK_SEGS:
+    floor(Z, 'conc_tiles', x0_, EDGE_Y + 48, x1_, 1760, DECK_Z)
+for x0_, x1_ in DECK_SEGS:
+    floor(Z, 'yellow_grip', x0_, EDGE_Y + 24, x1_, EDGE_Y + 48, DECK_Z)
+for x0_, x1_ in DECK_SEGS:
+    floor(Z, 'conc_painted', x0_, EDGE_Y, x1_, EDGE_Y + 24, DECK_Z)
 for x_ in range(-2112, 2400, 384):
     y0_ = EDGE_Y + 64 if TRAIN else 1760
     if TRAIN and any(w_[0] - 5 < x_ < w_[2] + 5 for w_ in WELLS.values()):
@@ -1171,13 +1175,13 @@ for x_, y_, w_, h_ in (((-1700, 1980, 160, 120), (-860, 2140, 200, 140), (-120, 
                         (1380, 1920, 170, 130), (2050, 2200, 150, 120)) if PA_DECK_STAINS else ()):
     decal_floor(Z, 'floor_stain', x_, y_, DECK_Z + 0.4, w_, h_)
 # platform edge face (deck to pit) with a coping lip
-for x0_, x1_ in ((-2192, 1904), (2112, 2400)):
+for x0_, x1_ in DECK_SEGS:
     B.wall_plane(Z, 'x', EDGE_Y, -1, x0_, x1_, PIT_Z, DECK_Z, 'conc_dark')
     if not TRAIN:       # (train) the mp_metro edge panels carry the coping
         B.box((x0_, EDGE_Y - 4, DECK_Z - 6), (x1_, EDGE_Y, DECK_Z), 'conc_painted', Z, collide=False, nav=False)
 if TRAIN:
     # side faces of the deck overhang beside the two stairwells (the pit stays open in front of a well's foot)
-    for xs_, fc_ in ((-2192, -1), (1904, +1), (2112, -1)):
+    for xs_, fc_ in ((-2112, +1), (-1904, -1), (1904, +1), (2112, -1)):
         B.wall_plane(Z, 'y', xs_, fc_, EDGE_Y, 1600, PIT_Z, DECK_Z, 'conc_dark')
 # stairwells into the pit (4 steps), railing on the deck side
 for wname, (wx0, wy0, wx1, wy1, ddir) in WELLS.items():
@@ -1315,10 +1319,10 @@ for x_ in (-1792, -1280, -768, -256, 256, 768, 1280, 1792):
     for (a_, b_, c_, d_) in ((x_ - 56, 1944, x_ + 56, 1960), (x_ - 56, 2040, x_ + 56, 2056), (x_ - 56, 1960, x_ - 40, 2040), (x_ + 40, 1960, x_ + 56, 2040)):
         pass        # (g27 review item 9) the charcoal frames around the columns read as black floor parallelograms
 drains(Z, [(-1536, 2200), (1024, 2200)], DECK_Z)
-B.quad('stair_tread', Z, [(-2192, EDGE_Y + 48, DECK_Z + 0.3), (1904, EDGE_Y + 48, DECK_Z + 0.3), (1904, EDGE_Y + 64, DECK_Z + 0.3), (-2192, EDGE_Y + 64, DECK_Z + 0.3)], n=(0, 0, 1), collide=False)
-B.quad('stair_tread', Z, [(2112, EDGE_Y + 48, DECK_Z + 0.3), (2400, EDGE_Y + 48, DECK_Z + 0.3), (2400, EDGE_Y + 64, DECK_Z + 0.3), (2112, EDGE_Y + 64, DECK_Z + 0.3)], n=(0, 0, 1), collide=False)
+for x0_, x1_ in DECK_SEGS:
+    B.quad('stair_tread', Z, [(x0_, EDGE_Y + 48, DECK_Z + 0.3), (x1_, EDGE_Y + 48, DECK_Z + 0.3), (x1_, EDGE_Y + 64, DECK_Z + 0.3), (x0_, EDGE_Y + 64, DECK_Z + 0.3)], n=(0, 0, 1), collide=False)
 if not TRAIN:
-    for x0_, x1_ in ((-2192, 1904), (2112, 2400)):
+    for x0_, x1_ in DECK_SEGS:
         B.box((x0_, 1588, DECK_Z - 8), (x1_, 1600, DECK_Z), {'side': 'conc_painted', 'bottom': 'conc_dark', 'top': 'conc_painted'}, Z, collide=False, nav=False)
     for x_ in (-1800, -1100, 600, 1300):
         wall_niche(Z, 'x', 1600, -1, x_, PIT_Z, w=96, h=56)
@@ -1331,7 +1335,8 @@ for xw_, fc_ in ((-2400, +1), (2400, -1)):
     B.slab_y(1200, 1600, xw_, -96, -72, 12, 'conc_painted', Z, fc_, collide=False, nav=False)
 ceiling_grid(Z, -2400, 1200, 2400, 2400, PCEIL, step_y=400, depth=28)
 region('deck', Z, (-2400, 1760, 2400, 2400), DECK_Z, (16, 0, 16, 16))
-region('deck_mid', Z, (-2192, EDGE_Y, 1904, 1760), DECK_Z, (0, 0, 16, 0))     # (a85) x1 margin 16: a deck cell over the well top corner floated 64 above the pit (emitcheck NAV_FLOATING well_e)
+region('deck_west', Z, (-2400, EDGE_Y, -2112, 1760), DECK_Z, (16, 0, 32, 0))      # (sz-finish) mirrors deck_east beside the moved west well
+region('deck_mid', Z, (-1904, EDGE_Y, 1904, 1760), DECK_Z, (16, 0, 16, 0))     # (a85) x1 margin 16: a deck cell over the well top corner floated 64 above the pit (emitcheck NAV_FLOATING well_e)
 # (g27b engine stair probe) the deck_east cells touched the east well's bottom landing column 64 below them, and the
 # seam rule removed the landing: zombies then entered the flight from the pit side at mid-height and ended under the
 # treads. A 32 margin keeps deck_east one cell off the well end, so the landing stays (as on the west well)
@@ -1340,10 +1345,10 @@ region('pit', Z, (-2400, 1200, 2400, 1600), PIT_Z, (0, 16, 0, 16))
 if TRAIN:
     # no pit cells under the deck overhang (y EDGE_Y..1600 behind the edge face); in front of the stairwells' feet the
     # pit still reaches the old face line, so the pit -> well routes are unchanged
-    for x0_, x1_ in ((-2192, 1904), (2112, 2400)):
+    for x0_, x1_ in DECK_SEGS:
         B.blockers.append((x0_, EDGE_Y, x1_, 1600, PIT_Z, DECK_Z))
 
-for a, b_ in (('deck', 'deck_mid'), ('deck', 'deck_east'), ('deck', 'well_w'), ('deck', 'well_e'), ('deck_mid', 'well_w'),
+for a, b_ in (('deck', 'deck_mid'), ('deck', 'deck_east'), ('deck', 'deck_west'), ('deck_west', 'well_w'), ('deck', 'well_w'), ('deck', 'well_e'), ('deck_mid', 'well_w'),
               ('deck_mid', 'well_e'), ('deck_east', 'well_e'), ('pit', 'well_w'), ('pit', 'well_e')):
     adjacent(a, b_)
 
@@ -1902,7 +1907,7 @@ def train_kit():
     decor('service_tunnel', 'iwz_track_buffer_stop', -3560, cy, bz, 0)
     B.collision_box((-3560, cy - 52, bz), (-3488, cy + 52, bz + 48))
     # platform edge panels (BO3 mp_metro, 128 / 64 long, 9 deep, 48 tall; back face on EDGE_Y, top at the deck)
-    for x0, x1 in ((-2192, 1904), (2112, 2400)):
+    for x0, x1 in DECK_SEGS:
         x = x0
         while x < x1:
             w = 128 if x1 - x >= 96 else 64
@@ -3305,8 +3310,8 @@ WALK = [   # waypoint path through every zone (doors are opened by the walk fixt
     (3080, 2300, -320), (3080, 1800, -320), (2600, 1800, -320), (1880, 1800, -320), (1880, 1680, -320), (1940, 1680, -320),
     (2084, 1680, -384), (2090, 1560, -384), (2080, 1250, -384), (1000, 1250, -384), (-500, 1250, -384), (-1500, 1260, -384), (-2350, 1400, -384),
     # pit <-> deck through the west stairwell (QA g18: service_tunnel -> platform_a deck route), then into the tunnel
-    (-2330, 1560, -384), (-2380, 1680, -384), (-2372, 1680, -384), (-2228, 1680, -320), (-2150, 1680, -320), (-2228, 1680, -320),
-    (-2372, 1680, -384), (-2380, 1680, -384), (-2330, 1560, -384), (-2350, 1400, -384),
+    (-2090, 1560, -384), (-2084, 1680, -384), (-2076, 1680, -384), (-1940, 1680, -320), (-1860, 1680, -320), (-1940, 1680, -320),
+    (-2076, 1680, -384), (-2084, 1680, -384), (-2090, 1560, -384), (-2350, 1400, -384),
     (-2500, 1400, -384), (-3400, 1400, -384), (-3400, 2000, -384), (-3400, 2650, -384), (-2800, 3000, -384), (-2120, 3250, -384),
     (-2032, 3250, -384), (-1296, 3250, 0), (-1250, 3300, 0), (-1150, 3300, 0), (-528, 3500, 0), (-528, 3880, 0),
 ]
