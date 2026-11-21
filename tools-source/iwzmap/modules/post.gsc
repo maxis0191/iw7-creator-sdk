@@ -510,12 +510,18 @@ t1_ride( from, to, p, segs, price, cap )
     t1_sound( from, "ftl_phase_out" );
     t1_fx( "iwz_rail_arc", from.origin );
     // drawn in: hidden and held where they stood (scripted, ignoring everyone) until they come out at the destination
+    // (22 Nov 2026, Station Zero g27l: left at the departure hatch with no player near, all three were removed by the stock
+    // far-from-players cleanup before they came out: BLOWBACK_OUT n=0 of 3) they travel with the capsule: hidden at once at the
+    // destination hatch, held there until they come out
     foreach ( z in bb )
     {
         z hide();
         z.ignoreall = 1;
         z.scripted_mode = 1;
         z.iwz_t1_tube = 1;
+        q = getclosestpointonnavmesh( to.iwz_out + ( randomintrange( -32, 32 ), randomintrange( -32, 32 ), 0 ) );
+        if ( isdefined( q ) )
+            z setorigin( q, 1 );
         z scragentsetgoalpos( z.origin );
     }
     // the rider: protected, frozen, hidden, behind a black screen, already standing in the destination zone
