@@ -309,6 +309,54 @@ def clear_scene():
             datablocks.remove(d)
 
 
+def authored_glb(name):
+    """Authored (not xmodel) models of the map: perks/machines writes <runtime>/iwz-stage2/level/p1/machines/authored/<name>.glb
+    (units inches, floor centre origin, front +X). -> path or None"""
+    p = os.path.join(A.runtime(), 'iwz-stage2', 'level', 'p1', 'machines', 'authored', name + '.glb')
+    return p if os.path.isfile(p) else None
+
+
+def import_glb_as_collection(path, name):
+    """Import a glb, convert its materials to unlit colour * object light, return a (not scene linked) collection."""
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=path)
+    new = [o for o in bpy.data.objects if o not in before]
+    col = bpy.data.collections.new('glb_' + name)
+    for o in new:
+        for c in list(o.users_collection):
+            c.objects.unlink(o)
+        col.objects.link(o)
+        o.parent = None if o.type != 'MESH' else o.parent
+        if o.type == 'MESH':
+            for slot in o.material_slots:
+                m = slot.material
+                if m is None or not m.use_nodes or m.get('iwz_conv'):
+                    continue
+                nt = m.node_tree
+                pb = next((n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+                if pb is None:
+                    continue
+                bc = pb.inputs['Base Color']
+                src = bc.links[0].from_socket if bc.links else None
+                dv = tuple(bc.default_value)
+                out = next(n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL')
+                em = nt.nodes.new('ShaderNodeEmission')
+                oi = nt.nodes.new('ShaderNodeObjectInfo')
+                mx = nt.nodes.new('ShaderNodeMix')
+                mx.data_type = 'RGBA'
+                mx.blend_type = 'MULTIPLY'
+                mx.inputs['Factor'].default_value = 1.0
+                if src is not None:
+                    nt.links.new(src, mx.inputs['A'])
+                else:
+                    mx.inputs['A'].default_value = dv
+                nt.links.new(oi.outputs['Color'], mx.inputs['B'])
+                nt.links.new(mx.outputs['Result'], em.inputs['Color'])
+                nt.links.new(em.outputs['Emission'], out.inputs['Surface'])
+                m['iwz_conv'] = True
+    return col
+
+
 def load(src, plan=None, eye=60.0, hfov=90.0, overlays=False, game=None, log=print):
     """Build the scene. Returns the report dict (timings, material / model resolution, light grid use)."""
     st = Stages()
@@ -376,9 +424,39 @@ def load(src, plan=None, eye=60.0, hfov=90.0, overlays=False, game=None, log=pri
                     q['scale'] = r['scale']
     gP, gC = grid_light(z['grid'])
     meshes, model_report = {}, {'resolved': {}, 'unresolved': {}}
+    glb_cols, glb_inst = {}, []
+
+    def light_at(origin):
+        if len(gP):
+            d2 = ((gP - np.array(origin)) ** 2).sum(1)
+            k = int(d2.argmin())
+            return gC[k] * Y00_E if d2[k] < (192.0 ** 2) else gC.mean(0) * Y00_E
+        return np.array(E[valid].mean(0))
     n_inst = 0
     for r in rows:
         name = r['model']
+        if name not in meshes and name not in glb_cols:
+            gp = authored_glb(name) if index.get('xmodel', name) is None else None
+            if gp:
+                try:
+                    glb_cols[name] = import_glb_as_collection(gp, name)
+                    model_report['resolved'][name] = {'source': 'authored glb ' + gp}
+                except Exception as e:
+                    model_report['unresolved'][name] = 'glb import failed: %s' % e
+        if name in glb_cols:
+            o = bpy.data.objects.new(name, None)
+            o.instance_type = 'COLLECTION'
+            o.instance_collection = glb_cols[name]
+            pitch, yaw, roll = r['angles']
+            o.location = [v * S for v in r['origin']]
+            o.rotation_euler = (math.radians(roll), math.radians(pitch), math.radians(yaw))
+            o.scale = (S * r['scale'],) * 3
+            e = light_at(r['origin'])
+            o.color = (float(e[0]), float(e[1]), float(e[2]), 1.0)
+            pc.objects.link(o)
+            glb_inst.append(o)
+            n_inst += 1
+            continue
         if name not in meshes:
             mdl, err = A.read_model(index, name)
             if mdl is None:
@@ -415,12 +493,7 @@ def load(src, plan=None, eye=60.0, hfov=90.0, overlays=False, game=None, log=pri
         o.location = [v * S for v in r['origin']]
         o.rotation_euler = (math.radians(roll), math.radians(pitch), math.radians(yaw))
         o.scale = (r['scale'],) * 3
-        if len(gP):
-            d2 = ((gP - np.array(r['origin'])) ** 2).sum(1)
-            k = int(d2.argmin())
-            e = gC[k] * Y00_E if d2[k] < (192.0 ** 2) else gC.mean(0) * Y00_E
-        else:
-            e = np.array(E[valid].mean(0))
+        e = light_at(r['origin'])
         o.color = (float(e[0]), float(e[1]), float(e[2]), 1.0)
         pc.objects.link(o)
         n_inst += 1
@@ -475,12 +548,27 @@ def box_mesh(name, mn, mx):
 
 def build_overlays(oc, lay, src, z, collision=False):
     """Hidden from render by default. Spawners, doors, blockers, zone volumes, nav cells, collision (wireframe)."""
-    def put(name, data, loc=(0, 0, 0), color=(1, 0, 0, 1)):
+    ov = bpy.data.materials.new('iwz:overlay')
+    ov.use_nodes = True
+    ont = ov.node_tree
+    ont.nodes.clear()
+    oo = ont.nodes.new('ShaderNodeOutputMaterial')
+    oe = ont.nodes.new('ShaderNodeEmission')
+    oi = ont.nodes.new('ShaderNodeObjectInfo')
+    ont.links.new(oi.outputs['Color'], oe.inputs['Color'])
+    ont.links.new(oe.outputs['Emission'], oo.inputs['Surface'])
+
+    def put(name, data, loc=(0, 0, 0), color=(1, 0, 0, 1), wire=True):
         o = bpy.data.objects.new(name, data)
         o.location = loc
         o.color = color
+        data.materials.append(ov)
         oc.objects.link(o)
-        o.display_type = 'WIRE'
+        o.display_type = 'WIRE' if wire else 'TEXTURED'
+        if wire:                                    # a wireframe modifier so the edges also render
+            md = o.modifiers.new('wire', 'WIREFRAME')
+            md.thickness = 0.04
+            md.use_replace = True
         return o
     for i, sp in enumerate(lay.get('spawners', [])):
         e = bpy.data.objects.new('spawn_%d' % i, None)
@@ -510,10 +598,16 @@ def build_overlays(oc, lay, src, z, collision=False):
         cells = plan.get('cells', [])
         cs = 32.0
         if cells:
-            pts = np.array([[c[0] * cs + cs / 2, c[1] * cs + cs / 2, c[2] + 2] for c in cells], np.float64) * S
+            q = 14.0
+            P, F = [], []
+            for c in cells:
+                x, y, zc = c[0] * cs + cs / 2, c[1] * cs + cs / 2, c[2] + 2
+                b = len(P)
+                P += [(x - q, y - q, zc), (x + q, y - q, zc), (x + q, y + q, zc), (x - q, y + q, zc)]
+                F.append((b, b + 1, b + 2, b + 3))
             me = bpy.data.meshes.new('navcells')
-            me.from_pydata(pts.tolist(), [], [])
-            put('navcells', me, color=(0, 0.6, 1, 1))
+            me.from_pydata((np.array(P, np.float32) * S).tolist(), [], F)
+            put('navcells', me, color=(0, 0.6, 1, 1), wire=False)
     hk = os.path.join(src, 'colmap.hkx')
     if collision and os.path.isfile(hk):
         try:

@@ -68,6 +68,9 @@ def dump_roots():
         roots.append(os.path.join(tmpl, z))
     for z in ('cp_disco', 'cp_final', 'cp_iwz', 'techsets_cp_disco', 'techsets_cp_final'):
         roots.append(os.path.join(kit, z))
+    # the dump of the built map zone (our own iwz_* models and materials), searched after the stock dumps
+    for sub in (('level', 'ztwork'), ('fx', 'ztwork-d')):
+        roots.append(os.path.join(rt, 'iwz-stage2', *sub, 'zonetool', 'cp_iwz'))
     return [r for r in roots if os.path.isdir(r)]
 
 
@@ -99,7 +102,7 @@ class DumpIndex:
     def __init__(self, roots=None):
         self.roots = roots or dump_roots()
         self.maps = {'xmodel': {}, 'xsurface': {}, 'image': {}, 'material': {}}
-        key = str(sorted(os.path.getmtime(r) for r in self.roots)) + '|' + '|'.join(self.roots)
+        key = 'v3|' + str(sorted(os.path.getmtime(r) for r in self.roots)) + '|' + '|'.join(self.roots)
         cf = os.path.join(cache_dir(), 'dump_index.json')
         try:
             c = json.load(open(cf))
@@ -122,6 +125,8 @@ class DumpIndex:
                 for f in os.listdir(d):
                     if f.endswith(ext):
                         self.maps[kind].setdefault(f[:-len(ext)], os.path.join(d, f))
+                    elif kind == 'image' and f.endswith('.dds'):         # the built zone's own images are plain DDS files
+                        self.maps[kind].setdefault(f[:-4], os.path.join(d, f))
         md = os.path.join(root, 'materials')
         if os.path.isdir(md):
             for dp, _, fs in os.walk(md):
@@ -257,6 +262,18 @@ def to_png(fmt, w, h, data, out_png):
     os.replace(p, out_png)
 
 
+def dds_to_png(dds, out_png):
+    tmp = tempfile.mkdtemp(prefix='iwzpv_')
+    cmd = [texconv_exe(), '-nologo', '-y', '-m', '1', '-ft', 'png', '-f', 'R8G8B8A8_UNORM', '-o', tmp, '--', dds]
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    p = os.path.join(tmp, os.path.splitext(os.path.basename(dds))[0] + '.png')
+    if r.returncode != 0 or not os.path.isfile(p):
+        raise RuntimeError('texconv: ' + (r.stdout + r.stderr)[-300:])
+    os.makedirs(os.path.dirname(out_png), exist_ok=True)
+    os.replace(p, out_png)
+    return out_png
+
+
 def image_png(index, name, game=None):
     """-> (png path or None, reason or None). Cached under <cache>/images/<name>.png."""
     out = os.path.join(cache_dir(), 'images', name.replace('/', '_').replace('$', '_').replace('&', '_') + '.png')
@@ -266,6 +283,8 @@ def image_png(index, name, game=None):
     if not p:
         return None, 'image %s not in any dump' % name
     try:
+        if p.endswith('.dds'):
+            return dds_to_png(p, out), None
         im = read_image_full(p)
         fmt = im['format']
         if im.get('embedded'):

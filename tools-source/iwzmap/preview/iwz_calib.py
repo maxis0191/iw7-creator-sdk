@@ -41,9 +41,9 @@ def _blur(a, sigma):
     k = np.exp(-0.5 * (np.arange(-r, r + 1) / sigma) ** 2)
     k /= k.sum()
     p = np.pad(a, r, mode='edge')
-    p = np.apply_along_axis(lambda v: np.convolve(v, k, 'valid'), 1, p)
-    p = np.apply_along_axis(lambda v: np.convolve(v, k, 'valid'), 0, p)
-    return p
+    h, w = a.shape
+    t = sum(k[i] * p[:, i:i + w] for i in range(2 * r + 1))
+    return sum(k[i] * t[i:i + h, :] for i in range(2 * r + 1))
 
 
 def edges(lin_lum, mask):
@@ -67,9 +67,15 @@ def _dilate(b, r):
     return out
 
 
-def edge_score(eng_srgb, prev_lin, mask):
-    """eng_srgb: HxWx3 in 0..1 (display values); prev_lin: HxWx3 display-linear. -> IoU in 0..1"""
-    e1 = edges(lum(srgb_to_lin(eng_srgb)), mask)
+def engine_edges(eng_srgb, mask):
+    return edges(lum(srgb_to_lin(eng_srgb)), mask)
+
+
+def edge_score(eng_srgb, prev_lin, mask, e1=None):
+    """eng_srgb: HxWx3 in 0..1 (display values); prev_lin: HxWx3 display-linear. -> IoU in 0..1
+    e1: the engine edge set when already computed (engine_edges)."""
+    if e1 is None:
+        e1 = engine_edges(eng_srgb, mask)
     e2 = edges(lum(prev_lin), mask)
     d1, d2 = _dilate(e1, TOL), _dilate(e2, TOL)
     inter = (e1 & d2).sum() + (e2 & d1).sum()
@@ -91,7 +97,7 @@ def fit_tonemap(raws, engines, mask):
     x = np.array([np.log(max(mean_lum(r, mask), 1e-7)) for r in raws])
     y = np.array([np.log(max(mean_lum(srgb_to_lin(e), mask), 1e-7)) for e in engines])
     p, b = np.polyfit(x, y, 1)
-    p = float(np.clip(p, 0.5, 1.5))
+    p = float(np.clip(p, 0.2, 1.5))
     b = float(np.mean(y - p * x))
     k = float(np.exp(b / p))
     return k, p
