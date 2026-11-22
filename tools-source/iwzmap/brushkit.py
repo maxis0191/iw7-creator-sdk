@@ -47,14 +47,24 @@ class Builder:
         self.trim_quads = 0
         self.records = []                 # (zone, material key, 4 points, normal): every quad, for sz2_flatness.py
         self.col_zone = []                # zone of every collision triangle, parallel to mesh.col (zonemap.json, sections/)
+        self.col_kind = []                # owner kind of every collision triangle: shell | decor | train | stair | interaction
         self.zone = None                  # zone of the last quad / collision call: collision added without a zone belongs to it
+        self.kind = 'shell'               # kind of collision added now (set_kind)
 
-    def sync_zone(self, zone):
+    def sync_zone(self, zone, kind=None):
         """Give the collision triangles added since the last call (by quad(), box(), collision_*() or direct mesh.col
-        appends) the zone `zone`."""
+        appends) the zone `zone` and the kind `kind` (default: the current kind)."""
         n = len(self.mesh.col)
         if n > len(self.col_zone):
             self.col_zone.extend([zone] * (n - len(self.col_zone)))
+        if n > len(self.col_kind):
+            self.col_kind.extend([kind or self.kind] * (n - len(self.col_kind)))
+
+    def set_kind(self, kind):
+        """Owner kind of the collision added from now on; returns the previous kind."""
+        self.sync_zone(self.zone)
+        old, self.kind = self.kind, kind
+        return old
 
     # ------------------------------------------------------------------ primitives
     def quad(self, mat, zone, pts, n=None, t=None, uvs=None, collide=True, tone='mid', uvoff=(0.0, 0.0), uvscale=1.0):
@@ -104,7 +114,7 @@ class Builder:
         self.used[mat] = self.used.get(mat, 0) + 1
         self.quads += 1
 
-    def collision_quad(self, pts, n=None, tag=None, zone=None):
+    def collision_quad(self, pts, n=None, tag=None, zone=None, kind=None):
         """Collision triangles of a quad; with `n` the winding is turned to face n (bullet traces are one-sided).
         tag: surface-table index of the collision template (contents + surface flags); None = the map default."""
         self.sync_zone(self.zone)
@@ -115,16 +125,16 @@ class Builder:
             self.mesh.col_tag[len(self.mesh.col)] = tag
             self.mesh.col_tag[len(self.mesh.col) + 1] = tag
         self.mesh.col += [(p0, p1, p2), (p0, p2, p3)]
-        self.sync_zone(zone or self.zone)
+        self.sync_zone(zone or self.zone, kind)
 
-    def collision_box(self, mn, mx, nav=True, zone=None):
+    def collision_box(self, mn, mx, nav=True, zone=None, kind=None):
         zone = zone or self.zone
         (x0, y0, z0), (x1, y1, z1) = mn, mx
         c = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
         for k in range(4):
             (ax, ay), (bx, by) = c[k], c[(k + 1) % 4]
-            self.collision_quad([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)], zone=zone)
-        self.collision_quad([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], zone=zone)
+            self.collision_quad([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)], zone=zone, kind=kind)
+        self.collision_quad([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], zone=zone, kind=kind)
         if nav:
             self.blockers.append((x0, y0, x1, y1, z0, z1))
 

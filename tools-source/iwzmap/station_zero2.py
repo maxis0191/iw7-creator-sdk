@@ -205,10 +205,10 @@ def wall(zone, space, axis, fixed, facing, s0, s1, zf, zc, style, frame='frame')
             else:
                 if axis == 'x':
                     B.slab_x(p, q, fixed, z0, z1, pr, mat, zone, facing, collide=False, skip=('bottom',) if z0 > zf + 1 else ('bottom',))
-                    B.collision_quad([(p, fixed, z0), (q, fixed, z0), (q, fixed, z1), (p, fixed, z1)], n=(0, facing, 0))
+                    B.collision_quad([(p, fixed, z0), (q, fixed, z0), (q, fixed, z1), (p, fixed, z1)], n=(0, facing, 0), zone=zone)
                 else:
                     B.slab_y(p, q, fixed, z0, z1, pr, mat, zone, facing, collide=False, skip=('bottom',))
-                    B.collision_quad([(fixed, p, z0), (fixed, q, z0), (fixed, q, z1), (fixed, p, z1)], n=(facing, 0, 0))
+                    B.collision_quad([(fixed, p, z0), (fixed, q, z0), (fixed, q, z1), (fixed, p, z1)], n=(facing, 0, 0), zone=zone)
     # frames on this side
     for o in OPENINGS:
         if o['axis'] != axis or o['walls'].get(space) != fixed or o['kind'] == 'open':
@@ -554,7 +554,7 @@ def column(zone, x, y, z0, z1, half=24):
     B.box((x - half - 1.5, y - half - 1.5, z0 + 112), (x + half + 1.5, y + half + 1.5, z0 + 120), 'steel_trim', zone, collide=False, nav=False)
     B.box((x - half, y - half, z0 + 120), (x + half, y + half, z1 - 24), 'tile_white', zone, collide=False, nav=False, skip=('bottom', 'top'))
     B.box((x - half - 4, y - half - 4, z1 - 24), (x + half + 4, y + half + 4, z1), 'steel_trim', zone, collide=False, nav=False, skip=('top',))
-    B.collision_box((x - half - 2, y - half - 2, z0), (x + half + 2, y + half + 2, z1))
+    B.collision_box((x - half - 2, y - half - 2, z0), (x + half + 2, y + half + 2, z1), zone=zone)
 
 
 # ============================================================================ architecture detail (art pass 3)
@@ -710,12 +710,12 @@ def rail_run(zone, axis, s0, s1, c, z, h=36, post=96, mat='steel_trim', collide=
         B.box((s0, c - 2, z + h), (s1, c + 2, z + h + 3), mat, zone, collide=False, nav=False)
         B.box((s0, c - 1, z + h / 2), (s1, c + 1, z + h / 2 + 2), mat, zone, collide=False, nav=False)
         if collide:
-            B.collision_box((s0, c - 2, z), (s1, c + 2, z + h + 3))
+            B.collision_box((s0, c - 2, z), (s1, c + 2, z + h + 3), zone=zone, kind='decor')
     else:
         B.box((c - 2, s0, z + h), (c + 2, s1, z + h + 3), mat, zone, collide=False, nav=False)
         B.box((c - 1, s0, z + h / 2), (c + 1, s1, z + h / 2 + 2), mat, zone, collide=False, nav=False)
         if collide:
-            B.collision_box((c - 2, s0, z), (c + 2, s1, z + h + 3))
+            B.collision_box((c - 2, s0, z), (c + 2, s1, z + h + 3), zone=zone, kind='decor')
 
 
 # (stock-stair study 2026-11-09) the template's surface table (cp_zmb HavokPhysicsShapeList, 475 entries of
@@ -802,8 +802,8 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
             # (RC2 item 7: the well stair block's pit-side face read near black) lighter concrete than conc_dark
             B.quad('conc', zone, [P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=nn_, collide=False)
             # (g27, QA g26c: east well climb stalled at (1936, 1692, -355), under the flight) solid, both faces
-            B.collision_quad([P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=nn_)
-            B.collision_quad([P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=tuple(-c for c in nn_))
+            B.collision_quad([P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=nn_, zone=zone, kind='stair')
+            B.collision_quad([P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=tuple(-c for c in nn_), zone=zone, kind='stair')
     STAIRS.append({'zone': zone, 'space': space, 'side_walls': side_walls, 'stringers': list(stringers), 'axis': axis,
                    'span': sorted((lo_end, hi_end)), 'c': [c0, c1], 'z': [z_lo, z_hi]})
     # collision: nosing line z(s) = z_lo + rise + (s - s_a) * rise / run, from s_a - run (z_lo) to s_b - run (z_hi)
@@ -813,7 +813,7 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
 
     def cq(sa, sb, za, zb, tag=None):
         pts = [P(sa, c0, za), P(sb, c0, zb), P(sb, c1, zb), P(sa, c1, za)]
-        B.collision_quad(pts, n=(0, 0, 1), tag=tag)
+        B.collision_quad(pts, n=(0, 0, 1), tag=tag, zone=zone, kind='stair')
     # (g27c) exactly the g27 stair collision again: g27b (ramp on top of a first riser, 10.7 risers) and g27n (two-
     # sided ramp and risers, 10.7 risers) both broke the climbs QA had passing on g27 (stair A 8/8)
     cq(lo_end, r0, z_lo, z_lo)
@@ -1253,7 +1253,7 @@ EAST_END, EAST_RUBBLE = 3000, 2840                                # rubble decor
 room(Z, 'recess', (2400, 1216, EAST_END, 1584), PIT_Z, -128, 'tunnel', 'conc_dark', None, skip=('west', 'east'))
 tunnel_throat(Z, 2400, EAST_END, 1216, 1584, PIT_Z, -184, 48, -128, caps=('x0',))
 rubble_end(Z, EAST_END, -1, 1216, 1584, PIT_Z, -184, 48)
-B.collision_quad([(2410, 1216, PIT_Z), (2410, 1584, PIT_Z), (2410, 1584, -128), (2410, 1216, -128)], n=(-1, 0, 0))
+B.collision_quad([(2410, 1216, PIT_Z), (2410, 1584, PIT_Z), (2410, 1584, -128), (2410, 1216, -128)], n=(-1, 0, 0), zone='platform_a')
 floor(Z, 'conc_warm', 2400, 1216, EAST_END, 1584, PIT_Z, tone='dark')     # (g27d item 10: the polished floor mirrored the navy cars: matte concrete)
 signal_head(Z, 2720, 1300, PIT_Z, -1, collide=False)                # facing the platform, on the cess beside the track
 for x_ in (2620, 2860):                                             # dead bulkhead lamps on the track-side wall
@@ -1402,7 +1402,7 @@ for x in (2800, 3200, 3600):
 GEN = (3300, 2800)
 if 'iwz_g2_genset' not in PORTED:
     B.box((GEN[0] - 120, GEN[1] - 72, -320), (GEN[0] + 120, GEN[1] + 72, -304), 'conc_painted', Z)
-    B.collision_box((GEN[0] - 100, GEN[1] - 50, -304), (GEN[0] + 100, GEN[1] + 50, -206))     # kit generator body (decor below)
+    B.collision_box((GEN[0] - 100, GEN[1] - 50, -304), (GEN[0] + 100, GEN[1] + 50, -206), zone=Z, kind='decor')     # kit generator body (decor below)
 # (g27) with the G-2 genset (train agent v4) the hero is its model on its own stained plinth at G2 (clip boxes from the
 # port); hazard markings and the floor-grid gap follow its footprint
 GEN_FOOT = ((G2['origin'][0] - 112, G2['origin'][1] - 52), (G2['origin'][0] + 162, G2['origin'][1] + 52)) if 'iwz_g2_genset' in PORTED else \
@@ -1444,7 +1444,7 @@ for y_ in (3650,):
     wall_lamp(Z, 'y', 3600, -1, y_, -120, mat='lamp_red', w=16, h=16)
 # signal desks (boxes, until the kit) and the network map board
 for x0_, y0_ in DESKS:      # (g25) stock lab desks (decor block) instead of box desks; collision for the pair
-    B.collision_box((x0_ + 12, y0_ + 24, -320), (x0_ + 228, y0_ + 56, -285))
+    B.collision_box((x0_ + 12, y0_ + 24, -320), (x0_ + 228, y0_ + 56, -285), zone=Z, kind='decor')
 decal_wall(Z, ART_HOOKS.key('evac_signal_diagram') or 'map_board', 'y', 3600 - 3.2, -1, 3600, -140, 320, 160)   # above the desk monitors, proud of the trim   # Station Zero evacuation / signal diagram when delivered
 sign(Z, 'sign_network_map', 'x', 4000, -1, 2800, -170, 256, 128)
 B.wall_plane(Z, 'x', 4150, -1, 2976, 3232, -320, -112, 'conc_dark', collide=False)     # (RC2 item 3) was 'rollup': the tan backing seen through the closed shutter
@@ -1525,7 +1525,7 @@ B.wall_plane(Z, 'y', -3600, +1, 1376, 1584, -128, -96, 'conc_seam')             
 B.slab_y(1364, 1376, -3600, -384, -116, 10, 'conc_painted', Z, +1, collide=False, nav=False)  # mouth frame
 B.slab_y(1584, 1596, -3600, -384, -116, 10, 'conc_painted', Z, +1, collide=False, nav=False)
 B.slab_y(1364, 1596, -3600, -128, -116, 10, 'conc_painted', Z, +1, collide=False, nav=False)
-B.collision_quad([(-3600, 1376, -384), (-3600, 1584, -384), (-3600, 1584, -96), (-3600, 1376, -96)], n=(1, 0, 0))
+B.collision_quad([(-3600, 1376, -384), (-3600, 1584, -384), (-3600, 1584, -96), (-3600, 1376, -96)], n=(1, 0, 0), zone='service_tunnel')
 wall_lamp(Z, 'x', 1376, +1, -3800, -236, mat='lamp_warm', w=12, h=10, dead=True)
 
 cable_tray(Z, 'y', 1584, 2584, -3560, -122)
@@ -1848,7 +1848,7 @@ def decor(zone, model, x, y, z, yaw=0, clip=None, targetname=None, pitch=0, roll
                   'pitch': pitch, 'roll': roll})
     if clip:
         hx, hy, hz = clip
-        B.collision_box((x - hx, y - hy, z), (x + hx, y + hy, z + 2 * hz))
+        B.collision_box((x - hx, y - hy, z), (x + hx, y + hy, z + 2 * hz), zone=zone, kind='decor')
     if model in PIPE_TO_FLOOR:
         pipe_chase(zone, model, x, y, z, yaw)
 
@@ -1929,12 +1929,13 @@ def train_kit():
     # (QA g25t: a vertical 16-unit face could be stepped down but not climbed, by players or zombies)
     for x0, x1 in ((-2400, 2590), (-3600, -2400)):
         t0, t1, f0, f1 = cy - BALLAST_TOP_HALF, cy + BALLAST_TOP_HALF, cy - BALLAST_FOOT_HALF, cy + BALLAST_FOOT_HALF
-        B.collision_quad([(x0, t0, bz), (x1, t0, bz), (x1, t1, bz), (x0, t1, bz)], n=(0, 0, 1))
-        B.collision_quad([(x0, f0, TRAIN_BED), (x1, f0, TRAIN_BED), (x1, t0, bz), (x0, t0, bz)], n=(0, -0.45, 0.89))
-        B.collision_quad([(x0, t1, bz), (x1, t1, bz), (x1, f1, TRAIN_BED), (x0, f1, TRAIN_BED)], n=(0, 0.45, 0.89))
+        _bz = 'platform_a' if x1 > -2400 else 'service_tunnel'
+        B.collision_quad([(x0, t0, bz), (x1, t0, bz), (x1, t1, bz), (x0, t1, bz)], n=(0, 0, 1), zone=_bz, kind='train')
+        B.collision_quad([(x0, f0, TRAIN_BED), (x1, f0, TRAIN_BED), (x1, t0, bz), (x0, t0, bz)], n=(0, -0.45, 0.89), zone=_bz, kind='train')
+        B.collision_quad([(x0, t1, bz), (x1, t1, bz), (x1, f1, TRAIN_BED), (x0, f1, TRAIN_BED)], n=(0, 0.45, 0.89), zone=_bz, kind='train')
     # buffer stop at the tunnel's west end, buffer heads facing the platform (+x)
     decor('service_tunnel', 'iwz_track_buffer_stop', -3560, cy, bz, 0)
-    B.collision_box((-3560, cy - 52, bz), (-3488, cy + 52, bz + 48))
+    B.collision_box((-3560, cy - 52, bz), (-3488, cy + 52, bz + 48), zone='service_tunnel', kind='train')
     # platform edge panels (BO3 mp_metro, 128 / 64 long, 9 deep, 48 tall; back face on EDGE_Y, top at the deck)
     for x0, x1 in DECK_SEGS:
         x = x0
@@ -1968,18 +1969,18 @@ def train_kit():
             region(dn_, 'platform_a', (d0_, cy + 16, d1_, EDGE_Y), fz_, (0, 0, 0, 0))
             # (a85 reach audit) the door threshold: a clip plate over the gap between the car side and the platform edge, so the
             # door-bay nav cells rest on collision (emitcheck NAV_FLOATING platform_a, 49 above the ballast)
-            B.collision_quad([(d0_, cy + 16, fz_), (d1_, cy + 16, fz_), (d1_, EDGE_Y, fz_), (d0_, EDGE_Y, fz_)], n=(0, 0, 1))
+            B.collision_quad([(d0_, cy + 16, fz_), (d1_, cy + 16, fz_), (d1_, EDGE_Y, fz_), (d0_, EDGE_Y, fz_)], n=(0, 0, 1), zone='platform_a', kind='train')
             # the slot beside the hero car under its platform-side skirt (ballast bed, car side to the edge panel) is filled: a clip
             # brush from the bed to 8 under the car floor (a floor 37 above the ballast: no agent can stand in the slot and the walk
             # model agrees; a top higher than -328 would leave the ballast a 40 units headroom floor inside the brush)
-            B.collision_box((cx - 20, cy + 40, TRAIN_BED), (cx + 120, EDGE_Y - 8, fz_ - 8), nav=False)
+            B.collision_box((cx - 20, cy + 40, TRAIN_BED), (cx + 120, EDGE_Y - 8, fz_ - 8), nav=False, zone='platform_a', kind='train')
             adjacent(an_, dn_)
             adjacent(dn_, 'deck_mid')
         c, s_ = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
         for (a, b) in boxes:     # model-space clip boxes (players, bullets); yaw 0 / 180 keep them axis aligned
             xs = sorted((cx + c * a[0] - s_ * a[1], cx + c * b[0] - s_ * b[1]))
             ys = sorted((cy + s_ * a[0] + c * a[1], cy + s_ * b[0] + c * b[1]))
-            B.collision_box((xs[0], ys[0], oz + a[2]), (xs[1], ys[1], oz + b[2]), nav=False)
+            B.collision_box((xs[0], ys[0], oz + a[2]), (xs[1], ys[1], oz + b[2]), nav=False, zone='platform_a', kind='train')
         # interior (darkness design): dark before power; after power the hero car (cars[0]) gets dim emergency light
         # (warm, group 'power') and one flickering fluorescent tube (BO3 subway fixture lit / unlit swap, its light in
         # group 'flicker'); a broken fixture beside it. The other cars of a consist stay dark (broken fixtures only).
@@ -2061,7 +2062,7 @@ def place_ported(spec_path):
         for (a, b) in boxes:
             xs = sorted((x + c * a[0] - s_ * a[1], x + c * b[0] - s_ * b[1]))
             ys = sorted((y + s_ * a[0] + c * a[1], y + s_ * b[0] + c * b[1]))
-            B.collision_box((xs[0], ys[0], z + a[2]), (xs[1], ys[1], z + b[2]), nav=False)
+            B.collision_box((xs[0], ys[0], z + a[2]), (xs[1], ys[1], z + b[2]), nav=False, zone=e['zone'], kind='decor')
             u_.append((xs[0], ys[0], z + a[2], xs[1], ys[1], z + b[2]))
         # (g27b, QA g27: navmesh under the suitcase, within 12 of the wall fittings) one nav cut over the whole
         # footprint plus 8 (the voxel clip boxes left nav cells between them); a wall fitting ("wall") cuts down to
@@ -2148,7 +2149,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
             decor('platform_b', 'iwz_track_256_disused_end' if (pb_end_ and x_ == segs_pb_[-1]) else 'iwz_track_256_disused', x_, 3300, PB_TRENCH[4] + 16, 0)
         if pb_end_:
             decor('platform_b', 'iwz_buffer_sleepers', segs_pb_[-1] + 214, 3300, PB_TRENCH[4] + 16, 0)
-            B.collision_box((segs_pb_[-1] + 210, 3230, PB_TRENCH[4] + 16), (segs_pb_[-1] + 258, 3354, PB_TRENCH[4] + 74), nav=False)
+            B.collision_box((segs_pb_[-1] + 210, 3230, PB_TRENCH[4] + 16), (segs_pb_[-1] + 258, 3354, PB_TRENCH[4] + 74), nav=False, zone='platform_b', kind='decor')
         # ticket hall fare line east of the booth: three turnstiles and a broken one
         for x_, m_ in ((130, 'cp_disco_subway_turnstyle_animated'), (190, 'cp_disco_subway_turnstyle_animated'),
                        (250, 'cp_disco_subway_turnstyle_animated'), (310, 'cp_disco_subway_turnstyle_missing_arm')):
@@ -2240,7 +2241,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     for x_ in (-1130, -1050, -970, -890, -810, -730, -650, -570, -490, -410, -330):
         if KIT:
             decor(Zh, 'cp_disco_subway_turnstyle_animated' if x_ != -650 else 'cp_disco_subway_turnstyle_missing_arm', x_, 3700, 0, 90, (18, 16, 23))
-        B.collision_box((x_ - 16, 3684, 0), (x_ + 16, 3716, 40))
+        B.collision_box((x_ - 16, 3684, 0), (x_ + 16, 3716, 40), zone=Zh, kind='decor')
     for x_, y_, a_ in ((-260, 4470, 30), (-120, 4520, 200), (-200, 4580, 70), (60, 4570, 300)):     # street stair collapse
         decor(Zh, 'debris_concrete_rubble_pile_01_dark', x_, y_, 0 - 3, a_)
     for x0_, y0_ in DESKS:
@@ -2506,7 +2507,7 @@ for _k, _donor, _body, _o, _yaw, _zone, _pid in PERKS_P1:
     _c, _s = round(math.cos(math.radians(_yaw))), round(math.sin(math.radians(_yaw)))
     _xs = [_o[0] + _c * _a - _s * _b for _a in (-16, 24) for _b in (-20, 20)]
     _ys = [_o[1] + _s * _a + _c * _b for _a in (-16, 24) for _b in (-20, 20)]
-    B.collision_box((min(_xs), min(_ys), _o[2]), (max(_xs), max(_ys), _o[2] + 88))
+    B.collision_box((min(_xs), min(_ys), _o[2]), (max(_xs), max(_ys), _o[2] + 88), zone=_zone, kind='interaction')
 
 
 # nav cells: one z per 32-unit cell from the region list (first region wins), minus solid blockers
@@ -3586,9 +3587,9 @@ json.dump(plan, open(os.path.join(out, 'plan.json'), 'w'))
 json.dump({'quads': B.records}, open(os.path.join(out, 'surfaces.json'), 'w'))
 B.sync_zone(B.zone)
 import sections.zonemap as _zonemap
-_zm = _zonemap.build(B.mesh, B.col_zone, {z_: zd_['box'] for z_, zd_ in ZONES.items()}, os.path.join(out, 'world.bin'))
+_zm = _zonemap.build(B.mesh, B.col_zone, {z_: zd_['box'] for z_, zd_ in ZONES.items()}, os.path.join(out, 'world.bin'), B.col_kind)
 _zonemap.write(os.path.join(out, 'zonemap.json'), _zm)
-print('zonemap: render %s collision %s no-zone %d/%d moved-by-geometry %s' % (_zm['summary']['render_triangles'], _zm['summary']['collision_triangles'],
-      _zm['summary']['render_without_zone'], _zm['summary']['collision_without_zone'], sum(_zm['check']['collision_zone_moved_by_geometry'].values())))
+print('zonemap: render %s collision %s no-zone %d/%d outside-volume %s' % (_zm['summary']['render_triangles'], _zm['summary']['collision_triangles'],
+      _zm['summary']['render_without_zone'], _zm['summary']['collision_without_zone'], sum(_zm['check']['collision_centroid_outside_zone_volume'].values())))
 print('verts', nv, 'indices', ni, 'surfaces', ns, 'quads', B.quads, 'trim_quads', B.trim_quads, 'bounds', wb, 'collision', info, 'nav areas', nareas,
       'nav bytes', len(nav), 'materials', len(B.used), 'lights', len(LIGHTS), 'signs', len(SIGNS))

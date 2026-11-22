@@ -32,7 +32,7 @@ def render_surfaces(mesh):
     return out
 
 
-def build(mesh, col_zone, zone_boxes, world_path=None):
+def build(mesh, col_zone, zone_boxes, world_path=None, col_kind=None):
     """mesh: mapgen.Mesh after write_world; col_zone: zone per mesh.col triangle; zone_boxes: {zone: (x0,y0,z0,x1,y1,z1)}."""
     surfaces = render_surfaces(mesh)
     if world_path:
@@ -49,25 +49,18 @@ def build(mesh, col_zone, zone_boxes, world_path=None):
         if tri != [s[2] for s in surfaces]:
             raise RuntimeError('zonemap: world.bin surfaces do not match the mesh chunking (%d vs %d)' % (len(tri), len(surfaces)))
     col_zone = list(col_zone) + [None] * (len(mesh.col) - len(col_zone))
-    # The recorded zone is the generator's context (the zone of the last quad / collision call). Props, kit pieces and the
-    # train are placed with their clip boxes while another zone is current, so a triangle whose centroid lies more than 48
-    # units outside the volume of its recorded zone is moved to the zone whose volume is nearest (0 when inside one).
+    # The zone is the one the generator recorded (explicit at the call sites that know it, else the zone of the last quad /
+    # collision call). The geometry audit below only REPORTS triangles whose centroid is more than 48 units outside the
+    # volume of their recorded zone; it never changes a zone.
     def box_dist(bx, c):
         return sum(max(bx[a] - c[a], 0.0, c[a] - bx[a + 3]) ** 2 for a in range(3)) ** 0.5
     moved = {}
-    fixed = []
     for t, z in zip(mesh.col, col_zone):
-        c = [sum(p[a] for p in t) / 3 for a in range(3)]
-        if z in zone_boxes and box_dist(zone_boxes[z], c) <= 48.0:
-            fixed.append(z)
-            continue
-        if not zone_boxes:
-            fixed.append(z)
-            continue
-        zn = min(zone_boxes, key=lambda k: (box_dist(zone_boxes[k], c), k))
-        fixed.append(zn)
-        key = '%s->%s' % (z, zn) if zn != z else '%s (far from its volume, kept)' % z
-        moved[key] = moved.get(key, 0) + 1
+        if z in zone_boxes:
+            c = [sum(p[a] for p in t) / 3 for a in range(3)]
+            if box_dist(zone_boxes[z], c) > 48.0:
+                moved[z] = moved.get(z, 0) + 1
+    fixed = col_zone
     recorded = col_zone
     col_zone = fixed
     zones = []
@@ -83,6 +76,7 @@ def build(mesh, col_zone, zone_boxes, world_path=None):
             runs[-1][1] += 1
         else:
             runs.append([k, 1])
+    kinds = list(col_kind or []) + ['shell'] * (len(mesh.col) - len(col_kind or []))
     tris = [[c for p in t for c in p] for t in mesh.col]
     tags = [mesh.col_tag.get(i) for i in range(len(mesh.col))]
     rz, cz_ = {}, {}
@@ -93,10 +87,10 @@ def build(mesh, col_zone, zone_boxes, world_path=None):
     return {
         'schema': SCHEMA,
         'render': {'surfaces': [{'zone': z, 'material': m, 'triangles': n} for z, m, n in surfaces]},
-        'collision': {'zones': zones, 'zone_runs': runs, 'tris': tris, 'tag': tags},
+        'collision': {'zones': zones, 'zone_runs': runs, 'kind': list(kinds), 'tris': tris, 'tag': tags},
         'summary': {'render_triangles': rz, 'collision_triangles': cz_,
                     'render_without_zone': rz.get(None, 0), 'collision_without_zone': cz_.get(None, 0)},
-        'check': {'collision_zone_moved_by_geometry': moved},
+        'check': {'collision_centroid_outside_zone_volume': moved},
     }
 
 
