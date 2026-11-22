@@ -539,6 +539,7 @@
     "tools-source/iwzmap/scenes/station_zero_kits.json",
     "tools-source/iwzmap/scheduler.ps1",
     "tools-source/iwzmap/simd_check.py",
+    "tools-source/iwzmap/split_zone.py",
     "tools-source/iwzmap/st1_report.py",
     "tools-source/iwzmap/stage_cache.py",
     "tools-source/iwzmap/station_zero.py",

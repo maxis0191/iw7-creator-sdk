@@ -18,6 +18,7 @@ sys.path.insert(0, HERE)
 
 import assemble_key as ak  # noqa: E402
 import map_identity as mi  # noqa: E402
+import split_zone as sz  # noqa: E402
 
 
 def write(path, data=b''):
@@ -325,6 +326,41 @@ class MapIdentityTest(unittest.TestCase):
             csv = open(os.path.join(work, 'zone_source', m + '.csv')).read()
             self.assertNotIn(other, csv)
             self.assertEqual(open(os.path.join(work, 'zonetool', m, 'maps', 'cp', m + '.d3dbsp.ents')).read(), m)
+
+
+
+class SplitZoneTest(unittest.TestCase):
+    """The experiment tool: stock rows to the base csv, the map's own rows to the map csv, ignore first."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.stock_csv = os.path.join(self.tmp, 'stock.csv')
+        write(self.stock_csv, 'xmodel,gun\nmaterial,,mat_ref\nimage,img_a\nrawfile,scripts/cp/zombies/x.gsc\n')
+        write(os.path.join(self.tmp, 'zone_source', 'cp_blend_a.csv'),
+              '// cp_blend_a: generated world\nrequire,techsets_common\nrawfile,scripts/cp/maps/cp_blend_a/cp_blend_a.gsc\n'
+              'xmodel,gun\nmaterial,,mat_ref\nimage,img_a\nimage,my_custom_tga\nnetconststrings,ncs_efx_level\n'
+              'stringtable,cp/zombies/cp_blend_a_playercash_images.csv\nrawfile,scripts/cp/zombies/x.gsc\ncom_map,maps/cp/cp_blend_a.d3dbsp\n')
+
+    def read(self, name):
+        with open(os.path.join(self.tmp, 'zone_source', name)) as f:
+            return f.read()
+
+    def test_split(self):
+        nb, nm = sz.split(self.tmp, 'cp_blend_a', 'iwz_base', [self.stock_csv])
+        base = self.read('iwz_base.csv').splitlines()
+        own = self.read('cp_blend_a.csv').splitlines()
+        self.assertEqual(base, ['// cp_blend_a: generated world', 'require,techsets_common', 'xmodel,gun', 'material,,mat_ref', 'image,img_a',
+                                'rawfile,scripts/cp/zombies/x.gsc'])
+        self.assertEqual(own[:3], ['// cp_blend_a: generated world', 'ignore,iwz_base', 'require,techsets_common'], 'ignore comes before any asset row')
+        self.assertEqual(own[3:], ['rawfile,scripts/cp/maps/cp_blend_a/cp_blend_a.gsc', 'material,,mat_ref', 'image,my_custom_tga',
+                                   'netconststrings,ncs_efx_level', 'stringtable,cp/zombies/cp_blend_a_playercash_images.csv',
+                                   'com_map,maps/cp/cp_blend_a.d3dbsp'])
+        self.assertEqual((nb, nm), (4, 6))
+        full = self.read('cp_blend_a.full.csv').splitlines()
+        self.assertEqual({row for row in full if not row.startswith('//')} - set(base) - set(own), set(), 'no row of the full csv is lost')
+        sz.split(self.tmp, 'cp_blend_a', 'iwz_base', [self.stock_csv])
+        self.assertEqual(full, self.read('cp_blend_a.full.csv').splitlines(), 'the full copy is never overwritten')
 
 
 class OneCompilerTest(unittest.TestCase):

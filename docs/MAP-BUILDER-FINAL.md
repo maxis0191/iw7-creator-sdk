@@ -58,8 +58,8 @@ The tool comes first; the sections further down are its demonstration, not the g
 | A3 | The new section plays | door D4 buys and opens; zombies spawn in the Arcade and reach the player; rounds run with the player there; perk, wall buys | open |
 | A4 | Density at the stock level | props, distinct models and materials per 1000 x 1000 of floor against a measured stock reference (numbers below once measured) | open |
 | A5 | Look | three independent reviewers, in-game frames at fixed cameras, stock frames as reference: 7.5 or more of 10 for each of the three sections (RC4: 6.5 lit, about 5 dark) | open |
-| A6 | Loop | a geometry-only change of a section to a playable map: measured before (403 s build + 154 s bake) and after | open |
-| A7 | A map of its own | a generic Blender map with its own name, arena, title and browser art; two installed side by side | open |
+| A6 | Loop | a geometry-only change of a section to a playable map: measured before (403 s build + 154 s bake) and after | built, unproven: incremental assembly by key is the default (fake-tree tests pass); predicted 70 to 85 s for a 360-triangle map, 20 s only with the base-zone split (experiment E1 written, not run); see [MAP-BUILD-LOOP](MAP-BUILD-LOOP.md) |
+| A7 | A map of its own | a generic Blender map with its own name, arena, title and browser art; two installed side by side | built, unproven: `build-blend.ps1` takes the name from `layout.json`, generates arena, title string and `<map>_art.ff`; renaming tested on a fake emit and zone tree; the two-map build and the browser list check are for the lead ([MAP-BUILD-LOOP](MAP-BUILD-LOOP.md) section 4) |
 | A8 | Stairs | a second flight (rotated, both sides open) passes climb and descent over several uncached runs | open |
 | A9 | Landed | everything on main, checks on the exact head, author guide, DEVKIT row | open |
 
@@ -68,3 +68,4 @@ The preview (`tools-source/iwzmap/preview/`) serves composition only: its lit st
 ## State
 
 - 22 Nov 2026: acceptance written; work started.
+- 23 Nov 2026 (build loop worker): one pinned compiler (`machine.ps1 MapCompiler`); incremental assembly by an input key in `build-sz2.ps1` / `build-blend.ps1` (A6 part: no run yet); a Blender map takes its name, arena, title and browser art from the emit (A7 part: no run yet); base-zone split analysed, needs a client change for the product, experiment E1 (load-zone slot, no client change) written for the lead. Details and commands: [MAP-BUILD-LOOP](MAP-BUILD-LOOP.md).
