@@ -407,10 +407,10 @@ def stair_ramps(meshes):
             hflat = z1 + 42.0
             sc_ = s0 + (s1 - s0) * ((hflat - 64.0 - z0) / (z1 - z0)) if z1 > z0 else s1
             sc_ = min(max(sc_, min(s0, s1)), max(s0, s1)) if (s1 - s0) * (sc_ - s0) >= 0 else s0
-            # the wall runs from 24 before the ramp foot (on the floor) to the top landing. Started where the ramp is 18 up, zombies
-            # stepped onto the ramp from the open side off the navigation and stuck (1 to 3 of 4 a run); ending flush with the ramp
-            # foot, its end face and the ramp edge made a pocket that wedged one zombie (test map 1, 22 Nov 2026)
-            sw_ = s0 - sg * 24.0
+            # the wall runs from the ramp foot to the top landing. Started where the ramp is 18 up, zombies stepped onto the ramp
+            # from the open side off the navigation and stuck (1 to 3 of 4 a run); extended 24 onto the floor before the foot, it cut
+            # the upper floor off the navigation (test map 1, 22 Nov 2026)
+            sw_ = s0
             parts = [((sw_, sc_), (hflat, hflat)), ((sc_, s1), (hflat, zs(s1) + 64.0))]
             wt = []
             for sv_, tops_ in parts:
