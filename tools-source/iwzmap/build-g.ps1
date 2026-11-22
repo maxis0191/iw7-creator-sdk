@@ -10,9 +10,9 @@ $RT=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2')
 $S=$PSScriptRoot                       # the checkout this script is in (no other SDK worktree)
 $B="$S\bake"
 $PY=(& "$PSScriptRoot\machine.ps1" BakePython)+'\Scripts\python.exe'
-# the compiler: the x64-zt main binary (door brush models, named scriptable lights, static models, tome culling, zone-step
-# fix: compiler-landing\zonetool-playeranim-1dcd449.exe = main 342b870) unless -ZoneToolExe or IWZ_ZONETOOL_EXE names one
-$Z=if($ZoneToolExe){ $ZoneToolExe } elseif($env:IWZ_ZONETOOL_EXE){ $env:IWZ_ZONETOOL_EXE } else { (& "$PSScriptRoot\machine.ps1" Runtime 'compiler-landing\zonetool-playeranim-1dcd449.exe') }
+# the compiler: machine.ps1 MapCompiler (IWZ_ZONETOOL_EXE, else the one pinned default of every map build, named and explained there)
+# unless -ZoneToolExe names one
+$Z=if($ZoneToolExe){ $ZoneToolExe } else { (& "$PSScriptRoot\machine.ps1" MapCompiler) }
 $D=(& "$PSScriptRoot\machine.ps1" TemplateDump)
 $src="$L\src_$Tag"; $um="$L\um_$Tag"
 # -Kit: foreign-zone kit models (cp_disco / cp_final) placed by the generator (IWZ_KIT=1) and imported by kit_import.py

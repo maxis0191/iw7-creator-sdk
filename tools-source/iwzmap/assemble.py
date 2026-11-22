@@ -73,7 +73,12 @@ _json.dump({'dumps': [os.path.abspath(d) for d in dumps], 'generated': generated
 sp = os.path.join(dst, 'scripts', 'cp', 'maps', mapname, mapname + '.gsc')
 os.makedirs(os.path.dirname(sp), exist_ok=True)
 if os.path.exists(sp): os.remove(sp)
-open(sp, 'w', newline='\n').write(open(script).read())
+level_text = open(script).read()
+if mapname != 'cp_iwz':
+    # the level script is written for cp_iwz (cp_iwz3.gsc): it calls the perk module by path, and add_perks.py puts that module
+    # under scripts/cp/maps/<map>/ (its file names keep the cp_iwz_ prefix). Every script path of the template name moves.
+    level_text = level_text.replace('scripts\\cp\\maps\\cp_iwz\\', 'scripts\\cp\\maps\\%s\\' % mapname)
+open(sp, 'w', newline='\n').write(level_text)
 bsp = 'maps/cp/%s.d3dbsp' % mapname
 rows = ['// %s: generated world (iwzmap) + stock IW7 materials' % mapname]
 # world assets go last (stock order), after every material/image/model they reference
@@ -201,14 +206,24 @@ if os.environ.get('IWZ_KEEP_STOCK_REFS') != '1':
     rows[:] = out
     print('references held in full by the dumps, now full rows:', upgraded)
 # map-owned content (tables and raw files the engine looks up by map name): content/<map>/<asset path>
-content = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'content', mapname)
-for root, _, files in os.walk(content):
+# A map without a folder of its own gets the cp_iwz one with the name replaced in every path and file (the tables the engine
+# looks up by level.script: cp/zombies/<map>_playercash_images.csv).
+content_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'content')
+content = os.path.join(content_root, mapname)
+content_from = content
+if not os.path.isdir(content) and mapname != 'cp_iwz' and os.path.isdir(os.path.join(content_root, 'cp_iwz')):
+    content_from = os.path.join(content_root, 'cp_iwz')
+for root, _, files in os.walk(content_from):
     for f in files:
-        rel = os.path.relpath(os.path.join(root, f), content).replace(os.sep, '/')
+        rel = os.path.relpath(os.path.join(root, f), content_from).replace(os.sep, '/')
+        data = open(os.path.join(root, f), 'rb').read()
+        if content_from != content:
+            rel = rel.replace('cp_iwz', mapname)
+            data = data.replace(b'cp_iwz', mapname.encode())
         d = os.path.join(dst, rel)
         os.makedirs(os.path.dirname(d), exist_ok=True)
         if os.path.exists(d): os.remove(d)
-        open(d, 'wb').write(open(os.path.join(root, f), 'rb').read())
+        open(d, 'wb').write(data)
         r = ('stringtable,' if rel.endswith('.csv') else 'rawfile,') + rel
         if r not in rows: rows.append(r)
         print('content', r)
