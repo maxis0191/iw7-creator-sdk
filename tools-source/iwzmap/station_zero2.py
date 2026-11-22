@@ -1942,10 +1942,6 @@ def train_kit():
             w = 128 if x1 - x >= 96 else 64
             decor('platform_a', 'iwz_platform_edge_%d' % w, x + w / 2, EDGE_Y - 5, DECK_Z - 48, 0)
             x += w
-        # (RC4, RC2 item 1 / RC3 item 3: the panels' painted coping band read as a blown white line from the pit, lit
-        # and dark; it is the model's top, lit by the light grid) a lightmapped dark concrete cap over the band, 2 proud
-        # of the panel face
-        B.box((x0, EDGE_Y - 11, DECK_Z - 6), (x1, EDGE_Y, DECK_Z + 0.5), 'conc_dark', 'platform_a', collide=False, nav=False)
     cars = []
     boxes_path = os.environ.get('IWZ_TRAIN_CAR_BOXES', '')
     boxes = json.load(open(boxes_path))['boxes'] if boxes_path and os.path.isfile(boxes_path) else []
@@ -2013,7 +2009,7 @@ def train_kit():
             # (RC4, RC3 review item 4 / FRAME_BLANK dark_hero_car_1 mean 2.4) a battery lamp that stays on in the dark:
             # the hero car's windows glow faintly before power, so the car reads from the platform
             LIGHTS.append({'zone': 'platform_a', 'origin': (cx - 40, cy, fz - 40), 'type': 'omni',
-                           'color': (1.0, 0.72, 0.5), 'radius': 200, 'intensity': 0.14, 'fixture': 'emergency',
+                           'color': (1.0, 0.8, 0.64), 'radius': 180, 'intensity': 0.14, 'fixture': 'emergency',
                            'train': 'battery'})
         else:
             decor('platform_a', 'iwz_fluo_subway_broken', cx - 120, cy, fz, 90)
@@ -2084,7 +2080,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         decor(zn_, 'debris_concrete_rubble_pile_01_dark', x_, y_, z_ - 3, a_)
     decor('ticket_hall', 'trashbin_01_iw6', -1100, 4340, 0, 0, (16, 16, 24))
     decor('ticket_hall', 'trashbin_01_iw6', 360, 4100, 0, 0, (16, 16, 24))
-    for x, y, a in ((-950, 4336, 98), (205, 4342, 84)):      # (RC4, review: identical seats) yaw and spot differ a little
+    for x, y, a in ((-950, 4336, 98), (180, 4344, 84)):      # (RC4, review: identical seats) yaw and spot differ a little
         decor('ticket_hall', BENCH, x, y, 0, a, BENCH_CLIP[0])
     for x in (-2048, -1024, 64, 1300):
         if KIT:     # worn subway bench (cp_disco, 40 x 192): long axis along the wall
@@ -2208,7 +2204,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
                                             ('stair_a', -796, 3000, 70, 0, (1.0, 0.25, 0.08)),
                                             ('stair_b', -1700, 3396, -80, 270, (1.0, 0.7, 0.5)),
                                             ('stair_b', -1450, 3108, 40, 90, (1.0, 0.25, 0.08)),
-                                            ('service_tunnel', -3200, 1580, -214, 270, (1.0, 0.7, 0.5))):
+                                            ('service_tunnel', -3050, 1580, -214, 270, (1.0, 0.7, 0.5))):
             dec_(zn_, 'clk_emergency_light', x_, y_, z_, yaw_)
             # (g27, review C generator_room_1: a light pool with a violet halo and a tiny bracket for a fixture) a caged
             # lamp housing with a lit lens behind the kit lamp, the light 18 out from the wall instead of on it
