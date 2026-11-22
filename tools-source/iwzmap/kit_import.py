@@ -189,6 +189,10 @@ def main(argv=None):
             q = ln.strip().split(',')
             if len(q) == 2 and q[1]:
                 runtime.add((q[0], q[1]))
+            elif len(q) == 3 and not q[1] and q[2]:
+                # a reference row of a runtime zone (techset,,2d): a zone loaded before it defines the asset (the code
+                # zones, not dumped), so it is loaded at runtime too
+                runtime.add((q[0], q[2]))
     ref_rows = []
     zone_types = {}                             # zone -> {name: {types}} from the dump csv of each of its roots
 
