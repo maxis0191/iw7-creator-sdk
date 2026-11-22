@@ -3,7 +3,7 @@ param(
   [Parameter(Mandatory)][string]$UmOut,                                                               # usermap dir to fill (<Map>.ff, .arena)
   [string]$Map='cp_iwz',
   [string]$Work=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-blend\ztwork'),                           # own zonetool work dir (new-work.ps1 + zonetool\cp_zmb_tpl junction), NOT the Station Zero one
-  [string]$ZoneToolExe=(& "$PSScriptRoot\machine.ps1" ZoneToolExe 'x64-zt-iwz-map'),
+  [string]$ZoneToolExe=$(if($env:IWZ_ZONETOOL_EXE){ $env:IWZ_ZONETOOL_EXE } else { (& "$PSScriptRoot\machine.ps1" Runtime 'compiler-landing\zonetool-playeranim-1dcd449.exe') }),  # the build-g.ps1 compiler: generated volumes get entity shapes (IWZ_TRIGGER_SHAPES); the x64-zt-iwz-map build did not (testmap1, 22 Nov)
   [string]$TemplateDump=(& "$PSScriptRoot\machine.ps1" TemplateDump),
   [string]$Arena=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-release\cp_iwz-rc1\usermaps\cp_iwz\cp_iwz.arena'),
   [int]$Tries=600,
