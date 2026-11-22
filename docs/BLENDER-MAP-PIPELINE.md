@@ -67,3 +67,10 @@ causes are a per-view limit on runtime lights in the engine, or a bank that did 
   volumes (`blend_t1_rounds` 2/2, `blend_t1_accept` 7/9). Failed: zombies did not climb to the upper floor (a 19-unit step
   in the nav at the stair; the fix is the stock clip ramp over stairs, workstream E), and the closed door let the player
   through (the generic level script `cp_iwz3.gsc` hid the door blockers, which removes their collision: fixed).
+- 22 Nov 2026, in-game diagnosis (lead, Forge, `ops/gamelab/lib/navprobe.gsc` on server main): the engine reads our generated
+  graphs (point lookup per floor correct: ground 0, upper 136, ramp 73.7) and the round-1 grid graph moves zombies to the player
+  on the floor in 12 s, as Station Zero does; on the round-2/3 POLYGON graph zombies get the player as enemy and a path goal but do
+  not walk to it (36 s, goal inside their own area). Open, workstream N round 4: reproduce stock area rules (collinear corners,
+  centre, radius, cost, size) and a quads mode. Stairs: ramp lifted 2 over the nosings and side clip walls on the stair (done);
+  the climb is not proven until the area problem is solved. One server stall (game time stopped mid-chase, no dump) on poly2,
+  not reproduced in 3 later runs.
