@@ -82,6 +82,85 @@ python -B iwz_preview_render.py light  --src <emit src> --plan <plan> --frames <
 python -B iwz_preview_render.py lights --src <emit src> --plan <plan> --frames <engine frames> --out <dir>                                  # lit state, runtime lights
 ```
 
+
+### Measured: dark state (`light --power off --ev -3`, lightmap + props, no fitted curve, prop_gain 1)
+
+Edge IoU as before (Sobel of the blurred log luminance, 3 px). "median upper" = median luminance of rows 60-330 (no weapon, no flashlight pool), preview / engine.
+The engine's dark frames contain the player's flashlight pool and weapon, which the preview has not, so the mean ratio is below 1 where the flashlight dominates.
+
+| frame (exposure -3 EV) | edge IoU | lum ratio, mean | lum ratio, median upper rows |
+|---|---|---|---|
+| dark_ticket_hall_1 | 0.548 | 0.446 | 1.140 |
+| dark_stair_a_1 | 0.610 | 1.895 | 2.175 |
+| dark_platform_a_1 | 0.588 | 0.644 | 1.267 |
+| dark_maint_corridor_1 | 0.657 | 0.391 | 0.638 |
+| dark_generator_room_1 | 0.637 | 1.131 | 1.327 |
+| dark_control_room_1 | 0.707 | 0.481 | 0.933 |
+| dark_service_tunnel_1 | 0.650 | 2.242 | 1.479 |
+| dark_platform_b_1 | 0.562 | 0.976 | 1.517 |
+| dark_stair_b_1 | 0.569 | 0.296 | 0.500 |
+| dark_pap_arch_1 | 0.662 | 0.214 | 0.650 |
+| dark_well_w_1 | 0.468 | 0.366 | 0.594 |
+| dark_well_e_1 | 0.542 | 0.124 | 0.746 |
+| dark_hero_car_1 | 0.551 | 1.732 | 2.744 |
+| dark_pap_alcove_1 | 0.343 | 0.099 | 0.607 |
+| dark_pap_alcove_2 | 0.247 | 0.230 | 0.622 |
+| mean | 0.556 | 0.751 | 1.129 |
+
+Before this work the lightmap only render at gain 1 (no exposure at all) was 6.5 times too bright on the mean; with the engine tone map and the vision's fixed exposure
+there is no fitted parameter and the median of the upper rows is within 13 % on average (frames range 0.5 to 2.7). Side by sides (preview left, engine right):
+`IW7-Runtime/iwz-stage2/finish/preview/light/dark1/sidebyside/dark_{ticket_hall,generator_room,control_room}_1_preview_vs_engine.png`.
+
+### Measured: lit state (`lights`, power on, 72 runtime lights with the engine falloff)
+
+One global parameter, `UNIT` (the engine's light record colour is colour * intensity * UNIT, the CPU side of that unit is not in any shader): the grid minimum of the mean
+pattern error over 10 values is UNIT = 1e-3. The exposure of each frame is AUTO in the engine and is not modelled: each frame gets the gain that matches the median luminance of
+the engine frame (the column "exposure EV" is that gain in stops against the stock curve constants), before and after. "Pattern rms log err" is the rms of
+log(preview / engine) over the masked pixels of 4 x 4 block means (large because the engine has black pixels the log amplifies); lower is better.
+Dark and lit frames of the plan are the same views, so lights are the only difference of the two states.
+
+| frame | edge IoU before | edge IoU after | pattern rms log err before | pattern rms log err after | exposure EV before | exposure EV after |
+|---|---|---|---|---|---|---|
+| lit_ticket_hall_1 | 0.680 | 0.644 | 2.033 | 1.397 | -0.732 | -1.184 |
+| lit_stair_a_1 | 0.651 | 0.678 | 1.654 | 1.483 | -1.749 | -2.557 |
+| lit_platform_a_1 | 0.457 | 0.594 | 2.398 | 2.300 | -0.369 | -0.851 |
+| lit_maint_corridor_1 | 0.527 | 0.523 | 1.453 | 1.527 | 0.110 | -1.776 |
+| lit_generator_room_1 | 0.600 | 0.618 | 1.644 | 1.619 | 0.665 | -0.632 |
+| lit_control_room_1 | 0.639 | 0.687 | 2.117 | 1.913 | 0.657 | -0.518 |
+| lit_service_tunnel_1 | 0.615 | 0.615 | 2.055 | 2.055 | -0.725 | -0.725 |
+| lit_platform_b_1 | 0.681 | 0.680 | 1.617 | 1.632 | 0.497 | 0.446 |
+| lit_stair_b_1 | 0.541 | 0.652 | 1.533 | 1.102 | 0.193 | -1.613 |
+| lit_pap_arch_1 | 0.580 | 0.573 | 1.740 | 1.187 | 0.353 | -0.255 |
+| lit_well_w_1 | 0.498 | 0.488 | 2.250 | 2.220 | -1.104 | -1.238 |
+| lit_well_e_1 | 0.486 | 0.510 | 1.745 | 1.585 | -0.873 | -1.073 |
+| lit_hero_car_1 | 0.375 | 0.509 | 1.994 | 2.023 | -2.936 | -3.413 |
+| lit_pap_alcove_1 | 0.343 | 0.339 | 1.471 | 1.352 | -0.948 | -1.284 |
+| lit_pap_alcove_2 | 0.252 | 0.252 | 1.423 | 1.423 | -2.712 | -2.720 |
+| mean | 0.528 | 0.557 | 1.808 | 1.655 | -0.645 | -1.293 |
+
+By eye, after (lightmap + lights) against the engine, one sentence per frame: ticket_hall: ceiling, stairs and the bright side wall now match in brightness, the engine floor is cool grey where the preview floor is warm brown;
+stair_a: walls are far brighter than the engine's near black walls, the lamps' pools match; platform_a: ceiling and pillars now read like the engine, the preview floor is black where the engine shows pale tiles;
+maint_corridor: layout and lamp pool match, the engine is cool and glossy with near black lower walls, the preview warm and flat; generator_room: lamps, machine and the dim doorway match,
+the engine floor is brighter and cooler; control_room: props and layout match, the preview has a strong red wash from the baked emergency lights that the engine shows far weaker;
+service_tunnel: brightness and shape match closely, the engine adds glossy walls and rails; platform_b: structure matches, the preview floor is near black and the fire is missing;
+stair_b: green walls match well, the engine's far window is blown out where the preview's is dim; pap_arch: structure and brightness match, the engine is cooler and the floor glossy;
+well_w and well_e: wall lamps and glow match, engine wall tiles are cooler and the platform edge material differs (salmon in the preview, pale grey in the engine);
+hero_car: preview much darker (engine ceiling and floor lit, fire and debris), the blue car matches; pap_alcove_1: preview warm and solid where the engine shows chain link and a cool cast;
+pap_alcove_2: the engine has a large projector prop the emit does not list, the walls match in structure. The engine frames are consistently cooler than the preview: the lit vision's colour grade
+(its own LUT and curve constants) is not in any capture on disk, the stock LUT is used.
+
+Side by sides (before | after | engine) for all 15: `IW7-Runtime/iwz-stage2/finish/preview/light/lit1/sidebyside/lit_*_before_after_engine.png`
+(ticket_hall, generator_room, control_room among them).
+
+### Black control room (`lit_generator_room_1`)
+
+Not an engine limit. `ENGINE-SHADERS.md` section 4: per pixel limits 64 (primary omni / spot), 32 (dynamic), 256 light records per view; the largest number of lights covering one pixel of that view is 7.
+The room is drawn and dim in the engine; only two control room lamps reach what is visible through the door, with a smoothstep weight of 0.027 and 0.010.
+
+Open items found on the way (not changed): the world shader reads channel R of the `..._packed_nog` map as gloss, not occlusion (ENGINE-SHADERS.md section 2); the preview still multiplies R
+into the lightmap term A (an inference of the earlier round, now contradicted by the shader) and decodes colour maps with the sRGB curve where the engine squares them (c^2). Specular, reflection
+probes, shadows of the 9 shadowed lights, bloom (approximated), the lit vision's colour grade and the flashlight are not modelled.
+
 ## What it cannot show
 
 FX and particles; the engine's light grid lighting of models (direction, specular, SH order 1 bands) and
