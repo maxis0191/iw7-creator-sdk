@@ -26,9 +26,9 @@ The tool comes first; the sections further down are its demonstration, not the g
 
 | # | Tool line | Measure | State |
 |---|---|---|---|
-| T1 | Live edit | prop or light change visible in the running game in under 1 s; a frame back in under 2 s; 50 edits in a row without a restart | open |
+| T1 | Live edit | prop or light change visible in the running game in under 1 s; a frame back in under 2 s; 50 edits in a row without a restart | built and offline-tested, not run in the game (23 Nov: [LIVE-LINK](LIVE-LINK.md), proof `live/prove_live.py`) |
 | T2 | Geometry to game | a geometry change playable in 20 s or less, camera back at the same spot (before: 403 s + 154 s) | open |
-| T3 | In-game editor | place, move, turn, delete, save with keys in the game; the saved document rebuilds to the same placement (positions within 0.1) | open |
+| T3 | In-game editor | place, move, turn, delete, save with keys in the game; the saved document rebuilds to the same placement (positions within 0.1) | phase 1 built (keys: place, select, delete, turn; `save_section`), not run in the game; no move key, no menu ([LIVE-LINK](LIVE-LINK.md)) |
 | T4 | One document | the same map written by the Python API, Blender and the in-game editor round-trips with no loss | open |
 | T5 | Any stock model | a model of any dumped zone placed live and in a build with no hand step | open |
 | T6 | Gameplay kit and tests | doors, power, perks, wall buys, wheel, Pack-a-Punch, spawn zones placed as objects; the test plan generated from the document passes | open |

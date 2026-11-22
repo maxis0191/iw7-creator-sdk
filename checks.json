@@ -67,6 +67,19 @@
       ]
     },
     {
+      "id": "tools-source-iwzmap-live",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/iwzmap/live/tests",
+        "-v"
+      ]
+    },
+    {
       "id": "tools-source-iwzmap-preview",
       "command": [
         "python",
