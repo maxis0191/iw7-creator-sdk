@@ -104,7 +104,11 @@ any angle, edges anywhere. Steps:
 5. Convex merge: neighbouring polygons are joined along their shared edges while the result stays one simple convex
    polygon, planar within `plane_tol` units, with at most `max_edges` (14, stock range 3 to 14) corners; a vertex in the
    middle of an edge with the same neighbour on both sides is not a corner.
-6. Links: the neighbour of an edge is the polygon that owns the same two vertices reversed. Every link therefore is one
+6. Slope rule (round 3): a link between two areas whose slopes differ by more than 10 degrees (a ramp or stair next to a
+   flat floor) is kept only across the sloped area's foot or top edge, within 30 degrees of perpendicular to its gradient;
+   a side edge gets no link, because the body cannot step onto a ramp from the side (found in game on the Blender test
+   map). `report['slope_side_links_cut']` counts them.
+7. Links: the neighbour of an edge is the polygon that owns the same two vertices reversed. Every link therefore is one
    exactly shared edge with equal corner heights (the rule measured on stock). Areas not connected to any seed are dropped
    and counted (`dropped_unreachable`); a seed with no navigation at it within 48 units goes in `seed_problems` (all seeds
    bad: `ValueError`). The kd tree is the stock rule (`navfmt.build_kd`).
@@ -159,3 +163,8 @@ Free-form fixture (`fixtures/freeform`: the two-storey level rotated 30 degrees,
 shared edge, every area convex, `iwz_emitcheck check` 0 errors and 1 warning (the room is an island: it has its own seed),
 the bottom seed reaches the whole top floor, no corner within 47 of the pillar axis or within 7 of the wall. Without `solid_check` the interior of the pillar was walkable.
 Round-1 data (quads at 32 units) is kept in the git history of this page.
+
+Round 3 (slope rule), offline: testmap1 collision (362 triangles): 28 of 44 slope-changing links were side links, all cut,
+0 remain, the upper floor (z 136, 70 areas) is still reached from the ground start, `check` 0 errors; twostorey 28 cut, 0
+side links, 0 errors, route 1,510 units; freeform 158 cut, 0 side links, 0 errors; g27r 236 cut (186 side links before
+the rule, 0 after), 3,868 areas (round 2: 3,871), `check` the same 3 errors, `reach` 51 of 51 with a route.

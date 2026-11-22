@@ -531,6 +531,32 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
         info[pid] = {'pts': [(mesh.X[v], mesh.Y[v], mesh.Z[v]) for v in corners],
                      'c': (cxm, cym, zc_), 'plane': pl, 'zr': (min(zs_), max(zs_)),
                      'nbr': [mesh.owner.get((cyc[(kk + 1) % n], cyc[kk])) for kk in keep]}
+    # a ramp or stair next to a flat floor (slopes differing by more than 10 degrees) is entered across its foot or top
+    # edge, not from the side: the shared edge must be within 30 degrees of perpendicular to the gradient of the
+    # steeper area; a side edge gets no link (the body cannot step onto the ramp from the side)
+    cut = 0
+    for pid, inf_ in info.items():
+        pts = inf_['pts']
+        for e, b in enumerate(inf_['nbr']):
+            if b is None or b not in info:
+                continue
+            ga, gb = inf_['plane'][0], inf_['plane'][1]
+            ha, hb = info[b]['plane'][0], info[b]['plane'][1]
+            sp = math.hypot(ga, gb) if math.hypot(ga, gb) <= 1.73 else 0.0
+            sq = math.hypot(ha, hb) if math.hypot(ha, hb) <= 1.73 else 0.0
+            if abs(math.degrees(math.atan(sp)) - math.degrees(math.atan(sq))) <= 10.0:
+                continue
+            gx, gy = (ga, gb) if sp >= sq else (ha, hb)
+            gl = math.hypot(gx, gy)
+            p0, p1 = pts[e], pts[(e + 1) % len(pts)]
+            ex, ey = p1[0] - p0[0], p1[1] - p0[1]
+            el = math.hypot(ex, ey)
+            if el < 1e-9 or gl < 1e-9:
+                continue
+            if abs((ex * gx + ey * gy) / (el * gl)) > 0.5:          # within 60 degrees of parallel: a side edge
+                inf_['nbr'][e] = None
+                cut += 1
+    report['slope_side_links_cut'] = cut
     order = sorted(info, key=lambda p: (round(info[p]['c'][0], 3), round(info[p]['c'][1], 3), round(info[p]['c'][2], 3)))
     seed_problems = []
     dropped = 0

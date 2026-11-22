@@ -73,6 +73,50 @@ def flood(gr, start):
     return seen
 
 
+def side_slope_links(gr):
+    """Links between areas whose slopes differ by more than 10 degrees where the shared edge is within 60 degrees of
+    parallel to the gradient of the steeper one (a ramp entered from the side)."""
+    by = gr.by_off()
+    n = 0
+    for a in gr.areas:
+        P = [e.corner for e in a.edges]
+        for i, e in enumerate(a.edges):
+            if not e.cost:
+                continue
+            ga = navgen._plane(P)[:2]
+            Q = [f.corner for f in by[e.nbr].edges]
+            gb = navgen._plane(Q)[:2]
+            sa, sb = math.hypot(*ga), math.hypot(*gb)
+            if sa > 1.73 or sb > 1.73 or abs(math.degrees(math.atan(sa) - math.atan(sb))) <= 10.0:
+                continue
+            g = ga if sa >= sb else gb
+            ex, ey = P[(i + 1) % len(P)][0] - P[i][0], P[(i + 1) % len(P)][1] - P[i][1]
+            if abs(ex * g[0] + ey * g[1]) / (math.hypot(ex, ey) * math.hypot(*g)) > 0.5:
+                n += 1
+    return n
+
+
+@unittest.skipIf(np is None, 'numpy missing')
+class RampSideTests(unittest.TestCase):
+    def test_a_ramp_is_entered_by_its_foot_not_from_the_side(self):
+        # flat floor x < 256, a ramp x 256..512 rising to z 128 along x, and a flat strip beside the ramp (y > 256)
+        def quad(p0, p1, p2, p3):
+            return [(p0, p1, p2), (p0, p2, p3)]
+        tris = quad((0, 0, 0), (256, 0, 0), (256, 256, 0), (0, 256, 0))
+        tris += quad((256, 0, 0), (512, 0, 128), (512, 256, 128), (256, 256, 0))
+        tris += quad((256, 256, 0), (512, 256, 0), (512, 512, 0), (256, 512, 0))
+        tris += quad((0, 256, 0), (256, 256, 0), (256, 512, 0), (0, 512, 0))
+        data, rep = navgen.generate(np.array(tris), seeds=[(100, 100, 0)])
+        gr = read_bytes(data)
+        self.assertGreater(rep['slope_side_links_cut'], 0)
+        self.assertEqual(side_slope_links(gr), 0)
+        self.assertEqual(shared_edge_problems(gr), (0, 0))
+        # the top of the ramp is still reachable from the floor, over the foot edge
+        start = min(range(len(gr.areas)), key=lambda i: math.dist(gr.areas[i].centre, (100, 100, 0)))
+        seen = flood(gr, start)
+        self.assertTrue(any(gr.areas[i].centre[2] > 100 for i in seen))
+
+
 @unittest.skipIf(np is None, 'numpy missing')
 class FormatTests(unittest.TestCase):
     def test_mapgen_graph_round_trips_byte_identical(self):
@@ -150,7 +194,7 @@ class TwoStoreyTests(unittest.TestCase):
         self.assertGreater(zs[256], 100)
         self.assertGreaterEqual(len([z for z in zs if 8 <= z <= 248]), 3)
         self.assertGreater(navfmt.stats(self.gr)['stacked_areas'], 100)       # the upper floor lies over the lower one
-        self.assertEqual(self.rep['dropped_unreachable'], 0)
+        self.assertLessEqual(self.rep['dropped_unreachable'], 2)      # slivers beside the stair that lost their side link
         self.assertEqual(self.rep['seed_problems'], [])
         self.assertLess(len(self.gr.areas), 700)
 
