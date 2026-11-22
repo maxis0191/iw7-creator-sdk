@@ -47,11 +47,12 @@
   "81.0": 0.5301,
   "82.0": 0.4691
  },
- "k": 0.1694824979006634,
+ "k": 0.25326085869406456,
  "p": 0.5,
  "fit": "camera: edge IoU over 15 frames; tone: grid on p in [0.5, 1], k by bisection, least squares of log(luminance ratio)",
- "edge_mean_before": 0.2696144770629468,
- "edge_mean_after": 0.5465143313207025,
- "lum_ratio_log_rms_before": 1.1444318616714597,
- "lum_ratio_log_rms_after": 0.5720331598492575
+ "edge_mean_before": 0.27107363453397176,
+ "edge_mean_after": 0.5376865153723366,
+ "lum_ratio_log_rms_before": 1.2208759023733784,
+ "lum_ratio_log_rms_after": 0.5979374091094185,
+ "prop_gain": 0.086
 }

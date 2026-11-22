@@ -307,38 +307,56 @@ def image_png(index, name, game=None):
 
 
 # ---------------------------------------------------------------------------------------------------- materials
-def colour_image_of(mat_json):
-    """The colour map image name of a material json, or None. Stock world techsets store it at semantic 14
-    ('..._c_..._sg_packed_cs'), custom ones at semantic 2."""
-    best = None
-    for t in mat_json.get('textureTable', []):
-        s = t.get('semantic')
-        if s == 2:
-            return t['image']
-        if s == 14 and best is None:
-            best = t['image']
-    if best:
-        return best
-    for t in mat_json.get('textureTable', []):
-        n = t['image']
-        if '_c_' in n or n.endswith('_col') or '_col_' in n or '_color' in n:
-            return n
-    return None
+def colour_image_of(mat_json, with_evidence=False):
+    """The colour map image of a material json. Evidence, in order: the texture with semantic 14 (stock lit techsets,
+    '..._packed_cs'); else the only texture with semantic 2 (custom and unlit / emissive techsets); else the first
+    semantic 2 when several exist (weak); else a name heuristic (weak). -> name, or (name, how) with with_evidence."""
+    tt = mat_json.get('textureTable', [])
+    s14 = [t['image'] for t in tt if t.get('semantic') == 14]
+    s2 = [t['image'] for t in tt if t.get('semantic') == 2]
+    res = (None, 'none')
+    if s14:
+        res = (s14[0], 'semantic 14' + (' (%d candidates)' % len(s14) if len(s14) > 1 else ''))
+    elif len(s2) == 1:
+        res = (s2[0], 'semantic 2')
+    elif s2:
+        res = (s2[0], 'WEAK: first of %d semantic 2 textures %s' % (len(s2), s2))
+    else:
+        for t in tt:
+            n = t['image']
+            if '_c_' in n or n.endswith('_col') or '_col_' in n or '_color' in n:
+                res = (n, 'WEAK: name heuristic')
+                break
+    return res if with_evidence else res[0]
 
 
 def material_info(index, name):
-    """-> (dict(image, tint, techset, json, sort, textures), None) or (None, reason)."""
+    """-> (dict, None) or (None, reason). dict: image (colour map), how (evidence), tint, techset, json, sort, textures,
+    emissive_image + emissive_para (techset with an e0 / em0 slot: the semantic 2 map and the emissivePara constant),
+    unlit (techset without lighting: colour * colorTint as light), occlusion_image (semantic 15 '..._nog' map: the
+    occlusion lives in its R channel)."""
+    import re
     cands = [name, name.replace('w/', '', 1) if name.startswith('w/') else 'w/' + name, 'mo/' + name]
     for c in cands:
         p = index.get('material', c)
         if p:
             m = json.load(open(p))
-            tint = [1, 1, 1, 1]
+            tint, para = [1, 1, 1, 1], None
             for c_ in m.get('constantTable', []):
                 if c_.get('name') == 'colorTint':
                     tint = c_['literal']
-            return {'image': colour_image_of(m), 'tint': tint, 'techset': m.get('techniqueSet->name', ''),
-                    'json': p, 'sort': m.get('sortKey'), 'textures': [t['image'] for t in m.get('textureTable', [])]}, None
+                elif c_.get('name') == 'emissivePara':
+                    para = c_['literal'][0]
+            ts = m.get('techniqueSet->name', '')
+            img, how = colour_image_of(m, True)
+            tt = m.get('textureTable', [])
+            emi = None
+            if re.search(r'[0-9_]em?0', ts) and any(t.get('semantic') == 14 for t in tt):
+                emi = next((t['image'] for t in tt if t.get('semantic') == 2), None)
+            occ = next((t['image'] for t in tt if t.get('semantic') == 15 and 'nog' in t['image']), None)
+            return {'image': img, 'how': how, 'tint': tint, 'techset': ts, 'json': p, 'sort': m.get('sortKey'),
+                    'textures': [t['image'] for t in tt], 'emissive_image': emi, 'emissive_para': para,
+                    'unlit': 'unlit' in ts, 'occlusion_image': occ}, None
     return None, 'material %s not in any dump' % name
 
 

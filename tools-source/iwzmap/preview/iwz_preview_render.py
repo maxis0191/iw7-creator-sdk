@@ -2,6 +2,7 @@
 
     python iwz_preview_render.py render    --src <emit src> --out <dir> [--views a,b|all|prefix*] [--plan PLAN.json]
     python iwz_preview_render.py calibrate --src <emit src> --plan PLAN.json --frames <dir of lit_*_1.png> --out <dir>
+    python iwz_preview_render.py props     --src <emit src> --plan PLAN.json --frames <dir> --out <dir>      (fits prop_gain)
 
 render     loads the scene once (Blender -b), renders the views, tone maps with calibration.json (next to this file
            or --calib) and writes PNGs. Prints seconds per stage.
@@ -207,6 +208,10 @@ def cmd_calibrate(a):
                fit='camera: edge IoU over %d frames; tone: grid on p in [0.5, 1], k by bisection, least squares of log(luminance ratio)' % len(eng),
                edge_mean_before=float(np.mean(list(before_scores.values()))), edge_mean_after=float(np.mean(list(after_scores.values()))),
                lum_ratio_log_rms_before=float(np.sqrt(np.mean(lrb ** 2))), lum_ratio_log_rms_after=float(np.sqrt(np.mean(lr ** 2))))
+    if os.path.isfile(calp):
+        prev = json.load(open(calp))
+        if 'prop_gain' in prev:
+            cal['prop_gain'] = prev['prop_gain']        # fitted by the props command, kept
     json.dump(cal, open(calp, 'w'), indent=1)
     json.dump({'rows': rows, 'calibration': cal}, open(os.path.join(a.out, 'table.json'), 'w'), indent=1)
     lines = ['| frame | edge IoU before | lum ratio before | edge IoU after | lum ratio after |', '|---|---|---|---|---|']
@@ -222,9 +227,48 @@ def cmd_calibrate(a):
         shutil.rmtree(d, ignore_errors=True)
 
 
+def cmd_props(a):
+    """Fit the scale of the light grid value of props (calibration.json prop_gain) on the prop pixels of the 15 engine frames:
+    props rendered alone (RGBA, world holdout) at gain 1, display = clip(k * gain * radiance) ^ p with the tone of calibration.json,
+    least squares of log(preview mean luminance / engine mean luminance) over the frames that show props."""
+    cal = load_calib(a.calib)
+    mask = C.mask_1280x720()
+    plan_views = json.load(open(a.plan))
+    names = []
+    for st in plan_views['steps']:
+        if st.get('do') == 'tour':
+            names += [v['name'] for v in st['views'] if v['name'].startswith('lit_')]
+    eng = engine_frames(a.frames, names)
+    out = os.path.join(a.out, '_props')
+    shutil.rmtree(out, ignore_errors=True)
+    args = ['load', a.src, '--plan', a.plan, '--out', out, '--views', 'plan_lit_*', '--eye', str(cal['eye']), '--fov', str(cal['fov']),
+            '--prop-gain', '1', '--prop-pass']
+    lines, wall = run_blender(args)
+    data = []
+    for n, e in eng.items():
+        arr = np.load(os.path.join(out, 'plan_' + n + '.npy'))
+        sel = (arr[..., 3] > 0.99) & mask
+        if sel.sum() >= 500:
+            data.append((n, int(sel.sum()), arr[..., :3][sel], C.lum(C.srgb_to_lin(e))[sel].mean()))
+    gains = np.exp(np.linspace(np.log(0.01), np.log(2.0), 80))
+
+    def logs(g):
+        return np.array([np.log(C.lum(np.clip(pr * g * cal['k'], 0, 1) ** cal['p']).mean() / el) for _, _, pr, el in data])
+    errs = [float(np.sqrt(np.mean(logs(g) ** 2))) for g in gains]
+    g = float(gains[int(np.argmin(errs))])
+    cal['prop_gain'] = g
+    json.dump(cal, open(a.calib or CALIB, 'w'), indent=1)
+    l1, lg = logs(1.0), logs(g)
+    print('prop gain %.3f (rms log error %.3f, was %.3f at gain 1) over %d frames with props (%.1f s)' % (
+        g, float(np.sqrt(np.mean(lg ** 2))), float(np.sqrt(np.mean(l1 ** 2))), len(data), wall))
+    for (n, c, _, el), x1, xg in zip(data, l1, lg):
+        print('  %-24s %7d px  engine lum %.4f  log ratio %+.2f -> %+.2f' % (n, c, el, x1, xg))
+    shutil.rmtree(out, ignore_errors=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['render', 'calibrate'])
+    ap.add_argument('cmd', choices=['render', 'calibrate', 'props'])
     ap.add_argument('--src', required=True)
     ap.add_argument('--out', required=True)
     ap.add_argument('--views', default='all')
@@ -236,7 +280,7 @@ def main():
     ap.add_argument('--overlays', action='store_true')
     ap.add_argument('--tone-only', action='store_true', help='calibrate: keep the camera of calibration.json, refit exposure only')
     a = ap.parse_args()
-    (cmd_render if a.cmd == 'render' else cmd_calibrate)(a)
+    {'render': cmd_render, 'calibrate': cmd_calibrate, 'props': cmd_props}[a.cmd](a)
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ a game run and screenshots.
 | `iwz_preview.py` | runs inside Blender (`-b` or interactive): `load(src)` builds the scene (collections world / props / overlays / views), renders linear frames |
 | `iwz_preview_render.py` | plain Python wrapper: `render` (views to PNG, prints seconds per stage) and `calibrate` (the acceptance test against engine frames) |
 | `iwz_assets.py` | numpy-only readers: world.bin, dump index, material -> colour image, image decode from `imagefile<N>.pak` (IWC LZ4 blocks) via texconv, xmodel LOD0 with uv |
+| `iwz_audit.py` | per material audit of the colour image and its evidence (STRONG / MEDIUM / WEAK), `material_audit.md` / `.json` |
 | `iwz_calib.py` | the metrics (edge IoU, mean luminance, global tone fit) |
 | `calibration.json` | the fitted global camera (eye height, horizontal fov) and tone (exposure `k`, gamma `p`) |
 
@@ -63,7 +64,7 @@ frustum is drawn, so a view can show things the engine culls); anything that hap
 
 ## Measured (see the table below)
 
-Run of 22 Nov 2026 on the g27r emit (`level/src_g27r_lm`), the 15 `lit_*_1` engine frames of `finish/frames/rc4_g27r` and the plan
+First round (22 Nov 2026, superseded by the table below), run on the g27r emit (`level/src_g27r_lm`), the 15 `lit_*_1` engine frames of `finish/frames/rc4_g27r` and the plan
 `finish/plans/szf_rc4_look.json` (1280 x 720, one fixed mask for weapon, hands, watermark and corner icon):
 
 * **Camera**, fitted once for all frames (not per frame): eye height **60 units** above the `setorigin` origin and horizontal fov
@@ -98,6 +99,71 @@ Run of 22 Nov 2026 on the g27r emit (`level/src_g27r_lm`), the 15 `lit_*_1` engi
 | lit_pap_alcove_1 | 0.251 | 0.669 | 0.344 | 1.791 |
 | lit_pap_alcove_2 | 0.190 | 1.882 | 0.260 | 3.422 |
 | mean | 0.270 | 0.598 | 0.547 | 1.199 |
+
+### Fidelity round 2 (after the first review)
+
+Table of the 15 frames, old (commit 527ad09) next to new (this commit). "lum ratio" is preview / engine mean luminance after the global
+exposure fit (k = 0.253, p = 0.500); edge IoU is at the fitted camera (eye 60, fov 80.8), which did not change.
+
+| frame | edge IoU old | edge IoU new | lum ratio old | lum ratio new | what still differs, by eye |
+|---|---|---|---|---|---|
+| lit_ticket_hall_1 | 0.647 | 0.770 | 0.423 | 0.430 | Layout, floor grout, pillars and gates now match; the engine has glossy bright white upper tiles and dark ceilings where the preview is flat and warm. |
+| lit_stair_a_1 | 0.694 | 0.661 | 2.551 | 2.761 | Same geometry; engine walls are near black with specular glints and bright fixture glare, the preview is a flat mid grey and brighter. |
+| lit_platform_a_1 | 0.502 | 0.466 | 1.260 | 1.316 | Engine floor has large tile plates with seams and dark wall tiles with gloss; the preview floor is flat and lighter. |
+| lit_maint_corridor_1 | 0.546 | 0.492 | 0.784 | 0.877 | Engine lower walls (metal_panel_dark_01) are near black and glossy, the preview shows them mid grey (unexplained, see audit); fixture glare is missing. |
+| lit_generator_room_1 | 0.616 | 0.630 | 0.866 | 0.926 | Barrels, crate and lockers are now dark like the engine; the engine doorway on the left opens onto a black room where the preview shows a lit one, and its ceiling strips glow. |
+| lit_control_room_1 | 0.681 | 0.613 | 0.873 | 0.836 | Engine is cool, dark and glossy with a bright red ceiling vent; the preview is warm and flat with a pink desk (the red tinted custom material). |
+| lit_service_tunnel_1 | 0.625 | 0.602 | 0.639 | 0.763 | Engine lower walls near black with bright light cones and rail specular; the preview walls are pale grey and the rails flat. |
+| lit_platform_b_1 | 0.722 | 0.701 | 0.522 | 0.562 | Engine shows a fire, debris and blue FX props and a darker brick floor; the preview has no FX and a lighter floor. |
+| lit_stair_b_1 | 0.566 | 0.571 | 1.063 | 1.192 | Engine green tile walls are saturated and the far window glares white; the preview is desaturated and dim. |
+| lit_pap_arch_1 | 0.567 | 0.537 | 0.709 | 0.759 | Engine shows the chain link fence mesh and cool grey walls; the preview draws the fence frames without the mesh (alpha) and warm walls. |
+| lit_well_w_1 | 0.492 | 0.435 | 1.206 | 0.797 | Engine platform edge has specular glints and a darker tiled wall; the preview is flat. |
+| lit_well_e_1 | 0.524 | 0.519 | 0.526 | 0.468 | Engine tile wall is darker with a strong orange lamp glow and glossy rails; the preview is flatter and paler. |
+| lit_hero_car_1 | 0.412 | 0.415 | 1.357 | 0.911 | Car colour, window and fence match; the engine adds broken glass, a dark tunnel ceiling and a glossy tactile strip, the preview floor and ceiling are brighter. |
+| lit_pap_alcove_1 | 0.344 | 0.368 | 1.791 | 1.801 | Engine shows the chain link mesh over the cages and a grate floor; the preview has solid frames and a flat floor. |
+| lit_pap_alcove_2 | 0.260 | 0.288 | 3.422 | 4.104 | Engine has a large projector prop and a strong orange spot that the preview lacks (no such model in the emit lists), and a grate floor. |
+| mean | 0.547 | 0.538 | 1.199 | 1.234 | |
+
+Mean edge IoU went from 0.547 to 0.538 (6 frames up, 9 down, ticket hall 0.647 to 0.770): the new grout, occlusion and darker props add
+structure the engine also has but shift the log luminance edges in other frames; the camera is unchanged, so read the edge column as noise of about 0.03.
+The mean luminance ratio stays at 1.23 (log rms 0.60): fidelity of materials and props improved, the per view brightness spread did not.
+
+**1. Ticket hall floor.** It is the right image. The floor surface is `w/stone_marble_tile_checker_01` (128 unit repeat);
+the material json (template dump and built zone dump agree) has exactly one colour texture, semantic 14
+`stone_marble_tile_checker_01_c_..._sg_packed_cs`, and our PNG of it equals GrayWolf's export (mean difference 0.0). The texture
+scale is the same as in the engine: the autocorrelation period of the floor rows is 92 px in the preview and 91 px in the engine at the same row.
+What differed was the data the engine also uses and the preview ignored: the semantic 15 `..._packed_nog` map carries the tile grout as a
+strong dark line in its R channel (occlusion). The preview now multiplies that channel into the non directional lightmap term A
+(`E = A * occlusion + B * saturate(D.z)`), which restores the octagon outlines on every material with a `nog` map. R = occlusion is
+inferred from the picture (the channels G and A sit at 0.5, a normal; B is thin lines, gloss); weak evidence, flagged.
+`iwz_audit.py` writes the per material audit (`material_audit.md` / `.json` next to the table): 94 world materials, 91 STRONG
+(exactly one colour texture of semantic 14, or one of semantic 2 for custom / unlit), 0 MEDIUM, 3 WEAK: `iwz_lamp_cool`, `iwz_lamp_warm`,
+`iwz_lamp_red` (the stock base `emissive_light_panel_pink` has two semantic 2 textures, `..._neutral_8bit_c` and `..._white_8bit_c`, nothing
+tells them apart; the first is used, and the surface saturates anyway). One more material has strong evidence but a visible mismatch
+that the data does not explain: `w/metal_panel_dark_01` (lower walls of the maintenance corridor and the service tunnel): its colour map is mid
+grey (mean 0.54) while the engine draws near black and glossy, probably a metal material whose diffuse is suppressed by a channel
+the dumps do not carry as a separate map.
+
+**2. Props too bright.** The model and texture are right (a close-up of the barrels shows the stock tan rusty drum). The scale of the light
+grid value was wrong: `bake.npz grid` values times 0.886 equal the lightmap irradiance on average per zone (hall 0.091 / 0.093, platform A
+0.078 / 0.084), but the engine's props come out about 12 times darker than that. `iwz_preview_render.py props` renders only the props
+(RGBA, the world is a holdout) and fits one gain on the prop pixels of the 15 frames: **prop_gain = 0.086** (rms log luminance error 1.37 at gain 1,
+0.63 at the fit; a constant per zone instead of the nearest cell is worse, 0.73). The cause of the factor is not known (the grid values in
+`probes.txt` / `lighting.txt` are in other units than the lightmap, or the engine applies a probe visibility term). Props near a lamp still come out
+brighter than the engine's.
+
+**3. Light fixtures.** Three defects in my first version: the emissive test looked for `em0` but stock techsets say `e0`
+(`..._n0e0p0`), so the stock emissive materials (fluorescent bulbs, car lamps) were drawn as lit colour; the colour image of a material
+with both semantic 14 and semantic 2 was taken as the semantic 2 one (the emissive map); and the ceiling fixtures were not in the scene at
+all, because they are `power_fixtures` of the layout that the level script places when the power is switched on. Now: stock emissive
+slots show `emissive map * emissivePara`, unlit techsets (`..unlit..`, `colorTint` = brightness) show colour * tint, power fixtures use their
+`on` model (`--power off` for the `off` model), and all self lit surfaces are scaled by EMISSIVE_GAIN = 20 so they saturate like the engine
+(the engine frames have thousands of pixels above 0.9; the exact HDR / bloom value is not in the data, so this number is an assumption).
+
+**Specular from reflection probes: does not exist.** The reflection probe array (`_reflection_probe_array.iw7Image` in the zone dump) is
+on disk, but using it needs the cube array decoded, a probe chosen per surface, and the specular / gloss data per material: the gloss lives in an
+unconfirmed channel of the `nog` maps and the specular colour in the colour map alpha (0.05 on average: likely not it). That is more than
+the hour allowed; the preview draws no specular, which is the largest remaining visible difference (glossy engine walls, floors and rails).
 
 Side-by-side frames (preview left, engine right) are written to `<out>/sidebyside/`; this run's are in
 `IW7-Runtime/iwz-stage2/finish/preview/g27r/sidebyside/`.

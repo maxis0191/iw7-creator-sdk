@@ -16,6 +16,7 @@ Unresolved materials and models are magenta and listed in the report (<out>/repo
 import json
 import math
 import os
+import re
 import sys
 import time
 
@@ -46,20 +47,26 @@ class Stages:
 
 
 # ------------------------------------------------------------------------------------------------ lightmap
-def lightmap_irradiance(z):
-    """E = A + B * saturate(D.z) per texel (float32 H x W x 3); D is rotated octahedral (lm_decode.oct_decode)."""
+def lightmap_terms(z):
+    """A (non directional) and D = B * saturate(D.z) per texel (float32 H x W x 3); D.z from the rotated octahedral
+    direction (lm_decode.oct_decode). E = A + D is the irradiance of a flat surface."""
     a = z['D'][..., 0] * 2 - 1
     b = z['D'][..., 1] * 2 - 1
     x = (a + b) * 0.5
     y = (a - b) * 0.5
     zz = 1 - np.abs(x) - np.abs(y)
     dz = zz / np.maximum(np.sqrt(x * x + y * y + zz * zz), 1e-8)
-    return (z['A'] + z['B'] * np.maximum(dz, 0)[..., None]).astype(np.float32)
+    return z['A'].astype(np.float32), (z['B'] * np.maximum(dz, 0)[..., None]).astype(np.float32)
 
 
-def make_lightmap_image(E):
+def lightmap_irradiance(z):
+    A_, D_ = lightmap_terms(z)
+    return A_ + D_
+
+
+def make_lightmap_image(E, name='iwz_lightmap'):
     H, W = E.shape[:2]
-    img = bpy.data.images.new('iwz_lightmap', W, H, float_buffer=True, alpha=False, is_data=True)
+    img = bpy.data.images.new(name, W, H, float_buffer=True, alpha=False, is_data=True)
     img.colorspace_settings.name = 'Non-Color'
     px = np.ones((H, W, 4), np.float32)
     px[..., :3] = np.flipud(E)
@@ -75,7 +82,9 @@ def classify(techset, path, base_techset=None):
     t = base_techset or techset or ''
     if 'multiply' in t:
         return 'multiply', False
-    if 'em0' in t or t.startswith('w_unlit') or 'emissive' in path:
+    if 'unlit' in t or 'emissive' in path:
+        return 'emissive', False
+    if re.search(r'[0-9_]em0', t):
         return 'emissive', False
     if '_atest_' in t:
         return 'atest', True
@@ -84,8 +93,30 @@ def classify(techset, path, base_techset=None):
     return 'opaque', True
 
 
+EMISSIVE_GAIN = 20.0     # self-lit surfaces saturate in the engine (HDR + bloom); the exact value is not in the data, see README
+
+
+def _load_image(path, data=False):
+    """Load an image file; colour maps sRGB, data maps (occlusion) Non-Color, never premultiplied with the PNG alpha."""
+    if data:
+        img = bpy.data.images.load(path, check_existing=False)
+        img.name = 'data_' + os.path.basename(path)
+        img.colorspace_settings.name = 'Non-Color'
+    else:
+        img = bpy.data.images.load(path, check_existing=True)
+        img.colorspace_settings.name = 'sRGB'
+    img.alpha_mode = 'CHANNEL_PACKED'
+    return img
+
+
 def build_material(name, image_path, tint, kind, lit, lm_img, lm_uv_name, uv_name, emissive=0.0, object_light=False,
-                   magenta=False):
+                   magenta=False, extra=None):
+    """Unlit (emission) shading of one engine material.
+    lit surfaces: albedo * tint * (A * occlusion + B * saturate(D.z))   (lm_img = (E, A, D) images; E = A + D when the
+                  material has no occlusion map; occlusion = R channel of the semantic 15 '..._nog' image)
+    props (object_light): albedo * tint * object colour (light grid) [+ emissive]
+    emissive: strength * colour (not lit); extra['emissive_png'] * extra['emissive_para'] is added to a lit surface."""
+    extra = extra or {}
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     nt = mat.node_tree
@@ -98,54 +129,90 @@ def build_material(name, image_path, tint, kind, lit, lm_img, lm_uv_name, uv_nam
         return mat
     col = None
     alpha = None
-    if image_path:
+
+    def uvnode(uvname):
+        n = nt.nodes.new('ShaderNodeUVMap')
+        n.uv_map = uvname
+        return n
+
+    def tex(path, data=False, uvname=None, ext='REPEAT'):
         tx = nt.nodes.new('ShaderNodeTexImage')
+        tx.image = _load_image(path, data)
+        tx.interpolation = 'Linear'
+        tx.extension = ext
+        nt.links.new(uvnode(uvname or uv_name).outputs['UV'], tx.inputs['Vector'])
+        return tx
+
+    if image_path:
         try:
-            tx.image = bpy.data.images.load(image_path, check_existing=True)
+            tx = tex(image_path)
         except RuntimeError:
             em.inputs['Color'].default_value = MAGENTA
             return mat
-        tx.image.colorspace_settings.name = 'sRGB'
-        tx.image.alpha_mode = 'CHANNEL_PACKED'      # the PNG alpha is a data channel (gloss...): never premultiply the colour with it
-        tx.interpolation = 'Linear'
-        tx.extension = 'REPEAT'
-        uv = nt.nodes.new('ShaderNodeUVMap')
-        uv.uv_map = uv_name
-        nt.links.new(uv.outputs['UV'], tx.inputs['Vector'])
         col = tx.outputs['Color']
         alpha = tx.outputs['Alpha']
     tint_n = nt.nodes.new('ShaderNodeRGB')
     tint_n.outputs[0].default_value = (tint[0], tint[1], tint[2], 1.0)
 
-    def mul(a, b):
+    def mul(a, b, op='MULTIPLY'):
         m = nt.nodes.new('ShaderNodeMix')
         m.data_type = 'RGBA'
-        m.blend_type = 'MULTIPLY'
+        m.blend_type = op
         m.inputs['Factor'].default_value = 1.0
         nt.links.new(a, m.inputs['A'])
-        if isinstance(b, tuple):
-            m.inputs['B'].default_value = b
-        else:
-            nt.links.new(b, m.inputs['B'])
+        nt.links.new(b, m.inputs['B'])
         return m.outputs['Result']
 
     base = tint_n.outputs[0] if col is None else mul(col, tint_n.outputs[0])
     if emissive > 0:
-        em.inputs['Strength'].default_value = emissive
+        em.inputs['Strength'].default_value = emissive * EMISSIVE_GAIN
         nt.links.new(base, em.inputs['Color'])
     elif lit and lm_img is not None:
-        lu = nt.nodes.new('ShaderNodeUVMap')
-        lu.uv_map = lm_uv_name
-        lt = nt.nodes.new('ShaderNodeTexImage')
-        lt.image = lm_img
-        lt.interpolation = 'Linear'
-        lt.extension = 'EXTEND'
-        nt.links.new(lu.outputs['UV'], lt.inputs['Vector'])
-        base = mul(base, lt.outputs['Color'])
+        E_img, A_img, D_img = lm_img
+        occ_png = extra.get('occlusion_png')
+        if occ_png:
+            ot = tex(occ_png, data=True)
+            sep = nt.nodes.new('ShaderNodeSeparateColor')
+            nt.links.new(ot.outputs['Color'], sep.inputs['Color'])
+            at = nt.nodes.new('ShaderNodeTexImage')
+            at.image = A_img
+            at.interpolation = 'Linear'
+            at.extension = 'EXTEND'
+            nt.links.new(uvnode(lm_uv_name).outputs['UV'], at.inputs['Vector'])
+            dt = nt.nodes.new('ShaderNodeTexImage')
+            dt.image = D_img
+            dt.interpolation = 'Linear'
+            dt.extension = 'EXTEND'
+            nt.links.new(uvnode(lm_uv_name).outputs['UV'], dt.inputs['Vector'])
+            occ_rgb = nt.nodes.new('ShaderNodeCombineColor')
+            for ch in ('Red', 'Green', 'Blue'):
+                nt.links.new(sep.outputs['Red'], occ_rgb.inputs[ch])
+            amb = mul(at.outputs['Color'], occ_rgb.outputs['Color'])
+            light = mul(amb, dt.outputs['Color'], 'ADD')
+        else:
+            lt = nt.nodes.new('ShaderNodeTexImage')
+            lt.image = E_img
+            lt.interpolation = 'Linear'
+            lt.extension = 'EXTEND'
+            nt.links.new(uvnode(lm_uv_name).outputs['UV'], lt.inputs['Vector'])
+            light = lt.outputs['Color']
+        base = mul(base, light)
+        if extra.get('emissive_png') and extra.get('emissive_para'):
+            et = tex(extra['emissive_png'])
+            es = nt.nodes.new('ShaderNodeRGB')
+            g = float(extra['emissive_para']) * EMISSIVE_GAIN
+            es.outputs[0].default_value = (g, g, g, 1.0)
+            base = mul(base, mul(et.outputs['Color'], es.outputs[0]), 'ADD')
         nt.links.new(base, em.inputs['Color'])
     elif object_light:
         oi = nt.nodes.new('ShaderNodeObjectInfo')
         base = mul(base, oi.outputs['Color'])
+        if extra.get('emissive_png') and extra.get('emissive_para'):
+            et = tex(extra['emissive_png'])
+            es = nt.nodes.new('ShaderNodeRGB')
+            g = float(extra['emissive_para']) * EMISSIVE_GAIN
+            es.outputs[0].default_value = (g, g, g, 1.0)
+            base = mul(base, mul(et.outputs['Color'], es.outputs[0]), 'ADD')
         nt.links.new(base, em.inputs['Color'])
     else:
         nt.links.new(base, em.inputs['Color'])
@@ -212,7 +279,7 @@ class MaterialResolver:
                                            or 'grime' in name or 'streak' in name):
                     kind, lit = 'blend', True
                 return {'image': c['tga'], 'tint': tint, 'kind': kind, 'lit': lit, 'emissive': 0.0, 'techset': bt,
-                        'src': 'custom tga'}, None
+                        'src': 'custom tga', 'how': 'custom_materials.json tga', 'color_image': os.path.basename(c['tga']), 'extra': {}}, None
             if base is None:
                 return None, err
             png, e = A.image_png(self.index, base['image']) if base['image'] else (None, None)
@@ -221,8 +288,13 @@ class MaterialResolver:
             kind, lit = classify(bt, name)
             if emis:
                 kind, lit = 'emissive', False
+            extra = {}
+            if base.get('occlusion_image') and lit:
+                op, e2 = A.image_png(self.index, base['occlusion_image'])
+                if op:
+                    extra['occlusion_png'] = op
             return {'image': png, 'tint': tint, 'kind': kind, 'lit': lit, 'emissive': float(emis), 'techset': bt,
-                    'src': 'custom tint of ' + c['base']}, None
+                    'src': 'custom tint of ' + c['base'], 'how': base['how'], 'color_image': base['image'], 'extra': extra}, None
         mi, err = A.material_info(self.index, name)
         if mi is None:
             return None, err
@@ -232,8 +304,20 @@ class MaterialResolver:
         if not png:
             return None, e
         kind, lit = classify(mi['techset'], name)
-        return {'image': png, 'tint': mi['tint'], 'kind': kind, 'lit': lit, 'emissive': 0.0, 'techset': mi['techset'],
-                'src': 'dump'}, None
+        extra = {}
+        emissive, tint = 0.0, mi['tint']
+        if mi['unlit'] and kind == 'emissive':
+            emissive, tint = float(mi['tint'][0]), (1, 1, 1)          # colorTint of an unlit techset is its brightness
+        if mi['emissive_image'] and mi['emissive_para']:
+            ep, e2 = A.image_png(self.index, mi['emissive_image'])
+            if ep:
+                extra['emissive_png'], extra['emissive_para'] = ep, mi['emissive_para']
+        if mi['occlusion_image'] and lit:
+            op, e2 = A.image_png(self.index, mi['occlusion_image'])
+            if op:
+                extra['occlusion_png'] = op
+        return {'image': png, 'tint': tint, 'kind': kind, 'lit': lit, 'emissive': emissive, 'techset': mi['techset'],
+                'src': 'dump', 'how': mi['how'], 'color_image': mi['image'], 'extra': extra}, None
 
     def get(self, name, uv_name='uv', lm_uv='lightmap', object_light=False):
         key = (name, uv_name, object_light)
@@ -244,9 +328,11 @@ class MaterialResolver:
             self.report['unresolved'][name] = err
             m = build_material('iwz:' + name, None, (1, 1, 1), 'opaque', False, None, lm_uv, uv_name, magenta=True)
         else:
-            self.report['resolved'][name] = {k: ent[k] for k in ('kind', 'techset', 'src')}
+            self.report['resolved'][name] = {k: ent[k] for k in ('kind', 'techset', 'src', 'how', 'color_image')}
+            self.report['resolved'][name]['extra'] = sorted(ent['extra'])
             m = build_material('iwz:' + name, ent['image'], ent['tint'], ent['kind'], ent['lit'] and not object_light,
-                               self.lm, lm_uv, uv_name, ent['emissive'], object_light and ent['kind'] != 'emissive')
+                               self.lm, lm_uv, uv_name, ent['emissive'], object_light and ent['kind'] != 'emissive',
+                               extra=dict(ent['extra'], **({'occlusion_png': None} if object_light else {})))
         self.cache[key] = m
         return m
 
@@ -379,9 +465,14 @@ def import_glb_as_collection(path, name):
     return col
 
 
-def load(src, plan=None, eye=60.0, hfov=90.0, overlays=False, game=None, log=print):
+def load(src, plan=None, eye=60.0, hfov=90.0, overlays=False, game=None, log=print, prop_gain=None, power=True):
     """Build the scene. Returns the report dict (timings, material / model resolution, light grid use)."""
     st = Stages()
+    if prop_gain is None:
+        try:
+            prop_gain = float(json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'calibration.json'))).get('prop_gain', 1.0))
+        except (OSError, ValueError):
+            prop_gain = 1.0
     clear_scene()
     sc = bpy.context.scene
     root = sc.collection
@@ -394,8 +485,9 @@ def load(src, plan=None, eye=60.0, hfov=90.0, overlays=False, game=None, log=pri
     customs = {v['path']: v for v in cm['custom'].values()}
     st.mark('read_source')
 
-    E = lightmap_irradiance(z)
-    lm_img = make_lightmap_image(E)
+    A_lm, D_lm = lightmap_terms(z)
+    E = A_lm + D_lm
+    lm_img = (make_lightmap_image(E), make_lightmap_image(A_lm, 'iwz_lightmap_A'), make_lightmap_image(D_lm, 'iwz_lightmap_D'))
     valid = z['valid']
     lum = E[..., 0] * 0.2126 + E[..., 1] * 0.7152 + E[..., 2] * 0.0722
     report = {'lightmap': {'atlas': list(E.shape[:2]), 'E_mean_valid': [float(v) for v in E[valid].mean(0)],
@@ -439,6 +531,10 @@ def load(src, plan=None, eye=60.0, hfov=90.0, overlays=False, game=None, log=pri
         if key(d['model'], d['origin']) in seen or str(d.get('targetname') or '').startswith('iwz_doordress'):
             continue
         rows.append({'model': d['model'], 'origin': d['origin'], 'angles': [0, d.get('yaw', 0), 0], 'scale': 1.0, 'src': 'layout models'})
+    # power fixtures: placed by the level script when the power is switched on (the 'on' model, emissive); power='off' shows the 'off' model
+    for d in lay.get('power_fixtures', []):
+        rows.append({'model': d['on'] if power else d['off'], 'origin': d['origin'], 'angles': [0, d.get('yaw', 0), 0],
+                     'scale': 1.0, 'src': 'layout power_fixtures (%s)' % ('on' if power else 'off')})
     for r in parse_smodels(os.path.join(src, 'smodels.txt')):      # the compiled static rows carry the scale
         if r['scale'] != 1.0:
             for q in rows:
@@ -474,7 +570,7 @@ def load(src, plan=None, eye=60.0, hfov=90.0, overlays=False, game=None, log=pri
             o.rotation_euler = (math.radians(roll), math.radians(pitch), math.radians(yaw))
             o.scale = (S * r['scale'],) * 3
             e = light_at(r['origin'])
-            o.color = (float(e[0]), float(e[1]), float(e[2]), 1.0)
+            o.color = (float(e[0]) * prop_gain, float(e[1]) * prop_gain, float(e[2]) * prop_gain, 1.0)
             pc.objects.link(o)
             glb_inst.append(o)
             n_inst += 1
@@ -516,7 +612,7 @@ def load(src, plan=None, eye=60.0, hfov=90.0, overlays=False, game=None, log=pri
         o.rotation_euler = (math.radians(roll), math.radians(pitch), math.radians(yaw))
         o.scale = (r['scale'],) * 3
         e = light_at(r['origin'])
-        o.color = (float(e[0]), float(e[1]), float(e[2]), 1.0)
+        o.color = (float(e[0]) * prop_gain, float(e[1]) * prop_gain, float(e[2]) * prop_gain, 1.0)
         pc.objects.link(o)
         n_inst += 1
     st.mark('props')
@@ -670,7 +766,7 @@ def setup_render(sc, res=(1280, 720)):
         pass
 
 
-def render_linear(cam, path_npy, res=(1280, 720)):
+def render_linear(cam, path_npy, res=(1280, 720), rgba=False):
     """Render one camera to a float EXR and save the linear RGB (H x W x 3, top row first) as .npy. -> seconds."""
     t = time.time()
     sc = bpy.context.scene
@@ -679,6 +775,7 @@ def render_linear(cam, path_npy, res=(1280, 720)):
     sc.view_settings.view_transform = 'Raw'
     sc.render.image_settings.file_format = 'OPEN_EXR'
     sc.render.image_settings.color_depth = '32'
+    sc.render.image_settings.color_mode = 'RGBA' if rgba else 'RGB'
     exr = path_npy[:-4] + '.exr'
     sc.render.filepath = exr
     bpy.ops.render.render(write_still=True)
@@ -688,7 +785,7 @@ def render_linear(cam, path_npy, res=(1280, 720)):
     img.pixels.foreach_get(buf)
     bpy.data.images.remove(img)
     os.remove(exr)
-    np.save(path_npy, buf.reshape(h, w, 4)[::-1, :, :3].copy())
+    np.save(path_npy, buf.reshape(h, w, 4)[::-1, :, :(4 if rgba else 3)].copy())
     return round(time.time() - t, 3)
 
 
@@ -712,10 +809,16 @@ def main(argv):
     ap.add_argument('--eye-list', default='', help='sweep: render every view for each eye height (inches)')
     ap.add_argument('--fov-list', default='', help='sweep: horizontal fov degrees')
     ap.add_argument('--overlays', action='store_true')
+    ap.add_argument('--prop-gain', type=float, default=None, help='scale of the light grid value of props (default: calibration.json)')
+    ap.add_argument('--power', choices=['on', 'off'], default='on', help='power fixtures show their on (emissive) or off model')
+    ap.add_argument('--prop-pass', action='store_true', help='render only the props (RGBA, the world is a holdout): the pixels the prop gain is fitted on')
     ap.add_argument('--res', default='1280x720')
     a = ap.parse_args(argv)
     res = tuple(int(v) for v in a.res.split('x'))
-    report, cams = load(a.src, a.plan or None, a.eye, a.fov, a.overlays)
+    report, cams = load(a.src, a.plan or None, a.eye, a.fov, a.overlays, prop_gain=a.prop_gain, power=(a.power == 'on'))
+    if a.prop_pass:
+        bpy.context.scene.render.film_transparent = True
+        bpy.data.objects['world'].is_holdout = True
     timings = dict(report['timing_s'])
     if a.out:
         os.makedirs(a.out, exist_ok=True)
@@ -735,7 +838,7 @@ def main(argv):
                 sub = a.out if (len(eyes) == 1 and len(fovs) == 1) else os.path.join(a.out, 'e%g_f%g' % (eye, fov))
                 os.makedirs(sub, exist_ok=True)
                 for nm in want:
-                    rt['%g/%g/%s' % (eye, fov, nm)] = render_linear(cams[nm], os.path.join(sub, nm + '.npy'), res)
+                    rt['%g/%g/%s' % (eye, fov, nm)] = render_linear(cams[nm], os.path.join(sub, nm + '.npy'), res, rgba=a.prop_pass)
         timings['render_each_s'] = rt
         timings['render_total_s'] = round(time.time() - t, 3)
         timings['renders'] = len(rt)
