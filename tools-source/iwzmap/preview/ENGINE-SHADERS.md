@@ -29,7 +29,7 @@ the same shader hashes for the post passes and the same curve constants.
 Constants of the capture: cb13[0].x = 0.071506, cb13[1] = (27.888254, 27.613163, -0.5121, 4.523621) (shoulder: A, C, B, D),
 cb13[2] = (6.124092, -1.118782, -0.0, 2.0) (toe), cb2[4] = (0.1, 0.9). The two curves meet at c = 0.071506 (0.2281 on both sides).
 The same cb13[1], cb13[2] were read in the generated map capture (rd3). `cb13[0].w` and `cb13[3].w` differ between the captures (3.745 / 7.657 and
-0.0043 / 8.5e-05) but this shader does not read them. The LUT is saved as `engine_tonemap_lut32.bin` (131072 bytes, index [b][g][r], RGBA8); it is the vision's colour grade.
+0.0043 / 8.5e-05) but this shader does not read them. The LUT is saved as `engine_tonemap_lut32.hex` (131072 bytes, index [b][g][r], RGBA8); it is the vision's colour grade.
 
 Verification (`iwz_tonemap.py`, numpy, from the dumped targets 83362 and 83390 and the LUT): per pixel absolute error against the engine's 83444, in
 8 bit levels, over all 921,600 pixels: mean 0.248, 99th percentile 0.523, maximum 0.608, no pixel above 1 level. Without the bloom term the mean is 2.30.

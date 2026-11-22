@@ -13,7 +13,7 @@ a game run and screenshots.
 | `iwz_audit.py` | per material audit of the colour image and its evidence (STRONG / MEDIUM / WEAK), `material_audit.md` / `.json` |
 | `iwz_calib.py` | the metrics (edge IoU, mean luminance, global tone fit) |
 | `calibration.json` | the fitted global camera (eye height, horizontal fov); its tone fit (`k`, `p`) and `prop_gain` are the OLD lit-frame fit, superseded, see "State of the lighting" |
-| `iwz_tonemap.py`, `engine_tonemap_lut32.bin` | the engine's own tone map (shader `8881bdf370aa`, constants and colour grade LUT of a stock capture), numpy |
+| `iwz_tonemap.py`, `engine_tonemap_lut32.hex` | the engine's own tone map (shader `8881bdf370aa`, constants and colour grade LUT of a stock capture), numpy |
 | `iwz_lights.py` | the 72 runtime lights added per pixel with the engine falloff (lit state) |
 | `rdoc_inspect.py`, `rdoc_run.py` | offline RenderDoc replay of an existing .rdc: shader disassembly, constants, textures, targets (no game) |
 | `ENGINE-SHADERS.md` | what the engine's post chain and lightmapped world shader do, with instruction lines |

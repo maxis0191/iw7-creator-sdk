@@ -90,8 +90,12 @@ def tonemap(scene, bloom, lut, p=TONE_CAPTURE, matrix=None):
 
 def load_lut(path=None):
     import os
-    p = path or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'engine_tonemap_lut32.bin')
-    return np.frombuffer(open(p, 'rb').read(), np.uint8).reshape(32, 32, 32, 4)
+    p = path or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'engine_tonemap_lut32.hex')
+    if p.endswith('.hex'):                     # text in the product (the source workspace refuses binary payloads)
+        raw = bytes.fromhex(''.join(l.strip() for l in open(p, encoding='ascii') if not l.startswith('#')))
+    else:
+        raw = open(p, 'rb').read()
+    return np.frombuffer(raw, np.uint8).reshape(32, 32, 32, 4)
 
 
 def bloom_approx(scene):
