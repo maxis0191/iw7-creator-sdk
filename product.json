@@ -579,7 +579,8 @@
     "tools-source/worldkit/tests/test_crowd_seen.py",
     "tools-source/worldkit/tests/test_see.py",
     "tools-source/worldkit/tests/test_worldkit.py",
-    "tools-source/worldkit/tests/test_worldpatch.py"
+    "tools-source/worldkit/tests/test_worldpatch.py",
+    "docs/IWZ-EMIT-CONTRACT.md"
   ],
   "dependencies": [
     {
