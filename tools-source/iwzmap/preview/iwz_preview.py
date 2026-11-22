@@ -803,7 +803,18 @@ def geometry_override(kind):
     out = nt.nodes.new('ShaderNodeOutputMaterial')
     em = nt.nodes.new('ShaderNodeEmission')
     geo = nt.nodes.new('ShaderNodeNewGeometry')
-    nt.links.new(geo.outputs['Position' if kind == 'pos' else 'Normal'], em.inputs['Color'])
+    # emission colour cannot be negative: position + 100 m (the map is within +-100 m, float precision 1e-5 m), normal * 0.5 + 0.5
+    vm = nt.nodes.new('ShaderNodeVectorMath')
+    if kind == 'pos':
+        vm.operation = 'ADD'
+        vm.inputs[1].default_value = (100.0, 100.0, 100.0)
+        nt.links.new(geo.outputs['Position'], vm.inputs[0])
+    else:
+        vm.operation = 'MULTIPLY_ADD'
+        vm.inputs[1].default_value = (0.5, 0.5, 0.5)
+        vm.inputs[2].default_value = (0.5, 0.5, 0.5)
+        nt.links.new(geo.outputs['Normal'], vm.inputs[0])
+    nt.links.new(vm.outputs['Vector'], em.inputs['Color'])
     nt.links.new(em.outputs['Emission'], out.inputs['Surface'])
     return mat
 

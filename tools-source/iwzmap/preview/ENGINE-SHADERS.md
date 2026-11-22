@@ -83,3 +83,27 @@ Per pixel, in code order:
 * The HDR value of a lightmapped, rough surface is `diffuse_albedo * (1 - max spec) * Fd * E`, no exposure. The old per frame exposure and gamma were fitting a difference of power state.
 * The tone is exactly section 1. The curve constants of the custom vision of the map are in no capture on disk; the stock constants are used.
 * Runtime lights: section 2 gives the falloff; only the colour unit is open.
+
+## 4. Runtime light limits and the dark room behind the generator room door (22 Nov 2026)
+
+Question: in `lit_generator_room_1` the control room seen through the open door is dark while its bank is on. Is there a per view limit on runtime lights?
+
+Engine limits found (engine map `iw7-engine-map.sqlite`, function `sub_140DF62C0` = dvar registration, `Dvar_RegisterInt` calls):
+
+| limit | value | where |
+|---|---|---|
+| `r_primaryOmniLightLimit` "Maximum number of primary omni lights drawn per pixel simultaneously" | default 64 (0x40) | `140DF8CAD` .. `140DF8CD9` |
+| `r_primarySpotLightLimit` (same, spot) | default 64 | `140DF8CE0` .. `140DF8D0C` |
+| `r_dynamicOmniLightLimit`, `r_dynamicSpotLightLimit` "Maximum number of dynamic omni / spot lights drawn simultaneously" | default 32 each (0x20) | `140DF8D13`, `140DF8D46` |
+| frustum light array (`t24` of the world shader) | 256 records of 88 bytes (`mov ecx, 0x100`, `edx = 0x58`) | `sub_1400C4950` at `1400C4BE4` |
+| z bin buffer (`t37`) | 0x8000 entries | `sub_1400C4950` at `1400C4C00` |
+| scriptable primary light slots of a map | the compiler's range 943 .. 1038 (96 lights) | darkness NOTES |
+
+The 72 named lights of g27r are below every one of these. Measured on the preview's geometry of that view (`iwz_lights.region_report`): the largest number of
+lights whose radius covers one pixel anywhere in `lit_generator_room_1` is **7** (mean 4.4), against a per pixel limit of 64. In the doorway region (rows 150-340,
+columns 290-440, world x 3125 .. 3597, y 3179 .. 3996, z -322 .. -34) only five lights reach any pixel at all: control room `(3100, 3300, -54)` reaches 27 % of the
+region's pixels with a mean weight a * N.L of 0.027, control room `(3450, 3300, -54)` 10 % with 0.010, two generator room lights and one shadowed control room light
+`(2760, 3560, -54)` about 2 % with 0.000. The other control room lights are farther than their 518 unit radius from what is visible
+through the door (floor at z -322 is 268 units under the lamps, and the falloff is a smoothstep that is 0 at the radius). The engine frame shows the room drawn and dim,
+not black (the floor, ceiling fixtures and a box are visible). Verdict: **no engine limit is hit**; the room is dim because few lamps reach the surfaces seen through
+the door and their smoothstep weight there is small, relative to a frame exposed for the bright generator room. The preview reproduces it (the room is dark in both).

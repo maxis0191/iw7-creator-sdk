@@ -36,8 +36,12 @@ def light_term(pos, nrm, alb, lights, k=1.0, zones=None):
     Engine falloff (ENGINE-SHADERS.md section 2, lines 405-410): a = saturate(k (1 - d / R)); a = a^2 (3 - 2a);
     diffuse = albedo * colour * intensity * a * saturate(N.L). No shadows (63 of the 72 lights are unshadowed in the engine, the 9 shadowed ones are
     drawn unshadowed here), no specular, no sphere size. `zones`: only lights of these zones (None: all)."""
+    # passes as written by iwz_preview.geometry_override: position + 100 m (scene in metres, S = 0.0254 per engine unit), normal * 0.5 + 0.5; background = 0
+    hit = pos[..., 0] > 50.0
+    pos = (pos - 100.0) / 0.0254
+    nrm = nrm * 2.0 - 1.0
     h, w = pos.shape[:2]
-    valid = (np.linalg.norm(nrm, axis=-1) > 0.5).reshape(-1)
+    valid = hit.reshape(-1)
     fp, fn, fa = pos.reshape(-1, 3), nrm.reshape(-1, 3), alb.reshape(-1, 3)
     acc = np.zeros((h * w, 3), np.float32)
     for L in lights:
@@ -77,56 +81,88 @@ def run(a, load_calib, run_blender, engine_frames, save_png):
         run_blender(base + ['--out', ad, '--albedo-pass'])
     lights = parse_lights(a.src)
     lut = TM.load_lut()
-    S = 4
     data = {}
     for n in eng:
         data[n] = {'lm': np.load(os.path.join(rd, 'plan_' + n + '.npy')),
                    'lt': light_term(np.load(os.path.join(rd, 'plan_' + n + '__pos.npy')), np.load(os.path.join(rd, 'plan_' + n + '__nrm.npy')),
                                     np.load(os.path.join(ad, 'plan_' + n + '.npy')), lights)}
-    up = (slice(60, 330), slice(None))
+    msk = C.mask_1280x720()
 
-    def lav(x):
-        return float(np.exp(np.log(np.maximum(C.lum(x), 1e-5)).mean()))
+    def blocks(a):
+        h, w = a.shape[:2]
+        return a[:h // 4 * 4, :w // 4 * 4].reshape(h // 4, 4, w // 4, 4, *a.shape[2:]).mean((1, 3))
+    mlow = blocks(msk.astype(np.float32)) > 0.99
+    elow = {n: np.maximum(blocks(C.lum(C.srgb_to_lin(eng[n]))), 1e-4) for n in eng}
 
-    def frame(n, unit, kg, full=False):
-        x = data[n]['lm'] + unit * data[n]['lt']
-        x = x if full else x[::S, ::S]
-        g = min(1.0, kg / lav(x))
-        return TM.display_frame(x, g, lut), g
+    def preview_low(n, unit, gain):
+        x = (data[n]['lm'] + unit * data[n]['lt'])
+        x = blocks(x)
+        return np.maximum(C.lum(C.srgb_to_lin(TM.display_frame(x, gain, lut))), 1e-4)
 
-    emed = {n: float(np.median(C.lum(C.srgb_to_lin(eng[n][up])))) for n in eng}
+    def fit_exposure(n, unit):
+        """The exposure of this frame (auto exposure: not modelled): the gain that makes the median luminance of the preview equal the engine's. -> gain, rms log error of the spatial pattern."""
+        lo, hi = 1e-4, 1e2
+        em = float(np.median(elow[n][mlow]))
+        for _ in range(14):
+            g = float(np.sqrt(lo * hi))
+            lo, hi = (g, hi) if float(np.median(preview_low(n, unit, g)[mlow])) < em else (lo, g)
+        p = preview_low(n, unit, g)
+        return g, float(np.sqrt(np.mean((np.log(p[mlow]) - np.log(elow[n][mlow])) ** 2)))
 
-    def med_up(img):
-        return float(np.median(C.lum(C.srgb_to_lin(img[60 // S:330 // S, :]))))
-
-    def err(unit, kg):
-        return float(np.sqrt(np.mean([np.log(max(med_up(frame(n, unit, kg)[0]), 1e-6) / emed[n]) ** 2 for n in eng])))
-    units = 10 ** np.linspace(-6, -1, 21)
-    kgs = 10 ** np.linspace(-3, 0, 25)
-    best0 = min((err(0.0, kg), kg) for kg in kgs)
-    best1 = min((err(u, kg), u, kg) for u in units for kg in kgs)
+    units = [0.0] + list(10 ** np.linspace(-5.5, -1.5, 9))
+    errs = {}
+    for u in units:
+        errs[u] = float(np.mean([fit_exposure(n, u)[1] for n in eng]))
+        print('unit %.3g: mean spatial rms log error %.4f' % (u, errs[u]), flush=True)
+    ubest = min(units, key=lambda u: errs[u])
     sbs = os.path.join(out, 'sidebyside')
     os.makedirs(sbs, exist_ok=True)
     rows = []
     for n in eng:
         eedge = C.engine_edges(eng[n], mask)
         res = {}
-        for tag, unit, kg in (('before', 0.0, best0[1]), ('after', best1[1], best1[2])):
-            img, g = frame(n, unit, kg, full=True)
+        for tag, unit in (('before', 0.0), ('after', ubest)):
+            g, e = fit_exposure(n, unit)
+            x = data[n]['lm'] + unit * data[n]['lt']
+            img = TM.display_frame(x, g, lut)
             res[tag] = img
             res[tag + '_edge'] = C.edge_score(eng[n], C.srgb_to_lin(img), mask, eedge)
-            res[tag + '_mean'] = C.mean_lum(C.srgb_to_lin(img), mask) / C.mean_lum(C.srgb_to_lin(eng[n]), mask)
-            res[tag + '_med'] = float(np.median(C.lum(C.srgb_to_lin(img[up])))) / emed[n]
-            res[tag + '_gain'] = g
+            res[tag + '_err'] = e
+            res[tag + '_ev'] = float(np.log2(g))
         rows.append({'frame': n, **{k: round(float(v), 3) for k, v in res.items() if not isinstance(v, np.ndarray)}})
         save_png(np.concatenate([res['before'], res['after'], eng[n]], 1), os.path.join(sbs, n + '_before_after_engine.png'))
-    keys = ('before_edge', 'after_edge', 'before_med', 'after_med', 'before_mean', 'after_mean', 'after_gain')
-    lines = ['| frame | edge IoU before | edge IoU after | median ratio before | median ratio after | mean ratio before | mean ratio after | auto gain after |',
-             '|---|---|---|---|---|---|---|---|']
+    keys = ('before_edge', 'after_edge', 'before_err', 'after_err', 'before_ev', 'after_ev')
+    lines = ['| frame | edge IoU before | edge IoU after | pattern rms log err before | pattern rms log err after | exposure EV before | exposure EV after |',
+             '|---|---|---|---|---|---|---|']
     for r in rows:
         lines.append('| %s | ' % r['frame'] + ' | '.join('%.3f' % r[k] for k in keys) + ' |')
     lines.append('| mean | ' + ' | '.join('%.3f' % np.mean([r[k] for r in rows]) for k in keys) + ' |')
     open(os.path.join(out, 'table_lit.md'), 'w').write(chr(10).join(lines) + chr(10))
-    json.dump({'rows': rows, 'before': best0, 'after': best1}, open(os.path.join(out, 'table_lit.json'), 'w'), indent=1)
+    json.dump({'rows': rows, 'unit_errors': {str(k): v for k, v in errs.items()}, 'unit': ubest}, open(os.path.join(out, 'table_lit.json'), 'w'), indent=1)
     print(chr(10).join(lines))
-    print('lit: before rms log median error %.3f (KG %.4f); after %.3f (UNIT %.3g, KG %.4f)' % (best0[0], best0[1], best1[0], best1[1], best1[2]))
+    print('lit: UNIT %.3g (0 = no runtime lights)' % ubest)
+
+
+def region_report(pos, nrm, lights, region, min_share=0.01):
+    """Which runtime lights reach the pixels of a region (row slice, column slice) of a view and how much: (zone, position, radius, shadowed, share of the
+    region's pixels inside the radius with N.L > 0, mean of a * N.L). Also the largest number of lights whose radius covers one pixel of the whole view
+    (to compare with the engine's per pixel limits, ENGINE-SHADERS.md section 4)."""
+    hit = pos[..., 0] > 50.0
+    P = ((pos - 100.0) / 0.0254)
+    N = nrm * 2.0 - 1.0
+    sel = hit[region]
+    p, n = P[region][sel], N[region][sel]
+    rows = []
+    for l in lights:
+        d = p - l['pos']
+        dist = np.linalg.norm(d, axis=1)
+        a = np.clip(1 - dist / l['radius'], 0, 1)
+        a = a * a * (3 - 2 * a)
+        w = a * np.clip((-d * n).sum(1) / np.maximum(dist, 1e-3), 0, 1)
+        if (w > 0).mean() > min_share:
+            rows.append((l['zone'], l['pos'].tolist(), l['radius'], l['shadowed'], round(float((w > 0).mean()), 3), round(float(w.mean()), 4)))
+    cnt = np.zeros(int(hit.sum()), int)
+    fp = P[hit]
+    for l in lights:
+        cnt += np.linalg.norm(fp - l['pos'], axis=1) < l['radius']
+    return sorted(rows, key=lambda r: -r[5]), int(cnt.max()), float(cnt.mean())
