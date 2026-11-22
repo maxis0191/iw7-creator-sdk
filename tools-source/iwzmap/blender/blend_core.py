@@ -555,9 +555,9 @@ class BlendEmitter(scenegen.Emitter):
                 continue
             fz = self.floor_z(x, y, z)
             k = (int(math.floor(x / CELL)), int(math.floor(y / CELL)))
-            on_nav = k in self.cells
+            on_nav = k in self.cells and abs(self.cells[k] - NAV_LIFT - z) <= 48
             if not on_nav and kind == 'ground':
-                self.problems.append('spawner %s at %s is on no navigation column' % (kind, (round(x), round(y), round(z))))
+                self.problems.append('spawner %s at %s is on no navigation floor (a floor over another floor has none until navgen exists)' % (kind, (round(x), round(y), round(z))))
             e = dict(classname='script_struct', targetname=zone + '_spawner', noteworthy='static', angles='0 %g 0' % yaw)
             if kind == 'ground':
                 e.update(origin=self.fmt((x, y, fz + 8)), animation='spawn_ground', parameters='ground_spawn_no_boards', fxid='concrete')
