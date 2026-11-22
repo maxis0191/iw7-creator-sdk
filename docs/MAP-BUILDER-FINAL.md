@@ -5,6 +5,12 @@ Prove it by building a whole new section, remaking sections that feel too generi
 screenshots are blank areas with a few props). Not a prototype." This page is the acceptance list and its state; the plan of the
 pipeline itself is [BLENDER-MAP-PIPELINE](BLENDER-MAP-PIPELINE.md). Nothing here is "done" until its line says measured.
 
+> **Superseded 22 Nov 2026 (night).** The owner widened the task: the best map-making tool for the agents themselves (maps from
+> scratch, stock maps modified, zones ported from other titles; no dependence on Blender, Forge or the older workflows; nobody
+> waits for a build or another agent). The specification, gates, acceptance and state are now `C:\studio\SPEC.md` (repository
+> `maxis0191/iw7-studio`). What follows is kept as history; its measured facts stand, its "sections on a base" decision is one
+> feature of the new tool, not the spine.
+
 ## The product (owner, 22 Nov 2026, late: "make the tools perfect; build fast; it works in the game as soon as you build it; any tool, or our own")
 
 The tool comes first; the sections further down are its demonstration, not the goal. The map builder is four parts:
