@@ -121,7 +121,11 @@ perk, wall buy; rounds spawn from the map's spawners and volumes; floor chases r
 `areas='quads'` (the exporter default): the polygon graphs (corners on straight edges in 40% of areas, 2.8% in stock) made
 the engine path but not move agents.
 
-Open: a descending zombie can fall into a stairwell (no rail on the upper floor's stairwell edge; down 3/4 in two runs of the
-default export, 4/4 in one run of the quads fixture): stairwell guard rails, workstream E round 5. The preview's lit state
+Stairwell guard rails (E round 5): every floor edge over a stair footprint with a drop over 18 gets a solid rail 42 high, and the
+stair side wall rises to max(ramp + 64, landing + 42) from the ramp foot. Measured on this export, six runs (four uncached):
+5 passed 9/9, one 8/9; climbs 23 of 24 zombies, descents 24 of 24. The one miss: a zombie wedged at the side wall's end by the
+ramp foot. Two variants measured worse and were reverted: the wall started where the ramp is 18 up (zombies stepped onto the ramp
+off the navigation: 1 to 3 of 4 climbed), and the wall extended 24 onto the floor before the foot (it cut the upper floor off the
+navigation). The preview's lit state
 (auto exposure, specular, interpolated light grid) and the control-room doorway cause, workstream L. Not merged: the
 preview lighting branch `claude/iwz-preview-light`.

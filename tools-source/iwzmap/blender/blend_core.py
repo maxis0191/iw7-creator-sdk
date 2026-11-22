@@ -164,6 +164,8 @@ def validate(scene, materials=None, steps=True):
             E('mesh %s: material %r is not an IW7 world material (w/...)' % (m['name'], m.get('material')))
     try:
         for r in stair_ramps(scene.get('meshes', []))[1]:
+            for ue in r['unrailed_edges'][:5]:
+                W('stair %s: a slanted floor edge near (%d, %d) at z %g drops more than 18 into the stair and cannot be railed automatically: add your own clip rail' % ((r['stair'],) + ue))
             if r['foot_clear_depth'] < r['foot_needs']:
                 W('stair %s: the foot has only %g units of clear approach in front of the lower edge (48 wanted, the stair wide): zombies and players need room to step on' % (r['stair'], r['foot_clear_depth']))
     except ValueError as e:
@@ -293,6 +295,37 @@ class WorldBuilder:
 
 
 # ------------------------------------------------------------------------------------------------ stair ramps
+def prism_tris(P, sv, cv, zbot, tops):
+    """closed prism: s in sv, c in cv (P maps s, c, z to x, y, z), from zbot up to tops[i] at sv[i]; outward triangles"""
+    pt = lambda i, j, k: P(sv[i], cv[j], zbot if k == 0 else tops[i])
+    cen = [sum(pt(i, j, k)[m] for i in (0, 1) for j in (0, 1) for k in (0, 1)) / 8.0 for m in range(3)]
+    faces = [[(0, 0, 0), (0, 1, 0), (0, 1, 1), (0, 0, 1)], [(1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1)],
+             [(0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1)], [(0, 1, 0), (1, 1, 0), (1, 1, 1), (0, 1, 1)],
+             [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)], [(0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)]]
+    out = []
+    for f in faces:
+        q4 = [pt(*c_) for c_ in f]
+        fc = [sum(p[m] for p in q4) / 4.0 for m in range(3)]
+        for t in ([q4[0], q4[1], q4[2]], [q4[0], q4[2], q4[3]]):
+            n_, a2_ = tri_normal(*t)
+            if a2_ * 0.5 < DEG_AREA:
+                continue
+            if _dot(n_, _sub(fc, cen)) < 0:
+                t = [t[0], t[2], t[1]]
+            out.append(t)
+    return out
+
+
+def _in_tri2(x, y, t, eps=1e-6):
+    (x0, y0, _), (x1, y1, _), (x2, y2, _) = t
+    d = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0 - y2)
+    if abs(d) < 1e-9:
+        return False
+    a = ((y1 - y2) * (x - x2) + (x2 - x1) * (y - y2)) / d
+    b = ((y2 - y0) * (x - x2) + (x0 - x2) * (y - y2)) / d
+    return a >= -eps and b >= -eps and 1 - a - b >= -eps
+
+
 def stair_ramps(meshes):
     """The stock stair construction (scenegen.build_flight): an invisible clip sheet over the step nosings, from the floor in front
     of the first riser to the top tread, full stair width. Players and zombies walk on the sheet; navigation is made on it.
@@ -370,27 +403,105 @@ def stair_ramps(meshes):
             # inside the stair's width, on the steps (a railing): outside it the wall left an 8-unit sliver of room floor along it
             # and reached into a slab beside a stairwell (test map 1: DROP_ONLY_REGION under the upper floor's edge)
             ca, cb = (side, side + 8.0) if out < 0 else (side - 8.0, side)
-            sv, cv = (s0, s1), (ca, cb)
-            pt = lambda i, j, k: P(sv[i], cv[j], z0 if k == 0 else zs(sv[i]) + 64.0)
-            cen = [sum(pt(i, j, k)[m] for i in (0, 1) for j in (0, 1) for k in (0, 1)) / 8.0 for m in range(3)]
-            faces = [[(0, 0, 0), (0, 1, 0), (0, 1, 1), (0, 0, 1)], [(1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1)],
-                     [(0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1)], [(0, 1, 0), (1, 1, 0), (1, 1, 1), (0, 1, 1)],
-                     [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)], [(0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)]]
+            # height max(ramp + 64, top landing + 42): flat to the crossover, then along the ramp + 64 (two convex parts)
+            hflat = z1 + 42.0
+            sc_ = s0 + (s1 - s0) * ((hflat - 64.0 - z0) / (z1 - z0)) if z1 > z0 else s1
+            sc_ = min(max(sc_, min(s0, s1)), max(s0, s1)) if (s1 - s0) * (sc_ - s0) >= 0 else s0
+            # the wall runs from the ramp foot to the top landing. Started where the ramp is 18 up, zombies stepped onto the ramp
+            # from the open side off the navigation and stuck (1 to 3 of 4 a run); extended 24 onto the floor before the foot, it cut
+            # the upper floor off the navigation (test map 1, 22 Nov 2026)
+            sw_ = s0
+            parts = [((sw_, sc_), (hflat, hflat)), ((sc_, s1), (hflat, zs(s1) + 64.0))]
             wt = []
-            for f in faces:
-                q4 = [pt(*c_) for c_ in f]
-                fc = [sum(p[m] for p in q4) / 4.0 for m in range(3)]
-                for t in ([q4[0], q4[1], q4[2]], [q4[0], q4[2], q4[3]]):
-                    n_, a2_ = tri_normal(*t)
-                    if a2_ * 0.5 < DEG_AREA:
-                        continue
-                    if _dot(n_, _sub(fc, cen)) < 0:
-                        t = [t[0], t[2], t[1]]
-                    wt.append(t)
+            for sv_, tops_ in parts:
+                if abs(sv_[1] - sv_[0]) > 0.01:
+                    wt += prism_tris(P, sv_, (ca, cb), z0, tops_)
             recs.append({'name': 'stairclip_%s_%s' % (name, 'xy'[oth] + ('minus' if out < 0 else 'plus')), 'material': '', 'mode': 'collision', 'tag': None,
                          'tris': wt, 'uvs': None})
             walls.append({'side': 'xy'[oth] + ('-' if out < 0 else '+'), 'at': round(side, 2), 'against_wall': round(frac, 2), 'triangles': len(wt),
-                          'height': 'floor %.0f to ramp + 64' % z0, 'length': round(hi_s - lo_s, 1), 'thickness': 8})
+                          'height': 'floor %.0f to max(ramp + 64, landing + 42 = %.0f)' % (z0, z1 + 42.0), 'length': round(hi_s - lo_s, 1), 'thickness': 8})
+        # rails: floors that border the stair footprint from above (an edge on or within 8 of its boundary, the stair surface more than 18
+        # below it along the edge) get a solid clip rail on the floor side of the edge, floor to floor + 42, 4 thick; where the ramp
+        # meets the floor (less than 18 below) the edge stays open
+        step_lo = min(sg * p[ax] for t in tris for p in t) * sg if sg > 0 else max(sg * p[ax] for t in tris for p in t) * sg
+        step_hi = max(sg * p[ax] for t in tris for p in t) * sg if sg > 0 else min(sg * p[ax] for t in tris for p in t) * sg
+        slo, shi = sorted((s0, s1, step_lo, step_hi))[0], sorted((s0, s1, step_lo, step_hi))[-1]
+        floors = [t for t in others[name] if tri_normal(*t)[0][2] >= 0.64 and max(p[2] for p in t) > z0 + 18 and
+                  min(p[ax] for p in t) <= shi + 12 and max(p[ax] for p in t) >= slo - 12 and
+                  min(p[oth] for p in t) <= c1 + 12 and max(p[oth] for p in t) >= c0 - 12]
+        def covered(q_s, q_c, zf):
+            x_, y_ = (q_s, q_c) if ax == 0 else (q_c, q_s)
+            return any(abs(sum(p[2] for p in t) / 3.0 - zf) < 2.0 and _in_tri2(x_, y_, t) for t in floors)
+        found = {}
+        unrailed = []
+        for t in floors:
+            cx_ = sum(p[oth] for p in t) / 3.0
+            sx_ = sum(p[ax] for p in t) / 3.0
+            for e0, e1 in ((t[0], t[1]), (t[1], t[2]), (t[2], t[0])):
+                zf = (e0[2] + e1[2]) / 2.0
+                if abs(e0[2] - e1[2]) > 0.5:
+                    continue
+                if abs(e0[oth] - e1[oth]) < 0.5:          # the edge runs along s at c = const: a long side of the footprint
+                    line, kind = e0[oth], 'c'
+                    near_ = [c_ for c_ in (c0, c1) if abs(c_ - line) <= 8.0]
+                    lo_e, hi_e = sorted((e0[ax], e1[ax]))
+                    lo_e, hi_e = max(lo_e, slo), min(hi_e, shi)
+                    out_ = -1.0 if cx_ > line else 1.0       # across the edge, away from the floor
+                elif abs(e0[ax] - e1[ax]) < 0.5:          # the edge runs along c at s = const: a foot or head end
+                    line, kind = e0[ax], 's'
+                    near_ = [s_ for s_ in (s0, s1, step_lo, step_hi) if abs(s_ - line) <= 8.0]
+                    lo_e, hi_e = sorted((e0[oth], e1[oth]))
+                    lo_e, hi_e = max(lo_e, c0), min(hi_e, c1)
+                    out_ = -1.0 if sx_ > line else 1.0
+                else:
+                    # a slanted edge on the footprint boundary with a drop into the stair cannot be railed here
+                    inside_ = all(slo - 8 <= p[ax] <= shi + 8 and c0 - 8 <= p[oth] <= c1 + 8 for p in (e0, e1))
+                    if inside_ and zf <= z1 + 18.0 and zf - zs(min(max((e0[ax] + e1[ax]) / 2, min(s0, s1)), max(s0, s1))) > 18.0:
+                        unrailed.append((round((e0[0] + e1[0]) / 2), round((e0[1] + e1[1]) / 2), round(zf, 1)))
+                    continue
+                if not near_ or hi_e - lo_e < 1.0:
+                    continue
+                n_s = max(1, int((hi_e - lo_e) / 4.0))
+                ok_run = []
+                for k in range(n_s + 1):
+                    u = lo_e + (hi_e - lo_e) * k / n_s
+                    q_s, q_c = (u, line + out_ * 2.0) if kind == 'c' else (line + out_ * 2.0, u)
+                    s_at = u if kind == 'c' else line
+                    drop = zf - zs(min(max(s_at, min(s0, s1)), max(s0, s1)))
+                    deep = all(covered(*((s_at, line - out_ * dd) if kind == 'c' else (line - out_ * dd, u)), zf) for dd in (4.0, 20.0, 40.0))                         if True else True
+                    walled = any(min(p[ax] for p in w_) - 3 <= q_s <= max(p[ax] for p in w_) + 3 and min(p[oth] for p in w_) - 3 <= q_c <= max(p[oth] for p in w_) + 3
+                                 and min(p[2] for p in w_) <= zf + 42 and max(p[2] for p in w_) >= zf + 2 for w_ in near)
+                    ok_run.append(18.0 < drop and zf <= z1 + 18.0 and deep and not walled and not covered(q_s, q_c, zf))
+                key = (kind, round(line, 1), out_, round(zf, 1))
+                lst = found.setdefault(key, [])
+                k = 0
+                while k <= n_s:
+                    if ok_run[k]:
+                        k2 = k
+                        while k2 + 1 <= n_s and ok_run[k2 + 1]:
+                            k2 += 1
+                        lst.append((lo_e + (hi_e - lo_e) * k / n_s, lo_e + (hi_e - lo_e) * k2 / n_s))
+                        k = k2 + 1
+                    else:
+                        k += 1
+        rails = []
+        for (kind, line, out_, zf), ivs in sorted(found.items()):
+            merged = []
+            for lo_i, hi_i in sorted(ivs):
+                if merged and lo_i <= merged[-1][1] + 4.5:
+                    merged[-1][1] = max(merged[-1][1], hi_i)
+                else:
+                    merged.append([lo_i, hi_i])
+            for lo_i, hi_i in merged:
+                lo_i -= 4.0
+                hi_i += 4.0                                  # the rails of a corner meet
+                thick = (line, line + 4.0) if out_ < 0 else (line - 4.0, line)          # on the floor side of the edge
+                sv_, cv_ = ((lo_i, hi_i), thick) if kind == 'c' else (thick, (lo_i, hi_i))
+                rt = prism_tris(P, sv_, cv_, zf, (zf + 42.0, zf + 42.0))
+                recs.append({'name': 'stairrail_%s_%s%g' % (name, kind, line), 'material': '', 'mode': 'collision', 'tag': None, 'tris': rt, 'uvs': None})
+                rails.append({'edge': '%s = %g (%s of the floor)' % ('xy'[oth] if kind == 'c' else 'xy'[ax], line, 'outside' if out_ < 0 else 'inside'),
+                              'from': round(lo_i, 1), 'to': round(hi_i, 1), 'length': round(hi_i - lo_i, 1), 'floor_z': round(zf, 1), 'height': 42,
+                              'thickness': 4, 'triangles': len(rt)})
         # the approach to the foot: clear depth in front of the lower edge, the stair width wide
         clear = 96.0
         for d_ in range(0, 97, 4):
@@ -409,7 +520,7 @@ def stair_ramps(meshes):
         foot_row = {'foot_clear_depth': clear, 'foot_needs': 48}
         rows.append({'stair': name, 'axis': 'xy'[ax], 'direction': int(sg), 'steps': len(hs), 'rise': round(rise, 3), 'tread': round(run, 3),
                      'ramp_from': [round(v, 2) for v in a], 'ramp_to': [round(v, 2) for v in b], 'width': round(c1 - c0, 2),
-                     'slope_deg': round(math.degrees(math.atan(slope)), 2), 'triangles': 2, 'side_walls': walls, **foot_row})
+                     'slope_deg': round(math.degrees(math.atan(slope)), 2), 'triangles': 2, 'side_walls': walls, 'rails': rails, 'unrailed_edges': sorted(set(unrailed)), **foot_row})
     return recs, rows
 
 
