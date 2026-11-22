@@ -3142,12 +3142,6 @@ for kind, donor, body, origin, yaw, zone, pid in PERKS_P1:
         layout['interactions'][-1]['body'] = body
 istruct('weapon_upgrade', PAP['origin'], PAP['yaw'], parameters='requires_power', target='iwz_pap_spot')
 relocations.append('pap_machine 0 %g %g %g %g' % (PAP['origin'][0], PAP['origin'][1] + 10, PAP['origin'][2], PAP['yaw']))
-# (RC4) the relocated stock scriptable works (real-key upgrade 7/7) but draws nothing: no frame since RC1 shows a machine,
-# with its model and definition in the zone and part machine in state "on" (probe sz_pap_machine, g27p). Cause open (the
-# instance's culling / transient-zone fields are not decoded). Like the perk machines (iwz_perk_body), the stock Pack-a-Punch
-# model stands on the interaction as a script model.
-ents.append(ent(classname='script_model', targetname='iwz_pap_body', model='zmb_pap_machine_animated',
-                origin=fmt((PAP['origin'][0], PAP['origin'][1] + 10, PAP['origin'][2])), angles='0 %g 0' % PAP['yaw']))
 ents.append(ent(classname='script_struct', targetname='iwz_pap_spot', origin=fmt((PAP['origin'][0], PAP['origin'][1] + 20, PAP['origin'][2] + 14)),
                 angles='0 %g 0' % PAP['yaw'], model='weapon_e_ak47_rare_wm'))
 for scriptable, origin, yaw, zone in WHEELS:
