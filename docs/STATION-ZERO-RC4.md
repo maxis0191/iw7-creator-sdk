@@ -20,8 +20,12 @@ kept clear), so it stays open. One round 2 of nine stalled 90 s with every zombi
 ## Measured on g27r (Forge, compressed time 10x unless said)
 
 doors 70/70; economy 76/76; wells 9/9; stairs 9/9; Capsule Post routes 128/128 and rules 39/39; start with every door closed 20/20;
-PaP with the real Use key (client) 7/7; rounds: see the RC4 report line in `docs/STATE.md` of the server (rerun with the corrected
-probe). Lit frames mean luma 0.168, near-black 9 % (stock Spaceland 0.174, 13 %).
+PaP with the real Use key (client) 7/7; rounds 1-15 with the corrected probe: 8 of 11 round plans pass. Open: with the player
+standing on stair A just under its 192-wide top door, zombies that find no melee slot run in place 350-430 units below without
+progress along their path (rounds 2 and 11, the same spot x -510, y 2720-2800; also on g27l before any RC4 change); the navmesh
+route from that spot is normal (490 units, as from every point across the flight), so it is the crowd at a choke, not a nav hole.
+Deck walkers on long routes made no progress for 50 s twice (rounds 3, 12). Lit frames mean luma 0.168, near-black 9 % (stock
+Spaceland 0.174, 13 %).
 
 ## Look: three independent reviewers, 30 frames, stock Spaceland frames as reference
 
