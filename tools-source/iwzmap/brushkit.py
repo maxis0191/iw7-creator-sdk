@@ -46,11 +46,22 @@ class Builder:
         self.quads = 0
         self.trim_quads = 0
         self.records = []                 # (zone, material key, 4 points, normal): every quad, for sz2_flatness.py
+        self.col_zone = []                # zone of every collision triangle, parallel to mesh.col (zonemap.json, sections/)
+        self.zone = None                  # zone of the last quad / collision call: collision added without a zone belongs to it
+
+    def sync_zone(self, zone):
+        """Give the collision triangles added since the last call (by quad(), box(), collision_*() or direct mesh.col
+        appends) the zone `zone`."""
+        n = len(self.mesh.col)
+        if n > len(self.col_zone):
+            self.col_zone.extend([zone] * (n - len(self.col_zone)))
 
     # ------------------------------------------------------------------ primitives
     def quad(self, mat, zone, pts, n=None, t=None, uvs=None, collide=True, tone='mid', uvoff=(0.0, 0.0), uvscale=1.0):
         """pts: 4 points counter-clockwise seen from the front (normal) side. uvs: explicit per-point (u, v);
         otherwise world aligned with the material's texture world size (su, sv) and offsets in repeats."""
+        self.sync_zone(self.zone)
+        self.zone = zone
         if n is None:
             n = norm(cross(sub(pts[1], pts[0]), sub(pts[2], pts[0])))
         elif dot(cross(sub(pts[1], pts[0]), sub(pts[2], pts[0])), n) < 0:
@@ -89,12 +100,14 @@ class Builder:
         key = '%s|%s' % (spec['path'], zone)
         self.mesh.quad_uv(key, pts, uvs, n, t, self.lm(zone, spec.get('tone', tone) if tone == 'mid' else tone),
                           collide=collide and spec.get('collide', True))
+        self.sync_zone(zone)
         self.used[mat] = self.used.get(mat, 0) + 1
         self.quads += 1
 
-    def collision_quad(self, pts, n=None, tag=None):
+    def collision_quad(self, pts, n=None, tag=None, zone=None):
         """Collision triangles of a quad; with `n` the winding is turned to face n (bullet traces are one-sided).
         tag: surface-table index of the collision template (contents + surface flags); None = the map default."""
+        self.sync_zone(self.zone)
         p0, p1, p2, p3 = pts
         if n is not None and dot(cross(sub(p1, p0), sub(p3, p0)), n) < 0:
             p0, p1, p2, p3 = p1, p0, p3, p2
@@ -102,14 +115,16 @@ class Builder:
             self.mesh.col_tag[len(self.mesh.col)] = tag
             self.mesh.col_tag[len(self.mesh.col) + 1] = tag
         self.mesh.col += [(p0, p1, p2), (p0, p2, p3)]
+        self.sync_zone(zone or self.zone)
 
-    def collision_box(self, mn, mx, nav=True):
+    def collision_box(self, mn, mx, nav=True, zone=None):
+        zone = zone or self.zone
         (x0, y0, z0), (x1, y1, z1) = mn, mx
         c = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
         for k in range(4):
             (ax, ay), (bx, by) = c[k], c[(k + 1) % 4]
-            self.collision_quad([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)])
-        self.collision_quad([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)])
+            self.collision_quad([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)], zone=zone)
+        self.collision_quad([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], zone=zone)
         if nav:
             self.blockers.append((x0, y0, x1, y1, z0, z1))
 
@@ -139,7 +154,7 @@ class Builder:
             # side faces: the quad winding above is counter-clockwise from outside
             self.quad(m, zone, pts, n=tuple(float(c) for c in n), collide=False, tone=tone, uvoff=uvoff, uvscale=uvscale)
         if collide:
-            self.collision_box(mn, mx, nav=False)
+            self.collision_box(mn, mx, nav=False, zone=zone)
         if nav is None:
             nav = collide and (z1 - z0) > 18
         if nav:

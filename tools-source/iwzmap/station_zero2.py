@@ -3577,12 +3577,18 @@ for t_ in B.mesh.col:
     if len(pts_) < 2:
         continue
     COL_WALLS.append([pts_[0][0], pts_[0][1], pts_[-1][0], pts_[-1][1], round(min(az_, bz_, cz_), 1), round(max(az_, bz_, cz_), 1)])
-plan = {'regions': [{'name': r['name'], 'zone': r['zone'], 'rect': r['rect']} for r in REGIONS], 'adj': [sorted(a) for a in ADJ],
+plan = {'regions': [{'name': r['name'], 'zone': r['zone'], 'rect': r['rect']} for r in REGIONS], 'adj': sorted(sorted(a) for a in ADJ),
         'cells': [[i, j, z, owner[(i, j)]] for (i, j), z in cells.items()],
         'cell_corners': [[i, j, list(c_)] for (i, j), c_ in corner_z.items() if (i, j) in cells],
         'nav_seams': NAV_SEAM_REPORT, 'blockers': B.blockers,
         'col_tris': len(B.mesh.col), 'bounds': wb, 'col_walls': COL_WALLS}
 json.dump(plan, open(os.path.join(out, 'plan.json'), 'w'))
 json.dump({'quads': B.records}, open(os.path.join(out, 'surfaces.json'), 'w'))
+B.sync_zone(B.zone)
+import sections.zonemap as _zonemap
+_zm = _zonemap.build(B.mesh, B.col_zone, {z_: zd_['box'] for z_, zd_ in ZONES.items()}, os.path.join(out, 'world.bin'))
+_zonemap.write(os.path.join(out, 'zonemap.json'), _zm)
+print('zonemap: render %s collision %s no-zone %d/%d moved-by-geometry %s' % (_zm['summary']['render_triangles'], _zm['summary']['collision_triangles'],
+      _zm['summary']['render_without_zone'], _zm['summary']['collision_without_zone'], sum(_zm['check']['collision_zone_moved_by_geometry'].values())))
 print('verts', nv, 'indices', ni, 'surfaces', ns, 'quads', B.quads, 'trim_quads', B.trim_quads, 'bounds', wb, 'collision', info, 'nav areas', nareas,
       'nav bytes', len(nav), 'materials', len(B.used), 'lights', len(LIGHTS), 'signs', len(SIGNS))
