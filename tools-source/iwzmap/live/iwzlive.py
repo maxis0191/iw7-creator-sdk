@@ -232,7 +232,7 @@ class Session:
         if name:
             args += ["--name", name]
         if cam:
-            args += ["--cam", ",".join(_fmt(v) for v in cam)]
+            args.append("--cam=" + ",".join(_fmt(v) for v in cam))      # the = form: a value that starts with - is not an option
         if out:
             args += ["--out", out]
         code, text = self.run(args)
@@ -346,7 +346,7 @@ def main(argv=None):
     s.add_argument("section")
     s = sub.add_parser("shot")
     s.add_argument("--name")
-    s.add_argument("--cam", help="x,y,z,yaw,pitch")
+    s.add_argument("--cam", help="x,y,z,yaw,pitch (write --cam=-10,... when the first value is negative)")
     s.add_argument("--out")
     s = sub.add_parser("save", help="write the in-game edits into a section file")
     s.add_argument("section")

@@ -131,7 +131,9 @@ class Library(unittest.TestCase):
     def test_shot_returns_a_png_path(self):
         self.assertTrue(self.s.shot("v1", cam=(1, 2, 3, 90, -5)).endswith(".png"))
         args = self.f.calls[-1][0]
-        self.assertEqual(args[args.index("--cam") + 1], "1,2,3,90,-5")
+        self.assertIn("--cam=1,2,3,90,-5", args)
+        self.s.shot("v3", cam=(-3400, 2730, 60.5, 0, 0))
+        self.assertIn("--cam=-3400,2730,60.5,0,0", self.f.calls[-1][0])
         self.assertEqual(self.s.shot("v2", out=r"C:\x\v2.png"), r"C:\x\v2.png")
 
     def test_edits_update_known_and_watch_yields_them(self):

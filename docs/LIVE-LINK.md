@@ -4,7 +4,7 @@ Line T1 and T3 of [MAP-BUILDER-FINAL.md](MAP-BUILDER-FINAL.md). A game session s
 outside shows in the game within a second; a frame comes back on request; a person in the game can place and turn props with keys and the
 outside tool records what they did.
 
-**State (23 Nov 2026): built, offline-tested, not yet run in the game.** Measured offline: the protocol, the record, the difference sync,
+**State (22 Nov 2026): built, offline-tested, not yet run in the game.** Measured offline: the protocol, the record, the difference sync,
 the section write-back, BMP to PNG, and the game script's logic in Forge's script VM (gscvm). Not measured: everything that needs the engine
 (the table at the end says which).
 
@@ -38,6 +38,7 @@ A command is one console line: `set iwz_live "<seq> <op> <args>|<seq> <op> <args
 | `light <targetname> <intensity> [r g b [radius]]` | sets the lights a **map** carries (`light_spot` entities with a targetname, as the darkness module's station lights): `setlightintensity` (proven by the darkness module), `setlightcolor`, `setlightradius` (in the engine function list, argument forms never run here) | built, partly unmeasured. **Creating or moving a light at run time is not possible**: no `spawn("light")` or origin call exists in the function list |
 | `fly 0\|1` | free flight for a human: releases the anchor and sends the engine's console `noclip` (a toggle; the state is tracked) | built, unmeasured; needs a human client and may need cheats |
 | `edit 0\|1`, `grid <n>`, `palette <model>` | the in-game editor below | built, unmeasured |
+| `e_place`, `e_select`, `e_delete`, `e_turn <deg>` | the editor's actions without a key, from the view the player has (`cam` puts it anywhere): the same code the keys run, so a live session can exercise the editor | built, unmeasured |
 
 ## In-game editing (phase 1: keys, no menu)
 
@@ -51,7 +52,7 @@ With `edit 1` (weapons disabled so the buttons do not fire):
 | frag / tactical | turn the selection +15 / -15 degrees |
 
 Each change prints `[IWZ local] LIVE edit op=<place\|turn\|delete> id=.. model=.. origin=x,y,z angles=p,y,r`; `forge live edits` and `Session.watch_edits()` return them and
-`apply_edits_to_section` writes them into a section. **Not built:** a move key (no key was specified), selection of the map's own static models (they are not script entities), a menu, undo,
+`apply_edits_to_section` writes them into a section. **The keys cannot be pressed in a Forge live session as built:** the client cell runs on a hidden desktop (`winproc.py`) and `ClientCell.begin()` starts no key relay, so the edit keys only work for a person at a visible client; use `e_*` ops to test the editor. The smallest change to press keys from outside: start the gamelab key relay (`gamelab_input.Relay`, as `ClientCell.run` does for a plan with input) in `begin()` and have the script print `CLIREQ keydown:attack` cues. **Not built:** a move key (no key was specified), selection of the map's own static models (they are not script entities), a menu, undo,
 save-by-key (saving is the outside tool's `save_section`). The button queries used (`attackbuttonpressed`, `adsbuttonpressed`, `usebuttonpressed`, `fragbuttonpressed`,
 `secondaryoffhandbuttonpressed`) are in the engine's function list; whether they read while weapons are disabled is unmeasured.
 
@@ -86,7 +87,8 @@ A section row without an `id` is known to the game as `p<index>`; a prop the gam
   (a new level, not a new cell). Detection: the entity's `model` field must change after `setmodel`; if not, `ok=0 why=model_not_loaded` and nothing changes.
 - **The session holds the machine's only client slot** (`max_client_cells` is 1). It ends by itself after 30 minutes without a command (`--idle-min`), and `forge live stop` ends it
   at once; the record stays in `C:\forge-run\live\live_state.json`, and the next `start` on the same map puts the props and camera back.
-- A daemon restart (`forge restart`) ends the session; `forge live start` restores it from the record.
+- A daemon restart (`forge restart`) ends the session; `forge live start` restores it from the record (the same map and usermap folder; another one starts empty). `reload` keeps the process; a rebuilt usermap (its `.ff` changed) or `reload --hard` takes a new cell. `stop` hands the cell back with the 2D HUD on again; the map restart of the next plan resets the rest.
+- A model the level cannot precache may end the plan before the script is ready: `start` then fails at once with the log line (script runtime error, `GL END`), it does not wait.
 - The live plan's conditions are `quiet` (no zombies, no damage, rounds held); change with `--conditions`.
 - Frames are PNG made from the client's BMP in Forge (no image library); they are the game's frames, nothing is judged here.
 
@@ -96,5 +98,11 @@ A section row without an `id` is known to the game as `p<index>`; a prop the gam
 |---|---|
 | protocol, record, splitting, ack parsing, difference sync, section write-back, BMP to PNG, overlay | measured offline (Forge `tests/test_live.py`, SDK `live/tests`) |
 | the script's op loop, parser, props, list/clear/del, snap, model refusal logic | measured offline in gscvm; compiled with the pinned gsc-tool |
+| the live plan's compile (gsc-tool, real compiler) | measured offline: `real_compile ok` for the plan with the script |
 | ack latency, frame latency, camera hold and eye error, `capture_frame` by a live thread, `ent.model` after `setmodel`, console line length, edit keys, `fly`, light calls, reload | unmeasured: first run is `prove_live.py` |
 | scale, run-time lights, selecting stock static models, a move key, a menu | do not exist |
+
+## Not written (decided with the lead on 22 Nov)
+
+The server repository was dropped from this work (the script lives in Forge and travels by path), so there is **no `docs/FORGE.md` "forge live" section and no `docs/GAMELAB.md` or DEVKIT row**
+in `iw7-paris-server`. The text for them is the Forge README section "forge live" and this page; copy from there when the lead lands the work.

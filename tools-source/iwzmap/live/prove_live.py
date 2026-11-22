@@ -22,8 +22,9 @@ sys.path.insert(0, HERE)
 import iwzlive  # noqa: E402
 
 USERMAP = r"C:\Users\ezvalo\Documents\IW7-Runtime\iwz-blend\testmap1\um_final2\cp_iwz"
-# stock models that Station Zero's layout places (iwz-stage2 level/src_g27r_lm/layout.json `decor`); the usermap loads the stock zombies zones
-MODELS = ["com_debris_paper_iw6_02", "electrical_control_box_03", "trashbin_01_iw6", "cp_disco_worn_subway_bench", "cp_disco_subway_lockers_02"]
+# stock models of the cp_zmb zone that are also static models of the template map cp_zmb (tools-source/iwzmap/scenes/station_zero_kits.json: zones has cp_zmb, template_donor,
+# dump_checked), so a usermap built on that template has them loaded; sizes 15 to 42 units. Not seen in the game: the first run says which the level refuses.
+MODELS = ["p7_box_cardboard_a_closed", "com_trashbag2_black", "com_restaurantchair_1", "chair_folding_iw6", "fac_trash_bin"]
 CENTER = (244.0, 200.0, 0.0)          # the middle of room_a of the Blender test map (box 0..488 x 0..400, floor -16, ceiling 132)
 
 
@@ -71,7 +72,7 @@ def main(argv=None):
     want = {}
     for i in range(50):
         pid = "p%02d" % i
-        origin = (cx - 160 + (i % 10) * 36.0, cy - 80 + (i // 10) * 40.0, cz)
+        origin = (cx - 100 + (i % 10) * 22.0, cy - 60 + (i // 10) * 30.0, cz)
         angles = (0, (i * 37) % 360, 0)
         model = models[i % len(models)]
         r, wall = timed(lambda: s.prop(pid, model, origin, angles))
@@ -97,7 +98,7 @@ def main(argv=None):
     frames = []
     for k in range(5):
         ang = k * 72.0
-        x, y = cx + 260.0 * math.cos(math.radians(ang)), cy + 260.0 * math.sin(math.radians(ang))
+        x, y = cx + 170.0 * math.cos(math.radians(ang)), cy + 170.0 * math.sin(math.radians(ang))
         yaw = (ang + 180.0) % 360.0
         try:
             path, wall = timed(lambda: s.shot("prove_c%d" % k, cam=(x, y, cz + 60.0, yaw, 10.0)))

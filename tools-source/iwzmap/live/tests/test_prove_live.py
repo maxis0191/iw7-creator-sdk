@@ -61,7 +61,7 @@ class Prove(unittest.TestCase):
         self.assertIn("T1 FAIL", text)
 
     def test_an_unloaded_model_stops_before_the_table(self):
-        code, text = self.run_prove(GameForge(refuse_models={"trashbin_01_iw6"}))
+        code, text = self.run_prove(GameForge(refuse_models={"fac_trash_bin"}))
         self.assertEqual(code, 2)
         self.assertIn("models the level did not load", text)
 
