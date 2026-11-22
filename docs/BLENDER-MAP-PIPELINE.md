@@ -60,3 +60,10 @@ causes are a per-view limit on runtime lights in the engine, or a bank that did 
 ## State
 
 - 22 Nov 2026: plan written; L, N, E started.
+
+- 22 Nov 2026, first map authored in Blender played in IW7 (lead, Forge, compressed time): testmap1 (two ground rooms, a door,
+  a stair to an upper floor over room A) built by `build-blend.ps1` in 184 s. Passed in game: the player climbs the stair,
+  zombies come down it, door charges 750, power, Up 'N Atoms, wall buy, rounds spawn from the map's own spawners and
+  volumes (`blend_t1_rounds` 2/2, `blend_t1_accept` 7/9). Failed: zombies did not climb to the upper floor (a 19-unit step
+  in the nav at the stair; the fix is the stock clip ramp over stairs, workstream E), and the closed door let the player
+  through (the generic level script `cp_iwz3.gsc` hid the door blockers, which removes their collision: fixed).
