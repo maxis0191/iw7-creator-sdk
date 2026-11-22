@@ -111,6 +111,6 @@ without it (`python -I` does not see the user-site numpy, `python -B` does).
 - g27r collision (34,036 triangles) regenerated in about 5 s with seeds at the three player starts: 10,832 areas against
   10,262 shipped; 44 shipped cells missing, 614 generated cells not shipped (wall margins, tunnel and platform edges);
   `iwz_emitcheck check`: 1 error (`NAV_FLOATING`, one cell, 12 units, ticket hall); the shipped graph has 0.
-- Two-storey fixture (`fixtures/twostorey`, floors at z 0 and 256, 32-step stair): 925 lower, 866 upper areas,
+- Two-storey fixture (`fixtures/twostorey`, floors at z 0 and 256, 32-step stair): 933 lower, 858 upper, 88 stair areas (1,882),
   861 squares with two areas, one component, `route` from the bottom start to the top floor 1,403 units;
   `iwz_emitcheck check`: 0 errors, 1 warning (open stair sides, by design).
