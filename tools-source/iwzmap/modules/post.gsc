@@ -124,6 +124,16 @@ t1_main()
         h = spawn( "script_model", m[3] + ( 0, 0, 52 ) );
         h setmodel( "pipe_metal_painted_bend_90_lrg_blue" );
         h.angles = ( 0, m[4], 0 );
+        // (Station Zero g27, RC2 review: the pipe bend read as a floating blue dot) a map may give the hatch a wall-mounted model:
+        // it is put on the wall behind the marker (a trace back from 52 up), facing into the room
+        if ( isdefined( level.iwz_post_hatch_model ) )
+        {
+            fb = anglestoforward( ( 0, m[4], 0 ) );
+            tr = bullettrace( m[3] + ( 0, 0, 52 ), m[3] + ( 0, 0, 52 ) - fb * 96, 0 );
+            h setmodel( level.iwz_post_hatch_model );
+            if ( tr["fraction"] < 1 )
+                h.origin = tr["position"] + fb * 1.5;
+        }
         h.targetname = "iwz_t1_hatch_" + tolower( m[1] );
         h.iwz_id = m[1];
         h.iwz_zone = m[2];
@@ -500,12 +510,18 @@ t1_ride( from, to, p, segs, price, cap )
     t1_sound( from, "ftl_phase_out" );
     t1_fx( "iwz_rail_arc", from.origin );
     // drawn in: hidden and held where they stood (scripted, ignoring everyone) until they come out at the destination
+    // (22 Nov 2026, Station Zero g27l: left at the departure hatch with no player near, all three were removed by the stock
+    // far-from-players cleanup before they came out: BLOWBACK_OUT n=0 of 3) they travel with the capsule: hidden at once at the
+    // destination hatch, held there until they come out
     foreach ( z in bb )
     {
         z hide();
         z.ignoreall = 1;
         z.scripted_mode = 1;
         z.iwz_t1_tube = 1;
+        q = getclosestpointonnavmesh( to.iwz_out + ( randomintrange( -32, 32 ), randomintrange( -32, 32 ), 0 ) );
+        if ( isdefined( q ) )
+            z setorigin( q, 1 );
         z scragentsetgoalpos( z.origin );
     }
     // the rider: protected, frozen, hidden, behind a black screen, already standing in the destination zone

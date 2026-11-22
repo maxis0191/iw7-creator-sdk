@@ -776,7 +776,15 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
         zt = z_lo + (k + 1) * rise
         rect(sk0, sk1, zt, 'conc_floor', False)                                   # g26: concrete tread (stock tread art read all yellow)
         ns2_ = sk0 + d * 3 if d > 0 else sk0 - 3
-        rect(min(sk0, ns2_), max(sk0, ns2_), zt + 0.2, 'beam_yellow', False)          # narrow yellow paint nosing
+        # (RC2 item 4: the 3-unit nosing sampled the grey bare-metal margin / chips of metal_painted_scratched_yellow at a random v,
+        # which read as blue-white streaks) explicit uvs pin v to the middle of the painted band
+        sa_, sb_, zn2_, Lc_ = min(ns2_, sk0), max(ns2_, sk0), zt + 0.2, abs(c1 - c0) / 128.0
+        if axis == 'x':
+            B.quad('beam_yellow', zone, [(sa_, c0, zn2_), (sb_, c0, zn2_), (sb_, c1, zn2_), (sa_, c1, zn2_)], n=(0, 0, 1),
+                   uvs=[(0, .45), (0, .55), (Lc_, .55), (Lc_, .45)], collide=False)
+        else:
+            B.quad('beam_yellow', zone, [(c0, sa_, zn2_), (c1, sa_, zn2_), (c1, sb_, zn2_), (c0, sb_, zn2_)], n=(0, 0, 1),
+                   uvs=[(0, .45), (Lc_, .45), (Lc_, .55), (0, .55)], collide=False)          # narrow yellow paint nosing
         ns_ = sk0 + d * 4 if d > 0 else sk0 - 4
         if k in (0, n_steps - 1):
             rect(min(sk0, ns_), max(sk0, ns_), zt + 0.3, 'yellow_grip', False)     # tactile nosing: top and bottom step only
@@ -791,7 +799,8 @@ def straight_stair(zone, space, axis, lo_end, hi_end, c0, c1, z_lo, z_hi, land_l
         for side_ in stringers:
             cs_, fs_ = (c0, -1) if side_ == 'c0' else (c1, +1)
             nn_ = (0, fs_, 0) if axis == 'x' else (fs_, 0, 0)
-            B.quad('conc_dark', zone, [P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=nn_, collide=False)
+            # (RC2 item 7: the well stair block's pit-side face read near black) lighter concrete than conc_dark
+            B.quad('conc', zone, [P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=nn_, collide=False)
             # (g27, QA g26c: east well climb stalled at (1936, 1692, -355), under the flight) solid, both faces
             B.collision_quad([P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=nn_)
             B.collision_quad([P(sk0, cs_, z_lo), P(sk1, cs_, z_lo), P(sk1, cs_, zt), P(sk0, cs_, zt)], n=tuple(-c for c in nn_))
@@ -1042,8 +1051,9 @@ def junction_box(zone, axis, fixed, facing, s, zc, w=16, h=20, depth=7):
 def signal_head(zone, x, y, zf, face, collide=True):
     """Tunnel signal on a post: three aspects facing +x (face 1) or -x (face -1); the top aspect is lit red, the
     others are dead. The red lamp gets a small light (emergency group: it stays on in the dark)."""
-    B.box((x - 3, y - 3, zf), (x + 3, y + 3, zf + 150), 'metal_black', zone, collide=collide, nav=collide)
-    B.box((x - 7, y - 9, zf + 150), (x + 7, y + 9, zf + 200), 'metal_black', zone, collide=False, nav=False)
+    # (RC2 item 6: the pole and head read as a pure black untextured pillar at the service_tunnel_1 frame edge) textured dark panel steel
+    B.box((x - 3, y - 3, zf), (x + 3, y + 3, zf + 150), 'panel_dark', zone, collide=collide, nav=collide)
+    B.box((x - 7, y - 9, zf + 150), (x + 7, y + 9, zf + 200), 'panel_dark', zone, collide=False, nav=False)
     xf = x + face * 7.2
     for k, mat in enumerate(('lamp_red', 'panel_dark', 'panel_dark')):
         zc = zf + 191 - k * 16
@@ -1164,9 +1174,10 @@ floor(Z, 'conc_tiles', -2400, 1760, 2400, 2400, DECK_Z)
 for x0_, x1_ in DECK_SEGS:
     floor(Z, 'conc_tiles', x0_, EDGE_Y + 48, x1_, 1760, DECK_Z)
 for x0_, x1_ in DECK_SEGS:
-    floor(Z, 'yellow_grip', x0_, EDGE_Y + 24, x1_, EDGE_Y + 48, DECK_Z)
+    floor(Z, 'yellow_grip', x0_, EDGE_Y + 24, x1_, EDGE_Y + 48, DECK_Z, tone='dark')
 for x0_, x1_ in DECK_SEGS:
-    floor(Z, 'conc_painted', x0_, EDGE_Y, x1_, EDGE_Y + 24, DECK_Z)
+    # (RC2 item 1: the pale painted lip blew out to pure white seen edge-on from the pit) dark lightmap tone, not the lit wall paint
+    floor(Z, 'conc_painted', x0_, EDGE_Y, x1_, EDGE_Y + 24, DECK_Z, tone='dark')
 for x_ in range(-2112, 2400, 384):
     y0_ = EDGE_Y + 64 if TRAIN else 1760
     if TRAIN and any(w_[0] - 5 < x_ < w_[2] + 5 for w_ in WELLS.values()):
@@ -1436,7 +1447,7 @@ for x0_, y0_ in DESKS:      # (g25) stock lab desks (decor block) instead of box
     B.collision_box((x0_ + 12, y0_ + 24, -320), (x0_ + 228, y0_ + 56, -285))
 decal_wall(Z, ART_HOOKS.key('evac_signal_diagram') or 'map_board', 'y', 3600 - 3.2, -1, 3600, -140, 320, 160)   # above the desk monitors, proud of the trim   # Station Zero evacuation / signal diagram when delivered
 sign(Z, 'sign_network_map', 'x', 4000, -1, 2800, -170, 256, 128)
-B.wall_plane(Z, 'x', 4150, -1, 2976, 3232, -320, -112, 'rollup', collide=False)
+B.wall_plane(Z, 'x', 4150, -1, 2976, 3232, -320, -112, 'conc_dark', collide=False)     # (RC2 item 3) was 'rollup': the tan backing seen through the closed shutter
 ceiling_grid(Z, 2600, 3200, 3600, 4000, -32, step_y=250, depth=16, mat='steel_trim')
 for x_ in (2980, 3300):
     B.box((x_ - 7, 3200, -48), (x_ + 7, 4000, -32), 'steel_trim', Z, collide=False, nav=False)
@@ -1584,7 +1595,7 @@ if 'iwz_zm_zod_ticket_booth' not in PORTED or not os.environ.get('IWZ_PB_BOOTH_M
 sign(Z, 'sign_old_station', 'x', 2600, +1, -2900, -120, 320)
 sign(Z, 'sign_old_station', 'y', -3600, +1, 3000, -120, 320)
 sign(Z, 'poster_lasttrain', 'x', 3400, -1, -2300, -200, 96, 144)
-decal_wall(Z, 'wall_stain', 'x', 3400, -1, -3200, -150, 160, 160)
+# (RC2 item 2: the hard-edged grey wall_stain square on the north wall read as a blank placeholder) removed
 decal_wall(Z, 'drip_stain', 'y', -3600, +1, 2800, -180, 160, 200)
 decal_wall(Z, 'top_stain', 'x', 2600, +1, -3200, -60, 256, 64)
 decal_floor(Z, 'floor_stain', -2900, 3100, -384, 192, 160)
@@ -1598,7 +1609,12 @@ for x_, y_, w_, h_, m_ in ((-3350, 2760, 200, 150, 'floor_stain'), (-3050, 2900,
                           (-2300, 2700, 160, 120, 'floor_stain'), (-2650, 3180, 140, 110, 'water_stain')):
     if not FLOOR_STAINS:       # (g27e) paper debris instead of the (black-reading) stains: detail on the old paving
         # and a patch of newer concrete paving where the old herringbone was repaired
-        floor(Z, 'conc_tiles', round(x_ - w_ / 2), round(y_ - h_ / 2), round(x_ + w_ / 2), round(y_ + h_ / 2), -383.7, collide=False)
+        # (RC2 item 2: the hard-edged beige 'repair' rectangles read as pasted cardboard) no floor patch quad, the paper debris stays
+        # (RC3) worn paving instead: two smaller overlapping patches of dark worn concrete, an irregular outline (the floor keeps
+        # under sz2_flatness's largest-undetailed-area limit, which failed with no patch at all)
+        for (px_, py_, pw_, ph_) in ((x_ - w_ * 0.12, y_ - h_ * 0.05, w_ * 0.8, h_ * 0.65), (x_ + w_ * 0.18, y_ + h_ * 0.2, w_ * 0.6, h_ * 0.75)):
+            floor(Z, 'conc_floor', round(px_ - pw_ / 2), round(py_ - ph_ / 2), round(px_ + pw_ / 2), round(py_ + ph_ / 2), -383.7,
+                  collide=False, tone='dark')
         for k_, (dx_, dy_) in enumerate(((-w_ / 4, -h_ / 5), (w_ / 5, h_ / 4))):
             DECOR.append({'zone': Z, 'model': 'com_debris_paper_iw6_02', 'origin': (x_ + dx_, y_ + dy_, -384), 'yaw': (k_ * 137 + int(x_)) % 360,
                           'clip': None, 'targetname': None, 'pitch': 0, 'roll': 0})
@@ -1979,13 +1995,13 @@ def train_kit():
                                                              (xe_, cy + 38, oz + 166.5)], n=(-1, 0, 0), uvs=[(0, 1), (1, 1), (1, 0), (0, 0)], collide=False)
                 STORY_PLACED.append(('story_headsign_2347', 'platform_a', (xe_, cy + 2, oz + 162)))
             LIGHTS.append({'zone': 'platform_a', 'origin': (cx + 60, cy, fz - 30), 'type': 'omni',
-                           'color': (1.0, 0.82, 0.6), 'radius': 260, 'intensity': 0.1, 'fixture': 'train_interior',
+                           'color': (1.0, 0.82, 0.6), 'radius': 260, 'intensity': 0.3, 'fixture': 'train_interior',     # (RC2 item 5) was 0.1: black windows
                            'train': 'emergency'})
         else:
             decor('platform_a', 'iwz_fluo_subway_broken', cx - 120, cy, fz, 90)
             # g27 review: every car carries a dim battery emergency light after power, so the consist pulls the eye
             LIGHTS.append({'zone': 'platform_a', 'origin': (cx, cy, fz - 30), 'type': 'omni',
-                           'color': (1.0, 0.82, 0.6), 'radius': 220, 'intensity': 0.08, 'fixture': 'train_interior',
+                           'color': (1.0, 0.82, 0.6), 'radius': 220, 'intensity': 0.25, 'fixture': 'train_interior',     # (RC2 item 5) was 0.08
                            'train': 'emergency'})
         decor('platform_a', 'iwz_fluo_subway_broken', cx + 120, cy, fz, 90)
         db_ = sorted([cx + TRAIN_DOOR_X[0] * c, cx + TRAIN_DOOR_X[1] * c])
@@ -2047,7 +2063,7 @@ def place_ported(spec_path):
 
 if os.environ.get('IWZ_NO_DECOR') != '1':
     for zn_, x_, y_, z_, a_ in RUBBLE:            # (g27) tunnel collapses (rubble_end)
-        decor(zn_, 'debris_concrete_rubble_pile_01_dark', x_, y_, z_, a_)
+        decor(zn_, 'debris_concrete_rubble_pile_01_dark', x_, y_, z_ - 3, a_)
     decor('ticket_hall', 'trashbin_01_iw6', -1100, 4340, 0, 0, (16, 16, 24))
     decor('ticket_hall', 'trashbin_01_iw6', 360, 4100, 0, 0, (16, 16, 24))
     for x in (-950, 180):
@@ -2077,7 +2093,10 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     # (g27e, review g27d item 13: hangar-sized, tidy) the night shift left in a hurry: chairs tipped over, logs and paper
     # thrown across the floor
     for k_, (x0_, y0_) in enumerate(DESKS[:3]):
-        decor('control_room', 'chair_folding_iw6', x0_ + 120, y0_ - 50, -320, 35 + k_ * 70, roll=90 if k_ != 1 else 0, pitch=0 if k_ != 1 else 80)
+        # (RC2 item 3: the tipped chair sank into the floor) tipped on its side the chair's half width (10.5 for roll 90, 11.5 for
+        # pitch 80) hangs below its origin: lifted by that much so it rests on the floor
+        decor('control_room', 'chair_folding_iw6', x0_ + 120, y0_ - 90, -320 + (10.6 if k_ != 1 else 11.6), 35 + k_ * 70,
+              roll=90 if k_ != 1 else 0, pitch=0 if k_ != 1 else 80)
         decor('control_room', 'office_paper_stack01_iw6', x0_ + 40 + k_ * 30, y0_ - 70, -320, k_ * 50)
         decor('control_room', 'com_debris_paper_iw6_02', x0_ + (160 if k_ < 2 else -40), y0_ - 110, -320, k_ * 90 + 20)  # (a85) the third desk's paper sat in the Deadeye approach
         decor('control_room', 'newspaper_single_fn_01', x0_ - 30, y0_ - 90, -320, k_ * 40)
@@ -2128,7 +2147,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
             decor('generator_room' if y_ > 2400 else 'maint_corridor', DRUM, x_, y_, -321, a_, (14, 14, 22))
         # old platform: loose planks by the rubble
         for x_, y_, a_ in ((-3460, 2930, 30), (-3430, 2960, 75)):         # (g27) clear of the booth
-            decor('platform_b', 'p7_zm_der_plank_wood_2x12x96', x_, y_, -384, a_)
+            decor('platform_b', 'p7_zm_der_plank_wood_2x12x96', x_, y_, -382.9, a_)     # (RC2 item 2) the model origin is mid-thickness (z -1..+1): lifted 1.1 onto the floor
         # story props from the cp_disco dump (newspapers, quarantine sheets, street barricades, emergency lamps)
         dec_ = lambda *a_, **k_: decor(*a_, **k_)
         dec_('platform_a', 'misc_zom_duffelbag_03', 235, 1712, DECK_Z, 20, (16, 13, 8))
@@ -2201,7 +2220,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
             decor(Zh, 'cp_disco_subway_turnstyle_animated' if x_ != -650 else 'cp_disco_subway_turnstyle_missing_arm', x_, 3700, 0, 90, (18, 16, 23))
         B.collision_box((x_ - 16, 3684, 0), (x_ + 16, 3716, 40))
     for x_, y_, a_ in ((-260, 4470, 30), (-120, 4520, 200), (-200, 4580, 70), (60, 4570, 300)):     # street stair collapse
-        decor(Zh, 'debris_concrete_rubble_pile_01_dark', x_, y_, 0, a_)
+        decor(Zh, 'debris_concrete_rubble_pile_01_dark', x_, y_, 0 - 3, a_)
     for x0_, y0_ in DESKS:
         for dx_ in (60, 180):
             decor(Zc, 'lab_desk_02', x0_ + dx_, y0_ + 40, -320, 90, (48, 16, 18))
@@ -2229,7 +2248,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     if 'iwz_machine_vending_food' not in PORTED:
         decor(Zh, 'zmb_mobile_ticket_booth', -1170, 3640, 0, 0, (18, 43, 23))     # clear of the west-wall posters
     decor(Zh, 'barrier_pedestrian_01', -230, 4380, 0, 0, (40, 6, 20))
-    decor(Zh, 'debris_concrete_rubble_pile_01_dark', 40, 4440, 0, 200)
+    decor(Zh, 'debris_concrete_rubble_pile_01_dark', 40, 4440, 0 - 3, 200)
     decor(Zh, 'com_trashbag2_black', -1140, 4360, 0, 30, (16, 16, 20))
     decor(Zh, 'p7_box_cardboard_a_closed', -1080, 4370, 0, 70, (16, 16, 15))
     decor(Zh, 'com_debris_paper_iw6_02', -300, 3450, 0, 25)
@@ -2238,7 +2257,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     pass                                        # (g26) Spaceland astronaut standee removed
     decor(Zh, BENCH, -1150, 4000, 0, 180, BENCH_CLIP[1])
     decor(Zh, BENCH, 350, 3890, 0, 0, BENCH_CLIP[1])           # clear of the Up'N Atoms perk at y 3460 and (g27) of the fare-line railing at y 3700
-    decor('service_tunnel', 'debris_concrete_rubble_pile_01_dark', -2900, 1250, -384, 60)
+    decor('service_tunnel', 'debris_concrete_rubble_pile_01_dark', -2900, 1250, -384 - 3, 60)
     decor('service_tunnel', 'com_junktire', -3560, 2050, -384, 30, (14, 14, 6))
     decor('generator_room', 'electrical_control_box_03', 2700, 2405, -200, 90)
     decor('generator_room', 'electrical_control_box_03', 3300, 2405, -200, 90)
@@ -2326,15 +2345,15 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     # service tunnel: work lights (lights table entries below), struts, junk, rubble, cones
     decor(Zt, 'com_junktire', -2840, 1240, -372, 30, (14, 14, 6))
     decor(Zt, 'ind_debris_metal_scrap_04', -3150, 1245, -384, 70)
-    decor(Zt, 'debris_concrete_rubble_pile_01_dark', -3500, 2500, -384, 20)
+    decor(Zt, 'debris_concrete_rubble_pile_01_dark', -3500, 2500, -384 - 3, 20)
     for y_ in (1700, 2000, 2300):
         decor(Zt, 'electrical_control_box_03', -3599, y_, -290, 0)
     for x_ in (-3300, -2700):
         decor(Zt, 'electrical_control_box_03', x_, 1217, -290, 90)
     # old platform: rubble, a dead work light, caution signs and cones ((g27) the boarded windows are generated steel
     # frames now: the stock Spaceland spawn-window frames read as red rounded arcade trim)
-    decor(Zb, 'debris_concrete_rubble_pile_01_dark', -3450, 2640, -384, 40)     # (g27e, lint perk-approach: was in front of Bang Bangs)
-    decor(Zb, 'debris_concrete_rubble_pile_01_dark', -2250, 3300, -384, 160)
+    decor(Zb, 'debris_concrete_rubble_pile_01_dark', -3450, 2640, -384 - 3, 40)     # (g27e, lint perk-approach: was in front of Bang Bangs)
+    decor(Zb, 'debris_concrete_rubble_pile_01_dark', -2250, 3300, -384 - 3, 160)
     pass                                        # (g26) Spaceland standee removed
     for x_, y_ in ((-2780, 2700), (-2620, 2700)):
         decor(Zb, 'traffic_cone_sml_01', x_, y_, -384, 0, (8, 8, 14))
@@ -2743,6 +2762,9 @@ FX = [   # ambient kit FX (assets/kit/fx_kit.tsv, cp_zmb) kept after the engine 
     {'fx': 'vfx/iw7/core/zombie/environment/vfx_zb_trash_a_ch', 'origin': (-100, 4440, 10), 'zone': 'ticket_hall', 'repeat': True},
     {'fx': 'vfx/iw7/core/zombie/environment/vfx_zb_trash_a_ch', 'origin': (-2400, 1400, -374), 'zone': 'platform_a', 'repeat': True},
 ]
+# (RC2 item 5: the trash fire at the west end of the pit threw no light) a warm light on the FX origin, always on (emergency group)
+LIGHTS.append({'zone': 'platform_a', 'origin': (-2400, 1400, -340), 'type': 'omni', 'color': (1.0, 0.78, 0.52), 'radius': 180,
+               'intensity': 0.3, 'fixture': 'emergency', 'fx_fire': True})
 WALL_BUYS = [   # (weapon, world model, origin, yaw, zone)
     ('iw7_revolver_zm', 'weapon_kb_revolver_wm', (-1184, 4100, 64), 90, 'ticket_hall'),
     ('iw7_ump45_zml', 'weapon_ump_wm', (-784, 2600, -180), 90, 'stair_a'),

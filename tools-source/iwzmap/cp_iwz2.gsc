@@ -70,6 +70,7 @@ main()
     level thread iwz_door_dressing();
     level thread iwz_report();
     //@AUDIO@
+    level.iwz_post_hatch_model = "emergency_shutoff_sm_panel_01";     // (RC3) the Capsule Post hatch: a stock wall panel, not the 19-zone pipe stand-in
     //@POST@
 }
 
