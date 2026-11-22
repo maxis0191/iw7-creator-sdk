@@ -683,7 +683,12 @@ def try_navgen(col_tris, starts, log):
     except ImportError as e:
         return None, None, 'navgen.py not importable (%s)' % e
     try:
-        data, rep = navgen.generate(col_tris, seeds=[tuple(s) for s in starts] or None)
+        # areas='quads' (32-unit lattice rectangles, clipped polygons only at non-axis walkable edges): the shape proven in game on
+        # 22 Nov 2026 (testmap1 9/9, zombies climb and descend the stair). Large polygons with corners on straight edges (round 2/3)
+        # froze agents in place; IWZ_NAV_AREAS=stock|polygons selects the others.
+        mode = os.environ.get('IWZ_NAV_AREAS', 'quads')
+        kw = {'areas': mode, 'cell': 32} if mode == 'quads' else {'areas': mode}
+        data, rep = navgen.generate(col_tris, seeds=[tuple(s) for s in starts] or None, **kw)
         polys = parse_polygons(data)
         if not isinstance(data, (bytes, bytearray)) or not polys:
             return None, None, 'navgen.generate gave no data or no area'
