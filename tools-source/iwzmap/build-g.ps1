@@ -218,8 +218,11 @@ if($Darkness){
   $litK='fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3'
   # (sz-rc3) lit exposure candidates, each on an unused stock vision name (paris_iwz_lit_vision picks one in a private test): the map's
   # own lit vision auto-exposes every room to mid grey (mean luma 0.45 in every view whatever the light intensity)
-  $litV="lita:$litK;tonemapMaxExposureAdjust=0|litb:$litK;tonemapMaxExposureAdjust=-0.7;tonemapAutoExposureAdjust=-0.5|litc:$litK;tonemapMaxExposureAdjust=0.5;tonemapMidExposureAdjust=-1.2;tonemapAutoExposureAdjust=-0.3"
-  $A['DarkArgs']="--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --lit $litK --variants $litV --alias cp_zmb_int_triton_main=lita,cp_zmb_int_triton_ride=litb,cp_zmb_ghost_path=litc"
+  # (RC3, 22 Nov 2026) candidates only from keys shown to be read (darkness NOTES 22 Nov): tonemapAutoExposureAdjust (auto) and
+  # tonemapAuto 0 + tonemapExposureAdjust (fixed, as the dark vision). Stock cp_zmb under the same vision: mean luma 0.175, p90 0.34;
+  # g27l lit: 0.442, p90 0.82.
+  $litV="fxa:$litK;tonemapAuto=0;tonemapExposureAdjust=-1.5|fxb:$litK;tonemapAuto=0;tonemapExposureAdjust=-2|aua:$litK;tonemapAutoExposureAdjust=-2|aub:$litK;tonemapAutoExposureAdjust=-3"
+  $A['DarkArgs']="--dark tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3 --lit $litK --variants $litV --alias cp_zmb_int_triton_main=fxa,cp_zmb_int_triton_ride=fxb,cp_zmb_ghost_path=aua,cp_zmb_alien=aub"
 }
 # Capsule Post (modules/post.gsc, package T1): station_zero2.py writes modules/cp_iwz_post.gsc into $src (unless IWZ_POST=0) and the level
 # script starts it. The bake overlays above copy top-level files only, so the module folder is carried over to $build here (a stale
