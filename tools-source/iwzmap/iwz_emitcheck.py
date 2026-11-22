@@ -59,22 +59,25 @@ def load_tris(path):
 
 
 def load_nav(path):
-    g = open(path, 'rb').read()[48:]
-    _ver, _pad, area_bytes, _kd = struct.unpack_from('<IIII', g, 0)
+    """Areas keyed by byte offset: centre, corners (any number: stock areas are 3 to 14 sided), neighbour per edge
+    (0 = none). Read with navfmt, so graphs with N-gon areas load."""
+    import navfmt
+    gr = navfmt.read_file(path)
     areas = {}
-    off = HS
-    while off < HS + area_bytes:
-        centre = struct.unpack_from('<3f', g, off + 32)
-        corners, nbrs = [], []
-        for e in range(4):
-            eo = off + AREA + EDGE * e
-            nb = struct.unpack_from('<Q', g, eo)[0]
-            x, y, z, _flags, cost, _ = struct.unpack_from('<3fIII', g, eo + 8)
-            corners.append((x, y, z))
-            nbrs.append(nb if cost else 0)
-        areas[off] = {'c': centre, 'corners': corners, 'nbrs': nbrs}
-        off += AREA + EDGE * 4
+    for a in gr.areas:
+        areas[a.off] = {'c': a.centre, 'corners': [e.corner for e in a.edges],
+                        'nbrs': [e.nbr if e.cost else 0 for e in a.edges]}
     return areas
+
+
+def _inside(x, y, poly, tol=1e-3):
+    """Point in a convex polygon (counter-clockwise corners), edges inclusive."""
+    n = len(poly)
+    for k in range(n):
+        a, b = poly[k], poly[(k + 1) % n]
+        if (b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]) < -tol * max(1.0, math.hypot(b[0] - a[0], b[1] - a[1])):
+            return False
+    return True
 
 
 class NotAnEmit(Exception):
@@ -243,23 +246,40 @@ class Nav:
 
     def z_at(self, k, x, y):
         ar = self.a[k]
-        x0, x1, y0, y1 = ar['bb']
-        if x1 - x0 < 1e-6 or y1 - y0 < 1e-6:
-            return ar['c'][2]
-        u = min(1.0, max(0.0, (x - x0) / (x1 - x0)))
-        v = min(1.0, max(0.0, (y - y0) / (y1 - y0)))
-        z = 0.0
-        for cx, cy, cz in ar['corners']:
-            wu = u if abs(cx - x1) < abs(cx - x0) else 1.0 - u
-            wv = v if abs(cy - y1) < abs(cy - y0) else 1.0 - v
-            z += wu * wv * cz
-        return z
+        cs = ar['corners']
+        if len(cs) == 4:
+            x0, x1, y0, y1 = ar['bb']
+            if x1 - x0 < 1e-6 or y1 - y0 < 1e-6:
+                return ar['c'][2]
+            u = min(1.0, max(0.0, (x - x0) / (x1 - x0)))
+            v = min(1.0, max(0.0, (y - y0) / (y1 - y0)))
+            z = 0.0
+            for cx, cy, cz in cs:
+                wu = u if abs(cx - x1) < abs(cx - x0) else 1.0 - u
+                wv = v if abs(cy - y1) < abs(cy - y0) else 1.0 - v
+                z += wu * wv * cz
+            return z
+        # a polygon: the triangle of the corner fan that holds the point, planar inside it
+        a0 = cs[0]
+        for t in range(1, len(cs) - 1):
+            b, c = cs[t], cs[t + 1]
+            d = (b[1] - c[1]) * (a0[0] - c[0]) + (c[0] - b[0]) * (a0[1] - c[1])
+            if abs(d) < 1e-9:
+                continue
+            u = ((b[1] - c[1]) * (x - c[0]) + (c[0] - b[0]) * (y - c[1])) / d
+            v = ((c[1] - a0[1]) * (x - c[0]) + (a0[0] - c[0]) * (y - c[1])) / d
+            w = 1.0 - u - v
+            if u >= -1e-6 and v >= -1e-6 and w >= -1e-6:
+                return u * a0[2] + v * b[2] + w * c[2]
+        return ar['c'][2]
 
     def columns(self, x, y):
         out = []
         for k in self.grid.get((int(math.floor(x / self.g)), int(math.floor(y / self.g))), ()):
             bb = self.a[k]['bb']
             if bb[0] - 1e-3 <= x <= bb[1] + 1e-3 and bb[2] - 1e-3 <= y <= bb[3] + 1e-3:
+                if len(self.a[k]['corners']) != 4 and not _inside(x, y, self.a[k]['corners']):
+                    continue
                 out.append((self.z_at(k, x, y), k))
         return out
 
@@ -517,11 +537,13 @@ def check_nav_support(emit):
 
 
 def check_links(emit):
-    """Nav links must be walkable: no wall across them, no cliff along them."""
+    """Nav links must be walkable: no wall across them, no cliff along them. Quads are tested centre to centre; a
+    polygon area (a graph from navgen) is tested centre to the middle of the shared edge to the other centre, with
+    the heights taken on the shared edge, because the centres of two big areas can be far apart in z on a ramp."""
     out_blocked, out_steep, oneway = [], [], 0
     for k, ar in emit.areas.items():
         a = ar['c']
-        for nb in ar['nbrs']:
+        for e, nb in enumerate(ar['nbrs']):
             if nb not in emit.areas:
                 continue
             other = emit.areas[nb]
@@ -530,12 +552,24 @@ def check_links(emit):
                 oneway += 1
             if k > nb and k in other['nbrs']:
                 continue
-            if abs(a[2] - b[2]) > STEP + 6.0:
-                out_steep.append((int(a[0] // 32), int(a[1] // 32), a[2]))
-            base = max(a[2], b[2])
-            if emit.col.blocked((a[0] + EX, a[1] + EY, base + 20.0), (b[0] + EX, b[1] + EY, base + 20.0)) or \
-               emit.col.blocked((a[0] + EX, a[1] + EY, base + 48.0), (b[0] + EX, b[1] + EY, base + 48.0)):
-                out_blocked.append((int(a[0] // 32), int(a[1] // 32), a[2]))
+            if len(ar['corners']) == 4 and len(other['corners']) == 4:
+                if abs(a[2] - b[2]) > STEP + 6.0:
+                    out_steep.append((int(a[0] // 32), int(a[1] // 32), a[2]))
+                legs = [(a, b)]
+            else:
+                cs = ar['corners']
+                p, q = cs[e], cs[(e + 1) % len(cs)]
+                m = ((p[0] + q[0]) / 2, (p[1] + q[1]) / 2)
+                za, zb = emit.nav.z_at(k, m[0], m[1]), emit.nav.z_at(nb, m[0], m[1])
+                if abs(za - zb) > STEP + 6.0:
+                    out_steep.append((int(a[0] // 32), int(a[1] // 32), a[2]))
+                zm = (za + zb) / 2
+                legs = [(a, (m[0], m[1], zm)), ((m[0], m[1], zm), b)]
+            for s, d in legs:
+                base = max(s[2], d[2])
+                if emit.col.blocked((s[0] + EX, s[1] + EY, base + 20.0), (d[0] + EX, d[1] + EY, base + 20.0)) or                    emit.col.blocked((s[0] + EX, s[1] + EY, base + 48.0), (d[0] + EX, d[1] + EY, base + 48.0)):
+                    out_blocked.append((int(a[0] // 32), int(a[1] // 32), a[2]))
+                    break
     out = []
     for grp in clusters(out_blocked):
         out.append(finding('LINK_BLOCKED', 'error', majority(emit, grp, 32.0), grp, 32.0,

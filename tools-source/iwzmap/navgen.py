@@ -30,6 +30,7 @@ seed_problems, params. With detail=True also 'cells': one dict per area (i, j, z
 """
 import argparse
 import collections
+import heapq
 import json
 import math
 import os
@@ -90,16 +91,183 @@ def _sample(tris, h_floor, h_wall, cos_slope, chunk=1_500_000):
     return
 
 
-def generate(tris, *, cell=32, agent_height=72, agent_radius=15, step=18, max_slope_deg=45, seeds=None,
-             res=8, min_cover=0.2, detail=False, _debug=None):
+def _plane(pts):
+    """Least squares z = a x + b y + c through (n, 3) points; returns (a, b, c, max residual)."""
+    p = np.asarray(pts, dtype=np.float64)
+    if len(p) < 3:
+        return 0.0, 0.0, float(p[:, 2].mean()), 0.0
+    x0, y0 = p[:, 0].mean(), p[:, 1].mean()
+    A = np.column_stack([p[:, 0] - x0, p[:, 1] - y0, np.ones(len(p))])
+    if np.linalg.matrix_rank(A, tol=1e-6) < 3:
+        return 0.0, 0.0, float(p[:, 2].mean()), float(np.abs(p[:, 2] - p[:, 2].mean()).max())
+    c = np.linalg.lstsq(A, p[:, 2], rcond=None)[0]
+    res = float(np.abs(A @ c - p[:, 2]).max())
+    return float(c[0]), float(c[1]), float(c[2] - c[0] * x0 - c[1] * y0), res
+
+
+class _Mesh:
+    """Convex polygons over shared vertices; directed edge (u, v) belongs to exactly one polygon, its neighbour is
+    the owner of (v, u)."""
+
+    def __init__(self):
+        self.X, self.Y, self.Z = [], [], []
+        self.vkey = {}
+        self.poly = {}            # id -> vertex cycle (counter-clockwise)
+        self.owner = {}           # directed atomic edge -> polygon id
+        self.nid = 0
+
+    def vertex(self, key, x, y, z):
+        v = self.vkey.get(key)
+        if v is None:
+            v = self.vkey[key] = len(self.X)
+            self.X.append(x)
+            self.Y.append(y)
+            self.Z.append(z)
+        return v
+
+    def add(self, cyc):
+        pid = self.nid
+        self.nid += 1
+        self.poly[pid] = cyc
+        n = len(cyc)
+        for k in range(n):
+            self.owner[(cyc[k], cyc[(k + 1) % n])] = pid
+        return pid
+
+    def area2(self, cyc):
+        s = 0.0
+        n = len(cyc)
+        for k in range(n):
+            a, b = cyc[k], cyc[(k + 1) % n]
+            s += self.X[a] * self.Y[b] - self.X[b] * self.Y[a]
+        return s
+
+    def collinear(self, a, b, c, tol=0.6):
+        """b lies on the segment a-c within tol units in xy and z (a vertex that adds no corner)."""
+        ax, ay, az = self.X[a], self.Y[a], self.Z[a]
+        cx, cy, cz = self.X[c], self.Y[c], self.Z[c]
+        dx, dy = cx - ax, cy - ay
+        ln = math.hypot(dx, dy)
+        if ln < 1e-9:
+            return True
+        t = ((self.X[b] - ax) * dx + (self.Y[b] - ay) * dy) / (ln * ln)
+        if t < -1e-6 or t > 1 + 1e-6:
+            return False
+        off = abs((self.X[b] - ax) * dy - (self.Y[b] - ay) * dx) / ln
+        zc = az + (cz - az) * t
+        return off <= tol and abs(self.Z[b] - zc) <= tol
+
+    def corners(self, cyc, own=None):
+        """The polygon without the vertices that sit in the middle of one edge: the edges before and after have the
+        same neighbour and the three points are collinear. Returns (kept vertices, their indices in cyc)."""
+        n = len(cyc)
+        if own is None:
+            own = lambda u, v: self.owner.get((v, u))     # noqa: E731
+        nb = [own(cyc[k], cyc[(k + 1) % n]) for k in range(n)]
+        keep = []
+        for k in range(n):
+            prev = (k - 1) % n
+            if nb[prev] == nb[k] and self.collinear(cyc[prev], cyc[k], cyc[(k + 1) % n]):
+                continue
+            keep.append(k)
+        if len(keep) < 3:
+            return list(cyc), list(range(n))
+        return [cyc[k] for k in keep], keep
+
+    def convex(self, cyc, eps=1e-3):
+        n = len(cyc)
+        for k in range(n):
+            a, b, c = cyc[k], cyc[(k + 1) % n], cyc[(k + 2) % n]
+            cr = (self.X[b] - self.X[a]) * (self.Y[c] - self.Y[b]) - (self.Y[b] - self.Y[a]) * (self.X[c] - self.X[b])
+            if cr < -eps:
+                return False
+        return True
+
+    def try_merge(self, a, b, max_edges, plane_tol):
+        """The cycle of a and b joined along their shared edges, or None when that is not one simple convex, planar
+        polygon with at most max_edges corners. Returns (cycle, shared edges, corner count)."""
+        A, B = self.poly[a], self.poly[b]
+        n = len(A)
+        sh = [self.owner.get((A[(k + 1) % n], A[k])) == b for k in range(n)]
+        cnt = sum(sh)
+        if cnt == 0 or cnt == n:
+            return None
+        starts = [k for k in range(n) if sh[k] and not sh[k - 1]]
+        if len(starts) != 1:
+            return None
+        s = starts[0]
+        vs, ve = A[s], A[(s + cnt) % n]
+        m = len(B)
+        if vs not in B or ve not in B:
+            return None
+        jb = B.index(vs)
+        rest = []
+        k = (jb + 1) % m
+        guard = 0
+        while B[k] != ve:
+            rest.append(B[k])
+            k = (k + 1) % m
+            guard += 1
+            if guard > m:
+                return None
+        path_a = [A[(s + cnt + t) % n] for t in range(n - cnt + 1)]      # ve ... vs along the free side of a
+        cyc = path_a + rest
+        if len(set(cyc)) != len(cyc) or not self.convex(cyc):
+            return None
+        if _plane([(self.X[v], self.Y[v], self.Z[v]) for v in cyc])[3] > plane_tol:
+            return None
+        shared = {(A[(s + t) % n], A[(s + t + 1) % n]) for t in range(cnt)}
+        shared |= {(v, u) for (u, v) in shared}
+
+        def own(u, v):
+            if (u, v) in shared:
+                return None
+            return self.owner.get((v, u))
+        corners, _ = self.corners(cyc, own=own)
+        if len(corners) > max_edges:
+            return None
+        return cyc, shared, len(corners)
+
+    def commit(self, a, b, cyc, shared):
+        for e in shared:
+            self.owner.pop(e, None)
+        for k in range(len(cyc)):
+            self.owner[(cyc[k], cyc[(k + 1) % len(cyc)])] = a
+        self.poly[a] = cyc
+        del self.poly[b]
+
+    def merge_all(self, max_edges, plane_tol):
+        merged = 0
+        for pid in sorted(self.poly):
+            while pid in self.poly:
+                cyc = self.poly[pid]
+                n = len(cyc)
+                cand = {self.owner.get((cyc[(k + 1) % n], cyc[k])) for k in range(n)} - {None, pid}
+                best = None
+                for qd in sorted(cand):
+                    r = self.try_merge(pid, qd, max_edges, plane_tol)
+                    if r is None:
+                        continue
+                    score = (r[2], len(r[0]))
+                    if best is None or score < best[0]:
+                        best = (score, qd, r)
+                if best is None:
+                    break
+                self.commit(pid, best[1], best[2][0], best[2][1])
+                merged += 1
+        return merged
+
+
+def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_slope_deg=45, seeds=None,
+             res=8, max_edges=14, plane_tol=1.5, detail=False, _debug=None):
     tris = np.asarray(tris, dtype=np.float64).reshape(-1, 3, 3)
     cell = float(cell)
-    q = max(1, int(round(cell / float(res))))
-    res = cell / q
+    res = cell / 2.0          # a lattice cell is two columns wide: every column touches one lattice vertex
     cos_slope = math.cos(math.radians(max_slope_deg))
     report = {'tris': int(len(tris)), 'params': {'cell': cell, 'res': res, 'agent_height': agent_height,
                                                  'agent_radius': agent_radius, 'step': step,
-                                                 'max_slope_deg': max_slope_deg, 'min_cover': min_cover}}
+                                                 'max_slope_deg': max_slope_deg, 'max_edges': max_edges,
+                                                 'plane_tol': plane_tol}}
     if len(tris) == 0:
         raise ValueError('no triangles')
     mn = tris.reshape(-1, 3).min(0)
@@ -111,7 +279,6 @@ def generate(tris, *, cell=32, agent_height=72, agent_radius=15, step=18, max_sl
 
     # -------- 1. points to columns
     keys, zs, ws = [], [], []
-    degenerate = 0
     for pts, wk in _sample(tris, res * 0.7, res * 0.5, cos_slope):
         cx = np.floor((pts[:, 0] - ox) / res).astype(np.int64)
         cy = np.floor((pts[:, 1] - oy) / res).astype(np.int64)
@@ -120,8 +287,7 @@ def generate(tris, *, cell=32, agent_height=72, agent_radius=15, step=18, max_sl
         ws.append(wk)
     e1 = tris[:, 1] - tris[:, 0]
     e2 = tris[:, 2] - tris[:, 0]
-    degenerate = int((np.linalg.norm(np.cross(e1, e2), axis=1) <= 1e-6).sum())
-    report['tris_skipped'] = degenerate
+    report['tris_skipped'] = int((np.linalg.norm(np.cross(e1, e2), axis=1) <= 1e-6).sum())
     key = np.concatenate(keys)
     z = np.concatenate(zs)
     w = np.concatenate(ws)
@@ -163,178 +329,204 @@ def generate(tris, *, cell=32, agent_height=72, agent_radius=15, step=18, max_sl
     fzl, zmaxl, ceill = fz.tolist(), zmax.tolist(), ceil.tolist()
 
     def qualifying(i, nk):
-        out = []
-        for j in colspans.get(nk, ()):
-            if abs(fzl[i] - fzl[j]) <= step and min(ceill[i], ceill[j]) - max(zmaxl[i], zmaxl[j]) >= agent_height:
-                out.append(j)
-        return out
+        return [j for j in colspans.get(nk, ())
+                if abs(fzl[i] - fzl[j]) <= step and min(ceill[i], ceill[j]) - max(zmaxl[i], zmaxl[j]) >= agent_height]
 
-    # -------- 3. links, erosion
-    alive = {int(i) for i in np.flatnonzero(floor)}
+    # -------- 3. distance of every floor span to the edge of its walkable surface (chamfer metric on the links)
+    alive = sorted(int(i) for i in np.flatnonzero(floor))
+    D8 = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
     nb8 = {}
-    nb4 = {}
-    boundary = []
+    seedd = {}
     for i in alive:
         k = int(skey[i])
         cx, cy = k % W, k // W
-        l8, l4, bnd = [], [], False
-        for d, (dx, dy) in enumerate(N8):
+        lst = []
+        miss4 = miss8 = False
+        for d, (dx, dy) in enumerate(D8):
             xx, yy = cx + dx, cy + dy
-            if xx < 0 or yy < 0 or xx >= W or yy >= Hh:
-                bnd = True
-                continue
-            js = qualifying(i, yy * W + xx)
+            js = qualifying(i, yy * W + xx) if 0 <= xx < W and 0 <= yy < Hh else []
             if js:
-                l8 += js
-                if d < 4:
-                    l4 += js
+                lst += [(j, res if d < 4 else res * math.sqrt(2.0)) for j in js]
+            elif d < 4:
+                miss4 = True
             else:
-                bnd = True
-        nb8[i], nb4[i] = l8, l4
-        if bnd:
-            boundary.append(i)
-    dist = {i: 0 for i in boundary}
-    dq = collections.deque(boundary)
-    while dq:
-        i = dq.popleft()
-        for j in nb8[i]:
-            if j not in dist:
-                dist[j] = dist[i] + 1
-                dq.append(j)
-    keep = {i for i in alive if (dist.get(i, 1 << 30) + 0.5) * res >= agent_radius}
-    report['eroded'] = len(alive) - len(keep)
-    if _debug is not None:
-        _debug.update(dict(skey=skey, fz=fz, zmax=zmax, zmin=zmin, ceil=ceil, floor=floor, swalk=swalk, keep=keep, dist=dist, W=W, ox=ox, oy=oy, res=res))
-
-    # -------- 4. floor layers (components), cells
-    comp = {}
-    ncomp = 0
-    for i in sorted(keep):
-        if i in comp:
+                miss8 = True
+        nb8[i] = lst
+        if miss4:
+            seedd[i] = 0.5 * res
+        elif miss8:
+            seedd[i] = 0.5 * res * math.sqrt(2.0)
+    dist = dict(seedd)
+    heap = [(d, i) for i, d in seedd.items()]
+    heapq.heapify(heap)
+    reach_cap = agent_radius + 2 * res
+    while heap:
+        d, i = heapq.heappop(heap)
+        if d > dist.get(i, 1e18) or d > reach_cap:
             continue
-        comp[i] = ncomp
-        st = [i]
-        while st:
-            c = st.pop()
-            for j in nb4[c]:
-                if j in keep and j not in comp:
-                    comp[j] = ncomp
-                    st.append(j)
-        ncomp += 1
-    report['components'] = ncomp
-    percell = collections.defaultdict(list)
-    for i in keep:
+        for j, wgt in nb8[i]:
+            nd = d + wgt
+            if nd < dist.get(j, 1e18):
+                dist[j] = nd
+                heapq.heappush(heap, (nd, j))
+    phi_span = {i: min(dist.get(i, reach_cap + res), reach_cap + res) for i in alive}
+
+    # -------- 4. lattice vertices with one node per floor level; marching squares per cell and level
+    # a column touches exactly one lattice vertex (the cell is two columns wide): the corner of its own cell
+    vspans = collections.defaultdict(list)
+    for i in alive:
         k = int(skey[i])
         cx, cy = k % W, k // W
-        percell[(cx // q, cy // q, comp[i])].append(i)
-    need = max(1, math.ceil(min_cover * q * q - 1e-9))
-    nodes = []          # dicts
-    span_node = {}
-    for (ci, cj, cp), lst in sorted(percell.items()):
+        vspans[(cx // 2 + cx % 2, cy // 2 + cy % 2)].append(i)
+    nid = [0]
+    vnodes = collections.defaultdict(list)            # (I, J) -> [(z, phi, node id)]
+    for (vi, vj), lst in vspans.items():
         lst.sort(key=lambda i: fzl[i])
         groups, cur = [], [lst[0]]
         for i in lst[1:]:
-            if fzl[i] - fzl[cur[-1]] > 2 * step:
+            if fzl[i] - fzl[cur[-1]] > step:
                 groups.append(cur)
                 cur = [i]
             else:
                 cur.append(i)
         groups.append(cur)
         for g in groups:
-            if len(g) < need:
+            zz = sum(fzl[i] for i in g) / len(g)
+            ph = (sum(phi_span[i] for i in g) + max(0, 4 - len(g)) * (-0.5 * res)) / 4.0
+            nid[0] += 1
+            vnodes[(vi, vj)].append((zz, ph, nid[0]))
+
+    def node_at(vi, vj, zref):
+        best = None
+        for nd in vnodes.get((vi, vj), ()):
+            dz = abs(nd[0] - zref)
+            if dz <= step and (best is None or dz < best[0]):
+                best = (dz, nd)
+        return best[1] if best else None
+
+    mesh = _Mesh()
+    r = float(agent_radius)
+
+    def vert(vi, vj, nd):
+        return mesh.vertex(('v', vi, vj, nd[2]), ox + vi * cell, oy + vj * cell, nd[0])
+
+    cells = set()
+    for (vi, vj) in vnodes:
+        for di in (0, -1):
+            for dj in (0, -1):
+                cells.add((vi + di, vj + dj))
+    for (ci, cj) in sorted(cells):
+        corners = [(ci, cj), (ci + 1, cj), (ci + 1, cj + 1), (ci, cj + 1)]
+        cand = []
+        for k, (vi, vj) in enumerate(corners):
+            for nd in vnodes.get((vi, vj), ()):
+                cand.append((nd[0], k, nd))
+        if not cand:
+            continue
+        cand.sort(key=lambda t: t[0])
+        levels, cur = [], [cand[0]]
+        for t in cand[1:]:
+            if t[0] - cur[-1][0] > step:
+                levels.append(cur)
+                cur = [t]
+            else:
+                cur.append(t)
+        levels.append(cur)
+        for lv in levels:
+            at = {}
+            for _z, k, nd in lv:
+                if k not in at or nd[1] > at[k][1]:
+                    at[k] = nd
+            if not any(nd[1] >= r for nd in at.values()):
                 continue
-            xy = np.array([[((int(skey[i]) % W) + 0.5) * res + ox, ((int(skey[i]) // W) + 0.5) * res + oy] for i in g])
-            zz = np.array([fzl[i] for i in g])
-            cxm, cym = ox + (ci + 0.5) * cell, oy + (cj + 0.5) * cell
-            Amat = np.column_stack([np.ones(len(g)), xy[:, 0] - cxm, xy[:, 1] - cym])
-            if len(g) >= 3 and np.linalg.matrix_rank(Amat) == 3:
-                coef = np.linalg.lstsq(Amat, zz, rcond=None)[0]
-            else:
-                coef = np.array([zz.mean(), 0.0, 0.0])
-            est = []
-            for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
-                v = coef[0] + coef[1] * sx * cell / 2 + coef[2] * sy * cell / 2
-                est.append(float(min(max(v, zz.min() - res), zz.max() + res)))
-            node = {'i': ci, 'j': cj, 'comp': cp, 'est': est, 'zmean': float(zz.mean()), 'n': len(g)}
-            for i in g:
-                span_node[i] = len(nodes)
-            nodes.append(node)
-    if not nodes:
-        raise ValueError('no walkable area found (%d floor spans, %d after erosion)' % (len(alive), len(keep)))
+            zref = sum(nd[0] for nd in at.values()) / len(at)
+            cyc = []
+            for k in range(4):
+                kb = (k + 1) % 4
+                a, b = at.get(k), at.get(kb)
+                ia = a is not None and a[1] >= r
+                ib = b is not None and b[1] >= r
+                if ia:
+                    cyc.append(vert(corners[k][0], corners[k][1], a))
+                if ia != ib:
+                    inn, ink, out_v = (a, k, corners[kb]) if ia else (b, kb, corners[k])
+                    inv = corners[ink]
+                    outn = node_at(out_v[0], out_v[1], inn[0])
+                    pb = outn[1] if outn is not None else -0.5 * res
+                    pa = inn[1]
+                    t = (pa - r) / (pa - pb) if pa != pb else 0.0
+                    if t < 0.03:
+                        cyc.append(vert(inv[0], inv[1], inn))
+                    else:
+                        ek = ('x', inn[2], out_v[0], out_v[1])
+                        cyc.append(mesh.vertex(ek, ox + (inv[0] + (out_v[0] - inv[0]) * t) * cell,
+                                               oy + (inv[1] + (out_v[1] - inv[1]) * t) * cell, inn[0]))
+            dedup = [v for kk, v in enumerate(cyc) if v != cyc[kk - 1]]
+            if len(dedup) < 3 or abs(mesh.area2(dedup)) < 8.0:
+                continue
+            mesh.add(dedup)
+    report['polygons_before_merge'] = len(mesh.poly)
+    if not mesh.poly:
+        raise ValueError('no walkable area found (%d floor spans)' % len(alive))
+    report['eroded'] = sum(1 for i in alive if phi_span[i] < r)
 
-    # -------- 5. shared corner heights
-    vert = collections.defaultdict(list)
-    for ni, nd in enumerate(nodes):
-        i, j = nd['i'], nd['j']
-        for c, (vi, vj) in enumerate(((i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1))):
-            vert[(vi, vj, nd['comp'])].append((nd['est'][c], ni, c))
-    for lst in vert.values():
-        lst.sort()
-        cur = [lst[0]]
-        groups = []
-        for item in lst[1:]:
-            if item[0] - cur[-1][0] <= step:
-                cur.append(item)
-            else:
-                groups.append(cur)
-                cur = [item]
-        groups.append(cur)
-        for g in groups:
-            m = sum(e for e, _n, _c in g) / len(g)
-            for _e, ni, c in g:
-                nodes[ni].setdefault('z', [None] * 4)[c] = m
+    # -------- 5. merge into convex polygons
+    report['merges'] = mesh.merge_all(max_edges, plane_tol)
 
-    # -------- links between nodes (fine links across a cell boundary, shared edge heights equal)
-    pairs = set()
-    for i in keep:
-        a = span_node.get(i)
-        if a is None:
+    # -------- 6. final polygons
+    info = {}
+    for pid, cyc in mesh.poly.items():
+        corners, keep = mesh.corners(cyc)
+        a2 = mesh.area2(corners)
+        if abs(a2) < 1e-6:
             continue
-        for j in nb4[i]:
-            b = span_node.get(j)
-            if b is not None and b != a and nodes[a]['comp'] == nodes[b]['comp']:
-                pairs.add((a, b))
-    bycell = collections.defaultdict(list)
-    for ni, nd in enumerate(nodes):
-        bycell[(nd['i'], nd['j'])].append(ni)
-    links = {ni: [None] * 4 for ni in range(len(nodes))}
-    for a, b in pairs:
-        A, B = nodes[a], nodes[b]
-        off = (B['i'] - A['i'], B['j'] - A['j'])
-        if off not in NBR:
-            continue
-        e = NBR.index(off)
-        za, zb = A['z'], B['z']
-        if abs(za[e] - zb[(e + 3) % 4]) <= 0.05 and abs(za[(e + 1) % 4] - zb[(e + 2) % 4]) <= 0.05:
-            links[a][e] = b
-
-    # -------- 6. seeds
+        m = len(corners)
+        cxm = cym = 0.0
+        for k in range(m):
+            a, b = corners[k], corners[(k + 1) % m]
+            cr = mesh.X[a] * mesh.Y[b] - mesh.X[b] * mesh.Y[a]
+            cxm += (mesh.X[a] + mesh.X[b]) * cr
+            cym += (mesh.Y[a] + mesh.Y[b]) * cr
+        cxm /= 3 * a2
+        cym /= 3 * a2
+        pl = _plane([(mesh.X[v], mesh.Y[v], mesh.Z[v]) for v in cyc])
+        n = len(cyc)
+        info[pid] = {'pts': [(mesh.X[v], mesh.Y[v], mesh.Z[v]) for v in corners],
+                     'c': (cxm, cym, pl[0] * cxm + pl[1] * cym + pl[2]), 'plane': pl,
+                     'nbr': [mesh.owner.get((cyc[(kk + 1) % n], cyc[kk])) for kk in keep]}
+    order = sorted(info, key=lambda p: (round(info[p]['c'][0], 3), round(info[p]['c'][1], 3), round(info[p]['c'][2], 3)))
     seed_problems = []
     dropped = 0
-    order_nodes = sorted(range(len(nodes)), key=lambda n: (nodes[n]['i'], nodes[n]['j'], nodes[n]['zmean']))
     if seeds:
         und = collections.defaultdict(set)
-        for a in range(len(nodes)):
-            for b in links[a]:
-                if b is not None:
-                    und[a].add(b)
-                    und[b].add(a)
+        for pid in info:
+            for b in info[pid]['nbr']:
+                if b is not None and b in info:
+                    und[pid].add(b)
+                    und[b].add(pid)
+        grid = collections.defaultdict(list)
+        for pid in info:
+            xs = [p[0] for p in info[pid]['pts']]
+            ys = [p[1] for p in info[pid]['pts']]
+            for gx in range(int(min(xs) // 64), int(max(xs) // 64) + 1):
+                for gy in range(int(min(ys) // 64), int(max(ys) // 64) + 1):
+                    grid[(gx, gy)].append(pid)
         start = set()
         for sd in seeds:
             sx, sy, sz = (float(c) for c in sd)
-            ci, cj = int(math.floor((sx - ox) / cell)), int(math.floor((sy - oy) / cell))
             best = None
-            for di in (0, -1, 1):
-                for dj in (0, -1, 1):
-                    for ni in bycell.get((ci + di, cj + dj), ()):
-                        nd = nodes[ni]
-                        d = abs(nd['zmean'] - sz)
-                        if d <= 48.0 and (best is None or (di == 0 and dj == 0, -d) > best[0]):
-                            best = ((di == 0 and dj == 0, -d), ni)
+            for pid in grid.get((int(sx // 64), int(sy // 64)), ()):
+                a, b, c = info[pid]['plane'][:3]
+                if navfmt.point_in_poly(sx, sy, info[pid]['pts']):
+                    dz = abs(a * sx + b * sy + c - sz)
+                    if dz <= 48.0 and (best is None or dz < best[0]):
+                        best = (dz, pid)
             if best is None:
-                seed_problems.append({'seed': [sx, sy, sz], 'problem': 'no navigation within one cell and 48 units'})
+                seed_problems.append({'seed': [sx, sy, sz], 'problem': 'no navigation at the seed within 48 units'})
             else:
                 start.add(best[1])
+        if not start:
+            raise ValueError('none of the %d seeds is on navigation: %s' % (len(seeds), seed_problems))
         reach = set(start)
         st = list(start)
         while st:
@@ -343,32 +535,23 @@ def generate(tris, *, cell=32, agent_height=72, agent_radius=15, step=18, max_sl
                 if d not in reach:
                     reach.add(d)
                     st.append(d)
-        if not start:
-            raise ValueError('none of the %d seeds is on navigation: %s' % (len(seeds), seed_problems))
-        dropped = len(nodes) - len(reach)
-        order_nodes = [n for n in order_nodes if n in reach]
+        dropped = len([p for p in order if p not in reach])
+        order = [p for p in order if p in reach]
     report['dropped_unreachable'] = dropped
     report['seed_problems'] = seed_problems
 
-    # -------- 7. areas
-    idx_of = {n: k for k, n in enumerate(order_nodes)}
+    # -------- 7. areas and links
+    idx_of = {p: k for k, p in enumerate(order)}
     areas = []
-    for n in order_nodes:
-        nd = nodes[n]
-        i, j = nd['i'], nd['j']
-        x0, y0 = ox + i * cell, oy + j * cell
-        cz = nd['z']
-        corners = [(x0, y0, cz[0]), (x0 + cell, y0, cz[1]), (x0 + cell, y0 + cell, cz[2]), (x0, y0 + cell, cz[3])]
-        c = (x0 + cell / 2, y0 + cell / 2, sum(cz) / 4)
-        r = max(math.dist(c, p) for p in corners)
-        edges = [navfmt.Edge(0, corners[e]) for e in range(4)]
-        areas.append(navfmt.Area(c, r, edges))
+    for p in order:
+        pts = info[p]['pts']
+        c = info[p]['c']
+        areas.append(navfmt.Area(c, max(math.dist(c, pt) for pt in pts), [navfmt.Edge(0, pt) for pt in pts]))
     navfmt.layout_offsets(areas)
     nlinks = 0
-    for n in order_nodes:
-        a = areas[idx_of[n]]
-        for e in range(4):
-            b = links[n][e]
+    for p in order:
+        a = areas[idx_of[p]]
+        for e, b in enumerate(info[p]['nbr']):
             if b is not None and b in idx_of:
                 tgt = areas[idx_of[b]]
                 a.edges[e].nbr = tgt.off
@@ -376,20 +559,20 @@ def generate(tris, *, cell=32, agent_height=72, agent_radius=15, step=18, max_sl
                 nlinks += 1
     gr = navfmt.new_graph(areas)
     data = navfmt.wrap_resource(navfmt.write_graph(gr))
-    perc = collections.Counter((nodes[n]['i'], nodes[n]['j']) for n in order_nodes)
-    zc = collections.Counter(round(nodes[n]['zmean'] / 8.0) * 8 for n in order_nodes)
-    report.update({'areas': len(areas), 'cells': len(perc), 'stacked_cells': sum(1 for v in perc.values() if v > 1),
-                   'max_layers_in_a_cell': max(perc.values()), 'links': nlinks,
+    ec = collections.Counter(len(a.edges) for a in areas)
+    zc = collections.Counter(round(a.centre[2] / 8.0) * 8 for a in areas)
+    foot = collections.defaultdict(list)
+    for a in areas:
+        foot[(int(a.centre[0] // 32), int(a.centre[1] // 32))].append(a.centre[2])
+    report.update({'areas': len(areas), 'links': nlinks, 'edge_count_hist': dict(sorted(ec.items())),
+                   'stacked_squares_32': sum(1 for v in foot.values() if max(v) - min(v) >= agent_height),
                    'layers_z': dict(sorted(zc.items())), 'bytes': len(data)})
-    if detail:
-        report['cells_detail'] = [{'i': nodes[n]['i'], 'j': nodes[n]['j'], 'comp': nodes[n]['comp'],
-                                   'z': [round(v, 2) for v in nodes[n]['z']],
-                                   'links': [None if b is None or b not in idx_of else idx_of[b] for b in links[n]]}
-                                  for n in order_nodes]
+    if _debug is not None:
+        _debug.update(dict(mesh=mesh, info=info, order=order, areas=areas, ox=ox, oy=oy))
     return data, report
 
 
-# ------------------------------------------------------------------------------ tools
+
 def load_triangles(path):
     if os.path.isdir(path):
         path = os.path.join(path, 'colmap.hkx')
