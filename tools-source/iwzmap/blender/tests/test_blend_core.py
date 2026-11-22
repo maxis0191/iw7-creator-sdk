@@ -182,7 +182,14 @@ class Stairs(unittest.TestCase):
         recs, rows = C.stair_ramps(stair_scene(True)['meshes'])
         r = rows[0]
         self.assertEqual((r['axis'], r['steps'], r['triangles']), ('x', 17, 2))
-        self.assertEqual((r['ramp_from'][0], r['ramp_from'][2], r['ramp_to'][0], r['ramp_to'][2]), (43.0, 0.0, 332.0, 136.0))
+        # the nosing line runs (43, 0) -> (332, 136); the sheet is that line lifted by 2 (8.5 along the run at slope 136/289)
+        self.assertEqual((r['ramp_from'][0], r['ramp_from'][2], r['ramp_to'][0], r['ramp_to'][2]), (38.75, 0.0, 327.75, 136.0))
+        # every tread's front top edge (nosing) lies under the sheet, never on it
+        a, b = r['ramp_from'], r['ramp_to']
+        k = (b[2] - a[2]) / (b[0] - a[0])
+        for i in range(17):
+            x, z = 60 + 17 * i, 8 * (i + 1)
+            self.assertGreaterEqual(a[2] + k * (x - a[0]) - z, 1.9)
         self.assertAlmostEqual(r['slope_deg'], 25.2, 1)
         self.assertEqual((recs[0]['mode'], recs[0]['tag']), ('collision', None))
         for t in recs[0]['tris']:
