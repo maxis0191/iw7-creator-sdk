@@ -367,7 +367,9 @@ def stair_ramps(meshes):
             if frac >= 0.6:
                 walls.append({'side': 'xy'[oth] + ('-' if out < 0 else '+'), 'at': round(side, 2), 'against_wall': round(frac, 2), 'triangles': 0})
                 continue
-            ca, cb = (side - 8.0, side) if out < 0 else (side, side + 8.0)
+            # inside the stair's width, on the steps (a railing): outside it the wall left an 8-unit sliver of room floor along it
+            # and reached into a slab beside a stairwell (test map 1: DROP_ONLY_REGION under the upper floor's edge)
+            ca, cb = (side, side + 8.0) if out < 0 else (side - 8.0, side)
             sv, cv = (s0, s1), (ca, cb)
             pt = lambda i, j, k: P(sv[i], cv[j], z0 if k == 0 else zs(sv[i]) + 64.0)
             cen = [sum(pt(i, j, k)[m] for i in (0, 1) for j in (0, 1) for k in (0, 1)) / 8.0 for m in range(3)]
