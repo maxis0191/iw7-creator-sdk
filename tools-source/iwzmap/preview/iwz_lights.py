@@ -207,7 +207,7 @@ def run(a, load_calib, run_blender, engine_frames, save_png):
     flu0 = a.flu if a.flu is not None else 0.0
     fit = {}
     if state == 'dark' and a.flashlight and a.flu is None:
-        grid = [0.0] + list(10 ** np.linspace(-4.5, -0.5, 9))
+        grid = [0.0] + list(10 ** np.linspace(-2.5, 1.5, 9))
         errs = {}
         for f in grid:
             errs[f] = mean_err(0.0, f)
