@@ -196,6 +196,72 @@ def relayout(gr):
         off += a.size
 
 
+# ------------------------------------------------------------------------------ building
+KD_PAD = 0.0072
+PARAMS = (72.0, 5.0, 15.0, 10.0, 72.0)   # as the stock header and mapgen.nav_graph: height, ?, radius, ?, height
+
+
+def layout_offsets(areas):
+    """Give every area its byte offset in the graph (edge `nbr` values are such offsets)."""
+    off = HS
+    for a in areas:
+        a.off = off
+        off += a.size
+
+
+def _bbox(a):
+    pts = a.polygon() or [a.centre]
+    return [(min(p[k] for p in pts), max(p[k] for p in pts)) for k in range(3)]
+
+
+def build_kd(areas):
+    """The stock rule (measured on cp_zmb, 2864 of 2864 nodes): the axis is the longest extent of the polygon corners
+    over x, y and z (a bbox tie goes to the lower axis), the items sorted by the middle of their corner extent along
+    it, the left half is n // 2 items; the node stores the left maximum and the right minimum of the polygon corners
+    on that axis, each pushed outwards by KD_PAD (stock: 0.0072)."""
+    kd = []
+    boxes = {id(a): _bbox(a) for a in areas}
+
+    def rec(items):
+        if len(items) == 1:
+            kd.append(KdNode(0x80000000 | items[0].off))
+            return
+        ext = [max(boxes[id(a)][k][1] for a in items) - min(boxes[id(a)][k][0] for a in items) for k in range(3)]
+        ax = ext.index(max(ext))
+        items = sorted(items, key=lambda a: boxes[id(a)][ax][0] + boxes[id(a)][ax][1])
+        h = len(items) // 2
+        left, right = items[:h], items[h:]
+        node = KdNode(0, max(boxes[id(a)][ax][1] for a in left) + KD_PAD,
+                      min(boxes[id(a)][ax][0] for a in right) - KD_PAD)
+        kd.append(node)
+        at = len(kd) - 1
+        rec(left)
+        # byte offset of the right child, counted from this node
+        node.word = ax << 28 | (sum(4 if n.is_leaf else 12 for n in kd[at:]))
+        rec(right)
+    rec(sorted(areas, key=lambda a: a.off))
+    return kd
+
+
+def new_graph(areas, params=PARAMS):
+    """A graph from areas whose edges already carry final `nbr` offsets (call layout_offsets first)."""
+    gr = Graph()
+    gr.areas = list(areas)
+    pts = [p for a in areas for p in (a.polygon() or [a.centre])]
+    mn = [min(p[k] for p in pts) for k in range(3)]
+    mx = [max(p[k] for p in pts) for k in range(3)]
+    mx[2] += params[0]
+    h = gr.header
+    struct.pack_into('<IIII', h, 0, 0x2B, 0, 0, 0)
+    struct.pack_into('<I', h, 24, 56)
+    struct.pack_into('<5f', h, 36, *params)
+    struct.pack_into('<6f', h, 56, *mn, *mx)
+    struct.pack_into('<I', h, 80, 2)
+    gr.kd = build_kd(areas)
+    gr.kd_head = struct.pack('<6f', *mn, *mx) + bytes(4)
+    return gr
+
+
 # ------------------------------------------------------------------------------ analysis
 def kd_walk(gr):
     """Yield (depth, node) along the stream; returns leaf area offsets and axes used."""
