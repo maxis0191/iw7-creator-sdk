@@ -54,6 +54,21 @@
       ]
     },
     {
+      "id": "tools-source-iwzmap-preview",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/iwzmap/preview",
+        "-p",
+        "test_preview_assets.py",
+        "-v"
+      ]
+    },
+    {
       "id": "tools-source-worldkit-tests",
       "command": [
         "python",
