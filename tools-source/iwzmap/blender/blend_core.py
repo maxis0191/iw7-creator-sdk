@@ -388,21 +388,29 @@ def nav_single_layer(col_tris, starts, cell=CELL):
     return cells, info
 
 
-def try_navgen(col_tris, starts, log):
-    """workstream N: navgen.generate(tris, starts=...) when the module exists -> bytes | None"""
+def try_navgen(col_tris, starts, log, cell=CELL):
+    """workstream N: navgen.generate(tris, seeds=..., detail=True) when the module is importable (any number of floors).
+    -> (navgraph bytes, nodes [(i, j, z)] with absolute 32 unit column indices, report) or (None, None, reason)"""
+    d = os.environ.get('IWZ_NAVGEN_DIR')
+    if d and d not in sys.path:
+        sys.path.insert(0, d)
     try:
         import navgen
-    except ImportError:
-        return None, 'navgen.py not present'
+    except ImportError as e:
+        return None, None, 'navgen.py not importable (%s)' % e
     try:
-        r = navgen.generate(col_tris, starts=starts)
-        blob = r[0] if isinstance(r, tuple) else r
-        if isinstance(blob, (bytes, bytearray)):
-            return bytes(blob), 'navgen.generate'
-        return None, 'navgen.generate returned %s' % type(blob).__name__
+        data, rep = navgen.generate(col_tris, seeds=[tuple(s) for s in starts] or None, detail=True)
+        mx = min(p[0] for t in col_tris for p in t)
+        my = min(p[1] for t in col_tris for p in t)
+        i0, j0 = int(math.floor(mx / cell)), int(math.floor(my / cell))
+        detail = rep.get('cells_detail') or []
+        nodes = [(c['i'] + i0, c['j'] + j0, round(sum(c['z']) / 4.0, 2)) for c in detail]
+        if not isinstance(data, (bytes, bytearray)) or not nodes:
+            return None, None, 'navgen.generate gave no data or no cell detail'
+        return bytes(data), nodes, {k: v for k, v in rep.items() if k != 'cells_detail'}
     except Exception as e:                  # report, never hide
         log('navgen failed (%s): using the single layer fallback' % e)
-        return None, 'navgen failed: %s' % e
+        return None, None, 'navgen failed: %s' % e
 
 
 # ------------------------------------------------------------------------------------------------ the emitter
@@ -417,7 +425,9 @@ class BlendEmitter(scenegen.Emitter):
         self.scene = scene
         self.problems = []
         self.warnings = []
-        self.cells = {}
+        self.nodes = []
+        self.layers = {}
+        self.lift = NAV_LIFT
         self.vols = []
 
     # -- geometry ------------------------------------------------------------------------------------------
@@ -436,40 +446,50 @@ class BlendEmitter(scenegen.Emitter):
         return None
 
     def floor_z(self, x, y, z):
-        """nav floor (without the lift) of the column nearest to (x, y, z), else z"""
-        k = (int(math.floor(x / CELL)), int(math.floor(y / CELL)))
-        c = self.cells.get(k)
-        if c is not None and abs(c - NAV_LIFT - z) <= 48:
-            return c - NAV_LIFT
-        return z
+        """floor height (nav height without the lift) of the column nearest to (x, y, z), else z"""
+        c = self.nav_floor(x, y, z)
+        return c - self.lift if c is not None else z
 
     # -- navigation ----------------------------------------------------------------------------------------
     def build_nav(self):
         col = [tuple(t) for t in self.B.mesh.col]
         starts = [tuple(s['at']) for s in self.scene.get('starts', [])]
-        cells, info = nav_single_layer(col, starts)
-        blob, how = try_navgen(col, starts, self.log)
-        self.nav_info = dict(info, navgen=how)
-        if not cells:
-            raise RuntimeError('no walkable column found: the collision has no floor with 72 units of headroom reachable from a start')
-        self.cells = cells
-        nav_blob, _n = self.mapgen.nav_graph(cells, CELL)
+        blob, nodes, rep = try_navgen(col, starts, self.log)
         if blob:
+            self.lift = 0.0
+            self.nav_info = {'used': 'navgen', 'navgen': rep}
             nav_blob = blob
-            self.nav_info['used'] = 'navgen'
         else:
-            self.nav_info['used'] = 'single layer fallback'
+            cells, info = nav_single_layer(col, starts)
+            if not cells:
+                raise RuntimeError('no walkable column found: the collision has no floor with 72 units of headroom reachable from a start')
+            self.lift = NAV_LIFT
+            nodes = [(k[0], k[1], z) for k, z in sorted(cells.items())]
+            nav_blob, _n = self.mapgen.nav_graph(cells, CELL)
+            self.nav_info = dict(info, used='single layer fallback', navgen=rep)
+            if info.get('dropped_upper_floors'):
+                self.warnings.append('navigation: %d columns have a second floor that the single layer graph cannot hold (room over room): '
+                                     'those floors have no navigation until navgen exists' % info['dropped_upper_floors'])
+            if info.get('unreached_floor_samples'):
+                self.warnings.append('navigation: %d floor samples (roofs and outside surfaces included) are not reachable from a player start by 18 unit steps' % info['unreached_floor_samples'])
+        self.nodes = nodes
+        self.layers = collections.defaultdict(list)
+        for i, j, z in nodes:
+            self.layers[(i, j)].append(z)
+        for k in self.layers:
+            self.layers[k].sort()
+        self.nav_info['nodes'] = len(nodes)
         open(os.path.join(self.out, 'navgraph.bin'), 'wb').write(nav_blob)
         self.nav_blob = nav_blob
-        if info.get('dropped_upper_floors'):
-            self.warnings.append('navigation: %d columns have a second floor that the single layer graph cannot hold (room over room): '
-                                 'those floors have no navigation until navgen exists' % info['dropped_upper_floors'])
-        if info.get('unreached_floor_samples'):
-            self.warnings.append('navigation: %d floor samples (roofs and outside surfaces included) are not reachable from a player start by 18 unit steps' % info['unreached_floor_samples'])
 
-    def cell_zone(self, k):
-        x, y = (k[0] + 0.5) * CELL, (k[1] + 0.5) * CELL
-        return self.zone_at((x, y, self.cells[k] - NAV_LIFT + 8))
+    def node_zone(self, n):
+        return self.zone_at(((n[0] + 0.5) * CELL, (n[1] + 0.5) * CELL, n[2] - self.lift + 8))
+
+    def nav_floor(self, x, y, z, reach=48.0):
+        """nav height of the column of (x, y) nearest to z within reach, else None"""
+        zs = self.layers.get((int(math.floor(x / CELL)), int(math.floor(y / CELL))), ())
+        best = min(zs, key=lambda c: abs(c - self.lift - z), default=None)
+        return best if best is not None and abs(best - self.lift - z) <= reach else None
 
     # -- entities ------------------------------------------------------------------------------------------
     def emit_scene_entities(self):
@@ -485,15 +505,15 @@ class BlendEmitter(scenegen.Emitter):
         sz = self.zone_at(first)
         self.sc.start_zone = sz or zones[0]['name']
         # up to four starts: pad with the nearest free columns
-        k0 = (int(math.floor(first[0] / CELL)), int(math.floor(first[1] / CELL)))
         if len(starts) < 4:
             used = {(int(math.floor(s['at'][0] / CELL)), int(math.floor(s['at'][1] / CELL))) for s in starts}
-            near = sorted((k for k in self.cells if k not in used and self.cell_zone(k) == self.sc.start_zone),
-                          key=lambda k: (k[0] - k0[0]) ** 2 + (k[1] - k0[1]) ** 2)
+            near = sorted((n for n in self.nodes if (n[0], n[1]) not in used and self.node_zone(n) == self.sc.start_zone
+                           and abs(n[2] - self.lift - first[2]) <= 48),
+                          key=lambda n: ((n[0] + .5) * CELL - first[0]) ** 2 + ((n[1] + .5) * CELL - first[1]) ** 2)
             if near:
                 self.warnings.append('player starts: %d placed, padded to 4 on the nearest columns' % len(sc['starts']))
-            for k in near[:4 - len(starts)]:
-                starts.append({'at': ((k[0] + .5) * CELL, (k[1] + .5) * CELL, self.cells[k] - NAV_LIFT), 'yaw': starts[0].get('yaw', 0)})
+            for n in near[:4 - len(starts)]:
+                starts.append({'at': ((n[0] + .5) * CELL, (n[1] + .5) * CELL, n[2] - self.lift), 'yaw': starts[0].get('yaw', 0)})
         for s in starts:
             x, y, z = s['at']
             z = self.floor_z(x, y, z)
@@ -554,8 +574,7 @@ class BlendEmitter(scenegen.Emitter):
                 self.problems.append('spawner at %s is in no zone' % ((round(x), round(y), round(z)),))
                 continue
             fz = self.floor_z(x, y, z)
-            k = (int(math.floor(x / CELL)), int(math.floor(y / CELL)))
-            on_nav = k in self.cells and abs(self.cells[k] - NAV_LIFT - z) <= 48
+            on_nav = self.nav_floor(x, y, z) is not None
             if not on_nav and kind == 'ground':
                 self.problems.append('spawner %s at %s is on no navigation floor (a floor over another floor has none until navgen exists)' % (kind, (round(x), round(y), round(z))))
             e = dict(classname='script_struct', targetname=zone + '_spawner', noteworthy='static', angles='0 %g 0' % yaw)
@@ -572,25 +591,22 @@ class BlendEmitter(scenegen.Emitter):
                                        'on_nav': on_nav, 'plate': False})
         # landing spots, idle spots and respawns: two of each per zone on its navigation columns, far from each other
         for v in self.vols:
-            cand = sorted(k for k in self.cells if self.cell_zone(k) == v['zone'])
+            cand = sorted(n for n in self.nodes if self.node_zone(n) == v['zone'])
             if not cand:
                 continue
-            taken = [((k[0] + .5) * CELL, (k[1] + .5) * CELL) for k in []]
             chosen = []
-            for n_ in range(4):
-                best = max(cand, key=lambda k: min([math.hypot((k[0] - c[0]), (k[1] - c[1])) for c in chosen] or [9e9]) + 0.0001 * (-k[0]))
-                chosen.append(best)
-            for kk, kind in zip(chosen, ('dog', 'dog', 'resp', 'resp')):
-                x, y, fz = (kk[0] + .5) * CELL, (kk[1] + .5) * CELL, self.cells[kk] - NAV_LIFT
+            for _ in range(4):
+                chosen.append(max(cand, key=lambda n: min([math.hypot(n[0] - c[0], n[1] - c[1]) + abs(n[2] - c[2]) for c in chosen] or [9e9]) - 1e-4 * n[0]))
+            for nn, kind in zip(chosen, ('dog', 'dog', 'resp', 'resp')):
+                x, y, fz = (nn[0] + .5) * CELL, (nn[1] + .5) * CELL, nn[2] - self.lift
                 if kind == 'dog':
                     self.ent(classname='script_struct', targetname='dog_spawner', origin=self.fmt((x, y, fz + 8)), angles='0 0 0', radius=66)
                     self.ent(classname='script_struct', targetname='zombie_idle_spot', origin=self.fmt((x, y, fz + 8)))
                 else:
                     self.ent(classname='script_struct', targetname='player_respawn_loc', origin=self.fmt((x, y, fz)), angles='0 0 0')
-            layout_z = self.layout
-            layout_z.setdefault('dog_spawners', {})[v['zone']] = [[(k[0] + .5) * CELL, (k[1] + .5) * CELL] for k in chosen[:2]]
-            layout_z.setdefault('respawns', {})[v['zone']] = [[(k[0] + .5) * CELL, (k[1] + .5) * CELL] for k in chosen[2:]]
-            layout_z.setdefault('zone_points', {})[v['zone']] = [(chosen[0][0] + .5) * CELL, (chosen[0][1] + .5) * CELL, self.cells[chosen[0]] - NAV_LIFT]
+            self.layout.setdefault('dog_spawners', {})[v['zone']] = [[(n[0] + .5) * CELL, (n[1] + .5) * CELL] for n in chosen[:2]]
+            self.layout.setdefault('respawns', {})[v['zone']] = [[(n[0] + .5) * CELL, (n[1] + .5) * CELL] for n in chosen[2:]]
+            self.layout.setdefault('zone_points', {})[v['zone']] = [(chosen[0][0] + .5) * CELL, (chosen[0][1] + .5) * CELL, chosen[0][2] - self.lift]
         self.layout['inspection_plates'] = []
 
     def place_scene_doors(self):
@@ -621,16 +637,20 @@ class BlendEmitter(scenegen.Emitter):
         self.ops = ops
         self.place_doors()          # scenegen: interaction structs, door_buy trigger, blocker brushes, layout doors + openings
 
+    def node_pairs(self):
+        """pairs of linked nodes (neighbouring columns, floors at most 18 apart)"""
+        for n in self.nodes:
+            for dk in ((1, 0), (0, 1)):
+                for z2 in self.layers.get((n[0] + dk[0], n[1] + dk[1]), ()):
+                    if abs(z2 - n[2]) <= STEP:
+                        yield n, (n[0] + dk[0], n[1] + dk[1], z2)
+
     def zone_adjacency(self):
         adj = set()
-        for k in self.cells:
-            za = self.cell_zone(k)
-            for dk in ((1, 0), (0, 1)):
-                k2 = (k[0] + dk[0], k[1] + dk[1])
-                if k2 in self.cells and abs(self.cells[k2] - self.cells[k]) <= STEP:
-                    zb = self.cell_zone(k2)
-                    if za and zb and za != zb:
-                        adj.add(frozenset((za, zb)))
+        for n, m in self.node_pairs():
+            za, zb = self.node_zone(n), self.node_zone(m)
+            if za and zb and za != zb:
+                adj.add(frozenset((za, zb)))
         return adj
 
     def add_links(self):
@@ -783,18 +803,16 @@ class BlendEmitter(scenegen.Emitter):
         open(os.path.join(self.out, 'lighting.txt'), 'w', newline='\n').write('\n'.join(amb) + '\n')
         open(os.path.join(self.out, 'probes.txt'), 'w', newline='\n').write('\n'.join(probes) + '\n')
         # plan.json: regions = zones, cells with their zone, adjacency
-        owner = {k: (self.cell_zone(k) or '_outside') for k in self.cells}
+        owner = {n: (self.node_zone(n) or '_outside') for n in self.nodes}
         if any(v == '_outside' for v in owner.values()):
-            n = sum(1 for v in owner.values() if v == '_outside')
-            self.problems.append('%d navigation columns are in no zone box: zombies there are in no spawn volume' % n)
+            n_out = sum(1 for v in owner.values() if v == '_outside')
+            self.problems.append('%d navigation cells are in no zone box: zombies there are in no spawn volume' % n_out)
             self.regions.append({'name': '_outside', 'zone': '_outside', 'rect': [0, 0, 0, 0]})
         adj = set()
-        for k in self.cells:
-            for dk in ((1, 0), (0, 1)):
-                k2 = (k[0] + dk[0], k[1] + dk[1])
-                if k2 in self.cells and abs(self.cells[k2] - self.cells[k]) <= STEP and owner[k] != owner[k2]:
-                    adj.add(frozenset((owner[k], owner[k2])))
-        plan = {'regions': self.regions, 'adj': [sorted(a) for a in adj], 'cells': [[i, j, z, owner[(i, j)]] for (i, j), z in sorted(self.cells.items())],
+        for n, m in self.node_pairs():
+            if owner[n] != owner[m]:
+                adj.add(frozenset((owner[n], owner[m])))
+        plan = {'regions': self.regions, 'adj': [sorted(a_) for a_ in adj], 'cells': [[n[0], n[1], n[2], owner[n]] for n in sorted(self.nodes)],
                 'cell_corners': [], 'blockers': self.B.blockers, 'col_tris': len(col), 'bounds': wbnd, 'col_walls': []}
         json.dump(plan, open(os.path.join(self.out, 'plan.json'), 'w'))
         self.layout['regions'] = len(self.regions)
@@ -819,7 +837,7 @@ class BlendEmitter(scenegen.Emitter):
         json.dump(report, open(os.path.join(self.out, 'scene_report.json'), 'w'), indent=1, default=list)
         self.log('blend2iwz %s: %d zones, %d doors, %d spawners, %d render triangles in %d surfaces, %d collision triangles, %d nav cells, '
                  '%d problems, %d warnings' % (self.sc.map, len(sc['zones']), len(sc.get('doors', [])), len(self.layout['spawners']), wb.render_tris,
-                                                ns, len(col), len(self.cells), len(self.problems), len(self.warnings)))
+                                                ns, len(col), len(self.nodes), len(self.problems), len(self.warnings)))
         for p in self.problems:
             self.log('PROBLEM ' + p)
         for w in self.warnings:

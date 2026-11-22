@@ -54,6 +54,19 @@
       ]
     },
     {
+      "id": "tools-source-iwzmap-blender",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/iwzmap/blender/tests",
+        "-v"
+      ]
+    },
+    {
       "id": "tools-source-iwzmap-preview",
       "command": [
         "python",

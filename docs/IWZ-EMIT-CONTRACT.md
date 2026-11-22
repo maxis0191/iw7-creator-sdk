@@ -57,10 +57,12 @@ The compiler is run by `build-*.ps1` as `zonetool -iwzcompile cp_zmb_tpl cp_zmb 
   Havok. The contents/surface flags of the template surface table are **not decoded** in this repository, so "player
   clip only" and "monster clip only" cannot be told apart yet: a collision-only mesh is a solid (382) invisible brush that
   blocks players, bullets and zombies alike. A mesh may carry an explicit integer `iwz_tag` for experiments.
-* **Navigation.** `mapgen.nav_graph` keeps one floor height per 32 unit column. The Blender exporter calls `navgen.generate`
-  when `navgen.py` (workstream N) exists, else builds a single layer height field from the collision triangles
-  (`blend_core.nav_single_layer`), reports every column where a second floor was dropped, and does not claim two storey
-  navigation.
+* **Navigation.** `mapgen.nav_graph` keeps one floor height per 32 unit column. The Blender exporter calls
+  `navgen.generate(tris, seeds=starts, detail=True)` (workstream N, any number of floors) when `navgen.py` is importable
+  (`iwzmap/` itself, or the folder in `IWZ_NAVGEN_DIR`); else it builds a single layer height field from the collision triangles
+  (`blend_core.nav_single_layer`: the lowest floor reachable from a player start per column), reports every column where a
+  second floor was dropped, and does not claim two storey navigation. `plan.json` `cells` then holds one entry per area (a column
+  can appear twice); older readers of `plan.json` (`sz2_navconn`) assume one cell per column.
 
 ## `layout.json`: keys by consumer
 
