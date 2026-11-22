@@ -320,6 +320,7 @@ def cmd_light(a):
 
 def cmd_lights(a):
     import iwz_lights
+    a.flashlight = not a.no_flashlight
     iwz_lights.run(a, load_calib, run_blender, engine_frames, save_png)
 
 
@@ -343,6 +344,10 @@ def main():
     ap.add_argument('--ae-factor', type=float, default=1.0, help='lights: factor on key / log average luminance (ENGINE-SHADERS.md 1b)')
     ap.add_argument('--lit-adjust', type=float, default=None, help='lights: tonemapAutoExposureAdjust override')
     ap.add_argument('--fit-exposure', action='store_true', help='lights: fit the exposure per frame instead of the model')
+    ap.add_argument('--state', choices=['dark', 'lit'], default='lit', help='lights: which engine frames (dark_* power off / lit_* power on)')
+    ap.add_argument('--unit', type=float, default=None, help='lights: runtime light unit (default: fitted)')
+    ap.add_argument('--flu', type=float, default=None, help='lights: flashlight unit (default: fitted in the dark state, 0 in the lit state)')
+    ap.add_argument('--no-flashlight', action='store_true')
     ap.add_argument('--keep-raw', action='store_true')
     ap.add_argument('--power', choices=['on', 'off'], default='off')
     ap.add_argument('--prop-gain', type=float, default=1.0)
