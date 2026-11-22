@@ -463,7 +463,9 @@ Y1 = 0.488603
 
 def light_grid(cfg, w, Lfinal, n, scene, tri_lm, tri_mat, tid, W, H, L, quick):
     """Order-1 SH (constant and vertical terms, the compiler's relight format) at cell centres of a regular grid
-    over the world. Cells inside solid or outside the world (most rays hit back faces or escape) are skipped."""
+    over the world. Cells inside solid or outside the world (most rays hit back faces or escape) are skipped.
+    Units: c0 = sqrt(4 pi) x the mean over normals of the irradiance (baker units); the indirect term (4 pi Y00 x radiance) and the direct term
+    (pi Y00 x e) are the same convention (tests/test_lmbake_grid_units.py). Radiance includes the surfaces' albedo, so c0 x 0.886 is about albedo x pi x E."""
     cell = cfg.get('probe_cell', 128)
     mn = np.array(w['bounds'][:3]); mx = np.array(w['bounds'][3:])
     xs = np.arange(mn[0] + cell / 2, mx[0], cell); ys = np.arange(mn[1] + cell / 2, mx[1], cell)
