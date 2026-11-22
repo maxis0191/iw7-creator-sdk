@@ -353,14 +353,27 @@ def load(src, plan=None, eye=60.0, hfov=90.0, overlays=False, game=None, log=pri
 
     # ---- props
     pc = new_coll(root, 'props')
-    rows = parse_smodels(os.path.join(src, 'smodels.txt'))
+    # every placed model: layout decor (static models of smodels.txt are a subset, with the same origin) plus the
+    # layout models that are not decor; door dressing is left out (the capture plans open the doors first)
+    def key(m, o):
+        return (m, round(float(o[0]), 1), round(float(o[1]), 1), round(float(o[2]), 1))
+    seen = set()
+    rows = []
     for d in lay.get('decor', []):
-        if not d.get('static', True):
-            rows.append({'model': d['model'], 'origin': d['origin'], 'angles': [d.get('pitch', 0), d.get('yaw', 0), d.get('roll', 0)],
-                         'scale': 1.0, 'src': 'layout decor (script_model)'})
+        if str(d.get('targetname') or '').startswith('iwz_doordress'):
+            continue
+        seen.add(key(d['model'], d['origin']))
+        rows.append({'model': d['model'], 'origin': d['origin'], 'angles': [d.get('pitch', 0), d.get('yaw', 0), d.get('roll', 0)],
+                     'scale': float(d.get('scale', 1.0)), 'src': 'layout decor'})
     for d in lay.get('models', []):
-        rows.append({'model': d['model'], 'origin': d['origin'], 'angles': [0, d.get('yaw', 0), 0], 'scale': 1.0,
-                     'src': 'layout models'})
+        if key(d['model'], d['origin']) in seen:
+            continue
+        rows.append({'model': d['model'], 'origin': d['origin'], 'angles': [0, d.get('yaw', 0), 0], 'scale': 1.0, 'src': 'layout models'})
+    for r in parse_smodels(os.path.join(src, 'smodels.txt')):      # the compiled static rows carry the scale
+        if r['scale'] != 1.0:
+            for q in rows:
+                if key(q['model'], q['origin']) == key(r['model'], r['origin']):
+                    q['scale'] = r['scale']
     gP, gC = grid_light(z['grid'])
     meshes, model_report = {}, {'resolved': {}, 'unresolved': {}}
     n_inst = 0
@@ -431,13 +444,17 @@ def load(src, plan=None, eye=60.0, hfov=90.0, overlays=False, game=None, log=pri
 
     # ---- overlays
     oc = new_coll(root, 'overlays')
-    build_overlays(oc, lay, src, z)
+    build_overlays(oc, lay, src, z, collision=overlays)
     oc.hide_render = not overlays
     st.mark('overlays')
 
     setup_render(sc)
-    report['materials'] = {'resolved': len(resolver.report['resolved']), 'unresolved': len(resolver.report['unresolved']),
-                           'resolved_list': resolver.report['resolved'], 'unresolved_list': resolver.report['unresolved']}
+    un = {k: v for k, v in resolver.report['unresolved'].items() if not k.startswith('__missing_model__')}
+    ws = set(world['materials'])
+    report['materials'] = {'resolved': len(resolver.report['resolved']), 'unresolved': len(un),
+                           'world_resolved': len([m for m in ws if m in resolver.report['resolved']]),
+                           'world_unresolved': len([m for m in ws if m in un]),
+                           'resolved_list': resolver.report['resolved'], 'unresolved_list': un}
     report['models'] = {'resolved': len(model_report['resolved']), 'unresolved': len(model_report['unresolved']),
                         'unresolved_list': model_report['unresolved'], 'resolved_list': model_report['resolved'],
                         'instances': n_inst, 'light': model_report['light']}
@@ -456,7 +473,7 @@ def box_mesh(name, mn, mx):
     return me
 
 
-def build_overlays(oc, lay, src, z):
+def build_overlays(oc, lay, src, z, collision=False):
     """Hidden from render by default. Spawners, doors, blockers, zone volumes, nav cells, collision (wireframe)."""
     def put(name, data, loc=(0, 0, 0), color=(1, 0, 0, 1)):
         o = bpy.data.objects.new(name, data)
@@ -497,10 +514,23 @@ def build_overlays(oc, lay, src, z):
             me = bpy.data.meshes.new('navcells')
             me.from_pydata(pts.tolist(), [], [])
             put('navcells', me, color=(0, 0.6, 1, 1))
-    try:
-        import hkcm  # noqa: F401
-    except Exception:
-        pass
+    hk = os.path.join(src, 'colmap.hkx')
+    if collision and os.path.isfile(hk):
+        try:
+            sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+            import hkcm
+            from hkpack import Packfile
+            pf = Packfile(open(hk, 'rb').read())
+            for a_, n_, sz_ in pf.objects:
+                if n_ == 'hknpCompressedMeshShapeData':
+                    tr = hkcm.decode_cm_data(pf, a_)['tris']
+                    pts = np.array(tr, np.float32).reshape(-1, 3) * S
+                    me = bpy.data.meshes.new('collision')
+                    me.from_pydata(pts.tolist(), [], [tuple(range(i, i + 3)) for i in range(0, len(pts), 3)])
+                    put('collision', me, color=(1, 1, 0, 1))
+                    break
+        except Exception as e:  # overlay only: report, do not fail the scene
+            print('IWZ_PREVIEW_WARN collision overlay: %s' % e)
 
 
 def setup_render(sc, res=(1280, 720)):
@@ -596,8 +626,9 @@ def main(argv):
         report['timing_s'] = timings
         json.dump(report, open(os.path.join(a.out, 'report.json'), 'w'), indent=1)
     print('IWZ_PREVIEW_TIMING ' + json.dumps({k: v for k, v in report['timing_s'].items() if k != 'render_each_s'}))
-    print('IWZ_PREVIEW_COUNTS materials %d/%d models %d/%d' % (
-        report['materials']['resolved'], report['materials']['unresolved'], report['models']['resolved'], report['models']['unresolved']))
+    print('IWZ_PREVIEW_COUNTS materials resolved %d unresolved %d (world %d/%d) models resolved %d unresolved %d' % (
+        report['materials']['resolved'], report['materials']['unresolved'], report['materials']['world_resolved'],
+        report['materials']['world_unresolved'], report['models']['resolved'], report['models']['unresolved']))
 
 
 if __name__ == '__main__' and '--' in sys.argv:
