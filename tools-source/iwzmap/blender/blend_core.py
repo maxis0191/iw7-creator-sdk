@@ -326,9 +326,14 @@ def stair_ramps(meshes):
         slope = (hs[-1] - hs[0]) / abs(ns[-1] - ns[0]) if abs(ns[-1] - ns[0]) > 1e-6 else 0
         if slope <= 0 or slope > 1.0:
             raise ValueError('stair %s: slope %.2f is not a stair (tread nosings must climb with at most 45 degrees)' % (name, slope))
-        s0 = ns[0] - sg * run                              # one rise below the first tread: the floor in front of the first riser
+        # The sheet is the nosing line lifted by RAMP_LIFT: a sheet through the nosings leaves every step box's top front edge on
+        # its surface, and zombies caught on them at the foot (Blender test map 1, 22 Nov 2026: two zombies held 40 s at the
+        # first nosing). The lifted line meets the floor RAMP_LIFT / slope before the nosing line does, and the landing as much
+        # before the last nosing.
+        RAMP_LIFT = 2.0
+        s0 = ns[0] - sg * run - sg * RAMP_LIFT / slope     # the floor in front of the first riser
         z0 = hs[0] - rise
-        s1, z1 = ns[-1], hs[-1]
+        s1, z1 = ns[-1] - sg * RAMP_LIFT / slope, hs[-1]
         oth = 1 - ax
         c0 = min(p[oth] for t in tris for p in t)
         c1 = max(p[oth] for t in tris for p in t)
