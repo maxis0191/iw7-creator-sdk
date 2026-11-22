@@ -167,7 +167,10 @@ class _Mesh:
         keep = []
         for k in range(n):
             prev = (k - 1) % n
-            if nb[prev] == nb[k] and self.collinear(cyc[prev], cyc[k], cyc[(k + 1) % n]):
+            # a vertex between two edges of the same neighbour is merged when it is 0.6 off the line (both sides of a
+            # link decide alike); on an open boundary only when it is exactly on the line
+            if nb[prev] == nb[k] and self.collinear(cyc[prev], cyc[k], cyc[(k + 1) % n],
+                                                     0.6 if nb[k] is not None else 0.05):
                 continue
             keep.append(k)
         if len(keep) < 3:
@@ -259,14 +262,14 @@ class _Mesh:
 
 
 def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_slope_deg=45, seeds=None,
-             res=8, max_edges=14, plane_tol=1.5, detail=False, _debug=None):
+             res=8, max_edges=14, plane_tol=1.5, edge_margin=8.0, detail=False, _debug=None):
     tris = np.asarray(tris, dtype=np.float64).reshape(-1, 3, 3)
     cell = float(cell)
     res = cell / 2.0          # a lattice cell is two columns wide: every column touches one lattice vertex
     cos_slope = math.cos(math.radians(max_slope_deg))
     report = {'tris': int(len(tris)), 'params': {'cell': cell, 'res': res, 'agent_height': agent_height,
                                                  'agent_radius': agent_radius, 'step': step,
-                                                 'max_slope_deg': max_slope_deg, 'max_edges': max_edges,
+                                                 'max_slope_deg': max_slope_deg, 'max_edges': max_edges, 'edge_margin': edge_margin,
                                                  'plane_tol': plane_tol}}
     if len(tris) == 0:
         raise ValueError('no triangles')
@@ -359,7 +362,7 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
     dist = dict(seedd)
     heap = [(d, i) for i, d in seedd.items()]
     heapq.heapify(heap)
-    reach_cap = agent_radius + 2 * res
+    reach_cap = edge_margin + 2 * res
     while heap:
         d, i = heapq.heappop(heap)
         if d > dist.get(i, 1e18) or d > reach_cap:
@@ -405,7 +408,7 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
         return best[1] if best else None
 
     mesh = _Mesh()
-    r = float(agent_radius)
+    r = float(edge_margin)
 
     def vert(vi, vj, nd):
         return mesh.vertex(('v', vi, vj, nd[2]), ox + vi * cell, oy + vj * cell, nd[0])
@@ -491,8 +494,10 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
         cym /= 3 * a2
         pl = _plane([(mesh.X[v], mesh.Y[v], mesh.Z[v]) for v in cyc])
         n = len(cyc)
+        zs_ = [mesh.Z[v] for v in cyc]
+        zc_ = min(max(pl[0] * cxm + pl[1] * cym + pl[2], min(zs_)), max(zs_))     # a thin polygon gives a wild plane
         info[pid] = {'pts': [(mesh.X[v], mesh.Y[v], mesh.Z[v]) for v in corners],
-                     'c': (cxm, cym, pl[0] * cxm + pl[1] * cym + pl[2]), 'plane': pl,
+                     'c': (cxm, cym, zc_), 'plane': pl, 'zr': (min(zs_), max(zs_)),
                      'nbr': [mesh.owner.get((cyc[(kk + 1) % n], cyc[kk])) for kk in keep]}
     order = sorted(info, key=lambda p: (round(info[p]['c'][0], 3), round(info[p]['c'][1], 3), round(info[p]['c'][2], 3)))
     seed_problems = []
@@ -518,7 +523,7 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
             for pid in grid.get((int(sx // 64), int(sy // 64)), ()):
                 a, b, c = info[pid]['plane'][:3]
                 if navfmt.point_in_poly(sx, sy, info[pid]['pts']):
-                    dz = abs(a * sx + b * sy + c - sz)
+                    dz = abs(min(max(a * sx + b * sy + c, info[pid]['zr'][0]), info[pid]['zr'][1]) - sz)
                     if dz <= 48.0 and (best is None or dz < best[0]):
                         best = (dz, pid)
             if best is None:
@@ -628,7 +633,7 @@ def main(argv=None):
     p.add_argument('src')
     p.add_argument('-o', '--out', required=True)
     p.add_argument('--seed', action='append', default=[], help='x,y,z (repeatable)')
-    p.add_argument('--cell', type=float, default=32.0)
+    p.add_argument('--cell', type=float, default=16.0)
     p.add_argument('--res', type=float, default=8.0)
     p.add_argument('--radius', type=float, default=15.0)
     p.add_argument('--json', help='write the report (with the cells) here')

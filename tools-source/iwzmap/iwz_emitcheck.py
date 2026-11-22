@@ -247,8 +247,9 @@ class Nav:
     def z_at(self, k, x, y):
         ar = self.a[k]
         cs = ar['corners']
-        if len(cs) == 4:
-            x0, x1, y0, y1 = ar['bb']
+        x0, x1, y0, y1 = ar['bb']
+        if len(cs) == 4 and all((abs(c[0] - x0) < 1e-3 or abs(c[0] - x1) < 1e-3) and (abs(c[1] - y0) < 1e-3 or abs(c[1] - y1) < 1e-3)
+                                for c in cs):       # an axis-aligned rectangle: bilinear, as before
             if x1 - x0 < 1e-6 or y1 - y0 < 1e-6:
                 return ar['c'][2]
             u = min(1.0, max(0.0, (x - x0) / (x1 - x0)))
@@ -536,6 +537,17 @@ def check_nav_support(emit):
     return out
 
 
+def _rect(ar):
+    """An axis-aligned quad (a cell of the old grid generator)."""
+    cs = ar['corners']
+    if len(cs) != 4:
+        return False
+    xs, ys = [c[0] for c in cs], [c[1] for c in cs]
+    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+    return (x1 - x0 <= 64.0 and y1 - y0 <= 64.0) and all(
+        (abs(c[0] - x0) < 1e-3 or abs(c[0] - x1) < 1e-3) and (abs(c[1] - y0) < 1e-3 or abs(c[1] - y1) < 1e-3) for c in cs)
+
+
 def check_links(emit):
     """Nav links must be walkable: no wall across them, no cliff along them. Quads are tested centre to centre; a
     polygon area (a graph from navgen) is tested centre to the middle of the shared edge to the other centre, with
@@ -552,7 +564,7 @@ def check_links(emit):
                 oneway += 1
             if k > nb and k in other['nbrs']:
                 continue
-            if len(ar['corners']) == 4 and len(other['corners']) == 4:
+            if _rect(ar) and _rect(other):
                 if abs(a[2] - b[2]) > STEP + 6.0:
                     out_steep.append((int(a[0] // 32), int(a[1] // 32), a[2]))
                 legs = [(a, b)]
