@@ -22,7 +22,9 @@ param(
 #
 # What it runs, in this order (every ZoneTool run under the machine-wide resource lease, like build-sz2.ps1):
 #   1  gates, plain Python, no game:  python iwz_emitcheck.py check <Src>      (collision and navigation of the emit)
-#                                     python sz2_navconn.py <Src>               (navigation connectivity)
+#                                     python iwz_emitcheck.py reach <Src> --all-spawners   (every spawner has a route on the real
+#                                     navgraph, stacked floors included; sz2_navconn.py reads plan.json as one floor per column and
+#                                     reports false seams on a map with a floor over another, so it is not a gate here)
 #                                     python <server>\ops\iwzmap\iwzmap_ents_lint.py <Src>\ents.txt --gsc <Src>\cp_iwz.gsc  (when the server checkout is present)
 #                                     both gates fail the build on an error; -GatesOnly stops here
 #   2  -Bake:   bake\layout_lights.py <Src> lights.json ; bake\lmbake.py <Src> lights.json <Src>_lm --rays <Rays> --bounces 3 --denoise 1
@@ -39,7 +41,7 @@ $S=$PSScriptRoot; $W=$Work; $D=$TemplateDump
 $py='python'
 function Run-Gate([string]$Name,[scriptblock]$Block){ $o=& $Block 2>&1; $c=$LASTEXITCODE; ($o | Select-Object -Last 6) | ForEach-Object { "  [$Name] $_" }; if($c){ throw "gate $Name failed (exit $c)" } }
 Run-Gate 'emitcheck' { & $py -I -B "$S\iwz_emitcheck.py" check $Src }
-Run-Gate 'navconn' { & $py -I -B "$S\sz2_navconn.py" $Src }
+Run-Gate 'reach' { & $py -I -B "$S\iwz_emitcheck.py" reach $Src --all-spawners }
 $lint=Join-Path (& "$S\machine.ps1" Server) 'ops\iwzmap\iwzmap_ents_lint.py'
 if(Test-Path $lint){ Run-Gate 'ents_lint' { & $py -I -B $lint "$Src\ents.txt" --gsc "$Src\cp_iwz.gsc" } }
 if($GatesOnly){ return }
