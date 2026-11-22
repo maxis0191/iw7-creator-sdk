@@ -84,7 +84,8 @@ def mesh_records(obj, depsgraph):
         me.calc_loop_triangles()
         mw = ev.matrix_world
         flip = mw.determinant() < 0
-        uvl = me.uv_layers.active
+        uvl = me.uv_layers.get('UVMap') or me.uv_layers.active
+        lml = me.uv_layers.get('lightmap') if str(_prop(obj, 'iwz_lm', '')) == 'keep' else None
         authored = str(_prop(obj, 'iwz_uv', 'auto')) == 'authored' and uvl is not None
         mode = str(_prop(obj, 'iwz_mode', 'both'))
         tag = _prop(obj, 'iwz_tag', None)
@@ -93,7 +94,7 @@ def mesh_records(obj, depsgraph):
         verts = [mw @ v.co for v in me.vertices]
         for lt in me.loop_triangles:
             name = slots[lt.material_index] if lt.material_index < len(slots) else slots[0]
-            r = by.setdefault(name, {'tris': [], 'uvs': []})
+            r = by.setdefault(name, {'tris': [], 'uvs': [], 'lms': []})
             ids = list(lt.vertices)
             lp = list(lt.loops)
             if flip:
@@ -101,9 +102,11 @@ def mesh_records(obj, depsgraph):
             r['tris'].append([[_in(verts[i].x), _in(verts[i].y), _in(verts[i].z)] for i in ids])
             if authored:
                 r['uvs'].append([list(uvl.data[l].uv) for l in lp])
+            if lml is not None:
+                r['lms'].append([list(lml.data[l].uv) for l in lp])
         out = []
         for name, r in by.items():
-            out.append({'name': obj.name, 'material': name or '', 'mode': mode, 'tag': tag, 'tris': r['tris'], 'uvs': r['uvs'] or None})
+            out.append({'name': obj.name, 'material': name or '', 'mode': mode, 'tag': tag, 'tris': r['tris'], 'uvs': r['uvs'] or None, 'lms': r['lms'] or None})
         return out
     finally:
         ev.to_mesh_clear()
@@ -172,7 +175,7 @@ def collect_scene(scene=None, log=print):
         elif kind == 'start':
             out['starts'].append({'at': at, 'yaw': yaw})
         elif kind == 'spawner':
-            out['spawners'].append({'at': at, 'yaw': yaw, 'kind': str(_prop(obj, 'iwz_spawn', 'ground'))})
+            out['spawners'].append({'at': at, 'yaw': yaw, 'kind': str(_prop(obj, 'iwz_spawn', 'ground')), 'vent': bool(_prop(obj, 'iwz_vent', 1))})
         elif kind == 'power':
             out['power'].append({'at': at, 'yaw': yaw})
         elif kind == 'perk':

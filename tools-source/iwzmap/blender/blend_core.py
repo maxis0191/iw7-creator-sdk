@@ -149,8 +149,6 @@ def validate(scene, materials=None):
         k = w.get('weapon_class') or ''
         if not w.get('weapon') and k not in scenegen.Emitter.WALL_WEAPON:
             E('wall buy: class %r unknown (%s) and no weapon name' % (k, ', '.join(sorted(scenegen.Emitter.WALL_WEAPON))))
-        if not w.get('cost'):
-            E('wall buy without a cost')
     if len(scene.get('wheels', [])) > len(scenegen.Emitter.WHEEL_SCRIPTABLES):
         E('more mystery boxes than stock wheel scriptables (%d)' % len(scenegen.Emitter.WHEEL_SCRIPTABLES))
     if len(scene.get('pap', [])) > 1:
@@ -254,12 +252,14 @@ class WorldBuilder:
                 key = self._key(mat, rec['name'])
                 verts, idx = self.mesh.mat(key)
                 ids = []
-                for q, (u, v) in zip(p, uv):
-                    wk = (key, tuple(round(c, 3) for c in q), round(u, 5), round(v, 5), tuple(round(c, 4) for c in n))
+                lms = rec.get('lms')
+                for qi, (q, (u, v)) in enumerate(zip(p, uv)):
+                    lm = tuple(float(c) for c in lms[ti][qi]) if lms else self.lm
+                    wk = (key, tuple(round(c, 3) for c in q), round(u, 5), round(v, 5), tuple(round(c, 4) for c in n), lm)
                     vi = self.weld.get(wk)
                     if vi is None:
                         vi = len(verts)
-                        verts.append((tuple(round(c, 3) for c in q), u, v, self.lm, mapgen.pack_unit(n), mapgen.pack_unit(t)))
+                        verts.append((tuple(round(c, 3) for c in q), u, v, lm, mapgen.pack_unit(n), mapgen.pack_unit(t)))
                         self.weld[wk] = vi
                     ids.append(vi)
                 idx += ids
@@ -563,7 +563,8 @@ class BlendEmitter(scenegen.Emitter):
                 e.update(origin=self.fmt((x, y, fz + 8)), animation='spawn_ground', parameters='ground_spawn_no_boards', fxid='concrete')
             elif kind == 'wall':
                 e.update(origin=self.fmt((x, y, fz + 8)), animation='spawn_wall_low', parameters='no_boards')
-                self.vent(zone, x, y, fz, yaw)
+                if sp.get('vent', True):
+                    self.vent(zone, x, y, fz, yaw)
             else:
                 e.update(origin=self.fmt((x, y, z)), animation='spawn_ceiling', parameters='ground_spawn_no_boards', fxid='ceiling')
             self.ent(**e)
@@ -664,7 +665,7 @@ class BlendEmitter(scenegen.Emitter):
             if wm:
                 kw['model'] = wm
             self.istruct(weapon, org, yaw, zone_of(org), **kw)
-            layout['interactions'][-1].update({'class': w.get('weapon_class'), 'price': int(w['cost']),
+            layout['interactions'][-1].update({'class': w.get('weapon_class'), 'price': int(w.get('cost') or 0) or None,
                                                'stand_in': w.get('weapon_class') in E.STAND_IN})
         for w in self.scene.get('wheels', []):
             org = self.snap(w['at']); yaw = float(w.get('yaw', 0))
