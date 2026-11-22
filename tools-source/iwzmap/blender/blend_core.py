@@ -569,9 +569,37 @@ def check_steps(col_tris, starts):
     return find_steps(valid, seeds, 8)
 
 
-def try_navgen(col_tris, starts, log, cell=CELL):
-    """workstream N: navgen.generate(tris, seeds=..., detail=True) when the module is importable (any number of floors).
-    -> (navgraph bytes, nodes [(i, j, z)] with absolute 32 unit column indices, report) or (None, None, reason)"""
+def _plane_fit(pts):
+    """least squares plane z = a x + b y + c through corners (a, b, c); flat at the mean when the corners are collinear"""
+    import numpy as np
+    P = np.asarray(pts, dtype=float)
+    A = np.c_[P[:, 0], P[:, 1], np.ones(len(P))]
+    try:
+        sol = np.linalg.lstsq(A, P[:, 2], rcond=None)[0]
+        if np.linalg.matrix_rank(A) < 3:
+            raise np.linalg.LinAlgError
+        return float(sol[0]), float(sol[1]), float(sol[2])
+    except np.linalg.LinAlgError:
+        return 0.0, 0.0, float(P[:, 2].mean())
+
+
+def parse_polygons(data):
+    """navgraph bytes -> polygon areas [{'pts': [(x, y, z)], 'nbr': [area index | None per edge], 'c': centre, 'plane': (a, b, c)}]
+    (navfmt.py of the navgen branch reads the engine's graph: any graph, round 1 quads or round 2 polygons)"""
+    import navfmt
+    gr, _end = navfmt.parse_graph(bytes(data)[navfmt.find_graph(bytes(data)):])
+    idx = {a.off: k for k, a in enumerate(gr.areas)}
+    out = []
+    for a in gr.areas:
+        pts = [tuple(e.corner) for e in a.edges]
+        out.append({'pts': pts, 'nbr': [idx.get(e.nbr) if e.nbr else None for e in a.edges], 'c': tuple(a.centre), 'plane': _plane_fit(pts)})
+    return out
+
+
+def try_navgen(col_tris, starts, log):
+    """workstream N: navgen.generate(tris, seeds=...) when the module is importable (`IWZ_NAVGEN_DIR`, or iwzmap/ itself); round 2
+    makes convex polygon areas on any number of floors, and its bytes are written as navgraph.bin unchanged.
+    -> (navgraph bytes, polygons, report) or (None, None, reason)"""
     d = os.environ.get('IWZ_NAVGEN_DIR')
     if d and d not in sys.path:
         sys.path.insert(0, d)
@@ -580,21 +608,71 @@ def try_navgen(col_tris, starts, log, cell=CELL):
     except ImportError as e:
         return None, None, 'navgen.py not importable (%s)' % e
     try:
-        data, rep = navgen.generate(col_tris, seeds=[tuple(s) for s in starts] or None, detail=True)
-        mx = min(p[0] for t in col_tris for p in t)
-        my = min(p[1] for t in col_tris for p in t)
-        i0, j0 = int(math.floor(mx / cell)), int(math.floor(my / cell))
-        detail = rep.get('cells_detail') or []
-        nodes = [(c['i'] + i0, c['j'] + j0, round(sum(c['z']) / 4.0, 2)) for c in detail]
-        links = [(a, b) for a, c in enumerate(detail) for b in (c.get('links') or []) if b is not None and a < b]
-        if not isinstance(data, (bytes, bytearray)) or not nodes:
-            return None, None, 'navgen.generate gave no data or no cell detail'
+        data, rep = navgen.generate(col_tris, seeds=[tuple(s) for s in starts] or None)
+        polys = parse_polygons(data)
+        if not isinstance(data, (bytes, bytearray)) or not polys:
+            return None, None, 'navgen.generate gave no data or no area'
         rep = {k: v for k, v in rep.items() if k != 'cells_detail'}
-        rep['_links'] = links
-        return bytes(data), nodes, rep
+        rep['navgen_file'] = os.path.abspath(navgen.__file__)
+        return bytes(data), polys, rep
     except Exception as e:                  # report, never hide
         log('navgen failed (%s): using the single layer fallback' % e)
         return None, None, 'navgen failed: %s' % e
+
+
+def point_in_poly(x, y, poly):
+    inside = False
+    n = len(poly)
+    for i in range(n):
+        x0, y0 = poly[i][0], poly[i][1]
+        x1, y1 = poly[(i + 1) % n][0], poly[(i + 1) % n][1]
+        if (y0 > y) != (y1 > y) and x < (x1 - x0) * (y - y0) / (y1 - y0) + x0:
+            inside = not inside
+    return inside
+
+
+def poly_nodes(polys, cell=CELL):
+    """what the rest of the emit needs from polygons: the 32 unit lattice centres inside each area with z from its plane, one
+    node per area and floor ((i, j, z) of the lattice cell), plus the centroid cell of an area that holds no lattice centre"""
+    nodes = {}
+    rep = []
+    for k, p in enumerate(polys):
+        xs = [q[0] for q in p['pts']]; ys = [q[1] for q in p['pts']]
+        a, b, c = p['plane']
+        found = False
+        for i in range(int(math.floor(min(xs) / cell)), int(math.floor(max(xs) / cell)) + 1):
+            for j in range(int(math.floor(min(ys) / cell)), int(math.floor(max(ys) / cell)) + 1):
+                x, y = (i + 0.5) * cell, (j + 0.5) * cell
+                if point_in_poly(x, y, p['pts']):
+                    nodes[(i, j, round(a * x + b * y + c, 2))] = k
+                    found = True
+        cx, cy, cz = p['c']
+        key = (int(math.floor(cx / cell)), int(math.floor(cy / cell)), round(cz, 2))
+        nodes.setdefault(key, k)
+        rep.append(key)
+    return nodes, rep
+
+
+def link_steps(polys):
+    """Links of a polygon graph are shared edges; the step of a link is the height difference of the two areas at that edge
+    (both ends and the middle, each area's own plane and corner). -> [(x, y, z_low, z_high)] over 18"""
+    out = []
+    for k, p in enumerate(polys):
+        for e, m in enumerate(p['nbr']):
+            if m is None or m < k:
+                continue
+            q = polys[m]
+            c0, c1 = p['pts'][e], p['pts'][(e + 1) % len(p['pts'])]
+            worst = 0.0
+            for t in (0.0, 0.5, 1.0):
+                x, y, z = c0[0] + (c1[0] - c0[0]) * t, c0[1] + (c1[1] - c0[1]) * t, c0[2] + (c1[2] - c0[2]) * t
+                za = p['plane'][0] * x + p['plane'][1] * y + p['plane'][2]
+                zb = q['plane'][0] * x + q['plane'][1] * y + q['plane'][2]
+                worst = max(worst, abs(za - zb), abs(z - za), abs(z - zb))
+            if worst > STEP:
+                zl, zh = sorted((p['plane'][2], q['plane'][2]))
+                out.append((round((c0[0] + c1[0]) / 2), round((c0[1] + c1[1]) / 2), round(zl + 0, 1), round(zl + worst, 1)))
+    return out
 
 
 # ------------------------------------------------------------------------------------------------ the emitter
@@ -611,6 +689,7 @@ class BlendEmitter(scenegen.Emitter):
         self.warnings = []
         self.nodes = []
         self.layers = {}
+        self.polys = None
         self.lift = NAV_LIFT
         self.vols = []
 
@@ -641,14 +720,27 @@ class BlendEmitter(scenegen.Emitter):
     def build_nav(self):
         col = [tuple(t) for t in self.B.mesh.col]
         starts = [tuple(s['at']) for s in self.scene.get('starts', [])]
-        blob, nodes, rep = try_navgen(col, starts, self.log)
+        blob, polys, rep = try_navgen(col, starts, self.log)
         cells_fb, info_fb = nav_single_layer(col, starts)
         info_fb['steps_error'], info_fb['steps_warn'] = check_steps(col, starts)
+        self.polys = None
+        nav_err = []
         if blob:
             self.lift = 0.0
-            self.nav_links = rep.pop('_links', [])
-            self.nav_info = {'used': 'navgen', 'navgen': rep}
+            self.polys = polys
+            node_map, self.area_rep = poly_nodes(polys)
+            nodes = sorted(node_map)
+            self.poly_grid = collections.defaultdict(list)
+            for k, p in enumerate(polys):
+                xs = [q[0] for q in p['pts']]; ys = [q[1] for q in p['pts']]
+                for gx in range(int(min(xs) // 64), int(max(xs) // 64) + 1):
+                    for gy in range(int(min(ys) // 64), int(max(ys) // 64) + 1):
+                        self.poly_grid[(gx, gy)].append(k)
+            ec = collections.Counter(len(p['pts']) for p in polys)
+            self.nav_info = {'used': 'navgen polygons', 'navgen': rep, 'areas': len(polys),
+                             'links': sum(1 for p in polys for m in p['nbr'] if m is not None), 'edge_histogram': dict(sorted(ec.items()))}
             nav_blob = blob
+            nav_err = link_steps(polys)
         else:
             cells, info = cells_fb, info_fb
             if not cells:
@@ -669,17 +761,9 @@ class BlendEmitter(scenegen.Emitter):
         for k in self.layers:
             self.layers[k].sort()
         self.nav_info['nodes'] = len(nodes)
-        # a step between two LINKED navigation cells over 18: the engine's agents climb 18. A stair without its clip ramp sags about 4
-        # below the nosing line inside a cell, so the cell next to a landing is 19 higher (testmap1, first build)
-        nav_err, nav_warn = [], []
-        if blob:
-            for a_, b_ in self.nav_links:
-                na, nb = nodes[a_], nodes[b_]
-                if abs(na[2] - nb[2]) > STEP:
-                    lo_, hi_ = sorted((na, nb), key=lambda n: n[2])
-                    nav_err.append((round((hi_[0] + .5) * CELL), round((hi_[1] + .5) * CELL), round(lo_[2], 1), round(hi_[2], 1)))
-        err = sorted(set(nav_err))          # the collision-level steps are warnings: the side of a stair or a ledge is no route
-        nav_warn = list(nav_warn) + list(info_fb['steps_error'])
+        # a step between two LINKED areas over 18 (the engine's agents climb 18): a stair without its clip ramp is refused
+        err = sorted(set(nav_err))
+        nav_warn = list(info_fb['steps_error'])
         if err:
             raise ValueError('scene refused: walkable steps over 18 that zombies cannot climb and no clip ramp covers (mark the step meshes '
                              'with iwz_stair so the exporter adds the stock ramp sheet): ' + '; '.join('at (%d, %d) from %g to %g' % r for r in err[:6]))
@@ -689,7 +773,7 @@ class BlendEmitter(scenegen.Emitter):
             self.warnings.append('%d step edges over 18 between floors (ledges, the open side of a stair, crates; first: %g to %g at (%d, %d)): '
                                  'zombies cannot climb them' % (len(ws), r[2], r[3], r[0], r[1]))
         self.nav_info['step_errors'] = len(err)
-        self.nav_info['step_warnings'] = len(info_fb['steps_warn']) + len(nav_warn)
+        self.nav_info['step_warnings'] = len(ws)
         open(os.path.join(self.out, 'navgraph.bin'), 'wb').write(nav_blob)
         self.nav_blob = nav_blob
 
@@ -697,7 +781,16 @@ class BlendEmitter(scenegen.Emitter):
         return self.zone_at(((n[0] + 0.5) * CELL, (n[1] + 0.5) * CELL, n[2] - self.lift + 8))
 
     def nav_floor(self, x, y, z, reach=48.0):
-        """nav height of the column of (x, y) nearest to z within reach, else None"""
+        """nav height of the floor at (x, y) nearest to z within reach, else None (polygon graph: the area plane at the point)"""
+        if getattr(self, 'polys', None):
+            best = None
+            for k in self.poly_grid.get((int(x // 64), int(y // 64)), ()):
+                p = self.polys[k]
+                if point_in_poly(x, y, p['pts']):
+                    zz = p['plane'][0] * x + p['plane'][1] * y + p['plane'][2]
+                    if abs(zz - z) <= reach and (best is None or abs(zz - z) < abs(best - z)):
+                        best = zz
+            return best
         zs = self.layers.get((int(math.floor(x / CELL)), int(math.floor(y / CELL))), ())
         best = min(zs, key=lambda c: abs(c - self.lift - z), default=None)
         return best if best is not None and abs(best - self.lift - z) <= reach else None
@@ -849,7 +942,14 @@ class BlendEmitter(scenegen.Emitter):
         self.place_doors()          # scenegen: interaction structs, door_buy trigger, blocker brushes, layout doors + openings
 
     def node_pairs(self):
-        """pairs of linked nodes (neighbouring columns, floors at most 18 apart)"""
+        """pairs of linked nodes: neighbouring columns with floors at most 18 apart (one layer graph), or the representative nodes
+        of two linked polygon areas"""
+        if getattr(self, 'polys', None):
+            for k, p in enumerate(self.polys):
+                for m in p['nbr']:
+                    if m is not None and m > k:
+                        yield self.area_rep[k], self.area_rep[m]
+            return
         for n in self.nodes:
             for dk in ((1, 0), (0, 1)):
                 for z2 in self.layers.get((n[0] + dk[0], n[1] + dk[1]), ()):

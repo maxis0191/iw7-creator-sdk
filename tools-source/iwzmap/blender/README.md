@@ -77,13 +77,15 @@ a material found in neither the stock table nor the dumps.
 
 ## Known limits (what the exporter cannot do yet)
 
-* **Two floors need `navgen.py`** (workstream N, branch `claude/iwz-navgen`, not on main when this was written). The exporter calls
-  `navgen.generate(tris, seeds=starts, detail=True)` when it imports (`IWZ_NAVGEN_DIR` names the folder holding `navgen.py` and
-  `navfmt.py`). Without it, a single layer height field is written (`nav_single_layer`: the floor reachable from a player start by
-  18 unit steps, the lowest in a column with two); every dropped floor is listed in `scene_report.json` and as `PROBLEM` / `WARN`
-  lines (a spawner on a floor without navigation is a problem). Measured on testmap1: fallback 260 cells, 2 problems (the two
-  upper floor spawners), `iwz_emitcheck check` 0 errors, `sz2_navconn` 11 fails (the stair seams); with navgen 496 cells over both
-  floors, 0 problems, `iwz_emitcheck check` 0 errors 0 warnings. **Neither is proven in the game.**
+* **Two floors need `navgen.py`** (workstream N, branch `claude/iwz-navgen`, round 2: convex polygon areas, any number of floors).
+  `IWZ_NAVGEN_DIR` names the folder holding `navgen.py` and `navfmt.py`. The exporter calls `navgen.generate(tris, seeds=starts)`,
+  writes its bytes as `navgraph.bin` **unchanged** and parses the graph with `navfmt` for the rest of the emit: spawner on-nav checks
+  use the area plane at the point; `plan.json` holds one cell per 32 unit lattice centre inside each area and floor (z from the area
+  plane; several cells per column when floors stack) plus one representative cell per area; zone links come from the area links. A
+  link is a shared edge: the export is **refused** when the two areas' heights at the shared edge (corners, middle, each area's own
+  plane) differ by more than 18. Without navgen a single layer height field is written (`nav_single_layer`; the upper floor of
+  testmap1 then has no navigation and the spawners there are reported as problems). The main-branch `iwz_emitcheck.py` and
+  `sz2_navconn.py` read quads (one floor a column): use the navgen branch's `iwz_emitcheck.py` on a polygon graph.
 * **Collision tags**: only solid (382) is generated; the contents flags of the template surface table are not decoded, so there is no
   player-only or monster-only clip (a collision-only mesh blocks everything). The stair tags 387, 402 and 411 are preserved on import.
 * **Lightmaps**: the exporter writes the neutral placeholder texel; `-Bake` (lmbake) makes the real one. lmbake makes one chart per

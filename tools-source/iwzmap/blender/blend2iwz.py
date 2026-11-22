@@ -67,7 +67,7 @@ def _bbox_in(obj):
         sc = obj.matrix_world.to_scale()
         c = obj.matrix_world.translation
         pts = [Vector((c.x + sx * s * abs(sc.x), c.y + sy * s * abs(sc.y), c.z + sz * s * abs(sc.z))) for sx in (-1, 1) for sy in (-1, 1) for sz in (-1, 1)]
-    return [_in(min(p[i] for p in pts)) for i in range(3)] + [_in(max(p[i] for p in pts)) for i in range(3)]
+    return [round(_in(min(p[i] for p in pts)), 2) for i in range(3)] + [round(_in(max(p[i] for p in pts)), 2) for i in range(3)]      # 0.01 inch: metre float noise must not move a box edge across a lattice centre
 
 
 def _all_objects_of(coll):
