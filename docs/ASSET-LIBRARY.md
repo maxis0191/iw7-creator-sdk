@@ -45,6 +45,10 @@ Models per zone (a model counts under every zone it ships in) and group. `LOD0` 
 10593 models, 5077 in the library (not weapon / character / vfx / attachment), 5004 of those resolve. The attachment and weapon columns are viewmodel and attachment meshes of global_cp and global_core_mp; the character column is zombie body parts and heroes.
 
 
+## Sheets (run of 22 Nov 2026)
+
+5,077 library models, 145 sheets (about 125 MB) under `IW7-Runtime\iwz-blend\library\sheets\<group>\<zone>_<n>.png`: misc 24, utilities 20, debris 19, structural 19, retail 15, furniture 11, vegetation 11, architecture 10, transit 9, vehicles 7. Timings: catalogue 17 s, prep (meshes of 5,077 models, 3,633 textures decoded by texconv, cache cold for the new zones) about 70 s, tiles 322 s with 4 background Blender workers (0.25 s a tile each, 16 cores shared), composing 26 s. Failures (`sheetsailures.json`): 43 models do not load (23 are `tag_origin*` helper models with no surface, the others name a missing xsurface or xmodel) and draw an all-magenta tile with the reason; 196 load but have a surface whose texture did not resolve (magenta surface, reason in the file, mostly `$black` / do_not_use placeholder materials). Known look limits: alpha-blended glass and decals show as dithered speckle (EEVEE dithered blend), models are lit by one neutral sun, lit techset colour tints are applied but no gloss or normal maps; the label's third line is `subcategory / zones`.
+
 ## Density: stock map against Station Zero (target of acceptance line A4)
 
 Measured with `density.py` (`library\density.json`). Stock = cp_zmb: the world kit database built from the dump
