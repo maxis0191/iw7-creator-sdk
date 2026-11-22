@@ -3,7 +3,7 @@
 The navigation of an IW7 zombies map is one bfx NavGraph (graph version 0x2B, the zone's `navmesh` asset). This page is
 the format as measured on the stock `cp_zmb` navmesh (ZoneTool dump, 2,865 areas) and the generator that writes it from
 collision triangles. Code: `tools-source/iwzmap/navfmt.py` (reader, writer, kd builder), `navgen.py` (generator),
-`test_navgen.py`, fixture `fixtures/twostorey/`.
+`test_navgen.py`, fixtures `fixtures/twostorey/` and `fixtures/freeform/`.
 
 ## Where the graph sits in a file
 
@@ -74,43 +74,88 @@ reproduced exactly; the rest are ties in the sort or in the axis choice.
 `mapgen.nav_graph` splits on x and y only, with centre bounds; it cannot separate two areas that share an xy position,
 which is why it cannot write stacked floors. `navgen` uses the stock rule.
 
-## Generator: `navgen.generate`
+## Generator: `navgen.generate` (round 2, 22 Nov 2026)
 
 ```
-generate(tris, *, cell=32, agent_height=72, agent_radius=15, step=18, max_slope_deg=45, seeds=None,
-         res=8, min_cover=0.2, detail=False) -> (navgraph.bin bytes, report dict)
+generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_slope_deg=45, seeds=None,
+         max_edges=14, plane_tol=1.5, edge_margin=8.0, solid_check=True) -> (navgraph.bin bytes, report dict)
 ```
 
-`tris` is (N, 3, 3) in game units; floors face up, ceilings down. Steps: triangles are sampled on a lattice and binned
-in columns of `res` (8) units on a grid aligned to `cell`; per column the points are merged into spans; a span is a floor
-when its highest walkable point is within `step` of the span top, the slope is at most `max_slope_deg` and the next span
-above is `agent_height` higher; neighbouring floors link when their heights differ by at most `step` and the headroom
-stays; floors within `agent_radius` of a wall, a drop or a missing link are removed (distance counted on the links); the
-rest becomes layers (connected components); each `cell` square gets one quad per layer when at least `min_cover` of its
-columns are floor; quad corner heights come from a least squares plane, averaged with the corners of the same layer
-within one `step` at the same point, so linked quads share edges exactly; links are the quads joined by linked columns;
-quads not connected to any seed are dropped and counted (`dropped_unreachable`); a seed with no navigation within one
-cell and 48 units goes in `seed_problems` (all seeds bad: `ValueError`). `report` has counts, `layers_z`,
-`stacked_cells`, `components`, `links`.
+`tris` is (N, 3, 3) in game units; floors face up, ceilings down, solids closed. No grid is assumed: walls and stairs at
+any angle, edges anywhere. Steps:
+
+1. Every triangle is sampled on a lattice (5.6 units on floors, which are pulled 0.6 inside their triangle so that the
+   row of points on a border does not put a floor column on the far side of the edge; 4 on walls) and binned in columns
+   of `cell / 2` (8) units.
+2. Per column the points are merged into spans. A span is a floor when its highest walkable point is within `step` of the
+   span top, the slope is at most `max_slope_deg`, the next span above is `agent_height` higher, and (`solid_check`) the
+   next surface above is not an up-facing face: a floor inside a closed solid (under a pillar, inside a crate) is not
+   walkable (`report['inside_solid']`).
+3. Floors of neighbouring columns link when their heights differ by at most `step` and the headroom stays. Every floor
+   span gets its distance to the edge of its surface: a floor with a missing neighbour is a border span, its distance is
+   measured to the real wall points of the neighbouring columns (the wall is somewhere inside its column), or half a column
+   at a drop; the distance is carried inward along the links (chamfer metric 1, 1.41, in 8-unit steps).
+4. Lattice vertices every `cell` (16) units. A vertex collects the floor spans of the four columns around it and has
+   one node per floor level (spans within `step` of each other), with the mean height and the mean distance to the edge
+   (a missing column counts -4). Per lattice cell and floor level, marching squares at the level `edge_margin` (8)
+   cuts the cell: corners over the level are kept, and the crossing on a cell edge is placed by linear interpolation of
+   the two vertex distances. The result is a convex polygon of 3 to 6 corners that does not overhang the real edge
+   (the crossing depends only on the two vertex nodes of the shared lattice edge, so both cells compute the same point).
+5. Convex merge: neighbouring polygons are joined along their shared edges while the result stays one simple convex
+   polygon, planar within `plane_tol` units, with at most `max_edges` (14, stock range 3 to 14) corners; a vertex in the
+   middle of an edge with the same neighbour on both sides is not a corner.
+6. Links: the neighbour of an edge is the polygon that owns the same two vertices reversed. Every link therefore is one
+   exactly shared edge with equal corner heights (the rule measured on stock). Areas not connected to any seed are dropped
+   and counted (`dropped_unreachable`); a seed with no navigation at it within 48 units goes in `seed_problems` (all seeds
+   bad: `ValueError`). The kd tree is the stock rule (`navfmt.build_kd`).
+
+`report` has counts (`polygons_before_merge`, `areas`, `links`, `edge_count_hist`, `inside_solid`, `eroded`, `layers_z`).
+`navgen.boundary_gap(tris, data)` measures how far the nav edge stays from the collision wall (outward ray from every
+unlinked edge, first wall point within 3 units of the ray): mean, 95th percentile, max, the samples that face a drop.
 
 CLI: `python navgen.py gen <colmap.hkx|emit folder|tris.npy> -o navgraph.bin --seed=x,y,z --json report.json`;
-`python navgen.py compare a.bin b.bin --layout layout.json` (cell coverage by zone). Needs numpy; the test skips
-without it (`python -I` does not see the user-site numpy, `python -B` does).
+`python navgen.py compare a.bin b.bin --layout layout.json` (floor area of one graph the other does not cover, by zone).
+Needs numpy (no scipy); the test skips without it (`python -I` does not see the user-site numpy, `python -B` does).
+
+`iwz_emitcheck` now reads N-gon graphs (through `navfmt`): `load_nav` takes any edge count, `z_at` and `columns` work on
+polygons, and `check_links` judges a link between polygon areas centre to the middle of the shared edge to the centre
+(heights on the shared edge) instead of centre to centre, which is meaningless for big ramp polygons. Axis-aligned flat
+quads of at most 64 units are still judged as before.
 
 ### What it does not do
 
-- Areas are quads on the `cell` grid (as `mapgen.nav_graph`); no merging into N-gons (stock merges: 3 to 14 edges). The
-  grid must fit the level: a stair or corridor edge that is not a multiple of `cell` gets a quad that sticks out over the
-  drop (`NAV_FLOATING` in emitcheck on that quad; seen with a stair edge at x 592). Author on a 32-unit grid.
+- The merge is greedy and local: 3,871 areas for g27r where stock cp_zmb has 2,865 for a bigger map; a flat 512 x 512
+  floor gives 88 polygons.
 - Doors, jump links, flags `0xFFFF8000`, the `n << 24` field and the 128-byte stock block are not generated.
-- Memory is about 24 bytes per sample point: a very large floor needs `res` raised.
+- Closed solids are assumed: a single-sided floor over another floor turns the lower floor into "inside a solid"
+  (`solid_check=False` switches that off).
+- The edge sits `edge_margin` (8) units from the wall, not `agent_radius`: with 15 the stair feet next to a pit wall lose
+  their last samples (`STAIR_NAV_GAP`), with 6 or less the quads reach over drops (`NAV_FLOATING`).
+- Memory is about 24 bytes per sample point: a very large floor needs `cell` raised.
 
 ## Measured (22 Nov 2026, offline, no game)
 
-- Stock cp_zmb: round trip byte identical (653,342 bytes); our g27r `navgraph.bin`: byte identical (2,216,992 bytes).
-- g27r collision (34,036 triangles) regenerated in about 5 s with seeds at the three player starts: 10,832 areas against
-  10,262 shipped; 44 shipped cells missing, 614 generated cells not shipped (wall margins, tunnel and platform edges);
-  `iwz_emitcheck check`: 1 error (`NAV_FLOATING`, one cell, 12 units, ticket hall); the shipped graph has 0.
-- Two-storey fixture (`fixtures/twostorey`, floors at z 0 and 256, 32-step stair): 933 lower, 858 upper, 88 stair areas (1,882),
-  861 squares with two areas, one component, `route` from the bottom start to the top floor 1,403 units;
-  `iwz_emitcheck check`: 0 errors, 1 warning (open stair sides, by design).
+Round 1 (quads on a 32-unit grid) against round 2 (polygons from the contour), same inputs:
+
+| | round 1 | round 2 |
+| --- | --- | --- |
+| g27r areas (shipped 10,262; stock cp_zmb 2,865) | 10,832 | 3,871 (49,388 lattice polygons before the merge) |
+| g27r `iwz_emitcheck check` errors (shipped: 0) | 1 | 3: 1 `NAV_FLOATING` (generator_room, 12 units), 2 `STAIR_NAV_GAP` (one sample each at the foot of well_e and well_w, 8 units from the pit wall) |
+| g27r floor area the shipped graph has and ours misses | 44 cells of 32 x 32 (45,000) | 115,000 sq units (1.1% of 10.5 M) |
+| g27r floor area ours has and the shipped graph misses | 614 cells (630,000) | 819,000 (walls, tunnel, platform margins) |
+| g27r `reach --all-spawners` | not run | 51 sources, 0 without a route |
+| g27r time | 5 s | 15 s |
+| two-storey fixture areas | 1,882 | 610 |
+| two-storey `check` | 0 errors, 1 warning | 0 errors, 1 warning (open stair sides, by design) |
+| two-storey `route` start to top floor | 1,403 units | 1,328 units |
+
+Edge distance to the wall (`boundary_gap`, outward ray): g27r mean 9.0, 95th percentile 12.6, max 44 (78 of 19,489 samples
+beyond 20, at open stair sides and wells facing a far wall); free-form fixture mean 9.5, p95 11.2, max 47 (24 of 3,557
+beyond 20, all at the open side of the stair top); two-storey mean 9.5, p95 9.7. `edge_margin` is 8, so the expected
+distance is 8 plus the thickness of the sampling.
+
+Free-form fixture (`fixtures/freeform`: the two-storey level rotated 30 degrees, plus a room with a 45-degree wall and a
+16-sided pillar of radius 48 at x 1620, y 230): 1,100 areas, edge counts 3 to 14, every one of 5,052 links one exactly
+shared edge, every area convex, `iwz_emitcheck check` 0 errors and 1 warning (the room is an island: it has its own seed),
+the bottom seed reaches the whole top floor, no corner within 47 of the pillar axis or within 7 of the wall. Without `solid_check` the interior of the pillar was walkable.
+Round-1 data (quads at 32 units) is kept in the git history of this page.

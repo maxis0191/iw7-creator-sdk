@@ -1,32 +1,20 @@
 #!/usr/bin/env python3
-"""Navmesh from collision triangles, with any number of floors, in the engine's own graph format (navfmt.py).
+"""Navmesh from collision triangles, with any number of floors and free-form geometry, in the engine's own graph format
+(navfmt.py). Areas are convex polygons of 3 to 14 corners that follow the real edge of the walkable surface; every link is
+one exactly shared edge with equal corner heights. Details and measurements: docs/NAVMESH.md.
 
     from navgen import generate
-    data, report = generate(tris, cell=32, agent_height=72, agent_radius=15, step=18, max_slope_deg=45, seeds=[...])
+    data, report = generate(tris, cell=16, agent_height=72, step=18, max_slope_deg=45, edge_margin=8, seeds=[...])
 
-`tris` is anything numpy reads as (N, 3, 3) game units (collision triangles: a floor faces up, a ceiling down; the
-soup does not have to be closed). `data` is a bare navgraph.bin (the resource the map compiler reads). `report` is a
-dict of counts (see below); a seed with no navigation near it is reported in `report['seed_problems']`, never
-silently dropped.
+`tris` is anything numpy reads as (N, 3, 3) game units (collision triangles: a floor faces up, a ceiling down, solids
+closed). `data` is a bare navgraph.bin (the resource the map compiler reads). `report` is a dict of counts; a seed with no
+navigation near it is reported in `report['seed_problems']`, never silently dropped. `boundary_gap(tris, data)` measures
+the distance from the nav edge to the collision wall.
 
-How it works (a Recast-style heightfield written for this format, no Recast code):
-  1. every triangle is sampled with points on a lattice (4 units on walls, 5.6 on floors); the points are binned into
-     columns of `res` units (8 by default) on a grid aligned to `cell`;
-  2. in each column the points are merged into solid spans (gap <= res); a span is a floor when its top is an
-     up-facing triangle whose slope is under `max_slope_deg`, and when the next span above is at least
-     `agent_height` higher (headroom);
-  3. floors of neighbouring columns are linked when they differ by at most `step`, with the headroom of both kept;
-     floors within `agent_radius` of a wall, a drop or a missing link are eroded (distance measured on the links);
-  4. what is left is grouped in connected floor layers; each `cell` x `cell` square holds at most one area per layer
-     (a quad) when at least `min_cover` of its columns are floor, so a floor can lie over another floor;
-  5. the corner heights of a quad come from a least-squares plane through its columns, then every corner is
-     averaged with the corners of the same layer within one `step` at the same point, so linked quads share their
-     edge exactly (the engine climbs only along such edges); links are the pairs of quads joined by linked columns;
-  6. areas not connected to any seed are dropped (when seeds are given), the kd tree is built by the stock rule.
-
-report keys: tris, tris_skipped, columns, spans, floor_spans, eroded, areas, cells, stacked_cells (squares with more
-than one area), components, layers_z (rounded floor heights with their area counts), links, dropped_unreachable,
-seed_problems, params. With detail=True also 'cells': one dict per area (i, j, z, corners, links).
+Pipeline: sample the triangles into 8-unit columns; spans, floors (slope, headroom, not inside a closed solid); distance of
+every floor span to the edge of its surface along the links; lattice of `cell` units with one node per floor level;
+marching squares at `edge_margin` per cell and level; greedy convex merge up to `max_edges` corners, planar within
+`plane_tol`; links by shared vertices; seeds drop unreachable areas; kd tree by the stock rule.
 """
 import argparse
 import collections
@@ -700,32 +688,42 @@ def load_triangles(path):
     return np.array(iwz_emitcheck.load_tris(path), dtype=np.float64)
 
 
-def cells_of(path, cell=32.0):
-    """{(i, j, k): z} for a navgraph (k numbers the areas of one column from the lowest)."""
-    gr = navfmt.read_file(path)
-    col = collections.defaultdict(list)
-    for a in gr.areas:
-        col[(int(math.floor(a.centre[0] / cell)), int(math.floor(a.centre[1] / cell)))].append(a.centre[2])
-    return {k: sorted(v) for k, v in col.items()}
+def compare(a_path, b_path, step=16.0, zones=None, tol=24.0):
+    """Floor area of navgraph a that graph b does not cover and the reverse, in 16-unit samples (area = count * step^2),
+    by zone when a layout's zones are given. A sample is covered when b has an area over the same x, y at a height
+    within `tol`."""
+    import iwz_emitcheck as ec
+    A, B = ec.load_nav(a_path), ec.load_nav(b_path)
+    NA, NB = ec.Nav(A), ec.Nav(B)
 
+    def samples(areas, nav):
+        for k, ar in areas.items():
+            x0, x1, y0, y1 = ar['bb'] if 'bb' in ar else (None,) * 4
+            xs = [c[0] for c in ar['corners']]
+            ys = [c[1] for c in ar['corners']]
+            gx0, gx1, gy0, gy1 = min(xs), max(xs), min(ys), max(ys)
+            x = (math.floor(gx0 / step) + 0.5) * step
+            while x < gx1:
+                y = (math.floor(gy0 / step) + 0.5) * step
+                while y < gy1:
+                    if ec._inside(x, y, ar['corners']) if len(ar['corners']) != 4 else True:
+                        if gx0 <= x <= gx1 and gy0 <= y <= gy1:
+                            yield x, y, nav.z_at(k, x, y)
+                    y += step
+                x += step
 
-def compare(a_path, b_path, cell=32.0, zones=None, tol=24.0):
-    """Cells in a and not in b (same column, no area within `tol` in z) and the reverse; by zone when given."""
-    A, B = cells_of(a_path, cell), cells_of(b_path, cell)
-
-    def only(X, Y):
+    def only(src, srcnav, dst):
         out = []
-        for k, zs in X.items():
-            for z in zs:
-                if not any(abs(z - y) <= tol for y in Y.get(k, ())):
-                    out.append((k, z))
+        for x, y, z in samples(src, srcnav):
+            if dst.at(x, y, z, tol) is None:
+                out.append((x, y, z))
         return out
-    oa, ob = only(A, B), only(B, A)
-    res = {'a_areas': sum(len(v) for v in A.values()), 'b_areas': sum(len(v) for v in B.values()),
-           'only_in_a': len(oa), 'only_in_b': len(ob)}
+    oa, ob = only(A, NA, NB), only(B, NB, NA)
+    res = {'a_areas': len(A), 'b_areas': len(B), 'a_only_area': int(len(oa) * step * step),
+           'b_only_area': int(len(ob) * step * step),
+           'a_total_area': int(sum(1 for _ in samples(A, NA)) * step * step)}
     if zones:
-        def where(k, z):
-            x, y = (k[0] + 0.5) * cell, (k[1] + 0.5) * cell
+        def where(x, y, z):
             best = None
             for name, zn in zones.items():
                 b = zn.get('box')
@@ -734,8 +732,8 @@ def compare(a_path, b_path, cell=32.0, zones=None, tol=24.0):
                     if best is None or vol < best[0]:
                         best = (vol, name)
             return best[1] if best else 'outside'
-        res['only_in_a_by_zone'] = dict(collections.Counter(where(k, z) for k, z in oa))
-        res['only_in_b_by_zone'] = dict(collections.Counter(where(k, z) for k, z in ob))
+        res['a_only_by_zone'] = {k: v * int(step * step) for k, v in collections.Counter(where(*p) for p in oa).items()}
+        res['b_only_by_zone'] = {k: v * int(step * step) for k, v in collections.Counter(where(*p) for p in ob).items()}
     return res
 
 

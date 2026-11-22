@@ -30,7 +30,7 @@ records (`iw7-paris-server`: `ops/iwzmap/`, `tests/fixtures/iwzmap_*`,
 | `preview/` | look preview in Blender without a map build: `iwz_preview_render.py render` loads an emitted source (world, baked lightmap, real textures, LOD0 props, overlays) and renders views in ~0.4 s each; `calibrate` fits one camera and one exposure against engine frames ([preview/README.md](preview/README.md)) |
 | `tome_read.py` | reads an Umbra format-20 tome header |
 | `tome_cull.py` | the generated map's culling data: per-prop cull distances by size, a check of the tome against every door sightline before the zone step, and the game's depth of door captures ([CULLING](../../docs/CULLING.md)) |
-| `navfmt.py`, `navgen.py` (+ `test_navgen.py`, `fixtures/twostorey/`) | bfx NavGraph reader/writer (byte-identical round trip) and a navmesh generator from collision triangles with any number of floors ([NAVMESH](../../docs/NAVMESH.md)) |
+| `navfmt.py`, `navgen.py` (+ `test_navgen.py`, `fixtures/twostorey/`, `fixtures/freeform/`) | bfx NavGraph reader/writer (byte-identical round trip) and a navmesh generator from collision triangles: any number of floors, any angle, convex N-gon areas ([NAVMESH](../../docs/NAVMESH.md)) |
 | `iwz_emitcheck.py` | offline gate on an emit: collision, nav, links, stairs, spawners, routes, build-to-build diff |
 | `iwz_zonecheck.py` | offline gate between "emitted" and "packed": everything built is listed, present in the source tree, and the compiled file is newer than its sources |
 | `iwz_probe_forensics.py` | recorded probe logs to per-zombie classes, verdicts, trust flags, flaky cases, hotspots |

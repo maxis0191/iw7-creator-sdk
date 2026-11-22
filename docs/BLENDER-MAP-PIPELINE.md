@@ -61,3 +61,5 @@ causes are a per-view limit on runtime lights in the engine, or a bank that did 
 
 - 22 Nov 2026: plan written; L, N, E started.
 - 22 Nov 2026, N: `navfmt.py` + `navgen.py` built and proven offline ([NAVMESH](NAVMESH.md)): the stock graph has N-gons and stacked floors, kd splits on z; the generator writes quads on any number of floors. g27r regenerated from its collision: 10,832 areas (shipped 10,262), emitcheck 1 error; two-storey fixture `tools-source/iwzmap/fixtures/twostorey` passes emitcheck, route bottom to top 1,403 units. Not yet proven in game (lead, Forge).
+- 22 Nov 2026, N round 2: the generator is edge-accurate on free-form geometry (no grid): convex polygon areas from the contour, shared-edge links, closed-solid check. g27r: 3,871 areas (shipped 10,262, stock cp_zmb 2,865), emitcheck 3 errors (1 floating cell, 2 well-foot samples), `reach` 51 of 51; fixtures `twostorey` and `freeform` (30 degrees, 45-degree wall, pillar) 0 errors. Test copy of g27r with the generated graph: `IW7-Runtime\iwz-blend
+avtest_g27r`. `iwz_emitcheck` reads N-gon graphs. Not proven in game.
