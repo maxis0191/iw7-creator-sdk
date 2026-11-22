@@ -87,6 +87,20 @@ Contract of the emit folder: [IWZ-EMIT-CONTRACT.md](IWZ-EMIT-CONTRACT.md). Autho
 ## State
 
 - 22 Nov 2026: plan written; L, N, E started.
+
+- 22 Nov 2026, first map authored in Blender played in IW7 (lead, Forge, compressed time): testmap1 (two ground rooms, a door,
+  a stair to an upper floor over room A) built by `build-blend.ps1` in 184 s. Passed in game: the player climbs the stair,
+  zombies come down it, door charges 750, power, Up 'N Atoms, wall buy, rounds spawn from the map's own spawners and
+  volumes (`blend_t1_rounds` 2/2, `blend_t1_accept` 7/9). Failed: zombies did not climb to the upper floor (a 19-unit step
+  in the nav at the stair; the fix is the stock clip ramp over stairs, workstream E), and the closed door let the player
+  through (the generic level script `cp_iwz3.gsc` hid the door blockers, which removes their collision: fixed).
+- 22 Nov 2026, in-game diagnosis (lead, Forge, `ops/gamelab/lib/navprobe.gsc` on server main): the engine reads our generated
+  graphs (point lookup per floor correct: ground 0, upper 136, ramp 73.7) and the round-1 grid graph moves zombies to the player
+  on the floor in 12 s, as Station Zero does; on the round-2/3 POLYGON graph zombies get the player as enemy and a path goal but do
+  not walk to it (36 s, goal inside their own area). Open, workstream N round 4: reproduce stock area rules (collinear corners,
+  centre, radius, cost, size) and a quads mode. Stairs: ramp lifted 2 over the nosings and side clip walls on the stair (done);
+  the climb is not proven until the area problem is solved. One server stall (game time stopped mid-chase, no dump) on poly2,
+  not reproduced in 3 later runs.
 - 22 Nov 2026: E built (add-on, exporter, importer, generic build script, contract); round trip of g27r measured; testmap1 exported. Waits on: navgen merged (N), the lead's first zone build of testmap1 (P).
 - 22 Nov 2026 (E, after the first build of testmap1): stairs need the stock clip ramp. `iwz_stair` on the step meshes makes `blend2iwz` add the nosing ramp sheet (testmap1: 2 triangles, 25.2 degrees, 43,288,0 to 332,288,136, 112 wide); an export with two linked navigation cells more than 18 apart is refused (without the ramp: 101.7 to 120.5 at (304, 304), the step `iwz_emitcheck reach` flagged).
 - 22 Nov 2026 (E, round 3): `blend_core` adapted to the round-2 polygon navgen (`IWZ_NAVGEN_DIR`, navgraph.bin unchanged, lattice cells and area links derived from the polygons; the over-18 refusal judges the height difference at each shared edge). testmap1 `emit_poly`: 212 areas, 812 links, 544 plan cells, `iwz_emitcheck check` (navgen branch) 0 errors, `reach --all-spawners` 6 of 6.
@@ -95,4 +109,23 @@ Contract of the emit folder: [IWZ-EMIT-CONTRACT.md](IWZ-EMIT-CONTRACT.md). Autho
 - 22 Nov 2026, N round 2: the generator is edge-accurate on free-form geometry (no grid): convex polygon areas from the contour, shared-edge links, closed-solid check. g27r: 3,871 areas (shipped 10,262, stock cp_zmb 2,865), emitcheck 3 errors (1 floating cell, 2 well-foot samples), `reach` 51 of 51; fixtures `twostorey` and `freeform` (30 degrees, 45-degree wall, pillar) 0 errors. Test copy of g27r with the generated graph: `IW7-Runtime\iwz-blend
 avtest_g27r`. `iwz_emitcheck` reads N-gon graphs. Not proven in game.
 - 22 Nov 2026 (E, round 4): stairs get side clip walls on open sides and a foot clearance check; testmap1's stair moved 32 in +x (foot 75 from the wall). `emit_poly2`: ramp areas link only along the ramp and to the foot, none to the floor beside.
-- 22 Nov 2026 (E, round 5): stairs get clip rails (floor to floor + 42, 4 thick, on the floor side) along every slab edge that borders the stair from above with the stair more than 18 below; the landing edge stays open; the side wall is raised to max(ramp + 64, landing + 42). testmap1 `emit_final2`.
+
+## Where it stands (22 Nov 2026, evening)
+
+Merged to main at `b783b01` (checks 25/25): the add-on, `blend2iwz`, the importer, `build-blend.ps1`, the emit contract,
+stair ramps (2 over the nosings) and side clip walls, `navgen` with stacked floors and `navfmt`.
+
+Proven in game (Forge, compressed time, `ops/gamelab/lib/navprobe.gsc` on server main for the probes), Blender test map 1:
+the player climbs the stair; zombies climb it 4/4 and come down it; the closed door blocks, charges 750 and opens; power,
+perk, wall buy; rounds spawn from the map's spawners and volumes; floor chases reach the player in 12 s. Navigation must be
+`areas='quads'` (the exporter default): the polygon graphs (corners on straight edges in 40% of areas, 2.8% in stock) made
+the engine path but not move agents.
+
+Stairwell guard rails (E round 5): every floor edge over a stair footprint with a drop over 18 gets a solid rail 42 high, and the
+stair side wall rises to max(ramp + 64, landing + 42) from the ramp foot. Measured on this export, six runs (four uncached):
+5 passed 9/9, one 8/9; climbs 23 of 24 zombies, descents 24 of 24. The one miss: a zombie wedged at the side wall's end by the
+ramp foot. Two variants measured worse and were reverted: the wall started where the ramp is 18 up (zombies stepped onto the ramp
+off the navigation: 1 to 3 of 4 climbed), and the wall extended 24 onto the floor before the foot (it cut the upper floor off the
+navigation). The preview's lit state
+(auto exposure, specular, interpolated light grid) and the control-room doorway cause, workstream L. Not merged: the
+preview lighting branch `claude/iwz-preview-light`.
