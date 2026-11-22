@@ -60,6 +60,9 @@ if($Bake){
 }
 $layout=Get-Content "$Src\layout.json" -Raw | ConvertFrom-Json
 $hasDoors=(@($layout.doors).Count -gt 0)
+# Deadeye Dewdrops is a cp_disco machine relocated from a parked map scriptable: only when the map places one
+$hasDeadeye=(@($layout.interactions | Where-Object { $_.kind -eq 'perk_machine_deadeye' }).Count -gt 0)
+if(-not $hasDeadeye){ $DeadeyeKitDump=''; $DeadeyeScriptable='' }
 # the perk module is part of every map built from cp_iwz3.gsc; its four new machines are kept as in build-sz2.ps1
 $perkKit=@(); $KitDumps=@(); $KitModels=''
 if($PerkMachines -and (Test-Path $PerkMachines)){ $perkKit+='perks:iwz_perk_machine_bakers,perks:iwz_perk_machine_voyage,perks:iwz_perk_machine_grudge,perks:iwz_perk_machine_double'; $KitDumps+="perks=$PerkMachines" }
