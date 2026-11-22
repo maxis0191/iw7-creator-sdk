@@ -75,7 +75,7 @@ the runtime lights in the preview, and their exposure is auto (see below).
   (`c672eba77dc0`, a vignette weighted sum of log luminance) through the vision's Dark / Mid / Light EV table, adapted slowly (`tonemapAdaptSpeed 0.01`).
   Dark frames: the 15 `dark_*` frames fit a mean exposure of 2^-3.01 (per frame spread 0.75 stops) against the stock constants, which is the module's dark vision
   (`tonemapAuto 0`, `tonemapMaxExposure -3`, `darkness/NOTES.md`). The preview uses `--ev -3`.
-* **Lit frames** have an auto exposure that depends on the frame: it is modelled with one global parameter (see the table).
+* **Lit frames** have an auto exposure that depends on the frame; it is not modelled: each frame gets the gain that matches its median luminance (see the table).
 
 ```powershell
 python -B iwz_preview_render.py light  --src <emit src> --plan <plan> --frames <engine frames> --out <dir> --prefix dark --power off --ev -3   # dark state
@@ -181,7 +181,7 @@ First round (22 Nov 2026, superseded by the table below), run on the g27r emit (
   `bake/lm_measure.py` grid (118 to 150 degrees) uses another fov convention and does not apply here.
 * **Exposure**: one global pair, display = clip(k * radiance) ^ p with k = 0.169, p = 0.500 (p sits on the lower end of its [0.5, 1] grid).
   No single curve reconciles the frames: the engine's mean luminance varies much less between views than the lightmap predicts
-  (auto exposure and lighting terms the preview does not have), so the per-frame luminance ratio keeps a spread of 0.42 to 3.4 after the
+  (the runtime lights the preview did not have, and the engine's auto exposure; this explanation is from the withdrawn lit-frame fit), so the per-frame luminance ratio keeps a spread of 0.42 to 3.4 after the
   fit (log rms 0.572, was 1.144 with exposure 1). Use the luminance column as "how far is this view's brightness from the engine",
   never as a match.
 * Edge IoU (Sobel of the blurred log luminance, strongest 6 % of the unmasked pixels, 3 px tolerance): mean 0.270 before, 0.547 after.
