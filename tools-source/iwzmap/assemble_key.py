@@ -12,7 +12,7 @@ tree (zonetool/<map>/.iwz_modules.key, written only when the whole assembly succ
     --tree D       content hash of every file below D (the module folders: perks, darkness, fx, audio; small trees)
     --manifest D   path + size + modification time of every file below D (the stock dumps: 136k files, content hashing them
                    would cost what the assembly costs). A re-dump or a replaced file changes size or time. Listing the files
-                   is the cost: 12 s with 8 threads, 25 s with one, on the development machine (23 Nov 2026, warm).
+                   is the cost: 12 s with 8 threads, 25 s with one, on the development machine (22 Nov 2026, warm).
     --stamp D      the quick form of --manifest for a dump that is frozen reference data (see stamp_hash): milliseconds
     --text T       any string: arguments, switches, environment values (IWZ_FULL_STOCK, IWZ_KEEP_STOCK_REFS)
 
@@ -91,9 +91,10 @@ def manifest_hash(root):
 
 def stamp_hash(root):
     """Quick stand-in for manifest_hash on a dump that is frozen reference data: the files directly in root (a dump's csv is
-    rewritten by every dump run) and the name and modification time of every directory directly in root (a file replaced below
-    it changes that directory's time). A file overwritten in place below it is not seen here; the hard links of a kept tree
-    see its new bytes anyway, so for the stock links that case is harmless."""
+    rewritten by every dump run) and the name and modification time of every directory directly in root. A file added, removed or
+    replaced directly in such a directory moves its time; one a level deeper (materials/mo/...) does not, and neither does a file
+    overwritten in place (harmless for the stock links of a kept tree: a hard link sees the new bytes). Only right for dumps
+    nobody touches."""
     h = hashlib.sha256()
     with os.scandir(root) as it:
         entries = sorted(it, key=lambda e: e.name)

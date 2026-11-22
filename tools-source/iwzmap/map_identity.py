@@ -3,10 +3,11 @@
 usage: map_identity.py resolve <emit folder> [--map NAME]            print the map name to build (layout.json "map" unless --map)
        map_identity.py check NAME                                     exit 0 / 1: may this name be a usermap
        map_identity.py arena NAME TITLE OUT [--description TEXT]      write NAME.arena (the stock arena text format)
+       map_identity.py validate NAME TITLE [--description TEXT]      exit 0 / 1: name, title and description are all acceptable
        map_identity.py title NAME                                     the title a map gets when none is given
        map_identity.py strings NAME TITLE BASE.json OUT.json          BASE's strings plus IWZ_MAPNAME_<NAME> = TITLE (the map's own localized title for scripts)
 
-Limits come from the client (iw7-mod src/client/component/arena.cpp, read 23 Nov 2026):
+Limits come from the client (iw7-mod src/client/component/arena.cpp, read 22 Nov 2026):
   * a loadname starting with cp_ is what makes a usermap a Zombies map (MAP_INFO_ALIENS);
   * map_info fields are fixed: loadname 16 bytes (name at most 15 characters), longname and description 32 bytes
     (usermaps turn them into literals with a 0x1F prefix: at most 30 characters), mapimage and mapvoteimage 32 bytes
@@ -124,6 +125,13 @@ def main(argv):
             check_name(rest[0])
         elif cmd == 'title':
             print(default_title(rest[0]))
+        elif cmd == 'validate':
+            desc = 'An IWZ custom map'
+            if '--description' in rest:
+                i = rest.index('--description')
+                desc = rest[i + 1]
+                rest = rest[:i] + rest[i + 2:]
+            arena_text(rest[0], rest[1], desc)
         elif cmd == 'strings':
             name, title, base, out = rest[:4]
             with open(out, 'w', encoding='utf-8') as f:

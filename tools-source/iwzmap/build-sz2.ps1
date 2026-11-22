@@ -29,6 +29,7 @@ param(
   [string]$DeadeyeScriptable=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\ztwork-p1\dump\cp_disco\scriptable\zm_perk_machine_deadeye_sign'),  # P1: zonetool -dumpzonetypes cp_disco scriptable
   [switch]$Incremental,                                                                              # no effect: incremental assembly is the default (kept for old command lines)
   [switch]$QuickKey,                                                                                 # key the stock dumps by a stamp (frozen reference dumps: milliseconds) instead of listing every file (about 15 s)
+  [switch]$TrustModules,                                                                             # incremental assembly even with the audio, effects, darkness or foreign kit modules on (never measured against a full one: ff_compare first)
   [switch]$FullAssemble)                                                                             # assemble everything: ignore the kept tree even when its key matches
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
@@ -36,6 +37,7 @@ $ErrorActionPreference='Stop'
 $S=$PSScriptRoot; $W=$Work; $D=$TemplateDump
 # P1 perk machines, always part of the map: the four authored machines and Deadeye's own cp_disco machine (its two models
 # here; its scriptable by perks\add_deadeye_machine.py after the kit import)
+$userKit=[bool]($KitModels -or $KitJson)       # foreign kit models asked for by the caller (the perk kit below is added to $KitModels after this)
 $perkKit=@()
 if($PerkMachines -and (Test-Path $PerkMachines)){ $perkKit+='perks:iwz_perk_machine_bakers,perks:iwz_perk_machine_voyage,perks:iwz_perk_machine_grudge,perks:iwz_perk_machine_double'; $KitDumps=@($KitDumps)+"perks=$PerkMachines" }
 if($DeadeyeKitDump -and (Test-Path "$DeadeyeKitDump\cp_disco\xmodel")){ $perkKit+='cp_disco:cp_disco_perk_dewdrops,cp_disco:cp_disco_perk_dewdrops_off'; $KitDumps=@($KitDumps)+"cp_disco=$DeadeyeKitDump\cp_disco;$DeadeyeKitDump\techsets_cp_disco" }
@@ -113,6 +115,11 @@ Mark 'key'
 $keyFile="$W\zonetool\$Map\.iwz_modules.key"
 $inc=@()
 $kept=Test-Path -LiteralPath $keyFile
+# Read and found idempotent over a kept tree: the perks module (scripts, icons, bit table), the Deadeye machine, the perk sounds, the
+# localized strings, the perk kit import. Not shown yet: audio, effects, darkness and a foreign kit were never in a measured incremental
+# run, so with one of them on the assembly is full until the lead has compared a full and an incremental zone (ff_compare.py).
+$unproven=@(); if($AudioSdk){ $unproven+='audio' }; if($Darkness){ $unproven+='darkness' }; if($FxImport){ $unproven+='effects' }; if($userKit){ $unproven+='foreign kit models' }
+if($unproven -and -not $TrustModules -and -not $FullAssemble){ $FullAssemble=[switch]$true; "incremental assembly is not yet proven with the $($unproven -join ', ') module(s): assembling everything (-TrustModules after an ff_compare of a full and an incremental zone)" }
 if($kept -and -not $FullAssemble -and ((Get-Content -LiteralPath $keyFile -Raw) -eq $modKey)){ $inc=@('--incremental'); "incremental assembly: the kept tree was made from the same inputs (key $($modKey.Substring(0,12)))" }
 elseif(Test-Path "$W\zonetool\$Map"){
   $why=if($FullAssemble){ '-FullAssemble' } elseif($kept){ 'an input of the assembly changed' } else { 'no finished assembly to keep' }

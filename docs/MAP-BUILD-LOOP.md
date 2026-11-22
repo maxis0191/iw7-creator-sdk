@@ -1,6 +1,6 @@
 # Map build loop: stages, keys, the base-zone question, a map of its own
 
-Written 23 Nov 2026 for lines A6 (loop) and A7 (a map of its own) of [MAP-BUILDER-FINAL](MAP-BUILDER-FINAL.md) and tool line T2.
+Written 22 Nov 2026 for lines A6 (loop) and A7 (a map of its own) of [MAP-BUILDER-FINAL](MAP-BUILDER-FINAL.md) and tool line T2.
 Everything below is read from the scripts, the build logs under `IW7-Runtime` and the engine logs of real sessions. **Nothing in
 the "after" columns was run by the author of this page**: the lead runs every build. Measured and unmeasured are marked.
 
@@ -12,7 +12,7 @@ runs the gates, an optional bake, then the same stages. Seconds are the `build.j
 | Stage | Reads | Invalidated by | Seconds, measured |
 | --- | --- | --- | --- |
 | gates (`iwz_emitcheck check` and `reach`, `iwzmap_ents_lint`; `build-blend` only) | the emit folder | any emit change | not timed in any log |
-| bake (`bake/lmbake.py`; Station Zero, `-Bake` in `build-blend`) | `world.bin`, the light list, bake arguments and bake tool files (stage cache `bake`, `stage_cache.py`) | a change of the render world or the lights; never an entity, script, collision or nav change | 154 s (g27r, lead, 23 Nov); `build-g.ps1` restores it from the stage cache when the key matches |
+| bake (`bake/lmbake.py`; Station Zero, `-Bake` in `build-blend`) | `world.bin`, the light list, bake arguments and bake tool files (stage cache `bake`, `stage_cache.py`) | a change of the render world or the lights; never an entity, script, collision or nav change | 154 s (g27r, measured by the lead, 22 Nov); `build-g.ps1` restores it from the stage cache when the key matches |
 | compile (`zonetool -iwzcompile`) | the emit folder, the compiler, the template map `cp_zmb_tpl` | any emit change (`-ReuseCompile` skips it for the same `-Src`) | 6 to 7 s (blend, 8 builds), 7 to 22 s (Station Zero, 17 builds); a longer lap is the wait for the machine's build slot |
 | volume check | the compiled map and `plan.json` | the compile | inside the compile lap |
 | **assembly** (`assemble.py`, `sz2_assemble.py`, then the modules: perks, perk sounds, localize, kit, effects, audio, darkness) | the generated world (`dump/<map>`), 5 stock dumps (136,079 files), module sources and arguments | see the key below | **118 to 147 s** (blend, 8 builds, `incremental: false`); **166 to 447 s** (Station Zero, 22 builds, all `incremental: false`; g27r 272 s). The laps never split link from modules: the new `build.json` carries `assemble_parts` `{key, link, modules}` |
@@ -45,28 +45,38 @@ deleted before the assembly starts changing the tree, so a failed assembly leave
 removes the tree and assembles everything, and says why (`an input of the assembly changed`, `no finished assembly to keep`,
 `-FullAssemble`).
 
-| Key mode | Cost (136,079 files, measured 23 Nov 2026, warm) | Sees | Does not see |
+| Key mode | Cost (136,079 files, measured 22 Nov 2026, warm) | Sees | Does not see |
 | --- | --- | --- | --- |
 | default: `--manifest` | **12 to 25 s** (15.7 s typical; 8 threads; the file listing is the cost, not hashing) | a dump file replaced, grown, added or removed | a file overwritten in place with the same size and time (a re-dump that preserves times) |
-| `-QuickKey`: `--stamp` | **0.0 s** | every dump's top-level files (its csv is rewritten by every dump run) and the time of every directory directly below it (a file replaced below it moves that time) | a file overwritten in place deeper down: harmless for the stock links, because a hard link sees the new bytes |
+| `-QuickKey`: `--stamp` | **0.0 s** | every top-level file of a dump (its csv is rewritten by every dump run) and the time of every folder directly in the dump (a file added, removed or replaced **directly** in `xmodel/`, `images/`, `xanim/`... moves that time) | a file replaced one level deeper (`materials/mo/...`, `techsets/...`), and a file overwritten in place anywhere (that second case is harmless for the stock links: a hard link sees the new bytes). So `-QuickKey` is only right for dumps nobody touches; the thorough key is the default for that reason |
 
-`-QuickKey` is for the frozen reference dumps of `iwz-map-ref-a`; the default is the thorough one.
+`-QuickKey` is for the frozen reference dumps of `iwz-map-ref-a` (a re-dump rewrites the dump's csv, which the stamp sees); the default is the thorough one. The unit test for the stamp fakes the folder time, so it proves the arithmetic, not the filesystem behaviour.
 
-**Proof on a fake tree** (`tests/test_map_build_loop.py`, 20 tests, no game): every input above moves the key (compiler, `assemble.py`,
+**Proof on a fake tree** (`tests/test_map_build_loop.py`, 22 tests, no game; `Get-AssembleKey.ps1` was also run once on the real dumps and its key equals the direct `python` call, multi-line argument included): every input above moves the key (compiler, `assemble.py`,
 a module source, a new module file, a dump file of another size, a same-size file with a new time, a new file, a removed file,
 arguments, dump order); a missing input fails; and `AssembleTreeTest` runs a full assembly, changes the generated world (one file
 changed, one added, one removed, one that shadowed a stock file removed), runs `--incremental`, and compares the tree and the zone
 csv with a fresh full assembly of the same world: identical; a sentinel file proves the incremental run kept the tree; other dumps
-force a full assembly. Not proven by a run: the **modules** over a kept tree on the real dumps. They were read for idempotence
-(`add_perks`, `add_perk_sounds`, `add_localize`, `add_deadeye_machine` remove before they write and skip what is already in the
-bank; `kit_import` keeps an existing link; `fx_import` reads the kept `ncs_efx_level.json` and only appends names that are missing,
-so a rerun leaves it equal) and the README measured full against incremental with the audio module (`ff_compare.py`: same content,
-0 content bytes) on 11 Nov. Kit, effects and darkness were never in a measured incremental run. **The lead's check** (once, on the real
-Blender map, after two builds of the same emit):
+force a full assembly.
+
+**The modules over a kept tree.** Read end to end for the question "does it take its source from the pristine dump or from the file it
+wrote last time?": `add_perks.py` (scripts and icons are rewritten from `perks/` and the icon folder; the perk bit table starts from
+the zone's own copy and appends only rows it does not have, so a rerun appends nothing), `add_deadeye_machine.py` (reads the dump's
+scriptable and the *compiled* map ents, which an incremental assembly links again from the pristine compile output before the module
+runs), `add_perk_sounds.py` (excludes its own alias csv when it asks what the bank already holds), `add_localize.py` (strings come from
+the dumps and the zone's scripts), `kit_import.py` (sources are the kit dumps; an existing file is kept, which is the same file). All
+five remove before they write. **Not read to that depth, so not trusted: audio, effects (`fx_import` reads the kept
+`ncs_efx_level.json` and appends), darkness, and a foreign kit.** `build-sz2.ps1` assembles fully when any of them is on, and says so;
+so a Station Zero build with `-Kit`, `-Fx` or `-Audio` stays a full assembly for now. **The lead's check** (once, on the real Blender
+map, after two builds of the same emit; it tests the perk modules, which every build has):
 
 ```
 python -I ff_compare.py <um_first>\cp_blend_a.ff <um_second>\cp_blend_a.ff      # build 1 full, build 2 incremental: exit 0 expected
 ```
+
+(For a Station Zero build with kit, effects, audio or darkness the same comparison on that build, then `-TrustModules` lifts the rule. The README measured full against
+incremental with the audio module on 11 Nov, prefab-room core, `ff_compare`: same content, 0 content bytes; that build did not have the
+newer modules.)
 
 What a **geometry-only rebuild** now runs (a changed section, same kit, same dumps, same compiler): gates (blend) + compile 6 to 7 s +
 key 15.7 s (0 with `-QuickKey`) + `assemble.py` incremental (relinks only the generated world: README: 1 s) + `sz2_assemble.py` +
@@ -83,8 +93,9 @@ reach the 20 s of T2 the stock content must leave the map's zone (next section).
    (build time; it has no meaning at run time). The row that makes a zone small is `ignore,<zone>` (`parse_csv_file_ignore`,
    `zonetool.cpp:871`): every `(type, name)` row of that zone's csv goes into `ignore_assets`, and
    `zone_interface::add_asset_of_type` (`zone.cpp:576`) writes an asset of that set as a reference (`,name`) instead of its data. It
-   runs inside `ADD_ASSET` before `load_depending`, so a dependency a map asset pulls in is a reference too. This is how the stock
-   patch zones refer to the zone they patch.
+   runs inside `ADD_ASSET` before `load_depending`, so a dependency a map asset pulls in is a reference too. That is how the stock
+   patch zones refer to the zone they patch (inferred from the comment in `assemble.py` about `patch_cp_zmb`; the stock zone format was
+   not read for this page).
 2. **The csv splits cleanly.** `split_zone.py` (an experiment tool, *not wired into any build script*) on Station Zero's real csv:
    base zone **29,028 rows** (20,073 full stock rows + 8,955 references), map zone **9,020 rows = 65 full rows of its own + the same
    8,955 reference rows** (references cost no data) + `ignore,<base>`. The 65: 23 `netconststrings` lists, 9 map-named rawfiles
@@ -137,20 +148,27 @@ python -I split_zone.py $W cp_blend_a --base cp_blend_a_load --junction `
   --stock-csv $D\patch_cp_zmb\patch_cp_zmb.csv --stock-csv $D\cp_zmb\cp_zmb.csv --stock-csv $D\techsets_cp_zmb\techsets_cp_zmb.csv `
   --stock-csv $D\techsets_global_cp\techsets_global_cp.csv --stock-csv $D\techsets_global\techsets_global.csv
 #    expected: "split_zone: 29028 rows to cp_blend_a_load, 9020 rows stay in cp_blend_a (ignore,cp_blend_a_load first)" (+/- the kit rows of the map)
-# 2. build both zones (under the machine lease, the usual zt.ps1)
-pwsh -File zt.ps1 -Work $W -ZtArgs '-buildzone','cp_blend_a_load' -TimeoutSec 2400 -Owner 'split E1'
-pwsh -File zt.ps1 -Work $W -ZtArgs '-buildzone','cp_blend_a'      -TimeoutSec 2400 -Owner 'split E1'
+# 2. build both zones (zt.ps1 takes the machine lease; -ZtArgs is a string[]: call it from a pwsh session, not with pwsh -File)
+& tools-source\iwzmap\zt.ps1 -Work $W -ZtArgs @('-buildzone','cp_blend_a_load') -TimeoutSec 2400 -Owner 'split E1' -WaitForSlotSeconds 3600
+& tools-source\iwzmap\zt.ps1 -Work $W -ZtArgs @('-buildzone','cp_blend_a')      -TimeoutSec 2400 -Owner 'split E1' -WaitForSlotSeconds 3600
 #    expected: both "Successfully compiled fastfile"; cp_blend_a.ff far smaller than 471 MB (size = the answer to "how small is the map")
 # 3. install both in a second usermap folder, same name, and run the usual local session
 copy $W\zone\cp_blend_a.ff, $W\zone\cp_blend_a_load.ff, the .sabl/.sabs and cp_blend_a.arena into <bench>\usermaps\cp_blend_a\
 ```
 
+**Negative control first (it decides whether a pass means anything):** run the same small `cp_blend_a.ff` in a usermap folder that has **no**
+`cp_blend_a_load.ff`. It must fail (black or missing models, `Could not find` lines, or a crash). The client log of a Station Zero session
+(`a85/qa/g27d-start/run/client.stdout.log`) shows the stock `cp_zmb` zone loaded just before `Starting map: cp_iwz`; if the control passes,
+something other than the base zone is resolving the references (that zone, or the global zones) and E1 proves nothing.
+
 Expected client log lines if it works: `Loading zone cp_blend_a_load`, then `Loading zone cp_blend_a`, **zero** new `Error: Could not
 find ...` lines against the monolithic run's log, the level script loaded (`Loaded custom gsc 'scripts/cp/maps/cp_blend_a/...'`
 lines as before), zombies spawn, the Pack-a-Punch machine draws. Comparing the asset sets is the strict check: `listassetpool` (no
-argument lists the pool numbers; then `listassetpool <xmodel pool> *`, material, image, xanim) in the monolithic and in the split
-run must name the same assets. **Kills it:** the map starts with black or missing models, `Could not find` lines, or the load zone is
-not loaded on a dedicated server (run the same maps on a Forge server cell and read its log for the two `Loading zone` lines).
+argument lists the pool numbers; then `listassetpool <xmodel pool>` with no filter, likewise material, image, xanim; the filter's
+semantics were not read) in the monolithic and in the split run must name the same assets. **Kills it:** the map starts with black or missing models, `Could not find` lines, or the load zone is
+not loaded on a dedicated server: that is the second discriminator, run the same maps on a Forge server cell and read its log for
+the two `Loading zone` lines (the one dedicated log read for this page is a stock `cp_zmb` session, so the dedicated server's handling
+of `_load` is unknown).
 If E1 is killed or only half works (client yes, server no), the client change above is the experiment E2 (a branch of the iw7-mod
 fork; the lead builds and runs it).
 
@@ -193,7 +211,7 @@ assembly key; a map's own build is compile 7 s + a handful of files + a zone ste
 | level script file and its `scripts\cp\maps\<dir>\` calls | emit `cp_iwz.gsc`; `assemble.py` | test: no `maps\cp_iwz\` left |
 | zone csv rows and the work folders `dump/<map>`, `zonetool/<map>`, `zone_source/<map>.csv`, `zone/<map>.ff` | every build script, by `-Map` | tests |
 | `maps/cp/<map>.d3dbsp` world rows, `gfx_map_trzone`, `soundbank <map>.all`, `localize,<map>` | `assemble.py`, `add_perk_sounds.py`, `add_localize.py` | csv test |
-| renamed stock tables (`cp_zmb` in the name), `bl_pc_cp_zmb_zombie.bin`, `vision/*cp_zmb*`, `impactfx`, `streaming_info` | `assemble.py` (the streaming-info name is a null-terminated string behind a type byte, not a length) | stringtable test; the others by code reading |
+| renamed stock tables (`cp_zmb` in the name), `bl_pc_cp_zmb_zombie.bin`, `vision/*cp_zmb*`, `impactfx`, `streaming_info` | `assemble.py` (the streaming-info name is a null-terminated string behind a type byte and an existence byte, not a length: `DUMP_TYPE_STRING = 6`, `assetmanager.hpp:29`, `filesystem.cpp read_string`) | stringtable test; the others by code reading |
 | the content table `<map>_playercash_images.csv` | `content/<map>/` or the `cp_iwz` template | test |
 | game script modules `<map>_<name>.gsc` and the Capsule Post call | `sz_modules.py` (from `layout.json`), `sz2_assemble.py` | existing; refusal test for a mismatching `-Map` |
 | perk module files `scripts/cp/maps/<map>/cp_iwz_perks.gsc` (module names keep the `cp_iwz_` prefix) | `perks/add_perks.py` | level script test |
@@ -201,6 +219,9 @@ assembly key; a map's own build is compile 7 s + a handful of files + a zone ste
 | arena `map`, `longname`, `mapimage`, `mapvoteimage` | `map_identity.py arena` | test |
 | art: `image_<map>`, `image_<map>_vote`, `zmb_poster_<map>`, `mo/iwz_poster_<map>` | `make_art.py`, `build_art.py` | the plate renders (checked once, by running it, not judged) |
 | the net const strings | taken from the compile's own output (`netconststrings/*_level.json`); nothing carries the name | none needed |
+
+**Front end without ZoneTool** (name, title, description, gates; no zone is built): `build-blend.ps1 -Src <emit> -GatesOnly` prints
+`map <name>  title '<title>'` and refuses a bad name or title before anything else runs.
 
 **The two commands for the lead, two maps side by side** (the Blender emits of two scenes whose `iwz_map` is `cp_blend_a` and
 `cp_blend_b`; or one emit exported twice with the name changed):

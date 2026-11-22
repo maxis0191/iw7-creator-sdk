@@ -62,11 +62,14 @@ def classify(lines, stock, map_name):
 
 def split(work, map_name, base, stock_csvs):
     src = os.path.join(work, 'zone_source', map_name + '.csv')
-    lines = open(src, errors='replace').read().splitlines()
-    common, base_rows, own_rows = classify(lines, read_stock(stock_csvs), map_name)
     full = os.path.join(work, 'zone_source', map_name + '.full.csv')
-    if not os.path.exists(full):
-        os.replace(src, full)
+    already = any(l.startswith('ignore,') for l in open(src, errors='replace').read().splitlines()[:4])
+    if already and os.path.exists(full):
+        pass                                # the csv is the result of an earlier split: start from the full copy again
+    else:
+        os.replace(src, full)               # a csv from a new assembly: it becomes the full copy
+    lines = open(full, errors='replace').read().splitlines()
+    common, base_rows, own_rows = classify(lines, read_stock(stock_csvs), map_name)
     write = lambda p, rows: open(p, 'w', newline='\n').write('\n'.join(rows) + '\n')
     head = [l for l in common if l.strip().startswith(('//', '#'))][:1]
     req = [l for l in common if l.strip().startswith('require,')]

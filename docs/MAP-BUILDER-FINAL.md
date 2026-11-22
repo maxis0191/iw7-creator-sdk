@@ -68,4 +68,4 @@ The preview (`tools-source/iwzmap/preview/`) serves composition only: its lit st
 ## State
 
 - 22 Nov 2026: acceptance written; work started.
-- 23 Nov 2026 (build loop worker): one pinned compiler (`machine.ps1 MapCompiler`); incremental assembly by an input key in `build-sz2.ps1` / `build-blend.ps1` (A6 part: no run yet); a Blender map takes its name, arena, title and browser art from the emit (A7 part: no run yet); base-zone split analysed, needs a client change for the product, experiment E1 (load-zone slot, no client change) written for the lead. Details and commands: [MAP-BUILD-LOOP](MAP-BUILD-LOOP.md).
+- 22 Nov 2026 (build loop worker): one pinned compiler (`machine.ps1 MapCompiler`); incremental assembly by an input key in `build-sz2.ps1` / `build-blend.ps1` (A6 part: no run yet); a Blender map takes its name, arena, title and browser art from the emit (A7 part: no run yet); base-zone split analysed, needs a client change for the product, experiment E1 (load-zone slot, no client change) written for the lead. Details and commands: [MAP-BUILD-LOOP](MAP-BUILD-LOOP.md).

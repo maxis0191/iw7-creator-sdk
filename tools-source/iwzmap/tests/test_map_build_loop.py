@@ -361,6 +361,15 @@ class SplitZoneTest(unittest.TestCase):
         self.assertEqual({row for row in full if not row.startswith('//')} - set(base) - set(own), set(), 'no row of the full csv is lost')
         sz.split(self.tmp, 'cp_blend_a', 'iwz_base', [self.stock_csv])
         self.assertEqual(full, self.read('cp_blend_a.full.csv').splitlines(), 'the full copy is never overwritten')
+        self.assertEqual(base, self.read('iwz_base.csv').splitlines(), 'a second run gives the same base csv, not references only')
+        self.assertEqual(own, self.read('cp_blend_a.csv').splitlines(), 'and the same map csv')
+
+    def test_a_new_assembly_replaces_the_full_copy(self):
+        sz.split(self.tmp, 'cp_blend_a', 'iwz_base', [self.stock_csv])
+        write(os.path.join(self.tmp, 'zone_source', 'cp_blend_a.csv'), '// new\nxmodel,gun\nimage,another_custom\n')     # the next build's assembly
+        sz.split(self.tmp, 'cp_blend_a', 'iwz_base', [self.stock_csv])
+        self.assertEqual(self.read('cp_blend_a.full.csv').splitlines(), ['// new', 'xmodel,gun', 'image,another_custom'])
+        self.assertEqual(self.read('iwz_base.csv').splitlines(), ['// new', 'xmodel,gun'])
 
 
 class OneCompilerTest(unittest.TestCase):
@@ -385,6 +394,15 @@ class OneCompilerTest(unittest.TestCase):
             self.assertRegex(t, r'Remove-Item -LiteralPath \$keyFile', name + ': the key goes before the assembly changes the tree')
             self.assertLess(t.index('Remove-Item -LiteralPath $keyFile'), t.index('assemble.py" $W'), name)
             self.assertNotRegex(t, r'if\(\$Incremental -and', name + ' still waits for -Incremental')
+        t = self.text('build-sz2.ps1')
+        for module in ('audio', 'darkness', 'effects', 'foreign kit models'):
+            self.assertIn("$unproven+='%s'" % module, t, 'a module never measured incrementally must force a full assembly')
+        self.assertIn('-not $TrustModules', t)
+
+    def test_build_blend_validates_before_it_builds(self):
+        t = self.text('build-blend.ps1')
+        self.assertLess(t.index('map_identity.py" validate'), t.index('Run-Gate \'emitcheck\''))
+        self.assertLess(t.index('map_identity.py" validate'), t.index('Invoke-Zt'))
 
 
 if __name__ == '__main__':

@@ -60,6 +60,8 @@ if(-not $Title){ $Title=if($layout0.title){ [string]$layout0.title } else { (& $
 $lvl=if(Test-Path "$Src\$Map.gsc"){ "$Src\$Map.gsc" } else { "$Src\cp_iwz.gsc" }       # the exporter always writes cp_iwz.gsc; assemble.py moves its script paths to the map
 if(-not (Test-Path $lvl)){ throw "level script missing: $Src\$Map.gsc or $Src\cp_iwz.gsc" }
 "map $Map  title '$Title'  level script $lvl"
+$vo=& $py -I -B "$S\map_identity.py" validate $Map $Title --description $Description 2>&1       # name, title, description: refused now, not after a zone build
+if($LASTEXITCODE){ throw ($vo -join ' ') }
 Run-Gate 'emitcheck' { & $py -I -B "$S\iwz_emitcheck.py" check $Src }
 Run-Gate 'reach' { & $py -I -B "$S\iwz_emitcheck.py" reach $Src --all-spawners }
 $lint=Join-Path (& "$S\machine.ps1" Server) 'ops\iwzmap\iwzmap_ents_lint.py'
