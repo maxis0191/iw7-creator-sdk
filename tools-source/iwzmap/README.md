@@ -122,6 +122,7 @@ The table above explains the main pieces. The three tables below list every file
 | `audio/` | sound bank, emitters, music, capture and measurement (see `audio/README.md`) |
 | `bake/` | lightmap and light grid baker and its measurements |
 | `catalog/` | model catalogue and preview booth (see `catalog/README.md`) |
+| `library/` | asset library over every stock dump on disk: contact sheets of every model with textures (`sheets.py`), `pick.py query/show`, stock density measure (`density.py`), dump and fastfile inventory (`inventory.py`); catalogue groups in `catalog/iwzgroups.py` ([docs/ASSET-LIBRARY.md](../../docs/ASSET-LIBRARY.md)) |
 | `content/cp_iwz/` | one content table of the map (`cp_iwz_playercash_images.csv`) |
 | `darkness/` | dark-until-power chain (see `darkness/README.md`); `darkness/runs/` (launch arguments of dated proof runs) and `darkness/integration/` (a patch for a script outside the repository) are records |
 | `fixtures/` | GSC fixtures for private local runs: `sz2_local.gsc` (views, walk, probes), `sz2_gameplay.gsc`, `sz2_hitch.gsc`, `train_kit.gsc` |

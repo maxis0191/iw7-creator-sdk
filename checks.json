@@ -228,6 +228,21 @@
       ]
     },
     {
+      "id": "tools-source-iwzmap-library",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools-source/iwzmap/library",
+        "-p",
+        "test_library.py",
+        "-v"
+      ]
+    },
+    {
       "id": "tools-source-iwzmap-art",
       "command": [
         "python",

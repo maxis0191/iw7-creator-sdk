@@ -24,6 +24,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ztdump  # noqa: E402
+import iwzgroups  # noqa: E402
 
 SCHEMA = 'iwz.asset-catalog/1'
 
@@ -225,6 +226,23 @@ def model_row(zone, path, pak_present):
     return row
 
 
+ENGINE_IMAGES = re.compile(r'^(blank_|flat_nml|black_|white_|grey_|gray_|transparent_invisible|caulk|\$)')
+
+
+def library_fields(row):
+    """Library level fields of a catalogue row: group, subcategory, lod0 size and whether the model resolves
+    (a material and an image file exist in the dumps for every texture; engine placeholder images are ignored)."""
+    g, sub = iwzgroups.group_of(row['name'], row['category'])
+    row['group'], row['subcategory'] = g, sub
+    l0 = row['lods'][0] if row['lods'] else {}
+    row['lod0Tris'] = l0.get('tris')
+    row['lod0Verts'] = l0.get('verts')
+    miss = [i for i in row['cost']['missingImages'] if not ENGINE_IMAGES.match(i)]
+    mats_missing = [m['name'] for m in row['materials'] if m.get('missing')]
+    row['resolves'] = bool(row['lods'] and l0.get('tris') and row['materials'] and not miss and not mats_missing)
+    row['unresolved'] = {'images': miss, 'materials': mats_missing} if not row['resolves'] else None
+
+
 def build(args):
     zones = []
     for z in args.zone:
@@ -257,7 +275,14 @@ def build(args):
                 continue
             r['zones'] = [z.name]
             rows[r['name']] = r
+    placements = {}
+    if getattr(args, 'placements', None):
+        import sqlite3
+        con = sqlite3.connect('file:%s?mode=ro' % args.placements, uri=True)
+        placements = {n: c for n, c in con.execute('select model, count(*) from smodels group by model')}
     for r in rows.values():
+        library_fields(r)
+        r['placements'] = {'cp_zmb': placements.get(r['name'], 0)} if placements else {}
         r['inAlwaysLoadedOrTemplate'] = bool(always.intersection(r['zones']))
         del r['zone']
     out = {'schema': SCHEMA, 'zones': [{'name': z.name, 'dirs': z.dirs} for z in zones],
@@ -408,6 +433,7 @@ def main(argv=None):
     b.add_argument('--zone', action='append', required=True)
     b.add_argument('--out', required=True)
     b.add_argument('--base-paks')
+    b.add_argument('--placements', help='world kit sqlite of a stock map (smodels table): placements per model')
     b.add_argument('--always-loaded')
     b.add_argument('--shared', help='";"-separated dumps of always-loaded zones searched last for images (cost 0)')
     q = sp.add_parser('query')
