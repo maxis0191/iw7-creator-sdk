@@ -174,6 +174,32 @@ if os.environ.get('IWZ_FULL_STOCK', '1') == '1':
                 r = '%s,,%s' % (q[0], q[2])
                 if r not in have and ('%s,%s' % (q[0], q[2])) not in have: have.add(r); rows.append(r)
     print('full stock rows', len(rows))
+# A reference row ("type,,name": the asset is expected from another loaded zone) whose asset one of these dumps holds in full
+# becomes a full row. The patch zone (first dump) references assets of the stock map's own zone, which a generated map
+# replaces and never loads: those references resolved to nothing (Station Zero RC4: 1,435 of them, 220 xmodels, 140 xanims,
+# 876 images, 65 vfx; the Pack-a-Punch model drew nowhere, its surfaces and materials were references only).
+# IWZ_KEEP_STOCK_REFS=1 keeps the old rows for A/B.
+if os.environ.get('IWZ_KEEP_STOCK_REFS') != '1':
+    held = set()
+    for d in dumps:
+        csvp = os.path.join(d, os.path.basename(d) + '.csv')
+        if not os.path.isfile(csvp) or os.path.basename(d).startswith('techsets'): continue
+        for ln in open(csvp, errors='replace'):
+            q = ln.strip().split(',')
+            if len(q) == 2: held.add((q[0], q[1]))
+    present = set(rows)
+    upgraded, out = 0, []
+    for r in rows:
+        q = r.split(',')
+        if len(q) == 3 and q[1] == '' and (q[0], q[2]) in held:
+            full_r = '%s,%s' % (q[0], q[2])
+            if full_r in present:
+                continue                      # the full row is there already: drop the duplicate reference
+            present.add(full_r); out.append(full_r); upgraded += 1
+        else:
+            out.append(r)
+    rows[:] = out
+    print('references held in full by the dumps, now full rows:', upgraded)
 # map-owned content (tables and raw files the engine looks up by map name): content/<map>/<asset path>
 content = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'content', mapname)
 for root, _, files in os.walk(content):

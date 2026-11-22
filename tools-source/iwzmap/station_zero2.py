@@ -624,7 +624,7 @@ def pilasters(zone, axis, fixed, facing, s0, s1, zf, zc, step=320, avoid=(), low
 ADS = ['poster_lasttrain', 'poster_mindgap', 'poster_station_zero'] + [k_ for k_ in [ART_HOOKS.key('poster_illustration_2')] if k_]
 
 
-def ad_frame(zone, axis, fixed, facing, s, zc, k):
+def ad_frame(zone, axis, fixed, facing, s, zc, k, key=None):
     """Recessed advertising panel: dark backing, steel frame, a poster."""
     w, h = 112, 160
     if wall_opening(axis, fixed, s - w / 2 - 8, s + w / 2 + 8, zc - h / 2 - 8, zc + h / 2 + 8):
@@ -654,7 +654,7 @@ def ad_frame(zone, axis, fixed, facing, s, zc, k):
     if k % 4 == 3 and not ad_:
         decal_wall(zone, ART_HOOKS.key('junction_grime') or 'wall_stain', axis, fixed + facing * 0.4, facing, s, zc, 96, 144)   # torn-off ad: ghost outline
         return
-    sign(zone, ad_ or pool_[(k * 7 + 3) % len(pool_)], axis, fixed, facing, s, zc, 96, 144, frame=False, depth=0.6, slide=False)
+    sign(zone, ad_ or key or pool_[(k * 7 + 3) % len(pool_)], axis, fixed, facing, s, zc, 96, 144, frame=False, depth=0.6, slide=False)
 
 
 def wall_niche(zone, axis, fixed, facing, s, z0, w=96, h=72):
@@ -1454,6 +1454,15 @@ for x_ in (2980, 3300):
 floor_grid(Z, 2600, 3200, 3600, 4000, -320, 'steel_trim', step=333, w=10, border=20, skip=tuple((x0_, y0_, x0_ + 240, y0_ + 80) for x0_, y0_ in DESKS))
 region('control', Z, (2600, 3200, 3600, 4000), -320)
 region('pap_alcove', Z, (2976, 4016, 3232, 4160), -320)
+# (RC4, review: the Pack-a-Punch alcove read empty) a bay plate over the opening on the control-room side, a hazard stripe at
+# the threshold, cable and conduit runs along the side walls under the ceiling; all non-colliding, no new light; the strip
+# y 4016..4060 in front of the machine and its footprint (x 3060..3148, y 4060..4150) stay clear
+sign(Z, 'sign_pap', 'x', 4000, -1, 3104, -88, 200, 50)
+floor(Z, 'yellow_grip', 2976, 4016, 3232, 4028, -320 + 0.3, tone='dark', collide=False)
+for x0_, x1_ in ((2976, 2982), (3226, 3232)):
+    B.box((x0_, 4020, -134), (x1_, 4156, -128), 'steel_trim', Z, collide=False, nav=False)          # cable tray
+    B.box((x0_, 4020, -124), (x1_, 4156, -119), 'metal_black', Z, collide=False, nav=False)         # conduit above it
+    B.box((x0_, 4150, -320), (x1_, 4156, -124), 'metal_black', Z, collide=False, nav=False)         # drop to the floor in the back corner
 
 # ---------------------------------------------------------------- 7 service tunnel (L) z -384..-96
 Z = 'service_tunnel'
@@ -1791,7 +1800,7 @@ if os.environ.get('IWZ_ART5', '1') == '1':
     _ph = pilasters(Zh5, 'y', -1200, +1, 3200, 4400, 0, 320, step=400, avoid=((3304, 110), (3640, 60), (3900, 70), (4150, 70)))
     _pe = pilasters(Zh5, 'y', 400, -1, 3200, 4400, 0, 320, step=400, avoid=((3620, 70), (3950, 150), (3900, 60), (4050, 60), (4220, 60)))
     ad_frame(Zh5, 'y', -1200, +1, 3500, 160, 0)
-    ad_frame(Zh5, 'y', 400, -1, 3400, 160, 1)
+    ad_frame(Zh5, 'y', 400, -1, 3400, 160, 1, key=ART_HOOKS.key('poster_missing_b') or 'poster_mindgap')     # (RC4, review: repeated posters) k 0 and 1 both drew poster_illustration_2
     hanging_sign(Zh5, 'sign_to_old_station', -300, 3400, 236, 256, 296)
     hanging_sign(Zh5, 'sign_northbound', 200, 4000, 236, 256, 296)
     for x_ in (-280, -140, 0):
@@ -1997,6 +2006,11 @@ def train_kit():
             LIGHTS.append({'zone': 'platform_a', 'origin': (cx + 60, cy, fz - 30), 'type': 'omni',
                            'color': (1.0, 0.82, 0.6), 'radius': 260, 'intensity': 0.3, 'fixture': 'train_interior',     # (RC2 item 5) was 0.1: black windows
                            'train': 'emergency'})
+            # (RC4, RC3 review item 4 / FRAME_BLANK dark_hero_car_1 mean 2.4) a battery lamp that stays on in the dark:
+            # the hero car's windows glow faintly before power, so the car reads from the platform
+            LIGHTS.append({'zone': 'platform_a', 'origin': (cx - 40, cy, fz - 40), 'type': 'omni',
+                           'color': (1.0, 0.8, 0.64), 'radius': 180, 'intensity': 0.3, 'fixture': 'emergency',
+                           'train': 'battery'})
         else:
             decor('platform_a', 'iwz_fluo_subway_broken', cx - 120, cy, fz, 90)
             # g27 review: every car carries a dim battery emergency light after power, so the consist pulls the eye
@@ -2066,8 +2080,8 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         decor(zn_, 'debris_concrete_rubble_pile_01_dark', x_, y_, z_ - 3, a_)
     decor('ticket_hall', 'trashbin_01_iw6', -1100, 4340, 0, 0, (16, 16, 24))
     decor('ticket_hall', 'trashbin_01_iw6', 360, 4100, 0, 0, (16, 16, 24))
-    for x in (-950, 180):
-        decor('ticket_hall', BENCH, x, 4340, 0, 90, BENCH_CLIP[0])
+    for x, y, a in ((-950, 4336, 98), (180, 4344, 84)):      # (RC4, review: identical seats) yaw and spot differ a little
+        decor('ticket_hall', BENCH, x, y, 0, a, BENCH_CLIP[0])
     for x in (-2048, -1024, 64, 1300):
         if KIT:     # worn subway bench (cp_disco, 40 x 192): long axis along the wall
             decor('platform_a', 'cp_disco_worn_subway_bench', x, 2350, DECK_Z, 90, (96, 20, 20))
@@ -2159,7 +2173,7 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         # memorial by the sealed street exit: candles and belongings on the floor of the north wall
         for k_, (x_, y_) in enumerate(((-980, 4378), (-955, 4384), (-930, 4376), (-905, 4385), (-880, 4378), (-860, 4386))):
             dec_('ticket_hall', 'p7_candle_01' if k_ % 2 else 'p7_candle_02', x_, y_, 0, 15 * k_)
-        dec_('ticket_hall', 'zombies_backpack_dropped_red', -1030, 4370, 0, 200)
+        dec_('ticket_hall', 'misc_zom_duffelbag_03', -1030, 4370, 0, 200)     # (RC4, review: black blob on the floor) was zombies_backpack_dropped_red (not in the proven kit list); the duffel is used on the platforms
         dec_('ticket_hall', 'newspaper_single_fn_01', -820, 4372, 0, 60)
         # quarantine: barricades either side of the street stair, biohazard sheets on the floor
         dec_('ticket_hall', 'cp_disco_street_barricade', -270, 4425, 0, 90, (49, 28, 38))
@@ -2182,7 +2196,15 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
                                             # route to the power switch: hall -> stair_a -> platform_a east -> maint door
                                             ('ticket_hall', -380, 3204, 250, 90, (1.0, 0.25, 0.08)),
                                             ('platform_a', 2396, 1960, -150, 180, (1.0, 0.25, 0.08)),
-                                            ('platform_a', 2396, 1640, -150, 180, (1.0, 0.25, 0.08))):
+                                            ('platform_a', 2396, 1640, -150, 180, (1.0, 0.25, 0.08)),
+                                            # (RC4, RC3 review item 4: the dark start too dark to read at stair A, stair B
+                                            # and the service tunnel) side-wall battery lamps, about 150 over the flight; the warm white ones (1, .7, .5)
+                                            # escape the saturated-colour clamp below (radius 96, 60 %) so they light the treads
+                                            ('stair_a', -404, 2700, -60, 180, (1.0, 0.7, 0.5)),
+                                            ('stair_a', -796, 3000, 70, 0, (1.0, 0.25, 0.08)),
+                                            ('stair_b', -1700, 3396, -80, 270, (1.0, 0.7, 0.5)),
+                                            ('stair_b', -1450, 3108, 40, 90, (1.0, 0.25, 0.08)),
+                                            ('service_tunnel', -3050, 1580, -214, 270, (1.0, 0.7, 0.5))):
             dec_(zn_, 'clk_emergency_light', x_, y_, z_, yaw_)
             # (g27, review C generator_room_1: a light pool with a violet halo and a tiny bracket for a fixture) a caged
             # lamp housing with a lit lens behind the kit lamp, the light 18 out from the wall instead of on it
@@ -2255,8 +2277,8 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zh, 'traffic_cone_sml_01', -200, 4330, 0, 20)
     decor(Zh, 'traffic_cone_sml_01', 10, 4335, 0, 70)
     pass                                        # (g26) Spaceland astronaut standee removed
-    decor(Zh, BENCH, -1150, 4000, 0, 180, BENCH_CLIP[1])
-    decor(Zh, BENCH, 350, 3890, 0, 0, BENCH_CLIP[1])           # clear of the Up'N Atoms perk at y 3460 and (g27) of the fare-line railing at y 3700
+    decor(Zh, BENCH, -1138, 4000, 0, 172, BENCH_CLIP[1])     # (RC4) off the west wall for the turn
+    decor(Zh, BENCH, 338, 3890, 0, 353, BENCH_CLIP[1])           # clear of the Up'N Atoms perk at y 3460 and (g27) of the fare-line railing at y 3700
     decor('service_tunnel', 'debris_concrete_rubble_pile_01_dark', -2900, 1250, -384 - 3, 60)
     decor('service_tunnel', 'com_junktire', -3560, 2050, -384, 30, (14, 14, 6))
     decor('generator_room', 'electrical_control_box_03', 2700, 2405, -200, 90)
@@ -2379,10 +2401,17 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
         decor(Zt, 'electrical_control_box_03', -3217, y_, -290, 180)
     # (g27) along the south wall, back to the wall (the kit bench's model x 0..40 is its depth, x 40 the backrest; at
     # yaw 180 it stood across the wall, half through it)
-    decor(Zh, BENCH, -900, 3244, 0, 270, BENCH_CLIP[0])
-    decor(Zh, BENCH, 20, 3244, 0, 270, BENCH_CLIP[0])
+    # (RC4, review: a row of identical seats) each turned a few degrees and one slid along the wall; 16 off the wall so the
+    # turned backrest does not enter it
+    decor(Zh, BENCH, -900, 3260, 0, 278, BENCH_CLIP[0])
+    decor(Zh, BENCH, 52, 3262, 0, 264, BENCH_CLIP[0])
     decor(Zh, 'trashbin_01_iw6', 250, 3236, 0, 0, (11, 13, 22))
     decor(Zh, 'trashbin_01_iw6', -460, 4380, 0, 0, (11, 13, 22))
+    # (RC4, review: PaP alcove empty) switchgear on both side walls, clear of the machine (x 3060..3148) and the front strip
+    decor(Zc, 'emergency_shutoff_sm_panel_01', 2978, 4090, -260, 0)         # west wall (x 2976), faces +x
+    decor(Zc, 'emergency_shutoff_sm_panel_01', 3230, 4090, -260, 180)       # east wall (x 3232), faces -x
+    decor(Zc, 'electrical_control_panel_01', 2978, 4128, -320, 0)
+    decor(Zc, 'electrical_control_panel_01', 3230, 4128, -320, 180)
 
 # ---------------------------------------------------------------- reveals and portals of every opening
 for o in OPENINGS:

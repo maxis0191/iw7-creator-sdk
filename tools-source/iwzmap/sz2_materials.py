@@ -153,7 +153,7 @@ def custom_tint(key, name, base, tint, emissive=None, su=64, consts=None):
 
 
 SIGNS = ['sign_station_zero', 'sign_station_zero_plain', 'sign_old_station', 'sign_to_platforms', 'sign_northbound',
-         'sign_to_old_station', 'sign_staff_only', 'sign_signal_control', 'sign_generator', 'sign_network_map']
+         'sign_to_old_station', 'sign_staff_only', 'sign_signal_control', 'sign_generator', 'sign_network_map', 'sign_pap']
 for _s in SIGNS:
     custom_image(_s, _s + '_c', os.path.join(ART, 'signs', _s + '_c.tga'))
 # (g27d, review item 16: story at eye level) procedural story plates (art/story_plates.py), only when delivered
