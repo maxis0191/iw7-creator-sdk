@@ -215,7 +215,7 @@ class Stairs(unittest.TestCase):
         sc['meshes'][0]['tris'] = keep
         recs, rows = C.stair_ramps(sc['meshes'])
         sides = {w['side']: w for w in rows[0]['side_walls']}
-        self.assertEqual(sides['y-']['triangles'], 12)
+        self.assertEqual(sides['y-']['triangles'], 24)          # two convex parts: flat to the crossover, then ramp + 64
         self.assertEqual(sides['y+']['triangles'], 0)
         self.assertGreater(sides['y+']['against_wall'], 0.9)
         self.assertEqual(len([r for r in recs if r['name'].startswith('stairclip_')]), 1)
@@ -231,6 +231,25 @@ class Stairs(unittest.TestCase):
         _recs, rows = C.stair_ramps(sc['meshes'])
         self.assertLess(rows[0]['foot_clear_depth'], 48)
         self.assertTrue(any('clear approach' in m for s, m in C.validate(sc) if s == 'WARN'))
+
+    def test_a_slab_edge_over_the_stair_gets_a_rail_on_top_and_the_landing_stays_open(self):
+        sc = stair_scene(True)
+        keep = []
+        for t in sc['meshes'][0]['tris']:
+            ys = [p[1] for p in t]
+            xs = [p[0] for p in t]
+            if min(ys) >= 92 - 1e-6 and max(ys) <= 100 + 1e-6 and min(xs) >= 40 - 1e-6 and max(xs) <= 332 + 1e-6:
+                continue
+            keep.append(t)
+        sc['meshes'][0]['tris'] = keep + C.box_tris((-100, 0, 128), (332, 100, 136))
+        recs, rows = C.stair_ramps(sc['meshes'])
+        rails = [r for r in recs if r['name'].startswith('stairrail_')]
+        self.assertEqual(len(rails), 1)
+        zs = [p[2] for t in rails[0]['tris'] for p in t]
+        self.assertEqual((min(zs), max(zs)), (136.0, 178.0))                  # on top of the slab, 42 high
+        info = rows[0]['rails'][0]
+        self.assertEqual(info['thickness'], 4)
+        self.assertLess(info['to'], 332)                                      # open where the ramp meets the floor
 
 
 @unittest.skipUnless(HAVE_NUMPY and HAVE_TEMPLATE, 'numpy and the stock template dump')
