@@ -26,6 +26,7 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import iwz_calib as C  # noqa: E402
+import iwz_tonemap as TM  # noqa: E402
 
 CALIB = os.path.join(HERE, 'calibration.json')
 
@@ -266,9 +267,66 @@ def cmd_props(a):
     shutil.rmtree(out, ignore_errors=True)
 
 
+def cmd_light(a):
+    """Render the plan's `<prefix>_*` views in one power state, tone map them with the ENGINE curve (iwz_tonemap) at a stated exposure (`--ev`, the
+    vision's fixed exposure; nothing is fitted) and compare with the engine frames: edge IoU, mean luminance ratio and median luminance ratio of the
+    upper rows (no weapon, no flashlight pool). Side by sides go to <out>/sidebyside (preview left, engine right)."""
+    cal = load_calib(a.calib)
+    mask = C.mask_1280x720()
+    plan_views = json.load(open(a.plan))
+    names = []
+    for st in plan_views['steps']:
+        if st.get('do') == 'tour':
+            names += [v['name'] for v in st['views'] if v['name'].startswith(a.prefix + '_')]
+    eng = engine_frames(a.frames, names)
+    if not eng:
+        raise SystemExit('no engine frames found in %s' % a.frames)
+    raw_dir = os.path.join(a.out, '_raw')
+    reuse = a.reuse_raw and os.path.isdir(raw_dir)
+    if not reuse:
+        shutil.rmtree(raw_dir, ignore_errors=True)
+    args = ['load', a.src, '--plan', a.plan, '--out', raw_dir, '--views', 'plan_%s_*' % a.prefix, '--eye', str(cal['eye']),
+            '--fov', str(cal['fov']), '--power', a.power, '--prop-gain', str(a.prop_gain)]
+    lines, wall = ([], 0.0) if reuse else run_blender(args)
+    lut = TM.load_lut()
+    rows, sbs = [], os.path.join(a.out, 'sidebyside')
+    os.makedirs(sbs, exist_ok=True)
+    raws = {n: np.load(os.path.join(raw_dir, 'plan_' + n + '.npy')) for n in eng}
+    e_lum = {n: C.mean_lum(C.srgb_to_lin(eng[n]), mask) for n in eng}
+
+    gain = 2.0 ** a.ev
+    up = (slice(60, 330), slice(None))
+
+    def med(img):
+        return float(np.median(C.lum(C.srgb_to_lin(img[up]))))
+    for n in eng:
+        d1 = TM.display_frame(raws[n], gain, lut)
+        eedge = C.engine_edges(eng[n], mask)
+        rows.append({'frame': n, 'edge_iou': round(C.edge_score(eng[n], C.srgb_to_lin(d1), mask, eedge), 3),
+                     'lum_ratio_mean': round(C.mean_lum(C.srgb_to_lin(d1), mask) / e_lum[n], 3),
+                     'lum_ratio_median_upper': round(med(d1) / max(med(eng[n]), 1e-6), 3), 'engine_lum': round(e_lum[n], 4)})
+        save_png(np.concatenate([d1, eng[n]], 1), os.path.join(sbs, n + '_preview_vs_engine.png'))
+    out = ['| frame (exposure %+g EV) | edge IoU | lum ratio, mean | lum ratio, median upper rows |' % a.ev, '|---|---|---|---|']
+    for r in rows:
+        out.append('| %s | %.3f | %.3f | %.3f |' % (r['frame'], r['edge_iou'], r['lum_ratio_mean'], r['lum_ratio_median_upper']))
+    out.append('| mean | %.3f | %.3f | %.3f |' % tuple(np.mean([r[k] for r in rows]) for k in ('edge_iou', 'lum_ratio_mean', 'lum_ratio_median_upper')))
+    open(os.path.join(a.out, 'table_%s.md' % a.prefix), 'w').write(chr(10).join(out) + chr(10))
+    json.dump({'rows': rows, 'exposure_ev': a.ev, 'power': a.power, 'prop_gain': a.prop_gain}, open(os.path.join(a.out, 'table_%s.json' % a.prefix), 'w'), indent=1)
+    print(chr(10).join(out))
+    print('light: power %s, engine tone map, blender %.1f s; exposure %+g EV (gain %.4f)' % (a.power, wall, a.ev, gain))
+    if not a.keep_raw:
+        shutil.rmtree(raw_dir, ignore_errors=True)
+
+
+def cmd_lights(a):
+    import iwz_lights
+    a.flashlight = not a.no_flashlight
+    iwz_lights.run(a, load_calib, run_blender, engine_frames, save_png)
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['render', 'calibrate', 'props'])
+    ap.add_argument('cmd', choices=['render', 'calibrate', 'props', 'light', 'lights'])
     ap.add_argument('--src', required=True)
     ap.add_argument('--out', required=True)
     ap.add_argument('--views', default='all')
@@ -279,8 +337,22 @@ def main():
     ap.add_argument('--fov', type=float, default=0)
     ap.add_argument('--overlays', action='store_true')
     ap.add_argument('--tone-only', action='store_true', help='calibrate: keep the camera of calibration.json, refit exposure only')
+    ap.add_argument('--prefix', default='dark', help='light: engine frame / plan view prefix (dark = power off, lit = power on)')
+    ap.add_argument('--ev', type=float, default=-3.0, help='light: exposure in EV (display gain 2**ev); -3 = tonemapAuto 0 + tonemapMaxExposure -3 of the dark vision')
+    ap.add_argument('--reuse-raw', action='store_true')
+    ap.add_argument('--vision', default=r'C:\Users\ezvalo\Documents\IW7-Runtime\iwz-stage2\audio\lab\zonetool\cp_iwz\vision\cp_iwz.vision', help='lights: the vision file of the lit state (auto exposure values)')
+    ap.add_argument('--ae-factor', type=float, default=1.0, help='lights: factor on key / log average luminance (ENGINE-SHADERS.md 1b)')
+    ap.add_argument('--lit-adjust', type=float, default=None, help='lights: tonemapAutoExposureAdjust override')
+    ap.add_argument('--fit-exposure', action='store_true', help='lights: fit the exposure per frame instead of the model')
+    ap.add_argument('--state', choices=['dark', 'lit'], default='lit', help='lights: which engine frames (dark_* power off / lit_* power on)')
+    ap.add_argument('--unit', type=float, default=None, help='lights: runtime light unit (default: fitted)')
+    ap.add_argument('--flu', type=float, default=None, help='lights: flashlight unit (default: fitted in the dark state, 0 in the lit state)')
+    ap.add_argument('--no-flashlight', action='store_true')
+    ap.add_argument('--keep-raw', action='store_true')
+    ap.add_argument('--power', choices=['on', 'off'], default='off')
+    ap.add_argument('--prop-gain', type=float, default=1.0)
     a = ap.parse_args()
-    {'render': cmd_render, 'calibrate': cmd_calibrate, 'props': cmd_props}[a.cmd](a)
+    {'render': cmd_render, 'calibrate': cmd_calibrate, 'props': cmd_props, 'light': cmd_light, 'lights': cmd_lights}[a.cmd](a)
 
 
 if __name__ == '__main__':

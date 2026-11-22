@@ -45,17 +45,27 @@ What does not:
 | E: Blender add-on and exporter | worker (Sonnet) | `tools-source/iwzmap/blender/` add-on + `blend2iwz.py` + generic build entry | g27r emit round-trips through Blender with no `iwz_emitcheck` difference that matters; a new map authored in Blender builds and plays |
 | P: proof map | lead | a new two-floor map authored in Blender: door, power, a perk, a wall buy, spawners | built once, Forge plans: spawn, walk both floors, zombies chase across floors, door buy, power, perk |
 
-### L: what was found (22 Nov 2026)
+### L: state (22 Nov 2026)
 
-The g27r bake is a darkness bake: the lightmap holds the 56 emergency lights only (`bake.json` lights 56,
-`darkness.json` baked_emergency 56); the 72 named lights of the power banks are runtime lights switched on by the level
-script. The capture plan `szf_rc4_look.json` shoots `dark_*` with the power off and `lit_*` 15 s after
-`sz_power_direct power 20`. The first preview calibration (exposure `k`, `prop_gain 0.086`, emissive gain 20) fitted the
-lightmap-only render against the `lit_*` frames, so its constants and its "reflections / auto exposure" explanation are
-not valid. Order of work: tonemap from the engine's own shader and constants (RenderDoc captures on disk), calibrate the
-lightmap-only state against `dark_*`, then add the runtime lights with the engine's falloff and calibrate against
-`lit_*`. Open: in `lit_generator_room_1` the control room behind the open door is black while its bank is on; candidate
-causes are a per-view limit on runtime lights in the engine, or a bank that did not switch on.
+The g27r bake is a darkness bake: the lightmap holds the 56 emergency lights only; the 72 named lights of the power banks are runtime lights switched on by the level script.
+The capture plan `szf_rc4_look.json` shoots `dark_*` with the power off and `lit_*` 15 s after `sz_power_direct power 20`. The first preview calibration fitted a lightmap-only render against the
+`lit_*` frames (wrong state) and is withdrawn, with its "reflections / auto exposure" explanation.
+
+Done, with evidence in `tools-source/iwzmap/preview/` (`README.md` "State of the lighting", `ENGINE-SHADERS.md`):
+
+* Engine tone map read from the shader of a stock RenderDoc capture (offline, `rdoc_inspect.py`): reproduces the engine's post pass to 0.25 of an 8 bit level (mean), 0.61 max. Exposure is a scale on the
+  curve constants written by the exposure compute pass; dark frames fit 2^-3.01, the dark vision's `tonemapMaxExposure -3`.
+* Lightmapped world shader and runtime light falloff documented with instruction lines (smoothstep of `saturate(k (1 - d / R))`, radius R).
+* Dark state: 15 `dark_*` frames, mean edge IoU 0.556, median luminance ratio 1.13, no fitted parameter. Lit state: runtime lights added per pixel (`iwz_lights.py`), mean edge IoU 0.528 -> 0.557,
+  pattern error 1.81 -> 1.66, one fitted light unit (1e-3), exposure per frame fitted (auto exposure not modelled).
+* Control room dark through the generator room door: not an engine limit (at most 7 lights cover a pixel against a limit of 64; 256 light records per view).
+
+Round 2 (22 Nov 2026): albedo `rgb^2`, nog R as gloss (no occlusion); the engine's exposure pass as a steady state model (saturates at the maximum exposure for 10 of 15 lit frames, the engine wants about 1 stop less: open);
+the module's flashlight added (FLU fitted on the dark frames: dark pattern error 1.56 -> 1.24; the lit state is still not matched); specular from reflection probes not done (missing pieces listed); barrels: preview light grid
+nearest cell too hot (established); control room doorway: lights, exposure, props, lightmap data and techset excluded, cause open until a capture of that view.
+
+Open: the unit of a light record (CPU side), auto exposure of the lit vision, the lit vision's colour grade and curve constants (no capture of the generated map in the lit vision), specular and reflection
+probes, shadows of the 9 shadowed lights, the flashlight.
 
 ### E: Blender add-on, exporter and generic build (22 Nov 2026, built; nothing of it built into a zone or played yet)
 
@@ -87,6 +97,7 @@ Contract of the emit folder: [IWZ-EMIT-CONTRACT.md](IWZ-EMIT-CONTRACT.md). Autho
 ## State
 
 - 22 Nov 2026: plan written; L, N, E started.
+- 22 Nov 2026: L: tone map and lighting read from the engine, dark and lit states measured (see L).
 
 - 22 Nov 2026, first map authored in Blender played in IW7 (lead, Forge, compressed time): testmap1 (two ground rooms, a door,
   a stair to an upper floor over room A) built by `build-blend.ps1` in 184 s. Passed in game: the player climbs the stair,
