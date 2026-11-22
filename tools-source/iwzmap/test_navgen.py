@@ -73,6 +73,50 @@ def flood(gr, start):
     return seen
 
 
+def side_slope_links(gr):
+    """Links between areas whose slopes differ by more than 10 degrees where the shared edge is within 60 degrees of
+    parallel to the gradient of the steeper one (a ramp entered from the side)."""
+    by = gr.by_off()
+    n = 0
+    for a in gr.areas:
+        P = [e.corner for e in a.edges]
+        for i, e in enumerate(a.edges):
+            if not e.cost:
+                continue
+            ga = navgen._plane(P)[:2]
+            Q = [f.corner for f in by[e.nbr].edges]
+            gb = navgen._plane(Q)[:2]
+            sa, sb = math.hypot(*ga), math.hypot(*gb)
+            if sa > 1.73 or sb > 1.73 or abs(math.degrees(math.atan(sa) - math.atan(sb))) <= 10.0:
+                continue
+            g = ga if sa >= sb else gb
+            ex, ey = P[(i + 1) % len(P)][0] - P[i][0], P[(i + 1) % len(P)][1] - P[i][1]
+            if abs(ex * g[0] + ey * g[1]) / (math.hypot(ex, ey) * math.hypot(*g)) > 0.5:
+                n += 1
+    return n
+
+
+@unittest.skipIf(np is None, 'numpy missing')
+class RampSideTests(unittest.TestCase):
+    def test_a_ramp_is_entered_by_its_foot_not_from_the_side(self):
+        # flat floor x < 256, a ramp x 256..512 rising to z 128 along x, and a flat strip beside the ramp (y > 256)
+        def quad(p0, p1, p2, p3):
+            return [(p0, p1, p2), (p0, p2, p3)]
+        tris = quad((0, 0, 0), (256, 0, 0), (256, 256, 0), (0, 256, 0))
+        tris += quad((256, 0, 0), (512, 0, 128), (512, 256, 128), (256, 256, 0))
+        tris += quad((256, 256, 0), (512, 256, 0), (512, 512, 0), (256, 512, 0))
+        tris += quad((0, 256, 0), (256, 256, 0), (256, 512, 0), (0, 512, 0))
+        data, rep = navgen.generate(np.array(tris), seeds=[(100, 100, 0)])
+        gr = read_bytes(data)
+        self.assertGreater(rep['slope_side_links_cut'], 0)
+        self.assertEqual(side_slope_links(gr), 0)
+        self.assertEqual(shared_edge_problems(gr), (0, 0))
+        # the top of the ramp is still reachable from the floor, over the foot edge
+        start = min(range(len(gr.areas)), key=lambda i: math.dist(gr.areas[i].centre, (100, 100, 0)))
+        seen = flood(gr, start)
+        self.assertTrue(any(gr.areas[i].centre[2] > 100 for i in seen))
+
+
 @unittest.skipIf(np is None, 'numpy missing')
 class FormatTests(unittest.TestCase):
     def test_mapgen_graph_round_trips_byte_identical(self):
@@ -150,7 +194,7 @@ class TwoStoreyTests(unittest.TestCase):
         self.assertGreater(zs[256], 100)
         self.assertGreaterEqual(len([z for z in zs if 8 <= z <= 248]), 3)
         self.assertGreater(navfmt.stats(self.gr)['stacked_areas'], 100)       # the upper floor lies over the lower one
-        self.assertEqual(self.rep['dropped_unreachable'], 0)
+        self.assertLessEqual(self.rep['dropped_unreachable'], 2)      # slivers beside the stair that lost their side link
         self.assertEqual(self.rep['seed_problems'], [])
         self.assertLess(len(self.gr.areas), 700)
 
@@ -221,6 +265,80 @@ class FreeformTests(unittest.TestCase):
     def test_closed_solid_interior_is_not_walkable(self):
         _data, rep = navgen.generate(self.tris)
         self.assertGreater(rep['inside_solid'], 0)
+
+
+def collinear_corners(gr, tol=0.05):
+    n = 0
+    for a in gr.areas:
+        P = [e.corner for e in a.edges]
+        m = len(P)
+        for i in range(m):
+            p, q, r = P[i - 1], P[i], P[(i + 1) % m]
+            dx, dy = r[0] - p[0], r[1] - p[1]
+            ln = math.hypot(dx, dy)
+            if ln < 1e-9:
+                continue
+            tt = ((q[0] - p[0]) * dx + (q[1] - p[1]) * dy) / (ln * ln)
+            if 0 <= tt <= 1 and abs((q[0] - p[0]) * dy - (q[1] - p[1]) * dx) / ln <= tol:
+                n += 1
+    return n
+
+
+@unittest.skipIf(np is None, 'numpy missing')
+class AreaModeTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tris = np.array(twostorey.triangles())
+
+    def test_stock_mode_has_no_corner_on_a_straight_line_and_caps_the_radius(self):
+        data, rep = navgen.generate(self.tris, seeds=[twostorey.START], areas='stock')
+        gr = read_bytes(data)
+        self.assertEqual(collinear_corners(gr), 0)
+        self.assertEqual(shared_edge_problems(gr), (0, 0))
+        self.assertLessEqual(max(a.radius for a in gr.areas), 230.0 + 1e-3)
+        self.assertEqual(side_slope_links(gr), 0)
+        top = [i for i, a in enumerate(gr.areas) if abs(a.centre[2] - 256) < 1]
+        start = min(range(len(gr.areas)), key=lambda i: math.dist(gr.areas[i].centre, twostorey.START))
+        seen = flood(gr, start)
+        self.assertTrue(all(i in seen for i in top))
+
+    def test_stock_centre_radius_and_cost_definitions(self):
+        data, _rep = navgen.generate(self.tris, seeds=[twostorey.START], areas='stock')
+        gr = read_bytes(data)
+        by = gr.by_off()
+        for a in gr.areas[::7]:
+            P = [e.corner for e in a.edges]
+            a2 = cx = cy = 0.0
+            for i in range(len(P)):
+                p, q = P[i], P[(i + 1) % len(P)]
+                cr = p[0] * q[1] - q[0] * p[1]
+                a2 += cr / 2
+                cx += (p[0] + q[0]) * cr
+                cy += (p[1] + q[1]) * cr
+            self.assertAlmostEqual(a.centre[0], cx / (6 * a2), places=2)
+            self.assertAlmostEqual(a.centre[1], cy / (6 * a2), places=2)
+            self.assertAlmostEqual(a.radius, max(math.dist(a.centre, p) for p in P), places=2)
+            for e in a.edges:
+                if e.cost:
+                    self.assertLessEqual(abs(e.cost - math.ceil(math.dist(a.centre, by[e.nbr].centre) * 1000 / 72)), 1)
+
+    def test_quads_mode_is_rectangles_up_to_64_plus_boundary_polygons(self):
+        data, _rep = navgen.generate(self.tris, seeds=[twostorey.START], areas='quads', cell=32)
+        gr = read_bytes(data)
+        self.assertEqual(collinear_corners(gr), 0)
+        self.assertEqual(shared_edge_problems(gr), (0, 0))
+        self.assertEqual(side_slope_links(gr), 0)
+        rects = 0
+        for a in gr.areas:
+            xs = [e.corner[0] for e in a.edges]
+            ys = [e.corner[1] for e in a.edges]
+            self.assertLessEqual(max(xs) - min(xs), 64.01)
+            self.assertLessEqual(max(ys) - min(ys), 64.01)
+            if len(a.edges) == 4 and all((abs(x - min(xs)) < 0.01 or abs(x - max(xs)) < 0.01) and
+                                         (abs(y - min(ys)) < 0.01 or abs(y - max(ys)) < 0.01)
+                                         for x, y in zip(xs, ys)):
+                rects += 1
+        self.assertGreater(rects, len(gr.areas) * 0.8)
 
 
 if __name__ == '__main__':

@@ -104,7 +104,11 @@ any angle, edges anywhere. Steps:
 5. Convex merge: neighbouring polygons are joined along their shared edges while the result stays one simple convex
    polygon, planar within `plane_tol` units, with at most `max_edges` (14, stock range 3 to 14) corners; a vertex in the
    middle of an edge with the same neighbour on both sides is not a corner.
-6. Links: the neighbour of an edge is the polygon that owns the same two vertices reversed. Every link therefore is one
+6. Slope rule (round 3): a link between two areas whose slopes differ by more than 10 degrees (a ramp or stair next to a
+   flat floor) is kept only across the sloped area's foot or top edge, within 30 degrees of perpendicular to its gradient;
+   a side edge gets no link, because the body cannot step onto a ramp from the side (found in game on the Blender test
+   map). `report['slope_side_links_cut']` counts them.
+7. Links: the neighbour of an edge is the polygon that owns the same two vertices reversed. Every link therefore is one
    exactly shared edge with equal corner heights (the rule measured on stock). Areas not connected to any seed are dropped
    and counted (`dropped_unreachable`); a seed with no navigation at it within 48 units goes in `seed_problems` (all seeds
    bad: `ValueError`). The kd tree is the stock rule (`navfmt.build_kd`).
@@ -159,3 +163,53 @@ Free-form fixture (`fixtures/freeform`: the two-storey level rotated 30 degrees,
 shared edge, every area convex, `iwz_emitcheck check` 0 errors and 1 warning (the room is an island: it has its own seed),
 the bottom seed reaches the whole top floor, no corner within 47 of the pillar axis or within 7 of the wall. Without `solid_check` the interior of the pillar was walkable.
 Round-1 data (quads at 32 units) is kept in the git history of this page.
+
+Round 3 (slope rule), offline: testmap1 collision (362 triangles): 28 of 44 slope-changing links were side links, all cut,
+0 remain, the upper floor (z 136, 70 areas) is still reached from the ground start, `check` 0 errors; twostorey 28 cut, 0
+side links, 0 errors, route 1,510 units; freeform 158 cut, 0 side links, 0 errors; g27r 236 cut (186 side links before
+the rule, 0 after), 3,868 areas (round 2: 3,871), `check` the same 3 errors, `reach` 51 of 51 with a route.
+
+## Round 4: stock rules measured against ours, and the `areas` modes (22 Nov 2026)
+
+Trigger: on the Blender test map the engine paths on the round-3 polygon graph but zombies hover 70 to 160 units from
+their goals inside one big area, while the 32-unit quad graph of the same map works. Measured on stock cp_zmb (2,865
+areas) and on the testmap1 `emit_poly4` graph (211 areas); no cause of the hovering is proven by this table, these are
+the differences:
+
+| Property | stock cp_zmb | ours (polygons, testmap1 emit_poly4) | `areas='stock'` | `areas='quads'` |
+| --- | --- | --- | --- | --- |
+| corners on a straight line between neighbours (xy, 0.05) | 86 corners in 79 areas (2.8%) | 157 corners in 85 of 211 areas (40%) | 0 | 0 |
+| centre x, y | area centroid, error 0.00 on 2,865 | centroid, same | same | same |
+| centre z | plane through the corners at the centroid (0.00) | same (clamped to the corner range) | same | same |
+| radius | longest 3D distance centre to corner, 2,865 of 2,865 | same | same, and the diameter of a merged area is capped at 230 | same |
+| edge cost | `ceil(centre to centre distance * 1000 / 72)`, 5,804 of 5,804 (via the edge midpoint only 504) | same | same | same |
+| radius p5 / p50 / p95 / max | 21.6 / 87.3 / 230 / 949 | 8.9 / 44 / 82 / 232 | 11 / 48 / 100 / 107 | 19 / 23 / 23 / 24 |
+| longest edge of an area p50 / p95 | 140 / 366 | 86 / 160 | 86 / 157 | 32 / 35 |
+| area size p5 / p50 / p95 (sq units) | 238 / 4,969 / 44,248 | 128 / 1,968 / 5,248 | 128 / 896 / 4,864 | 410 / 1,024 / 1,024 |
+| first corner of an area | no rule (lowest y 27%, lowest x 27%) | lattice order | same | same |
+| order of the areas in the file | not sorted by position | sorted by centre | same | same |
+| `n << 24` word at +60, edge flag `0xFFFF8000` | 2 to 7, 214 edges | 2, never | same | same |
+
+So the definitions of centre, radius and cost were already stock's; what differs is the share of areas with a corner on a
+straight line (stock mostly has a full shared edge on every side), the size of the areas (stock median radius 87), and
+the order of the corners and areas, which stock does not sort.
+
+`generate(..., areas='polygons' | 'stock' | 'quads', max_radius=None)`:
+- `polygons` (default): as round 3.
+- `stock`: merge as in `polygons` with the diameter capped at 230 (stock p95 radius, so no radius above it), then every
+  polygon whose side meets two different neighbours (a corner on a straight line, 0.1 xy) is cut by a diagonal from that
+  corner, so each side has one neighbour; open-boundary corners within 0.3 of a line are removed. Result: no corner on a
+  straight line, every link one exactly shared edge, the round-3 slope rule kept. More areas than `polygons`.
+- `quads` (use `cell=32`): axis-aligned rectangles from the lattice, merged only when the result is still a rectangle of at
+  most 64 x 64 with one neighbour per side, plus the clipped polygons where the walkable edge is not axis-aligned; no corner
+  on a straight line; the slope rule kept. Closest to the graph shape proven in game.
+
+testmap1 (`emit_poly4` collision, seeds from its layout), written into copies of the emit folder with only `navgraph.bin`
+replaced: `IW7-Runtime\iwz-blend	estmap1\emit_nav_stock` (366 areas, 1,100 links, 0 straight-line corners, radius max
+107) and `emit_nav_quads` (520 areas, 1,894 links, 493 rectangles). Both: every link one exactly shared edge, no sideways
+ramp link, `iwz_emitcheck check` 0 errors, `reach --all-spawners` 6 sources, 0 without a route.
+
+g27r (not the test target): `stock` 7,455 areas, 5 `check` errors (the 3 of round 3 plus a `LINK_STEEP` and a
+`STAIR_NAV_OFF_SURFACE` on stair_a), `reach` 51 sources, 7 routes over 6,000 units (detours, no source without a route);
+`quads` (cell 32) 11,676 areas, 10 `check` errors (floating cells where walls are off the 32 grid), `reach` 51 of 51.
+`stock` mode costs time on a big map (16 s for g27r).
