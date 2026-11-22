@@ -139,7 +139,7 @@ class _Mesh:
             s += self.X[a] * self.Y[b] - self.X[b] * self.Y[a]
         return s
 
-    def collinear(self, a, b, c, tol=0.6):
+    def collinear(self, a, b, c, tol=0.6, use_z=True):
         """b lies on the segment a-c within tol units in xy and z (a vertex that adds no corner)."""
         ax, ay, az = self.X[a], self.Y[a], self.Z[a]
         cx, cy, cz = self.X[c], self.Y[c], self.Z[c]
@@ -152,7 +152,7 @@ class _Mesh:
             return False
         off = abs((self.X[b] - ax) * dy - (self.Y[b] - ay) * dx) / ln
         zc = az + (cz - az) * t
-        return off <= tol and abs(self.Z[b] - zc) <= tol
+        return off <= tol and (not use_z or abs(self.Z[b] - zc) <= tol)
 
     def corners(self, cyc, own=None):
         """The polygon without the vertices that sit in the middle of one edge: the edges before and after have the
@@ -174,6 +174,58 @@ class _Mesh:
             return list(cyc), list(range(n))
         return [cyc[k] for k in keep], keep
 
+    def corners_stock(self, cyc, own=None):
+        """corners(), then also the vertices between two open-boundary edges (no neighbour) that lie within 0.3 units of
+        the line between their neighbours are removed, one at a time (never below three corners): a stock polygon has
+        no corner on a straight line."""
+        corners, keep = self.corners(cyc, own=own)
+        n = len(cyc)
+        if own is None:
+            own = lambda u, v: self.owner.get((v, u))     # noqa: E731
+        nb = [own(cyc[k], cyc[(k + 1) % n]) for k in range(n)]
+        keep = list(keep)
+        again = True
+        while again and len(keep) > 3:
+            again = False
+            m = len(keep)
+            for j in range(m):
+                pk, k, nx = keep[j - 1], keep[j], keep[(j + 1) % m]
+                if nb[pk] is None and nb[k] is None and self.collinear(cyc[pk], cyc[k], cyc[nx], 0.3):
+                    rest = [cyc[x] for x in keep[:j] + keep[j + 1:]]
+                    if abs(self.area2(rest)) < 16.0:
+                        continue
+                    del keep[j]
+                    again = True
+                    break
+        return [cyc[k] for k in keep], keep
+
+    def is_rect(self, corners):
+        if len(corners) != 4:
+            return False
+        xs = [self.X[v] for v in corners]
+        ys = [self.Y[v] for v in corners]
+        x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+        return all((abs(self.X[v] - x0) < 0.01 or abs(self.X[v] - x1) < 0.01) and
+                   (abs(self.Y[v] - y0) < 0.01 or abs(self.Y[v] - y1) < 0.01) for v in corners)
+
+    def radius(self, corners):
+        """Longest 3D distance from the centroid to a corner (the stock radius)."""
+        a2 = self.area2(corners)
+        if abs(a2) < 1e-9:
+            return 0.0
+        m = len(corners)
+        cx = cy = 0.0
+        for k in range(m):
+            a, b = corners[k], corners[(k + 1) % m]
+            cr = self.X[a] * self.Y[b] - self.X[b] * self.Y[a]
+            cx += (self.X[a] + self.X[b]) * cr
+            cy += (self.Y[a] + self.Y[b]) * cr
+        cx /= 3 * a2
+        cy /= 3 * a2
+        pl = _plane([(self.X[v], self.Y[v], self.Z[v]) for v in corners])
+        cz = pl[0] * cx + pl[1] * cy + pl[2]
+        return max(math.dist((cx, cy, cz), (self.X[v], self.Y[v], self.Z[v])) for v in corners)
+
     def convex(self, cyc, eps=1e-3):
         n = len(cyc)
         for k in range(n):
@@ -183,7 +235,7 @@ class _Mesh:
                 return False
         return True
 
-    def try_merge(self, a, b, max_edges, plane_tol):
+    def try_merge(self, a, b, max_edges, plane_tol, rules=None):
         """The cycle of a and b joined along their shared edges, or None when that is not one simple convex, planar
         polygon with at most max_edges corners. Returns (cycle, shared edges, corner count)."""
         A, B = self.poly[a], self.poly[b]
@@ -223,9 +275,36 @@ class _Mesh:
             if (u, v) in shared:
                 return None
             return self.owner.get((v, u))
-        corners, _ = self.corners(cyc, own=own)
+        rules = rules or {}
+        corners, _ = (self.corners_stock if rules.get('conforming') else self.corners)(cyc, own=own)
         if len(corners) > max_edges:
             return None
+        if rules.get('conforming'):
+            # a polygon whose side meets two different neighbours has a corner on a straight line: not allowed
+            m = len(corners)
+            for k in range(m):
+                if self.collinear(corners[k - 1], corners[k], corners[(k + 1) % m], 0.3):
+                    return None
+        if rules.get('max_radius') and self.radius(corners) > rules['max_radius']:
+            return None
+        if rules.get('max_diameter'):
+            # every piece of a later split then also has a radius under the cap (a radius is at most a diameter)
+            lim = rules['max_diameter']
+            for i in range(len(corners)):
+                for j in range(i + 1, len(corners)):
+                    if math.hypot(self.X[corners[i]] - self.X[corners[j]], self.Y[corners[i]] - self.Y[corners[j]]) > lim:
+                        return None
+        if rules.get('rect_only'):
+            def own_a(u, v):
+                return self.owner.get((v, u))
+            ca, _ = self.corners(A)
+            cb, _ = self.corners(B)
+            if not (self.is_rect(ca) and self.is_rect(cb) and self.is_rect(corners)):
+                return None
+            xs = [self.X[v] for v in corners]
+            ys = [self.Y[v] for v in corners]
+            if max(xs) - min(xs) > rules['rect_only'] + 0.01 or max(ys) - min(ys) > rules['rect_only'] + 0.01:
+                return None
         return cyc, shared, len(corners)
 
     def commit(self, a, b, cyc, shared):
@@ -236,7 +315,7 @@ class _Mesh:
         self.poly[a] = cyc
         del self.poly[b]
 
-    def merge_all(self, max_edges, plane_tol):
+    def merge_all(self, max_edges, plane_tol, rules=None):
         merged = 0
         for pid in sorted(self.poly):
             while pid in self.poly:
@@ -245,7 +324,7 @@ class _Mesh:
                 cand = {self.owner.get((cyc[(k + 1) % n], cyc[k])) for k in range(n)} - {None, pid}
                 best = None
                 for qd in sorted(cand):
-                    r = self.try_merge(pid, qd, max_edges, plane_tol)
+                    r = self.try_merge(pid, qd, max_edges, plane_tol, rules)
                     if r is None:
                         continue
                     score = (r[2], len(r[0]))
@@ -259,7 +338,7 @@ class _Mesh:
 
 
 def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_slope_deg=45, seeds=None,
-             res=8, max_edges=14, plane_tol=1.5, edge_margin=8.0, solid_check=True, detail=False, _debug=None):
+             res=8, max_edges=14, plane_tol=1.5, edge_margin=8.0, solid_check=True, areas='polygons', max_radius=None, detail=False, _debug=None):
     tris = np.asarray(tris, dtype=np.float64).reshape(-1, 3, 3)
     cell = float(cell)
     res = cell / 2.0          # a lattice cell is two columns wide: every column touches one lattice vertex
@@ -490,14 +569,14 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
                     pb = outn[1] if outn is not None else -0.5 * res
                     pa = inn[1]
                     t = (pa - r) / (pa - pb) if pa != pb else 0.0
-                    if t < 0.03:
+                    if t < 0.12:
                         cyc.append(vert(inv[0], inv[1], inn))
                     else:
                         ek = ('x', inn[2], out_v[0], out_v[1])
                         cyc.append(mesh.vertex(ek, ox + (inv[0] + (out_v[0] - inv[0]) * t) * cell,
                                                oy + (inv[1] + (out_v[1] - inv[1]) * t) * cell, inn[0]))
             dedup = [v for kk, v in enumerate(cyc) if v != cyc[kk - 1]]
-            if len(dedup) < 3 or abs(mesh.area2(dedup)) < 8.0:
+            if len(dedup) < 3 or abs(mesh.area2(dedup)) < 32.0:
                 continue
             mesh.add(dedup)
     report['polygons_before_merge'] = len(mesh.poly)
@@ -506,12 +585,66 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
     report['eroded'] = sum(1 for i in alive if phi_span[i] < r)
 
     # -------- 5. merge into convex polygons
-    report['merges'] = mesh.merge_all(max_edges, plane_tol)
+    if areas not in ('polygons', 'stock', 'quads'):
+        raise ValueError("areas must be 'polygons', 'stock' or 'quads'")
+    rules = {}
+    if areas == 'stock':
+        rules = {'stock': True, 'max_radius': max_radius or 230.0, 'max_diameter': max_radius or 230.0}
+    elif areas == 'quads':
+        rules = {'conforming': True, 'rect_only': 64.0}
+    elif max_radius:
+        rules = {'max_radius': max_radius}
+    report['areas_mode'] = areas
+    report['merges'] = mesh.merge_all(max_edges, plane_tol, rules)
 
-    # -------- 6. final polygons
-    info = {}
+    # -------- 6. final polygons: (corner vertices, neighbour per edge, vertices for the plane)
+    fin = {}
     for pid, cyc in mesh.poly.items():
-        corners, keep = mesh.corners(cyc)
+        corners, keep = (mesh.corners_stock if (rules.get('conforming') or rules.get('stock')) else mesh.corners)(cyc)
+        n = len(cyc)
+        fin[pid] = (corners, [mesh.owner.get((cyc[(kk + 1) % n], cyc[kk])) for kk in keep], cyc)
+    if areas == 'stock':
+        # the stock mesh has (almost) no corner on a straight line between its neighbours: a polygon whose side meets
+        # two different neighbours is cut by a diagonal from that corner, so that each piece has one neighbour per side
+        own2 = {}
+        for pid, (cv, _nb, _c) in fin.items():
+            for k in range(len(cv)):
+                own2[(cv[k], cv[(k + 1) % len(cv)])] = pid
+        work = list(fin)
+        nxt = max(fin) + 1
+        splits = 0
+        while work:
+            pid = work.pop()
+            cv = fin[pid][0]
+            m = len(cv)
+            k = next((kk for kk in range(m) if m >= 4 and mesh.collinear(cv[kk - 1], cv[kk], cv[(kk + 1) % m], 0.1, False)), None)
+            if k is None:
+                continue
+            best = None
+            for d_ in range(2, m - 1):              # the diagonal that leaves the larger of the two smaller pieces
+                jj = (k + d_) % m
+                p1 = [cv[(k + s) % m] for s in range(d_ + 1)]
+                p2 = [cv[(jj + s) % m] for s in range(m - d_ + 1)]
+                sm = min(abs(mesh.area2(p1)), abs(mesh.area2(p2)))
+                if best is None or sm > best[0]:
+                    best = (sm, jj, p1, p2)
+            if best is None or best[0] < 2.0:
+                continue
+            _sm, j, a1, a2 = best
+            for kk in range(m):
+                own2.pop((cv[kk], cv[(kk + 1) % m]), None)
+            for npid, cvn in ((pid, a1), (nxt, a2)):
+                fin[npid] = (cvn, None, cvn)
+                for kk in range(len(cvn)):
+                    own2[(cvn[kk], cvn[(kk + 1) % len(cvn)])] = npid
+                work.append(npid)
+            nxt += 1
+            splits += 1
+        for pid, (cv, _nb, cyc) in list(fin.items()):
+            fin[pid] = (cv, [own2.get((cv[(kk + 1) % len(cv)], cv[kk])) for kk in range(len(cv))], cyc)
+        report['collinear_splits'] = splits
+    info = {}
+    for pid, (corners, nbl, cyc) in fin.items():
         a2 = mesh.area2(corners)
         if abs(a2) < 1e-6:
             continue
@@ -525,12 +658,10 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
         cxm /= 3 * a2
         cym /= 3 * a2
         pl = _plane([(mesh.X[v], mesh.Y[v], mesh.Z[v]) for v in cyc])
-        n = len(cyc)
         zs_ = [mesh.Z[v] for v in cyc]
         zc_ = min(max(pl[0] * cxm + pl[1] * cym + pl[2], min(zs_)), max(zs_))     # a thin polygon gives a wild plane
         info[pid] = {'pts': [(mesh.X[v], mesh.Y[v], mesh.Z[v]) for v in corners],
-                     'c': (cxm, cym, zc_), 'plane': pl, 'zr': (min(zs_), max(zs_)),
-                     'nbr': [mesh.owner.get((cyc[(kk + 1) % n], cyc[kk])) for kk in keep]}
+                     'c': (cxm, cym, zc_), 'plane': pl, 'zr': (min(zs_), max(zs_)), 'nbr': list(nbl)}
     # a ramp or stair next to a flat floor (slopes differing by more than 10 degrees) is entered across its foot or top
     # edge, not from the side: the shared edge must be within 30 degrees of perpendicular to the gradient of the
     # steeper area; a side edge gets no link (the body cannot step onto the ramp from the side)
@@ -773,6 +904,7 @@ def main(argv=None):
     p.add_argument('--cell', type=float, default=16.0)
     p.add_argument('--res', type=float, default=8.0)
     p.add_argument('--radius', type=float, default=15.0)
+    p.add_argument('--areas', choices=('polygons', 'stock', 'quads'), default='polygons')
     p.add_argument('--json', help='write the report (with the cells) here')
     p = sub.add_parser('compare', help='cell coverage of two navgraphs')
     p.add_argument('a')
@@ -781,7 +913,7 @@ def main(argv=None):
     args = ap.parse_args(argv)
     if args.cmd == 'gen':
         seeds = [tuple(float(c) for c in s.split(',')) for s in args.seed]
-        data, rep = generate(load_triangles(args.src), cell=args.cell, res=args.res, agent_radius=args.radius,
+        data, rep = generate(load_triangles(args.src), cell=args.cell, res=args.res, agent_radius=args.radius, areas=args.areas,
                              seeds=seeds or None, detail=bool(args.json))
         open(args.out, 'wb').write(data)
         if args.json:

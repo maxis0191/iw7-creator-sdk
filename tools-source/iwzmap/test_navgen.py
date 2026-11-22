@@ -267,5 +267,79 @@ class FreeformTests(unittest.TestCase):
         self.assertGreater(rep['inside_solid'], 0)
 
 
+def collinear_corners(gr, tol=0.05):
+    n = 0
+    for a in gr.areas:
+        P = [e.corner for e in a.edges]
+        m = len(P)
+        for i in range(m):
+            p, q, r = P[i - 1], P[i], P[(i + 1) % m]
+            dx, dy = r[0] - p[0], r[1] - p[1]
+            ln = math.hypot(dx, dy)
+            if ln < 1e-9:
+                continue
+            tt = ((q[0] - p[0]) * dx + (q[1] - p[1]) * dy) / (ln * ln)
+            if 0 <= tt <= 1 and abs((q[0] - p[0]) * dy - (q[1] - p[1]) * dx) / ln <= tol:
+                n += 1
+    return n
+
+
+@unittest.skipIf(np is None, 'numpy missing')
+class AreaModeTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tris = np.array(twostorey.triangles())
+
+    def test_stock_mode_has_no_corner_on_a_straight_line_and_caps_the_radius(self):
+        data, rep = navgen.generate(self.tris, seeds=[twostorey.START], areas='stock')
+        gr = read_bytes(data)
+        self.assertEqual(collinear_corners(gr), 0)
+        self.assertEqual(shared_edge_problems(gr), (0, 0))
+        self.assertLessEqual(max(a.radius for a in gr.areas), 230.0 + 1e-3)
+        self.assertEqual(side_slope_links(gr), 0)
+        top = [i for i, a in enumerate(gr.areas) if abs(a.centre[2] - 256) < 1]
+        start = min(range(len(gr.areas)), key=lambda i: math.dist(gr.areas[i].centre, twostorey.START))
+        seen = flood(gr, start)
+        self.assertTrue(all(i in seen for i in top))
+
+    def test_stock_centre_radius_and_cost_definitions(self):
+        data, _rep = navgen.generate(self.tris, seeds=[twostorey.START], areas='stock')
+        gr = read_bytes(data)
+        by = gr.by_off()
+        for a in gr.areas[::7]:
+            P = [e.corner for e in a.edges]
+            a2 = cx = cy = 0.0
+            for i in range(len(P)):
+                p, q = P[i], P[(i + 1) % len(P)]
+                cr = p[0] * q[1] - q[0] * p[1]
+                a2 += cr / 2
+                cx += (p[0] + q[0]) * cr
+                cy += (p[1] + q[1]) * cr
+            self.assertAlmostEqual(a.centre[0], cx / (6 * a2), places=2)
+            self.assertAlmostEqual(a.centre[1], cy / (6 * a2), places=2)
+            self.assertAlmostEqual(a.radius, max(math.dist(a.centre, p) for p in P), places=2)
+            for e in a.edges:
+                if e.cost:
+                    self.assertLessEqual(abs(e.cost - math.ceil(math.dist(a.centre, by[e.nbr].centre) * 1000 / 72)), 1)
+
+    def test_quads_mode_is_rectangles_up_to_64_plus_boundary_polygons(self):
+        data, _rep = navgen.generate(self.tris, seeds=[twostorey.START], areas='quads', cell=32)
+        gr = read_bytes(data)
+        self.assertEqual(collinear_corners(gr), 0)
+        self.assertEqual(shared_edge_problems(gr), (0, 0))
+        self.assertEqual(side_slope_links(gr), 0)
+        rects = 0
+        for a in gr.areas:
+            xs = [e.corner[0] for e in a.edges]
+            ys = [e.corner[1] for e in a.edges]
+            self.assertLessEqual(max(xs) - min(xs), 64.01)
+            self.assertLessEqual(max(ys) - min(ys), 64.01)
+            if len(a.edges) == 4 and all((abs(x - min(xs)) < 0.01 or abs(x - max(xs)) < 0.01) and
+                                         (abs(y - min(ys)) < 0.01 or abs(y - max(ys)) < 0.01)
+                                         for x, y in zip(xs, ys)):
+                rects += 1
+        self.assertGreater(rects, len(gr.areas) * 0.8)
+
+
 if __name__ == '__main__':
     unittest.main()
