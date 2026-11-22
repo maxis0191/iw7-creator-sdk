@@ -91,7 +91,7 @@ def _sample(tris, h_floor, h_wall, cos_slope, chunk=1_500_000):
 
 
 def generate(tris, *, cell=32, agent_height=72, agent_radius=15, step=18, max_slope_deg=45, seeds=None,
-             res=8, min_cover=0.5, detail=False):
+             res=8, min_cover=0.2, detail=False, _debug=None):
     tris = np.asarray(tris, dtype=np.float64).reshape(-1, 3, 3)
     cell = float(cell)
     q = max(1, int(round(cell / float(res))))
@@ -139,12 +139,15 @@ def generate(tris, *, cell=32, agent_height=72, agent_radius=15, step=18, max_sl
     skey = key[first]
     zmin = z[first]
     zmax = z[last]
-    top = zmax[sid]
-    near_top = w & (z >= top - 1.0)
-    swalk = np.bincount(sid, weights=near_top.astype(np.float64), minlength=ns) > 0
-    grp = w & (z >= top - 0.5 * res)
+    wz = np.where(w, z, -np.inf)
+    wtop = np.maximum.reduceat(wz, first)          # highest walkable point of each span
+    # walkable when the highest walkable point is within one step of the span top (a riser or a curb above a
+    # tread does not make the column a wall); the surface height is the mean of the walkable points near that top
+    swalk = wtop >= zmax - step
+    grp = w & (z >= wtop[sid] - 0.5 * res)
     cnt = np.bincount(sid, weights=grp.astype(np.float64), minlength=ns)
     fz = np.where(cnt > 0, np.bincount(sid, weights=np.where(grp, z, 0.0), minlength=ns) / np.maximum(cnt, 1), zmax)
+    zmax = np.where(swalk, wtop, zmax)             # headroom is counted from the walkable top
     nxt_same = np.zeros(ns, bool)
     nxt_same[:-1] = skey[1:] == skey[:-1]
     ceil = np.full(ns, np.inf)
@@ -200,6 +203,8 @@ def generate(tris, *, cell=32, agent_height=72, agent_radius=15, step=18, max_sl
                 dq.append(j)
     keep = {i for i in alive if (dist.get(i, 1 << 30) + 0.5) * res >= agent_radius}
     report['eroded'] = len(alive) - len(keep)
+    if _debug is not None:
+        _debug.update(dict(skey=skey, fz=fz, zmax=zmax, zmin=zmin, ceil=ceil, floor=floor, swalk=swalk, keep=keep, dist=dist, W=W, ox=ox, oy=oy, res=res))
 
     # -------- 4. floor layers (components), cells
     comp = {}
