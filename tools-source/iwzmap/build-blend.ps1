@@ -78,6 +78,8 @@ function Invoke-Zt([string[]]$a,[int]$t){
   throw 'resource lease not obtained'
 }
 New-Item -ItemType Directory -Force $W | Out-Null
+New-Item -ItemType Directory -Force $UmOut | Out-Null     # before the compile: its log and volume_check.json are written next to it
+$null = New-Item -ItemType Directory -Force (Split-Path $UmOut -Parent)
 Copy-Item $ZoneToolExe "$W\zonetool.exe" -Force
 . (& "$S\scheduler.ps1" '')
 $held=$null; $heldClock=[Diagnostics.Stopwatch]::StartNew()
