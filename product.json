@@ -578,6 +578,7 @@
     "tools-source/iwzmap/tests/test_iwz_zonecheck.py",
     "tools-source/iwzmap/tests/test_kit_import_stage.py",
     "tools-source/iwzmap/tests/test_kit_lists.py",
+    "tools-source/iwzmap/tests/test_lmbake_grid_units.py",
     "tools-source/iwzmap/tests/test_prefab_place.py",
     "tools-source/iwzmap/tests/test_scenegen.py",
     "tools-source/iwzmap/tests/test_scheduler_core.py",
