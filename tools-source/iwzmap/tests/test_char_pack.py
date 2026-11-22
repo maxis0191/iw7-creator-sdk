@@ -35,11 +35,15 @@ class CharPackTest(unittest.TestCase):
         write('xmodel/hero_body.xmb', b'XMB' + asset('hero_body_lod0') + asset('mtl_body') + asset('mtl_shared')
               + self.body_tail)
         write('zone_a.csv', 'xmodel,hero_body\nproceduralbones,pb_female\nscriptable,boss_scriptable\n')
-        write('xmodel/hero_arms.xmb', b'XMB' + asset('hero_arms_lod0') + asset('mtl_body'))
+        write('xmodel/hero_arms.xmb', b'XMB' + asset('hero_arms_lod0') + asset('mtl_body') + asset('mtl_core'))
         write('xsurface/hero_body_lod0.xsb', b'S' * 10)
         write('xsurface/hero_arms_lod0.xsb', b'S' * 4)
         write('materials/mtl_body.json', json.dumps({'techniqueSet->name': 'ts_shared', 'textureTable': [{'image': 'img_body'}]}))
         write('materials/mtl_shared.json', json.dumps({'techniqueSet->name': 'ts_shared', 'textureTable': [{'image': 'img_x'}]}))
+        write('materials/mtl_core.json', json.dumps({'techniqueSet->name': 'ts_core'}))
+        os.makedirs(os.path.join(self.dump, 'techsets', 'state', 'ts_core'))
+        write('techsets/state/ts_core/mtl_core.statebits', b'1')
+        write('techsets/state/ts_core/mtl_core.statebitsmap', b'1')
         write('images/img_body.iw7Image', b'H')
         write('techsets/state/ts_shared/mtl_body.statebits', b'1')
         write('techsets/state/ts_shared/mtl_body.statebitsmap', b'1')
@@ -47,9 +51,16 @@ class CharPackTest(unittest.TestCase):
         os.makedirs(os.path.join(self.runtime, 'techsets_global'))
         with open(os.path.join(self.runtime, 'techsets_global', 'techsets_global.csv'), 'w') as f:
             f.write('techset,ts_shared\nmaterial,mtl_shared\n')
-        os.makedirs(os.path.join(self.runtime, 'global_core_mp'))
-        with open(os.path.join(self.runtime, 'global_core_mp', 'global_core_mp.csv'), 'w') as f:
+        os.makedirs(os.path.join(self.runtime, 'global'))
+        with open(os.path.join(self.runtime, 'global', 'global.csv'), 'w') as f:
             f.write('physicsasset,ragdoll_shared\n')
+        # a techset only a *_core_mp zone defines: zombies never loads those zones, so the pack copies it from that dump
+        core = os.path.join(self.runtime, 'techsets_global_core_mp')
+        os.makedirs(os.path.join(core, 'techsets'))
+        with open(os.path.join(core, 'techsets_global_core_mp.csv'), 'w') as f:
+            f.write('techset,ts_core\n')
+        with open(os.path.join(core, 'techsets', 'ts_core.techset'), 'wb') as f:
+            f.write(b'T')
         self.spec = os.path.join(d, 'chars.json')
         with open(self.spec, 'w') as f:
             json.dump({'table': 'paris/chars.csv', 'characters': [
@@ -70,7 +81,9 @@ class CharPackTest(unittest.TestCase):
         code, out = self.run_pack()
         self.assertEqual(code, 0, out)
         rows = open(os.path.join(self.out, 'zone_source', 'mod.csv')).read().split()
-        self.assertEqual(rows[0], 'require,techsets_common')
+        self.assertEqual(rows[0], 'require,techsets_global')
+        self.assertNotIn('require,techsets_global_core_mp', rows)   # not loaded in zombies (22 Nov 2026)
+        self.assertNotIn('techset,,ts_core', rows)                  # copied from the core_mp dump, not referenced
         self.assertIn('material,,mtl_shared', rows)          # defined by a shared zone: a reference
         self.assertIn('techset,,ts_shared', rows)
         self.assertNotIn('material,,mtl_body', rows)         # own material: copied
@@ -79,6 +92,7 @@ class CharPackTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(tree, 'materials', 'mtl_body.json')))
         self.assertFalse(os.path.exists(os.path.join(tree, 'materials', 'mtl_shared.json')))
         self.assertTrue(os.path.isfile(os.path.join(tree, 'images', 'img_body.iw7Image')))
+        self.assertTrue(os.path.isfile(os.path.join(tree, 'techsets', 'ts_core.techset')))
         with open(os.path.join(tree, 'paris', 'chars.csv')) as f:
             self.assertEqual(f.read(), 'key,body,head,arms\nhero,hero_body,,hero_arms\n')
         self.assertIn('physicsasset,,ragdoll_shared', rows)  # a shared zone's ragdoll: a reference

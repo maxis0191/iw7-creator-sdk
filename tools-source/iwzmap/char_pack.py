@@ -24,13 +24,18 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import kit_import  # noqa: E402
 
-# Techset zones loaded on every zombies map (the usermap template requires the same, without its map's own).
-SHARED_TECHSET_ZONES = ('techsets_common', 'techsets_global', 'techsets_common_core_mp', 'techsets_global_core_mp',
-                        'techsets_common_mp', 'techsets_global_mp', 'techsets_common_cp', 'techsets_global_cp')
-# Zones loaded before the mod zone on every zombies map and kept across maps (the maps reference their assets, e.g. the
-# ragdoll physics asset and the male procedural bones of global_core_mp): their assets become references. A map zone
-# never does: the mod zone outlives a map, so a reference into one would point at freed memory on the next map.
-SHARED_ZONES = SHARED_TECHSET_ZONES + ('global_core_mp', 'global_cp', 'global')
+# Zones a zombies client keeps loaded under the mod zone on every map: only these may be referenced. Measured on a joined
+# lab client (22 Nov 2026, the zones it loads for cp_town: code_*, global, global_mp, global_cp, common, common_mp,
+# common_cp, ui*, the map): no *_core_mp zone loads in zombies, and the common zones load again with each map. A pack that
+# referenced techsets of techsets_global_core_mp crashed every client drawing the DJ on cp_rave and cp_town (iw7_ship
+# +0xE45614, a null per-zone state map: the watch glass techset mopw_l_sm_rim_ndw_blendadd_i0c0s0o0n0pa0 is defined by
+# cp_zmb and cp_disco only). Everything else a model uses is copied into the pack.
+SHARED_TECHSET_ZONES = ('techsets_global', 'techsets_global_mp', 'techsets_global_cp')
+SHARED_ZONES = SHARED_TECHSET_ZONES + ('global', 'global_mp', 'global_cp')
+# Stock dumps searched for what a model's own zone dump lacks (a techset or a physics asset that only these define): the
+# copy comes from there.
+EXTRA_SOURCE_ZONES = ('techsets_global_core_mp', 'techsets_common_core_mp', 'techsets_common_mp', 'techsets_common_cp',
+                      'techsets_common', 'global_core_mp', 'common_core_mp', 'common_cp', 'common_mp', 'common')
 
 
 def main(argv=None):
@@ -63,6 +68,7 @@ def main(argv=None):
     with open(csvp, 'w', newline='\n') as f:
         f.write(''.join('require,%s\n' % z for z in SHARED_TECHSET_ZONES))
 
+    extra = [os.path.join(a.runtime_dir, z) for z in EXTRA_SOURCE_ZONES if os.path.isdir(os.path.join(a.runtime_dir, z))]
     runtime = []
     for z in SHARED_ZONES:
         p = os.path.join(a.runtime_dir, z, z + '.csv')
@@ -75,7 +81,7 @@ def main(argv=None):
     args = [a.out, a.zone, '--models', ','.join(models), '--share-runtime', '--drop-procedural-bones',
             '--report', report] + runtime
     for d in a.dump:
-        args += ['--dump', d]
+        args += ['--dump', ';'.join([d] + extra)]
     if a.dry_run:
         args.append('--dry-run')
     rc = kit_import.main(args)
