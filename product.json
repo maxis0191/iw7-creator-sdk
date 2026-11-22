@@ -464,6 +464,7 @@
     "tools-source/iwzmap/native/error_journal.c",
     "tools-source/iwzmap/native/iw7_fxperf.c",
     "tools-source/iwzmap/native/xref.py",
+    "tools-source/iwzmap/navfmt.py",
     "tools-source/iwzmap/new-work-from-stock.ps1",
     "tools-source/iwzmap/new-work.ps1",
     "tools-source/iwzmap/perks/README.md",
