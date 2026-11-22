@@ -57,6 +57,8 @@ def _sample(tris, h_floor, h_wall, cos_slope, chunk=1_500_000):
     ok = area2 > 1e-6
     nz = np.where(ok, n[:, 2] / np.maximum(area2, 1e-12), 0.0)
     walk = nz >= cos_slope
+    # class: 3 walkable up-facing, 2 up-facing too steep, 1 near vertical, 0 facing down
+    cls_t = np.where(walk, 3, np.where(nz > 0.1, 2, np.where(nz >= -0.1, 1, 0))).astype(np.int8)
     # the longest edge is the base a -> b; c is the apex
     l = np.stack([np.linalg.norm(e1, axis=1), np.linalg.norm(e3, axis=1), np.linalg.norm(e2, axis=1)], 1)
     which = l.argmax(1)
@@ -80,8 +82,15 @@ def _sample(tris, h_floor, h_wall, cos_slope, chunk=1_500_000):
         u = (S * (1.0 - T)).ravel()
         v = T.ravel()
         p = A[ti] + u[:, None] * (B[ti] - A[ti]) + v[:, None] * (C[ti] - A[ti])
+        if walk[ti]:
+            # pull the points of a floor triangle 0.6 units inside it, so that the row of points on its border does not
+            # put a floor column on the far side of the edge (the slab edge, a doorway, a ledge)
+            cen = (A[ti] + B[ti] + C[ti]) / 3.0
+            vec = p - cen
+            dn = np.maximum(np.linalg.norm(vec, axis=1), 1e-9)
+            p = cen + vec * np.maximum(0.0, 1.0 - 0.6 / dn)[:, None]
         pend_p.append(p)
-        pend_w.append(np.full(len(p), walk[ti]))
+        pend_w.append(np.full(len(p), cls_t[ti]))
         count += len(p)
         if count >= chunk:
             yield np.concatenate(pend_p), np.concatenate(pend_w)
@@ -262,7 +271,7 @@ class _Mesh:
 
 
 def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_slope_deg=45, seeds=None,
-             res=8, max_edges=14, plane_tol=1.5, edge_margin=8.0, detail=False, _debug=None):
+             res=8, max_edges=14, plane_tol=1.5, edge_margin=8.0, solid_check=True, detail=False, _debug=None):
     tris = np.asarray(tris, dtype=np.float64).reshape(-1, 3, 3)
     cell = float(cell)
     res = cell / 2.0          # a lattice cell is two columns wide: every column touches one lattice vertex
@@ -282,12 +291,25 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
 
     # -------- 1. points to columns
     keys, zs, ws = [], [], []
-    for pts, wk in _sample(tris, res * 0.7, res * 0.5, cos_slope):
+    wall_k, wall_p = [], []
+    for pts, cl in _sample(tris, res * 0.7, res * 0.5, cos_slope):
+        wk = cl == 3
         cx = np.floor((pts[:, 0] - ox) / res).astype(np.int64)
         cy = np.floor((pts[:, 1] - oy) / res).astype(np.int64)
         keys.append(cy * W + cx)
         zs.append(pts[:, 2])
-        ws.append(wk)
+        ws.append(cl)
+        wall_k.append((cy * W + cx)[~wk])
+        wall_p.append(pts[~wk])
+    wall_k = np.concatenate(wall_k)
+    wall_p = np.concatenate(wall_p)
+    wo = np.argsort(wall_k, kind='stable')
+    wall_k, wall_p = wall_k[wo], wall_p[wo]
+    wall_lo = {}
+    if len(wall_k):
+        ukeys, ustart = np.unique(wall_k, return_index=True)
+        uend = np.append(ustart[1:], len(wall_k))
+        wall_lo = {int(a): (int(b), int(c)) for a, b, c in zip(ukeys, ustart, uend)}
     e1 = tris[:, 1] - tris[:, 0]
     e2 = tris[:, 2] - tris[:, 0]
     report['tris_skipped'] = int((np.linalg.norm(np.cross(e1, e2), axis=1) <= 1e-6).sum())
@@ -296,7 +318,8 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
     w = np.concatenate(ws)
     del keys, zs, ws
     order = np.lexsort((z, key))
-    key, z, w = key[order], z[order], w[order]
+    key, z, cls = key[order], z[order], w[order]
+    w = cls == 3
 
     # -------- 2. spans
     new = np.ones(len(key), bool)
@@ -322,6 +345,14 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
     ceil = np.full(ns, np.inf)
     ceil[:-1] = np.where(nxt_same[:-1], zmin[1:], np.inf)
     floor = swalk & (ceil - zmax >= agent_height)
+    if solid_check:
+        # the next surface above must be seen from below (a ceiling or a wall): when it faces up, the floor lies
+        # inside a closed solid (under a pillar, inside a crate) and is not walkable
+        lowcls = cls[first]
+        inside = np.zeros(ns, bool)
+        inside[:-1] = nxt_same[:-1] & (lowcls[1:] >= 2)
+        report['inside_solid'] = int((floor & inside).sum())
+        floor &= ~inside
     report['columns'] = int(len(np.unique(skey)))
     report['spans'] = ns
     report['floor_spans'] = int(floor.sum())
@@ -355,10 +386,23 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
             else:
                 miss8 = True
         nb8[i] = lst
-        if miss4:
-            seedd[i] = 0.5 * res
-        elif miss8:
-            seedd[i] = 0.5 * res * math.sqrt(2.0)
+        if miss4 or miss8:
+            # the edge of the surface: the true distance to the wall in the neighbouring columns when there is one
+            # (a wall column holds the wall somewhere inside it), else the half column of an open drop
+            best = 0.5 * res if miss4 else 0.5 * res * math.sqrt(2.0)
+            px, py = ox + (cx + 0.5) * res, oy + (cy + 0.5) * res
+            lo, hi = fzl[i] + step, fzl[i] + agent_height
+            wd = None
+            for dx, dy in D8 + ((0, 0),):
+                rng = wall_lo.get((cy + dy) * W + cx + dx)
+                if rng is None:
+                    continue
+                seg = wall_p[rng[0]:rng[1]]
+                seg = seg[(seg[:, 2] >= lo) & (seg[:, 2] <= hi)]
+                if len(seg):
+                    d = float(np.sqrt(((seg[:, 0] - px) ** 2 + (seg[:, 1] - py) ** 2).min()))
+                    wd = d if wd is None else min(wd, d)
+            seedd[i] = wd if wd is not None else best
     dist = dict(seedd)
     heap = [(d, i) for i, d in seedd.items()]
     heapq.heapify(heap)
@@ -573,11 +617,80 @@ def generate(tris, *, cell=16, agent_height=72, agent_radius=15, step=18, max_sl
                    'stacked_squares_32': sum(1 for v in foot.values() if max(v) - min(v) >= agent_height),
                    'layers_z': dict(sorted(zc.items())), 'bytes': len(data)})
     if _debug is not None:
-        _debug.update(dict(mesh=mesh, info=info, order=order, areas=areas, ox=ox, oy=oy))
+        _debug.update(dict(mesh=mesh, info=info, order=order, areas=areas, ox=ox, oy=oy, phi=phi_span, skey=skey, fz=fz, W=W, res=res, vnodes=vnodes))
     return data, report
 
 
 
+# ------------------------------------------------------------------------------ measurements
+def boundary_gap(tris, data, *, agent_height=72, step=18, max_slope_deg=45, reach=48.0, spacing=4.0):
+    """How far the navigation edge stays from the collision wall: samples every `spacing` units along each area edge
+    that has no neighbour, looks straight out from the edge (the outward normal) and measures the distance to the first
+    wall point within 3 units of that line (a point of a triangle steeper than max_slope_deg whose height lies in the
+    body of an agent standing there). Samples with no wall within `reach` are drops, not walls, and are only counted.
+    Returns a dict: samples, near_wall, open, max, mean, p95."""
+    tris = np.asarray(tris, dtype=np.float64).reshape(-1, 3, 3)
+    cos_slope = math.cos(math.radians(max_slope_deg))
+    wall = [pts[cl != 3] for pts, cl in _sample(tris, 4.0, 4.0, cos_slope)]
+    wall = np.concatenate(wall) if wall else np.zeros((0, 3))
+    g = 16.0
+    cx_all = np.floor(wall[:, 0] / g).astype(np.int64)
+    cy_all = np.floor(wall[:, 1] / g).astype(np.int64)
+    order = np.lexsort((cy_all, cx_all))
+    wall, cx_all, cy_all = wall[order], cx_all[order], cy_all[order]
+    grid = {}
+    if len(wall):
+        ck = cx_all * 100003 + cy_all
+        uk, us = np.unique(ck, return_index=True)
+        ue = np.append(us[1:], len(ck))
+        for k, s, e in zip(uk.tolist(), us.tolist(), ue.tolist()):
+            grid[k] = wall[s:e]
+    gs = navfmt.find_graph(data)
+    gr, _n = navfmt.parse_graph(data[gs:])
+    dists = []
+    far = []
+    open_n = 0
+    rr = int(reach // g) + 1
+    for a in gr.areas:
+        n = len(a.edges)
+        for e in range(n):
+            if a.edges[e].cost:
+                continue
+            p, q = a.edges[e].corner, a.edges[(e + 1) % n].corner
+            ln = math.dist(p[:2], q[:2])
+            if ln < 1e-6:
+                continue
+            tx, ty = (q[0] - p[0]) / ln, (q[1] - p[1]) / ln
+            nx, ny = ty, -tx                                   # outward for counter-clockwise corners
+            k = max(1, int(ln // spacing))
+            for s in range(k + 1):
+                x, y, z = (p[i] + (q[i] - p[i]) * s / k for i in range(3))
+                cx, cy = int(x // g), int(y // g)
+                cand = [grid[kk] for kk in ((ix * 100003 + iy) for ix in range(cx - rr, cx + rr + 1)
+                                            for iy in range(cy - rr, cy + rr + 1)) if kk in grid]
+                best = None
+                if cand:
+                    w = np.concatenate(cand)
+                    w = w[(w[:, 2] >= z + step) & (w[:, 2] <= z + agent_height)]
+                    if len(w):
+                        al = (w[:, 0] - x) * nx + (w[:, 1] - y) * ny
+                        pe = np.abs((w[:, 0] - x) * tx + (w[:, 1] - y) * ty)
+                        ok = (al >= 0.0) & (al <= reach) & (pe <= 3.0)
+                        if ok.any():
+                            best = float(al[ok].min())
+                if best is None:
+                    open_n += 1
+                else:
+                    dists.append(best)
+                    if best > 20.0:
+                        far.append((round(x, 1), round(y, 1), round(z, 1), round(best, 1)))
+    d = np.array(dists) if dists else np.zeros(1)
+    return {'samples': len(dists) + open_n, 'near_wall': len(dists), 'open': open_n, 'max': round(float(d.max()), 2),
+            'mean': round(float(d.mean()), 2), 'p95': round(float(np.percentile(d, 95)), 2),
+            'beyond_20': len(far), 'far_examples': far[:5]}
+
+
+# ------------------------------------------------------------------------------ tools
 def load_triangles(path):
     if os.path.isdir(path):
         path = os.path.join(path, 'colmap.hkx')
