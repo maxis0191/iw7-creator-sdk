@@ -86,3 +86,27 @@ def tonemap(scene, bloom, lut, p=TONE_CAPTURE, matrix=None):
         t = np.clip(t @ np.asarray(matrix, np.float32).T, 0, 1)
     s = np.maximum(1.055 * np.power(np.clip(t, 0, 1), 1 / 2.4) - 0.055, 0)
     return lut_sample(lut, s * 0.96875 + 0.015625)
+
+
+def load_lut(path=None):
+    import os
+    p = path or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'engine_tonemap_lut32.bin')
+    return np.frombuffer(open(p, 'rb').read(), np.uint8).reshape(32, 32, 32, 4)
+
+
+def bloom_approx(scene):
+    """The engine's bloom is a 5 level blurred pyramid of the HDR frame ending at 320 x 180 (post chain in ENGINE-SHADERS.md).
+    Approximation: 4 x 4 box average (320 x 180) sampled back bilinearly. Weight 0.1 of the output, so its error is second order."""
+    h, w = scene.shape[:2]
+    if h % 4 or w % 4:
+        return scene
+    small = scene.reshape(h // 4, 4, w // 4, 4, 3).mean((1, 3))
+    return bilinear_up(small, h, w)
+
+
+def display_frame(raw, gain=1.0, lut=None):
+    """Preview linear radiance (h, w, 3), multiplied by `gain` (1.0 = the engine's own scale) -> display sRGB 0..1 (h, w, 3)
+    through the engine tone map of the stock vision."""
+    lut = load_lut() if lut is None else lut
+    scene = np.maximum(raw[..., :3] * gain, 0).astype(np.float32)
+    return tonemap(scene, bloom_approx(scene), lut)
