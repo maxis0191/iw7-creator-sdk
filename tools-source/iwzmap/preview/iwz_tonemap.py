@@ -110,3 +110,65 @@ def display_frame(raw, gain=1.0, lut=None):
     lut = load_lut() if lut is None else lut
     scene = np.maximum(raw[..., :3] * gain, 0).astype(np.float32)
     return tonemap(scene, bloom_approx(scene), lut)
+
+
+# ---- exposure: the engine's exposure compute pass as a steady state model ------------------------------------------------------------------
+# Shaders: c672eba77dc0 (sum of log luminance of the 160 x 90 blurred HDR, optional vignette weight; unweighted here) and 974052551c85 lines 28-120
+# (ENGINE-SHADERS.md section 1b). The tone curve constants of the pass are the base constants times s, s = 5.5555 * exposure; the world is
+# multiplied by nothing else. Stock vision values: the numbers of the cp_zmb / cp_iwz vision files.
+import math
+import re
+
+STOCK_CAP = 5.0345    # exposure of the stock capture (cb13[3].x) = 0.18 / Lmax with tonemapMaxExposure 8
+
+
+def parse_vision(path):
+    out = {}
+    for ln in open(path, encoding='utf-8', errors='replace'):
+        m = re.match(r'\s*(\w+)\s+"([^"]*)"', ln)
+        if m:
+            try:
+                out[m.group(1)] = float(m.group(2).split()[0])
+            except ValueError:
+                pass
+    return out
+
+
+def log_average(scene, block=8):
+    """Geometric mean of the luminance of the scene reduced to 1 / block (160 x 90 for 1280 x 720), floor 0.000061 as in the shader (line 24-25 of c672)."""
+    h, w = scene.shape[:2]
+    h8, w8 = h // block * block, w // block * block
+    lum = scene[:h8, :w8, 0] * 0.2126 + scene[:h8, :w8, 1] * 0.7152 + scene[:h8, :w8, 2] * 0.0722
+    low = lum.reshape(h8 // block, block, w8 // block, block).mean((1, 3))
+    return float(math.exp(np.mean(np.log(np.clip(low, 0.000061, 65504.0)))))
+
+
+def auto_key(lavg, v):
+    """The target luminance the frame is exposed to (974052551c85 lines 38-66): a power curve through the vision's Dark / Mid / Light EV points and their exposure adjustments,
+    evaluated in the gamma 2.2 domain, clamped to 0.18 * 2^(min adjust) .. 0.18 * 2^(max adjust)."""
+    dark, mid, light = v['tonemapDarkEv'], v['tonemapMidEv'], v['tonemapLightEv']
+    ga = [(0.18 * 2.0 ** v[k]) ** (1 / 2.2) for k in ('tonemapDarkExposureAdjust', 'tonemapMidExposureAdjust', 'tonemapLightExposureAdjust')]
+    ln2 = math.log(2.0)
+    span = (light - dark) * ln2
+    ratio_ev = (mid - dark) * ln2 / span
+    ratio_adj = (ga[1] - ga[0]) / (ga[2] - ga[0])
+    p = math.log(ratio_adj) / math.log(ratio_ev)
+    scaled = max(lavg / 0.001, 6.1e-5)               # scene luminance in the units of the Ev table (line 34-37)
+    tt = max((math.log(scaled) - 0.0) / span, 0.0)   # (Dark - 2.84) = 0 for the stock Dark Ev
+    y = max(tt ** p * (ga[2] - ga[0]) + ga[0], 0.0)
+    key = y ** 2.2
+    return min(max(key, 0.18 * 2.0 ** v['tonemapMinExposureAdjust']), 0.18 * 2.0 ** v['tonemapMaxExposureAdjust'])
+
+
+def exposure_gain(lavg, v, factor=1.0):
+    """Gain on the scene relative to the stock capture's curve constants (s = 27.97 at exposure 5.0345).
+    auto (tonemapAuto 1): e = factor * key / Lavg, exposure = min(0.18 / Lmax, e * 2^tonemapAutoExposureAdjust) (lines 80, 108-109);
+    fixed (tonemapAuto 0): exposure = min(0.18 / Lmax, 5.0345 * 2^tonemapExposureAdjust) (the stock capture's value times the bias; 2^-3 for the dark vision)."""
+    lmax = 0.001 * 2.0 ** (v['tonemapMaxExposure'] - 2.84)
+    cap = 0.18 / lmax
+    if v.get('tonemapAuto', 1.0) > 0:
+        e = factor * auto_key(lavg, v) / max(lavg, 1e-9)
+        exp = min(cap, e * 2.0 ** v.get('tonemapAutoExposureAdjust', 0.0))
+    else:
+        exp = min(cap, STOCK_CAP * 2.0 ** v.get('tonemapExposureAdjust', 0.0))
+    return exp / STOCK_CAP

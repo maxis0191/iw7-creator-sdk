@@ -109,10 +109,23 @@ def run(a, load_calib, run_blender, engine_frames, save_png):
         p = preview_low(n, unit, g)
         return g, float(np.sqrt(np.mean((np.log(p[mlow]) - np.log(elow[n][mlow])) ** 2)))
 
+    vision = TM.parse_vision(a.vision)
+    if a.lit_adjust is not None:
+        vision['tonemapAutoExposureAdjust'] = a.lit_adjust
+
+    def model_exposure(n, unit):
+        """Steady state auto exposure of the engine from the frame's own log average luminance and the vision (iwz_tonemap.exposure_gain). No per frame parameter.
+        -> gain, rms log error of the spatial pattern."""
+        x = data[n]['lm'] + unit * data[n]['lt']
+        g = TM.exposure_gain(TM.log_average(x), vision, a.ae_factor)
+        p = preview_low(n, unit, g)
+        return g, float(np.sqrt(np.mean((np.log(p[mlow]) - np.log(elow[n][mlow])) ** 2)))
+
+    exposure = fit_exposure if a.fit_exposure else model_exposure
     units = [0.0] + list(10 ** np.linspace(-5.5, -1.5, 9))
     errs = {}
     for u in units:
-        errs[u] = float(np.mean([fit_exposure(n, u)[1] for n in eng]))
+        errs[u] = float(np.mean([exposure(n, u)[1] for n in eng]))
         print('unit %.3g: mean spatial rms log error %.4f' % (u, errs[u]), flush=True)
     ubest = min(units, key=lambda u: errs[u])
     sbs = os.path.join(out, 'sidebyside')
@@ -122,7 +135,9 @@ def run(a, load_calib, run_blender, engine_frames, save_png):
         eedge = C.engine_edges(eng[n], mask)
         res = {}
         for tag, unit in (('before', 0.0), ('after', ubest)):
-            g, e = fit_exposure(n, unit)
+            g, e = exposure(n, unit)
+            gf, _ = fit_exposure(n, unit)
+            res[tag + '_evfit'] = float(np.log2(gf))
             x = data[n]['lm'] + unit * data[n]['lt']
             img = TM.display_frame(x, g, lut)
             res[tag] = img
@@ -131,9 +146,9 @@ def run(a, load_calib, run_blender, engine_frames, save_png):
             res[tag + '_ev'] = float(np.log2(g))
         rows.append({'frame': n, **{k: round(float(v), 3) for k, v in res.items() if not isinstance(v, np.ndarray)}})
         save_png(np.concatenate([res['before'], res['after'], eng[n]], 1), os.path.join(sbs, n + '_before_after_engine.png'))
-    keys = ('before_edge', 'after_edge', 'before_err', 'after_err', 'before_ev', 'after_ev')
-    lines = ['| frame | edge IoU before | edge IoU after | pattern rms log err before | pattern rms log err after | exposure EV before | exposure EV after |',
-             '|---|---|---|---|---|---|---|']
+    keys = ('before_edge', 'after_edge', 'before_err', 'after_err', 'before_ev', 'before_evfit', 'after_ev', 'after_evfit')
+    lines = ['| frame | edge IoU before | edge IoU after | pattern rms log err before | pattern rms log err after | EV used before | EV fitted before | EV used after | EV fitted after |',
+             '|---|---|---|---|---|---|---|---|---|']
     for r in rows:
         lines.append('| %s | ' % r['frame'] + ' | '.join('%.3f' % r[k] for k in keys) + ' |')
     lines.append('| mean | ' + ' | '.join('%.3f' % np.mean([r[k] for r in rows]) for k in keys) + ' |')

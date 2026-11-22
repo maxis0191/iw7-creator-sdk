@@ -144,9 +144,11 @@ def build_material(name, image_path, tint, kind, lit, lm_img, lm_uv_name, uv_nam
         nt.links.new(uvnode(uvname or uv_name).outputs['UV'], tx.inputs['Vector'])
         return tx
 
+    # the engine's lit shaders square the colour map (ENGINE-SHADERS.md section 2, line 9): read it as raw values, not sRGB, and square it
+    square = bool((lit or object_light) and not emissive)
     if image_path:
         try:
-            tx = tex(image_path)
+            tx = tex(image_path, data=square)
         except RuntimeError:
             em.inputs['Color'].default_value = MAGENTA
             return mat
@@ -164,6 +166,8 @@ def build_material(name, image_path, tint, kind, lit, lm_img, lm_uv_name, uv_nam
         nt.links.new(b, m.inputs['B'])
         return m.outputs['Result']
 
+    if square and col is not None:
+        col = mul(col, col)
     base = tint_n.outputs[0] if col is None else mul(col, tint_n.outputs[0])
     if emissive > 0 and ALBEDO_PASS:
         em.inputs['Color'].default_value = (0, 0, 0, 1)
@@ -174,7 +178,7 @@ def build_material(name, image_path, tint, kind, lit, lm_img, lm_uv_name, uv_nam
         nt.links.new(base, em.inputs['Color'])
     elif lit and lm_img is not None:
         E_img, A_img, D_img = lm_img
-        occ_png = extra.get('occlusion_png')
+        occ_png = None      # the `nog` map's R channel is gloss, not occlusion (ENGINE-SHADERS.md section 2); the lightmap and ssao are the occlusion
         if occ_png:
             ot = tex(occ_png, data=True)
             sep = nt.nodes.new('ShaderNodeSeparateColor')
