@@ -1,0 +1,66 @@
+{
+ "zones": {
+  "lower": {
+   "box": [
+    0,
+    0,
+    -16,
+    1024,
+    1024,
+    240
+   ]
+  },
+  "upper": {
+   "box": [
+    0,
+    0,
+    240,
+    1024,
+    1024,
+    512
+   ]
+  }
+ },
+ "starts": [
+  [
+   200.0,
+   200.0,
+   0.0
+  ]
+ ],
+ "spawners": [
+  {
+   "zone": "upper",
+   "origin": [
+    200.0,
+    900.0,
+    256.0
+   ],
+   "kind": "ground",
+   "yaw": 0,
+   "on_nav": true
+  }
+ ],
+ "stairs": [
+  {
+   "zone": "lower",
+   "space": "stair_main",
+   "axis": "y",
+   "span": [
+    128.0,
+    640.0
+   ],
+   "c": [
+    416.0,
+    576.0
+   ],
+   "z": [
+    0,
+    256
+   ],
+   "steps": 32,
+   "side_walls": false,
+   "stringers": []
+  }
+ ]
+}
