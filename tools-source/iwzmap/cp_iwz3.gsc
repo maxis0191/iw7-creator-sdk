@@ -57,7 +57,8 @@ main()
     level thread iwz_wall_prices();
     //@DARK@
     level thread iwz_door_dressing();
-    level thread iwz_hide_door_blockers();
+    // door blockers stay shown: hide() on a brush model removes its player collision on these maps (Station Zero g27f,
+    // Forge szf_phys_vis; Blender test map 1 on 22 Nov 2026: the player walked through a closed door with them hidden)
     level thread iwz_report();
     //@AUDIO@
     // game-script modules (sz_modules.py: modules/*.gsc, e.g. the Q1 quest and the T1 Capsule Post)
@@ -401,24 +402,6 @@ iwz_register_interactions()
 // (g27 review BLOQUANT 2: the white placeholder block behind the barricades) the door blockers are template brush
 // sub-models kept for their collision; they also render (a white block in every closed door). Hidden at load: hide()
 // keeps the collision, the stock purchase makes them non-solid as before.
-iwz_hide_door_blockers()
-{
-    wait 0.5;
-    n = 0;
-    foreach ( d in iwz_door_table() )
-    {
-        foreach ( e in getentarray( d.target, "targetname" ) )
-        {
-            if ( isdefined( e.classname ) && e.classname == "script_brushmodel" )
-            {
-                e hide();
-                n++;
-            }
-        }
-    }
-    print( "[IWZ level] DOOR_BLOCKERS_HIDDEN " + n );
-}
-
 iwz_door_dressing()
 {
     level endon( "game_ended" );
