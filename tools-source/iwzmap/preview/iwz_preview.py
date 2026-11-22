@@ -73,6 +73,8 @@ def make_lightmap_image(E):
 def classify(techset, path, base_techset=None):
     """-> (kind, lit): kind opaque | atest | blend | emissive, lit True when the lightmap multiplies it."""
     t = base_techset or techset or ''
+    if 'multiply' in t:
+        return 'multiply', False
     if 'em0' in t or t.startswith('w_unlit') or 'emissive' in path:
         return 'emissive', False
     if '_atest_' in t:
@@ -104,6 +106,7 @@ def build_material(name, image_path, tint, kind, lit, lm_img, lm_uv_name, uv_nam
             em.inputs['Color'].default_value = MAGENTA
             return mat
         tx.image.colorspace_settings.name = 'sRGB'
+        tx.image.alpha_mode = 'CHANNEL_PACKED'      # the PNG alpha is a data channel (gloss...): never premultiply the colour with it
         tx.interpolation = 'Linear'
         tx.extension = 'REPEAT'
         uv = nt.nodes.new('ShaderNodeUVMap')
@@ -146,7 +149,25 @@ def build_material(name, image_path, tint, kind, lit, lm_img, lm_uv_name, uv_nam
         nt.links.new(base, em.inputs['Color'])
     else:
         nt.links.new(base, em.inputs['Color'])
-    if kind in ('atest', 'blend') and alpha is not None:
+    if kind == 'multiply':
+        # unlit multiply decal (w_unlit_multiply): approximated as a black overlay with alpha = 1 - luminance of its colour
+        bw = nt.nodes.new('ShaderNodeRGBToBW')
+        inv = nt.nodes.new('ShaderNodeMath')
+        inv.operation = 'SUBTRACT'
+        inv.inputs[0].default_value = 1.0
+        nt.links.new(base, bw.inputs['Color'])
+        nt.links.new(bw.outputs['Val'], inv.inputs[1])
+        tr = nt.nodes.new('ShaderNodeBsdfTransparent')
+        mix = nt.nodes.new('ShaderNodeMixShader')
+        nt.links.new(inv.outputs[0], mix.inputs['Fac'])
+        nt.links.new(tr.outputs['BSDF'], mix.inputs[1])
+        for l in list(em.inputs['Color'].links):
+            nt.links.remove(l)
+        em.inputs['Color'].default_value = (0, 0, 0, 1)
+        nt.links.new(em.outputs['Emission'], mix.inputs[2])
+        nt.links.new(mix.outputs['Shader'], out.inputs['Surface'])
+        mat.surface_render_method = 'BLENDED'
+    elif kind in ('atest', 'blend') and alpha is not None:
         tr = nt.nodes.new('ShaderNodeBsdfTransparent')
         mix = nt.nodes.new('ShaderNodeMixShader')
         if kind == 'atest':
@@ -187,9 +208,10 @@ class MaterialResolver:
                 if not os.path.isfile(c['tga']):
                     return None, 'custom image %s missing' % c['tga']
                 kind, lit = classify(bt, name, bt)
-                if c['base'] == 'wall_stain_01_dec' or 'decal' in name or 'stain' in name or 'grime' in name or 'streak' in name:
-                    kind = 'blend'
-                return {'image': c['tga'], 'tint': tint, 'kind': kind, 'lit': True, 'emissive': 0.0, 'techset': bt,
+                if kind != 'multiply' and (c['base'] == 'wall_stain_01_dec' or 'decal' in name or 'stain' in name
+                                           or 'grime' in name or 'streak' in name):
+                    kind, lit = 'blend', True
+                return {'image': c['tga'], 'tint': tint, 'kind': kind, 'lit': lit, 'emissive': 0.0, 'techset': bt,
                         'src': 'custom tga'}, None
             if base is None:
                 return None, err
@@ -414,7 +436,7 @@ def load(src, plan=None, eye=60.0, hfov=90.0, overlays=False, game=None, log=pri
         rows.append({'model': d['model'], 'origin': d['origin'], 'angles': [d.get('pitch', 0), d.get('yaw', 0), d.get('roll', 0)],
                      'scale': float(d.get('scale', 1.0)), 'src': 'layout decor'})
     for d in lay.get('models', []):
-        if key(d['model'], d['origin']) in seen:
+        if key(d['model'], d['origin']) in seen or str(d.get('targetname') or '').startswith('iwz_doordress'):
             continue
         rows.append({'model': d['model'], 'origin': d['origin'], 'angles': [0, d.get('yaw', 0), 0], 'scale': 1.0, 'src': 'layout models'})
     for r in parse_smodels(os.path.join(src, 'smodels.txt')):      # the compiled static rows carry the scale

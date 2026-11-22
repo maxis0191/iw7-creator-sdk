@@ -27,7 +27,6 @@ sys.path.insert(0, HERE)
 import iwz_calib as C  # noqa: E402
 
 CALIB = os.path.join(HERE, 'calibration.json')
-BEFORE = {'eye': 64.0, 'fov': 2 * np.degrees(np.arctan(18 * 0.5 * 0 + 1)) if False else 90.0, 'k': 1.0, 'p': 1.0}
 
 
 def blender_exe():
@@ -95,6 +94,8 @@ def cmd_render(a):
         json.dump(zl, open(os.path.join(a.out, 'zone_luminance.json'), 'w'), indent=1)
         print('mean luminance per zone (linear radiance of the render, all pixels): ' +
               ', '.join('%s %.4f' % (z, v['mean_radiance_luminance']) for z, v in zl.items()))
+    if os.path.isfile(os.path.join(raw_dir, 'report.json')):
+        shutil.move(os.path.join(raw_dir, 'report.json'), os.path.join(a.out, 'report.json'))
     shutil.rmtree(raw_dir, ignore_errors=True)
     print('render: blender wall %.2f s, tonemap+png %.2f s, %d frames -> %s' % (wall, time.time() - t, n, a.out))
 
@@ -136,6 +137,31 @@ def sweep(a, eng, mask, eyes, fovs, tag):
     return res, wall, out
 
 
+def camera_search(a, eng, mask):
+    """Edge IoU sweeps: fov at eye 60, then eye x fov around the best, then a fine fov (with 80.8 = cg_fov 65 at 16:9)."""
+    fovs1 = [65.0, 75.0, 85.0, 95.0, 105.0, 115.0, 125.0, 135.0, 145.0]
+    sw1, w1, d1 = sweep(a, eng, mask, [60.0], fovs1, 'fov')
+    best_fov = max(fovs1, key=lambda f: sw1[(60.0, f)]['mean'])
+    print('stage fov: best %g (%.1f s) %s' % (best_fov, w1, {f: round(sw1[(60.0, f)]['mean'], 3) for f in fovs1}), flush=True)
+    shutil.rmtree(d1, ignore_errors=True)
+    fine = sorted({round(best_fov + d, 1) for d in (-5, -2.5, 0, 2.5, 5)})
+    eyes = [52.0, 56.0, 60.0, 64.0, 68.0]
+    sw2, w2, d2 = sweep(a, eng, mask, eyes, fine, 'eye')
+    (best_eye, best_fov2) = max(sw2, key=lambda ef: sw2[ef]['mean'])
+    shutil.rmtree(d2, ignore_errors=True)
+    fine3 = sorted({round(best_fov2 + d, 1) for d in (-2, -1, 0, 1, 2)} | {80.8})
+    sw3, w3, d3 = sweep(a, eng, mask, [best_eye], fine3, 'fine')
+    shutil.rmtree(d3, ignore_errors=True)
+    best3 = max(fine3, key=lambda f: sw3[(best_eye, f)]['mean'])
+    print('stage fine: best %g at eye %g %s' % (best3, best_eye, {f: round(sw3[(best_eye, f)]['mean'], 4) for f in fine3}), flush=True)
+    if sw3[(best_eye, best3)]['mean'] >= sw2[(best_eye, best_fov2)]['mean']:
+        best_fov2 = best3
+    return {'eye': best_eye, 'fov': best_fov2,
+            'grid_fov_stage': {str(f): round(sw1[(60.0, f)]['mean'], 4) for f in fovs1},
+            'grid_eye_fov_stage': {'%g/%g' % ef: round(v['mean'], 4) for ef, v in sw2.items()},
+            'grid_fine_fov_stage': {str(f): round(sw3[(best_eye, f)]['mean'], 4) for f in fine3}}
+
+
 def cmd_calibrate(a):
     t_all = time.time()
     os.makedirs(a.out, exist_ok=True)
@@ -148,36 +174,21 @@ def cmd_calibrate(a):
     eng = engine_frames(a.frames, names)
     if not eng:
         raise SystemExit('no engine frames found in %s' % a.frames)
-    # BEFORE: the lead's probe guesses (eye +64, 90 deg horizontal here, exposure 1)
+    calp = a.calib or CALIB
+    if a.tone_only and os.path.isfile(calp):
+        cam = {k: v for k, v in json.load(open(calp)).items() if k in ('eye', 'fov') or k.startswith('grid_')}
+        print('tone only: camera from %s (eye %g, fov %g)' % (calp, cam['eye'], cam['fov']), flush=True)
+    else:
+        cam = camera_search(a, eng, mask)
+    best_eye, best_fov = cam['eye'], cam['fov']
+    # BEFORE: the first probe guesses (eye +64, 18 mm lens on a 36 mm sensor = 90 deg horizontal, exposure 1)
     sw0, w0, d0 = sweep(a, eng, mask, [64.0], [90.0], 'before')
-    before_dir = d0
     before_raws = {n: np.load(os.path.join(d0, 'plan_' + n + '.npy')) for n in eng}
     before_scores = sw0[(64.0, 90.0)]['per']
-    # stage 1: fov at eye 60; stage 2: eye at the best fov
-    fovs1 = [65.0, 75.0, 85.0, 95.0, 105.0, 115.0, 125.0, 135.0, 145.0]
-    sw1, w1, d1 = sweep(a, eng, mask, [60.0], fovs1, 'fov')
-    best_fov = max(fovs1, key=lambda f: sw1[(60.0, f)]['mean'])
-    print('stage fov: best %g (%.1f s) %s' % (best_fov, w1, {f: round(sw1[(60.0, f)]['mean'], 3) for f in fovs1}), flush=True)
-    shutil.rmtree(d1, ignore_errors=True)
-    fine = sorted({round(best_fov + d, 1) for d in (-5, -2.5, 0, 2.5, 5)})
-    eyes = [52.0, 56.0, 60.0, 64.0, 68.0]
-    sw2, w2, d2 = sweep(a, eng, mask, eyes, fine, 'eye')
-    (best_eye, best_fov2) = max(sw2, key=lambda ef: sw2[ef]['mean'])
-    # stage 3: fine fov at the best eye height (includes 80.8, the horizontal fov of cg_fov 65 at 16:9)
-    fine3 = sorted({round(best_fov2 + d, 1) for d in (-2, -1, 0, 1, 2)} | {80.8})
-    sw3, w3, d3 = sweep(a, eng, mask, [best_eye], fine3, 'fine')
-    best3 = max(fine3, key=lambda f: sw3[(best_eye, f)]['mean'])
-    print('stage fine: best %g at eye %g %s' % (best3, best_eye, {f: round(sw3[(best_eye, f)]['mean'], 4) for f in fine3}), flush=True)
-    if sw3[(best_eye, best3)]['mean'] >= sw2[(best_eye, best_fov2)]['mean']:
-        best_fov2 = best3
-        d2_keep = d3
-    else:
-        d2_keep = None
-    print('stage eye/fov: best %g/%g (%.1f s)' % (best_eye, best_fov2, w2), flush=True)
-    best_dir = os.path.join(d3 if d2_keep else d2, 'e%g_f%g' % (best_eye, best_fov2))
-    raws = {n: np.load(os.path.join(best_dir, 'plan_' + n + '.npy')) for n in eng}
-    # exposure / gamma: one global pair over all frames
-    k, p = C.fit_tonemap([raws[n] for n in eng], [eng[n] for n in eng], mask)
+    sw1, w1, d1 = sweep(a, eng, mask, [best_eye], [best_fov], 'after')
+    raws = {n: np.load(os.path.join(d1, 'plan_' + n + '.npy')) for n in eng}
+    # exposure / gamma: ONE global pair over all frames (grid on gamma, bisection on exposure)
+    k, p, err = C.fit_tonemap([raws[n] for n in eng], [eng[n] for n in eng], mask)
     after_scores = {n: C.edge_score(eng[n], C.tonemap(raws[n], k, p), mask, _ENG_EDGES[n]) for n in eng}
     rows = []
     sbs_dir = os.path.join(a.out, 'sidebyside')
@@ -188,16 +199,15 @@ def cmd_calibrate(a):
         a_lum = C.mean_lum(C.tonemap(raws[n], k, p), mask)
         rows.append({'frame': n, 'edge_before': round(before_scores[n], 3), 'lum_ratio_before': round(b_lum / e_lum, 3),
                      'edge_after': round(after_scores[n], 3), 'lum_ratio_after': round(a_lum / e_lum, 3),
-                     'engine_lum': round(e_lum, 4)})
-        prev = display(raws[n], k, p)
-        side = np.concatenate([prev, eng[n]], 1)
-        save_png(side, os.path.join(sbs_dir, n + '_preview_vs_engine.png'))
-    cal = {'eye': best_eye, 'fov': best_fov2, 'k': k, 'p': p, 'fit': 'edge IoU over %d frames; log mean luminance regression' % len(eng),
-           'edge_mean_before': float(np.mean(list(before_scores.values()))), 'edge_mean_after': float(np.mean(list(after_scores.values()))),
-           'grid_fov_stage': {str(f): round(sw1[(60.0, f)]['mean'], 4) for f in fovs1},
-           'grid_eye_fov_stage': {'%g/%g' % ef: round(v['mean'], 4) for ef, v in sw2.items()},
-           'grid_fine_fov_stage': {str(f): round(sw3[(best_eye, f)]['mean'], 4) for f in fine3}}
-    json.dump(cal, open(a.calib or CALIB, 'w'), indent=1)
+                     'engine_lum': round(e_lum, 4), 'raw_lum': round(C.mean_lum(raws[n], mask), 5)})
+        save_png(np.concatenate([display(raws[n], k, p), eng[n]], 1), os.path.join(sbs_dir, n + '_preview_vs_engine.png'))
+    lr = np.log([r['lum_ratio_after'] for r in rows])
+    lrb = np.log([r['lum_ratio_before'] for r in rows])
+    cal = dict(cam, k=k, p=p,
+               fit='camera: edge IoU over %d frames; tone: grid on p in [0.5, 1], k by bisection, least squares of log(luminance ratio)' % len(eng),
+               edge_mean_before=float(np.mean(list(before_scores.values()))), edge_mean_after=float(np.mean(list(after_scores.values()))),
+               lum_ratio_log_rms_before=float(np.sqrt(np.mean(lrb ** 2))), lum_ratio_log_rms_after=float(np.sqrt(np.mean(lr ** 2))))
+    json.dump(cal, open(calp, 'w'), indent=1)
     json.dump({'rows': rows, 'calibration': cal}, open(os.path.join(a.out, 'table.json'), 'w'), indent=1)
     lines = ['| frame | edge IoU before | lum ratio before | edge IoU after | lum ratio after |', '|---|---|---|---|---|']
     for r in rows:
@@ -206,8 +216,9 @@ def cmd_calibrate(a):
                                                          np.mean([r['edge_after'] for r in rows]), np.mean([r['lum_ratio_after'] for r in rows])))
     open(os.path.join(a.out, 'table.md'), 'w').write('\n'.join(lines) + '\n')
     print('\n'.join(lines))
-    print('fit: eye %g in, hfov %g deg, k %.3f, p %.3f; total %.1f s' % (best_eye, best_fov2, k, p, time.time() - t_all))
-    for d in (before_dir, d2, d3):
+    print('fit: eye %g in, hfov %g deg, k %.3f, p %.3f; luminance ratio log-rms %.3f before, %.3f after; total %.1f s' % (
+        best_eye, best_fov, k, p, cal['lum_ratio_log_rms_before'], cal['lum_ratio_log_rms_after'], time.time() - t_all))
+    for d in (d0, d1):
         shutil.rmtree(d, ignore_errors=True)
 
 
@@ -223,6 +234,7 @@ def main():
     ap.add_argument('--eye', type=float, default=0)
     ap.add_argument('--fov', type=float, default=0)
     ap.add_argument('--overlays', action='store_true')
+    ap.add_argument('--tone-only', action='store_true', help='calibrate: keep the camera of calibration.json, refit exposure only')
     a = ap.parse_args()
     (cmd_render if a.cmd == 'render' else cmd_calibrate)(a)
 

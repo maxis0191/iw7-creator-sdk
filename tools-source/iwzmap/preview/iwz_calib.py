@@ -93,11 +93,28 @@ def tonemap(raw, k, p):
 
 
 def fit_tonemap(raws, engines, mask):
-    """One global (k, p): least squares of log(engine mean lum) = p * log(k * raw mean lum), over frames."""
-    x = np.array([np.log(max(mean_lum(r, mask), 1e-7)) for r in raws])
-    y = np.array([np.log(max(mean_lum(srgb_to_lin(e), mask), 1e-7)) for e in engines])
-    p, b = np.polyfit(x, y, 1)
-    p = float(np.clip(p, 0.2, 1.5))
-    b = float(np.mean(y - p * x))
-    k = float(np.exp(b / p))
-    return k, p
+    """One global (k, p) for all frames: display = clip(k * raw) ** p. p on a grid over [0.5, 1], k by bisection on the
+    mean log ratio of the real frames, minimising the rms of log(preview mean luminance / engine mean luminance).
+    Works on every 4th pixel of every 4th row (the means move by far less than the fit tolerance). -> (k, p, rms log error)"""
+    y = np.array([max(float(lum(srgb_to_lin(e[::4, ::4]))[mask[::4, ::4]].mean()), 1e-7) for e in engines])
+
+    def ratios(k, p):
+        # luminance of the tone mapped frame: per channel clip(k * c) ** p; the luma weights are applied after, so the
+        # sub-sample keeps all three channels
+        return np.array([max(float(tm.mean()), 1e-7) / yy for tm, yy in zip(sub_rgb(k, p), y)])
+
+    rs = [r[::4, ::4][mask[::4, ::4]] for r in raws]       # (n, 3) per frame
+
+    def sub_rgb(k, p):
+        return [lum(np.clip(r * k, 0, 1) ** p) for r in rs]
+
+    best = None
+    for p in np.arange(0.5, 1.0001, 0.05):
+        lo, hi = 1e-3, 1e4
+        for _ in range(30):
+            k = np.sqrt(lo * hi)
+            lo, hi = (k, hi) if float(np.mean(np.log(ratios(k, p)))) < 0 else (lo, k)
+        err = float(np.sqrt(np.mean(np.log(ratios(k, p)) ** 2)))
+        if best is None or err < best[2]:
+            best = (float(k), float(p), err)
+    return best

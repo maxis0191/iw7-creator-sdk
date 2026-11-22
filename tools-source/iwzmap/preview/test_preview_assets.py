@@ -57,6 +57,18 @@ class AssetTests(unittest.TestCase):
         m = C.mask_1280x720()
         self.assertAlmostEqual(C.edge_score(img, C.srgb_to_lin(img), m), 1.0, places=3)
 
+    def test_tonemap_fit_recovers_known_curve(self):
+        rng = np.random.default_rng(2)
+        m = np.ones((8, 8), bool)
+        raws, engs = [], []
+        for lvl in (0.002, 0.004, 0.01, 0.02, 0.05):
+            raw = np.full((8, 8, 3), lvl, np.float32) * (1 + 0.01 * rng.random((8, 8, 3)).astype(np.float32))
+            raws.append(raw)
+            engs.append(C.lin_to_srgb(C.tonemap(raw, 20.0, 0.7)).astype(np.float32))
+        k, p, _ = C.fit_tonemap(raws, engs, m)
+        self.assertAlmostEqual(p, 0.7, delta=0.05)
+        self.assertAlmostEqual(k, 20.0, delta=2.0)
+
 
 if __name__ == '__main__':
     unittest.main()
