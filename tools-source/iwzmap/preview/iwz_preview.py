@@ -93,6 +93,7 @@ def classify(techset, path, base_techset=None):
     return 'opaque', True
 
 
+ALBEDO_PASS = False      # --albedo-pass: surfaces show albedo * tint only (no lightmap, no light grid, no emission); the base of the runtime light pass
 EMISSIVE_GAIN = 20.0     # self-lit surfaces saturate in the engine (HDR + bloom); the exact value is not in the data, see README
 
 
@@ -164,8 +165,12 @@ def build_material(name, image_path, tint, kind, lit, lm_img, lm_uv_name, uv_nam
         return m.outputs['Result']
 
     base = tint_n.outputs[0] if col is None else mul(col, tint_n.outputs[0])
-    if emissive > 0:
+    if emissive > 0 and ALBEDO_PASS:
+        em.inputs['Color'].default_value = (0, 0, 0, 1)
+    elif emissive > 0:
         em.inputs['Strength'].default_value = emissive * EMISSIVE_GAIN
+        nt.links.new(base, em.inputs['Color'])
+    elif ALBEDO_PASS and (lit or object_light):
         nt.links.new(base, em.inputs['Color'])
     elif lit and lm_img is not None:
         E_img, A_img, D_img = lm_img
@@ -789,6 +794,20 @@ def render_linear(cam, path_npy, res=(1280, 720), rgba=False):
     return round(time.time() - t, 3)
 
 
+def geometry_override(kind):
+    """A material that shows the world space position or normal as colour (view layer material override, Raw view): the geometry passes of the runtime light pass."""
+    mat = bpy.data.materials.new('iwz_geo_' + kind)
+    mat.use_nodes = True
+    nt = mat.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new('ShaderNodeOutputMaterial')
+    em = nt.nodes.new('ShaderNodeEmission')
+    geo = nt.nodes.new('ShaderNodeNewGeometry')
+    nt.links.new(geo.outputs['Position' if kind == 'pos' else 'Normal'], em.inputs['Color'])
+    nt.links.new(em.outputs['Emission'], out.inputs['Surface'])
+    return mat
+
+
 def set_camera_params(cams, eye, hfov):
     for o in cams.values():
         x, y, z, yaw, pitch = o['iwz_view']
@@ -813,8 +832,12 @@ def main(argv):
     ap.add_argument('--power', choices=['on', 'off'], default='on', help='power fixtures show their on (emissive) or off model')
     ap.add_argument('--prop-pass', action='store_true', help='render only the props (RGBA, the world is a holdout): the pixels the prop gain is fitted on')
     ap.add_argument('--res', default='1280x720')
+    ap.add_argument('--albedo-pass', action='store_true', help='albedo * tint only: no lightmap, no light grid, no emission (runtime light pass)')
+    ap.add_argument('--aux', action='store_true', help='also render <view>__pos.npy and <view>__nrm.npy (world position and normal, material override)')
     a = ap.parse_args(argv)
     res = tuple(int(v) for v in a.res.split('x'))
+    global ALBEDO_PASS
+    ALBEDO_PASS = a.albedo_pass
     report, cams = load(a.src, a.plan or None, a.eye, a.fov, a.overlays, prop_gain=a.prop_gain, power=(a.power == 'on'))
     if a.prop_pass:
         bpy.context.scene.render.film_transparent = True
@@ -839,6 +862,13 @@ def main(argv):
                 os.makedirs(sub, exist_ok=True)
                 for nm in want:
                     rt['%g/%g/%s' % (eye, fov, nm)] = render_linear(cams[nm], os.path.join(sub, nm + '.npy'), res, rgba=a.prop_pass)
+        if a.aux:
+            vl = bpy.context.view_layer
+            for kind in ('pos', 'nrm'):
+                vl.material_override = geometry_override(kind)
+                for nm in want:
+                    render_linear(cams[nm], os.path.join(a.out, nm + '__' + kind + '.npy'), res)
+            vl.material_override = None
         timings['render_each_s'] = rt
         timings['render_total_s'] = round(time.time() - t, 3)
         timings['renders'] = len(rt)

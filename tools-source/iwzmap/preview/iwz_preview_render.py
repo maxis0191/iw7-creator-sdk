@@ -318,9 +318,14 @@ def cmd_light(a):
         shutil.rmtree(raw_dir, ignore_errors=True)
 
 
+def cmd_lights(a):
+    import iwz_lights
+    iwz_lights.run(a, load_calib, run_blender, engine_frames, save_png)
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['render', 'calibrate', 'props', 'light'])
+    ap.add_argument('cmd', choices=['render', 'calibrate', 'props', 'light', 'lights'])
     ap.add_argument('--src', required=True)
     ap.add_argument('--out', required=True)
     ap.add_argument('--views', default='all')
@@ -338,7 +343,7 @@ def main():
     ap.add_argument('--power', choices=['on', 'off'], default='off')
     ap.add_argument('--prop-gain', type=float, default=1.0)
     a = ap.parse_args()
-    {'render': cmd_render, 'calibrate': cmd_calibrate, 'props': cmd_props, 'light': cmd_light}[a.cmd](a)
+    {'render': cmd_render, 'calibrate': cmd_calibrate, 'props': cmd_props, 'light': cmd_light, 'lights': cmd_lights}[a.cmd](a)
 
 
 if __name__ == '__main__':

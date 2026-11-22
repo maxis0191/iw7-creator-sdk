@@ -12,7 +12,11 @@ a game run and screenshots.
 | `iwz_assets.py` | numpy-only readers: world.bin, dump index, material -> colour image, image decode from `imagefile<N>.pak` (IWC LZ4 blocks) via texconv, xmodel LOD0 with uv |
 | `iwz_audit.py` | per material audit of the colour image and its evidence (STRONG / MEDIUM / WEAK), `material_audit.md` / `.json` |
 | `iwz_calib.py` | the metrics (edge IoU, mean luminance, global tone fit) |
-| `calibration.json` | the fitted global camera (eye height, horizontal fov) and tone (exposure `k`, gamma `p`) |
+| `calibration.json` | the fitted global camera (eye height, horizontal fov); its tone fit (`k`, `p`) and `prop_gain` are the OLD lit-frame fit, superseded, see "State of the lighting" |
+| `iwz_tonemap.py`, `engine_tonemap_lut32.bin` | the engine's own tone map (shader `8881bdf370aa`, constants and colour grade LUT of a stock capture), numpy |
+| `iwz_lights.py` | the 72 runtime lights added per pixel with the engine falloff (lit state) |
+| `rdoc_inspect.py`, `rdoc_run.py` | offline RenderDoc replay of an existing .rdc: shader disassembly, constants, textures, targets (no game) |
+| `ENGINE-SHADERS.md` | what the engine's post chain and lightmapped world shader do, with instruction lines |
 
 ```powershell
 python -B iwz_preview_render.py render --src <emit src> --out <dir> --views ticket_hall_0,platform_a_0 [--overlays]
@@ -54,11 +58,35 @@ through Blender's glTF importer (unused on g27r: all models resolve from the zon
 `models.unresolved_list`); nothing is given a silent fake colour. A missing model is drawn as a 32 x 32 x 32 unit
 magenta box at its origin.
 
+## State of the lighting (22 Nov 2026, replaces the exposure and prop gain claims further down)
+
+**The power state is the fact that mattered.** The g27r emit is a darkness bake: its lightmap (`bake.npz`, and the compiled `lightmap/secondary.dds`, which are equal:
+median ratio 0.9998 on A) holds the 56 emergency lights only (`darkness.json` baked_emergency 56, ambient 0.025); the 72 named lights of the power banks
+(`lights.txt`, 72 lines with `name=iwz_power`) are runtime lights switched on by the level script. The capture plan `szf_rc4_look.json` shoots `dark_*` with the
+power off and `lit_*` 15 s after `sz_power_direct power 20`. The first calibration (round 1 and 2 below) fitted a lightmap-only render against the `lit_*` frames,
+the wrong state: its exposure `k`, gamma `p`, `prop_gain` 0.086 and the "auto exposure / reflections" explanation are not valid and are kept only as history.
+The earlier statement that the large per view brightness spread is caused by reflections or auto exposure was not verified and is withdrawn: the lit frames lack
+the runtime lights in the preview, and their exposure is auto (see below).
+
+* **Tone map**: the engine's, read from the shader (`ENGINE-SHADERS.md` section 1; `iwz_tonemap.py` reproduces the stock capture's post pass with a mean error of
+  0.25 of an 8 bit level, maximum 0.61). No fitted curve.
+* **Exposure** enters the engine only as a scale `s` on the curve constants (`cb13[1].xy`, `cb13[2].xy` = base constants * s, written by the exposure compute pass
+  `974052551c85`, lines 90-119). With `tonemapAuto 0` it comes from the vision (`tonemapMaxExposure`), with auto it comes from the log average luminance of the frame
+  (`c672eba77dc0`, a vignette weighted sum of log luminance) through the vision's Dark / Mid / Light EV table, adapted slowly (`tonemapAdaptSpeed 0.01`).
+  Dark frames: the 15 `dark_*` frames fit a mean exposure of 2^-3.01 (per frame spread 0.75 stops) against the stock constants, which is the module's dark vision
+  (`tonemapAuto 0`, `tonemapMaxExposure -3`, `darkness/NOTES.md`). The preview uses `--ev -3`.
+* **Lit frames** have an auto exposure that depends on the frame: it is modelled with one global parameter (see the table).
+
+```powershell
+python -B iwz_preview_render.py light  --src <emit src> --plan <plan> --frames <engine frames> --out <dir> --prefix dark --power off --ev -3   # dark state
+python -B iwz_preview_render.py lights --src <emit src> --plan <plan> --frames <engine frames> --out <dir>                                  # lit state, runtime lights
+```
+
 ## What it cannot show
 
 FX and particles; the engine's light grid lighting of models (direction, specular, SH order 1 bands) and
 reflection probes; specular, normal maps and gloss (colour map only); the vision / tone mapping / bloom of the engine
-(replaced by one fitted exposure and gamma); the first person weapon, hands and HUD; Umbra culling (everything in the
+(the engine tone map is used since 22 Nov, see "State of the lighting"; bloom is approximated); the first person weapon, hands and HUD; Umbra culling (everything in the
 frustum is drawn, so a view can show things the engine culls); anything that happens in play (doors, power state beyond the
 `lit_*` capture, zombies). Light fixtures that have an `on` variant show the single model the emit lists.
 

@@ -494,6 +494,7 @@
     "tools-source/iwzmap/preview/iwz_assets.py",
     "tools-source/iwzmap/preview/iwz_audit.py",
     "tools-source/iwzmap/preview/iwz_calib.py",
+    "tools-source/iwzmap/preview/iwz_lights.py",
     "tools-source/iwzmap/preview/iwz_preview.py",
     "tools-source/iwzmap/preview/iwz_preview_render.py",
     "tools-source/iwzmap/preview/iwz_tonemap.py",
