@@ -40,6 +40,18 @@ csv = os.path.join(work, 'zone_source', mapname + '.csv')
 lines = open(csv).read().splitlines()
 at = next(i for i, l in enumerate(lines) if l.startswith('com_map,'))
 lines[at:at] = [r for r in rows if r not in lines]
+# models drawn by a relocated stock scriptable (src/scriptables.txt). The stock zone ships them only through the scriptable
+# definition, so the full-stock rows of assemble.py list their surfaces but never the model: the relocated scriptable
+# was placed and worked, but drew nothing (Station Zero RC4: no Pack-a-Punch machine in any frame since RC1; probe
+# sz_pap_machine read part machine "on" at 3104 4110). Rows go before the world assets that reference the definition.
+SCRIPTABLE_MODELS = {'pap_machine': ('zmb_pap_machine_animated', 'zmb_pap_machine_animated_blue')}
+reloc = os.path.join(src, 'scriptables.txt')
+moved = {l.split()[0] for l in open(reloc).read().splitlines() if l.strip()} if os.path.isfile(reloc) else set()
+srows = ['xmodel,' + m for n in sorted(moved & set(SCRIPTABLE_MODELS)) for m in SCRIPTABLE_MODELS[n]
+         if os.path.isfile(os.path.join(dst, 'xmodel', m + '.xmb'))]
+at = next(i for i, l in enumerate(lines) if l.startswith('com_map,'))
+lines[at:at] = [r for r in srows if r not in lines]
+print('scriptable models', len(srows), ' '.join(srows))
 # game-script modules of the emit (<src>/modules/<map>_<name>.gsc, sz_modules.py): rawfiles right after the level script
 mods = sorted(f for f in os.listdir(os.path.join(src, 'modules')) if f.endswith('.gsc')) if os.path.isdir(os.path.join(src, 'modules')) else []
 mrows = []
