@@ -158,6 +158,22 @@ class IWZ_OT_mode(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class IWZ_OT_mark_stair(bpy.types.Operator):
+    bl_idname = 'iwz.mark_stair'
+    bl_label = 'Mark selected as one stair'
+    bl_description = 'the selected step meshes are one flight: the exporter adds the stock clip ramp over their nosings (walkable steps over 18 are an error without it)'
+    name: StringProperty(default='flight')
+
+    def execute(self, ctx):
+        n = 0
+        for o in ctx.selected_objects:
+            if o.type == 'MESH':
+                o['iwz_stair'] = self.name
+                n += 1
+        self.report({'INFO'}, '%d step meshes marked as stair %s' % (n, self.name))
+        return {'FINISHED'}
+
+
 class IWZ_OT_add_prop(bpy.types.Operator):
     bl_idname = 'iwz.add_prop'
     bl_label = 'Place prop'
@@ -327,6 +343,7 @@ class IWZ_PT_main(bpy.types.Panel):
         r = b.row()
         for m, t in (('both', 'Render + collision'), ('render', 'Render only'), ('collision', 'Clip')):
             r.operator('iwz.set_mode', text=t).mode = m
+        b.operator('iwz.mark_stair', icon='SORT_ASC')
         o = ctx.active_object
         if o and o.type == 'MESH' and o.get('iwz_kind') is None:
             b.label(text='%s: mode %s, uv %s' % (o.name, o.get('iwz_mode', 'both'), o.get('iwz_uv', 'auto')))
@@ -365,7 +382,7 @@ class IWZ_PT_main(bpy.types.Panel):
             b.label(text=str(ctx.scene['iwz_last_validate']))
 
 
-CLASSES = (IWZ_Name, IWZ_Settings, IWZ_OT_refresh, IWZ_OT_assign_material, IWZ_OT_mode, IWZ_OT_add_prop, IWZ_OT_add_entity,
+CLASSES = (IWZ_Name, IWZ_Settings, IWZ_OT_refresh, IWZ_OT_assign_material, IWZ_OT_mode, IWZ_OT_mark_stair, IWZ_OT_add_prop, IWZ_OT_add_entity,
            IWZ_OT_add_light, IWZ_OT_validate, IWZ_OT_export, IWZ_OT_preview, IWZ_PT_main)
 
 

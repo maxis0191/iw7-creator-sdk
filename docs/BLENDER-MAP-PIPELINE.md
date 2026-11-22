@@ -88,3 +88,5 @@ Contract of the emit folder: [IWZ-EMIT-CONTRACT.md](IWZ-EMIT-CONTRACT.md). Autho
 
 - 22 Nov 2026: plan written; L, N, E started.
 - 22 Nov 2026: E built (add-on, exporter, importer, generic build script, contract); round trip of g27r measured; testmap1 exported. Waits on: navgen merged (N), the lead's first zone build of testmap1 (P).
+- 22 Nov 2026 (E, after the first build of testmap1): stairs need the stock clip ramp. `iwz_stair` on the step meshes makes `blend2iwz` add the nosing ramp sheet (testmap1: 2 triangles, 25.2 degrees, 43,288,0 to 332,288,136, 112 wide); an export with two linked navigation cells more than 18 apart is refused (without the ramp: 101.7 to 120.5 at (304, 304), the step `iwz_emitcheck reach` flagged).
+

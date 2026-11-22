@@ -9,6 +9,7 @@ y north, z up), so nothing is swapped. Yaw is the rotation about Z in degrees (0
 What is read (no add-on needs to be registered: everything is plain custom properties, so a .blend exports from the
 command line on any Blender 4/5):
   meshes in collection IWZ_World (children included)   material slot name = IW7 world material (w/...)
+        obj["iwz_stair"] a stair name on every step mesh of one flight: the exporter adds the stock clip ramp sheet over the nosings
         obj["iwz_mode"]  both (default) | render | collision      obj["iwz_tag"] int (collision surface tag, experts)
         obj["iwz_uv"]    auto (default: world aligned at the material's real scale) | authored (the mesh uv map, v flipped)
   objects with obj["iwz_kind"]: zone door start spawner power perk wall_buy pap wheel marker (see README.md)
@@ -89,6 +90,8 @@ def mesh_records(obj, depsgraph):
         authored = str(_prop(obj, 'iwz_uv', 'auto')) == 'authored' and uvl is not None
         mode = str(_prop(obj, 'iwz_mode', 'both'))
         tag = _prop(obj, 'iwz_tag', None)
+        stair = _prop(obj, 'iwz_stair', None)
+        stair = None if stair in (None, 0, False, '') else (str(stair) if not isinstance(stair, (int, float)) else 'stair')
         slots = [(s.material.name if s and s.material else None) for s in obj.material_slots] or [None]
         by = {}
         verts = [mw @ v.co for v in me.vertices]
@@ -106,7 +109,7 @@ def mesh_records(obj, depsgraph):
                 r['lms'].append([list(lml.data[l].uv) for l in lp])
         out = []
         for name, r in by.items():
-            out.append({'name': obj.name, 'material': name or '', 'mode': mode, 'tag': tag, 'tris': r['tris'], 'uvs': r['uvs'] or None, 'lms': r['lms'] or None})
+            out.append({'name': obj.name, 'material': name or '', 'mode': mode, 'tag': tag, 'stair': stair, 'tris': r['tris'], 'uvs': r['uvs'] or None, 'lms': r['lms'] or None})
         return out
     finally:
         ev.to_mesh_clear()

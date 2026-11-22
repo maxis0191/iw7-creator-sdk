@@ -160,6 +160,42 @@ class Navigation(unittest.TestCase):
         self.assertTrue(all(z < 10 for z in cells2.values()))
 
 
+
+def stair_scene(marked):
+    """a 17 step flight (riser 8, tread 17, 112 wide) from a ground floor up to a landing at 136, walled in, roofless"""
+    tris = C.box_tris((-100, 0, -8), (700, 400, 0)) + C.box_tris((332, 0, 0), (700, 400, 136))
+    steps = []
+    for i in range(17):
+        steps += C.box_tris((60 + 17 * i, 100, 0), (60 + 17 * (i + 1), 212, 8 * (i + 1)))
+    walls = []
+    for mn, mx in [((-100, -8, 0), (700, 0, 300)), ((-100, 400, 0), (700, 408, 300)), ((-108, 0, 0), (-100, 400, 300)), ((700, 0, 0), (708, 400, 300)),
+                   ((40, 92, 0), (332, 100, 300)), ((40, 212, 0), (332, 220, 300))]:
+        walls += C.box_tris(mn, mx)
+    return {'map': 'cp_iwz', 'meshes': [{'name': 'shell', 'material': 'w/concrete_tiles_01', 'tris': tris + walls},
+                                        {'name': 'steps', 'material': 'w/rubber_non_skid_stair_01', 'tris': steps, 'stair': 'flight_a' if marked else None}],
+            'zones': [{'name': 'a', 'box': F(-100, 0, -16, 700, 400, 300)}], 'starts': [{'at': F(0, 150, 0), 'yaw': 0}]}
+
+
+@unittest.skipUnless(HAVE_NUMPY, 'numpy')
+class Stairs(unittest.TestCase):
+    def test_ramp_goes_from_the_floor_before_the_first_riser_to_the_top_tread(self):
+        recs, rows = C.stair_ramps(stair_scene(True)['meshes'])
+        r = rows[0]
+        self.assertEqual((r['axis'], r['steps'], r['triangles']), ('x', 17, 2))
+        self.assertEqual((r['ramp_from'][0], r['ramp_from'][2], r['ramp_to'][0], r['ramp_to'][2]), (43.0, 0.0, 332.0, 136.0))
+        self.assertAlmostEqual(r['slope_deg'], 25.2, 1)
+        self.assertEqual((recs[0]['mode'], recs[0]['tag']), ('collision', None))
+        for t in recs[0]['tris']:
+            self.assertGreater(C.tri_normal(*t)[0][2], 0.5)
+
+    def test_a_riser_over_18_is_reported_and_8_unit_risers_are_not(self):
+        sc = stair_scene(False)
+        self.assertEqual([m for s, m in C.validate(sc) if 'step over 18' in m], [])
+        tall = C.box_tris((60, 100, 0), (77, 212, 8)) + C.box_tris((77, 100, 0), (94, 212, 30)) + C.box_tris((94, 100, 0), (332, 212, 36))
+        sc['meshes'][1] = {'name': 'steps', 'material': 'w/rubber_non_skid_stair_01', 'tris': tall, 'stair': None}
+        self.assertTrue(any('step over 18' in m for s, m in C.validate(sc)))
+
+
 @unittest.skipUnless(HAVE_NUMPY and HAVE_TEMPLATE, 'numpy and the stock template dump')
 class EndToEnd(unittest.TestCase):
     def test_emit_folder_has_every_file_the_compiler_reads(self):

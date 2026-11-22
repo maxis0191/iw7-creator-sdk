@@ -93,7 +93,7 @@ def in_box(p, b, pad=0.0):
     return all(b[i] - pad <= p[i] <= b[3 + i] + pad for i in range(3))
 
 
-def validate(scene, materials=None):
+def validate(scene, materials=None, steps=True):
     """-> list of (severity 'ERROR'|'WARN', message). ERROR = the export refuses."""
     out = []
     E = lambda m: out.append(('ERROR', m))
@@ -162,6 +162,20 @@ def validate(scene, materials=None):
     for m in scene.get('meshes', []):
         if m.get('mode', 'both') != 'collision' and not (m.get('material') or '').startswith('w/'):
             E('mesh %s: material %r is not an IW7 world material (w/...)' % (m['name'], m.get('material')))
+    if steps and scene.get('meshes') and scene.get('starts'):
+        try:
+            import numpy  # noqa: F401
+            col = scene_collision(scene)
+            st = [tuple(s['at']) for s in scene['starts']]
+            st_err, st_warn = check_steps(col, st)
+            for r in st_err[:10]:
+                W('walkable step over 18 at (%d, %d), from %g to %g: zombies cannot climb it (a stair needs iwz_stair, its clip ramp; the export refuses steps between navigation cells)' % r)
+            for r in st_warn[:10]:
+                W('small step over 18 at (%d, %d), from %g to %g: zombies cannot climb it' % r)
+        except ImportError:
+            W('numpy missing: the step check was skipped')
+        except ValueError as e:
+            E(str(e))
     return out
 
 
@@ -272,6 +286,68 @@ class WorldBuilder:
                 self.col_tris += 1
 
 
+# ------------------------------------------------------------------------------------------------ stair ramps
+def stair_ramps(meshes):
+    """The stock stair construction (scenegen.build_flight): an invisible clip sheet over the step nosings, from the floor in front
+    of the first riser to the top tread, full stair width. Players and zombies walk on the sheet; navigation is made on it.
+    Step meshes carry the property iwz_stair (a stair name; one name = one flight, any number of step objects).
+    -> (collision-only mesh records, report rows)"""
+    groups = collections.defaultdict(list)
+    for m in meshes:
+        if m.get('stair') and m.get('mode', 'both') != 'render':
+            groups[str(m['stair'])].extend(m['tris'])
+    recs, rows = [], []
+    for name, tris in sorted(groups.items()):
+        tops = collections.defaultdict(list)          # tread height -> triangles of tread tops
+        for t in tris:
+            n, a2 = tri_normal(*t)
+            if a2 * 0.5 >= DEG_AREA and n[2] > 0.95:
+                tops[round(sum(p[2] for p in t) / 3.0, 1)].append(t)
+        hs = sorted(tops)
+        if len(hs) < 2:
+            raise ValueError('stair %s: fewer than two tread heights (mark the step meshes with iwz_stair)' % name)
+        cx = {h: (sum(p[0] for t in tops[h] for p in t) / (3 * len(tops[h])), sum(p[1] for t in tops[h] for p in t) / (3 * len(tops[h]))) for h in hs}
+        dx, dy = cx[hs[-1]][0] - cx[hs[0]][0], cx[hs[-1]][1] - cx[hs[0]][1]
+        ax = 0 if abs(dx) >= abs(dy) else 1               # the climb runs along x (0) or y (1)
+        sg = 1.0 if (dx if ax == 0 else dy) > 0 else -1.0
+        def nosing(h):                                    # the lower edge of the tread, along the climb
+            return min(sg * p[ax] for t in tops[h] for p in t) * sg
+        ns = [nosing(h) for h in hs]
+        rise = hs[1] - hs[0]
+        run = abs(ns[1] - ns[0])
+        slope = (hs[-1] - hs[0]) / abs(ns[-1] - ns[0]) if abs(ns[-1] - ns[0]) > 1e-6 else 0
+        if slope <= 0 or slope > 1.0:
+            raise ValueError('stair %s: slope %.2f is not a stair (tread nosings must climb with at most 45 degrees)' % (name, slope))
+        s0 = ns[0] - sg * run                              # one rise below the first tread: the floor in front of the first riser
+        z0 = hs[0] - rise
+        s1, z1 = ns[-1], hs[-1]
+        oth = 1 - ax
+        c0 = min(p[oth] for t in tris for p in t)
+        c1 = max(p[oth] for t in tris for p in t)
+        def P(s_, c_, z_):
+            return (s_, c_, z_) if ax == 0 else (c_, s_, z_)
+        a, b, c, d = P(s0, c0, z0), P(s1, c0, z1), P(s1, c1, z1), P(s0, c1, z0)
+        quad = [[a, b, c], [a, c, d]] if (sg > 0) == (ax == 0) else [[a, c, b], [a, d, c]]
+        for t in quad:                                     # the sheet faces up whatever the climb direction
+            if tri_normal(*t)[0][2] < 0:
+                t[1], t[2] = t[2], t[1]
+        recs.append({'name': 'ramp_' + name, 'material': '', 'mode': 'collision', 'tag': None, 'tris': quad, 'uvs': None})
+        rows.append({'stair': name, 'axis': 'xy'[ax], 'direction': int(sg), 'steps': len(hs), 'rise': round(rise, 3), 'tread': round(run, 3),
+                     'ramp_from': [round(v, 2) for v in a], 'ramp_to': [round(v, 2) for v in b], 'width': round(c1 - c0, 2),
+                     'slope_deg': round(math.degrees(math.atan(slope)), 2), 'triangles': 2})
+    return recs, rows
+
+
+def scene_collision(scene):
+    """collision triangles of a scene as the exporter will write them (meshes plus stair ramps)"""
+    m = mapgen.Mesh()
+    wb = WorldBuilder(m, scenegen.LM, {})
+    ramps, _ = stair_ramps(scene.get('meshes', []))
+    for rec in scene.get('meshes', []) + ramps:
+        wb.add(dict(rec, mode='collision' if rec.get('mode', 'both') != 'render' else 'render'))
+    return [tuple(t) for t in m.col]
+
+
 # ------------------------------------------------------------------------------------------------ navigation (fallback)
 def nav_single_layer(col_tris, starts, cell=CELL):
     """One floor per 32 unit column from the collision triangles (the format of mapgen.nav_graph holds one height a column).
@@ -341,7 +417,7 @@ def nav_single_layer(col_tris, starts, cell=CELL):
                 continue
             keep.append(z)
         for z in keep:
-            above = [c for c in ceils.get(key, ()) if c > z + 1.0]
+            above = [c for c in ceils.get(key, ()) if c > z - 0.5]
             above += [f for f in keep if f > z + 1.0]
             if above and min(above) - z < HEAD_MIN:
                 continue
@@ -388,6 +464,111 @@ def nav_single_layer(col_tris, starts, cell=CELL):
     return cells, info
 
 
+def find_steps(valid, seeds, cell=CELL):
+    """Walkable steps over 18 (up to 40) between neighbouring columns: floors a player reaches (steps up to 40 allowed, i.e. with
+    a jump) but that zombies, which climb 18, cannot. A step to a floor that is part of a large level area (a flight's treads and
+    landing, a raised room: 8 cells or more joined by steps of at most 18) is an ERROR; a small one (a crate, a ledge) a warning.
+    A stair under a clip ramp has no such step: the ramp surface is the only floor there. -> (errors, warnings) of
+    (x, y, z_low, z_high); `cell` is the column size of `valid`"""
+    nodes = [(k, z) for k, zs in valid.items() for z in zs]
+    if not nodes or not seeds:
+        return [], []
+    idx = {n: i for i, n in enumerate(nodes)}
+    parent = list(range(len(nodes)))
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    nb = collections.defaultdict(list)
+    for (k, z) in nodes:
+        for dk in ((1, 0), (0, 1)):
+            k2 = (k[0] + dk[0], k[1] + dk[1])
+            for z2 in valid.get(k2, ()):
+                d = abs(z2 - z)
+                if d <= STEP:
+                    parent[find(idx[(k, z)])] = find(idx[(k2, z2)])
+                if d <= 40.0:
+                    nb[(k, z)].append(((k2, z2), d))
+                    nb[(k2, z2)].append(((k, z), d))
+    size = collections.Counter(find(i) for i in range(len(nodes)))
+    seen = set(seeds)
+    dq = collections.deque(seeds)
+    while dq:
+        n = dq.popleft()
+        for m, d in nb.get(n, ()):
+            if m not in seen:
+                seen.add(m)
+                dq.append(m)
+    errs, warns = [], []
+    for n in seen:
+        for m, d in nb.get(n, ()):
+            if d > STEP and m in seen and m[1] > n[1]:
+                row = (round((m[0][0] + 0.5) * cell), round((m[0][1] + 0.5) * cell), round(n[1], 1), round(m[1], 1))
+                (errs if size[find(idx[m])] >= 8 * (CELL // cell) ** 2 else warns).append(row)
+    return sorted(set(errs)), sorted(set(warns))
+
+
+def step_floors(col_tris, starts, res=8):
+    """floors of an 8 unit grid (headroom 72, slope under 50 degrees, no wall clearance: a player walks along walls) and the seeds
+    on them -> (valid {column: [z]}, seeds [(column, z)])"""
+    import numpy as np
+    floors = collections.defaultdict(list)
+    ceils = collections.defaultdict(list)
+    for t in col_tris:
+        p0, p1, p2 = t
+        n, a2 = tri_normal(p0, p1, p2)
+        if a2 * 0.5 < DEG_AREA or abs(n[2]) < 0.5:
+            continue
+        xs = (p0[0], p1[0], p2[0]); ys = (p0[1], p1[1], p2[1])
+        i0, i1 = int(math.floor(min(xs) / res)), int(math.floor(max(xs) / res))
+        j0, j1 = int(math.floor(min(ys) / res)), int(math.floor(max(ys) / res))
+        ii, jj = np.meshgrid(np.arange(i0, i1 + 1), np.arange(j0, j1 + 1), indexing='ij')
+        ii, jj = ii.ravel(), jj.ravel()
+        cx = (ii + 0.5) * res; cy = (jj + 0.5) * res
+        d = (p1[1] - p2[1]) * (p0[0] - p2[0]) + (p2[0] - p1[0]) * (p0[1] - p2[1])
+        if abs(d) < 1e-9:
+            continue
+        a = ((p1[1] - p2[1]) * (cx - p2[0]) + (p2[0] - p1[0]) * (cy - p2[1])) / d
+        b = ((p2[1] - p0[1]) * (cx - p2[0]) + (p0[0] - p2[0]) * (cy - p2[1])) / d
+        c = 1 - a - b
+        ok = np.nonzero((a >= -1e-6) & (b >= -1e-6) & (c >= -1e-6))[0]
+        zz = a[ok] * p0[2] + b[ok] * p1[2] + c[ok] * p2[2]
+        dest = floors if n[2] >= 0.64 else (ceils if n[2] <= -0.5 else None)
+        if dest is None:
+            continue
+        for k, z in zip(ok, zz):
+            dest[(int(ii[k]), int(jj[k]))].append(float(z))
+    valid = {}
+    for key, zl in floors.items():
+        keep = []
+        for z in sorted(set(round(z, 1) for z in zl)):
+            if keep and z - keep[-1] < 0.5:
+                continue
+            keep.append(z)
+        for z in keep:
+            above = [c for c in ceils.get(key, ()) if c > z - 0.5] + [f for f in keep if f > z + 1.0]
+            if not above or min(above) - z >= HEAD_MIN:
+                valid.setdefault(key, []).append(z)
+    seeds = []
+    for s in starts:
+        k = (int(math.floor(s[0] / res)), int(math.floor(s[1] / res)))
+        best = None
+        for dk in [(a_, b_) for a_ in (-1, 0, 1) for b_ in (-1, 0, 1)]:
+            for z in valid.get((k[0] + dk[0], k[1] + dk[1]), ()):
+                if abs(z - s[2]) <= 36 and (best is None or abs(z - s[2]) < best[0]):
+                    best = (abs(z - s[2]), (k[0] + dk[0], k[1] + dk[1]), z)
+        if best:
+            seeds.append((best[1], best[2]))
+    return valid, seeds
+
+
+def check_steps(col_tris, starts):
+    """-> (errors, warnings) of find_steps on the 8 unit floors; (x, y, z_low, z_high)"""
+    valid, seeds = step_floors(col_tris, starts)
+    return find_steps(valid, seeds, 8)
+
+
 def try_navgen(col_tris, starts, log, cell=CELL):
     """workstream N: navgen.generate(tris, seeds=..., detail=True) when the module is importable (any number of floors).
     -> (navgraph bytes, nodes [(i, j, z)] with absolute 32 unit column indices, report) or (None, None, reason)"""
@@ -405,9 +586,12 @@ def try_navgen(col_tris, starts, log, cell=CELL):
         i0, j0 = int(math.floor(mx / cell)), int(math.floor(my / cell))
         detail = rep.get('cells_detail') or []
         nodes = [(c['i'] + i0, c['j'] + j0, round(sum(c['z']) / 4.0, 2)) for c in detail]
+        links = [(a, b) for a, c in enumerate(detail) for b in (c.get('links') or []) if b is not None and a < b]
         if not isinstance(data, (bytes, bytearray)) or not nodes:
             return None, None, 'navgen.generate gave no data or no cell detail'
-        return bytes(data), nodes, {k: v for k, v in rep.items() if k != 'cells_detail'}
+        rep = {k: v for k, v in rep.items() if k != 'cells_detail'}
+        rep['_links'] = links
+        return bytes(data), nodes, rep
     except Exception as e:                  # report, never hide
         log('navgen failed (%s): using the single layer fallback' % e)
         return None, None, 'navgen failed: %s' % e
@@ -436,6 +620,9 @@ class BlendEmitter(scenegen.Emitter):
         wb = WorldBuilder(self.B.mesh, scenegen.LM, mats)
         for rec in self.scene.get('meshes', []):
             wb.add(rec)
+        ramps, self.ramp_rows = stair_ramps(self.scene.get('meshes', []))
+        for rec in ramps:
+            wb.add(rec)
         self.wb = wb
         return wb
 
@@ -455,12 +642,15 @@ class BlendEmitter(scenegen.Emitter):
         col = [tuple(t) for t in self.B.mesh.col]
         starts = [tuple(s['at']) for s in self.scene.get('starts', [])]
         blob, nodes, rep = try_navgen(col, starts, self.log)
+        cells_fb, info_fb = nav_single_layer(col, starts)
+        info_fb['steps_error'], info_fb['steps_warn'] = check_steps(col, starts)
         if blob:
             self.lift = 0.0
+            self.nav_links = rep.pop('_links', [])
             self.nav_info = {'used': 'navgen', 'navgen': rep}
             nav_blob = blob
         else:
-            cells, info = nav_single_layer(col, starts)
+            cells, info = cells_fb, info_fb
             if not cells:
                 raise RuntimeError('no walkable column found: the collision has no floor with 72 units of headroom reachable from a start')
             self.lift = NAV_LIFT
@@ -479,6 +669,27 @@ class BlendEmitter(scenegen.Emitter):
         for k in self.layers:
             self.layers[k].sort()
         self.nav_info['nodes'] = len(nodes)
+        # a step between two LINKED navigation cells over 18: the engine's agents climb 18. A stair without its clip ramp sags about 4
+        # below the nosing line inside a cell, so the cell next to a landing is 19 higher (testmap1, first build)
+        nav_err, nav_warn = [], []
+        if blob:
+            for a_, b_ in self.nav_links:
+                na, nb = nodes[a_], nodes[b_]
+                if abs(na[2] - nb[2]) > STEP:
+                    lo_, hi_ = sorted((na, nb), key=lambda n: n[2])
+                    nav_err.append((round((hi_[0] + .5) * CELL), round((hi_[1] + .5) * CELL), round(lo_[2], 1), round(hi_[2], 1)))
+        err = sorted(set(nav_err))          # the collision-level steps are warnings: the side of a stair or a ledge is no route
+        nav_warn = list(nav_warn) + list(info_fb['steps_error'])
+        if err:
+            raise ValueError('scene refused: walkable steps over 18 that zombies cannot climb and no clip ramp covers (mark the step meshes '
+                             'with iwz_stair so the exporter adds the stock ramp sheet): ' + '; '.join('at (%d, %d) from %g to %g' % r for r in err[:6]))
+        ws = sorted(set(info_fb['steps_warn']) | set(nav_warn))
+        if ws:
+            r = ws[0]
+            self.warnings.append('%d step edges over 18 between floors (ledges, the open side of a stair, crates; first: %g to %g at (%d, %d)): '
+                                 'zombies cannot climb them' % (len(ws), r[2], r[3], r[0], r[1]))
+        self.nav_info['step_errors'] = len(err)
+        self.nav_info['step_warnings'] = len(info_fb['steps_warn']) + len(nav_warn)
         open(os.path.join(self.out, 'navgraph.bin'), 'wb').write(nav_blob)
         self.nav_blob = nav_blob
 
@@ -761,7 +972,7 @@ class BlendEmitter(scenegen.Emitter):
         sc = self.scene
         os.makedirs(self.out, exist_ok=True)
         mats, known_ok = known_materials()
-        issues = validate(sc, mats if known_ok else None)
+        issues = validate(sc, mats if known_ok else None, steps=False)
         errs = [m for s, m in issues if s == 'ERROR']
         if errs:
             raise ValueError('scene refused:\n  ' + '\n  '.join(errs))
@@ -821,7 +1032,7 @@ class BlendEmitter(scenegen.Emitter):
         self.layout['navconn_routes'] = [[s0, z['name']] for z in sc['zones'] if z['name'] != s0 and z['name'] in set(owner.values())]
         self.layout['far_zones'] = []
         self.layout['modules'] = self.layout.get('modules', [])
-        self.layout['stairs'] = []
+        self.layout['stairs'] = []          # the ramps are in scene_report.json `stairs`
         self.layout['blender'] = {'schema': 'iwz.blend/1', 'meshes': len(sc.get('meshes', [])), 'navigation': self.nav_info}
         for k, v in (sc.get('extra_layout') or {}).items():
             self.layout.setdefault(k, v)
@@ -832,7 +1043,7 @@ class BlendEmitter(scenegen.Emitter):
                   'doors': len(sc.get('doors', [])), 'spawners': len(self.layout['spawners']),
                   'world': {'vertices': nv, 'indices': ni, 'surfaces': ns, 'render_triangles': wb.render_tris, 'materials': len(self.B.mesh.materials)},
                   'collision': {'triangles': len(col), 'degenerate_dropped_before': wb.degenerate, 'havok': info, 'bytes': len(blob)},
-                  'navigation': self.nav_info, 'entities': self.entity_census(), 'problems': self.problems, 'warnings': self.warnings,
+                  'navigation': self.nav_info, 'stairs': self.ramp_rows, 'entities': self.entity_census(), 'problems': self.problems, 'warnings': self.warnings,
                   'lights': len(self.layout['lights'])}
         json.dump(report, open(os.path.join(self.out, 'scene_report.json'), 'w'), indent=1, default=list)
         self.log('blend2iwz %s: %d zones, %d doors, %d spawners, %d render triangles in %d surfaces, %d collision triangles, %d nav cells, '

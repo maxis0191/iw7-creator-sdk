@@ -121,7 +121,7 @@ def build():
     box(W, 'upper_ceiling', (0, 0, top), (496, 400, top + SLAB), CEIL)
     # stair: 17 steps, riser 8, tread 17, 112 wide, from x 60 (z 0) to x 349 (z 136), rising toward +x
     for i in range(17):
-        box(W, 'step_%02d' % i, (60 + 17 * i, 288, 0), (60 + 17 * (i + 1), 400, 8 * (i + 1)), TREAD)
+        box(W, 'step_%02d' % i, (60 + 17 * i, 288, 0), (60 + 17 * (i + 1), 400, 8 * (i + 1)), TREAD)['iwz_stair'] = 'flight_a'
     # zones (axis aligned boxes; stacked zones split at the slab)
     volume(Z, 'room_a', 'zone', (0, 0, -16), (480, 400, 132))
     volume(Z, 'room_b', 'zone', (496, 0, -16), (976, 400, 132))
