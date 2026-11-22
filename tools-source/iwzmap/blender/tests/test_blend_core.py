@@ -195,6 +195,36 @@ class Stairs(unittest.TestCase):
         sc['meshes'][1] = {'name': 'steps', 'material': 'w/rubber_non_skid_stair_01', 'tris': tall, 'stair': None}
         self.assertTrue(any('step over 18' in m for s, m in C.validate(sc)))
 
+    def test_open_side_gets_a_clip_wall_and_a_wall_side_gets_none(self):
+        sc = stair_scene(True)
+        # remove the wall along y 92..100 (the stair's low side): that side is then open
+        keep = []
+        for t in sc['meshes'][0]['tris']:
+            ys = [p[1] for p in t]
+            xs = [p[0] for p in t]
+            if min(ys) >= 92 - 1e-6 and max(ys) <= 100 + 1e-6 and min(xs) >= 40 - 1e-6 and max(xs) <= 332 + 1e-6:
+                continue
+            keep.append(t)
+        sc['meshes'][0]['tris'] = keep
+        recs, rows = C.stair_ramps(sc['meshes'])
+        sides = {w['side']: w for w in rows[0]['side_walls']}
+        self.assertEqual(sides['y-']['triangles'], 12)
+        self.assertEqual(sides['y+']['triangles'], 0)
+        self.assertGreater(sides['y+']['against_wall'], 0.9)
+        self.assertEqual(len([r for r in recs if r['name'].startswith('stairclip_')]), 1)
+        for r in recs:
+            for t in r['tris']:
+                self.assertGreater(C.tri_normal(*t)[1], 0)
+
+    def test_foot_clearance_is_measured(self):
+        _recs, rows = C.stair_ramps(stair_scene(True)['meshes'])
+        self.assertGreaterEqual(rows[0]['foot_clear_depth'], 48)
+        sc = stair_scene(True)
+        sc['meshes'][0]['tris'] += C.box_tris((20, 90, 0), (30, 220, 100))       # a wall 13 units in front of the foot (43)
+        _recs, rows = C.stair_ramps(sc['meshes'])
+        self.assertLess(rows[0]['foot_clear_depth'], 48)
+        self.assertTrue(any('clear approach' in m for s, m in C.validate(sc) if s == 'WARN'))
+
 
 @unittest.skipUnless(HAVE_NUMPY and HAVE_TEMPLATE, 'numpy and the stock template dump')
 class EndToEnd(unittest.TestCase):

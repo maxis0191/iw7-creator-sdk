@@ -114,14 +114,14 @@ def build():
     box(W, 'wall_mid_lintel', (480, 150, 96), (496, 250, top), WALL)
     # room B ceiling
     box(W, 'ceiling_b', (496, 0, ROOM_H), (976, 400, ROOM_H + SLAB), CEIL)
-    # upper floor slab over room A with a stairwell (x 60..349, y 288..400)
+    # upper floor slab over room A with a stairwell (x 92..381, y 288..400)
     box(W, 'slab_a1', (0, 0, ROOM_H), (480, 288, UP_FLOOR), FLOOR)
-    box(W, 'slab_a2', (0, 288, ROOM_H), (60, 400, UP_FLOOR), FLOOR)
-    box(W, 'slab_a3', (349, 288, ROOM_H), (480, 400, UP_FLOOR), FLOOR)
+    box(W, 'slab_a2', (0, 288, ROOM_H), (92, 400, UP_FLOOR), FLOOR)
+    box(W, 'slab_a3', (381, 288, ROOM_H), (480, 400, UP_FLOOR), FLOOR)
     box(W, 'upper_ceiling', (0, 0, top), (496, 400, top + SLAB), CEIL)
-    # stair: 17 steps, riser 8, tread 17, 112 wide, from x 60 (z 0) to x 349 (z 136), rising toward +x
+    # stair: 17 steps, riser 8, tread 17, 112 wide, from x 92 (z 0) to x 381 (z 136); the foot is 75 from the x=0 wall (48 of clear approach wanted), rising toward +x
     for i in range(17):
-        box(W, 'step_%02d' % i, (60 + 17 * i, 288, 0), (60 + 17 * (i + 1), 400, 8 * (i + 1)), TREAD)['iwz_stair'] = 'flight_a'
+        box(W, 'step_%02d' % i, (92 + 17 * i, 288, 0), (92 + 17 * (i + 1), 400, 8 * (i + 1)), TREAD)['iwz_stair'] = 'flight_a'
     # zones (axis aligned boxes; stacked zones split at the slab)
     volume(Z, 'room_a', 'zone', (0, 0, -16), (480, 400, 132))
     volume(Z, 'room_b', 'zone', (496, 0, -16), (976, 400, 132))

@@ -162,6 +162,12 @@ def validate(scene, materials=None, steps=True):
     for m in scene.get('meshes', []):
         if m.get('mode', 'both') != 'collision' and not (m.get('material') or '').startswith('w/'):
             E('mesh %s: material %r is not an IW7 world material (w/...)' % (m['name'], m.get('material')))
+    try:
+        for r in stair_ramps(scene.get('meshes', []))[1]:
+            if r['foot_clear_depth'] < r['foot_needs']:
+                W('stair %s: the foot has only %g units of clear approach in front of the lower edge (48 wanted, the stair wide): zombies and players need room to step on' % (r['stair'], r['foot_clear_depth']))
+    except ValueError as e:
+        E(str(e))
     if steps and scene.get('meshes') and scene.get('starts'):
         try:
             import numpy  # noqa: F401
@@ -297,6 +303,8 @@ def stair_ramps(meshes):
         if m.get('stair') and m.get('mode', 'both') != 'render':
             groups[str(m['stair'])].extend(m['tris'])
     recs, rows = [], []
+    # everything that blocks: collision triangles of the other meshes (a stair's own steps are not an obstacle to itself)
+    others = {n: [t for m in meshes if m.get('mode', 'both') != 'render' and str(m.get('stair') or '') != n for t in m['tris']] for n in groups}
     for name, tris in sorted(groups.items()):
         tops = collections.defaultdict(list)          # tread height -> triangles of tread tops
         for t in tris:
@@ -332,9 +340,69 @@ def stair_ramps(meshes):
             if tri_normal(*t)[0][2] < 0:
                 t[1], t[2] = t[2], t[1]
         recs.append({'name': 'ramp_' + name, 'material': '', 'mode': 'collision', 'tag': None, 'tris': quad, 'uvs': None})
+        # clip walls along each long side that is not against a wall: from the floor to the ramp + 64, 8 thick, foot to top landing
+        zs = lambda s_: z0 + (z1 - z0) * (s_ - s0) / (s1 - s0)
+        walls = []
+        lo_s, hi_s = sorted((s0, s1))
+        near = [t for t in others[name] if abs(tri_normal(*t)[0][2]) < 0.7 and
+                min(p[ax] for p in t) <= hi_s + 8 and max(p[ax] for p in t) >= lo_s - 8 and
+                min(p[oth] for p in t) <= c1 + 12 and max(p[oth] for p in t) >= c0 - 12]
+        for side, out in ((c0, -1.0), (c1, 1.0)):
+            samples = [lo_s + (hi_s - lo_s) * k / 40.0 for k in range(41)]
+            hit = 0
+            for sm in samples:
+                q = side + out * 4.0
+                zr = zs(sm)
+                for t in near:
+                    if min(p[ax] for p in t) - 4 <= sm <= max(p[ax] for p in t) + 4 and min(p[oth] for p in t) - 4 <= q <= max(p[oth] for p in t) + 4 \
+                            and min(p[2] for p in t) <= zr + 64 and max(p[2] for p in t) >= zr + 2:
+                        hit += 1
+                        break
+            frac = hit / len(samples)
+            if frac >= 0.6:
+                walls.append({'side': 'xy'[oth] + ('-' if out < 0 else '+'), 'at': round(side, 2), 'against_wall': round(frac, 2), 'triangles': 0})
+                continue
+            ca, cb = (side - 8.0, side) if out < 0 else (side, side + 8.0)
+            sv, cv = (s0, s1), (ca, cb)
+            pt = lambda i, j, k: P(sv[i], cv[j], z0 if k == 0 else zs(sv[i]) + 64.0)
+            cen = [sum(pt(i, j, k)[m] for i in (0, 1) for j in (0, 1) for k in (0, 1)) / 8.0 for m in range(3)]
+            faces = [[(0, 0, 0), (0, 1, 0), (0, 1, 1), (0, 0, 1)], [(1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1)],
+                     [(0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1)], [(0, 1, 0), (1, 1, 0), (1, 1, 1), (0, 1, 1)],
+                     [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)], [(0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)]]
+            wt = []
+            for f in faces:
+                q4 = [pt(*c_) for c_ in f]
+                fc = [sum(p[m] for p in q4) / 4.0 for m in range(3)]
+                for t in ([q4[0], q4[1], q4[2]], [q4[0], q4[2], q4[3]]):
+                    n_, a2_ = tri_normal(*t)
+                    if a2_ * 0.5 < DEG_AREA:
+                        continue
+                    if _dot(n_, _sub(fc, cen)) < 0:
+                        t = [t[0], t[2], t[1]]
+                    wt.append(t)
+            recs.append({'name': 'stairclip_%s_%s' % (name, 'xy'[oth] + ('minus' if out < 0 else 'plus')), 'material': '', 'mode': 'collision', 'tag': None,
+                         'tris': wt, 'uvs': None})
+            walls.append({'side': 'xy'[oth] + ('-' if out < 0 else '+'), 'at': round(side, 2), 'against_wall': round(frac, 2), 'triangles': len(wt),
+                          'height': 'floor %.0f to ramp + 64' % z0, 'length': round(hi_s - lo_s, 1), 'thickness': 8})
+        # the approach to the foot: clear depth in front of the lower edge, the stair width wide
+        clear = 96.0
+        for d_ in range(0, 97, 4):
+            lo_ = s0 - sg * d_
+            hit_ = False
+            for t in others[name]:
+                if max(p[2] for p in t) <= z0 + 2 or min(p[2] for p in t) >= z0 + 72:
+                    continue
+                if min(p[oth] for p in t) < c1 and max(p[oth] for p in t) > c0 and min(p[ax] for p in t) < max(lo_, lo_ - sg * 4) and \
+                        max(p[ax] for p in t) > min(lo_, lo_ - sg * 4):
+                    hit_ = True
+                    break
+            if hit_:
+                clear = float(d_)
+                break
+        foot_row = {'foot_clear_depth': clear, 'foot_needs': 48}
         rows.append({'stair': name, 'axis': 'xy'[ax], 'direction': int(sg), 'steps': len(hs), 'rise': round(rise, 3), 'tread': round(run, 3),
                      'ramp_from': [round(v, 2) for v in a], 'ramp_to': [round(v, 2) for v in b], 'width': round(c1 - c0, 2),
-                     'slope_deg': round(math.degrees(math.atan(slope)), 2), 'triangles': 2})
+                     'slope_deg': round(math.degrees(math.atan(slope)), 2), 'triangles': 2, 'side_walls': walls, **foot_row})
     return recs, rows
 
 
@@ -700,6 +768,9 @@ class BlendEmitter(scenegen.Emitter):
         for rec in self.scene.get('meshes', []):
             wb.add(rec)
         ramps, self.ramp_rows = stair_ramps(self.scene.get('meshes', []))
+        for r in self.ramp_rows:
+            if r['foot_clear_depth'] < r['foot_needs']:
+                self.warnings.append('stair %s: foot clear approach %g < 48' % (r['stair'], r['foot_clear_depth']))
         for rec in ramps:
             wb.add(rec)
         self.wb = wb
