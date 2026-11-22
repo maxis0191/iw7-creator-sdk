@@ -27,7 +27,7 @@ pipeline itself is [BLENDER-MAP-PIPELINE](BLENDER-MAP-PIPELINE.md). Nothing here
 | A1 | Station Zero through the builder with no section is the same map | emit files byte-identical to the base emit | open |
 | A2 | The RC4 gameplay suite still passes on the map with the sections | doors 70/70, economy 76/76, wells 9/9, stairs 9/9, post routes 128/128, start closed 20/20 | open |
 | A3 | The new section plays | door D4 buys and opens; zombies spawn in the Arcade and reach the player; rounds run with the player there; perk, wall buys | open |
-| A4 | Density at the stock level | props, distinct models and materials per 1000 x 1000 of floor against a measured stock reference (numbers below once measured) | open |
+| A4 | Density at the stock level | per 1000 x 1000 of floor: at least 500 props, 110 distinct models, 100 world materials, 20 lights (stock cp_zmb, five densest covered 1000 x 1000 areas: 512 to 840 props, 116 to 162 models, 100 to 189 materials, 22 to 38 lights; Station Zero zones today: 26 to 160 props, 4 to 38 models a zone; method and table in [ASSET-LIBRARY](ASSET-LIBRARY.md)) | open (target measured 22 Nov) |
 | A5 | Look | three independent reviewers, in-game frames at fixed cameras, stock frames as reference: 7.5 or more of 10 for each of the three sections (RC4: 6.5 lit, about 5 dark) | open |
 | A6 | Loop | a geometry-only change of a section to a playable map: measured before (403 s build + 154 s bake) and after | open |
 | A7 | A map of its own | a generic Blender map with its own name, arena, title and browser art; two installed side by side | open |
@@ -39,3 +39,4 @@ The preview (`tools-source/iwzmap/preview/`) serves composition only: its lit st
 ## State
 
 - 22 Nov 2026: acceptance written; work started.
+- 22 Nov 2026: A4 target measured (asset library: stock density, caps of the compiler, contact sheets of the stock models): [ASSET-LIBRARY](ASSET-LIBRARY.md).
