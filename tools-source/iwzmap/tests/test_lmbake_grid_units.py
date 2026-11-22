@@ -10,10 +10,12 @@ import os
 import sys
 import unittest
 
-import numpy as np
-
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'bake'))
-import lmbake  # noqa: E402
+try:
+    import numpy as np
+    import lmbake  # noqa: E402
+except ImportError as e:      # the baker needs the bake environment (numba); the product check runs without it
+    raise unittest.SkipTest('bake environment missing: %s' % e)
 
 
 class GridUnits(unittest.TestCase):
