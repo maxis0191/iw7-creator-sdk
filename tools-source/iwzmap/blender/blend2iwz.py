@@ -27,6 +27,7 @@ if HERE not in sys.path:
 
 IN_PER_BU = 1.0 / 0.0254
 WORLD_COLLECTION = 'IWZ_World'
+EXCLUDED_COLLECTIONS = ('IWZ_Base', 'IWZ_Base_Replaced', 'IWZ_Gameplay')    # context of a section: never exported
 
 
 def _bpy():
@@ -115,8 +116,32 @@ def mesh_records(obj, depsgraph):
         ev.to_mesh_clear()
 
 
-def collect_scene(scene=None, log=print):
-    """-> scene dict of blend_core (inches)"""
+def _excluded_objects():
+    """names of the objects in the context collections (IWZ_Base, IWZ_Base_Replaced, IWZ_Gameplay, children included)"""
+    bpy = _bpy()
+    names = set()
+    for cn in EXCLUDED_COLLECTIONS:
+        c = bpy.data.collections.get(cn)
+        if c:
+            names |= {o.name for o in _all_objects_of(c)}
+    return names
+
+
+def _plane_info(obj):
+    """(world bounding box in inches, unit normal of the first polygon) of a plane mesh"""
+    from mathutils import Vector
+    mw = obj.matrix_world
+    pts = [mw @ v.co for v in obj.data.vertices]
+    bb = [round(_in(min(p[i] for p in pts)), 3) for i in range(3)] + [round(_in(max(p[i] for p in pts)), 3) for i in range(3)]
+    n = mw.to_3x3() @ Vector(obj.data.polygons[0].normal) if len(obj.data.polygons) else Vector((0, 0, 1))
+    n.normalize()
+    return bb, [n.x, n.y, n.z]
+
+
+def collect_scene(scene=None, log=print, section=False):
+    """-> scene dict of blend_core (inches); `section` also collects decals, signs, effects, links and keeps camera zones empty for the
+    section exporter to fill"""
+    import section_core as SC
     bpy = _bpy()
     scene = scene or bpy.context.scene
     dg = bpy.context.evaluated_depsgraph_get()
@@ -131,10 +156,14 @@ def collect_scene(scene=None, log=print):
             out['extra_layout'] = json.loads(extra.as_string())
         except ValueError as e:
             log('iwz_layout_extra is not JSON: %s' % e)
+    out.update(decals=[], signs=[], fx=[], links=[])
     world = bpy.data.collections.get(WORLD_COLLECTION)
     world_objs = set(o.name for o in _all_objects_of(world)) if world else set()
+    skip = _excluded_objects()
     views = {}
     for obj in scene.objects:
+        if obj.name in skip:
+            continue
         kind = _prop(obj, 'iwz_kind')
         if kind is None and obj.name in world_objs and obj.type == 'MESH':
             out['meshes'] += mesh_records(obj, dg)
@@ -142,7 +171,8 @@ def collect_scene(scene=None, log=print):
         if kind is None and _prop(obj, 'iwz_model'):
             ang = obj.matrix_world.to_euler()
             out['props'].append({'model': str(_prop(obj, 'iwz_model')), 'at': _loc(obj), 'scale': obj.matrix_world.to_scale().x,
-                                 'angles': [math.degrees(ang.y), math.degrees(ang.z) % 360.0, math.degrees(ang.x)]})
+                                 'angles': [math.degrees(ang.y), math.degrees(ang.z) % 360.0, math.degrees(ang.x)],
+                                 'static': bool(_prop(obj, 'iwz_static', 1)), 'clip': bool(_prop(obj, 'iwz_clip', 0))})
             continue
         if obj.type == 'LIGHT':
             L = obj.data
@@ -151,14 +181,15 @@ def collect_scene(scene=None, log=print):
             rec = {'at': _loc(obj), 'type': 'spot' if L.type == 'SPOT' else 'omni', 'color': list(L.color)[:3],
                    'radius': float(_prop(obj, 'iwz_radius', _in(L.cutoff_distance) if L.use_custom_distance else 420.0)),
                    'intensity': float(_prop(obj, 'iwz_intensity', 2.0)), 'group': str(_prop(obj, 'iwz_group', '') or ''),
-                   'name': str(_prop(obj, 'iwz_name', '') or ''), 'runtime': bool(_prop(obj, 'iwz_runtime', 0))}
+                   'name': str(_prop(obj, 'iwz_name', '') or ''), 'runtime': bool(_prop(obj, 'iwz_runtime', 0)),
+                   'fixture': str(_prop(obj, 'iwz_fixture', '') or '')}
             if L.type == 'SPOT':
                 d = obj.matrix_world.to_3x3() @ __import__('mathutils').Vector((0, 0, -1))
                 rec.update(dir=[d.x, d.y, d.z], outer=math.degrees(L.spot_size) / 2, inner=math.degrees(L.spot_size) / 2 * (1 - L.spot_blend))
             out['lights'].append(rec)
             continue
         if obj.type == 'CAMERA':
-            zone = str(_prop(obj, 'iwz_zone', 'main'))
+            zone = str(_prop(obj, 'iwz_zone', '' if section else 'main'))
             t = obj.matrix_world.translation
             e = obj.matrix_world.to_euler()
             yaw = (math.degrees(e.z) + 90.0) % 360.0         # camera rotation (90, 0, 0) looks along +y = IW7 yaw 90
@@ -170,8 +201,33 @@ def collect_scene(scene=None, log=print):
         name = str(_prop(obj, 'iwz_name', obj.name) or obj.name)
         at = _loc(obj)
         yaw = _yaw(obj)
+        if kind in ('decal', 'sign') and obj.type == 'MESH':
+            bb, nrm = _plane_info(obj)
+            recs = mesh_records(obj, dg)
+            mat = recs[0]['material'] if recs else str(_prop(obj, 'iwz_material', ''))
+            path, key = SC.resolve_material(str(_prop(obj, 'iwz_material', '') or mat))
+            for r in recs:
+                r.update(material=path, mode='render', free_material=True)
+                out['meshes'].append(r)
+            row = SC.plane_row(kind, bb, nrm, key, image=str(_prop(obj, 'iwz_image', '') or key), off=float(_prop(obj, 'iwz_off', 3.6 if kind == 'sign' else 0.4)),
+                               hanging=bool(_prop(obj, 'iwz_hanging', 0)))
+            if row:
+                out['decals' if kind == 'decal' else 'signs'].append(row)
+            continue
+        if kind == 'fx':
+            out['fx'].append({'fx': str(_prop(obj, 'iwz_fx', '')), 'origin': [round(v, 2) for v in at], 'zone': None, 'repeat': bool(_prop(obj, 'iwz_repeat', 1))})
+            continue
+        if kind == 'link':
+            zs = [z.strip() for z in str(_prop(obj, 'iwz_zones', '') or '').split(',') if z.strip()]
+            if len(zs) == 2:
+                out['links'].append(zs)
+            continue
         if kind == 'zone':
-            out['zones'].append({'name': name, 'box': _bbox_in(obj), 'probe': _prop(obj, 'iwz_probe', None) or [0.9, 0.9, 0.95, 0.6]})
+            zr = {'name': name, 'box': _bbox_in(obj), 'probe': _prop(obj, 'iwz_probe', None) or [0.9, 0.9, 0.95, 0.6]}
+            for k in ('floor', 'ceiling'):
+                if _prop(obj, 'iwz_' + k) is not None:
+                    zr[k] = float(_prop(obj, 'iwz_' + k))
+            out['zones'].append(zr)
         elif kind == 'door':
             zs = [z.strip() for z in str(_prop(obj, 'iwz_zones', '') or '').split(',') if z.strip()]
             out['doors'].append({'name': name, 'cost': int(_prop(obj, 'iwz_cost', 750)), 'box': _bbox_in(obj), 'zones': zs or None})
@@ -196,10 +252,35 @@ def collect_scene(scene=None, log=print):
         else:
             log('object %s: unknown iwz_kind %r (ignored)' % (obj.name, kind))
     if views:
-        out.setdefault('extra_layout', {}).setdefault('views', views)
+        if section:
+            out['views'] = views
+        else:
+            out.setdefault('extra_layout', {}).setdefault('views', views)
     for z in out['zones']:
         z['probe'] = list(z['probe'])
     return out
+
+
+def collect_section(scene=None, log=print):
+    """-> section scene dict (section_core): the scene plus the section properties of the .blend (iwz_section_name, iwz_section_mode,
+    iwz_zone, iwz_base_emit)"""
+    bpy = _bpy()
+    scene = scene or bpy.context.scene
+    sc = collect_scene(scene, log, section=True)
+    name = str(scene.get('iwz_section_name') or os.path.splitext(os.path.basename(bpy.data.filepath))[0] or 'section')
+    sc['section'] = {'name': name, 'mode': str(scene.get('iwz_section_mode') or 'replace'), 'zone': str(scene.get('iwz_zone') or ''),
+                     'base': str(scene.get('iwz_base_emit') or '')}
+    return sc
+
+
+def run_export_section(out_dir, base=None, log=print):
+    """export the open scene as a section folder (None: validate only); raises ValueError with every error"""
+    import section_core as SC
+    sc = collect_section(log=log)
+    base_path = base or sc['section']['base']
+    if not base_path or not os.path.isfile(os.path.join(base_path, 'layout.json')):
+        raise ValueError('the base emit %r has no layout.json: import the base first (iwz2blend.py import-base) or pass --base' % base_path)
+    return SC.build_section(sc, out_dir, SC.Base(base_path), log)
 
 
 def run_export(out_dir, template=None, log=print):
@@ -214,8 +295,9 @@ def run_export(out_dir, template=None, log=print):
 def main(argv):
     import argparse
     ap = argparse.ArgumentParser(prog='blend2iwz')
-    ap.add_argument('cmd', choices=['export', 'validate'])
+    ap.add_argument('cmd', choices=['export', 'validate', 'export-section', 'validate-section'])
     ap.add_argument('--out')
+    ap.add_argument('--base')
     ap.add_argument('--template')
     a = ap.parse_args(argv)
     import blend_core
@@ -227,6 +309,18 @@ def main(argv):
         print('%d errors, %d warnings; %d meshes, %d zones' % (sum(1 for s, _ in iss if s == 'ERROR'), sum(1 for s, _ in iss if s == 'WARN'),
                                                                 len(sc['meshes']), len(sc['zones'])))
         return 1 if any(s == 'ERROR' for s, _ in iss) else 0
+    if a.cmd in ('export-section', 'validate-section'):
+        if a.cmd == 'export-section' and not a.out:
+            ap.error('export-section needs --out')
+        try:
+            rep = run_export_section(a.out if a.cmd == 'export-section' else None, a.base)
+        except ValueError as e:
+            print(e)
+            return 1
+        for w in rep['warnings']:
+            print('WARN', w)
+        print('budgets', json.dumps(rep['budgets']))
+        return 0
     if not a.out:
         ap.error('export needs --out')
     run_export(a.out, a.template)
