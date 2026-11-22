@@ -60,6 +60,10 @@ Done, with evidence in `tools-source/iwzmap/preview/` (`README.md` "State of the
   pattern error 1.81 -> 1.66, one fitted light unit (1e-3), exposure per frame fitted (auto exposure not modelled).
 * Control room dark through the generator room door: not an engine limit (at most 7 lights cover a pixel against a limit of 64; 256 light records per view).
 
+Round 2 (22 Nov 2026): albedo `rgb^2`, nog R as gloss (no occlusion); the engine's exposure pass as a steady state model (saturates at the maximum exposure for 10 of 15 lit frames, the engine wants about 1 stop less: open);
+the module's flashlight added (FLU fitted on the dark frames: dark pattern error 1.56 -> 1.24; the lit state is still not matched); specular from reflection probes not done (missing pieces listed); barrels: preview light grid
+nearest cell too hot (established); control room doorway: lights, exposure, props, lightmap data and techset excluded, cause open until a capture of that view.
+
 Open: the unit of a light record (CPU side), auto exposure of the lit vision, the lit vision's colour grade and curve constants (no capture of the generated map in the lit vision), specular and reflection
 probes, shadows of the 9 shadowed lights, the flashlight.
 
