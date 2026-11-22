@@ -9,6 +9,7 @@ param(
   [int]$Tries=600,
   [switch]$Bake,                                                                                      # light bake first: layout_lights.py + lmbake.py on $Src -> "$Src`_lm" (the baked copy is then built)
   [int]$Rays=144,
+  [switch]$KeepWinding,                                                                               # do not reverse the triangles for the engine (iwz_wind.py): only to reproduce a build made before 22 Nov 2026
   [switch]$ReuseCompile,                                                                              # keep the previous iwzcompile output of the same -Src (dump\<map>)
   [switch]$Incremental,                                                                               # keep the stock links of the previous assembly (same modules and dumps)
   [switch]$GatesOnly,                                                                                 # run the offline gates and stop (no ZoneTool)
@@ -97,6 +98,8 @@ try {
 if($ReuseCompile -and (Test-Path "$W\dump\$Map\maps\cp\$Map.d3dbsp.ents")){ "reusing compiled $W\dump\$Map" } else {
 if(Test-Path "$W\iwz_src"){ Remove-Item "$W\iwz_src" -Recurse -Force }
 Copy-Item -Recurse $Src "$W\iwz_src"
+# the engine's front is clockwise, the emit contract is counter clockwise: reverse the private copy (iwz_wind.py; -KeepWinding skips it)
+if(!$KeepWinding){ python -I "$S\iwz_wind.py" "$W\iwz_src"; if($LASTEXITCODE){ throw 'iwz_wind failed' } }
 if(Test-Path "$W\dump\$Map"){ Remove-Item -LiteralPath "$W\dump\$Map" -Recurse -Force }
 $env:IWZ_GEN_TOME='1'; $env:IWZ_KEEP_ENTSHAPES='1'
 if($hasDoors){ $env:IWZ_KEEP_SUBMODELS='1'; $env:IWZ_TRIGGER_SHAPES='1' }

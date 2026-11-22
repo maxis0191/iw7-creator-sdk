@@ -22,6 +22,7 @@ param(
   [string]$FxReport='',
   [switch]$Darkness, [string]$DarkArgs='',                                                         # (DarkArgs: add_darkness options, e.g. "--dark-exposure 8 --exposures 4,6")                                                                                  # darkness\add_darkness.py: darkness + flashlight modules (generator IWZ_DARK=1)
   [string]$FxNcsSkip='',                                                                             # experiment: imported effects left out of the level effect list
+  [switch]$KeepWinding,                                                                               # do not reverse the triangles for the engine (iwz_wind.py): only to reproduce a build made before 22 Nov 2026
   [switch]$ReuseCompile,                                                                             # keep the previous iwzcompile output of the same -Src (dump\<map>)
   [string]$DeadeyeImage=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\assets\dumps\cp_disco\images\cp_zmb_perk_icon_deadeye.iw7Image'),  # P1: Deadeye Dewdrops' HUD icon (not in the template zone)
   [string]$PerkMachines=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\p1\machines\port'),       # P1: the four authored perk machines (perks\machines\README.md)
@@ -68,6 +69,8 @@ try {
 if($ReuseCompile -and (Test-Path "$W\dump\$Map\maps\cp\$Map.d3dbsp.ents")){ "reusing compiled $W\dump\$Map" } else {
 if(Test-Path "$W\iwz_src"){ Remove-Item "$W\iwz_src" -Recurse -Force }
 Copy-Item -Recurse $Src "$W\iwz_src"
+# the engine's front is clockwise, the emit contract is counter clockwise: reverse the private copy (iwz_wind.py; -KeepWinding skips it)
+if(!$KeepWinding){ python -I "$S\iwz_wind.py" "$W\iwz_src"; if($LASTEXITCODE){ throw 'iwz_wind failed' } }
 if(Test-Path "$W\dump\$Map"){ Remove-Item -LiteralPath "$W\dump\$Map" -Recurse -Force }
 $env:IWZ_GEN_TOME='1'; $env:IWZ_KEEP_ENTSHAPES='1'
 if($KeepSubmodels){ $env:IWZ_KEEP_SUBMODELS='1'; $env:IWZ_TRIGGER_SHAPES='1' }
