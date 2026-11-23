@@ -3,7 +3,7 @@ param(
   [Parameter(Mandatory)][string]$UmOut,                                                               # usermap dir to fill (cp_iwz.ff, .arena)
   [string]$Map='cp_iwz',
   [string]$Work=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\ztwork'),                     # own zonetool work dir (new-work.ps1 + zonetool\cp_zmb_tpl junction)
-  [string]$ZoneToolExe=(& "$PSScriptRoot\machine.ps1" ZoneToolExe 'x64-zt-iwz-map'),
+  [string]$ZoneToolExe=(& "$PSScriptRoot\machine.ps1" MapCompiler),                                    # the one pinned compiler (machine.ps1)
   [string]$TemplateDump=(& "$PSScriptRoot\machine.ps1" TemplateDump),
   [string]$Arena=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-release\cp_iwz-rc1\usermaps\cp_iwz\cp_iwz.arena'),
   [int]$Tries=600,
@@ -28,13 +28,17 @@ param(
   [string]$PerkMachines=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\p1\machines\port'),       # P1: the four authored perk machines (perks\machines\README.md)
   [string]$DeadeyeKitDump=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\kitimport\ztwork\dump'),        # P1: cp_disco dump with Deadeye's machine (models, scriptable)
   [string]$DeadeyeScriptable=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\ztwork-p1\dump\cp_disco\scriptable\zm_perk_machine_deadeye_sign'),  # P1: zonetool -dumpzonetypes cp_disco scriptable
-  [switch]$Incremental)                                                                              # keep the stock links and the module outputs of the previous assembly (same modules and dumps)
+  [switch]$Incremental,                                                                              # no effect: incremental assembly is the default (kept for old command lines)
+  [switch]$QuickKey,                                                                                 # key the stock dumps by a stamp (frozen reference dumps: milliseconds) instead of listing every file (about 15 s)
+  [switch]$TrustModules,                                                                             # incremental assembly even with the audio, effects, darkness or foreign kit modules on (never measured against a full one: ff_compare first)
+  [switch]$FullAssemble)                                                                             # assemble everything: ignore the kept tree even when its key matches
 # Station Zero v2 build: iwzcompile (generated tome) -> assemble (+ custom materials) -> buildzone, every zonetool run under
 # the machine-wide resource lease (zt.ps1); waits and retries while another owner holds the heavy slot.
 $ErrorActionPreference='Stop'
 $S=$PSScriptRoot; $W=$Work; $D=$TemplateDump
 # P1 perk machines, always part of the map: the four authored machines and Deadeye's own cp_disco machine (its two models
 # here; its scriptable by perks\add_deadeye_machine.py after the kit import)
+$userKit=[bool]($KitModels -or $KitJson)       # foreign kit models asked for by the caller (the perk kit below is added to $KitModels after this)
 $perkKit=@()
 if($PerkMachines -and (Test-Path $PerkMachines)){ $perkKit+='perks:iwz_perk_machine_bakers,perks:iwz_perk_machine_voyage,perks:iwz_perk_machine_grudge,perks:iwz_perk_machine_double'; $KitDumps=@($KitDumps)+"perks=$PerkMachines" }
 if($DeadeyeKitDump -and (Test-Path "$DeadeyeKitDump\cp_disco\xmodel")){ $perkKit+='cp_disco:cp_disco_perk_dewdrops,cp_disco:cp_disco_perk_dewdrops_off'; $KitDumps=@($KitDumps)+"cp_disco=$DeadeyeKitDump\cp_disco;$DeadeyeKitDump\techsets_cp_disco" }
@@ -89,17 +93,47 @@ if($KeepSubmodels -and (Test-Path "$Src\plan.json")){
 }
 if($CompileOnly){ return }
 Lap 'compile'
-# -Incremental: the stock links and what the modules added stay when the modules ran with the same arguments last time
-# (the key below); only the generated world is linked again and the modules run again over the kept tree.
-$modKey=(@($D,$AudioSdk,$AudioBank,$AudioModels,$KitModels,$KitJson,$KitTier,$KitZones,($KitDumps -join '|'),($KitRuntimeCsv -join '|'),$FxImport,($FxDumps -join '|'),$FxNcsSkip,[string][bool]$Darkness,$DarkArgs,$DeadeyeScriptable) -join "`n")
+# Incremental assembly is the default (docs/MAP-BUILD-LOOP.md): the stock links (135,676) and what the modules added stay in
+# zonetool\<map> when the key of every input of the assembly (assemble_key.py: compiler, assembly and module sources, stock dumps by
+# path + size + time, kit and effect dumps, arguments, environment) equals the key stored beside the kept tree by the last build
+# that finished. Only the generated world is linked again and the modules run again over the kept tree. -FullAssemble forces everything.
+$sub=[ordered]@{}; $ts=Get-Date
+function Mark([string]$Name){ $script:sub[$Name]=[math]::Round(((Get-Date)-$script:ts).TotalSeconds,1); $script:ts=Get-Date }
+$dumpList=@("$D\patch_cp_zmb","$D\techsets_cp_zmb","$D\techsets_global_cp","$D\techsets_global","$D\cp_zmb")
+$mk=if($QuickKey){ '--stamp' } else { '--manifest' }     # every stock dump below: full listing (about 15 s for 136k files) or the quick stamp (see assemble_key.py)
+$kp=@('--text',"map=$Map",'--text',"IWZ_FULL_STOCK=$env:IWZ_FULL_STOCK",'--text',"IWZ_KEEP_STOCK_REFS=$env:IWZ_KEEP_STOCK_REFS",
+  '--file',$ZoneToolExe,'--file',"$S\assemble.py",'--file',"$S\sz2_assemble.py",'--file',"$S\kit_import.py",'--tree',"$S\perks",'--tree',"$S\content")
+foreach($dp in $dumpList){ $kp+=@($mk,$dp) }
+foreach($td in [IO.Directory]::GetDirectories($D,'techsets_*')){ $rcsv=Join-Path $td ((Split-Path $td -Leaf)+'.csv'); if(Test-Path $rcsv){ $kp+=@('--file',$rcsv) } }
+foreach($kd in $KitDumps){ foreach($kpath in (($kd -split '=',2)[-1] -split ';')){ if($kpath -and (Test-Path -LiteralPath $kpath)){ $kp+=@($mk,$kpath) } } }
+foreach($kf in @($DeadeyeImage,$DeadeyeScriptable,$KitJson)){ if($kf -and (Test-Path -LiteralPath $kf -PathType Leaf)){ $kp+=@('--file',$kf) } elseif($kf -and (Test-Path -LiteralPath $kf)){ $kp+=@($mk,$kf) } }
+foreach($rc in @($KitRuntimeCsv)){ if($rc -and (Test-Path $rc)){ $kp+=@('--file',$rc) } }
+if($AudioSdk){ $kp+=@('--tree',$AudioSdk) }
+foreach($ad in @($AudioBank,$AudioModels)){ if($ad -and (Test-Path -LiteralPath $ad -PathType Container)){ $kp+=@($mk,$ad) } }
+if($Darkness){ $kp+=@('--tree',"$S\darkness") }
+if($FxImport){ $kp+=@('--tree',"$S\fx"); foreach($fd in $FxDumps){ foreach($fpath in (($fd -split '=',2)[-1] -split ';')){ if($fpath -and (Test-Path -LiteralPath $fpath)){ $kp+=@($mk,$fpath) } } } }
+$kp+=@('--text',('args='+(@($KitModels,$KitJson,$KitTier,$KitZones,$FxImport,$FxNcsSkip,[string][bool]$Darkness,$DarkArgs,($KitDumps -join '|'),($FxDumps -join '|'),$AudioBank,$AudioModels) -join "`n")))
+$modKey=& "$S\Get-AssembleKey.ps1" @kp
+Mark 'key'
 $keyFile="$W\zonetool\$Map\.iwz_modules.key"
 $inc=@()
-if($Incremental -and (Test-Path -LiteralPath $keyFile) -and ((Get-Content -LiteralPath $keyFile -Raw) -eq $modKey)){ $inc=@('--incremental'); 'incremental assembly: same modules as the kept tree' }
-elseif(Test-Path "$W\zonetool\$Map"){ if($Incremental){ 'incremental asked, but the modules or their arguments changed: assembling everything' }; Remove-Item -LiteralPath "$W\zonetool\$Map" -Recurse -Force }
-python -I "$S\assemble.py" $W $Map "$Src\cp_iwz.gsc" "$D\patch_cp_zmb" "$D\techsets_cp_zmb" "$D\techsets_global_cp" "$D\techsets_global" "$D\cp_zmb" @inc | Select-Object -Last 3
+$kept=Test-Path -LiteralPath $keyFile
+# Read and found idempotent over a kept tree: the perks module (scripts, icons, bit table), the Deadeye machine, the perk sounds, the
+# localized strings, the perk kit import. Not shown yet: audio, effects, darkness and a foreign kit were never in a measured incremental
+# run, so with one of them on the assembly is full until the lead has compared a full and an incremental zone (ff_compare.py).
+$unproven=@(); if($AudioSdk){ $unproven+='audio' }; if($Darkness){ $unproven+='darkness' }; if($FxImport){ $unproven+='effects' }; if($userKit){ $unproven+='foreign kit models' }
+if($unproven -and -not $TrustModules -and -not $FullAssemble){ $FullAssemble=[switch]$true; "incremental assembly is not yet proven with the $($unproven -join ', ') module(s): assembling everything (-TrustModules after an ff_compare of a full and an incremental zone)" }
+if($kept -and -not $FullAssemble -and ((Get-Content -LiteralPath $keyFile -Raw) -eq $modKey)){ $inc=@('--incremental'); "incremental assembly: the kept tree was made from the same inputs (key $($modKey.Substring(0,12)))" }
+elseif(Test-Path "$W\zonetool\$Map"){
+  $why=if($FullAssemble){ '-FullAssemble' } elseif($kept){ 'an input of the assembly changed' } else { 'no finished assembly to keep' }
+  "full assembly: $why"; Remove-Item -LiteralPath "$W\zonetool\$Map" -Recurse -Force
+}
+Remove-Item -LiteralPath $keyFile -Force -ErrorAction SilentlyContinue     # the key is written again only when this assembly finishes
+python -I "$S\assemble.py" $W $Map "$Src\cp_iwz.gsc" @dumpList @inc | Select-Object -Last 3
 if($LASTEXITCODE){ throw 'assemble failed' }
 python -I "$S\sz2_assemble.py" $W $Map $Src
 if($LASTEXITCODE){ throw 'sz2_assemble failed' }
+Mark 'link'
 # perks module (P1, perks\README.md): scripts, HUD icons, the bit table's new rows; always, the level script calls it
 $pa=@("$W\zone_source\$Map.csv","$W\zonetool\$Map",$Map,'--template-dump',$D)
 if($DeadeyeImage -and (Test-Path $DeadeyeImage)){ $pa+=@('--deadeye-image',$DeadeyeImage) }
@@ -165,6 +199,7 @@ $req=@('techsets_common','techsets_global','techsets_common_core_mp','techsets_g
 Set-Content $csv (@($lines[0])+$req+$lines[1..($lines.Count-1)]) -Encoding ascii
 foreach($ext in 'ff','sabl','sabs'){ if(Test-Path "$W\zone\$Map.$ext"){ Remove-Item "$W\zone\$Map.$ext" } }
 [IO.File]::WriteAllText($keyFile,$modKey)
+Mark 'modules'
 Lap 'assemble'
 $b = Invoke-Zt @('-buildzone',$Map) 2400
 Lap 'zone'
@@ -179,7 +214,7 @@ foreach($ext in 'sabl','sabs'){
 }
 if($Arena -and (Test-Path $Arena)){ Copy-Item $Arena "$UmOut\$Map.arena" -Force }
 $times.total=[int]((Get-Date)-$t0).TotalSeconds
-[ordered]@{map=$Map;ff_bytes=(Get-Item "$UmOut\$Map.ff").Length;incremental=[bool]$inc;seconds=$times;zonetool=$ZoneToolExe} | ConvertTo-Json | Set-Content "$UmOut.build.json"
+[ordered]@{map=$Map;ff_bytes=(Get-Item "$UmOut\$Map.ff").Length;incremental=[bool]$inc;seconds=$times;assemble_parts=$sub;key=$modKey;zonetool=$ZoneToolExe} | ConvertTo-Json | Set-Content "$UmOut.build.json"
 "built $UmOut\$Map.ff $((Get-Item "$UmOut\$Map.ff").Length) bytes in $($times.total) s (compile $($times.compile), assemble $($times.assemble), zone $($times.zone))"
 } finally {
   # release the build reservation; the scheduler keeps it while a compiler of ours may still be ending
