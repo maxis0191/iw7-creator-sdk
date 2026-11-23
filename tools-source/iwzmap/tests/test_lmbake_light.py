@@ -25,10 +25,11 @@ if not os.path.isfile(iw7image.TEXCONV):
 LIGHT = {'zone': 'z', 'origin': [128.0, 128.0, 100.0], 'type': 'omni', 'color': [1.0, 1.0, 1.0], 'radius': 400.0, 'intensity': 1.0, 'fixture': ''}
 
 
-def bake_emit(work, quads, materials, layout, smodels=None, extra=None, quick=True):
+def bake_emit(work, quads, materials, layout, smodels=None, extra=None, quick=True, extra_cfg=None):
     src = os.path.join(work, 'emit')
     SW.write_emit(src, SW.make_world(quads, materials), layout, smodels, extra)
     cfg, rep = layout_lights.build_config(src, texel=8.0)
+    cfg.update(extra_cfg or {})
     lj = os.path.join(work, 'lights.json')
     json.dump(cfg, open(lj, 'w'))
     out = os.path.join(work, 'out')
@@ -140,6 +141,30 @@ class Light(unittest.TestCase):
         print('open floor: A %s (ambient 0.1 0.2 0.3 + sky 0.5 0.25 0)' % a.round(3))
         # open floor: every ray escapes -> the sky's radiance arrives as indirect light, plus the ambient fill (ao = 1)
         self.assertTrue(np.allclose(a, [0.6, 0.45, 0.3], atol=0.03))
+
+    def test_the_sun_bounces_off_what_it_lights(self):
+        # a floor and a wall at its west edge facing it; a red sun from the east (the light travels west and down) lights both. The wall's baked (indirect) light must hold
+        # what the sunlit floor throws back; the sun's own light is in neither image (the engine adds it with the visibility S)
+        quads = [SW.floor_quad(0, 0, 0, 256, 256), SW.wall_quad_x(0, 0, 0, 256, 0, 128, facing=1)]
+        base = {'lights': [], 'lighting': {'ambient': {'color': [0, 0, 0], 'level': 0}, 'bounces': 2}}
+        sun = {'lights': [], 'lighting': {'ambient': {'color': [0, 0, 0], 'level': 0}, 'bounces': 2, 'sun': {'dir': [-0.5, 0.0, -0.866], 'color': [2.0, 0.0, 0.0]}}}
+        z0, _, _, _ = bake_emit(self.work, quads, ['w/concrete_floor'], base)
+        z1, cfg, _, _ = bake_emit(self.work, quads, ['w/concrete_floor'], sun)
+        i = nearest(z1, 0, 128, 40)                       # on the wall, 40 above the floor
+        a0 = z0['A'][z0['tx_y'][i], z0['tx_x'][i]]; a1 = z1['A'][z1['tx_y'][i], z1['tx_x'][i]]
+        print('wall beside a sunlit floor: baked light without the sun %s, with it %s' % (a0.round(3), a1.round(3)))
+        self.assertTrue(np.allclose(a0, 0, atol=1e-6))
+        alb = float(cfg['albedo']['w/concrete_floor'][0]) if 'w/concrete_floor' in cfg.get('albedo', {}) else float(cfg['default_albedo'][0])
+        # the floor's radiance is albedo x 2 x 0.866; a wall at its edge sees it in about a third of its hemisphere (cosine weighted, 40 up a 256 deep floor)
+        self.assertGreater(a1[0], 0.15 * alb * 2.0 * 0.866)
+        self.assertLess(a1[0], 0.6 * alb * 2.0 * 0.866)
+        self.assertTrue(np.allclose(a1[1:], 0, atol=1e-6))                     # a red sun: nothing in green and blue
+        j = nearest(z1, 128, 128)
+        self.assertTrue(np.allclose(z1['B'][z1['tx_y'][j], z1['tx_x'][j]], 0, atol=1e-6))      # the sun's own light is not baked as direct light
+        self.assertGreater(z1['S'][z1['tx_y'][j], z1['tx_x'][j]], 0.99)                        # the floor sees the sun
+        off = dict(sun, lighting=dict(sun['lighting']))
+        z2, cfg2, _, _ = bake_emit(self.work, quads, ['w/concrete_floor'], off, extra_cfg={'sun_bounce': False})
+        self.assertTrue(np.allclose(z2['A'][z2['tx_y'][i], z2['tx_x'][i]], 0, atol=1e-6))       # the switch
 
     def test_a_sky_box_is_no_occluder_and_no_chart(self):
         floor = [SW.floor_quad(0, 0, 0, 256, 256)]
