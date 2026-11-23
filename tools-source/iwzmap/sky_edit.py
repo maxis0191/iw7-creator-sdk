@@ -11,7 +11,8 @@ import json
 import os
 import struct
 
-SKY_TAG = b'\x07\x01'
+NULL_ARRAY, FULL_ARRAY = bytes([8, 0]), bytes([8, 1])
+SKY_TAG = bytes([7, 1])
 
 
 def _find_sky(buf):
@@ -50,6 +51,77 @@ def set_sun(com, direction, color, strength=1.0, toward_sun=True):
     return len(ls)
 
 
+def _worldkit():
+    import sys
+    wk = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'worldkit')
+    if wk not in sys.path:
+        sys.path.insert(0, wk)
+    import iw7_dump
+    return iw7_dump
+
+
+def _repeats(buf, tag):
+    """parse the gfxmap with the worldkit reader and return ([(offset of a repeat record's entry index, index)], the entry number a new array at `tag` gets)"""
+    D = _worldkit()
+    reps, num = [], []
+    orig_rep, orig_arr = D.Stream._repeat, D.Stream.array
+
+    def rep(self, what):
+        at = self.p
+        r = orig_rep(self, what)
+        reps.append((at, struct.unpack_from('<I', self.b, at)[0]))
+        return r
+
+    def arr(self, elem, expected, what, required=False):
+        if self.p == tag:
+            num.append(len(self.entries))
+        return orig_arr(self, elem, expected, what, required)
+
+    D.Stream._repeat, D.Stream.array = rep, arr
+    try:
+        D.parse_gfxmap(buf)
+    finally:
+        D.Stream._repeat, D.Stream.array = orig_rep, orig_arr
+    if not num:
+        raise ValueError('the sky start surface array was not met while parsing')
+    return reps, num[0]
+
+
+def set_sky_surface(buf, k):
+    """the sky draws the world surface `k` (its position in the sorted surface list, which the compiler writes as the identity): skySurfCount 1 and the array
+    `08 01 <count> <k>` in place of the compiler's null array `08 00`. The stream numbers its entries (arrays, strings, assets) and a later record repeats one by number:
+    the new array takes a number, so every repeat of a later number is raised by one."""
+    at = _find_sky(buf)
+    tag, st = at - 2, at - 2 - 32
+    if bytes(buf[tag:tag + 2]) == FULL_ARRAY:
+        raise ValueError('the world already lists sky surfaces')
+    if bytes(buf[tag:tag + 2]) != NULL_ARRAY:
+        raise ValueError('the sky struct is not followed by the start surface array: %r' % bytes(buf[tag - 8:at]))
+    reps, num = _repeats(buf, tag)
+    out = bytearray(buf)
+    for pos, idx in reps:
+        if pos > tag and idx >= num:
+            struct.pack_into('<I', out, pos, idx + 1)
+    head = bytearray(out[st:tag])
+    head[0:4] = struct.pack('<i', 1)
+    head[8:16] = bytes.fromhex('f8474ce208000000')      # a non-null pointer: the array follows in the stream
+    return bytes(out[:st]) + bytes(head) + FULL_ARRAY + struct.pack('<II', 1, k) + bytes(out[tag + 2:])
+
+
+def sky_surface_index(gfxmap_path):
+    """index of the first surface whose material is a sky material (worldkit's reader), None when there is none"""
+    import sys
+    wk = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'worldkit')
+    if wk not in sys.path:
+        sys.path.insert(0, wk)
+    import iw7_dump
+    w = iw7_dump.parse_gfxmap(open(gfxmap_path, 'rb').read())
+    for i, m in enumerate(w.surface_materials):
+        if m.startswith('w/sky_') or m.startswith('sky_'):
+            return i
+    return None
+
+
 def _rewrite(path, data):
     """write through a new file (the zone folder holds hard links into the stock dumps)"""
     if os.path.exists(path):
@@ -70,9 +142,14 @@ def apply_to_zone(zone_dir, mapname, lighting):
     if img:
         buf = open(base + '.gfxmap', 'rb').read()
         old = sky_name(buf)
-        if old != img:
-            _rewrite(base + '.gfxmap', set_sky_name(buf, img))
+        new = set_sky_name(buf, img) if old != img else buf
+        k = sky_surface_index(base + '.gfxmap')
+        if k is not None:
+            new = set_sky_surface(new, k)
+        if new is not buf:
+            _rewrite(base + '.gfxmap', new)
         rep['sky_image'] = [old, img]
+        rep['sky_surface'] = k
     if eng:
         com = json.load(open(base + '.commap.json', encoding='utf-8'))
         n = set_sun(com, eng['dir'], eng['color'], eng.get('strength', 1.0), toward_sun=TOWARD_SUN)
