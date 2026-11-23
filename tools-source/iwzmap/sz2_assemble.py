@@ -78,4 +78,11 @@ if mrows:
     at = lines.index(level_row) + 1
     lines[at:at] = [r for r in mrows if r not in lines]
 open(csv, 'w', newline='\n').write('\n'.join(lines) + '\n')
+# the map's own look (layout.json lighting: fog, exposure, vision keys): vision/<map>.vision, which assemble.py shipped (vision_edit.py)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import vision_edit
+_lay = os.path.join(src, 'layout.json')
+_vis = vision_edit.apply_to_zone(dst, mapname, (json.load(open(_lay)).get('lighting') if os.path.isfile(_lay) else None))
+if _vis:
+    print('vision/%s.vision: %d keys changed, %d added (%s)' % (mapname, len(_vis['changed']), len(_vis['added']), ', '.join(sorted(list(_vis['changed']) + _vis['added']))))
 print('custom materials', len(rows), 'modules', len(mrows))
