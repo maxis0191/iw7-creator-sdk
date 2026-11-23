@@ -6,6 +6,8 @@ The compiler keeps the template's sun and sky (iwzmap.cpp: sun lights, sky image
   baked sun visibility of the lightmap. `sun {dir, color, strength}`: `dir` is the direction the light travels (the bake's convention), colour x strength is written to `color`.
 * `maps/cp/<map>.d3dbsp.gfxmap`  the stream tag `07 01 <name> 00` of the sky's `skyImage`: `sky_image` replaces the name (the stream is sequential, a different length is fine);
   `sky_surface`: the index of the world surface (material = a sky material) that the engine draws as the sky, written to `skyStartSurfs[0]` with `skySurfCount` 1.
+  `sun_flare` {field: number}: the sun's sprite and glare (`GfxWorld.sun`, sunflare_t: spriteSize, flareMaxSize, flareMinDot ..., the numbers of a stock map that shows its
+  sun): plain numbers of the world struct, written in place. The engine draws the sprite where the sun light comes from; the template (a night map) has size 0: no sprite.
 """
 import json
 import os
@@ -125,6 +127,28 @@ def sky_surface_index(gfxmap_path):
     return None
 
 
+SUN_FLARE = ('spriteSize', 'flareMinSize', 'flareMinDot', 'flareMaxSize', 'flareMaxDot', 'flareMaxAlpha', 'flareFadeInTime', 'flareFadeOutTime', 'blindMinDot', 'blindMaxDot',
+             'blindMaxDarken', 'blindFadeInTime', 'blindFadeOutTime', 'glareMinDot', 'glareMaxDot', 'glareMaxLighten', 'glareFadeInTime', 'glareFadeOutTime')
+
+
+def sun_flare(buf):
+    """the numbers of the world's sun sprite and glare (GfxWorld.sun)"""
+    W = _worldkit().layout('GfxWorld')
+    return {k: W.get(buf, 6, 'sun.' + k) for k in SUN_FLARE}
+
+
+def set_sun_flare(buf, fields):
+    """write numbers of GfxWorld.sun in place (the world struct is the first record of the gfxmap: 6 bytes of record header, then the struct)"""
+    W = _worldkit().layout('GfxWorld')
+    out = bytearray(buf)
+    for k, v in fields.items():
+        if k not in SUN_FLARE:
+            raise ValueError('sun_flare: %r is not a number of the sun sprite (%s)' % (k, ', '.join(SUN_FLARE)))
+        o, ch = W.flat['sun.' + k]
+        struct.pack_into('<' + ch, out, 6 + o, int(v) if ch in 'iIhHbB' else float(v))
+    return bytes(out)
+
+
 def _rewrite(path, data):
     """write through a new file (the zone folder holds hard links into the stock dumps)"""
     if os.path.exists(path):
@@ -134,25 +158,32 @@ def _rewrite(path, data):
 
 
 def apply_to_zone(zone_dir, mapname, lighting):
-    """lighting: layout.json `lighting`. `sky_image` -> the gfxmap's sky image name; `sun_engine` {dir, color, strength} -> the directional primary lights of the commap.
+    """lighting: layout.json `lighting`. `sky_image` -> the gfxmap's sky image name; `sun_engine` {dir, color, strength} -> the directional primary lights of the commap; `sun_flare` -> the numbers of the world's sun sprite.
     -> report dict or None when the layout asks for neither"""
     lighting = lighting or {}
-    img, eng = lighting.get('sky_image'), lighting.get('sun_engine')
-    if not img and not eng:
+    img, eng, flare = lighting.get('sky_image'), lighting.get('sun_engine'), lighting.get('sun_flare')
+    if not img and not eng and not flare:
         return None
     rep = {}
     base = os.path.join(zone_dir, 'maps', 'cp', mapname + '.d3dbsp')
-    if img:
+    if img or flare:
         buf = open(base + '.gfxmap', 'rb').read()
-        old = sky_name(buf)
-        new = set_sky_name(buf, img) if old != img else buf
-        k = sky_surface_index(base + '.gfxmap')
-        if k is not None:
-            new = set_sky_surface(new, k)
+        new = buf
+        if img:
+            old = sky_name(buf)
+            new = set_sky_name(buf, img) if old != img else buf
+            k = sky_surface_index(base + '.gfxmap')
+            if k is not None:
+                new = set_sky_surface(new, k)
+            rep['sky_image'] = [old, img]
+            rep['sky_surface'] = k
+        if flare:
+            done = set_sun_flare(new, flare)
+            if done != new:
+                new = done
+            rep['sun_flare'] = len(flare)
         if new is not buf:
             _rewrite(base + '.gfxmap', new)
-        rep['sky_image'] = [old, img]
-        rep['sky_surface'] = k
     if eng:
         com = json.load(open(base + '.commap.json', encoding='utf-8'))
         n = set_sun(com, eng['dir'], eng['color'], eng.get('strength', 1.0), toward_sun=TOWARD_SUN)
