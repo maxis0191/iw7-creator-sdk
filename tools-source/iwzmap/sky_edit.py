@@ -6,6 +6,9 @@ The compiler keeps the template's sun and sky (iwzmap.cpp: sun lights, sky image
   baked sun visibility of the lightmap. `sun {dir, color, strength}`: `dir` is the direction the light travels (the bake's convention), colour x strength is written to `color`.
 * `maps/cp/<map>.d3dbsp.gfxmap`  the stream tag `07 01 <name> 00` of the sky's `skyImage`: `sky_image` replaces the name (the stream is sequential, a different length is fine);
   `sky_surface`: the index of the world surface (material = a sky material) that the engine draws as the sky, written to `skyStartSurfs[0]` with `skySurfCount` 1.
+* `streaming_info/<map>`  the map's StreamingInfo (a renamed copy of the template's, assemble.py): its always-loaded lists name the template's sky image and sky material
+  (`07 01 sky_cp_zmb_night_01`, `07 01 w/sky_cp_zmb`, each with 4 flag bits by its place in the list). A sky image that is not in that list is streamed on demand: the game
+  draws a black sky for the first 6 to 14 s of a session. `set_streamed_sky` puts the map's sky image and material in the template sky's places (same places, same flags).
 """
 import json
 import os
@@ -33,6 +36,37 @@ def set_sky_name(buf, name):
     at = _find_sky(buf) + 2
     end = buf.index(b'\0', at)
     return bytes(buf[:at]) + name.encode('latin1') + bytes(buf[end:])
+
+
+def _asset_names(buf, prefix):
+    """[(offset of the name, name)] of the asset tags `07 01 <prefix>...` of a stream"""
+    out, at, tag = [], 0, SKY_TAG + prefix
+    while True:
+        at = buf.find(tag, at)
+        if at < 0:
+            return out
+        end = buf.index(b'\0', at + 2)
+        out.append((at + 2, buf[at + 2:end].decode('latin1')))
+        at = end
+
+
+def set_streamed_sky(buf, image=None, material=None):
+    """the always-loaded sky of a streaming_info stream: the ONE image asset named `sky_*` becomes `image`, the ONE material asset named `w/sky_*` becomes `material`
+    (the stream is sequential and the flags go by place, so a name of another length is fine). -> (new bytes, {image: [old, new], material: [old, new]}); a list
+    that holds none or several such names is left as it is and the report says so."""
+    rep = {}
+    for key, prefix, new in (('material', b'w/sky_', material), ('image', b'sky_', image)):      # the later offsets first: the earlier ones stay valid
+        if not new:
+            continue
+        found = _asset_names(buf, prefix)
+        if len(found) != 1:
+            rep[key] = 'not changed: %d names %s* in the list' % (len(found), prefix.decode())
+            continue
+        at, old = found[0]
+        rep[key] = [old, new]
+        if old != new:
+            buf = bytes(buf[:at]) + new.encode('latin1') + bytes(buf[at + len(old):])
+    return buf, rep
 
 
 def sun_lights(com):
@@ -153,6 +187,12 @@ def apply_to_zone(zone_dir, mapname, lighting):
             _rewrite(base + '.gfxmap', new)
         rep['sky_image'] = [old, img]
         rep['sky_surface'] = k
+        si = os.path.join(zone_dir, 'streaming_info', mapname)
+        if os.path.isfile(si):                # the sky image is there when the level starts, like the template's own (not streamed in seconds later)
+            sbuf = open(si, 'rb').read()
+            snew, rep['always_loaded'] = set_streamed_sky(sbuf, img, lighting.get('sky_material'))
+            if snew != sbuf:
+                _rewrite(si, snew)
     if eng:
         com = json.load(open(base + '.commap.json', encoding='utf-8'))
         n = set_sun(com, eng['dir'], eng['color'], eng.get('strength', 1.0), toward_sun=TOWARD_SUN)
