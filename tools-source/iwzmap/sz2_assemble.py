@@ -52,6 +52,16 @@ def copy_image(tga, image):
         shutil.copyfile(dds, out_dds)
 
 
+def copy_header(header, image):
+    """a stock image of another zone: its dumped header as images/<image>.iw7Image. The pixels are not in the file: the header names the bytes of a stock
+    imagefile<N>.pak, and the game streams them from there (as kit_import.py does for the images of an imported model). The name must be the stock one."""
+    os.makedirs(os.path.join(dst, 'images'), exist_ok=True)
+    out = os.path.join(dst, 'images', image + '.iw7Image')
+    if os.path.exists(out):
+        os.remove(out)        # never write through a hardlink
+    shutil.copyfile(header, out)
+
+
 n_state = 0
 for key, c in spec.items():
     ext = c.get('ext')
@@ -61,6 +71,8 @@ for key, c in spec.items():
     if ext:
         # the extended route: a base with a packed normal and gloss map (semantic 14 / 15 of the concrete_01 family); every texture of a listed semantic
         # points at our image. "ext": {"base": "concrete_01", "images": {"14": {"image": name, "tga": path}, "15": {...}}}
+        # An image entry {"image": name, "header": path of a dumped .iw7Image} is a stock image of another zone (a sky: base "sky_cp_zmb", semantic 2).
+        # "set": {field: value} writes fields of the material itself (a stock sky of another zone differs from the base in `gameFlags` at most).
         for t in m['textureTable']:
             im = ext['images'].get(str(t['semantic']))
             if im:
@@ -68,7 +80,13 @@ for key, c in spec.items():
         missing = [s for s in ext['images'] if not any(str(t['semantic']) == s for t in m['textureTable'])]
         assert not missing, (key, 'base has no semantic', missing)
         for im in ext['images'].values():
-            copy_image(im['tga'], im['image'])
+            if im.get('header'):
+                copy_header(im['header'] if os.path.isabs(im['header']) else os.path.join(src, im['header']), im['image'])      # a relative path is the emit folder's
+            else:
+                copy_image(im['tga'], im['image'])
+        for field, value in (ext.get('set') or {}).items():
+            assert field in m, (key, 'the base material has no field', field)
+            m[field] = value
     else:
         for const in m.get('constantTable', []):
             if const['name'] == 'colorTint' and c.get('tint'):
