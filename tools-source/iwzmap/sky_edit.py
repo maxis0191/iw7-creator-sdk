@@ -13,6 +13,7 @@ import struct
 
 NULL_ARRAY, FULL_ARRAY = bytes([8, 0]), bytes([8, 1])
 SKY_TAG = bytes([7, 1])
+TOWARD_SUN = True      # the commap stores the vector from the surface towards the sun (confirmed by the sun patch in the game: Studio port/README, ninth pass)
 
 
 def _find_sky(buf):
@@ -92,9 +93,11 @@ def set_sky_surface(buf, k):
     `08 01 <count> <k>` in place of the compiler's null array `08 00`. The stream numbers its entries (arrays, strings, assets) and a later record repeats one by number:
     the new array takes a number, so every repeat of a later number is raised by one."""
     at = _find_sky(buf)
+    if bytes(buf[at - 10:at - 4]) == FULL_ARRAY + struct.pack('<I', 1):
+        if struct.unpack_from('<I', buf, at - 4)[0] == k:
+            return bytes(buf)                       # already done (a second assembly of the same folder)
+        raise ValueError('the world already lists another sky surface')
     tag, st = at - 2, at - 2 - 32
-    if bytes(buf[tag:tag + 2]) == FULL_ARRAY:
-        raise ValueError('the world already lists sky surfaces')
     if bytes(buf[tag:tag + 2]) != NULL_ARRAY:
         raise ValueError('the sky struct is not followed by the start surface array: %r' % bytes(buf[tag - 8:at]))
     reps, num = _repeats(buf, tag)
