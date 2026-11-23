@@ -1,17 +1,24 @@
 param(
   [Parameter(Mandatory)][string]$Src,                                                                 # emit folder of blend2iwz.py (docs/IWZ-EMIT-CONTRACT.md)
   [Parameter(Mandatory)][string]$UmOut,                                                               # usermap dir to fill (<Map>.ff, .arena)
-  [string]$Map='cp_iwz',
+  [string]$Map='',                                                                                    # the map's name (cp_ + up to 12 of a-z 0-9 _); default: layout.json "map" of the emit (the exporter writes the scene's iwz_map), else cp_iwz
+  [string]$Title='',                                                                                  # the name in the map browser and the lobby (at most 30 characters); default: layout.json "title", else the map name in capitals
+  [string]$Description='An IWZ custom map',                                                           # the browser's one-line description (at most 30 characters)
+  [string]$Art='',                                                                                    # folder with image_<map>.tga, image_<map>_vote.tga (and zmb_poster_<map>_c.tga): the browser art; default: generated, the title on a neutral plate
+  [switch]$NoArt,                                                                                     # no <map>_art.ff (the map is then in the list without pictures)
+  [string]$FrontendDump=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-map-m2-a\dump\cp_frontend'),    # cp_frontend dump with the stock poster model (xmodel, xsurface): without it the art has no theater poster
   [string]$Work=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-blend\ztwork'),                           # own zonetool work dir (new-work.ps1 + zonetool\cp_zmb_tpl junction), NOT the Station Zero one
-  [string]$ZoneToolExe=$(if($env:IWZ_ZONETOOL_EXE){ $env:IWZ_ZONETOOL_EXE } else { (& "$PSScriptRoot\machine.ps1" Runtime 'compiler-landing\zonetool-playeranim-1dcd449.exe') }),  # the build-g.ps1 compiler: generated volumes get entity shapes (IWZ_TRIGGER_SHAPES); the x64-zt-iwz-map build did not (testmap1, 22 Nov)
+  [string]$ZoneToolExe=(& "$PSScriptRoot\machine.ps1" MapCompiler),                                   # the one pinned compiler of every map build (machine.ps1: IWZ_ZONETOOL_EXE, else zonetool-lightvol-ea60b19)
   [string]$TemplateDump=(& "$PSScriptRoot\machine.ps1" TemplateDump),
-  [string]$Arena=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-release\cp_iwz-rc1\usermaps\cp_iwz\cp_iwz.arena'),
+  [string]$Arena='',                                                                                  # an arena file to copy as <map>.arena; default: generated from the map name and the title
   [int]$Tries=600,
   [switch]$Bake,                                                                                      # light bake first: layout_lights.py + lmbake.py on $Src -> "$Src`_lm" (the baked copy is then built)
   [int]$Rays=144,
   [switch]$KeepWinding,                                                                               # do not reverse the triangles for the engine (iwz_wind.py): only to reproduce a build made before 22 Nov 2026
   [switch]$ReuseCompile,                                                                              # keep the previous iwzcompile output of the same -Src (dump\<map>)
-  [switch]$Incremental,                                                                               # keep the stock links of the previous assembly (same modules and dumps)
+  [switch]$Incremental,                                                                               # no effect: incremental assembly is the default (kept for old command lines)
+  [switch]$QuickKey,                                                                                 # key the stock dumps by a stamp (frozen reference dumps: milliseconds) instead of listing every file (about 15 s)
+  [switch]$FullAssemble,                                                                              # assemble everything: ignore the kept tree even when its key matches
   [switch]$GatesOnly,                                                                                 # run the offline gates and stop (no ZoneTool)
   [string]$PerkMachines=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\level\p1\machines\port'),   # the four authored new-perk machines (kept: the level script calls the perk module, perks\README.md)
   [string]$DeadeyeImage=(& "$PSScriptRoot\machine.ps1" Runtime 'iwz-stage2\assets\dumps\cp_disco\images\cp_zmb_perk_icon_deadeye.iw7Image'),
@@ -36,15 +43,30 @@ param(
 #   5  assemble.py <Work> <Map> <Src>\cp_iwz.gsc <template dumps>     then   sz2_assemble.py <Work> <Map> <Src>   (custom materials, modules of the emit)
 #   6  perks\add_perks.py, perks\add_perk_sounds.py, perks\add_localize.py   (the level script cp_iwz3.gsc links against cp_iwz_perks)
 #   7  zonetool -buildzone <Map>                                copies <Map>.ff (and .sabl/.sabs, .arena) to <UmOut>
-# Output: <UmOut>\<Map>.ff, <UmOut>.build.json (seconds per stage), <UmOut>.volume_check.json, <UmOut>.compile.log.
+#   8  <Map>_art.ff   (unless -NoArt) the browser art: make_art.py --plate draws the title on a neutral plate when -Art gives no images,
+#                     build_art.py prepares the zone, zonetool -buildzone <Map>_art; <Map>.arena is generated (map_identity.py) unless -Arena
+# Identity: the map name comes from layout.json "map" (the exporter's iwz_map) unless -Map says it; every name below follows it
+#   (docs/MAP-BUILD-LOOP.md lists the places). Two maps built to two usermap dirs sit side by side.
+# Output: <UmOut>\<Map>.ff, <UmOut>\<Map>_art.ff, <UmOut>\<Map>.arena, <UmOut>.build.json (seconds per stage), <UmOut>.volume_check.json, <UmOut>.compile.log.
 $ErrorActionPreference='Stop'
 $S=$PSScriptRoot; $W=$Work; $D=$TemplateDump
 $py='python'
 function Run-Gate([string]$Name,[scriptblock]$Block){ $o=& $Block 2>&1; $c=$LASTEXITCODE; ($o | Select-Object -Last 6) | ForEach-Object { "  [$Name] $_" }; if($c){ throw "gate $Name failed (exit $c)" } }
+$idArgs=@('resolve',$Src); if($Map){ $idArgs+=@('--map',$Map) }
+$idOut=& $py -I -B "$S\map_identity.py" @idArgs 2>&1
+if($LASTEXITCODE){ throw ($idOut -join ' ') }
+$Map=([string]($idOut | Select-Object -Last 1)).Trim()
+$layout0=Get-Content "$Src\layout.json" -Raw | ConvertFrom-Json
+if(-not $Title){ $Title=if($layout0.title){ [string]$layout0.title } else { (& $py -I -B "$S\map_identity.py" title $Map).Trim() } }
+$lvl=if(Test-Path "$Src\$Map.gsc"){ "$Src\$Map.gsc" } else { "$Src\cp_iwz.gsc" }       # the exporter always writes cp_iwz.gsc; assemble.py moves its script paths to the map
+if(-not (Test-Path $lvl)){ throw "level script missing: $Src\$Map.gsc or $Src\cp_iwz.gsc" }
+"map $Map  title '$Title'  level script $lvl"
+$vo=& $py -I -B "$S\map_identity.py" validate $Map $Title --description $Description 2>&1       # name, title, description: refused now, not after a zone build
+if($LASTEXITCODE){ throw ($vo -join ' ') }
 Run-Gate 'emitcheck' { & $py -I -B "$S\iwz_emitcheck.py" check $Src }
 Run-Gate 'reach' { & $py -I -B "$S\iwz_emitcheck.py" reach $Src --all-spawners }
 $lint=Join-Path (& "$S\machine.ps1" Server) 'ops\iwzmap\iwzmap_ents_lint.py'
-if(Test-Path $lint){ Run-Gate 'ents_lint' { & $py -I -B $lint "$Src\ents.txt" --gsc "$Src\cp_iwz.gsc" } }
+if(Test-Path $lint){ Run-Gate 'ents_lint' { & $py -I -B $lint "$Src\ents.txt" --gsc $lvl } }
 if($GatesOnly){ return }
 if($Bake){
   $PY=(& "$S\machine.ps1" BakePython)+'\Scripts\python.exe'
@@ -58,6 +80,7 @@ if($Bake){
   Get-ChildItem $Src -File | Where-Object { $_.Name -notin @('world.bin','lighting.txt') } | ForEach-Object { Copy-Item $_.FullName (Join-Path $build $_.Name) -Force }
   if(Test-Path "$Src\modules"){ Copy-Item "$Src\modules" "$build\modules" -Recurse -Force }
   $Src=$build
+  $lvl=Join-Path $Src (Split-Path $lvl -Leaf)
 }
 $layout=Get-Content "$Src\layout.json" -Raw | ConvertFrom-Json
 $hasDoors=(@($layout.doors).Count -gt 0)
@@ -116,15 +139,36 @@ if($hasDoors -and (Test-Path "$Src\plan.json")){
   if($LASTEXITCODE){ throw 'volume_check failed' }
 }
 Lap 'compile'
-$modKey=(@($D,$KitModels,($KitDumps -join '|'),$DeadeyeScriptable) -join "`n")
+# Incremental assembly is the default (docs/MAP-BUILD-LOOP.md): the stock links (135,676) and what the modules added stay in
+# zonetool\<map> when the key of every input of the assembly (assemble_key.py) equals the one stored beside the kept tree by the last
+# build that finished. Only the generated world is linked again and the modules run again over the kept tree. -FullAssemble forces everything.
+$sub=[ordered]@{}; $ts=Get-Date
+function Mark([string]$Name){ $script:sub[$Name]=[math]::Round(((Get-Date)-$script:ts).TotalSeconds,1); $script:ts=Get-Date }
+$dumpList=@("$D\patch_cp_zmb","$D\techsets_cp_zmb","$D\techsets_global_cp","$D\techsets_global","$D\cp_zmb")
+$mk=if($QuickKey){ '--stamp' } else { '--manifest' }     # every stock dump below: full listing (about 15 s for 136k files) or the quick stamp (see assemble_key.py)
+$kp=@('--text',"map=$Map",'--text',"IWZ_FULL_STOCK=$env:IWZ_FULL_STOCK",'--text',"IWZ_KEEP_STOCK_REFS=$env:IWZ_KEEP_STOCK_REFS",
+  '--file',$ZoneToolExe,'--file',"$S\assemble.py",'--file',"$S\sz2_assemble.py",'--file',"$S\kit_import.py",'--tree',"$S\perks",'--tree',"$S\content")
+foreach($dp in $dumpList){ $kp+=@($mk,$dp) }
+foreach($td in [IO.Directory]::GetDirectories($D,'techsets_*')){ $rcsv=Join-Path $td ((Split-Path $td -Leaf)+'.csv'); if(Test-Path $rcsv){ $kp+=@('--file',$rcsv) } }
+foreach($kd in $KitDumps){ foreach($kpath in (($kd -split '=',2)[-1] -split ';')){ if($kpath -and (Test-Path -LiteralPath $kpath)){ $kp+=@($mk,$kpath) } } }
+foreach($kf in @($DeadeyeImage,$DeadeyeScriptable)){ if($kf -and (Test-Path -LiteralPath $kf -PathType Leaf)){ $kp+=@('--file',$kf) } elseif($kf -and (Test-Path -LiteralPath $kf)){ $kp+=@($mk,$kf) } }
+$kp+=@('--text',('args='+(@($KitModels,($KitDumps -join '|')) -join "`n")))
+$modKey=& "$S\Get-AssembleKey.ps1" @kp
+Mark 'key'
 $keyFile="$W\zonetool\$Map\.iwz_modules.key"
 $inc=@()
-if($Incremental -and (Test-Path -LiteralPath $keyFile) -and ((Get-Content -LiteralPath $keyFile -Raw) -eq $modKey)){ $inc=@('--incremental'); 'incremental assembly: same modules as the kept tree' }
-elseif(Test-Path "$W\zonetool\$Map"){ Remove-Item -LiteralPath "$W\zonetool\$Map" -Recurse -Force }
-& $py -I "$S\assemble.py" $W $Map "$Src\cp_iwz.gsc" "$D\patch_cp_zmb" "$D\techsets_cp_zmb" "$D\techsets_global_cp" "$D\techsets_global" "$D\cp_zmb" @inc | Select-Object -Last 3
+$kept=Test-Path -LiteralPath $keyFile
+if($kept -and -not $FullAssemble -and ((Get-Content -LiteralPath $keyFile -Raw) -eq $modKey)){ $inc=@('--incremental'); "incremental assembly: the kept tree was made from the same inputs (key $($modKey.Substring(0,12)))" }
+elseif(Test-Path "$W\zonetool\$Map"){
+  $why=if($FullAssemble){ '-FullAssemble' } elseif($kept){ 'an input of the assembly changed' } else { 'no finished assembly to keep' }
+  "full assembly: $why"; Remove-Item -LiteralPath "$W\zonetool\$Map" -Recurse -Force
+}
+Remove-Item -LiteralPath $keyFile -Force -ErrorAction SilentlyContinue     # the key is written again only when this assembly finishes
+& $py -I "$S\assemble.py" $W $Map $lvl @dumpList @inc | Select-Object -Last 3
 if($LASTEXITCODE){ throw 'assemble failed' }
 & $py -I "$S\sz2_assemble.py" $W $Map $Src
 if($LASTEXITCODE){ throw 'sz2_assemble failed' }
+Mark 'link'
 $pa=@("$W\zone_source\$Map.csv","$W\zonetool\$Map",$Map,'--template-dump',$D)
 if($DeadeyeImage -and (Test-Path $DeadeyeImage)){ $pa+=@('--deadeye-image',$DeadeyeImage) }
 & $py -I "$S\perks\add_perks.py" @pa
@@ -143,7 +187,9 @@ if($DeadeyeScriptable -and (Test-Path $DeadeyeScriptable)){
 $ps=@("$W\zone_source\$Map.csv","$W\zonetool\$Map",$Map,'--aliases',"$D\cp_zmb\sound\cp_zmb.all.aliases.csv",'--aliases',(& "$S\machine.ps1" Runtime 'iwz-stage2\audio\lab\dump\cp_disco\sound\cp_disco.all.aliases.csv'),'--stock-bank',(& "$S\machine.ps1" Runtime 'private-test-server\cp_disco.sabl'),'--stock-bank',(& "$S\machine.ps1" Runtime 'private-test-server\cp_disco.sabs'),'--report',"$UmOut.perk_sounds.json")
 & $py -I "$S\perks\add_perk_sounds.py" @ps
 if($LASTEXITCODE){ throw 'add_perk_sounds failed' }
-$la=@("$W\zone_source\$Map.csv","$W\zonetool\$Map",'--strings',(& "$S\machine.ps1" Runtime 'iw7-dump-lui\localize.json'),'--extra',"$S\perks\strings.json",'--report',"$UmOut.localize.tsv")
+& $py -I -B "$S\map_identity.py" strings $Map $Title "$S\perks\strings.json" "$W\strings_$Map.json"
+if($LASTEXITCODE){ throw 'map_identity strings failed' }
+$la=@("$W\zone_source\$Map.csv","$W\zonetool\$Map",'--strings',(& "$S\machine.ps1" Runtime 'iw7-dump-lui\localize.json'),'--extra',"$W\strings_$Map.json",'--report',"$UmOut.localize.tsv")
 foreach($lz in 'eng_cp_zmb','eng_patch_cp_zmb'){ if(Test-Path "$W\dump\$lz\localizedstrings"){ $la+=@('--strings',"$W\dump\$lz\localizedstrings") } }
 & $py -I "$S\perks\add_localize.py" @la
 if($LASTEXITCODE){ throw 'add_localize failed' }
@@ -154,6 +200,7 @@ $req=@('techsets_common','techsets_global','techsets_common_core_mp','techsets_g
 Set-Content $csv (@($lines[0])+$req+$lines[1..($lines.Count-1)]) -Encoding ascii
 foreach($ext in 'ff','sabl','sabs'){ if(Test-Path "$W\zone\$Map.$ext"){ Remove-Item "$W\zone\$Map.$ext" } }
 [IO.File]::WriteAllText($keyFile,$modKey)
+Mark 'modules'
 Lap 'assemble'
 $b = Invoke-Zt @('-buildzone',$Map) 2400
 Lap 'zone'
@@ -165,10 +212,32 @@ foreach($ext in 'sabl','sabs'){
   if(Test-Path "$UmOut\$Map.$ext"){ Remove-Item "$UmOut\$Map.$ext" -Force }
   if(Test-Path "$W\zone\$Map.$ext"){ Copy-Item "$W\zone\$Map.$ext" "$UmOut\$Map.$ext" -Force }
 }
-if($Arena -and (Test-Path $Arena)){ Copy-Item $Arena "$UmOut\$Map.arena" -Force }
+if($Arena){ if(-not (Test-Path $Arena)){ throw "arena file not found: $Arena" }; Copy-Item $Arena "$UmOut\$Map.arena" -Force }
+else { & $py -I -B "$S\map_identity.py" arena $Map $Title "$UmOut\$Map.arena" --description $Description; if($LASTEXITCODE){ throw 'map_identity arena failed' } }
+Lap 'copy'
+# the browser art zone <map>_art.ff: the client loads usermaps\<map>\<map>_art.ff in the front end and defaults the arena's images to
+# image_<map> and image_<map>_vote; the theater poster needs the stock poster model of a cp_frontend dump
+if(-not $NoArt){
+  $artDir=$Art
+  if(-not $artDir){
+    $artDir="$UmOut.art"; New-Item -ItemType Directory -Force $artDir | Out-Null
+    & $py -I "$S\make_art.py" --plate $Title $artDir $Map | Select-Object -Last 1
+    if($LASTEXITCODE){ throw 'make_art failed' }
+  }
+  foreach($n in "image_$Map","image_${Map}_vote"){ if(-not (Test-Path "$artDir\$n.tga")){ throw "art image missing: $artDir\$n.tga" } }
+  $frontend=if($FrontendDump -and (Test-Path "$FrontendDump\xmodel\zmb_poster_dlc1.xmb")){ @($FrontendDump) } else { @() }
+  if(-not $frontend){ 'no cp_frontend dump with the poster model: the art zone has the list and vote images only' }
+  & $py -I "$S\build_art.py" $W $Map "$W\zonetool\$Map" $artDir @frontend | Select-Object -Last 2
+  if($LASTEXITCODE){ throw 'build_art failed' }
+  if(Test-Path "$W\zone\${Map}_art.ff"){ Remove-Item "$W\zone\${Map}_art.ff" }
+  $ab = Invoke-Zt @('-buildzone',"${Map}_art") 900
+  if(!(Test-Path "$W\zone\${Map}_art.ff")){ $ab | Select-Object -Last 30; throw 'buildzone produced no art fastfile' }
+  Copy-Item "$W\zone\${Map}_art.ff" "$UmOut\${Map}_art.ff" -Force
+  Lap 'art'
+}
 $times.total=[int]((Get-Date)-$t0).TotalSeconds
-[ordered]@{map=$Map;src=$Src;ff_bytes=(Get-Item "$UmOut\$Map.ff").Length;incremental=[bool]$inc;seconds=$times;zonetool=$ZoneToolExe} | ConvertTo-Json | Set-Content "$UmOut.build.json"
-"built $UmOut\$Map.ff $((Get-Item "$UmOut\$Map.ff").Length) bytes in $($times.total) s (compile $($times.compile), assemble $($times.assemble), zone $($times.zone))"
+[ordered]@{map=$Map;title=$Title;src=$Src;ff_bytes=(Get-Item "$UmOut\$Map.ff").Length;art=(-not $NoArt);incremental=[bool]$inc;seconds=$times;assemble_parts=$sub;key=$modKey;zonetool=$ZoneToolExe} | ConvertTo-Json | Set-Content "$UmOut.build.json"
+"built $UmOut\$Map.ff $((Get-Item "$UmOut\$Map.ff").Length) bytes in $($times.total) s (compile $($times.compile), assemble $($times.assemble) [key $($sub.key), link $($sub.link), modules $($sub.modules)], zone $($times.zone), art $($times.art))"
 } finally {
   $relUntil=[datetime]::UtcNow.AddMinutes(30); $done=$false
   while(-not $done){

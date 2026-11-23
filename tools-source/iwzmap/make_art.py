@@ -1,6 +1,7 @@
 """Map browser art of Station Zero from engine renders (no HUD, no weapon).
 
-usage: make_art.py <hero frame> <second frame> <out dir> [map]
+usage: make_art.py <hero frame> <second frame> <out dir> [map]          Station Zero's art from two engine renders
+       make_art.py --plate "<TITLE>" <out dir> <map>                     any other map: the title on a neutral plate, no frames
 Writes (TGA, 32-bit):
   zmb_poster_<map>_c.tga   theater poster texture of the zombies map browser (portrait 512x768)
   zmb_poster_<map>_sg.tga  its flat specular/gloss map
@@ -11,8 +12,13 @@ and preview PNGs next to them.
 import os, sys
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
 
-hero, second, out = sys.argv[1:4]
-mapname = sys.argv[4] if len(sys.argv) > 4 else 'cp_iwz'
+PLATE = len(sys.argv) > 1 and sys.argv[1] == '--plate'
+if PLATE:
+    plate_title, out, mapname = sys.argv[2:5]
+    hero = second = None
+else:
+    hero, second, out = sys.argv[1:4]
+    mapname = sys.argv[4] if len(sys.argv) > 4 else 'cp_iwz'
 os.makedirs(out, exist_ok=True)
 FONTS = r'C:\Windows\Fonts'
 title_font = lambda s: ImageFont.truetype(os.path.join(FONTS, 'impact.ttf'), s)
@@ -56,10 +62,43 @@ def cover(im, size):
     return ImageOps.fit(im.convert('RGB'), size, Image.LANCZOS, centering=(0.5, 0.45))
 
 
+def plate_image(size):
+    """A neutral plate for a map with no engine render: dark vertical gradient with a faint grid. Nothing of any game."""
+    w, h = size
+    im = Image.new('RGB', size, (10, 14, 18))
+    d = ImageDraw.Draw(im)
+    for y in range(h):
+        t = y / max(1, h - 1)
+        d.line([(0, y), (w, y)], fill=(int(14 + 22 * t), int(20 + 26 * t), int(26 + 30 * t)))
+    for x in range(0, w, 32):
+        d.line([(x, 0), (x, h)], fill=(30, 42, 50))
+    for y in range(0, h, 32):
+        d.line([(0, y), (w, y)], fill=(30, 42, 50))
+    return im
+
+
+def fit_font(make, text, max_w, start):
+    """The largest size of make(size) up to start whose text fits max_w."""
+    size = start
+    while size > 12 and make(size).getlength(text) > max_w:
+        size -= 2
+    return make(size)
+
+
+if PLATE:
+    words = plate_title.upper().split()
+    LINE1, LINE2 = (' '.join(words[:-1]), words[-1]) if len(words) > 1 else ('', words[0])
+    TAGLINE, FOOT1, FOOT2, BOARD = 'A  CUSTOM  ZOMBIES  MAP', 'AN  INFINITE WARFARE ZOMBIES  CUSTOM MAP', 'BUILT WITH THE IWZ MAP BUILDER', 'NOW  LOADING'
+    VOTE_TITLE = plate_title.upper()
+else:
+    LINE1, LINE2 = 'STATION', 'ZERO'
+    TAGLINE, FOOT1, FOOT2, BOARD = 'LAST TRAIN OUT.  NO RETURN TICKET.', 'AN  ORIGINAL  INFINITE WARFARE ZOMBIES  CUSTOM MAP', 'GENERATED  WORLD  \u2022  NAVMESH  \u2022  STOCK  ZOMBIES  SYSTEMS', 'NOW  BOARDING'
+    VOTE_TITLE = 'STATION ZERO'
+
 # poster 512x768
 W, H = 512, 768
 poster = Image.new('RGBA', (W, H), (6, 8, 10, 255))
-art = grade(cover(Image.open(hero), (W, 560)))
+art = grade(plate_image((W, 560))) if PLATE else grade(cover(Image.open(hero), (W, 560)))
 poster.paste(art, (0, 110))
 fade = Image.new('L', (W, 560), 0)
 fd = ImageDraw.Draw(fade)
@@ -70,27 +109,28 @@ for y in range(560):
     fd.line([(0, y), (W, y)], fill=a)
 poster.paste(Image.new('RGBA', (W, 560), (6, 8, 10, 255)), (0, 110), fade)
 poster.alpha_composite(vignette((W, H), 0.6))
-glow_text(poster, (W // 2, 70), 'STATION', title_font(92), (235, 255, 225), NEON, 10)
-glow_text(poster, (W // 2, 160), 'ZERO', title_font(118), NEON, NEON, 14)
+if LINE1:
+    glow_text(poster, (W // 2, 70), LINE1, fit_font(title_font, LINE1, W - 60, 92), (235, 255, 225), NEON, 10)
+glow_text(poster, (W // 2, 160), LINE2, fit_font(title_font, LINE2, W - 60, 118), NEON, NEON, 14)
 d = ImageDraw.Draw(poster)
-d.text((W // 2, 612), 'LAST TRAIN OUT.  NO RETURN TICKET.', font=body_font(22), fill=(230, 220, 200, 255), anchor='mm')
+d.text((W // 2, 612), TAGLINE, font=body_font(22), fill=(230, 220, 200, 255), anchor='mm')
 d.line([(70, 640), (W - 70, 640)], fill=(120, 255, 90, 200), width=2)
-d.text((W // 2, 668), 'AN  ORIGINAL  INFINITE WARFARE ZOMBIES  CUSTOM MAP', font=body_font(14), fill=(170, 180, 170, 255), anchor='mm')
-d.text((W // 2, 690), 'GENERATED  WORLD  \u2022  NAVMESH  \u2022  STOCK  ZOMBIES  SYSTEMS', font=body_font(12), fill=(130, 140, 130, 255), anchor='mm')
-d.text((W // 2, 732), 'NOW  BOARDING', font=title_font(34), fill=(255, 70, 50, 255), anchor='mm')
+d.text((W // 2, 668), FOOT1, font=body_font(14), fill=(170, 180, 170, 255), anchor='mm')
+d.text((W // 2, 690), FOOT2, font=body_font(12), fill=(130, 140, 130, 255), anchor='mm')
+d.text((W // 2, 732), BOARD, font=title_font(34), fill=(255, 70, 50, 255), anchor='mm')
 d.rectangle([4, 4, W - 5, H - 5], outline=(40, 50, 40, 255), width=3)
 poster_rgb = poster.convert('RGB')
 
 # vote banner 512x256
 VW, VH = 512, 256
 vote = Image.new('RGBA', (VW, VH), (0, 0, 0, 255))
-vote.paste(grade(cover(Image.open(second), (VW, VH))), (0, 0))
+vote.paste(grade(plate_image((VW, VH))) if PLATE else grade(cover(Image.open(second), (VW, VH))), (0, 0))
 shade = Image.new('L', (VW, VH), 0)
 sd = ImageDraw.Draw(shade)
 for x in range(VW):
     sd.line([(x, 0), (x, VH)], fill=int(200 * max(0.0, 1 - x / (VW * 0.75))))
 vote.paste(Image.new('RGBA', (VW, VH), (4, 6, 8, 255)), (0, 0), shade)
-glow_text(vote, (24, 96), 'STATION ZERO', title_font(64), (235, 255, 225), NEON, 8, anchor='lm')
+glow_text(vote, (24, 96), VOTE_TITLE, fit_font(title_font, VOTE_TITLE, VW - 48, 64), (235, 255, 225), NEON, 8, anchor='lm')
 ImageDraw.Draw(vote).text((26, 150), 'Infinite Warfare Zombies custom map', font=body_font(20), fill=(220, 220, 210, 255), anchor='lm')
 vote_rgb = vote.convert('RGB')
 
