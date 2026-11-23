@@ -164,6 +164,62 @@ def build_charts(w, texel):
     return charts, front
 
 
+def split_shared_vertices(w, charts):
+    """Give every lightmap chart its own copy of a vertex that two or more charts share (R7 baker bug: the vertex kept
+    only the last chart's lightmap coordinate, so the triangles of the other charts read the atlas from far away).
+
+    The first chart (in chart order) keeps the original vertex, every later chart gets a copy appended at the end of the
+    surface's vertex range (indices are relative to the surface's firstVertex, u16). Triangle counts and the index layout
+    do not change; w['verts'], w['surfaces'] (first) and w['indices'] are replaced, charts are updated in place (tris,
+    verts, global ids in the new numbering). A triangle that was not baked (the reversed side of a double sided pair)
+    follows the chart of its twin so it reads the same texels. Returns {'added': n, 'surfaces_split': k}."""
+    verts, idx, surfs = w['verts'], w['indices'], w['surfaces']
+    by_surface = {}
+    for ci, c in enumerate(charts):
+        by_surface.setdefault(c['surface'], []).append(ci)
+    pieces, new_idx, new_surfs = [], idx.copy(), surfs.copy()
+    total = added = split = 0
+    for si, s in enumerate(surfs):
+        f, vc, base, tc = int(s['first']), int(s['vc']), int(s['base']), int(s['tc'])
+        cis = by_surface.get(si, [])
+        owner, extra, extra_src = {}, {}, []      # extra[(chart, old global id)] -> local index in the new range
+        for ci in cis:
+            for v in charts[ci]['verts']:
+                if v not in owner:
+                    owner[v] = ci
+                else:
+                    extra[(ci, v)] = vc + len(extra_src); extra_src.append(v)
+        if vc + len(extra_src) > 65535:
+            raise SystemExit('surface %d: %d vertices after splitting the lightmap charts (u16 limit 65535); '
+                             'split the surface smaller in the exporter' % (si, vc + len(extra_src)))
+        new_surfs['first'][si] = total
+        new_surfs['vc'][si] = vc + len(extra_src)
+        pieces.append(verts[f:f + vc])
+        if extra_src:
+            pieces.append(verts[np.array(extra_src, np.int64)])
+            split += 1; added += len(extra_src)
+
+        def loc(ci, v):                           # local index (new range) of old global vertex v as seen by chart ci
+            return extra.get((ci, v), v - f)
+        twin = {}                                 # sorted old corners -> chart
+        for ci in cis:
+            for t in charts[ci]['tris']:
+                twin[tuple(sorted(t))] = ci
+        old = idx[base:base + tc * 3].reshape(-1, 3).astype(np.int64) + f
+        out = new_idx[base:base + tc * 3].reshape(-1, 3)
+        for k, t in enumerate(old):
+            ci = twin.get(tuple(sorted(int(x) for x in t)))
+            out[k] = [loc(ci, int(x)) if ci is not None else int(x) - f for x in t]
+        for ci in cis:
+            c = charts[ci]
+            c['tris'] = [tuple(total + loc(ci, v) for v in t) for t in c['tris']]
+            c['verts'] = sorted({v for t in c['tris'] for v in t})
+        total += vc + len(extra_src)
+    w['verts'] = np.concatenate(pieces) if pieces else verts
+    w['indices'], w['surfaces'] = new_idx, new_surfs
+    return {'added': added, 'surfaces_split': split}
+
+
 def pack(charts):
     def a4(x): return (x + 3) & ~3
     for c in charts:
@@ -269,12 +325,17 @@ def chart_filter(val, x, y, chart, W, H, r):
     return acc / np.maximum(cnt, 1)[:, None]
 
 
-def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, pattern=None, denoise=1):
+def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False, pattern=None, denoise=1):
     t_start = time.time(); timing = {}
     cfg = json.load(open(lights_path))
     texel = texel or cfg.get('texel', 8)
+    bounces = bounces if bounces is not None else int(cfg.get('bounces', 2))
     w = read_world(os.path.join(src, 'world.bin'))
     charts, front = build_charts(w, texel)
+    nv0 = len(w['verts'])
+    sp = split_shared_vertices(w, charts)
+    front = [(a, b, c, ch['surface']) for ch in charts for a, b, c in ch['tris']]
+    print('lightmap charts own their vertices: %d vertices added (%d -> %d) on %d surfaces' % (sp['added'], nv0, len(w['verts']), sp['surfaces_split']))
     W, H = pack(charts)
     tx = chart_texels(charts, w, W, H)
     n = len(tx['x'])
@@ -289,18 +350,35 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
     tri_lm = [lm[F[:, 0]], lm[F[:, 1]], lm[F[:, 2]]]
     tri_mat = np.array([int(w['surfaces'][si]['mat']) for *_, si in front])
     occ = cfg.get('occluders', [])
-    for o in occ:                                   # axis-aligned boxes that only block light (decor)
-        mn, mx = np.array(o['min'], float), np.array(o['max'], float)
-        c = np.array([[mn[0], mn[1], mn[2]], [mx[0], mn[1], mn[2]], [mx[0], mx[1], mn[2]], [mn[0], mx[1], mn[2]],
-                      [mn[0], mn[1], mx[2]], [mx[0], mn[1], mx[2]], [mx[0], mx[1], mx[2]], [mn[0], mx[1], mx[2]]])
+    occ_v = [[], [], []]; occ_e = []                 # occ_e: emitter index of every occluder triangle (-1: none)
+    emitters = []                                    # radiance (r, g, b) of the emissive boxes (a prop declared emissive)
+    for o in occ:                                   # boxes that only block light (decor): {min, max} axis aligned or {corners} (8 points, oriented)
+        if 'corners' in o:
+            c = np.array(o['corners'], float)
+        else:
+            mn, mx = np.array(o['min'], float), np.array(o['max'], float)
+            c = np.array([[mn[0], mn[1], mn[2]], [mx[0], mn[1], mn[2]], [mx[0], mx[1], mn[2]], [mn[0], mx[1], mn[2]],
+                          [mn[0], mn[1], mx[2]], [mx[0], mn[1], mx[2]], [mx[0], mx[1], mx[2]], [mn[0], mx[1], mx[2]]])
         quads = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
+        ei = -1
+        if o.get('emissive') and max(o['emissive']) > 0:
+            ei = len(emitters); emitters.append([float(x) for x in o['emissive']])
         for q in quads:
             for t in ((q[0], q[1], q[2]), (q[0], q[2], q[3])):
-                for k in range(3): tri_v[k] = np.vstack([tri_v[k], c[t[k]][None]])
-                for k in range(3): tri_lm[k] = np.vstack([tri_lm[k], [[-1, -1]]])
-                tri_mat = np.append(tri_mat, -1)
+                for k in range(3): occ_v[k].append(c[t[k]])
+                occ_e.append(ei)
+    grid_world = [tri_v[k] for k in range(3)], [tri_lm[k] for k in range(3)], tri_mat      # the light grid sees the world only (below)
+    if occ_v[0]:                                    # one concatenation, not one per triangle
+        n_occ = len(occ_v[0])
+        tri_v = [np.vstack([tri_v[k], np.array(occ_v[k])]) for k in range(3)]
+        tri_lm = [np.vstack([tri_lm[k], np.full((n_occ, 2), -1.0)]) for k in range(3)]
+        tri_mat = np.concatenate([tri_mat, np.full(n_occ, -1)])
+    tri_emit = np.concatenate([np.full(len(tri_mat) - len(occ_e), -1), np.array(occ_e, int)]).astype(np.int64)
     scene = rt.Scene(*tri_v)
     S_args = scene.args()
+    # the light grid lights models that stand in the gaps of the props (zombies, the gun): a prop's solid box must not darken it (Arcade quick
+    # bake: mean c0 2.56 -> 1.79 with the boxes in its rays), so its rays see the walls, floors and render boxes only, as before the boxes
+    grid_scene = rt.Scene(*grid_world[0]) if occ_v[0] else scene
 
     # material properties
     mats = w['materials']
@@ -337,7 +415,9 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
             uvh = (1 - uu - vv)[..., None] * a + uu[..., None] * b + vv[..., None] * c
             xi = np.clip((uvh[..., 0] * W).astype(np.int64), 0, W - 1); yi = np.clip((uvh[..., 1] * H).astype(np.int64), 0, H - 1)
             h = tid[yi, xi]
-            out[r0:r0 + 8192] = np.where(t < 0, -1, np.where((sd < 0) | (tri_mat[np.maximum(t, 0)] < 0), -2, h))
+            tm = tri_mat[np.maximum(t, 0)]; em = tri_emit[np.maximum(t, 0)]
+            out[r0:r0 + 8192] = np.where(t < 0, -1, np.where((tm < 0) & (em >= 0) & (sd > 0), -3 - em,
+                                                              np.where((sd < 0) | (tm < 0), -2, h)))
         return out
 
     sky = np.array(cfg.get('sky', [0, 0, 0]), float)
@@ -349,22 +429,23 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
         c1 = min(n, c0 + 65536)
         htri, hu, hv, hdist, hside = rt.gather_rays(p[c0:c1], nn[c0:c1], tu[c0:c1], tv[c0:c1], nr_, 7 + c0, *S_args)
         hits = hit_texels(htri, hu, hv, hside)        # -1 sky, -2 back face/occluder (black)
-        idx[c0:c1] = np.where(hits == -1, n, np.where(hits == -2, n + 1, hits))
+        idx[c0:c1] = np.where(hits == -1, n, np.where(hits == -2, n + 1, np.where(hits <= -3, n + 2 + (-3 - hits), hits)))
         ao[c0:c1] = (hdist > amb.get('ao_radius', 96)).mean(1)
         del htri, hu, hv, hdist, hside, hits
     timing['gather_rays'] = time.time() - t0
     a_tex = alb[tx['mat']]; e_tex = emi[tx['mat']]
     Eind = np.zeros((n, 3))
+    emit_rad = np.array(emitters, float).reshape(-1, 3)
     for k in range(bounces):
-        Lout = np.vstack([a_tex * (Edir + Eind) + e_tex, sky[None], np.zeros((1, 3))])
+        Lout = np.vstack([a_tex * (Edir + Eind) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])
         Eind = np.concatenate([Lout[idx[r0:r0 + 8192]].mean(1) for r0 in range(0, n, 8192)])
     timing['indirect'] = time.time() - t0
     print('indirect: %d rays/texel, %d bounces, %.1f s; mean AO %.3f' % (nr_, bounces, timing['indirect'], ao.mean()))
 
     # light grid samples (lighting.txt): SH order 1 (constant + vertical) of the radiance around each cell centre
     t0 = time.time()
-    Lfinal = np.vstack([a_tex * (Edir + Eind + fill * ao[:, None]) + e_tex, sky[None], np.zeros((1, 3))])
-    light_lines, grid = light_grid(cfg, w, Lfinal, n, scene, tri_lm, tri_mat, tid, W, H, L, quick)
+    Lfinal = np.vstack([a_tex * (Edir + Eind + fill * ao[:, None]) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])
+    light_lines, grid = light_grid(cfg, w, Lfinal, n, grid_scene, grid_world[1], grid_world[2], tid, W, H, L, quick)
     timing['light_grid'] = time.time() - t0
 
     # encode: B along the dominant direction of the direct light, A the rest
@@ -413,13 +494,13 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
     # the baked source is the whole source: files and folders (modules/ holds the game-script modules the level
     # script starts; a copy without it builds a map whose level script fails to link: ShutdownGame at load, W2 build b)
     for f in os.listdir(src):
-        p = os.path.join(src, f)
+        fp = os.path.join(src, f)
         if os.path.abspath(src) == os.path.abspath(out) or f in ('lightmap', 'bake_tmp'):
             continue
-        if os.path.isfile(p):
-            shutil.copyfile(p, os.path.join(out, f))
-        elif os.path.isdir(p):
-            shutil.copytree(p, os.path.join(out, f), dirs_exist_ok=True)
+        if os.path.isfile(fp):
+            shutil.copyfile(fp, os.path.join(out, f))
+        elif os.path.isdir(fp):
+            shutil.copytree(fp, os.path.join(out, f), dirs_exist_ok=True)
     lmdir = os.path.join(out, 'lightmap'); os.makedirs(lmdir, exist_ok=True)
     work = os.path.join(out, 'bake_tmp')
     t0 = time.time()
@@ -446,7 +527,7 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
                         tx_pos=p, tx_n=nn, tx_x=x, tx_y=y, tx_mat=tx['mat'], tx_chart=tx['chart'], Edir=Edir, Eind=Eind, ao=ao,
                         grid=grid)
     rep = {'schema': 'iwzmap.lightbake/1', 'atlas': [W, H], 'texel': texel, 'texels': n, 'charts': len(charts),
-           'triangles': len(front), 'occluder_boxes': len(occ), 'lights': len(L), 'rays_per_texel': nr_, 'bounces': bounces,
+           'triangles': len(front), 'occluder_boxes': len(occ), 'emissive_boxes': len(emitters), 'bounces_used': bounces, 'lights': len(L), 'rays_per_texel': nr_, 'bounces': bounces,
            'mean': {'A': imgA[valid].mean(0).tolist(), 'B': imgB[valid].mean(0).tolist(), 'E': E_flat[valid].mean(0).tolist(),
                     'ao': float(ao.mean())},
            'encode': enc_err, 'timing_s': {k: round(v, 2) for k, v in timing.items()}, 'total_s': round(time.time() - t_start, 1),
@@ -477,8 +558,9 @@ def light_grid(cfg, w, Lfinal, n, scene, tri_lm, tri_mat, tid, W, H, L, quick):
     uvh = (1 - bu - bv)[..., None] * a + bu[..., None] * b + bv[..., None] * c
     xi = np.clip((uvh[..., 0] * W).astype(np.int64), 0, W - 1); yi = np.clip((uvh[..., 1] * H).astype(np.int64), 0, H - 1)
     h = tid[yi, xi]
-    bad = (side < 0) | (tri < 0) | (tri_mat[np.maximum(tri, 0)] < 0)
-    keep = bad.mean(1) < 0.25
+    occ_hit = (tri >= 0) & (tri_mat[np.maximum(tri, 0)] < 0)          # a prop's box (it absorbs, but a cell beside a shelf is still a room cell)
+    bad = (side < 0) | (tri < 0) | occ_hit
+    keep = ((tri < 0) | ((side < 0) & ~occ_hit)).mean(1) < 0.25
     idx = np.where(tri < 0, n, np.where(bad, n + 1, h))
     rad = Lfinal[idx]                                       # (cells, rays, 3)
     c0 = rad.mean(1) * 4 * math.pi * Y00
@@ -514,7 +596,7 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('src'); ap.add_argument('lights'); ap.add_argument('out')
     ap.add_argument('--texel', type=float); ap.add_argument('--rays', type=int, default=100)
-    ap.add_argument('--bounces', type=int, default=2); ap.add_argument('--quick', action='store_true')
+    ap.add_argument('--bounces', type=int, default=None, help='indirect bounces (default: lights.json "bounces", else 2)'); ap.add_argument('--quick', action='store_true')
     ap.add_argument('--denoise', type=int, default=1, help='chart-local box filter radius of the indirect term (0 = off)')
     ap.add_argument('--pattern', help='json list of calibration patches {box, normal, A, B, Dz, name}')
     a = ap.parse_args()

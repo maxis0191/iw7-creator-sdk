@@ -142,12 +142,19 @@ class DumpIndex:
 
 # ---------------------------------------------------------------------------------------------------- images
 def lz4_block(src, usize):
-    """LZ4 block decompress: the lz4 package when present, else pure Python."""
+    """LZ4 block decompress: the lz4 package when present, else pure Python.
+
+    The package refuses a block that breaks the format's end rules (the last five bytes must be literals); the pure Python
+    reader below takes it, so a refused block falls through to it instead of failing."""
     try:
         import lz4.block
-        return lz4.block.decompress(bytes(src), uncompressed_size=usize)
     except ImportError:
-        pass
+        lz4 = None
+    if lz4 is not None:
+        try:
+            return lz4.block.decompress(bytes(src), uncompressed_size=usize)
+        except lz4.block.LZ4BlockError:
+            pass
     out = bytearray()
     i, n = 0, len(src)
     while i < n:

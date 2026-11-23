@@ -276,6 +276,66 @@ class EndToEnd(unittest.TestCase):
             with self.assertRaises(ValueError):
                 C.export_scene(sc, d, log=lambda m: None)
 
+    @staticmethod
+    def parse_lights_txt(text):
+        """a port of iwzmap.cpp read_lights (the lines quoted in the comments): the compiler's own grammar"""
+        out = []
+        for n, line in enumerate(text.split('\n'), 1):
+            line = line.split('#')[0]
+            t = line.split()
+            if not t:
+                continue
+            kind = t.pop(0)
+            assert kind in ('omni', 'spot'), 'lights.txt line %d: expected omni or spot' % n          # if (kind != "omni" && kind != "spot") throw
+            s = {'spot': kind == 'spot', 'shadow': False, 'name': '', 'group': ''}
+            assert len(t) >= 8, 'expected x y z r g b intensity radius'                              # l >> origin[3] >> rgb[3] >> intensity >> radius
+            v = [float(x) for x in t[:8]]; t = t[8:]
+            s.update(origin=v[:3], rgb=v[3:6], intensity=v[6], radius=v[7])
+            if s['spot']:
+                assert len(t) >= 3, 'a spot needs pitch yaw fov'                                      # if (s.spot && !(l >> s.pitch >> s.yaw >> s.fov))
+                s['pitch'], s['yaw'], s['fov'] = [float(x) for x in t[:3]]; t = t[3:]
+            for tok in t:                                                                             # optional tail: [shadow] [name=] [group=]
+                if tok.startswith('name='): s['name'] = tok[5:]
+                elif tok.startswith('group='): s['group'] = tok[6:]
+                elif tok in ('0', '1'): s['shadow'] = tok == '1'
+                else: raise AssertionError('lights.txt line %d: unknown token %s' % (n, tok))
+            assert s['radius'] > 0
+            out.append(s)
+        return out
+
+    def test_runtime_lights_reach_lights_txt_as_the_compiler_reads_them(self):
+        lights = [{'at': F(100, 100, 100), 'type': 'omni', 'color': [1, 0.5, 0.25], 'radius': 300, 'intensity': 2.0, 'runtime': True},
+                  {'at': F(200, 200, 110), 'type': 'spot', 'color': [0.2, 0.3, 1.0], 'radius': 400, 'intensity': 4.0, 'dir': [0, 0, -1], 'inner': 14, 'outer': 30,
+                   'runtime': True, 'shadows': True, 'name': 'lamp_a', 'group': 'g1'},
+                  {'at': F(300, 100, 100), 'type': 'omni', 'radius': 200, 'runtime': True, 'shadows': False, 'bake': False},
+                  {'at': F(50, 50, 100), 'type': 'omni', 'radius': 200}]
+        with tempfile.TemporaryDirectory() as d:
+            C.export_scene(room_scene({'lights': lights}), d, log=lambda m: None)
+            rows = self.parse_lights_txt(open(os.path.join(d, 'lights.txt')).read())
+            lay = __import__('json').load(open(os.path.join(d, 'layout.json')))
+        self.assertEqual(len(rows), 3)                                       # the baked-only light is not a runtime light
+        self.assertEqual(rows[0]['rgb'], [1.0, 0.5, 0.25]); self.assertAlmostEqual(rows[0]['intensity'], 2000.0)
+        self.assertTrue(rows[1]['spot']); self.assertAlmostEqual(rows[1]['pitch'], 90.0); self.assertEqual(rows[1]['fov'], 60.0)
+        self.assertTrue(rows[1]['shadow']); self.assertEqual((rows[1]['name'], rows[1]['group']), ('lamp_a', 'g1'))
+        self.assertFalse(rows[2]['shadow'])
+        by = {tuple(l['origin']): l for l in lay['lights']}
+        self.assertTrue(by[(300.0, 100.0, 100.0)]['runtime'] and by[(300.0, 100.0, 100.0)]['bake'] is False)
+        self.assertNotIn('runtime', by[(50.0, 50.0, 100.0)])
+        self.assertEqual(lay['runtime_lights'], {'spot': 1, 'omni': 2, 'shadows': 1})
+
+    def test_lighting_block_and_emissive_props_reach_layout_json(self):
+        sc = room_scene({'lighting': {'ambient': 0.05, 'bounces': 2, 'emissive': {'w/neon': {'color': [1, 0, 0], 'strength': 2}}},
+                         'props': [{'model': 'sign_a', 'at': F(100, 20, 30), 'angles': [0, 90, 0], 'scale': 1.0, 'emissive': {'color': [0, 1, 0], 'strength': 3}},
+                                   {'model': 'chair', 'at': F(120, 20, 0)}]})
+        with tempfile.TemporaryDirectory() as d:
+            C.export_scene(sc, d, log=lambda m: None)
+            lay = __import__('json').load(open(os.path.join(d, 'layout.json')))
+        lt = lay['lighting']
+        self.assertEqual((lt['ambient'], lt['bounces']), (0.05, 2))
+        self.assertEqual(lt['emissive']['w/neon']['strength'], 2)
+        self.assertEqual(len(lt['emissive_props']), 1)
+        self.assertEqual(lt['emissive_props'][0]['model'], 'sign_a'); self.assertEqual(lt['emissive_props'][0]['angles'], [0.0, 90.0, 0.0])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -13,7 +13,10 @@ Scene dict (all lengths in inches; every key optional except `map`):
   doors  [{name, cost 750|1000|1250|1500, box [..6], zones [a,b] | None}]
   power [{at,yaw}]  perks [{at,yaw,perk,powered}]  wall_buys [{at,yaw,weapon_class|weapon,cost,model}]
   pap [{at,yaw}]  wheels [{at,yaw}]  lights [{at,type,color,radius,intensity,dir,inner,outer,group,name,runtime}]
-  props [{model,at,angles [pitch,yaw,roll],scale}]   markers [{kind,id,at,yaw}]
+  props [{model,at,angles [pitch,yaw,roll],scale, emissive {color [r,g,b], strength}}]   markers [{kind,id,at,yaw}]
+  lighting {prop_shadows, prop_shadow_max_extent, ambient, bounces, sky, sun, emissive {material: {color, strength}}}
+           the light settings of the map: written to layout.json "lighting" and read by bake/layout_lights.py (docs/IWZ-EMIT-CONTRACT.md);
+           a prop with `emissive` is added to lighting.emissive_props (the bake lights the walls near it)
 """
 import collections
 import json
@@ -878,6 +881,7 @@ class BlendEmitter(scenegen.Emitter):
         self.scene = scene
         self.problems = []
         self.warnings = []
+        self.emissive_props = []
         self.nodes = []
         self.layers = {}
         self.polys = None
@@ -1229,11 +1233,16 @@ class BlendEmitter(scenegen.Emitter):
             pitch, yaw, roll = p.get('angles', (0, 0, 0))
             sc_ = float(p.get('scale', 1.0))
             self.smodels.append('%s %g %g %g %g %g %g %g' % (p['model'], x, y, z, pitch, yaw, roll, sc_))
+            if p.get('emissive'):
+                e = p['emissive']
+                self.emissive_props.append({'model': p['model'], 'origin': [x, y, z], 'angles': [pitch, yaw, roll], 'scale': sc_,
+                                            'color': [float(c) for c in e.get('color', (1.0, 1.0, 1.0))], 'strength': float(e.get('strength', 1.0))})
             self.layout.setdefault('decor', []).append({'zone': self.zone_at((x, y, z)) or '', 'model': p['model'], 'origin': [x, y, z],
                                                         'yaw': yaw, 'pitch': pitch, 'roll': roll, 'scale': sc_, 'clip': None, 'static': True})
 
     def place_lights(self):
         lines = []
+        nrun, nshadow = {}, 0
         for L in self.scene.get('lights', []):
             x, y, z = L['at']
             rec = {'zone': self.zone_at((x, y, z)) or '', 'origin': [round(x, 2), round(y, 2), round(z, 2)], 'type': L.get('type', 'omni'),
@@ -1245,14 +1254,24 @@ class BlendEmitter(scenegen.Emitter):
                 rec['group'] = L['group']
             if L.get('name'):
                 rec['name'] = L['name']
+            if L.get('runtime'):
+                rec['runtime'] = True
+                if L.get('shadows') is not None:
+                    rec['shadows'] = bool(L['shadows'])
+                if L.get('bake') is False:
+                    rec['bake'] = False             # a pure runtime light: bake/layout_lights.py leaves it out of the lightmap
             self.layout['lights'].append(rec)
             if L.get('runtime'):
+                nrun[rec['type']] = nrun.get(rec['type'], 0) + 1
+                nshadow += 1 if rec.get('shadows') else 0
                 row = '%s %g %g %g %g %g %g %g %g' % (rec['type'], x, y, z, *rec['color'], rec['intensity'] * 1000.0, rec['radius'])
                 if rec['type'] == 'spot':
                     d = rec['dir']
                     pitch = -math.degrees(math.asin(max(-1, min(1, d[2]))))
                     yaw = math.degrees(math.atan2(d[1], d[0]))
                     row += ' %g %g %g' % (pitch, yaw, rec['outer'] * 2)
+                if L.get('shadows') is not None:
+                    row += ' %d' % (1 if L['shadows'] else 0)           # lights.txt tail token: a shadow capable slot (iwzmap.cpp read_lights)
                 if L.get('name'):
                     row += ' name=' + L['name']
                 if L.get('group'):
@@ -1260,6 +1279,15 @@ class BlendEmitter(scenegen.Emitter):
                 lines.append(row)
         if lines:
             open(os.path.join(self.out, 'lights.txt'), 'w', newline='\n').write('\n'.join(lines) + '\n')
+        # the template (cp_zmb) offers about 860 static spot and 140 static omni primary light slots and 25 scriptable ones (named lights;
+        # the range grows downwards over static slots); about 459 of its 1,039 lights can use a shadow map. The compiler refuses a light
+        # without a slot (iwzmap.cpp assign_light_slots) and gives a shadow request to a slot without shadow data silently.
+        if nrun.get('spot', 0) > 850 or nrun.get('omni', 0) > 130:
+            self.problems.append('%d runtime spot and %d runtime omni lights: the template has about 860 and 140 static slots' %
+                                 (nrun.get('spot', 0), nrun.get('omni', 0)))
+        if nshadow > 64:
+            self.warnings.append('%d runtime lights ask for shadows: each is a shadow map pass in the engine, keep it to a few in view together' % nshadow)
+        self.layout['runtime_lights'] = {'spot': nrun.get('spot', 0), 'omni': nrun.get('omni', 0), 'shadows': nshadow}
 
     # -- run -----------------------------------------------------------------------------------------------
     def run(self):
@@ -1328,6 +1356,11 @@ class BlendEmitter(scenegen.Emitter):
         self.layout['modules'] = self.layout.get('modules', [])
         self.layout['stairs'] = []          # the ramps are in scene_report.json `stairs`
         self.layout['blender'] = {'schema': 'iwz.blend/1', 'meshes': len(sc.get('meshes', [])), 'navigation': self.nav_info}
+        lighting = dict(sc.get('lighting') or {})
+        if self.emissive_props:
+            lighting['emissive_props'] = list(lighting.get('emissive_props') or []) + self.emissive_props
+        if lighting:
+            self.layout['lighting'] = lighting
         for k, v in (sc.get('extra_layout') or {}).items():
             self.layout.setdefault(k, v)
         json.dump(self.layout, open(os.path.join(self.out, 'layout.json'), 'w'), indent=1, default=list)

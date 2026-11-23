@@ -20,7 +20,8 @@ Units are inches (x east, y north, z up), as everywhere in IW7. Workstream E of 
 | `smodels.txt` | no | `<xmodel> x y z pitch yaw roll scale [noshadow] [nocollision] [cull=<n>]` per static model; the model must be in the template dump | `iwzcompile` (`read_smodels`); writes `smodels.bounds.json` back; preview |
 | `lighting.txt` | no | `ambient r g b up` and `room x0 y0 z0 x1 y1 z1 r g b up` (replaces the template light grid probes inside a box) | `iwzcompile` (`read_lighting`); the baker rewrites it with the baked grid |
 | `probes.txt` | no | the `room` rows again (reflection probes, `IWZ_PROBES=neutral`) | `iwzcompile` |
-| `lights.txt` | no | script switchable runtime lights: `omni\|spot x y z r g b intensity radius [pitch yaw fov] [shadow] [name=<targetname>] [group=<script_noteworthy>]` | `iwzcompile` (`read_lights`); darkness tools |
+| `smodel_bounds.json` | no | `{model: {mins [x,y,z], maxs [x,y,z]}}` bounds of static models that no dump holds (authored or ported models): the baked prop shadows read it first | `bake/occluders.py` |
+| `lights.txt` | no | runtime lights (dynamic, written for every light with `runtime: true`; script switchable ones carry `name=`): `omni\|spot x y z r g b intensity radius [pitch yaw fov] [shadow] [name=<targetname>] [group=<script_noteworthy>]` | `iwzcompile` (`read_lights`); darkness tools |
 | `lightmap/` (`primary.dds`, `secondary.dds`, `secondunorm.dds`) | no | the baked atlas; written by `bake/lmbake.py` into the baked copy of the source together with a `world.bin` whose lightmap uv point into it | `iwzcompile` (`prepare_lightmap`) |
 | `layout.json` | for tools and the level script | see below | `scenegen` itself, `iwz_emitcheck`, `sz_modules`, `bake/layout_lights.py`, `volume_check --layout`, `sz2_plan/navconn/seams/flatness/artlint`, `preview`, `audio_layout`, `darkness` |
 | `plan.json` | for `volume_check --plan`, `sz2_navconn`, preview overlays | `regions [{name, zone, rect}]`, `adj [[regionA, regionB]]`, `cells [[i, j, z, region]]` (32 unit cells), `cell_corners`, `blockers`, `col_tris`, `bounds`, `col_walls` | `build-sz2.ps1` (`volume_check`), `sz2_navconn`, `sz2_plan`, `preview` |
@@ -64,6 +65,30 @@ The compiler is run by `build-*.ps1` as `zonetool -iwzcompile cp_zmb_tpl cp_zmb 
   second floor was dropped, and does not claim two storey navigation. `plan.json` `cells` then holds one entry per area (a column
   can appear twice); older readers of `plan.json` (`sz2_navconn`) assume one cell per column.
 
+## Light settings: `layout.json` `lighting`, runtime lights, `smodel_bounds.json` (23 Nov 2026)
+
+What a map document can say about its light, and who reads it. Every key is optional; without the block the bake and the build are as before
+(the baker's 2 bounces, or the 3 that `build-blend.ps1` passes with `--default-bounces 3`; ambient 0.02, no sky), except that static props now cast baked shadows when the build passes model bounds (`prop_shadows`, default on; `build-blend.ps1` passes the template dump, `build-g` and the darkness builds pass none and bake as before). Measured on the Arcade (full bake, 144 rays, 3 bounces): mean lightmap E 0.36 -> 0.26 and indirect 0.150 -> 0.089 with the 1,258 boxes, bake time 122 s -> 124 s.
+
+| Key of `lighting` | Meaning | Read by |
+| --- | --- | --- |
+| `prop_shadows` | `true` (default) / `false`: every static model of `smodels.txt` blocks light in the bake as the oriented box of its xmodel bounds. Limits: the box is solid (no gap between table legs); a model whose box holds a light, a box over `prop_shadow_max_extent` (200) units, a box under 3 units and a `noshadow` model are skipped (`bake.json` / the layout_lights report counts them); the light grid ignores the boxes. Bounds come from `<emit>/smodel_bounds.json` (`{model: {mins, maxs}}`), else `<emit>/xmodel/<name>.xmb`, else the dump roots of `layout_lights.py --dump` (build-blend passes the template dump) | `bake/occluders.py`, `bake/layout_lights.py` |
+| `ambient` | a number (grey), `[r,g,b]`, or `{color, level, ao_radius}`: the fill light (default grey 0.02, blue x 1.1) | `layout_lights.py` -> `lights.json ambient` |
+| `bounces` | indirect bounces (written to `lights.json` when set, else `--default-bounces`, else the baker's 2) | `lights.json bounces`, `lmbake.py` |
+| `sky` | `[r,g,b]` radiance of the sky seen by rays that leave the map (default 0 = an interior) | `lights.json sky` |
+| `sun` | `{dir [x,y,z], color [r,g,b]}`: baked sun visibility | `lights.json sun` |
+| `emissive` | `{material: {color [r,g,b], strength s}}` (or `[r,g,b,s]`): the world material emits radiance `color x strength` in the bake (walls beside it take its colour from the bounces). The name rule (`*lamp*`, `*_on`) stays for materials not listed | `layout_lights.py` |
+| `emissive_props` | `[{model, origin, angles, scale, color, strength}]`: a static model that emits (its bounds box, seen by the bounce rays). `blend_core` fills it from `props[].emissive` | `layout_lights.py` -> `lights.json occluders[].emissive` |
+| `fog`, `exposure`, `vision` | the map's own look, `vision_edit.py`: `fog {color, density, start, max_opacity, intensity}`, `exposure {auto, value, adjust}` (`value` = tonemapExposure did not change the frame in the darkness runs dk3: unproven, use `adjust`), `vision {<stock vision key>: value}` rewrite `vision/<map>.vision` in the zone (assemble.py ships it as a copy of the stock cp_zmb vision); a key no stock vision file holds is refused. One look per map: a look that changes by zone needs a script call on zone entry and is not built | `sz2_assemble.py` |
+
+Lights (`layout.json lights[]`): `runtime: true` writes the light to `lights.txt` too (an engine primary light, shaded per pixel, lights models by position).
+`shadows: true|false` adds the `lights.txt` shadow token: the compiler picks a slot with `canUseShadowMap` and lists shadow casters, but writes
+`needsDynamicShadows = 0` for every light and marks the shadow path "not engine verified" (`iwzmap.cpp build_com_lights`): a moving shadow is NOT proven; `bake: false` leaves a pure runtime light out of the lightmap (default: it is baked as well, which doubles its light on world surfaces if the engine
+also lights them dynamically; check in game). The compiler reads `lights.txt` whenever the file exists: there is no switch (`IWZ_LIGHTS` is a generator
+switch of Station Zero, the compiler does not read it). Limits (template cp_zmb): about 860 static spot and 140 static omni slots, 25 scriptable slots (named
+lights, the range grows downwards), 459 of 1,039 lights can use a shadow map; the exporter refuses more lights than slots and warns over 64 shadow lights.
+The compiler fixes a spot's inner angle (`max(fov/2 - 10, fov/4)`); `inner` of the document does not reach it. `layout.json runtime_lights` counts them.
+
 ## `layout.json`: keys by consumer
 
 Always read as a dict; every tool uses `.get` except where noted.
@@ -79,7 +104,8 @@ Always read as a dict; every tool uses `.get` except where noted.
 | `openings [...]` | door/arch records with `zones` | `volume_check` (portal regions), `sz2_plan` |
 | `interactions [{kind, origin, yaw, zone, ...}]` | placed stock interactions; wall buys carry `groupname == "wall_buy"` and `price` | level script `//@PRICES@`, `sz2_navconn` (generator), tests |
 | `markers [{kind, id, zone, origin, yaw, area}]` | positions kept for game script modules | `sz_modules` |
-| `lights [{zone, origin, type, color, radius, intensity, fixture, dir, inner, outer, group, name, fill}]` | light list | `bake/layout_lights.py`, darkness |
+| `lights [{zone, origin, type, color, radius, intensity, fixture, dir, inner, outer, group, name, fill, runtime, shadows, bake}]` | light list | `bake/layout_lights.py`, darkness |
+| `lighting {...}` | light settings of the map (section above) | `bake/layout_lights.py`, `sz2_assemble.py` (vision) |
 | `zone_links [[a,b]]` | zones joined without a door (spawn adjacency) | level script `//@LINKS@` |
 | `navconn_routes [[regionA, regionB]]` | region pairs `sz2_navconn` proves | `sz2_navconn` |
 | `stairs [{span, c, z, axis, zone}]` | flights, for the emit check stair profile | `iwz_emitcheck stairs` (optional) |
