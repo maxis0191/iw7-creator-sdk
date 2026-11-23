@@ -141,6 +141,16 @@ class Light(unittest.TestCase):
         # open floor: every ray escapes -> the sky's radiance arrives as indirect light, plus the ambient fill (ao = 1)
         self.assertTrue(np.allclose(a, [0.6, 0.45, 0.3], atol=0.03))
 
+    def test_a_sky_box_is_no_occluder_and_no_chart(self):
+        floor = [SW.floor_quad(0, 0, 0, 256, 256)]
+        top = SW.floor_quad(1, -30000, -30000, 30000, 30000, z=30000.0)       # a huge surface of a sky material over the floor (material index 1)
+        lay = {'lights': [], 'lighting': {'sky': [0.5, 0.25, 0.0], 'ambient': {'color': [0, 0, 0], 'level': 0}, 'bounces': 1}}
+        z, cfg, _, bj = bake_emit(self.work, floor + [top], ['w/concrete_floor', 'w/sky_cp_zmb'], lay)
+        i = nearest(z, 128, 128)
+        a = z['A'][z['tx_y'][i], z['tx_x'][i]]
+        self.assertTrue(np.allclose(a, [0.5, 0.25, 0.0], atol=0.03), a)       # the rays reach the sky through the sky box
+        self.assertEqual(bj['triangles'], 2)                                   # the floor only: the box has no chart
+
     def test_defaults_are_unchanged(self):
         floor = [SW.floor_quad(0, 0, 0, 256, 256)]
         cfg, _ = layout_lights.build_config(self._emit(floor), texel=8.0)
