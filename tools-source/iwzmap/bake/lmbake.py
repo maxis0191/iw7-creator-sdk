@@ -367,6 +367,7 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
             for t in ((q[0], q[1], q[2]), (q[0], q[2], q[3])):
                 for k in range(3): occ_v[k].append(c[t[k]])
                 occ_e.append(ei)
+    grid_world = [tri_v[k] for k in range(3)], [tri_lm[k] for k in range(3)], tri_mat      # the light grid sees the world only (below)
     if occ_v[0]:                                    # one concatenation, not one per triangle
         n_occ = len(occ_v[0])
         tri_v = [np.vstack([tri_v[k], np.array(occ_v[k])]) for k in range(3)]
@@ -375,6 +376,9 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
     tri_emit = np.concatenate([np.full(len(tri_mat) - len(occ_e), -1), np.array(occ_e, int)]).astype(np.int64)
     scene = rt.Scene(*tri_v)
     S_args = scene.args()
+    # the light grid lights models that stand in the gaps of the props (zombies, the gun): a prop's solid box must not darken it (Arcade quick
+    # bake: mean c0 2.56 -> 1.79 with the boxes in its rays), so its rays see the walls, floors and render boxes only, as before the boxes
+    grid_scene = rt.Scene(*grid_world[0]) if occ_v[0] else scene
 
     # material properties
     mats = w['materials']
@@ -441,7 +445,7 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
     # light grid samples (lighting.txt): SH order 1 (constant + vertical) of the radiance around each cell centre
     t0 = time.time()
     Lfinal = np.vstack([a_tex * (Edir + Eind + fill * ao[:, None]) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])
-    light_lines, grid = light_grid(cfg, w, Lfinal, n, scene, tri_lm, tri_mat, tid, W, H, L, quick)
+    light_lines, grid = light_grid(cfg, w, Lfinal, n, grid_scene, grid_world[1], grid_world[2], tid, W, H, L, quick)
     timing['light_grid'] = time.time() - t0
 
     # encode: B along the dominant direction of the direct light, A the rest
@@ -554,8 +558,9 @@ def light_grid(cfg, w, Lfinal, n, scene, tri_lm, tri_mat, tid, W, H, L, quick):
     uvh = (1 - bu - bv)[..., None] * a + bu[..., None] * b + bv[..., None] * c
     xi = np.clip((uvh[..., 0] * W).astype(np.int64), 0, W - 1); yi = np.clip((uvh[..., 1] * H).astype(np.int64), 0, H - 1)
     h = tid[yi, xi]
-    bad = (side < 0) | (tri < 0) | (tri_mat[np.maximum(tri, 0)] < 0)
-    keep = bad.mean(1) < 0.25
+    occ_hit = (tri >= 0) & (tri_mat[np.maximum(tri, 0)] < 0)          # a prop's box (it absorbs, but a cell beside a shelf is still a room cell)
+    bad = (side < 0) | (tri < 0) | occ_hit
+    keep = ((tri < 0) | ((side < 0) & ~occ_hit)).mean(1) < 0.25
     idx = np.where(tri < 0, n, np.where(bad, n + 1, h))
     rad = Lfinal[idx]                                       # (cells, rays, 3)
     c0 = rad.mean(1) * 4 * math.pi * Y00
