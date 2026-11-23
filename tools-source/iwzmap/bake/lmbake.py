@@ -458,15 +458,26 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
     a_tex = alb[tx['mat']]; e_tex = emi[tx['mat']]
     Eind = np.zeros((n, 3))
     emit_rad = np.array(emitters, float).reshape(-1, 3)
+    # The sun. Its own light on a surface is the engine's at run time (the primary light x the baked visibility S), so it is not stored as direct light. What the sunlit
+    # surfaces throw back is baked light like any other bounce: without it a roofed room beside a sunlit yard gets the sky's light only (measured in the game, S7: the
+    # floor under a roof at 0.2 of the sky value beside a floor lit 20 times stronger). "sun_bounce": false in the config leaves it out.
+    S = np.zeros(n); Esun = np.zeros((n, 3))
+    if cfg.get('sun'):
+        sd = norm(np.array(cfg['sun']['dir'], float))
+        far = p + nn * 0.5 - sd[None] * 1e5
+        cosn = np.dot(nn, -sd)
+        S = rt.visible(p + nn * 0.5, far, *S_args).astype(float) * (cosn > 0)
+        if cfg.get('sun_bounce', True) and cfg['sun'].get('color'):
+            Esun = (S * np.maximum(cosn, 0.0))[:, None] * np.array(cfg['sun']['color'], float)[None]
     for k in range(bounces):
-        Lout = np.vstack([a_tex * (Edir + Eind) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])
+        Lout = np.vstack([a_tex * (Edir + Esun + Eind) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])
         Eind = np.concatenate([Lout[idx[r0:r0 + 8192]].mean(1) for r0 in range(0, n, 8192)])
     timing['indirect'] = time.time() - t0
     print('indirect: %d rays/texel, %d bounces, %.1f s; mean AO %.3f' % (nr_, bounces, timing['indirect'], ao.mean()))
 
     # light grid samples (lighting.txt): SH order 1 (constant + vertical) of the radiance around each cell centre
     t0 = time.time()
-    Lfinal = np.vstack([a_tex * (Edir + Eind + fill * ao[:, None]) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])
+    Lfinal = np.vstack([a_tex * (Edir + Esun + Eind + fill * ao[:, None]) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])
     light_lines, grid = light_grid(cfg, w, Lfinal, n, grid_scene, grid_world[1], grid_world[2], tid, W, H, L, quick)
     timing['light_grid'] = time.time() - t0
 
@@ -494,11 +505,6 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
         Edir[sel] = 0; Eind[sel] = A[sel]
         print('pattern %s: %d texels A %s B %s Dz %.3f (encoded %.3f)' % (pt.get('name', ''), sel.sum(), pt.get('A'), pt.get('B'),
                                                                          dz, oct_decode(drg)[2]))
-    S = np.zeros(n)
-    if cfg.get('sun'):
-        sd = norm(np.array(cfg['sun']['dir'], float))
-        far = p + nn * 0.5 - sd[None] * 1e5
-        S = rt.visible(p + nn * 0.5, far, *S_args).astype(float) * (np.dot(nn, -sd) > 0)
     for pt in (pattern or []):                       # calibration patches may also force the sun visibility
         if 'S' in pt:
             lo, hi = np.array(pt['box'][:3], float), np.array(pt['box'][3:], float)

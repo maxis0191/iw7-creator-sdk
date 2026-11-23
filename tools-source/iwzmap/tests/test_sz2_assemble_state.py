@@ -72,6 +72,34 @@ class StateFiles(unittest.TestCase):
         if dumps:      # a dump is never written
             self.assertFalse(os.path.exists(os.path.join(dumps, 'techsets', 'state', TECH, 'w', 'iwz_a.statebits')))
 
+    def test_a_stock_image_by_its_header(self):
+        """a sky of another zone: the base sky material cloned under the stock name, its image the dumped header (no pixels), a field of the material set"""
+        t = tempfile.mkdtemp(prefix='sz2sky_')
+        self.addCleanup(__import__('shutil').rmtree, t, True)
+        work, src = os.path.join(t, 'work'), os.path.join(t, 'src')
+        tree = os.path.join(work, 'zonetool', 'cp_t')
+        mat = {'techniqueSet->name': 'w_sky', 'gameFlags': 12, 'constantTable': None, 'textureTable': [{'semantic': 2, 'image': 'sky_cp_zmb_night_01'}]}
+        put(os.path.join(tree, 'materials', 'w', 'sky_cp_zmb.json'), json.dumps(mat).encode())
+        for ext in ('.stateinfo', '.statebits', '.statebitsmap'):
+            put(os.path.join(tree, 'techsets', 'state', 'w_sky', 'w', 'sky_cp_zmb' + ext), ext.encode())
+        put(os.path.join(work, 'zone_source', 'cp_t.csv'), b'// x\ncom_map,cp_t\n')
+        put(os.path.join(src, 'sky', 'sky_other.iw7Image'), b'header of the other zone')
+        spec = {'custom': {'sky_other': {'path': 'w/sky_other', 'ext': {'base': 'sky_cp_zmb', 'set': {'gameFlags': 8}, 'images': {
+            '2': {'image': 'sky_other', 'header': 'sky/sky_other.iw7Image'}}}}}}
+        put(os.path.join(src, 'custom_materials.json'), json.dumps(spec).encode())
+        r = subprocess.run([sys.executable, '-B', os.path.join(HERE, 'sz2_assemble.py'), work, 'cp_t', src], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        new = json.load(open(os.path.join(tree, 'materials', 'w', 'sky_other.json')))
+        self.assertEqual((new['textureTable'][0]['image'], new['gameFlags'], new['techniqueSet->name']), ('sky_other', 8, 'w_sky'))
+        with open(os.path.join(tree, 'images', 'sky_other.iw7Image'), 'rb') as f:
+            self.assertEqual(f.read(), b'header of the other zone')
+        self.assertFalse(os.path.exists(os.path.join(tree, 'images', 'sky_other.tga')))
+        for ext in ('.stateinfo', '.statebits', '.statebitsmap'):
+            self.assertTrue(os.path.isfile(os.path.join(tree, 'techsets', 'state', 'w_sky', 'w', 'sky_other' + ext)))
+        rows = open(os.path.join(work, 'zone_source', 'cp_t.csv')).read().splitlines()
+        self.assertLess(rows.index('material,w/sky_other'), rows.index('com_map,cp_t'))
+        self.assertEqual(json.load(open(os.path.join(tree, 'materials', 'w', 'sky_cp_zmb.json')))['gameFlags'], 12)      # the base is not touched
+
     def test_full_tree(self):
         self.check(*self.build())
 
