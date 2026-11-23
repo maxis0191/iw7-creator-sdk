@@ -93,6 +93,25 @@ def snap(v, eps=2e-3):
 
 
 # ------------------------------------------------------------------ charts and atlas
+def is_sky_material(name):
+    """the world material of a sky box (drawn by the engine as the sky: `w/sky_*`)"""
+    n = name.decode('latin1') if isinstance(name, bytes) else str(name)
+    return n.startswith('w/sky_') or n.startswith('sky_')
+
+
+def room_bounds(w):
+    """world bounds without the surfaces of sky materials"""
+    lo = np.full(3, np.inf); hi = np.full(3, -np.inf)
+    pos = w['verts']['pos'].astype(np.float64)
+    for s in w['surfaces']:
+        if is_sky_material(w['materials'][int(s['mat'])]):
+            continue
+        p = pos[int(s['first']):int(s['first']) + int(s['vc'])]
+        if len(p):
+            lo = np.minimum(lo, p.min(0)); hi = np.maximum(hi, p.max(0))
+    return tuple(float(x) for x in (*lo, *hi)) if np.isfinite(lo).all() else tuple(w['bounds'])
+
+
 def build_charts(w, texel):
     """Planar triangle groups per surface. Double-sided duplicates (same corners, reversed) are baked once."""
     verts = w['verts']
@@ -101,6 +120,8 @@ def build_charts(w, texel):
     tan, tw = unpack(verts['t'])
     charts, front = [], []          # front: (a, b, c, surface) baked triangles (global vertex ids)
     for si, s in enumerate(w['surfaces']):
+        if is_sky_material(w['materials'][int(s['mat'])]):
+            continue                  # a sky box is not a surface of the room: no chart, no occluder (the rays that reach it are the sky's)
         tri = w['indices'][s['base']:s['base'] + s['tc'] * 3].reshape(-1, 3).astype(np.int64) + s['first']
         seen = {}
         keep = []
@@ -331,6 +352,7 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
     texel = texel or cfg.get('texel', 8)
     bounces = bounces if bounces is not None else int(cfg.get('bounces', 2))
     w = read_world(os.path.join(src, 'world.bin'))
+    w['bounds'] = room_bounds(w)                 # the room, not its sky box (the light grid is cut over these bounds)
     charts, front = build_charts(w, texel)
     nv0 = len(w['verts'])
     sp = split_shared_vertices(w, charts)

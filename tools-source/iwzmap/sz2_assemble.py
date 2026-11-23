@@ -140,4 +140,8 @@ _lay = os.path.join(src, 'layout.json')
 _vis = vision_edit.apply_to_zone(dst, mapname, (json.load(open(_lay)).get('lighting') if os.path.isfile(_lay) else None))
 if _vis:
     print('vision/%s.vision: %d keys changed, %d added (%s)' % (mapname, len(_vis['changed']), len(_vis['added']), ', '.join(sorted(list(_vis['changed']) + _vis['added']))))
+import sky_edit
+_sky = sky_edit.apply_to_zone(dst, mapname, (json.load(open(_lay)).get('lighting') if os.path.isfile(_lay) else None))
+if _sky:
+    print('sky and sun: %s' % json.dumps(_sky))
 print('custom materials', len(rows), 'state files', n_state, 'modules', len(mrows))
