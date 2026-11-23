@@ -28,7 +28,7 @@ param(
 #                                     reports false seams on a map with a floor over another, so it is not a gate here)
 #                                     python <server>\ops\iwzmap\iwzmap_ents_lint.py <Src>\ents.txt --gsc <Src>\cp_iwz.gsc  (when the server checkout is present)
 #                                     both gates fail the build on an error; -GatesOnly stops here
-#   2  -Bake:   bake\layout_lights.py <Src> lights.json ; bake\lmbake.py <Src> lights.json <Src>_lm --rays <Rays> --bounces 3 --denoise 1
+#   2  -Bake:   bake\layout_lights.py <Src> lights.json ; bake\lmbake.py <Src> lights.json <Src>_lm --rays <Rays> --denoise 1  (layout_lights gets --dump <TemplateDump> for the prop shadows; bounces, ambient, sky, emissive: layout.json "lighting", default 3 bounces)
 #               (bake python = machine.ps1 BakePython); the other emit files are copied over and the baked copy is built
 #   3  zonetool -iwzcompile cp_zmb_tpl cp_zmb <Map> <Src>     IWZ_GEN_TOME=1 IWZ_KEEP_ENTSHAPES=1, plus IWZ_KEEP_SUBMODELS=1 IWZ_TRIGGER_SHAPES=1
 #               when layout.json has doors (the debris blocker sub-model of the template, sz2_submodels.json)
@@ -50,10 +50,10 @@ if($Bake){
   $PY=(& "$S\machine.ps1" BakePython)+'\Scripts\python.exe'
   $build="$Src`_lm"
   $lj="$Src.lights.json"
-  & $PY -I "$S\bake\layout_lights.py" $Src $lj
+  & $PY -I "$S\bake\layout_lights.py" $Src $lj --dump $D
   if($LASTEXITCODE){ throw 'layout_lights failed' }
   if(Test-Path $build){ Remove-Item $build -Recurse -Force }
-  & $PY -I "$S\bake\lmbake.py" $Src $lj $build --rays $Rays --bounces 3 --denoise 1 2>&1 | Select-Object -Last 8
+  & $PY -I "$S\bake\lmbake.py" $Src $lj $build --rays $Rays --denoise 1 2>&1 | Select-Object -Last 8
   if(!(Test-Path "$build\lightmap\secondary.dds")){ throw 'bake produced no lightmap' }
   Get-ChildItem $Src -File | Where-Object { $_.Name -notin @('world.bin','lighting.txt') } | ForEach-Object { Copy-Item $_.FullName (Join-Path $build $_.Name) -Force }
   if(Test-Path "$Src\modules"){ Copy-Item "$Src\modules" "$build\modules" -Recurse -Force }
@@ -61,6 +61,8 @@ if($Bake){
 }
 $layout=Get-Content "$Src\layout.json" -Raw | ConvertFrom-Json
 $hasDoors=(@($layout.doors).Count -gt 0)
+# runtime (dynamic) lights need no switch: iwzcompile reads lights.txt when it is in the source (blend_core writes it for every light with runtime: true; IWZ_LIGHTS is a Station Zero generator switch, the compiler never reads it)
+if($layout.runtime_lights){ "runtime lights (lights.txt): $($layout.runtime_lights.spot) spot, $($layout.runtime_lights.omni) omni, $($layout.runtime_lights.shadows) with shadows" }
 # Deadeye Dewdrops is a cp_disco machine relocated from a parked map scriptable: only when the map places one
 $hasDeadeye=(@($layout.interactions | Where-Object { $_.kind -eq 'perk_machine_deadeye' }).Count -gt 0)
 if(-not $hasDeadeye){ $DeadeyeKitDump=''; $DeadeyeScriptable='' }
