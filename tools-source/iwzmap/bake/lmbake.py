@@ -164,6 +164,62 @@ def build_charts(w, texel):
     return charts, front
 
 
+def split_shared_vertices(w, charts):
+    """Give every lightmap chart its own copy of a vertex that two or more charts share (R7 baker bug: the vertex kept
+    only the last chart's lightmap coordinate, so the triangles of the other charts read the atlas from far away).
+
+    The first chart (in chart order) keeps the original vertex, every later chart gets a copy appended at the end of the
+    surface's vertex range (indices are relative to the surface's firstVertex, u16). Triangle counts and the index layout
+    do not change; w['verts'], w['surfaces'] (first) and w['indices'] are replaced, charts are updated in place (tris,
+    verts, global ids in the new numbering). A triangle that was not baked (the reversed side of a double sided pair)
+    follows the chart of its twin so it reads the same texels. Returns {'added': n, 'surfaces_split': k}."""
+    verts, idx, surfs = w['verts'], w['indices'], w['surfaces']
+    by_surface = {}
+    for ci, c in enumerate(charts):
+        by_surface.setdefault(c['surface'], []).append(ci)
+    pieces, new_idx, new_surfs = [], idx.copy(), surfs.copy()
+    total = added = split = 0
+    for si, s in enumerate(surfs):
+        f, vc, base, tc = int(s['first']), int(s['vc']), int(s['base']), int(s['tc'])
+        cis = by_surface.get(si, [])
+        owner, extra, extra_src = {}, {}, []      # extra[(chart, old global id)] -> local index in the new range
+        for ci in cis:
+            for v in charts[ci]['verts']:
+                if v not in owner:
+                    owner[v] = ci
+                else:
+                    extra[(ci, v)] = vc + len(extra_src); extra_src.append(v)
+        if vc + len(extra_src) > 65535:
+            raise SystemExit('surface %d: %d vertices after splitting the lightmap charts (u16 limit 65535); '
+                             'split the surface smaller in the exporter' % (si, vc + len(extra_src)))
+        new_surfs['first'][si] = total
+        new_surfs['vc'][si] = vc + len(extra_src)
+        pieces.append(verts[f:f + vc])
+        if extra_src:
+            pieces.append(verts[np.array(extra_src, np.int64)])
+            split += 1; added += len(extra_src)
+
+        def loc(ci, v):                           # local index (new range) of old global vertex v as seen by chart ci
+            return extra.get((ci, v), v - f)
+        twin = {}                                 # sorted old corners -> chart
+        for ci in cis:
+            for t in charts[ci]['tris']:
+                twin[tuple(sorted(t))] = ci
+        old = idx[base:base + tc * 3].reshape(-1, 3).astype(np.int64) + f
+        out = new_idx[base:base + tc * 3].reshape(-1, 3)
+        for k, t in enumerate(old):
+            ci = twin.get(tuple(sorted(int(x) for x in t)))
+            out[k] = [loc(ci, int(x)) if ci is not None else int(x) - f for x in t]
+        for ci in cis:
+            c = charts[ci]
+            c['tris'] = [tuple(total + loc(ci, v) for v in t) for t in c['tris']]
+            c['verts'] = sorted({v for t in c['tris'] for v in t})
+        total += vc + len(extra_src)
+    w['verts'] = np.concatenate(pieces) if pieces else verts
+    w['indices'], w['surfaces'] = new_idx, new_surfs
+    return {'added': added, 'surfaces_split': split}
+
+
 def pack(charts):
     def a4(x): return (x + 3) & ~3
     for c in charts:
@@ -275,6 +331,10 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=2, quick=False, p
     texel = texel or cfg.get('texel', 8)
     w = read_world(os.path.join(src, 'world.bin'))
     charts, front = build_charts(w, texel)
+    nv0 = len(w['verts'])
+    sp = split_shared_vertices(w, charts)
+    front = [(a, b, c, ch['surface']) for ch in charts for a, b, c in ch['tris']]
+    print('lightmap charts own their vertices: %d vertices added (%d -> %d) on %d surfaces' % (sp['added'], nv0, len(w['verts']), sp['surfaces_split']))
     W, H = pack(charts)
     tx = chart_texels(charts, w, W, H)
     n = len(tx['x'])
