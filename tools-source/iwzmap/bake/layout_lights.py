@@ -52,14 +52,14 @@ def _rgb(v, default=None):
     return [float(c) for c in v[:3]]
 
 
-def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emissive=1.5, dump_roots=(), extra=None, prop_shadows=None):
+def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emissive=1.5, dump_roots=(), extra=None, prop_shadows=None, bounces_default=None):
     """-> (lights.json dict, report) of an emit folder (layout.json lights and `lighting` block, world.bin, smodels.txt).
 
     layout.json "lighting" (all optional; what a map author sets in the document, see docs/IWZ-EMIT-CONTRACT.md):
       prop_shadows        true (default) | false     static models block light in the bake (bake/occluders.py)
       prop_shadow_max_extent  200                      boxes larger than this (units) are not occluders
       ambient             number | [r,g,b] | {color [r,g,b], level, ao_radius}   fill light (default grey 0.02, blue x 1.1)
-      bounces             indirect bounces (default 3)
+      bounces             indirect bounces (written only when set here, or by `bounces_default` / --default-bounces; else lmbake's own default 2)
       sky                 [r,g,b] radiance of the sky seen by escaping rays (default 0: interiors)
       sun                 {dir [x,y,z], color [r,g,b]} baked sun visibility
       emissive            {material: {color [r,g,b], strength s} | [r,g,b,s]}   the material emits color x strength (radiance)
@@ -117,7 +117,9 @@ def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emis
         acol, ao = _rgb(amb), 96
     cfg = {'texel': texel, 'probe_cell': 128, 'albedo': albedo, 'default_albedo': [0.45, 0.45, 0.45], 'emissive': emi,
            'sky': _rgb(st.get('sky'), [0, 0, 0]), 'ambient': {'color': [round(c, 5) for c in acol], 'ao_radius': ao},
-           'bounces': int(st.get('bounces', 3)), 'lights': lights}
+           'lights': lights}
+    if st.get('bounces') is not None or bounces_default is not None:
+        cfg['bounces'] = int(st['bounces'] if st.get('bounces') is not None else bounces_default)
     if st.get('sun'):
         cfg['sun'] = st['sun']
     boxes = []
@@ -125,7 +127,8 @@ def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emis
     roots = list(dump_roots) + [src]
     if use_shadows and os.path.isfile(os.path.join(src, 'smodels.txt')):
         import occluders
-        boxes, orep = occluders.occluders(src, roots, [l['origin'] for l in lights], max_extent=float(st.get('prop_shadow_max_extent', 200.0)))
+        boxes, orep = occluders.occluders(src, roots, [l['origin'] for l in lights], max_extent=float(st.get('prop_shadow_max_extent', 200.0)),
+                                          skip=[occluders.placement_key(e['model'], e['origin']) for e in (st.get('emissive_props') or [])])
         rep['prop_shadows'] = orep
     eprops = st.get('emissive_props') or []
     if eprops:
@@ -148,7 +151,7 @@ def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emis
         for k, v in ex.items():
             if isinstance(v, dict) and isinstance(cfg.get(k), dict): cfg[k].update(v)
             else: cfg[k] = v
-    rep['summary'] = {'lights': len(lights), 'materials': len(albedo), 'emissive': len(emi), 'occluders': len(boxes), 'bounces': cfg['bounces'],
+    rep['summary'] = {'lights': len(lights), 'materials': len(albedo), 'emissive': len(emi), 'occluders': len(boxes), 'bounces': cfg.get('bounces'),
                       'ambient': cfg['ambient']['color'], 'sky': cfg['sky']}
     return cfg, rep
 
@@ -162,12 +165,14 @@ def main():
     ap.add_argument('--extra', help='json merged over the result (albedo/emissive/sun/sky overrides)')
     ap.add_argument('--dump', action='append', default=[], help='a dump root holding <zone>/xmodel/<name>.xmb (model bounds for prop shadows); repeatable')
     ap.add_argument('--no-prop-shadows', action='store_true', help='no baked prop shadows whatever layout.json says')
+    ap.add_argument('--default-bounces', type=int, help='bounces written to lights.json when the document does not set them (build-blend: 3)')
     a = ap.parse_args()
-    roots = list(a.dump) or ([os.environ['IWZ_TEMPLATE_DUMP']] if os.environ.get('IWZ_TEMPLATE_DUMP') else [])
-    cfg, rep = build_config(a.src, a.power, a.radius_scale, a.texel, a.ambient, a.emissive, roots, a.extra, False if a.no_prop_shadows else None)
+    # prop shadows need model bounds: only the roots named here (or the emit's own xmodel folder / smodel_bounds.json) are searched, so a build route that
+    # passes no --dump (build-g, darkness) bakes exactly as before
+    cfg, rep = build_config(a.src, a.power, a.radius_scale, a.texel, a.ambient, a.emissive, list(a.dump), a.extra, False if a.no_prop_shadows else None, a.default_bounces)
     json.dump(cfg, open(a.out, 'w'), indent=1)
     s = rep['summary']
-    print('%d lights, %d materials (%d emissive), %d occluder boxes, %d bounces -> %s' % (s['lights'], s['materials'], s['emissive'], s['occluders'], s['bounces'], a.out))
+    print('%d lights, %d materials (%d emissive), %d occluder boxes, bounces %s -> %s' % (s['lights'], s['materials'], s['emissive'], s['occluders'], s['bounces'] if s['bounces'] is not None else 'baker default', a.out))
     for k in ('prop_shadows', 'emissive_props'):
         if k in rep:
             print('  %s: %s' % (k, json.dumps({kk: (len(vv) if isinstance(vv, list) else vv) for kk, vv in rep[k].items()})))

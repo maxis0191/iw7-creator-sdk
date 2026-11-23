@@ -116,10 +116,12 @@ class Light(unittest.TestCase):
         sm = ['test_sign 40 40 20 0 0 0 1']
         side = {'smodel_bounds.json': {'test_sign': {'mins': [-2, -16, 0], 'maxs': [2, 16, 40]}}}
         base, _, _, _ = bake_emit(self.work, quads, mats[:2], {'lights': []}, sm, side)
-        lay = {'lights': [], 'lighting': {'prop_shadows': False, 'emissive_props': [
+        lay = {'lights': [], 'lighting': {'emissive_props': [        # prop_shadows left at its default (on): the sign is boxed once, as an emitter
             {'model': 'test_sign', 'origin': [40, 40, 20], 'angles': [0, 0, 0], 'scale': 1.0, 'color': [0.1, 0.2, 1.0], 'strength': 3.0}]}}
         lit, cfg, rep, bj = bake_emit(self.work, quads, mats[:2], lay, sm, side)
         self.assertEqual(rep['emissive_props']['baked'], 1)
+        self.assertEqual(len(cfg['occluders']), 1)                  # not once as an occluder and once as an emitter
+        self.assertEqual(rep['prop_shadows']['emissive_boxed_elsewhere'], 1)
         self.assertEqual(bj['emissive_boxes'], 1)
         i = nearest(lit, 0.0, 40.0, 40.0)
         d = lit['Eind'][i] - base['Eind'][i]
@@ -142,7 +144,9 @@ class Light(unittest.TestCase):
     def test_defaults_are_unchanged(self):
         floor = [SW.floor_quad(0, 0, 0, 256, 256)]
         cfg, _ = layout_lights.build_config(self._emit(floor), texel=8.0)
-        self.assertEqual(cfg['bounces'], 3)
+        self.assertNotIn('bounces', cfg)                         # the baker's own default (2) stays for every route that does not ask
+        cfg3, _ = layout_lights.build_config(self._emit(floor), texel=8.0, bounces_default=3)
+        self.assertEqual(cfg3['bounces'], 3)                     # build-blend.ps1 --default-bounces 3
         self.assertEqual(cfg['ambient'], {'color': [0.02, 0.02, 0.022], 'ao_radius': 96})
         self.assertEqual(cfg['sky'], [0, 0, 0])
 

@@ -50,7 +50,7 @@ if($Bake){
   $PY=(& "$S\machine.ps1" BakePython)+'\Scripts\python.exe'
   $build="$Src`_lm"
   $lj="$Src.lights.json"
-  & $PY -I "$S\bake\layout_lights.py" $Src $lj --dump $D
+  & $PY -I "$S\bake\layout_lights.py" $Src $lj --dump $D --default-bounces 3
   if($LASTEXITCODE){ throw 'layout_lights failed' }
   if(Test-Path $build){ Remove-Item $build -Recurse -Force }
   & $PY -I "$S\bake\lmbake.py" $Src $lj $build --rays $Rays --denoise 1 2>&1 | Select-Object -Last 8

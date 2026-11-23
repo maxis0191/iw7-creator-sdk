@@ -8,7 +8,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 import vision_edit as V  # noqa: E402
 
 STOCK = 'fogDensity "300"\nfogColor "0.1137255 0.1529412 0.1803922"\nfogMaxOpacity "1"\ntonemapAuto "1"\ntonemapExposure "9"\nr_ssaoStrength "2"\n'
-DUMP = r'C:\Users\ezvalo\Documents\IW7-Runtime\iwz-map-ref-a\dump\cp_zmb\vision\cp_zmb.vision'
+DUMP = os.path.join(os.environ.get('IWZ_TEMPLATE_DUMP') or os.path.join(os.path.expanduser('~'), 'Documents', 'IW7-Runtime', 'iwz-map-ref-a', 'dump'),
+                    'cp_zmb', 'vision', 'cp_zmb.vision')
 
 
 class Vision(unittest.TestCase):

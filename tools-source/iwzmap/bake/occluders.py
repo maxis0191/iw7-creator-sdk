@@ -98,14 +98,21 @@ def _contains(corners, point, margin):
     return True
 
 
-def occluders(emit, dump_roots=(), light_origins=(), min_extent=3.0, max_extent=200.0, light_margin=4.0):
-    """-> (list of {'model', 'corners'}, report). Reads <emit>/smodels.txt."""
+def placement_key(model, origin):
+    return (model, tuple(round(float(v), 2) for v in origin))
+
+
+def occluders(emit, dump_roots=(), light_origins=(), min_extent=3.0, max_extent=200.0, light_margin=4.0, skip=()):
+    """-> (list of {'model', 'corners'}, report). Reads <emit>/smodels.txt. `skip`: placement_key()s that are boxed elsewhere (emissive props)."""
     sm = read_smodels(os.path.join(emit, 'smodels.txt'))
     bounds, unknown = model_bounds([s['model'] for s in sm], emit, dump_roots)
     out = []
     rep = {'props': len(sm), 'boxes': 0, 'noshadow': 0, 'unknown_models': sorted(set(unknown)), 'unknown_props': 0, 'too_small': 0,
            'too_big': 0, 'hold_a_light': 0, 'bounds_source': 'smodel_bounds.json' if os.path.isfile(os.path.join(emit, 'smodel_bounds.json')) else 'xmodel files'}
+    skip = set(skip)
     for s in sm:
+        if placement_key(s['model'], s['origin']) in skip:
+            rep['emissive_boxed_elsewhere'] = rep.get('emissive_boxed_elsewhere', 0) + 1; continue
         if s['noshadow']:
             rep['noshadow'] += 1; continue
         b = bounds.get(s['model'])
