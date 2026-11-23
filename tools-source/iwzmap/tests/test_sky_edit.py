@@ -22,6 +22,25 @@ class SkyEditTest(unittest.TestCase):
         new = S.set_sky_name(buf, 'sky_cp_town')
         self.assertEqual(new, b'abc' + S.SKY_TAG + b'sky_cp_town\0tail')
 
+    def test_always_loaded_sky_takes_the_template_skys_places(self):
+        img = lambda n: S.SKY_TAG + n + b'\0'          # noqa: E731
+        buf = img(b'aaa_c') + img(b'sky_cp_zmb_night_01') + img(b'zmb_arcade_sky_card_01_c') + b'\x08\x01flags' + img(b'w/sky_cp_zmb') + img(b'w/zmb_arcade_sky_card_01') + b'end'
+        new, rep = S.set_streamed_sky(buf, 'sky_cp_town', 'w/sky_cp_town')
+        self.assertEqual(new, img(b'aaa_c') + img(b'sky_cp_town') + img(b'zmb_arcade_sky_card_01_c') + b'\x08\x01flags' + img(b'w/sky_cp_town') + img(b'w/zmb_arcade_sky_card_01') + b'end')
+        self.assertEqual(rep, {'image': ['sky_cp_zmb_night_01', 'sky_cp_town'], 'material': ['w/sky_cp_zmb', 'w/sky_cp_town']})
+        again, rep2 = S.set_streamed_sky(new, 'sky_mp_paris', 'w/sky_mp_paris')          # a kept assembly already carries the last sky: the place is found by the prefix
+        self.assertIn(img(b'sky_mp_paris'), again)
+        self.assertNotIn(b'sky_cp_town', again)
+        same, _ = S.set_streamed_sky(new, 'sky_cp_town', 'w/sky_cp_town')
+        self.assertEqual(same, new)
+
+    def test_always_loaded_list_without_one_sky_is_left_alone(self):
+        buf = S.SKY_TAG + b'sky_a\0' + S.SKY_TAG + b'sky_b\0'
+        new, rep = S.set_streamed_sky(buf, 'sky_cp_town', 'w/sky_cp_town')
+        self.assertEqual(new, buf)
+        self.assertIn('not changed', rep['image'])
+        self.assertIn('not changed', rep['material'])
+
 
 if __name__ == '__main__':
     unittest.main()
