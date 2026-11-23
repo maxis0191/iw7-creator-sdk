@@ -70,7 +70,11 @@ def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emis
     st = lay.get('lighting') or {}
     w = lmbake.read_world(os.path.join(src, 'world.bin'))
     lights, fixture_col = [], {}
+    runtime_only = 0
     for l in lay.get('lights', []):
+        if l.get('runtime') and l.get('bake') is False:       # a pure runtime light (lights.txt, the engine's dynamic light): not in the lightmap
+            runtime_only += 1
+            continue
         col = [float(c) for c in l.get('color', [1, 1, 1])]
         mx = max(col) or 1.0
         col = [c / mx for c in col]
@@ -89,7 +93,7 @@ def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emis
             key = next((f for f in fixture_col if f and f.split('_')[-1] in ml), None)
             col = fixture_col.get(key, [1.0, 0.95, 0.85])
             emi[m] = [round(c * emissive, 3) for c in col]
-    rep = {}
+    rep = {'runtime_only_lights_not_baked': runtime_only}
     doc_emi = st.get('emissive') or {}
     unknown = []
     for m, v in doc_emi.items():                       # the document wins over the name rule
