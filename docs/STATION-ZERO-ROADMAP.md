@@ -73,3 +73,13 @@ its engine limit named where it cannot be done.
   byte-identical in 0.12 s (`C:\studio-data\sz\a1`); `studio check` 2.4 s; today's SDK main regenerates the g27r emit (17 of
   17 generator files equal, 4 s, `C:\studio-data\sz\regen`); Studio's compiler contains the RC4 light-volume commit; the RC4
   package's fastfile has the manifest's hash. Does not exist: a Studio build of Station Zero (F1), layer gameplay on a base (F2).
+- 24 Nov 2026, baseline. The RC4 headless batch run again on the g27r build through Forge (compressed time, server with one
+  bot; `C:\studio-data\sz\baseline\g27r_headless_24nov.log`, 531 s of runs): doors 70/70, economy 76/76, wells 9/9, stairs 9/9,
+  post routes 128/128 and rules 39/39, start closed 20/20, rounds 3 to 10 and 13 to 15 pass; rounds 1-2 fail (round 2: 2 stuck,
+  75 %) and 11-12 fail (round 11: 1 stuck at (-534, 2858, -121), 242 from its goal, the bot on stair A): the same two as on
+  22 Nov. So the suite and its two failures reproduce today; this is the reference every Studio build is compared with.
+- Work places: Station Zero's document scripts live in `tools-source/iwzmap/station_zero/` of this repository (branch
+  `claude/sz-rc5`; `arcade.py` first); documents, builds, frames, plans and notes under `C:\studio-data\sz`.
+- L4, read from the layout (not yet seen fixed): the black blob and the black rock pile are 27 placements of the static model
+  `debris_concrete_rubble_pile_01_dark` (a dark-tinted material variant; the plain `debris_concrete_rubble_pile_01` is in the
+  same dumps). Candidate: the plain variant; to be seen on the first recipe build.
