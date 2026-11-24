@@ -52,6 +52,11 @@ if($Fx -and $FxTxt){ $env:IWZ_FX_TXT=$FxTxt } else { Remove-Item Env:IWZ_FX_TXT 
 # -Darkness: the generator makes the power fittings with dark diffusers / unlit + lit fixture models and fills the //@DARK@ hook of cp_iwz2.gsc
 # (level thread ...cp_iwz_darkness::init()); see darkness\README.md. Without it IWZ_DARK is removed (the lit build is unchanged).
 if($Darkness){ $env:IWZ_DARK='1' } else { Remove-Item Env:IWZ_DARK -ErrorAction SilentlyContinue }
+# (sz-rc5) switches the generator hands to the build recipe it writes (build.json, sz2_recipe.py); build-sz2 ignores that file
+if($Train){ $env:IWZ_TRAIN_SET=$TrainSet } else { Remove-Item Env:IWZ_TRAIN_SET -ErrorAction SilentlyContinue }
+if($DarkZoneFill){ $env:IWZ_DARK_ZONE_FILL=$DarkZoneFillSpec } else { Remove-Item Env:IWZ_DARK_ZONE_FILL -ErrorAction SilentlyContinue }
+if($NavObstacles){ $env:IWZ_NAV_OBSTACLES='1' } else { Remove-Item Env:IWZ_NAV_OBSTACLES -ErrorAction SilentlyContinue }
+if($WithP1){ $env:IWZ_P1='1' } else { Remove-Item Env:IWZ_P1 -ErrorAction SilentlyContinue }
 python -I "$S\station_zero2.py" "$D\cp_zmb" $src | Select-Object -Last 1
 if(-not $SkipPick){
   & "$S\build-sz2.ps1" -Src $src -UmOut $um -ZoneToolExe $Z -KeepSubmodels -CompileOnly

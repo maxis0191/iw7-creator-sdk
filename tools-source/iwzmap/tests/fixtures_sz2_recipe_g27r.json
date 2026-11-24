@@ -1,0 +1,197 @@
+{
+ "version": 1,
+ "compiler": {
+  "exe": "pinned",
+  "env": {
+   "IWZ_PROBES": "neutral"
+  }
+ },
+ "submodels": {
+  "keep": true,
+  "nav_obstacles": true,
+  "gap_regions": [
+   "portal:a_tunnel_platform_b",
+   "portal:d_hall_stair_a",
+   "portal:d_platform_tunnel",
+   "portal:d_platform_corridor"
+  ]
+ },
+ "kit": {
+  "dumps": {
+   "cp_disco": [
+    "{runtime}/iwz-stage2/kitimport/ztwork/dump/cp_disco",
+    "{runtime}/iwz-stage2/kitimport/ztwork/dump/techsets_cp_disco"
+   ],
+   "cp_final": [
+    "{runtime}/iwz-stage2/kitimport/ztwork/dump/cp_final",
+    "{runtime}/iwz-stage2/kitimport/ztwork/dump/techsets_cp_final"
+   ],
+   "train": [
+    "{runtime}/iwz-stage2/train/port/banzai_v5",
+    "{runtime}/iwz-stage2/train/port/kit_v6",
+    "{runtime}/iwz-stage2/train/port/genset_v6",
+    "{runtime}/iwz-stage2/train/port/props_v4"
+   ]
+  },
+  "runtime_csv": [],
+  "layout_models": true,
+  "placed_from": [
+   "train"
+  ],
+  "material_map": {
+   "mopw/glass_opaque_02": "m/clk_glass_grunge_mild"
+  }
+ },
+ "fx": {
+  "place": "{sdk}/fx/station_zero_fx_dark.txt",
+  "ncs": "{dumps}/cp_zmb/netconststrings/ncs_efx_level.json",
+  "variant": {
+   "catalog": "{sdk}/fx/fx_catalog.json",
+   "roots": [
+    "{runtime}/iwz-stage2/fx/ztwork/dump/cp_disco",
+    "{runtime}/iwz-stage2/kitimport/ztwork/dump/cp_disco",
+    "{runtime}/iwz-stage2/level/ztwork/dump/techsets_cp_disco",
+    "{dumps}/cp_zmb",
+    "{dumps}/techsets_cp_zmb",
+    "{dumps}/techsets_global_cp",
+    "{dumps}/techsets_common_cp",
+    "{dumps}/techsets_global",
+    "{dumps}/techsets_common_mp",
+    "{dumps}/techsets_global_mp"
+   ],
+   "techsets": "{runtime}/iwz-stage2/fx/techsets_all.txt",
+   "zone": "iwzv"
+  },
+  "dumps": {
+   "cp_disco": [
+    "{runtime}/iwz-stage2/fx/ztwork/dump/cp_disco",
+    "{runtime}/iwz-stage2/kitimport/ztwork/dump/cp_disco",
+    "{runtime}/iwz-stage2/level/ztwork/dump/techsets_cp_disco"
+   ]
+  },
+  "ncs_skip": []
+ },
+ "audio": {
+  "bank": "{runtime}/iwz-stage2/audio/build/src15",
+  "models": "{runtime}/iwz-stage2/audio/build/src",
+  "layout_spec": "{sdk}/audio/station_zero_audio_layout.json",
+  "bank_spec": "{sdk}/audio/station_zero_audio.json"
+ },
+ "darkness": {
+  "lights": {
+   "ambient": 0.025,
+   "scale": 840,
+   "radius_scale": 1.8,
+   "cue_scale": 0.35,
+   "zone_fill": "maint_corridor:3.5:0.35:-40,service_tunnel:3.5:0.35:-40,stair_b:3.5:0.35:-40,platform_b:3.5:0.35:-40"
+  },
+  "vfx": {
+   "source": "{runtime}/iwz-stage2/fx/ztwork/dump/cp_disco/particlesystem/vfx/iw7/levels/cp_disco/subway_train/vfx_train_front_light_ch.iw7VFX",
+   "color": [
+    1,
+    0.92,
+    0.8
+   ],
+   "near": 8,
+   "life": 100000,
+   "effects": [
+    {
+     "name": "vfx/iwz/vfx_iwz_flashlight_world",
+     "fov": 40,
+     "inner": 2,
+     "brightness": 3.5,
+     "shadow": 1,
+     "radius": 900
+    },
+    {
+     "name": "vfx/iwz/vfx_iwz_flashlight_world_b",
+     "fov": 40,
+     "inner": 2,
+     "brightness": 3.5,
+     "shadow": 1,
+     "radius": 900
+    },
+    {
+     "name": "vfx/iwz/vfx_iwz_flashlight_world_c",
+     "fov": 40,
+     "inner": 2,
+     "brightness": 3.5,
+     "shadow": 1,
+     "radius": 900
+    },
+    {
+     "name": "vfx/iwz/vfx_iwz_flashlight_world_d",
+     "fov": 40,
+     "inner": 2,
+     "brightness": 3.5,
+     "shadow": 1,
+     "radius": 900
+    },
+    {
+     "name": "vfx/iwz/vfx_iwz_flashlight_world_e",
+     "fov": 40,
+     "inner": 2,
+     "brightness": 3.5,
+     "shadow": 1,
+     "radius": 900
+    },
+    {
+     "name": "vfx/iwz/vfx_iwz_flashlight_world_f",
+     "fov": 40,
+     "inner": 2,
+     "brightness": 3.5,
+     "shadow": 1,
+     "radius": 900
+    },
+    {
+     "name": "vfx/iwz/vfx_iwz_flashlight_lit",
+     "fov": 40,
+     "inner": 2,
+     "brightness": 1.05,
+     "shadow": 1,
+     "radius": 900
+    },
+    {
+     "name": "vfx/iwz/vfx_iwz_flashlight_halo",
+     "fov": 64,
+     "inner": 0,
+     "brightness": 0.88,
+     "shadow": 0,
+     "radius": 700
+    },
+    {
+     "name": "vfx/iwz/vfx_iwz_flashlight_halo_lit",
+     "fov": 64,
+     "inner": 0,
+     "brightness": 0.26,
+     "shadow": 0,
+     "radius": 700
+    }
+   ]
+  },
+  "args": [
+   "--dark",
+   "tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3",
+   "--lit",
+   "fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3;tonemapAutoExposureAdjust=-2.5",
+   "--variants",
+   "fxa:fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3;tonemapAuto=0;tonemapExposureAdjust=-1.5|fxb:fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3;tonemapAuto=0;tonemapExposureAdjust=-2|aua:fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3;tonemapAutoExposureAdjust=-2|aub:fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3;tonemapAutoExposureAdjust=-3",
+   "--alias",
+   "cp_zmb_int_triton_main=fxa,cp_zmb_int_triton_ride=fxb,cp_zmb_ghost_path=aua,cp_zmb_alien=aub"
+  ]
+ },
+ "perks": {
+  "p1": true
+ },
+ "bake": {
+  "lights": "dark",
+  "rays": 256,
+  "bounces": 3,
+  "denoise": 1
+ },
+ "arena": "{runtime}/iwz-release/cp_iwz-rc1/usermaps/cp_iwz/cp_iwz.arena",
+ "localize": {
+  "extra": "sdk"
+ },
+ "art": false
+}
