@@ -87,3 +87,21 @@ its engine limit named where it cannot be done.
   step; since 22 Nov (night) every build reverses the triangles for the engine's clockwise front. A build of the same emit today
   is therefore not the RC4 picture: the RC4 look scores are the baseline of the unreversed map only. Asked of the Studio build
   (fault F1, recipe key `keep_winding`): both usermaps of the g27r emit, to be shot at the RC4 cameras before any look work.
+- 24 Nov 2026, G1 and G2 (stair A crowd, long-route walkers): the cause is the acceptance script's rule, not the map.
+  `szaccept.gsc` lines 398 to 417 take the first `pathdisttogoal()` sample of a new zombie as its best; with no goal yet that
+  sample is 0, the progress clock never restarts, and every zombie alive 50 s more than 200 from the bot counts as stuck.
+  Measured on g27r (75 runs, compressed time, server with one bot; `C:\studio-data\sz\g1\REPORT.md`): the 7 flagged at the
+  stair-top position walked at 34 to 63 units a second with the distance to the bot falling at every 5 s sample; counts
+  follow the route's length (deck 8, stair top 7, half flight 2, hall 0); with a displacement rule (not moved 64 units in
+  50 s while more than 200 from the bot) 0 of 30 round-runs flag a zombie and every zombie the old rule flagged reached the
+  bot; at most 4 zombies within 110 of the bot (the probe kills on arrival, so a full ring cannot form in it: the crowd at
+  the choke with a living player is NOT measured by this probe). Long routes (rounds 3-4, 11-12, 3 runs each): every flagged
+  zombie moving at 27 to 70 units a second with 700 to 6,400 of path left. One real halt in 75 runs (deck, (-304, 2332,
+  -319), free room, bot not its enemy), not reproduced: open, with G3, for a recorder. The script is the Platform lane's
+  (fault FG1 reported); until its fix the round plans run with the corrected copy `C:\studio-data\sz\g1\lib\szg1.gsc`
+  through `--library-dir` (a workaround, named as such in every result).
+- 24 Nov 2026, Arcade round 1 (`station_zero/arcade.py`, document `C:\studio-data\sz\arcade\r1\doc`): in the game through
+  `studio live` (start 61 s, a sync 12 to 19 s): check 0 errors, 12 of 12 spawners reach, 746 props, 63 models, 37 lights;
+  frame p50 0.17 to 0.22 on nine cameras, p95 0.60 to 0.71 (below the stock band). Refused by the lead before any review:
+  Spaceland props and five shop boxes flooded with one colour each; round 2 (cp_disco kit, dressed shops, small tile floor,
+  emissive panels) in work. No play proof yet.
