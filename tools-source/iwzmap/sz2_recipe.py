@@ -56,6 +56,7 @@ DARK_VFX_EFFECTS = [('vfx/iwz/vfx_iwz_flashlight_world', 40, 2, 3.5, 1, 900), ('
                     ('vfx/iwz/vfx_iwz_flashlight_halo_lit', 64, 0, 0.26, 0, 700)]
 LIT_K = ('fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;'
          'tonemapAdaptSpeed=0.3')                              # build-g.ps1 line 218 ($litK)
+DARK_POWER = {'flag': 'power_on', 'interaction': 'generator'}     # Studio's `live power on|off` and `live shot --power` (compile/RECIPE.md, darkness.power)
 DARK_ARGS = ['--dark', 'tonemapAuto=0;tonemapAdaptSpeed=1;tonemapExposureAdjust=-3',            # build-g.ps1 line 228 ($A['DarkArgs'])
              '--lit', LIT_K + ';tonemapAutoExposureAdjust=-2.5',                                # line 221 ($litShip)
              '--variants', ('fxa:%s;tonemapAuto=0;tonemapExposureAdjust=-1.5|fxb:%s;tonemapAuto=0;tonemapExposureAdjust=-2|'
@@ -176,7 +177,8 @@ def recipe(env, emit_dir):
         vfx = {'source': DARK_VFX_SOURCE}
         vfx.update({k: (list(v) if isinstance(v, list) else v) for k, v in DARK_VFX_DEFAULTS.items()})
         vfx['effects'] = effects
-        r['darkness'] = {'lights': lights, 'vfx': vfx, 'args': list(DARK_ARGS)}
+        r['darkness'] = {'lights': lights, 'vfx': vfx, 'args': list(DARK_ARGS),
+                         'power': dict(DARK_POWER)}     # how a session or a plan switches the power: the level flag and the interaction that sets it (cp_iwz_darkness.gsc)
     r['perks'] = {'p1': _flag(env, 'IWZ_P1')}
     r['bake'] = dict({'lights': 'dark' if dark else 'document'}, **BAKE)
     r['arena'] = ARENA

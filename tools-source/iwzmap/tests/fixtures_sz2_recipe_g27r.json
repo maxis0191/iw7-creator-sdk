@@ -178,7 +178,11 @@
    "fxa:fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3;tonemapAuto=0;tonemapExposureAdjust=-1.5|fxb:fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3;tonemapAuto=0;tonemapExposureAdjust=-2|aua:fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3;tonemapAutoExposureAdjust=-2|aub:fogMaxOpacity=0.03;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;tonemapAdaptSpeed=0.3;tonemapAutoExposureAdjust=-3",
    "--alias",
    "cp_zmb_int_triton_main=fxa,cp_zmb_int_triton_ride=fxb,cp_zmb_ghost_path=aua,cp_zmb_alien=aub"
-  ]
+  ],
+  "power": {
+   "flag": "power_on",
+   "interaction": "generator"
+  }
  },
  "perks": {
   "p1": true
