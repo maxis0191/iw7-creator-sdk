@@ -95,12 +95,12 @@ def main(argv=None):
         if not tp:
             return False
         add(tp, os.path.join('techsets', tech + '.techset'))
-        for t in set(strings_of(tp)):
+        for t in sorted(set(strings_of(tp))):      # sorted: a set of strings has another order in every process, and the order decides the order of the zone rows
             tq = find(zone, os.path.join('techsets', t + '.technique')) if not set(t) & BADPATH else None
             if not tq:
                 continue
             add(tq, os.path.join('techsets', t + '.technique'))
-            for x in set(strings_of(tq)):
+            for x in sorted(set(strings_of(tq))):
                 if set(x) & BADPATH:
                     continue
                 vd = find(zone, os.path.join('techsets', x + '.vertexdecl'))
