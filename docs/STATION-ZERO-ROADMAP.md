@@ -83,3 +83,7 @@ its engine limit named where it cannot be done.
 - L4, read from the layout (not yet seen fixed): the black blob and the black rock pile are 27 placements of the static model
   `debris_concrete_rubble_pile_01_dark` (a dark-tinted material variant; the plain `debris_concrete_rubble_pile_01` is in the
   same dumps). Candidate: the plain variant; to be seen on the first recipe build.
+- 24 Nov 2026, winding: g27r (RC4) is an UNREVERSED build. `build-sz2.ps1` at the RC4 head `2dce3fd` had no `iwz_wind.py`
+  step; since 22 Nov (night) every build reverses the triangles for the engine's clockwise front. A build of the same emit today
+  is therefore not the RC4 picture: the RC4 look scores are the baseline of the unreversed map only. Asked of the Studio build
+  (fault F1, recipe key `keep_winding`): both usermaps of the g27r emit, to be shot at the RC4 cameras before any look work.
