@@ -102,6 +102,7 @@ Always read as a dict; every tool uses `.get` except where noted.
 | `starts [[x,y,z]]` | player starts | `iwz_emitcheck` (required for reach), preview |
 | `spawners [{zone, volume, origin, kind, yaw, on_nav, plate}]` | zombie spawn structs | `iwz_emitcheck check` (path to start), `volume_check --require-spawners` |
 | `doors [{name, door, target, cost, zones, axis, plane, lo, hi, z0, z1, blockers}]` | debris door table | level script `//@DOORS@` (read in `Emitter.level_script`), `sz2_plan` |
+| `blockers [{target, model, origin, yaw}]` | the blocker entities of the doors: copies of the template sub-model tiled over each opening (written by every door writer since 24 Nov 2026: `scenegen.Emitter.door_blockers`, the Station Zero generator) | `iwz_emitcheck reach --doors closed` (a closed door is a navigation obstacle of the sub-model radius) |
 | `openings [...]` | door/arch records with `zones` | `volume_check` (portal regions), `sz2_plan` |
 | `interactions [{kind, origin, yaw, zone, ...}]` | placed stock interactions; wall buys carry `groupname == "wall_buy"` and `price` | level script `//@PRICES@`, `sz2_navconn` (generator), tests |
 | `markers [{kind, id, zone, origin, yaw, area}]` | positions kept for game script modules | `sz_modules` |
@@ -131,6 +132,8 @@ Always read as a dict; every tool uses `.get` except where noted.
 | Wall weapon classes, perk and wheel scriptable names | `scenegen.Emitter.WALL_WEAPON`, `PERK_SCRIPTABLE`, `WHEEL_SCRIPTABLES` | stock template entities | reused through `blend_core` (subclass of `scenegen.Emitter`) |
 
 ## What the level script needs from the emit
+
+The rows of every generated table are written by one module, `tools-source/iwzmap/iwz_rows.py` (`door_row`, `link_row`, `price_row`, `initial_row`, the fixture rows, `trigger_row`; `rows_of` and `with_rows` read and rewrite a table block of a generated script): `scenegen.Emitter.level_tables` and `level_script`, `station_zero2.py`, and Studio's merge of a layer into a base emit all call it.
 
 `level_script()` fills: `//@DOORS@` (one `iwz_door(...)` per door), `//@LINKS@` (zone links), `//@INITIAL@` (the start
 volume), `//@WHEEL@` (zone of the first magic wheel), `//@PRICES@` (wall weapon prices by place), the trap markers and

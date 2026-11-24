@@ -470,6 +470,7 @@
     "tools-source/iwzmap/iwz_emitcheck.py",
     "tools-source/iwzmap/iwz_ledger.py",
     "tools-source/iwzmap/iwz_probe_forensics.py",
+    "tools-source/iwzmap/iwz_rows.py",
     "tools-source/iwzmap/iwz_wind.py",
     "tools-source/iwzmap/iwz_zonecheck.py",
     "tools-source/iwzmap/kit_import.py",

@@ -924,16 +924,7 @@ class BlendEmitter(scenegen.Emitter):
         self.polys = None
         nav_err = []
         if blob:
-            self.lift = 0.0
-            self.polys = polys
-            node_map, self.area_rep = poly_nodes(polys)
-            nodes = sorted(node_map)
-            self.poly_grid = collections.defaultdict(list)
-            for k, p in enumerate(polys):
-                xs = [q[0] for q in p['pts']]; ys = [q[1] for q in p['pts']]
-                for gx in range(int(min(xs) // 64), int(max(xs) // 64) + 1):
-                    for gy in range(int(min(ys) // 64), int(max(ys) // 64) + 1):
-                        self.poly_grid[(gx, gy)].append(k)
+            nodes = self.set_polys(polys)
             ec = collections.Counter(len(p['pts']) for p in polys)
             self.nav_info = {'used': 'navgen polygons', 'navgen': rep, 'areas': len(polys),
                              'links': sum(1 for p in polys for m in p['nbr'] if m is not None), 'edge_histogram': dict(sorted(ec.items()))}
@@ -952,12 +943,7 @@ class BlendEmitter(scenegen.Emitter):
                                      'those floors have no navigation until navgen exists' % info['dropped_upper_floors'])
             if info.get('unreached_floor_samples'):
                 self.warnings.append('navigation: %d floor samples (roofs and outside surfaces included) are not reachable from a player start by 18 unit steps' % info['unreached_floor_samples'])
-        self.nodes = nodes
-        self.layers = collections.defaultdict(list)
-        for i, j, z in nodes:
-            self.layers[(i, j)].append(z)
-        for k in self.layers:
-            self.layers[k].sort()
+        self.set_nodes(nodes)
         self.nav_info['nodes'] = len(nodes)
         # a step between two LINKED areas over 18 (the engine's agents climb 18): a stair without its clip ramp is refused
         err = sorted(set(nav_err))
@@ -974,6 +960,28 @@ class BlendEmitter(scenegen.Emitter):
         self.nav_info['step_warnings'] = len(ws)
         open(os.path.join(self.out, 'navgraph.bin'), 'wb').write(nav_blob)
         self.nav_blob = nav_blob
+
+    def set_polys(self, polys):
+        """the navigation is navgen's polygon areas: -> the nodes (one per area); nav_floor then reads the area planes"""
+        self.lift = 0.0
+        self.polys = polys
+        node_map, self.area_rep = poly_nodes(polys)
+        self.poly_grid = collections.defaultdict(list)
+        for k, p in enumerate(polys):
+            xs = [q[0] for q in p['pts']]; ys = [q[1] for q in p['pts']]
+            for gx in range(int(min(xs) // 64), int(max(xs) // 64) + 1):
+                for gy in range(int(min(ys) // 64), int(max(ys) // 64) + 1):
+                    self.poly_grid[(gx, gy)].append(k)
+        return sorted(node_map)
+
+    def set_nodes(self, nodes):
+        """the navigation nodes [(i, j, z)] the entity placement stands on (z = floor + self.lift)"""
+        self.nodes = nodes
+        self.layers = collections.defaultdict(list)
+        for i, j, z in nodes:
+            self.layers[(i, j)].append(z)
+        for k in self.layers:
+            self.layers[k].sort()
 
     def node_zone(self, n):
         return self.zone_at(((n[0] + 0.5) * CELL, (n[1] + 0.5) * CELL, n[2] - self.lift + 8))
@@ -994,14 +1002,50 @@ class BlendEmitter(scenegen.Emitter):
         return best if best is not None and abs(best - self.lift - z) <= reach else None
 
     # -- entities ------------------------------------------------------------------------------------------
+    def start_ent(self, s):
+        """a player start on the floor under it"""
+        x, y, z = s['at']
+        z = self.floor_z(x, y, z)
+        self.ent(classname='script_struct', targetname='default_player_start', origin=self.fmt((x, y, z)), angles='0 %g 0' % s.get('yaw', 0))
+        self.layout['starts'].append((x, y, z))
+
+    def emit_volumes(self, zones, first=0):
+        """one spawn volume per zone, numbered from `first` (trigger model ?IWZ<k> = line k of triggers.txt), and the zone rows of the layout;
+        the volumes are added to self.vols"""
+        new = [{'name': z['name'], 'zone': z['name'], 'box': [float(v) for v in z['box']]} for z in zones]
+        for k, v in enumerate(new):
+            self.volume_ent(first + k, v)
+        self.vols += new
+        for z in zones:
+            b = z['box']
+            self.layout['zones'][z['name']] = {'name': z['name'], 'box': list(b), 'boxes': [[b[0], b[1], b[3], b[4]]], 'floor': b[2], 'ceiling': b[5],
+                                               'far': False, 'probe': list(z.get('probe') or (0.9, 0.9, 0.95, 0.6)), 'volumes': [z['name']]}
+        return new
+
+    def emit_gameplay(self):
+        """the scene's spawners (with the landing, idle and respawn spots of every volume of self.vols), doors and interactions"""
+        self.place_scene_spawners()
+        self.drop_unused_targets()
+        self.place_scene_doors()
+        self.place_scene_interactions()
+
+    def emit_markers(self):
+        for m in self.scene.get('markers', []):
+            self.layout['markers'].append({'kind': m['kind'], 'id': m.get('id', ''), 'zone': self.zone_at(m['at']) or self.sc.start_zone,
+                                           'origin': list(m['at']), 'yaw': m.get('yaw', 0)})
+
+    @staticmethod
+    def room_row(z):
+        """the light grid / reflection probe room of a zone (lighting.txt, probes.txt)"""
+        b = z['box']
+        r, g, bl, up = z.get('probe') or (0.9, 0.9, 0.95, 0.6)
+        return 'room %d %d %d %d %d %d %.3f %.3f %.3f %.2f' % (b[0] - 48, b[1] - 48, b[2] - 48, b[3] + 48, b[4] + 48, b[5] + 48, r, g, bl, up)
+
     def emit_scene_entities(self):
         sc, layout, mg = self.scene, self.layout, self.mapgen
         zones = sc.get('zones', [])
         ws = mg.stock_worldspawn(os.path.join(self.tpl, 'maps', 'cp', 'cp_zmb.d3dbsp.ents'))
-        # spawn volumes: one per zone
         self.vols = []
-        for z in zones:
-            self.vols.append({'name': z['name'], 'zone': z['name'], 'box': [float(v) for v in z['box']]})
         starts = [dict(s) for s in sc['starts']]
         first = starts[0]['at']
         sz = self.zone_at(first)
@@ -1017,43 +1061,21 @@ class BlendEmitter(scenegen.Emitter):
             for n in near[:4 - len(starts)]:
                 starts.append({'at': ((n[0] + .5) * CELL, (n[1] + .5) * CELL, n[2] - self.lift), 'yaw': starts[0].get('yaw', 0)})
         for s in starts:
-            x, y, z = s['at']
-            z = self.floor_z(x, y, z)
-            self.ent(classname='script_struct', targetname='default_player_start', origin=self.fmt((x, y, z)), angles='0 %g 0' % s.get('yaw', 0))
-            layout['starts'].append((x, y, z))
+            self.start_ent(s)
         x, y, zz = layout['starts'][0]
         for k in range(8):
             self.ent(classname='trigger_use', targetname='player_use_trigger', origin=self.fmt((x + 40 * (k - 4), y, zz + 40)),
                      model='?%d' % (4 + k % 4), dummy='triggermodeldummydefault')
         self.ent(classname='mp_global_intermission', origin=self.fmt((x, y, zz + 220)), angles='10 270 0')
-        for k, v in enumerate(self.vols):
-            x0, y0, z0, x1, y1, z1 = v['box']
-            self.triggers.append('28000001 %g %g %g' % ((x1 - x0) / 2, (y1 - y0) / 2, (z1 - z0) / 2))
-            self.ent(classname='info_volume', targetname='spawn_volume', origin=self.fmt(((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)),
-                     model='?IWZ%d' % k, linkname=v['name'], target=v['name'] + '_spawner')
-            v['ent'] = self.ents[-1]
-        for z in zones:
-            b = z['box']
-            layout['zones'][z['name']] = {'name': z['name'], 'box': list(b), 'boxes': [[b[0], b[1], b[3], b[4]]], 'floor': b[2], 'ceiling': b[5],
-                                          'far': False, 'probe': list(z.get('probe') or (0.9, 0.9, 0.95, 0.6)), 'volumes': [z['name']]}
-        self.place_scene_spawners()
-        used = collections.Counter(s['volume'] for s in layout['spawners'])
-        for v in self.vols:
-            e = v.pop('ent')
-            if not used.get(v['name']):
-                e[:] = [kv for kv in e if kv[0] != '820']
-            v['spawners'] = used.get(v['name'], 0)
-        self.place_scene_doors()
-        self.place_scene_interactions()
+        self.emit_volumes(zones)
+        self.emit_gameplay()
         for tn in ('hidden_room_portal', 'center_portal', 'fast_travel_tube_start', 'fast_travel_tube_end', 'hidden_travel_tube_start',
                    'hidden_travel_tube_end'):
             self.ent(classname='script_model', targetname=tn, model='tag_origin', origin='0 0 -3000', angles='0 0 0')
         self.ent(classname='script_struct', targetname='hidden_room_spot', origin='0 0 -3000', angles='0 0 0')
         self.ent(classname='script_struct', targetname='brute_hide_org', origin='0 0 -2000')
         self.place_props()
-        for m in sc.get('markers', []):
-            layout['markers'].append({'kind': m['kind'], 'id': m.get('id', ''), 'zone': self.zone_at(m['at']) or self.sc.start_zone,
-                                      'origin': list(m['at']), 'yaw': m.get('yaw', 0)})
+        self.emit_markers()
         if self.smodels:
             try:
                 lines = self.size_culls(self.smodels)
@@ -1162,11 +1184,16 @@ class BlendEmitter(scenegen.Emitter):
                 adj.add(frozenset((za, zb)))
         return adj
 
-    def add_links(self):
-        """zones with a walkable connection that is not a door are linked (spawn adjacency, activated together)"""
-        door_pairs = {frozenset(o['zones']) for o in self.ops if o['kind'] == 'door'}
+    def add_links(self, touching=None, skip=()):
+        """zones with a walkable connection that is not a door are linked (spawn adjacency, activated together). `touching` (zone names) keeps
+        only the found connections with one of these zones (a layer on a base: the base's own pairs are the base's business); `skip` are
+        pairs that are doors or links already. The scene's explicit links always stay"""
+        door_pairs = {frozenset(o['zones']) for o in self.ops if o['kind'] == 'door'} | {frozenset(p) for p in skip}
         explicit = {frozenset(l) for l in self.scene.get('links', [])}
-        links = (self.zone_adjacency() | explicit) - door_pairs
+        found = self.zone_adjacency()
+        if touching is not None:
+            found = {p for p in found if p & set(touching)}
+        links = (found | explicit) - door_pairs
         for pair in sorted(tuple(sorted(p)) for p in links):
             a, b = pair
             self.ops.append({'kind': 'link', 'zones': [a, b], 'door': '', 'id': 'link_%s_%s' % pair, 'price': 0, 'planes': {a: 0, b: 0},
@@ -1177,7 +1204,7 @@ class BlendEmitter(scenegen.Emitter):
         layout = self.layout
         E = scenegen.Emitter
         zone_of = lambda p: self.zone_at(p) or self.sc.start_zone
-        wheels = 0
+        wheels = first_wheel = getattr(self, 'wheels_used', 0)      # a base that already uses stock wheel scriptables: the next free one
         for p in self.scene.get('perks', []):
             org = self.snap(p['at']); yaw = float(p.get('yaw', 0))
             name = 'perk_machine_' + p['perk']
@@ -1208,7 +1235,7 @@ class BlendEmitter(scenegen.Emitter):
             self.ent(classname='script_struct', targetname='wheel_fx_spot', origin=self.fmt((org[0] + 8 * fx + 14 * rx, org[1] + 8 * fy + 14 * ry, org[2] + 55.2)),
                      angles='0 %g 0' % yaw)
             layout['interactions'].append({'kind': 'magic_wheel', 'scriptable': sc_, 'origin': org, 'yaw': yaw, 'zone': zone_of(org), 'first': wheels == 1})
-        if wheels:
+        if wheels > first_wheel:
             layout['first_wheel_zone'] = next(i for i in layout['interactions'] if i['kind'] == 'magic_wheel')['zone']
         for p in self.scene.get('power', []):
             org = self.snap(p['at']); yaw = float(p.get('yaw', 0))
@@ -1329,9 +1356,7 @@ class BlendEmitter(scenegen.Emitter):
         amb = ['ambient %g %g %g %g' % tuple(sc.get('ambient') or (0.30, 0.30, 0.32, 0.50))]
         probes = []
         for z in sc['zones']:
-            b = z['box']
-            r, g, bl, up = z.get('probe') or (0.9, 0.9, 0.95, 0.6)
-            row = 'room %d %d %d %d %d %d %.3f %.3f %.3f %.2f' % (b[0] - 48, b[1] - 48, b[2] - 48, b[3] + 48, b[4] + 48, b[5] + 48, r, g, bl, up)
+            row = self.room_row(z)
             amb.append(row); probes.append(row)
         open(os.path.join(self.out, 'lighting.txt'), 'w', newline='\n').write('\n'.join(amb) + '\n')
         open(os.path.join(self.out, 'probes.txt'), 'w', newline='\n').write('\n'.join(probes) + '\n')
