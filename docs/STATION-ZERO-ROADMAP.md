@@ -129,3 +129,9 @@ its engine limit named where it cannot be done.
   reached), corridor still 77 props per 1000 x 1000. Lead's reading: for the first time it is the place; still bare, pale
   floor pools, plain columns. First blind review (three reviewers, eight shipped shop fronts as reference, lines fixed before:
   median 7.5, no frame under 6.5, within 0.5 of stock, half of ours taken for shipped) in work. No play proof yet.
+- 24 Nov 2026, Arcade blind review 1 (round 3 on a final bake, twelve cameras; three independent reviewers, the eight shipped
+  shop fronts and the rubric of Studio's own Arcade rounds; raw answers `C:\studio-data\sz\arcade\r3b\review`): ours 4.70,
+  stock 6.60; lines fixed before: median 7.5 NOT MET, no frame under 6.5 NOT MET (lowest 3.0), within 0.5 of stock NOT MET
+  (-1.9), half taken for shipped NOT MET (0 of 12). Per criterion ours / stock: finished 5 / 7, density 3 / 6.5, lighting
+  5 / 6, surfaces 5 / 6.5, composition 5 / 6. Round 4 (density first: vignettes, dressing taken from studio rooms prop by
+  prop, shops as lit pockets, no model cap, prop cap 1,500 instead of the bible's 760) in work with its own review.
