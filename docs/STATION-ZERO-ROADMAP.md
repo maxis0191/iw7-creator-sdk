@@ -105,3 +105,19 @@ its engine limit named where it cannot be done.
   frame p50 0.17 to 0.22 on nine cameras, p95 0.60 to 0.71 (below the stock band). Refused by the lead before any review:
   Spaceland props and five shop boxes flooded with one colour each; round 2 (cp_disco kit, dressed shops, small tile floor,
   emissive panels) in work. No play proof yet.
+- 24 Nov 2026, S2 part 1: the first Studio builds of Station Zero (full mode through the recipe `build.json`, Studio branch
+  `claude/c2-recipe`, not merged yet; usermaps `C:\studio-data\c2\twin\cp_iwz` with the release's winding and
+  `C:\studio-data\c2\reversed\cp_iwz` with the engine's), measured by this thread:
+  - the acceptance batch on `reversed` (compressed time, server with one bot; `C:\studio-data\sz\wind\reversed_headless.log`):
+    doors 70/70, economy 76/76, wells 9/9, stairs 9/9, post routes 128/128, rules 39/39, start closed 20/20, rounds 5 to 10
+    and 13 to 15 pass; rounds 1-2, 3-4 and 11-12 fail on the `stuck` rule only (the script's fault above), as on g27r;
+  - the 30 RC4 cameras on both (client; runs `C:\forge-run\runs\20261124-042744-0130-szf_rc4_look` and
+    `...-043325-0140-...`; table `C:\studio-data\sz\wind\wind_compare.json`): `twin` against the release's own frames of 22 Nov
+    differs by 0.6 to 3.6 of 255 on 28 cameras (the grain of two sessions); `reversed` against `twin` by 0.6 to 2.5 on 24
+    cameras; lit mean luminance 0.162 and 0.163, near-black share 8.7 and 8.6 %. The four cameras that differ more
+    (dark platform B, dark generator room, dark maintenance corridor, lit control room: 6 to 23) show a burning zombie's
+    smoke and fire in front of the camera in one of the two takes (lead's reading of
+    `C:\studio-data\sz\wind\twin_left_reversed_right_top4.jpg`), not a difference of the builds.
+  So: the winding makes no visible difference on Station Zero (the generator emits double-sided geometry), the Studio build
+  is the RC4 map, and RC5 is built with the engine's winding. Fault of the look plan itself: zombies die in frame
+  (`szf_rc4_look.json`): review frames need a take with no zombie alive.
