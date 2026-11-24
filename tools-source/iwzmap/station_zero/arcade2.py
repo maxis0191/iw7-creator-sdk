@@ -21,12 +21,12 @@ for _k in ('X0', 'X1', 'Y0', 'Y1', 'H', 'WT', 'BAY_X', 'BAY_W', 'BAY_D', 'BAY_H'
     globals()[_k] = getattr(R1, _k)
 
 # materials: only names already dumped for the build (C:\studio-data\sz\arcade\r1\dumped_materials.txt) or proven in round 1; neutral, worn, no saturated paint
-WALL = 'w/plaster_wall_01_beige'
+WALL = 'w/plaster_wall_01_brown'
 CEIL = 'w/plaster_wall_04_grey_dark_02'
 FLOOR = 'w/concrete_floor_polished_01'                 # the slab under the tile skin (collision and the colour of the gaps)
 SHUTTER = 'w/door_metal_rollup_grey_large_01'
 BAYWALL = ['w/plaster_wall_04_grey', 'w/plaster_wall_01_brown', 'w/plaster_wall_04_beige', 'w/iw7_drywall_painted_gray_01', 'w/plaster_wall_01_beige']
-BAYFLOOR = ['w/concrete_floor_polished_01', 'w/wood_rustic_floor_02', 'w/stone_marble_tile_checker_01_brown', 'w/clk_rubber_tiles', 'w/wood_rustic_floor_02']
+BAYFLOOR = ['w/concrete_floor_polished_01', 'w/wood_rustic_floor_02', 'w/stone_marble_tile_checker_01', 'w/clk_rubber_tiles', 'w/wood_rustic_floor_02']
 PANEL_LIVE, PANEL_DEAD = 'w/glass_led_light_diffuser_01', 'w/plastic_wall_panel_light_02_off'
 # the shutters: bay -> (the share of the opening's height the curtain covers, from the lintel down; None = jammed: a 152 wide curtain at 60 %, an 80 wide gap)
 SHUT_SHARE = {0: 0.30, 1: 0.60, 2: 0.30, 3: 0.30, 4: 0.60}
@@ -48,7 +48,7 @@ def geometry(m, standalone=True):
     m.use('dressing')
 
 
-EMISSIVE = {PANEL_LIVE: {'color': [0.80, 1.0, 0.84], 'strength': 4.0},
+EMISSIVE = {PANEL_LIVE: {'color': [0.80, 1.0, 0.84], 'strength': 3.2},
             'w/metal_light_line_lightblue_03': {'color': [0.30, 0.85, 1.0], 'strength': 2.4}, 'w/plastic_wall_panel_light_03_on_orange': {'color': [1.0, 0.55, 0.12], 'strength': 2.4},
             'w/emissive_light_panel_pink': {'color': [1.0, 0.30, 0.68], 'strength': 2.4}, 'w/plastic_wall_panel_light_02_on_blue': {'color': [0.26, 0.45, 1.0], 'strength': 2.4},
             'w/plastic_wall_panel_light_02_on_red': {'color': [1.0, 0.18, 0.20], 'strength': 2.4}}

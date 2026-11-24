@@ -73,8 +73,8 @@ def shutters(A, m, report):
 def corridor_shell(A, m, D, report, cal):
     m.use('dressing')
     cx0, cx1, cy0, cy1 = A.X0 + A.WT, A.X1 - A.WT, A.Y0 + A.WT, A.Y1 - A.WT
-    tile = float(__import__('os').environ.get('ARC_TILE', '96'))
-    floor_mat = __import__('os').environ.get('ARC_FLOOR', 'w/fah_restaurant_tiles_01')
+    tile = float(__import__('os').environ.get('ARC_TILE', '40'))
+    floor_mat = __import__('os').environ.get('ARC_FLOOR', 'w/plastic_slick_floor_01_orange')
     uv = {'top': {'tile': [tile, tile]}}
     if cal:
         cands = ['w/fah_restaurant_tiles_01', 'w/stone_floor_tiles_01', 'w/clk_rubber_tiles', 'w/plastic_slick_floor_01_orange']
@@ -145,8 +145,6 @@ def corridor_shell(A, m, D, report, cal):
     box(m, [xw, 3774.0, zt, xw + 14.0, 4026.0, zt + 12.0], 'w/metal_painted_01_black', id='d7_head')
     box(m, [xw + 2.0, 3794.0, 0.0, xw + 10.0, 4006.0, zt], 'w/metal_panel_dark_01', id='d7_slab')
     box(m, [xw + 10.0, 3794.0, 0.0, xw + 12.0, 4006.0, 12.0], 'w/metal_painted_scratched_yellow', id='d7_foot')
-    for k in range(6):
-        box(m, [xw + 10.0, 3800.0 + k * 35.0, 120.0 - (k % 2) * 8.0, xw + 18.0 - (k % 2) * 8.0, 3832.0 + k * 35.0, 128.0], 'w/paint_lines_01_thick_yellow_clean', id='d7_hz_%d' % k)   # hazard band
     box(m, [xw + 10.0, 3790.0, 88.0, xw + 13.0, 4010.0, 96.0], 'w/metal_painted_scratched_yellow_02', id='d7_band')
     for k, y in enumerate((3808.0, 3900.0, 3992.0)):
         box(m, [xw + 10.0, y - 3.0, 150.0, xw + 13.0, y + 3.0, 156.0], 'w/metal_painted_02', id='d7_bolt_%d' % k)
@@ -155,7 +153,23 @@ def corridor_shell(A, m, D, report, cal):
     for k in range(5):
         a0, a1 = A.aperture(k)
         box(m, [a0 - 14.0, cy1 - 16.0, 214.0, a1 + 14.0, cy1, 232.0], 'w/metal_painted_02', id='beam_%d' % (k + 1))
+    decals(A, m)
     report['floor'] = {'material': 'cal' if cal else floor_mat, 'tile_uv': tile}
+
+
+def decals(A, m):
+    """worn and dirty: stains on the floor at the walls and the lanes, peeling and cracks and old bills on the south wall (decals: whether they draw is judged in the frames)"""
+    rng = random.Random(5)
+    fl = ['w/asphalt_flooring_stain_01', 'w/fac_darkstain_01_dec']
+    for k in range(26):
+        x = rng.uniform(A.X0 + 60.0, A.X1 - 60.0)
+        y = rng.choice((rng.uniform(A.Y0 + 30.0, A.Y0 + 140.0), rng.uniform(A.Y1 - 150.0, A.Y1 - 40.0), rng.uniform(A.Y0 + 140.0, A.Y1 - 150.0)))
+        sz = rng.uniform(40.0, 90.0)
+        B.decal(m, fl[k % len(fl)], (x, y, 1.6), (0.0, 0.0, 1.0), (sz, sz), rot=rng.uniform(0.0, 360.0), id='decal_floor_%d' % k)
+    wl = ['w/plaster_peeling_02_grey_dec', 'w/plaster_damaged_11_crack_dec', 'w/wall_stain_01_dec', 'w/signage_decals_corridor_01', 'w/pb_plaster10_paint_decal', 'w/dirt_stain_water_drips_01']
+    for k in range(22):
+        x = A.X0 + 60.0 + k * 80.0 + rng.uniform(-20.0, 20.0)
+        B.decal(m, wl[k % len(wl)], (x, A.Y0 + A.WT, rng.uniform(70.0, 150.0)), (0.0, 1.0, 0.0), (rng.uniform(40.0, 70.0), rng.uniform(40.0, 70.0)), id='decal_wall_%d' % k)
 
 
 # ------------------------------------------------------------------------------------------------ the shop kit
@@ -446,20 +460,20 @@ def lights(A, m, report):
         return B.light(m, *a, **k)
     yin = A.Y1 - A.WT
     for k, (x, y) in enumerate(A.live):                  # a tight downward pool under every live panel
-        L((x, y, 176.0), color=(0.86, 1.0, 0.90), radius=170.0, intensity=2.0, type='spot', dir=(0.0, 0.0, -1.0), inner=10.0, outer=34.0, id='light_pool_%d' % k)
+        L((x, y, 176.0), color=(0.86, 1.0, 0.90), radius=170.0, intensity=0.55, type='spot', dir=(0.0, 0.0, -1.0), inner=10.0, outer=34.0, id='light_pool_%d' % k)
     for i in range(5):
         kind = A.BAYS[i]
         hue = HUE[kind]
         cx = A.BAY_X[i] + A.BAY_W / 2.0
-        L((cx, yin - 26.0, A.AP_H + 40.0), color=hue, radius=110.0, intensity=0.45, id='light_neon_%d' % (i + 1))                    # the shop's one hue: the sign's spill
-        L((cx, A.Y1 + 70.0, 176.0), color=(1.0, 0.88, 0.68), radius=240.0, intensity=0.55, type='spot', dir=(0.0, 0.0, -1.0), inner=20.0, outer=58.0, id='light_key_%d' % (i + 1))
+        L((cx, yin - 26.0, A.AP_H + 40.0), color=hue, radius=110.0, intensity=0.08, id='light_neon_%d' % (i + 1))                    # the shop's one hue: the sign's spill
+        L((cx, A.Y1 + 70.0, 176.0), color=(1.0, 0.88, 0.68), radius=240.0, intensity=0.2, type='spot', dir=(0.0, 0.0, -1.0), inner=20.0, outer=58.0, id='light_key_%d' % (i + 1))
         wp = (cx, A.Y1 + 40.0, 176.0)
         wt = (cx, A.BACK_Y, 70.0)
         dist = math.sqrt(sum((a - b) ** 2 for a, b in zip(wp, wt)))
         d = [(wt[j] - wp[j]) / dist for j in range(3)]
-        L(wp, color=(1.0, 0.92, 0.78), radius=round(dist * 1.8, 1), intensity=round(0.6 * (dist / 200.0) ** 2, 4), type='spot', dir=d, inner=14.0, outer=46.0, id='light_wash_%d' % (i + 1))
-    L((A.X1 - 60.0, 3900.0, 170.0), color=(1.0, 0.85, 0.55), radius=170.0, intensity=0.5, type='spot', dir=(0.0, 0.0, -1.0), inner=20.0, outer=60.0, id='light_d4')
-    L((A.X0 + 70.0, 4040.0, 150.0), color=(1.0, 0.80, 0.50), radius=180.0, intensity=0.9, type='spot', dir=(0.0, -0.2, -1.0), inner=16.0, outer=52.0, id='light_d7_cage')
+        L(wp, color=(1.0, 0.92, 0.78), radius=round(dist * 1.8, 1), intensity=round(0.2 * (dist / 200.0) ** 2, 4), type='spot', dir=d, inner=14.0, outer=46.0, id='light_wash_%d' % (i + 1))
+    L((A.X1 - 60.0, 3900.0, 170.0), color=(1.0, 0.85, 0.55), radius=170.0, intensity=0.25, type='spot', dir=(0.0, 0.0, -1.0), inner=20.0, outer=60.0, id='light_d4')
+    L((A.X0 + 70.0, 4040.0, 150.0), color=(1.0, 0.80, 0.50), radius=180.0, intensity=0.5, type='spot', dir=(0.0, -0.2, -1.0), inner=16.0, outer=52.0, id='light_d7_cage')
     L((A.X1 + 100.0, 3900.0, 200.0), color=(0.9, 0.9, 1.0), radius=160.0, intensity=0.05, id='light_vest')
     report['lights'] = n
     assert n <= LIGHT_CAP, n
