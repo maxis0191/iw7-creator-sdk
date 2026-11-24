@@ -16,6 +16,12 @@ g27 zones map onto bible zones (ticket hall = Fare Hall, platform A = Platform A
 = Converter Hall, control room = Signal Cabin, service tunnel + platform B = Car Barn approach). Step 0 below moves the g27
 systems into the scene line and proves the same acceptance suite on it before anything new is built.
 
+> **Changed 24 Nov 2026 (RC5 thread).** The one line is neither generator: it is the **Studio document** of Station Zero
+> (`C:\studio`, repository `iw7-studio`), whose base is the emit of `station_zero2.py` and whose layers and new sections carry
+> everything built from now on. `scenegen.py` builds nothing more; `scenes/station_zero.json` and `02-WORLD.md` stay the source
+> of the 19 zones' bounds, doors and contents, built as Studio sections in the bible's order (the Underpass Arcade first).
+> Package 0 below is replaced by "RC5: plan and state" at the end of this page; packages 1 to 7 keep their order.
+
 ## Packages (order; each ends in a measured proof)
 
 | # | Piece | Exists today | Engine / tool work it needs | Proof |
@@ -35,3 +41,35 @@ Stock cp_zmb renders at mean luma 0.175 (p90 0.34) under the same vision values 
 rendered at 0.442 (p90 0.82) because its many evenly spread lights and fill give the auto exposure nothing dark to keep.
 Fields the renderer reads and their offsets: `<runtime>\iwz-stage2\darkness\NOTES.md`, 22 Nov. Dressing a zone includes its
 light budget against that target.
+
+## RC5: plan and state (thread of 24 Nov 2026, branch `claude/sz-rc5`)
+
+Tool faults and gaps met on the way are written, one entry each, in `C:\studio-data\sz\TOOL-FAULTS.md` (owner of the fixes:
+the Studio lead session). Notes of the thread: `C:\studio-data\sz\notes`.
+
+### What Station Zero needs to be accepted, in order
+
+| # | Item | Cause or content known today | Route | What the new tools change | Proof |
+|---|---|---|---|---|---|
+| S2 | The map as a Studio document, same map | base = generator emit; the build needs Station Zero's recipe (train, kit of cp_disco and cp_final, FX, audio, darkness with its dark bake, P1, nav obstacles) | recipe file `build.json` in the emit, written by `station_zero2.py`; Studio's build reads it | possible once fault F1 is fixed (accepted by the Studio lead, in work); then an edit is seen in 10 to 20 s instead of 403 s + 154 s | emit files equal; full build's row list equal to g27r's; the RC4 suite on the Studio build |
+| L1 | Look: lit state reads as "power on", dark state readable without the flashlight | RC4 review items 3, 4: generator room, platform B, stair exits, tunnel end are black without the flashlight; lit exposure was matched to the stock mean | light per zone in the document: key and wash spots, pools, emissive fixtures, a light budget per zone against stock frames; darkness kept (emergency group) | Studio's bake with prop shadows and emissive, `live sync` for a light in 12 s, `view.shot` without the game. Open in the tool: the dark/lit two-state bake is not a Studio notion (part of F1) | three blind reviewers per round, lines fixed before, raw answers kept: 7.5 or more per zone, lit and dark |
+| L2 | Look: flashlight pool with a hard edge, treads blown white | RC4 item 1; the flashlight is one spot particle (fov 40, inner 2, brightness 3.5, radius 900) | effect numbers in the recipe (`darkness.vfx`): wider inner cone, lower brightness, halo carries the falloff | each try is a rebuild of nine effects: needs the recipe build | frames at stair B, platform A, ticket hall; reviewers |
+| L3 | Look: hard vertical light cuts on the well walls, angular floor patch on platform B | RC4 item 2; to be read on the lightmap (chart seams or a light's culling box) before any change | bake or light volume, at the cause | `tools/bakecompare.py`, `view.shot` | frames well_e x 1060, well_w x 250 to 330 |
+| L4 | Look: black blob on the ticket-hall floor, black rock pile in the tunnel, platform-lip white band, Pack-a-Punch without its own light | models drawn without their material or light: to be identified by position | the model or its material in the document's layer | `python -m store` facts for the model, `live shot` | frames; reviewers |
+| L5 | Look: density and composition of every zone | 26 to 160 props per 1000 x 1000 against a stock median of 555 | layers of dressing per zone as the Arcade's rounds: stock models of every dumped zone, lifted stock rooms where they fit, signs, decals | the asset store, prefabs, `prop_scatter`, density and empty-area answers in milliseconds | density numbers per zone against stock; reviewers |
+| N1 | New zone 4, Underpass Arcade | box x -3000..-1200, y 3500..4300, floor 0, ceiling 256, five bays y 4300..4600; D4 (1000) in the Fare Hall's west wall x = -1200; free of the present map (stair B ends at y 3400, platform B's roof at z -16) | geometry, dressing and light as a Studio section; door, zone, 12 spawners, Double Takes, wheel position, two wall buys through the generator until fault F2 is fixed | section building in the live loop; gameplay of a layer is NOT merged into a base (F2) | D4 buys and opens; zombies spawn in the Arcade and reach the player; rounds with the player there; reviewers 7.5 |
+| G1 | Stair A crowd at the choke | zombies with no melee slot run in place 350 to 430 below a player under the 192-wide top door (x -510, y 2720..2800); nav route normal | to be decided on a census of slots and goals: wider top landing and door, or the stock behaviour for zombies without a slot | `forge run` census plans in 20 s; a geometry try in the live loop | rounds 1-2 and 11-12 pass 3 of 3 with the progress rule |
+| G2 | Walkers on long routes without progress for 50 s (rounds 3, 12) | not yet read: census of goal, path length and speed needed | at the cause | same | round plans 11 of 11, three runs |
+| G3 | One round 2 stalled 90 s with every zombie dead (g27q, once) | not reproduced | an always-on recorder of the round state in the acceptance script, not retests | none needed | the recorder's line when it happens again; 30 round-2 runs without it |
+| R1 | Release candidate 5 | full build, whole suite, real-time run with a joined client, package with manifest | Studio `--full` with the recipe, else the SDK chain | row-list equality of both paths | `STATION-ZERO-RC5.md` |
+| R2 | Official-client gate | v1.1.0 has no usermap support and crashes joining the lab server | not in this thread's hands: an upstream release, or the proof on a client built from upstream main | none | stays open; said in RC5 |
+
+Then the packages 2 to 7 of the table above (quest, wonder weapons, enemies, Tab pages, camos and emotes, crowd), each with
+its engine limit named where it cannot be done.
+
+### State
+
+- 24 Nov 2026, step 1 (read, no build). Measured: the document with the g27r emit as base and no layer emits 22 of 22 files
+  byte-identical in 0.12 s (`C:\studio-data\sz\a1`); `studio check` 2.4 s; today's SDK main regenerates the g27r emit (17 of
+  17 generator files equal, 4 s, `C:\studio-data\sz\regen`); Studio's compiler contains the RC4 light-volume commit; the RC4
+  package's fastfile has the manifest's hash. Does not exist: a Studio build of Station Zero (F1), layer gameplay on a base (F2).
