@@ -15,7 +15,7 @@ def stats(path, top=0.88):
     im = im[:int(im.shape[0] * top)]
     luma = 0.2126 * im[..., 0] + 0.7152 * im[..., 1] + 0.0722 * im[..., 2]
     p5, p50, p95 = np.percentile(luma, [5, 50, 95])
-    return {'p5': round(float(p5), 3), 'p50': round(float(p50), 3), 'p95': round(float(p95), 3), 'under_008': round(float((luma < 0.08).mean()), 3),
+    return {'p5': round(float(p5), 3), 'p50': round(float(p50), 3), 'p95': round(float(p95), 3), 'under_005': round(float((luma < 0.05).mean()), 3), 'under_008': round(float((luma < 0.08).mean()), 3),
             'over_085': round(float((luma > 0.85).mean()), 3), 'size': [im.shape[1], int(im.shape[0] / top)]}
 
 
