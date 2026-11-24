@@ -121,3 +121,11 @@ its engine limit named where it cannot be done.
   So: the winding makes no visible difference on Station Zero (the generator emits double-sided geometry), the Studio build
   is the RC4 map, and RC5 is built with the engine's winding. Fault of the look plan itself: zombies die in frame
   (`szf_rc4_look.json`): review frames need a take with no zombie alive.
+- 24 Nov 2026, Arcade rounds 2 and 3 (documents `C:\studio-data\sz\arcade\r2`, `r3`; `station_zero/arcade3.py`): round 2 refused
+  by the lead (right theme, an empty hall, a bright orange floor, flat light). Round 3 in the game on a FINAL bake (44 s):
+  a spine of columns with islands, a dark floor with an inlay line, 12 live ceiling panels with pools, the five shop names as
+  lit text signs (PHOTOS, HEEL & KEY, HOLE NUMBER NINE, COPY STOP, NEEDLE DROP: read the right way round), dark south wall;
+  673 props, 46 models, 37 lights, 12 of 12 spawners reach; frame p50 0.13 to 0.27, p95 0.46 to 0.69 (band 0.72 to 0.77 not
+  reached), corridor still 77 props per 1000 x 1000. Lead's reading: for the first time it is the place; still bare, pale
+  floor pools, plain columns. First blind review (three reviewers, eight shipped shop fronts as reference, lines fixed before:
+  median 7.5, no frame under 6.5, within 0.5 of stock, half of ours taken for shipped) in work. No play proof yet.
