@@ -18,6 +18,7 @@ import mapgen, hkcm_write
 import brushkit as bk
 import sz2_materials as MT
 import sz2_art_hooks as ART_HOOKS
+import iwz_rows as ROWS
 ART_HOOKS.register()       # art drop-ins (sz2_art_hooks.py): present images become materials, missing ones change nothing
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -2852,7 +2853,7 @@ ents.append(ent(classname='mp_global_intermission', origin='-400 3500 220', angl
 vm = os.environ.get('IWZ_VOLUME_MODEL')
 for k, (zone, zd) in enumerate(ZONES.items()):
     x0, y0, z0, x1, y1, z1 = zd['box']
-    triggers.append('28000001 %g %g %g' % ((x1 - x0) / 2, (y1 - y0) / 2, (z1 - z0) / 2))
+    triggers.append(ROWS.trigger_row(zd['box']))
     ents.append(ent(classname='info_volume', targetname='spawn_volume', origin=fmt(((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)),
                     model=('?' + vm) if vm else '?IWZ%d' % k, linkname=zone, target=zone + '_spawner'))
     layout['zones'][zone] = zd
@@ -3293,11 +3294,10 @@ open(os.path.join(out, 'probes.txt'), 'w', newline='\n').write(''.join(
 
 # ============================================================================ level script with generated tables
 gsc = open(os.path.join(HERE, 'cp_iwz2.gsc')).read()
-door_lines = ['    doors[doors.size] = iwz_door( "%s", "%s", %d, %g, %g, %g, %g, %g );' % (d['name'], d['target'], d['axis'], d['plane'], d['lo'], d['hi'], d['z0'], d['z1'])
-              for d in DOORS]
-link_lines = ['    links[links.size] = [ "%s", "%s" ];' % l for l in ZONE_LINKS]
-gsc = gsc.replace('//@DOORS@', '\n'.join(door_lines)).replace('//@LINKS@', '\n'.join(link_lines))
-gsc = gsc.replace('//@INITIAL@', 'level.initial_active_volumes = [ %s ];' % ', '.join('"%s"' % z for z in INITIAL_ZONES))
+door_lines = [ROWS.door_row(d) for d in DOORS]
+link_lines = [ROWS.link_row(l) for l in ZONE_LINKS]
+gsc = gsc.replace('//@DOORS@', ROWS.table(door_lines)).replace('//@LINKS@', ROWS.table(link_lines))
+gsc = gsc.replace('//@INITIAL@', ROWS.initial_row(INITIAL_ZONES))
 if POST:     # the module is written below; the level script starts it
     import sz_modules
     gsc = gsc.replace('//@POST@', sz_modules.calls([POST_MODULE], 'cp_iwz')[0].lstrip())
@@ -3486,12 +3486,11 @@ for r in REGIONS:
     cz = floor_z_at(cx, cy)
     if cz is None:
         continue
-    probe_lines.append('    probes[probes.size] = iwz_probe( "%s", %g, %g, %g );' % (r['zone'], cx, cy, cz + 40))
+    probe_lines.append(ROWS.fixture_probe_row(r['zone'], cx, cy, cz + 40))
 NL = chr(10)
-fdoor_lines = ['    doors[doors.size] = iwz_door( "%s", %d, %g, %g, %g, %g, %g );' % (d['name'], d['axis'], d['plane'], d['lo'], d['hi'], d['z0'], d['z1'])
-               for d in DOORS]
-fdoor_lines.append('    doors[doors.size] = iwz_door( "pap_shutter", 1, 4008, %g, %g, %g, %g );' % (OP['a_control_pap']['a'], OP['a_control_pap']['b'],
-                                                                                              OP['a_control_pap']['z0'], OP['a_control_pap']['z1']))
+fdoor_lines = [ROWS.fixture_door_row(d) for d in DOORS]
+fdoor_lines.append(ROWS.fixture_door_row({'name': 'pap_shutter', 'axis': 1, 'plane': 4008, 'lo': OP['a_control_pap']['a'], 'hi': OP['a_control_pap']['b'],
+                                          'z0': OP['a_control_pap']['z0'], 'z1': OP['a_control_pap']['z1']}))
 fx = fx.replace('//@DOORS@', NL.join(fdoor_lines))
 fx = fx.replace('//@VIEWS@', NL.join(view_lines)).replace('//@FXVIEWS@', NL.join(fxv_lines)).replace('//@WALK@', NL.join(walk_lines)).replace('//@WALKCAP@', NL.join(wc_lines)).replace('//@PROBES@', NL.join(probe_lines))
 open(os.path.join(out, 'iwzmap_sz2_local.gsc'), 'w', newline=NL).write(fx)

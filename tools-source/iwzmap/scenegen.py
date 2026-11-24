@@ -643,6 +643,7 @@ class Emitter:
                        'interactions': [], 'markers': [], 'stairs': self.stairs, 'lights': []}
         self.report = {'schema': 'iw7.scenegen/1'}
         self.smodels, self.prop_ents = [], []
+        self.blockers = []
 
     # ---------------------------------------------------------------- render helpers
     def quad(self, mat, zone, pts, n, collide=True):
@@ -1180,22 +1181,13 @@ class Emitter:
         # spawn volumes
         self.vols = self.volumes()
         for k, v in enumerate(self.vols):
-            x0, y0, z0, x1, y1, z1 = v['box']
-            self.triggers.append('28000001 %g %g %g' % ((x1 - x0) / 2, (y1 - y0) / 2, (z1 - z0) / 2))
-            self.ent(classname='info_volume', targetname='spawn_volume', origin=self.fmt(((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)),
-                     model='?IWZ%d' % k, linkname=v['name'], target=v['name'] + '_spawner')
-            v['ent'] = self.ents[-1]
+            self.volume_ent(k, v)
         for z in sc.zones.values():
             layout['zones'][z.id] = {'name': z.name, 'box': [*z.bbox()[:2], z.zmin() - 16, *z.bbox()[2:], z.ceiling + 16],
                                      'boxes': [list(b) for b in z.boxes], 'floor': z.floor, 'ceiling': z.ceiling, 'far': z.far,
                                      'probe': list(z.probe), 'volumes': [v['name'] for v in self.vols if v['zone'] == z.id]}
         self.place_spawners()
-        used = collections.Counter(s['volume'] for s in layout['spawners'])
-        for v in self.vols:
-            e = v.pop('ent')
-            if not used.get(v['name']):
-                e[:] = [kv for kv in e if kv[0] != '820']      # a volume with no spawner has no target (lint: scripted-only zone)
-            v['spawners'] = used.get(v['name'], 0)
+        self.drop_unused_targets()
         self.place_doors()
         self.place_interactions()
         # stock systems that run on every map look these up: parked stand-ins
@@ -1212,6 +1204,24 @@ class Emitter:
         open(os.path.join(self.out, 'ents.txt'), 'w', newline='\n').write(mg.ents_text(ws, self.ents))
         open(os.path.join(self.out, 'triggers.txt'), 'w', newline='\n').write('\n'.join(self.triggers) + '\n')
         open(os.path.join(self.out, 'scriptables.txt'), 'w', newline='\n').write('\n'.join(self.relocations) + ('\n' if self.relocations else ''))
+
+    def volume_ent(self, k, v):
+        """the spawn volume number k (trigger model ?IWZ<k>, line k of triggers.txt): its trigger row and its info_volume entity, kept in v['ent']"""
+        import iwz_rows as R
+        x0, y0, z0, x1, y1, z1 = v['box']
+        self.triggers.append(R.trigger_row(v['box']))
+        self.ent(classname='info_volume', targetname='spawn_volume', origin=self.fmt(((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)),
+                 model='?IWZ%d' % k, linkname=v['name'], target=v['name'] + '_spawner')
+        v['ent'] = self.ents[-1]
+
+    def drop_unused_targets(self):
+        """a volume with no spawner has no target (lint: scripted-only zone); v['spawners'] = its count"""
+        used = collections.Counter(s['volume'] for s in self.layout['spawners'])
+        for v in self.vols:
+            e = v.pop('ent')
+            if not used.get(v['name']):
+                e[:] = [kv for kv in e if kv[0] != '820']
+            v['spawners'] = used.get(v['name'], 0)
 
     def vol_of(self, zid, x, y):
         for v in self.vols:
@@ -1362,11 +1372,14 @@ class Emitter:
                           'axis': 0 if o['axis'] == 'y' else 1, 'plane': plane, 'lo': o['span'][0], 'hi': o['span'][1], 'z0': o['sill'],
                           'z1': o['top'], 'blockers': nblk})
         self.layout['doors'] = doors
+        self.layout['blockers'] = self.blockers
         self.layout['openings'] = [{'name': o['id'], 'kind': o['kind'], 'axis': o['axis'], 'zones': list(o['zones']),
                                     'walls': {k: v for k, v in o['planes'].items()}, 'a': o['span'][0], 'b': o['span'][1],
                                     'z0': o['sill'], 'z1': o['top'], 'price': o['price']} for o in self.ops]
 
     def door_blockers(self, subs, target, axis, plane, a, b, z0, z1):
+        """the blocker entities of a door: copies of the template's kept sub-model tiled over the opening; each is also recorded in
+        self.blockers {target, model, origin, yaw} (what `iwz_emitcheck reach --doors closed` reads from layout.json `blockers`)"""
         if not subs:
             self.problems.append('no door blocker sub-model (sz2_submodels.json): doors have no collision until bought')
             return 0
@@ -1391,6 +1404,7 @@ class Emitter:
                     org = (plane - lx, c - ly, zc - mz)
                 self.ent(classname='script_brushmodel', targetname=target, model=sm['model'], origin=self.fmt(org), angles='0 %g 0' % yaw,
                          spawnflags='1', dummy=sm.get('dummy', 'ScriptBrushModelDummyFixed'))
+                self.blockers.append({'target': target, 'model': sm['model'], 'origin': org, 'yaw': yaw})
                 count += 1
         return count
 
@@ -1504,10 +1518,10 @@ class Emitter:
         self.layout['interactions'].append({'kind': kind, 'origin': origin, 'yaw': yaw, 'zone': zone, **kw})
 
     # ---------------------------------------------------------------- level script
-    def level_script(self):
-        gsc = open(os.path.join(HERE, 'cp_iwz3.gsc'), encoding='utf-8').read()
-        door_lines = ['    doors[doors.size] = iwz_door( "%s", "%s", %d, %g, %g, %g, %g, %g );' % (
-            d['name'], d['target'], d['axis'], d['plane'], d['lo'], d['hi'], d['z0'], d['z1']) for d in self.layout['doors']]
+    def level_tables(self):
+        """the rows of the level script's generated tables, from the layout and the openings: ({'doors', 'links', 'prices'}, the link pairs)"""
+        import iwz_rows as R
+        door_lines = [R.door_row(d) for d in self.layout['doors']]
         links = []
         for o in self.ops:
             if o['kind'] != 'door':
@@ -1517,10 +1531,16 @@ class Emitter:
         for v in self.vols:          # extra volumes of one zone activate with it
             if v['name'] != v['zone']:
                 links.append([v['zone'], v['name']])
-        link_lines = ['    links[links.size] = [ "%s", "%s" ];' % tuple(l) for l in links]
-        gsc = gsc.replace('//@DOORS@', '\n'.join(door_lines)).replace('//@LINKS@', '\n'.join(link_lines))
+        prices = [R.price_row(i['origin'], i['kind'], i['price']) for i in self.layout['interactions'] if i.get('groupname') == 'wall_buy' and i.get('price')]
+        return {'doors': door_lines, 'links': [R.link_row(l) for l in links], 'prices': prices}, links
+
+    def level_script(self):
+        import iwz_rows as R
+        gsc = open(os.path.join(HERE, 'cp_iwz3.gsc'), encoding='utf-8').read()
+        rows, links = self.level_tables()
+        gsc = gsc.replace('//@DOORS@', R.table(rows['doors'])).replace('//@LINKS@', R.table(rows['links']))
         init = [self.vol_of(self.sc.start_zone, *self.layout['starts'][0][:2])]
-        gsc = gsc.replace('//@INITIAL@', 'level.initial_active_volumes = [ %s ];' % ', '.join('"%s"' % z for z in init))
+        gsc = gsc.replace('//@INITIAL@', R.initial_row(init))
         gsc = gsc.replace('//@WHEEL@', '"%s"' % self.layout.get('first_wheel_zone', self.sc.start_zone))
         tr = self.layout.get('trap_third_rail')
         if tr:
@@ -1529,9 +1549,7 @@ class Emitter:
             gsc = gsc.replace('//@TRAPRAILY@', '%g' % tr['rail'][0]).replace('//@TRAPRAILZ@', '%g' % tr['rail'][1])
         else:
             gsc = gsc.replace('//@TRAPMIN@', '( 0, 0, 0 )').replace('//@TRAPMAX@', '( 0, 0, 0 )').replace('//@TRAPRAILY@', '0').replace('//@TRAPRAILZ@', '0')
-        prices = ['    table[table.size] = iwz_price( %s, "%s", %d );' % (self.fmt3(i['origin']), i['kind'], int(i['price']))
-                  for i in self.layout['interactions'] if i.get('groupname') == 'wall_buy' and i.get('price')]
-        gsc = gsc.replace('//@PRICES@', '\n'.join(prices).lstrip())
+        gsc = gsc.replace('//@PRICES@', R.table(rows['prices'], strip=True))
         # game-script modules (modules/*.gsc: Q1 quest, T1 Capsule Post...): tables filled, started by the level script
         import sz_modules
         mapname = self.sc.map
