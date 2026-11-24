@@ -22,6 +22,21 @@ for _k in ('X0', 'X1', 'Y0', 'Y1', 'H', 'WT', 'BAY_X', 'BAY_W', 'BAY_D', 'BAY_H'
            'gameplay', 'cameras', 'SHUT_SHARE', 'SHUT_GAP'):
     globals()[_k] = getattr(R2, _k)
 
+def cameras(m):
+    """round 3b: the two long cameras stand in the north lane (y = 4080), off the column line; two cameras added (south lane, the kiosk island). The other ten as in round 1."""
+    m.use('cameras')
+    B.camera(m, 'arc_east_long', (-1290.0, 4080.0, 60.0), 180.0, id='arc_east_long')
+    B.camera(m, 'arc_west_long', (-2910.0, 4080.0, 60.0), 0.0, id='arc_west_long')
+    B.camera(m, 'arc_south_lane_east', (-1290.0, 3700.0, 60.0), 180.0, id='arc_south_lane_east')
+    B.camera(m, 'arc_spine_island', (-2700.0 + 177.0, 3900.0 + 177.0, 60.0), 225.0, id='arc_spine_island')   # 250 units north-east of the kiosk (GAPS[0] = -2700)
+    for i in range(5):
+        cx = BAY_X[i] + BAY_W / 2.0
+        B.camera(m, 'arc_bay%d' % (i + 1), (cx, Y0 + 100.0, 64.0), 90.0, pitch=-4.0, id='arc_bay%d' % (i + 1))
+    B.camera(m, 'arc_south_wall', (-2100.0, 4110.0, 64.0), 270.0, id='arc_south_wall')
+    B.camera(m, 'arc_d7', (X0 + 330.0, 3900.0, 64.0), 180.0, id='arc_d7')
+    B.camera(m, 'arc_inside_bay3', (BAY_X[2] + 160.0, 4345.0, 62.0), 90.0, id='arc_inside_bay3')
+
+
 # materials. Names the build already drew in earlier rounds, or in the preview's dump list; the first frame of every new one is judged in the game (FA2).
 # The baker guesses the albedo of a surface from its NAME (layout_lights.ALBEDO_RULES, first match): black / dark / rubber 0.06, white / plaster / ceramic 0.62, concrete / stone /
 # tile / floor 0.4: a dark name returns no bounce light, which is the lever for a dark hall.
