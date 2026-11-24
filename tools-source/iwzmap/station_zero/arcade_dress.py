@@ -16,11 +16,21 @@ PROP_CAP, LIGHT_CAP = 760, 52
 MODELS_TXT = r'C:\studio-data\sz\arcade\r1\models.txt'
 
 HUE = {'photo': (0.10, 0.85, 1.00), 'heel': (1.00, 0.52, 0.08), 'hole9': (1.00, 0.22, 0.68), 'copy': (0.22, 0.42, 1.00), 'needle': (1.00, 0.14, 0.18)}
-TUBE = {'photo': 'w/metal_light_line_lightblue_03', 'heel': 'w/zmb_neon_orange', 'hole9': 'w/zmb_neon_pink', 'copy': 'w/plastic_wall_panel_light_02_on_blue', 'needle': 'w/plastic_wall_panel_light_02_on_red'}
+TUBE = {'photo': 'w/metal_light_line_lightblue_03', 'heel': 'w/zmb_neon_orange', 'hole9': 'w/emissive_light_panel_pink', 'copy': 'w/plastic_wall_panel_light_02_on_blue', 'needle': 'w/plastic_wall_panel_light_02_on_red'}
 SIGN = {'photo': 'sign_zombies_cosmic_cinema_on', 'heel': 'sign_zombies_octonian_pitstop_on', 'hole9': 'sign_zombies_crater_cakes_on', 'copy': 'sign_zombies_moon_shakes_on', 'needle': 'sign_cosmic_tunes_on'}
 SIGN_OFF = ['sign_zombies_cosmic_cinema', 'sign_cosmic_tunes', 'sign_zombies_crater_cakes', 'sign_zombies_octonian_pitstop']
 
 _zones = {}
+# a live session takes 64 distinct models (studio/live.py MAX_MODELS; fault FA8): the document keeps to 63 kinds, the rest is mapped onto a kind that stays, or dropped (None)
+G = 'pipe_metal_painted_straight_128_gray'
+SUBST = {'p7_diner_table_napkin_clean': None, 'ma_cup_stack': None, 'food_trash_bag_chips_01': None, 'base_book_stack_01a': None, 'com_magazine_english_stack_04': 'magazines_01_newspaper_stack',
+         'com_debris_paper_iw6_01': None, 'com_debris_paper_iw6_02': None, 'pipe_metal_painted_straight_128_blue': G, 'pipe_metal_painted_straight_128': G, 'pipe_metal_painted_straight_128_red': G,
+         'hanging_wires_01': 'wire_hanging_ceiling_64', 'newspaper_single_fn_01': None, 'com_trashbin_sml': 'fac_trash_bin', 'soda_machine_zmb': 'park_soda_machine',
+         'furniture_park_bench_01_yellow': 'furniture_park_bench_01_red', 'com_food_snacks_iw6_donuts_shortstack': 'food_snacks_iw6_donutsstack01',
+         'cp_disco_street_telephone_booth': 'street_telephone_booth_old_iw6', 'com_padlock': None, 'cp_disco_subway_locker_key': None, 'dns_tool_pliers01_iw6': None,
+         'cp_town_blueprint_hypnosis_roll': 'cp_town_blueprint_teleporter_roll', 'com_transistor_radio': None, 'beacon_light_plasticcase_red_on': None,
+         'cp_town_chem_lab_computer_01': 'equipment_old_computer', 'cp_town_soda_machine_01': 'park_soda_machine', 'lag_soda_crate': 'ammo_crate_01_dust', 'chair_folding_iw6': None,
+         'zmb_tv_crt_01': None, 'greece_display_cases_08': 'greece_display_cases_11', 'cp_disco_record_sleeve_02': 'cp_disco_record_sleeve_01', 'zmb_ticket_cart_sign': None}
 
 
 def zones_of(model):
@@ -85,6 +95,12 @@ class Dresser:
     def _put(self, model, x, y, yaw, z, tag, scale, emissive, alt, clip, on, margin, ignore_keep, zone):
         if self.n >= PROP_CAP:
             return None, 'cap'
+        if model in SUBST:
+            model = SUBST[model]
+            if model is None:
+                return None, 'zone'
+        if alt in SUBST:
+            alt = SUBST[alt]
         zs = zones_of(model)
         if not zs:
             self.skipped['zone'] += 1
@@ -187,7 +203,7 @@ def bay_geometry_extras(A, m, i):
     # roller shutter drawn half up above the aperture: the curtain z 150..198 in two thirds of the opening's width, the coil box above it, guide rails at the sides
     B.box(m, [a0 - 6.0, yw - 8.0, A.AP_H, a1 + 6.0, yw - 2.0, A.AP_H + 6.0], 'w/metal_painted_01_black', mode='render', id='shutter_frame_%d' % (i + 1))
     B.box(m, [a0, yw - 7.0, 152.0, a1, yw - 4.0, 200.0], A.SHUTTER, mode='render', id='shutter_curtain_%d' % (i + 1))
-    B.box(m, [a0 - 4.0, yw - 11.0, 198.0, a1 + 4.0, yw - 1.0, 214.0], 'w/metal_painted_02_dark', mode='render', id='shutter_coil_%d' % (i + 1))
+    B.box(m, [a0 - 4.0, yw - 11.0, 198.0, a1 + 4.0, yw - 1.0, 214.0], 'w/metal_painted_02', mode='render', id='shutter_coil_%d' % (i + 1))
     B.box(m, [a0 - 6.0, yw - 8.0, 0.0, a0 - 2.0, yw - 2.0, A.AP_H], 'w/metal_painted_01_black', mode='render', id='rail_l_%d' % (i + 1))
     B.box(m, [a1 + 2.0, yw - 8.0, 0.0, a1 + 6.0, yw - 2.0, A.AP_H], 'w/metal_painted_01_black', mode='render', id='rail_r_%d' % (i + 1))
     # neon tube round the aperture (a lit line in the shop's hue)
@@ -231,15 +247,15 @@ def corridor_geometry(A, m):
             if live:
                 A.live.append((x, y))
             n += 1
-        B.box(m, [cx0, y - 18.0, 183.0, cx1, y - 15.0, 188.0], 'w/metal_painted_02_dark', mode='render', id='panel_rail_a_%d' % ri)
-        B.box(m, [cx0, y + 15.0, 183.0, cx1, y + 18.0, 188.0], 'w/metal_painted_02_dark', mode='render', id='panel_rail_b_%d' % ri)
+        B.box(m, [cx0, y - 18.0, 183.0, cx1, y - 15.0, 188.0], 'w/metal_painted_02', mode='render', id='panel_rail_a_%d' % ri)
+        B.box(m, [cx0, y + 15.0, 183.0, cx1, y + 18.0, 188.0], 'w/metal_painted_02', mode='render', id='panel_rail_b_%d' % ri)
     A.panels = n
     # shop fronts of the south wall, shutters down (render only boxes proud of the wall) and their headers
     for k, (x0, x1) in enumerate(((-2480.0, -2220.0), (-1790.0, -1500.0), (-1470.0, -1290.0))):
         yv = cy0
         B.box(m, [x0 - 6.0, yv, 0.0, x1 + 6.0, yv + 5.0, 128.0], 'w/metal_painted_01_black', mode='render', id='front_frame_%d' % k)
         B.box(m, [x0, yv + 5.0, 0.0, x1, yv + 8.0, 122.0], SHUT[k % len(SHUT)], mode='render', id='front_shutter_%d' % k)
-        B.box(m, [x0 - 6.0, yv, 128.0, x1 + 6.0, yv + 9.0, 160.0], ('w/plaster_wall_01_brown', 'w/plaster_wall_01_orange', 'w/plaster_wall_04_beige')[k], mode='render', id='front_header_%d' % k)
+        B.box(m, [x0 - 6.0, yv, 128.0, x1 + 6.0, yv + 9.0, 160.0], ('w/plaster_wall_01_brown', 'w/frag_plaster_orange_dirty', 'w/plaster_wall_04_beige')[k], mode='render', id='front_header_%d' % k)
     # D4: the frame of the doorway in the east wall, hazard stripe
     B.box(m, [cx1 - 4.0, A.DOOR_Y0 - 8.0, 0.0, cx1, A.DOOR_Y0, A.DOOR_Z + 8.0], 'w/metal_painted_01_black', mode='render', id='d4_frame_l')
     B.box(m, [cx1 - 4.0, A.DOOR_Y1, 0.0, cx1, A.DOOR_Y1 + 8.0, A.DOOR_Z + 8.0], 'w/metal_painted_01_black', mode='render', id='d4_frame_r')
@@ -248,10 +264,10 @@ def corridor_geometry(A, m):
     # D7: a closed blast door, half wound: the slab to 128, the coil above it, two lamps
     xw = cx0
     B.box(m, [xw, 3790.0, 0.0, xw + 4.0, 4010.0, 190.0], 'w/metal_painted_01_black', mode='render', id='d7_frame')
-    B.box(m, [xw + 4.0, 3800.0, 0.0, xw + 8.0, 4000.0, 128.0], 'w/metal_door_panels_black_01', mode='render', id='d7_slab')
+    B.box(m, [xw + 4.0, 3800.0, 0.0, xw + 8.0, 4000.0, 128.0], 'w/metal_panel_dark_01', mode='render', id='d7_slab')
     B.box(m, [xw + 4.0, 3800.0, 128.0, xw + 9.0, 4000.0, 140.0], 'w/paint_lines_01_thick_yellow_clean', mode='render', id='d7_hazard')
-    B.box(m, [xw + 4.0, 3796.0, 146.0, xw + 20.0, 4004.0, 176.0], 'w/metal_painted_02_dark', mode='render', id='d7_coil')
-    B.box(m, [xw + 4.0, 3860.0, 56.0, xw + 9.0, 3940.0, 96.0], 'w/signage_caution_stripe_rvl_01' if False else 'w/signage_sign_caution_stripe_rvl_01', mode='render', id='d7_warn')
+    B.box(m, [xw + 4.0, 3796.0, 146.0, xw + 20.0, 4004.0, 176.0], 'w/metal_painted_02', mode='render', id='d7_coil')
+    B.box(m, [xw + 4.0, 3860.0, 56.0, xw + 9.0, 3940.0, 96.0], 'w/paint_lines_01_thick_yellow_clean', mode='render', id='d7_warn')
     # mats in front of every aperture and the carpet runner of the centre
     for i in range(A.BAYS.__len__()):
         a0, a1 = A.aperture(i)
@@ -262,7 +278,7 @@ def corridor_geometry(A, m):
     B.box(m, [A.X1 + A.WT, 3870.0, 0.0, A.X1 + 200.0 - A.WT, 3930.0, 1.2], 'w/fac_rubber_mat_black', mode='render', id='vest_mat')
 
 
-SHUT = ['w/door_metal_rollup_grey_large_01', 'w/cp_disco_metal_door_rollup_01', 'w/cp_disco_metal_door_rollup_01_green']
+SHUT = ['w/door_metal_rollup_grey_large_01'] * 3
 
 
 # ------------------------------------------------------------------------------------------------ content
@@ -497,8 +513,7 @@ BAYZ = 200.0
 
 def clutter(A, D, target):
     """floor litter and small things in the corridor's central band and the shops until `target` props"""
-    pool_floor = ['com_debris_paper_iw6_01', 'com_debris_paper_iw6_02', 'newspaper_single_fn_01', 'cup_paper_open_iw6', 'food_trash_bag_candy_01', 'food_trash_bag_chips_01', 'ma_cup_stack',
-                  'magazines_01_newspaper_stack', 'com_magazine_english_stack_04', 'base_book_stack_01a', 'p7_diner_table_napkin_clean', 'com_copypaper_box']
+    pool_floor = ['cup_paper_open_iw6', 'food_trash_bag_candy_01', 'magazines_01_newspaper_stack', 'com_copypaper_box', 'cup_paper_open_iw6', 'magazines_01_newspaper_stack']
     regions = [(A.X0 + 30.0, 3700.0, A.X1 - 30.0, 4130.0)]
     for i in range(5):
         s = A.BAY_X[i]
@@ -534,7 +549,8 @@ def ceiling_props(A, D):
 
 def _ceil(self, model, x, y, yaw, zc):
     """a ceiling prop by the centre of its bounds at height zc"""
-    if self.n >= PROP_CAP or not zones_of(model):
+    model = SUBST.get(model, model)
+    if self.n >= PROP_CAP or not model or not zones_of(model):
         return None
     mn, mx = self.bounds(model)
     c = ((mn[0] + mx[0]) / 2.0, (mn[1] + mx[1]) / 2.0, (mn[2] + mx[2]) / 2.0)
@@ -570,20 +586,20 @@ def lights(A, m, report):
         if len(chosen) == 12:
             break
     for k, (x, y) in enumerate(chosen):
-        L((x, y, 176.0), color=(0.86, 1.0, 0.90), radius=150.0, intensity=0.62, type='spot', dir=(0.0, 0.0, -1.0), inner=10.0, outer=34.0, id='light_pool_%d' % k)
+        L((x, y, 176.0), color=(0.86, 1.0, 0.90), radius=170.0, intensity=1.5, type='spot', dir=(0.0, 0.0, -1.0), inner=10.0, outer=34.0, id='light_pool_%d' % k)
     for i in range(5):
         kind = A.BAYS[i]
         hue = HUE[kind]
         s = A.BAY_X[i]
         cx = s + A.BAY_W / 2.0
         h = 176.0
-        L((cx, A.Y1 + 90.0, h), color=hue, radius=max(h * 2.0, 200.0), intensity=round(0.275 * (h / 200.0) ** 2, 4), type='spot', dir=(0.0, 0.0, -1.0), inner=22.0, outer=62.0, id='light_key_%d' % (i + 1))
+        L((cx, A.Y1 + 90.0, h), color=hue, radius=max(h * 2.0, 200.0), intensity=round(0.45 * (h / 200.0) ** 2, 4), type='spot', dir=(0.0, 0.0, -1.0), inner=22.0, outer=62.0, id='light_key_%d' % (i + 1))
         wp = (cx, A.Y1 + 36.0, h)
         wt = (cx, A.BACK_Y, 95.0)
         dist = math.sqrt(sum((a - b) ** 2 for a, b in zip(wp, wt)))
         d = [(wt[j] - wp[j]) / dist for j in range(3)]
-        L(wp, color=tuple(round(0.12 + 0.88 * c, 3) for c in hue), radius=round(dist * 1.8, 1), intensity=round(0.385 * (dist / 200.0) ** 2, 4), type='spot', dir=d, inner=14.0, outer=44.0, id='light_wash_%d' % (i + 1))
-        L((cx, A.Y1 - A.WT - 70.0, 150.0), color=hue, radius=110.0, intensity=0.096, id='light_neon_%d' % (i + 1))
+        L(wp, color=tuple(round(0.12 + 0.88 * c, 3) for c in hue), radius=round(dist * 1.8, 1), intensity=round(0.6 * (dist / 200.0) ** 2, 4), type='spot', dir=d, inner=14.0, outer=44.0, id='light_wash_%d' % (i + 1))
+        L((cx, A.Y1 - A.WT - 70.0, 150.0), color=hue, radius=130.0, intensity=0.28, id='light_neon_%d' % (i + 1))
         L((cx, A.Y1 + 235.0, 130.0), color=tuple(round(0.5 * c, 3) for c in hue), radius=120.0, intensity=0.006, id='light_back_%d' % (i + 1))
     L((A.X1 - 60.0, 3900.0, 170.0), color=(1.0, 0.85, 0.5), radius=170.0, intensity=0.18, type='spot', dir=(0.0, 0.0, -1.0), inner=20.0, outer=60.0, id='light_d4')
     L((A.X0 + 60.0, 3900.0, 170.0), color=(1.0, 0.1, 0.05), radius=170.0, intensity=0.12, type='spot', dir=(0.0, 0.0, -1.0), inner=20.0, outer=60.0, id='light_d7')
@@ -609,6 +625,8 @@ def dress(A, m, foreign=None):
     clutter(A, D, PROP_CAP - 14)
     report = {}
     lights(A, m, report)
+    report['distinct_models'] = len({p['model'] for p in m.flat().props})
+    assert report['distinct_models'] <= 64, report['distinct_models']
     report.update({'props': D.n, 'skipped': D.skipped, 'foreign_models': D.foreign, 'panels': A.panels, 'live_panels': len(A.live)})
     report['failed_hand'] = [f for f in D.failed if not f[0] in ()]
     m.dress_report = report

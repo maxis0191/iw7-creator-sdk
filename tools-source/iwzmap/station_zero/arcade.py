@@ -26,12 +26,12 @@ BACK_Y = 4470.0                             # the partition of every bay: back r
 DOOR_Y0, DOOR_Y1, DOOR_Z = 3804.0, 3996.0, 224.0
 
 # materials (those of examples/arcade.py are proven in the game; the others are new and judged on the first frames)
-WALL, CEIL = 'w/plaster_wall_01_beige', 'w/plaster_wall_04_grey_dark_02'
-FLOOR = 'w/stone_marble_tile_checker_01_brown'
+WALL, CEIL = 'w/plaster_wall_01_brown', 'w/plaster_wall_04_grey_dark_02'
+FLOOR = 'w/wood_rustic_floor_02'
 FLOOR_B = 'w/stone_marble_tile_checker_01_brown'
 SHUTTER = 'w/door_metal_rollup_grey_large_01'
-BAYWALL = ['w/plaster_wall_01_orange', 'w/plaster_wall_01_brown', 'w/plaster_wall_04_beige', 'w/plaster_wall_01_yellow', 'w/plaster_wall_01_brown']
-PANEL_LIVE, PANEL_DEAD = 'w/fluorescent_light_diffuser_03', 'w/glass_led_light_diffuser_01_unlit'
+BAYWALL = ['w/plaster_wall_04_turquoise', 'w/frag_brick_painted_orange', 'w/plaster_wall_04_beige', 'w/iw7_drywall_painted_blue_01', 'w/iw7_drywall_painted_red_02']
+PANEL_LIVE, PANEL_DEAD = 'w/glass_led_light_diffuser_01', 'w/plastic_wall_panel_light_02_off'
 BAYS = ['photo', 'heel', 'hole9', 'copy', 'needle']
 
 
@@ -103,11 +103,11 @@ def build_arcade(m, standalone=True, stage='full'):
     return m
 
 
-EMISSIVE = {PANEL_LIVE: {'color': [0.72, 1.0, 0.78], 'strength': 0.9},
-            'w/metal_light_line_lightblue_03': {'color': [0.10, 0.85, 1.0], 'strength': 1.4}, 'w/zmb_neon_orange': {'color': [1.0, 0.52, 0.08], 'strength': 1.4},
-            'w/zmb_neon_pink': {'color': [1.0, 0.22, 0.68], 'strength': 1.4}, 'w/plastic_wall_panel_light_02_on_blue': {'color': [0.22, 0.42, 1.0], 'strength': 1.4},
-            'w/plastic_wall_panel_light_02_on_red': {'color': [1.0, 0.14, 0.18], 'strength': 1.4}}
-LIGHTING = {'prop_shadows': True, 'ambient': 0.0045, 'bounces': 3, 'emissive': EMISSIVE}
+EMISSIVE = {PANEL_LIVE: {'color': [0.72, 1.0, 0.78], 'strength': 1.6},
+            'w/metal_light_line_lightblue_03': {'color': [0.10, 0.85, 1.0], 'strength': 2.6}, 'w/zmb_neon_orange': {'color': [1.0, 0.52, 0.08], 'strength': 2.6},
+            'w/emissive_light_panel_pink': {'color': [1.0, 0.22, 0.68], 'strength': 2.6}, 'w/plastic_wall_panel_light_02_on_blue': {'color': [0.22, 0.42, 1.0], 'strength': 2.6},
+            'w/plastic_wall_panel_light_02_on_red': {'color': [1.0, 0.14, 0.18], 'strength': 2.6}}
+LIGHTING = {'prop_shadows': True, 'ambient': 0.006, 'bounces': 3, 'emissive': EMISSIVE}
 
 
 def new_map(name='arcade_r1'):
