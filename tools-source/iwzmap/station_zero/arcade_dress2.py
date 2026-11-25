@@ -175,10 +175,11 @@ def decals(A, m):
 # ------------------------------------------------------------------------------------------------ the shop kit
 class Shelf:
     """a geometry shelf unit: uprights, boards, an invisible collision box; slots() yields stock positions per level"""
-    def __init__(self, m, id, rect, front, levels, board='w/wood_antique_panel_trim_01', frame='w/metal_painted_01_black', top=96.0):
+    def __init__(self, m, id, rect, front, levels, board='w/wood_antique_panel_trim_01', frame='w/metal_painted_01_black', top=96.0, clip=True):
         self.rect, self.front, self.levels, self.top = rect, front, levels, top
         x0, y0, x1, y1 = rect
-        B.clip(m, [x0, y0, 0.0, x1, y1, top], id=id + '_clip')
+        if clip:
+            B.clip(m, [x0, y0, 0.0, x1, y1, top], id=id + '_clip')
         for k, z in enumerate(levels):
             box(m, [x0, y0, z - 2.0, x1, y1, z], board, id='%s_b%d' % (id, k))
         # back panel and ends: thin dark
