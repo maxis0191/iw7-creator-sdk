@@ -35,8 +35,8 @@ class BringMaterialsTest(unittest.TestCase):
                 for e in exts:
                     put(self.dump, 'techsets/%s/%s/%s%s' % (sub, ts, mat, e))
             put(self.dump, 'images/%s_c.iw7Image' % mat[2:])
-        put(self.dump, 'techsets/ts_new.techset', b'\x00ts_new.tech.technique\x00')
-        put(self.dump, 'techsets/ts_new.tech.technique', b'\x00pp.7\x00 0123456789abcdef\x00')
+        put(self.dump, 'techsets/ts_new.techset', b'\x00ts_new.tech\x00')
+        put(self.dump, 'techsets/ts_new.tech.technique', b'\x00pp.7\x000123456789abcdef\x00')
         put(self.dump, 'techsets/pp.7.vertexdecl')
         put(self.dump, 'techsets/ps/0123456789abcdef.cso')
         self.rt = os.path.join(d, 'rt.csv')
