@@ -259,7 +259,7 @@
    "hook": "match_start",
    "when": "first departure (round 1)",
    "en": "Good evening. The twenty-three forty-seven Zero Line service is now boarding at Platform A. Please stand clear of the doors.",
-   "fr": "Bonsoir. Le vingt-trois heures quarante-sept, ligne Zéro, est à l'embarquement, quai A. Veuillez vous écarter des portes.",
+   "fr": "Bonsoir. Le vingt-trois heures quarante-sept, ligne Zéro, embarque quai A. Écartez-vous des portes.",
    "recorded": true
   },
   {
@@ -268,8 +268,8 @@
    "group": "round start",
    "hook": "round_start",
    "when": "ordinary round, variant 1",
-   "en": "The twenty-three forty-seven for Zero Line is now boarding. Please watch the edge, and each other.",
-   "fr": "Le vingt-trois heures quarante-sept, ligne Zéro, est à l'embarquement. Attention à la bordure du quai. Et les uns aux autres.",
+   "en": "The twenty-three forty-seven on the Zero Line is now boarding. Watch the edge, and each other.",
+   "fr": "Le vingt-trois heures quarante-sept, ligne Zéro, embarque. Attention au bord du quai. Et aux autres.",
    "recorded": false
   },
   {
@@ -278,8 +278,8 @@
    "group": "round start",
    "hook": "round_start",
    "when": "ordinary round, variant 2",
-   "en": "Departure announced. All passengers for the Zero Line, please make your way to Platform A.",
-   "fr": "Départ annoncé. Tous les voyageurs de la ligne Zéro sont priés de se diriger vers le quai A.",
+   "en": "Departure announced. Passengers for the Zero Line, please proceed to Platform A.",
+   "fr": "Départ annoncé. Voyageurs ligne Zéro, rendez-vous quai A.",
    "recorded": true
   },
   {
@@ -288,8 +288,8 @@
    "group": "round start",
    "hook": "round_start",
    "when": "ordinary round, variant 3",
-   "en": "Boarding has resumed. Thank you for travelling with Halcyon Rapid Transit.",
-   "fr": "L'embarquement a repris. Halcyon Rapid Transit vous remercie de votre confiance.",
+   "en": "Boarding has resumed. Thank you for riding Halcyon Rapid Transit.",
+   "fr": "L'embarquement reprend. Halcyon Rapid Transit vous remercie.",
    "recorded": true
   },
   {
@@ -298,8 +298,8 @@
    "group": "round start",
    "hook": "round_start",
    "when": "every fifth round",
-   "en": "A reminder that the Zero Line is never late. Departures will continue until the arrival is recorded.",
-   "fr": "Nous vous rappelons que la ligne Zéro n'est jamais en retard. Les départs se poursuivront jusqu'à l'enregistrement de l'arrivée.",
+   "en": "Reminder: the Zero Line is never late. Departures continue until arrival is confirmed.",
+   "fr": "Rappel : la ligne Zéro n'est jamais en retard. Les départs continuent jusqu'à l'arrivée.",
    "recorded": false
   },
   {
@@ -308,8 +308,8 @@
    "group": "round start",
    "hook": "round_start",
    "when": "round 25 and later",
-   "en": "Platform A is very busy this evening. Please board in an orderly fashion. Everyone will be seated.",
-   "fr": "Le quai A est très fréquenté ce soir. Veuillez embarquer dans le calme. Tout le monde aura une place.",
+   "en": "Platform A is busy tonight. Please board calmly. Everyone will get a seat.",
+   "fr": "Forte affluence quai A ce soir. Embarquez calmement. Chacun aura sa place.",
    "recorded": false
   },
   {
@@ -319,7 +319,7 @@
    "hook": "last_alive",
    "when": "a single passenger left standing",
    "en": "Passenger, you are the last one on the platform. Your train is waiting.",
-   "fr": "Voyageur, vous êtes le dernier sur le quai. Votre train vous attend.",
+   "fr": "Dernier voyageur sur le quai. Votre train vous attend.",
    "recorded": false
   },
   {
@@ -328,8 +328,8 @@
    "group": "Roller round",
    "hook": "rollers",
    "when": "",
-   "en": "A private party service is arriving at Platform A. Skates are not permitted on the platform.",
-   "fr": "Un service privé de soirée arrive au quai A. Les patins à roulettes sont interdits sur le quai.",
+   "en": "A private charter is arriving at Platform A. Skates are not permitted on the platform.",
+   "fr": "Train spécial en approche, quai A. Patins à roulettes interdits sur le quai.",
    "recorded": true
   },
   {
@@ -338,8 +338,8 @@
    "group": "Roller round",
    "hook": "rollers",
    "when": "",
-   "en": "The Orbit Rink Roll-In is now boarding at car six. Please keep to the right, and keep moving.",
-   "fr": "Le Roll-In de l'Orbit Rink embarque en voiture six. Serrez à droite, et ne vous arrêtez pas.",
+   "en": "Orbit Rink Roll-In now boarding at car six. Keep right, and keep moving.",
+   "fr": "Soirée Orbit Rink : embarquement voiture six. Serrez à droite, ne bloquez pas.",
    "recorded": false
   },
   {
@@ -349,7 +349,7 @@
    "hook": "rollers",
    "when": "",
    "en": "Passengers on wheels are reminded that the platform has no brakes.",
-   "fr": "Nous rappelons aux voyageurs sur roulettes que le quai n'a pas de freins.",
+   "fr": "Rappel aux voyageurs à roulettes : le quai n'a pas de freins.",
    "recorded": false
   },
   {
@@ -358,8 +358,8 @@
    "group": "Roller round",
    "hook": "rollers",
    "when": "",
-   "en": "The party service has ended. Halcyon Rapid Transit wishes you a happy New Year.",
-   "fr": "Le service de soirée est terminé. Halcyon Rapid Transit vous souhaite une bonne année.",
+   "en": "Charter service has ended. Halcyon Rapid Transit wishes you a happy New Year.",
+   "fr": "Fin du train spécial. Halcyon Rapid Transit vous souhaite une bonne année.",
    "recorded": true
   },
   {
@@ -369,7 +369,7 @@
    "hook": "inspector",
    "when": "",
    "en": "Fare inspection is now in progress. Please have your ticket ready, and be honest with yourself.",
-   "fr": "Contrôle des titres de transport en cours. Préparez votre billet, et soyez honnête avec vous-même.",
+   "fr": "Contrôle des titres en cours. Préparez votre billet, et soyez honnête avec vous-même.",
    "recorded": false
   },
   {
@@ -378,8 +378,8 @@
    "group": "Night Inspector",
    "hook": "inspector",
    "when": "",
-   "en": "An inspector is on the platform. Passengers without a valid ticket should make themselves known.",
-   "fr": "Un contrôleur est sur le quai. Les voyageurs sans titre valable sont priés de se signaler.",
+   "en": "An inspector is on the platform. Passengers without a valid ticket, please step forward.",
+   "fr": "Un contrôleur est sur le quai. Voyageurs sans titre valable, présentez-vous.",
    "recorded": true
   },
   {
@@ -389,7 +389,7 @@
    "hook": "inspector",
    "when": "",
    "en": "Inspection continues. The inspector has all night.",
-   "fr": "Le contrôle se poursuit. Le contrôleur a toute la nuit.",
+   "fr": "Le contrôle continue. Le contrôleur a toute la nuit.",
    "recorded": false
   },
   {
@@ -399,7 +399,7 @@
    "hook": "inspector",
    "when": "",
    "en": "Fare inspection is complete. Thank you for your cooperation.",
-   "fr": "Le contrôle est terminé. Merci de votre coopération.",
+   "fr": "Fin du contrôle. Merci de votre coopération.",
    "recorded": true
   },
   {
@@ -408,8 +408,8 @@
    "group": "Night Inspector",
    "hook": "inspector",
    "when": "the first inspection of a match, once",
-   "en": "Passengers found without a valid ticket will be charged a penalty fare.",
-   "fr": "Tout voyageur sans titre valable devra s'acquitter d'une amende forfaitaire.",
+   "en": "Passengers without a valid ticket will be charged a penalty fare.",
+   "fr": "Tout voyageur sans billet valable paiera une amende immédiate.",
    "recorded": true
   },
   {
@@ -419,7 +419,7 @@
    "hook": "power_on",
    "when": "the map's first full sentence",
    "en": "Main power has been restored. Thank you for your patience. It has been a long time.",
-   "fr": "L'alimentation principale est rétablie. Merci de votre patience. Cela faisait longtemps.",
+   "fr": "Alimentation principale rétablie. Merci de votre patience. Cela faisait si longtemps.",
    "recorded": false,
    "slot": "audio module power sequence (p.pa_line), after the garbled V17"
   },
@@ -440,8 +440,8 @@
    "group": "quest",
    "hook": "clock_wound",
    "when": "",
-   "en": "One of four station clocks has been corrected. Thank you.",
-   "fr": "Une des quatre horloges de la station a été corrigée. Merci.",
+   "en": "One of four station clocks is back on time. Thank you.",
+   "fr": "Une horloge sur quatre est remise à l'heure. Merci.",
    "recorded": false
   },
   {
@@ -451,7 +451,7 @@
    "hook": "clock_wound",
    "when": "",
    "en": "Two of four station clocks now agree.",
-   "fr": "Deux des quatre horloges de la station sont désormais d'accord.",
+   "fr": "Deux horloges sur quatre indiquent la même heure.",
    "recorded": false
   },
   {
@@ -461,7 +461,7 @@
    "hook": "clock_wound",
    "when": "",
    "en": "Three of four. The time is nearly right.",
-   "fr": "Trois sur quatre. L'heure est presque juste.",
+   "fr": "Trois sur quatre. L'heure est presque bonne.",
    "recorded": false
   },
   {
@@ -471,7 +471,7 @@
    "hook": "clock_wound",
    "when": "",
    "en": "The thirteen minutes have been accounted for. Thank you.",
-   "fr": "Les treize minutes ont été retrouvées. Merci.",
+   "fr": "Les treize minutes manquantes ont été retrouvées. Merci.",
    "recorded": false
   },
   {
@@ -481,7 +481,7 @@
    "hook": "road_set",
    "when": "",
    "en": "The road is set. The twenty-three forty-seven has a clear signal.",
-   "fr": "L'itinéraire est formé. Le vingt-trois heures quarante-sept a le signal ouvert.",
+   "fr": "Voie libre. Le vingt-trois heures quarante-sept a le signal ouvert.",
    "recorded": true
   },
   {
@@ -491,7 +491,7 @@
    "hook": "conductor",
    "when": "",
    "en": "The conductor of the twenty-three forty-seven is on the platform. Please give him room.",
-   "fr": "Le chef de bord du vingt-trois heures quarante-sept est sur le quai. Merci de lui laisser de la place.",
+   "fr": "Le chef de bord du vingt-trois heures quarante-sept est sur le quai. Laissez-lui le passage.",
    "recorded": false
   },
   {
@@ -500,8 +500,8 @@
    "group": "quest",
    "hook": "conductor",
    "when": "the Handle taken",
-   "en": "Lost property: one dead-man's handle, brass. It has been collected.",
-   "fr": "Objets trouvés : une manette d'homme mort, en laiton. Elle a été récupérée.",
+   "en": "Lost and found: one brass dead-man's handle. Claimed.",
+   "fr": "Objets trouvés : une manette d'homme mort en laiton. Réclamée.",
    "recorded": false
   },
   {
@@ -510,8 +510,8 @@
    "group": "quest",
    "hook": "terminus",
    "when": "the Handle fitted",
-   "en": "The driver's position is staffed. The twenty-three forty-seven is now boarding for the Terminus. Boarding... closes... at midnight.",
-   "fr": "Le poste de conduite est occupé. Le vingt-trois heures quarante-sept embarque pour le Terminus. Fin de l'embarquement... à minuit.",
+   "en": "Cab staffed. The twenty-three forty-seven is boarding for the Terminus. Boarding... closes... at midnight.",
+   "fr": "Cabine occupée. Le vingt-trois heures quarante-sept embarque pour le Terminus. Fin... à minuit.",
    "recorded": false
   },
   {
@@ -561,8 +561,8 @@
    "group": "quest",
    "hook": "terminus",
    "when": "during the cooldown",
-   "en": "The Terminus service is out of service. Please wait for the next departure.",
-   "fr": "La desserte du Terminus est interrompue. Veuillez attendre le prochain départ.",
+   "en": "Terminus service is suspended. Please wait for the next departure.",
+   "fr": "Desserte du Terminus suspendue. Patientez jusqu'au prochain départ.",
    "recorded": false
   },
   {
@@ -572,7 +572,7 @@
    "hook": "capsule_post",
    "when": "",
    "en": "Insufficient postage. Please add points and try again.",
-   "fr": "Affranchissement insuffisant. Veuillez ajouter des points et réessayer.",
+   "fr": "Affranchissement insuffisant. Ajoutez des points et réessayez.",
    "recorded": false
   },
   {
@@ -582,7 +582,7 @@
    "hook": "capsule_post",
    "when": "",
    "en": "This tube is sealed. Please use another hatch.",
-   "fr": "Ce tube est scellé. Veuillez utiliser une autre trappe.",
+   "fr": "Tube condamné. Utilisez une autre trappe.",
    "recorded": false
   },
   {
@@ -591,8 +591,8 @@
    "group": "Capsule Post",
    "hook": "capsule_post",
    "when": "",
-   "en": "No capsule at this hatch. A capsule is on its way.",
-   "fr": "Aucune capsule à cette trappe. Une capsule est en route.",
+   "en": "No capsule at this hatch. One is on the way.",
+   "fr": "Aucune capsule ici. Une capsule arrive.",
    "recorded": false
   },
   {
@@ -601,8 +601,8 @@
    "group": "Capsule Post",
    "hook": "capsule_post",
    "when": "",
-   "en": "The tubes are changing direction. Please stand clear of the hatches.",
-   "fr": "Les tubes changent de sens. Veuillez vous écarter des trappes.",
+   "en": "Tubes reversing. Stand clear of the hatches.",
+   "fr": "Inversion des tubes. Écartez-vous des trappes.",
    "recorded": false
   },
   {
@@ -611,8 +611,8 @@
    "group": "Capsule Post",
    "hook": "capsule_post",
    "when": "",
-   "en": "Postal inspection. Riders keep their inspector's marks.",
-   "fr": "Inspection du courrier. Les marques du contrôleur restent valables.",
+   "en": "Postal inspection. Inspector's marks remain valid.",
+   "fr": "Contrôle postal. Les marques du contrôleur restent valables.",
    "recorded": false
   },
   {
@@ -622,7 +622,7 @@
    "hook": "capsule_post",
    "when": "",
    "en": "Hatch unsealed. Mind your fingers.",
-   "fr": "Trappe descellée. Attention à vos doigts.",
+   "fr": "Trappe déverrouillée. Attention aux doigts.",
    "recorded": false
   },
   {
@@ -632,7 +632,7 @@
    "hook": "pay_phone",
    "when": "Fare Hall line, once a match",
    "en": "...your call to the twenty-three forty-seven... will be... connected... shortly.",
-   "fr": "...votre appel au vingt-trois heures quarante-sept... sera... mis en relation... sous peu.",
+   "fr": "...votre appel au vingt-trois heures quarante-sept... va être... transmis...",
    "recorded": false
   },
   {
@@ -652,7 +652,7 @@
    "hook": "pay_phone",
    "when": "",
    "en": "...please hold. A passenger will be with you...",
-   "fr": "...veuillez patienter. Un voyageur va vous répondre...",
+   "fr": "...ne quittez pas. Un voyageur va vous répondre...",
    "recorded": false
   },
   {
@@ -661,8 +661,8 @@
    "group": "pay phone",
    "hook": "pay_phone",
    "when": "",
-   "en": "...the number you have dialled is... on the platform...",
-   "fr": "...le numéro que vous avez composé est... sur le quai...",
+   "en": "...the number you dialed is... on the platform...",
+   "fr": "...le numéro composé est... sur le quai...",
    "recorded": false
   },
   {
@@ -671,8 +671,8 @@
    "group": "pay phone",
    "hook": "pay_phone",
    "when": "",
-   "en": "...we apologise for the... midnight...",
-   "fr": "...nous vous prions d'excuser ce... minuit...",
+   "en": "...we apologize for the... midnight...",
+   "fr": "...veuillez excuser ce... minuit...",
    "recorded": false
   },
   {
@@ -764,8 +764,8 @@
    "group": "secrets",
    "hook": "secret",
    "when": "the manifest printer",
-   "en": "Your name has been added to the passenger manifest. Thank you for travelling tonight.",
-   "fr": "Votre nom a été ajouté au manifeste des voyageurs. Merci de voyager avec nous ce soir.",
+   "en": "Your name is now on the passenger manifest. Thank you for riding tonight.",
+   "fr": "Votre nom figure au manifeste des voyageurs. Merci de voyager ce soir.",
    "recorded": false
   },
   {
@@ -774,8 +774,8 @@
    "group": "game over",
    "hook": "game_over",
    "when": "",
-   "en": "This service terminates here. Passengers should leave by the nearest exit, if there is one.",
-   "fr": "Ce service se termine ici. Les voyageurs sont priés de sortir par la sortie la plus proche, s'il y en a une.",
+   "en": "This train terminates here. Exit by the nearest door, if there is one.",
+   "fr": "Terminus. Tous les voyageurs descendent, s'il reste une sortie.",
    "recorded": false
   },
   {
@@ -784,8 +784,8 @@
    "group": "PA rotation (g27 now)",
    "hook": "pa_ambient",
    "when": "",
-   "en": "We apologise for the delay. Your train will be with you shortly.",
-   "fr": "Nous vous prions d'excuser ce retard. Votre train arrivera dans quelques instants.",
+   "en": "We apologize for the delay. Your train arrives shortly.",
+   "fr": "Veuillez excuser ce retard. Votre train arrive dans un instant.",
    "recorded": true,
    "note": "replaces the BO3 zm_island facility line of this slot (borrowed audio; 01-LORE originality rule)",
    "slot": "amb_iwz_pa_00"
@@ -796,8 +796,8 @@
    "group": "PA rotation (g27 now)",
    "hook": "pa_ambient",
    "when": "",
-   "en": "This is a Zero Line service to the Terminus. All stations to the Terminus.",
-   "fr": "Ce train de la ligne Zéro est à destination du Terminus. Il dessert toutes les gares jusqu'au Terminus.",
+   "en": "Zero Line service to the Terminus. Making all stops.",
+   "fr": "Train ligne Zéro pour le Terminus. Dessert toutes les stations.",
    "recorded": false,
    "note": "replaces the BO3 zm_island facility line of this slot (borrowed audio; 01-LORE originality rule)",
    "slot": "amb_iwz_pa_01"
@@ -808,8 +808,8 @@
    "group": "PA rotation (g27 now)",
    "hook": "pa_ambient",
    "when": "",
-   "en": "Watch the edge between the train and the platform.",
-   "fr": "Attention à l'espace entre le train et le quai.",
+   "en": "Watch your step between the train and the platform.",
+   "fr": "Attention à la marche en descendant du train.",
    "recorded": true,
    "note": "replaces the BO3 zm_island facility line of this slot (borrowed audio; 01-LORE originality rule)",
    "slot": "amb_iwz_pa_02"
@@ -820,8 +820,8 @@
    "group": "PA rotation (g27 now)",
    "hook": "pa_ambient",
    "when": "",
-   "en": "Passenger, your train is waiting. Please return to your carriage.",
-   "fr": "Voyageur, votre train vous attend. Veuillez regagner votre voiture.",
+   "en": "Passenger, your train is waiting. Please return to your car.",
+   "fr": "Voyageur, votre train attend. Regagnez votre voiture.",
    "recorded": false,
    "note": "replaces the BO3 zm_island facility line of this slot (borrowed audio; 01-LORE originality rule)",
    "slot": "amb_iwz_pa_03"
@@ -833,7 +833,7 @@
    "hook": "pa_ambient",
    "when": "",
    "en": "Midnight has been delayed. We regret that this is not unusual.",
-   "fr": "Minuit a été retardé. Nous regrettons que cela ne soit pas inhabituel.",
+   "fr": "Minuit accuse un retard. Nous regrettons que cela devienne habituel.",
    "recorded": false,
    "note": "replaces the BO3 zm_island facility line of this slot (borrowed audio; 01-LORE originality rule)",
    "slot": "amb_iwz_pa_04"
@@ -844,8 +844,8 @@
    "group": "PA rotation (g27 now)",
    "hook": "pa_ambient",
    "when": "",
-   "en": "Halcyon Rapid Transit reminds passengers that smoking, spitting and running are not permitted on the platform. Waiting is.",
-   "fr": "Halcyon Rapid Transit rappelle aux voyageurs qu'il est interdit de fumer, de cracher et de courir sur le quai. Attendre est autorisé.",
+   "en": "Halcyon Rapid Transit reminds you: no smoking, spitting, or running on the platform. Waiting is permitted.",
+   "fr": "Halcyon Rapid Transit rappelle : interdit de fumer, cracher ou courir sur le quai. Attendre reste autorisé.",
    "recorded": false,
    "note": "replaces the BO3 zm_island facility line of this slot (borrowed audio; 01-LORE originality rule)",
    "slot": "amb_iwz_pa_05"
@@ -857,7 +857,7 @@
    "hook": "relay_on",
    "when": "level.iwz_relays_on == 1",
    "en": "Signal relay one of three is proving. Thank you.",
-   "fr": "Relais de signalisation un sur trois : contrôle établi. Merci.",
+   "fr": "Relais de signalisation un sur trois validé. Merci.",
    "recorded": false
   },
   {
@@ -867,7 +867,7 @@
    "hook": "relay_on",
    "when": "level.iwz_relays_on == 2",
    "en": "Relay two of three is proving. The road is nearly set.",
-   "fr": "Relais deux sur trois : contrôle établi. L'itinéraire est presque formé.",
+   "fr": "Relais deux sur trois validé. La voie est presque libre.",
    "recorded": false
   },
   {
@@ -876,8 +876,8 @@
    "group": "g27 quest",
    "hook": "pap_open",
    "when": "the third relay: the PaP shutter opens",
-   "en": "All relays proving. The service door of the control room is now open. Please mind the gap.",
-   "fr": "Tous les relais sont en contrôle. La porte de service de la salle de commande est ouverte. Attention à la marche.",
+   "en": "All relays proving. Control-room service door is open. Watch your step.",
+   "fr": "Tous les relais validés. Porte de la salle de commande ouverte. Attention à la marche.",
    "recorded": false
   },
   {
@@ -896,8 +896,8 @@
    "group": "g27 purchases",
    "hook": "trap_bought",
    "when": "the third-rail trap armed",
-   "en": "Danger. The conductor rail is live. Please stand behind the yellow line.",
-   "fr": "Danger. Le rail conducteur est sous tension. Veuillez rester derrière la ligne jaune.",
+   "en": "Danger. The third rail is live. Stand behind the yellow line.",
+   "fr": "Danger. Troisième rail sous tension. Restez derrière la ligne jaune.",
    "recorded": true
   },
   {
@@ -1060,8 +1060,8 @@
    "group": "tapes",
    "hook": "secret",
    "when": "14 April 1983; found in the Cordon, the Channel 9 van",
-   "en": "Tape one. Strand, Lodestar, Station Zero site office. The Zero Line opens on New Year's Eve next year with no drivers, and the express bypass is the problem. The cheapest route is an arch the 1931 surveyors marked old sewer, bricked and never opened. If it holds, we save eleven months. I have asked for the drawings. I am told asking is a formality.",
-   "fr": "Cassette une. Strand, Lodestar, bureau de chantier de la station Zéro. La ligne Zéro ouvre le soir du réveillon l'an prochain, sans conducteurs, et la dérivation express est le problème. Le tracé le moins cher passe par une voûte que les géomètres de 1931 ont notée « ancien égout », murée et jamais ouverte. Si elle tient, nous gagnons onze mois. J'ai demandé les plans. On me dit que demander est une formalité.",
+   "en": "Tape one. Strand, Lodestar, Station Zero site office. The Zero Line opens next New Year's Eve, driverless, and the bypass is the bottleneck. Cheapest route cuts through an arch the 1931 surveyors marked old sewer, bricked and never opened. If it holds, we save eleven months. I asked for the drawings. Told asking is a formality.",
+   "fr": "Cassette une. Strand, Lodestar, chantier Station Zéro. La ligne Zéro ouvre au prochain réveillon, sans conducteurs, et la dérivation bloque tout. Le tracé le moins cher passe par une voûte notée « ancien égout » en 1931, murée et jamais ouverte. Si elle tient, on gagne onze mois. J'ai demandé les plans. Une formalité, paraît-il.",
    "max_s": 50
   },
   {
@@ -1070,8 +1070,8 @@
    "group": "tapes",
    "hook": "secret",
    "when": "17 August 1983; found in the Arcade, Hole Number Nine",
-   "en": "Tape two. The cut broke through this morning. Behind it there is a salon: parquet, gas chandeliers, and a wall of tuning forks in a walnut frame. A company called the Halcyon Atmospheric ran a pneumatic parcel post here from 1893, and for one season in 1897 sent people through it in capsules. Its builder, Ambrose Vayle, left notebooks. He tuned the main like an organ pipe, to send passengers where the dead go and bring them back. I am quoting. I felt the note in my teeth.",
-   "fr": "Cassette deux. La tranchée a percé ce matin. Derrière, il y a un salon : parquet, lustres à gaz, et un mur de diapasons dans un cadre de noyer. Une compagnie appelée la Halcyon Atmospheric exploitait ici une poste pneumatique de colis depuis 1893 et, pendant une saison, en 1897, y a envoyé des gens dans des capsules. Son constructeur, Ambrose Vayle, a laissé des carnets. Il a accordé la conduite comme un tuyau d'orgue, pour envoyer les voyageurs là où vont les morts, et les ramener. Je cite. J'ai senti la note dans mes dents.",
+   "en": "Tape two. We broke through this morning. Behind the brick sits a salon: parquet, gas chandeliers, a wall of tuning forks in walnut. Halcyon Atmospheric ran pneumatic mail here from 1893, and in 1897 sent live riders in capsules. Its founder, Ambrose Vayle, left notebooks. He tuned the main like an organ pipe, to send riders where the dead go and bring them back. His words. I felt the note in my teeth.",
+   "fr": "Cassette deux. On a percé ce matin. Derrière la brique, un salon : parquet, lustres à gaz, tout un mur de diapasons en noyer. La Halcyon Atmospheric exploitait ici une poste pneumatique dès 1893, et en 1897 y a envoyé des passagers en capsules. Son fondateur, Ambrose Vayle, a laissé des carnets : il a accordé la conduite comme un orgue, pour envoyer des gens chez les morts et les ramener. Je cite. J'ai senti la note dans mes dents.",
    "max_s": 50
   },
   {
@@ -1080,8 +1080,8 @@
    "group": "tapes",
    "hook": "secret",
    "when": "12 October 1983; found in the Transit Police Post, an evidence tag",
-   "en": "Tape three. Test trolley, six volunteers, Carrier switched on. All six filled in the same form: they arrived before they left. One wrote his arrival time, then a departure time earlier than it, and did not seem troubled. I have sent a memo. Lodestar has filed it under the word anecdotal. I would like it noted that a form is not an anecdote.",
-   "fr": "Cassette trois. Draisine d'essai, six volontaires, Porteuse activée. Tous les six ont rempli le même formulaire : ils sont arrivés avant d'être partis. L'un a écrit son heure d'arrivée, puis une heure de départ antérieure, et n'a pas semblé troublé. J'ai envoyé une note. Lodestar l'a classée sous le mot « anecdotique ». Je voudrais qu'il soit noté qu'un formulaire n'est pas une anecdote.",
+   "en": "Tape three. Test trolley, six volunteers, Carrier on. All six logged the same thing: they arrived before they left. One wrote his arrival time, then an earlier departure, without blinking. I sent a memo. Lodestar filed it under 'anecdotal.' Six signed forms are not an anecdote.",
+   "fr": "Cassette trois. Draisine d'essai, six volontaires, Porteuse active. Tous ont noté pareil : arrivés avant de partir. L'un a écrit son arrivée, puis un départ antérieur, sans tiquer. J'ai envoyé une note. Lodestar l'a classée « anecdotique ». Six fiches signées ne sont pas une anecdote.",
    "max_s": 50
   },
   {
@@ -1090,8 +1090,8 @@
    "group": "tapes",
    "hook": "secret",
    "when": "20 February 1984; found in Platform A East, a seat of car 2",
-   "en": "Tape four. The Carrier is a tone we put in the rails so that ZERO can find its trains. In the old tube it comes back, not as an echo but as an answer, on Vayle's note. Two signals that agree. On a moving train I cannot tell you where that goes. I can tell you it goes first, and returns. I told them. They kept the bypass.",
-   "fr": "Cassette quatre. La Porteuse est une tonalité que nous injectons dans les rails pour que ZERO retrouve ses trains. Dans l'ancien tube, elle revient, non pas comme un écho, mais comme une réponse, sur la note de Vayle. Deux signaux qui s'accordent. Sur un train en marche, je ne peux pas vous dire où cela mène. Je peux vous dire que cela part d'abord, et revient. Je le leur ai dit. Ils ont gardé la dérivation.",
+   "en": "Tape four. The Carrier is a tone in the rails so ZERO tracks its trains. In the old tube it comes back—not an echo, an answer, on Vayle's note. Two signals agreeing. On a moving train, I can't say where it goes. Only that it goes first, and returns. I warned them. They kept the bypass.",
+   "fr": "Cassette quatre. La Porteuse, c'est un signal dans les rails pour que ZERO suive ses trains. Dans l'ancien tube, il revient — pas en écho, en réponse, sur la note de Vayle. Deux signaux qui s'accordent. Sur un train lancé, j'ignore où ça mène. Ça part ailleurs, puis ça revient. Je les ai prévenus. Ils gardent la dérivation.",
    "max_s": 50
   },
   {
@@ -1100,8 +1100,8 @@
    "group": "tapes",
    "hook": "secret",
    "when": "9 August 1984; found in the Car Barn",
-   "en": "Tape five. The cars are fitted: receivers, door sensors, and a lamp-proving current that glows in a lamp the colour of a signal. The inaugural run is published. Six cars, three hundred and twelve guests, a thirteen-minute loop, home at midnight exactly. The newspapers like exactly. I have stopped saying what the loop crosses, because the next question is always whether it is on schedule.",
-   "fr": "Cassette cinq. Les voitures sont équipées : récepteurs, capteurs de portes, et un courant de contrôle de lampe qui brille dans une lampe couleur de signal. Le trajet inaugural est annoncé. Six voitures, trois cent douze invités, une boucle de treize minutes, retour à minuit pile. Les journaux aiment « pile ». J'ai cessé de dire ce que traverse la boucle, parce que la question suivante est toujours de savoir si l'on est dans les temps.",
+   "en": "Tape five. Cars are fitted: receivers, door sensors, a lamp-proving current glowing amber. Inaugural run's announced: six cars, three hundred twelve guests, a thirteen-minute loop, home at midnight sharp. The press loves 'sharp.' I stopped saying what the loop crosses. They only ask if we're on schedule.",
+   "fr": "Cassette cinq. Voitures équipées : récepteurs, capteurs de portes, courant ambre. Trajet inaugural annoncé : six voitures, trois cent douze invités, boucle de treize minutes, retour à minuit pile. La presse adore « pile ». J'ai arrêté de dire ce qu'on traverse. Ils demandent juste si on sera à l'heure.",
    "max_s": 50
   },
   {
@@ -1110,8 +1110,8 @@
    "group": "tapes",
    "hook": "secret",
    "when": "14 December 1984; found in the Exchange",
-   "en": "Tape six. Tonight I read ZERO's log specification to the end. A run may be pending or arrived. There is no third state. The contract says no failed runs, and the engineers took that as a promise rather than a design. If 047 does not arrive, ZERO will hold it pending, and issue the departure again, and again, for as long as it has power.",
-   "fr": "Cassette six. Ce soir, j'ai lu la spécification du journal de ZERO jusqu'au bout. Un trajet peut être en attente ou arrivé. Il n'y a pas de troisième état. Le contrat dit : aucun trajet en échec, et les ingénieurs l'ont pris pour une promesse plutôt que pour une conception. Si le 047 n'arrive pas, ZERO le gardera en attente, et annoncera de nouveau le départ, encore et encore, tant qu'il aura du courant.",
+   "en": "Tape six. Tonight I read ZERO's log spec to the end. A run is pending or arrived. No third state. The contract promised zero failed runs, and the coders took that as physics instead of policy. If 047 never arrives, ZERO holds it pending and calls the departure again, and again, while power lasts.",
+   "fr": "Cassette six. Ce soir j'ai fini le cahier des charges de ZERO. Un trajet est en attente ou arrivé. Pas de troisième état. Le contrat promettait zéro échec ; les programmeurs l'ont pris au pied de la lettre. Si le 047 ne revient pas, ZERO rappellera le départ, encore et encore, tant qu'il aura du jus.",
    "max_s": 50
   },
   {
@@ -1120,8 +1120,8 @@
    "group": "tapes",
    "hook": "secret",
    "when": "29 December 1984; found in the Exchange",
-   "en": "Tape seven. I asked the chairman to postpone. He said a railway that is never late cannot start late. I asked Lodestar for grounds to refuse the run and was given a ribbon. So I will ride in the cab, with a hand on the controller. If I am right, they will all be standing on that platform, still listening to the announcement. Please find these.",
-   "fr": "Cassette sept. J'ai demandé au président de reporter. Il m'a répondu qu'un chemin de fer qui n'est jamais en retard ne peut pas commencer en retard. J'ai demandé à Lodestar des raisons de refuser le trajet, et l'on m'a donné un ruban. Alors je monterai dans la cabine, une main sur le manipulateur. Si j'ai raison, ils seront tous debout sur ce quai, à écouter encore l'annonce. Trouvez ces cassettes, s'il vous plaît.",
+   "en": "Tape seven. [sighs] I asked the chairman to postpone. He said a railway never late can't start late. I asked Lodestar for grounds to refuse and got a ribbon. So I'll ride the cab, hand on the controller. If I'm right, they'll still be on that platform, listening to the PA. Please find these.",
+   "fr": "Cassette sept. [sighs] J'ai demandé au président de reporter. Un train jamais en retard ne peut pas partir en retard, qu'il m'a dit. Lodestar m'a répondu par un ruban. Alors je monte en cabine, main sur le levier. Si j'ai raison, ils seront encore sur ce quai à écouter l'annonce. Trouvez ces cassettes.",
    "max_s": 50
   },
   {
@@ -1130,8 +1130,8 @@
    "group": "tapes",
    "hook": "secret",
    "when": "31 December 1984, 23:46, in the cab; found in the Terminus, bench 4 (future zone)",
-   "en": "Tape eight. Eleven forty-six. The band is playing; I can hear it through the glass. The champagne is still on the coupler. Nobody broke it. The chairman says they will do it on the return. Thirteen seconds. When the Carrier meets the note we will go somewhere first and be back in the same second, every clock in the station will say we never left, and the first thing I expect to notice is the",
-   "fr": "Cassette huit. Vingt-trois heures quarante-six. La fanfare joue ; je l'entends à travers la vitre. Le champagne est toujours sur l'attelage. Personne ne l'a cassé. Le président dit qu'ils le feront au retour. Treize secondes. Quand la Porteuse rencontrera la note, nous irons d'abord quelque part et serons de retour dans la même seconde, toutes les horloges de la station diront que nous ne sommes jamais partis, et la première chose que je m'attends à remarquer, c'est le",
+   "en": "[whispering] Tape eight. Eleven forty-six. Band's playing past the glass. Champagne's still on the coupler, unbroken. Chairman says they'll smash it on return. Thirteen seconds. When the Carrier meets the note, we'll go somewhere first and land back in the same second, every clock will swear we never left, and the first thing I expect to feel is the",
+   "fr": "[whispering] Cassette huit. Vingt-trois heures quarante-six. La fanfare joue derrière la vitre. Le champagne est encore sur l'attelage, intact. On le cassera au retour, dit le président. Treize secondes. Quand la Porteuse croisera la note, on partira ailleurs pour revenir dans la même seconde, chaque horloge jurera qu'on n'a pas bougé, et la première chose qu'on sentira, c'est le",
    "note": "ends mid-word: cut the audio on the last syllable, no breath after it (hook H1)",
    "max_s": 50
   },
@@ -1160,7 +1160,7 @@
    "hook": "inspector",
    "when": "the Punch lands",
    "en": "Not valid for this journey.",
-   "fr": "Non valable pour ce trajet."
+   "fr": "Titre non valable pour ce trajet."
   },
   {
    "id": "P4",
@@ -1169,7 +1169,7 @@
    "hook": "inspector",
    "when": "fine taken",
    "en": "Penalty fare. Thank you.",
-   "fr": "Amende forfaitaire. Merci."
+   "fr": "Amende forfaitaire. Merci bien."
   },
   {
    "id": "P5",
@@ -1178,7 +1178,7 @@
    "hook": "inspector",
    "when": "the Whistle",
    "en": "Passengers will remain behind the yellow line.",
-   "fr": "Les voyageurs resteront derrière la ligne jaune."
+   "fr": "Restez derrière la ligne jaune."
   },
   {
    "id": "P6",
@@ -1223,7 +1223,7 @@
    "hook": "conductor",
    "when": "walking, as he shuts each car",
    "en": "Doors closing. Stand clear.",
-   "fr": "Fermeture des portes. Écartez-vous."
+   "fr": "Fermeture des portes ! Écartez-vous !"
   },
   {
    "id": "C3",
@@ -1240,8 +1240,8 @@
    "group": "photo booth",
    "hook": "secret",
    "when": "",
-   "en": "Please hold still.",
-   "fr": "Ne bougez plus, s'il vous plaît."
+   "en": "Smile big! Hold real still!",
+   "fr": "Grand sourire ! On ne bouge plus !"
   },
   {
    "id": "B2",
@@ -1249,8 +1249,8 @@
    "group": "photo booth",
    "hook": "secret",
    "when": "",
-   "en": "Three, two, one.",
-   "fr": "Trois, deux, un."
+   "en": "Three, two, one... cheese!",
+   "fr": "Trois, deux, un... ouistiti !"
   },
   {
    "id": "B3",
@@ -1259,7 +1259,7 @@
    "hook": "secret",
    "when": "",
    "en": "Please do not look behind you.",
-   "fr": "Veuillez ne pas regarder derrière vous."
+   "fr": "Surtout, ne regardez pas derrière vous."
   },
   {
    "id": "B4",
@@ -1267,8 +1267,8 @@
    "group": "photo booth",
    "hook": "secret",
    "when": "",
-   "en": "Your strip is ready.",
-   "fr": "Vos photos sont prêtes."
+   "en": "Your strip's ready! Looking sharp!",
+   "fr": "Vos photos sont prêtes ! Quelle classe !"
   },
   {
    "id": "B5",
@@ -1276,8 +1276,8 @@
    "group": "photo booth",
    "hook": "secret",
    "when": "",
-   "en": "Thank you for your custom.",
-   "fr": "Merci de votre visite."
+   "en": "Thanks for stopping by! Keep smiling!",
+   "fr": "Merci de votre visite ! Gardez le sourire !"
   },
   {
    "id": "O1",
@@ -1316,7 +1316,7 @@
    "hook": "pay_phone",
    "when": "",
    "en": "Number, please.",
-   "fr": "Votre numéro, s'il vous plaît.",
+   "fr": "Le central. Quel numéro demandez-vous ?",
    "note": "a 1950s operator's voice"
   },
   {
@@ -1325,8 +1325,8 @@
    "group": "round start (match opening)",
    "hook": "match_start",
    "when": "",
-   "en": "Halcyon Plaza, twenty-three forty-seven. Officer on scene. God help the officer.",
-   "fr": "Halcyon Plaza, vingt-trois heures quarante-sept. Agent sur place. Que Dieu aide l'agent.",
+   "en": "Halcyon Plaza, twenty-three forty-seven. Varsity's on patrol—man, these commuters look rough.",
+   "fr": "Halcyon Plaza, vingt-trois heures quarante-sept. Le champion veille — et vu leurs têtes, ça va cogner.",
    "max_s": 8,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1336,8 +1336,8 @@
    "group": "round start (match opening)",
    "hook": "match_start",
    "when": "",
-   "en": "I wrote 'gas' on a form. This is not gas.",
-   "fr": "J'ai écrit « gaz » sur un rapport. Ce n'est pas du gaz.",
+   "en": "They made me sign 'gas leak.' Yeah right—gas doesn't try to tackle you!",
+   "fr": "Ils m'ont fait signer « fuite de gaz ». Mon œil ! Le gaz te plaque pas au sol !",
    "max_s": 8,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1347,8 +1347,8 @@
    "group": "round start (every fifth round)",
    "hook": "round_start",
    "when": "",
-   "en": "Another departure. Nobody ever arrives.",
-   "fr": "Encore un départ. Personne n'arrive jamais.",
+   "en": "Another departure? Fourth quarter and these chumps still want overtime!",
+   "fr": "Encore une vague ? En prolongations, ces clowns en redemandent !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1358,8 +1358,8 @@
    "group": "low ammo",
    "hook": "player_vo",
    "when": "",
-   "en": "Running dry. Requesting backup that is not coming.",
-   "fr": "Je suis à sec. Je demande des renforts qui ne viendront pas.",
+   "en": "Running dry! Time-out—need ammo, not a pep talk!",
+   "fr": "À sec ! Temps mort — il me faut des munitions !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1369,8 +1369,8 @@
    "group": "low ammo",
    "hook": "player_vo",
    "when": "",
-   "en": "Last mag. Make it count, Officer.",
-   "fr": "Dernier chargeur. Fais-le compter, agent.",
+   "en": "Last mag! Time to go clutch, baby!",
+   "fr": "Dernier chargeur ! À moi de briller !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1380,8 +1380,8 @@
    "group": "reviving a teammate",
    "hook": "player_vo",
    "when": "",
-   "en": "On your feet. That's an order, citizen.",
-   "fr": "Debout. C'est un ordre, citoyen.",
+   "en": "On your feet, rookie! Walk it off!",
+   "fr": "Debout, la recrue ! Pas de forfait !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1391,8 +1391,8 @@
    "group": "reviving a teammate",
    "hook": "player_vo",
    "when": "",
-   "en": "Stay with me. I'm not writing up another one.",
-   "fr": "Reste avec moi. Je ne rédige pas un rapport de plus.",
+   "en": "Shake it off! Nobody gets benched on my beat!",
+   "fr": "Secoue-toi ! Personne reste sur le banc avec moi !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1402,8 +1402,8 @@
    "group": "thanks when revived",
    "hook": "player_vo",
    "when": "",
-   "en": "Noted. You're in my report. The good part.",
-   "fr": "Noté. Tu seras dans mon rapport. Dans la bonne partie.",
+   "en": "Solid assist! I'll rip up your next ticket.",
+   "fr": "Belle passe ! Je fais sauter ton prochain PV.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1413,8 +1413,8 @@
    "group": "downed",
    "hook": "player_vo",
    "when": "",
-   "en": "[shouting] Officer down! Officer down, Platform A!",
-   "fr": "[shouting] Agent à terre ! Agent à terre, quai A !",
+   "en": "[shouting] Officer down! Cheap shot, ref—get over here!",
+   "fr": "[shouting] Agent à terre ! Coup bas — venez m'aider !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1424,8 +1424,8 @@
    "group": "downed",
    "hook": "player_vo",
    "when": "",
-   "en": "[shouting] Ten-thirteen! Anybody! Ten-thirteen!",
-   "fr": "[shouting] Agent en détresse ! N'importe qui !",
+   "en": "[shouting] Ten-thirteen! Don't leave the MVP on the turf!",
+   "fr": "[shouting] Code rouge ! Laissez pas le champion au tapis !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1435,8 +1435,8 @@
    "group": "downed",
    "hook": "player_vo",
    "when": "",
-   "en": "Can't... somebody get me up before they punch my ticket.",
-   "fr": "Je peux pas... Relevez-moi avant qu'ils poinçonnent mon billet.",
+   "en": "[panicked] I'm pinned! Pull me up before they punch my ticket!",
+   "fr": "[panicked] Je suis coincé ! Relevez-moi avant qu'ils poinçonnent mon billet !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1446,8 +1446,8 @@
    "group": "perk: Double Takes",
    "hook": "perk_bought",
    "when": "",
-   "en": "Double Takes. Twice the look, twice the evidence.",
-   "fr": "Double Takes. Deux regards, deux fois plus de preuves.",
+   "en": "Double Takes! Two hits, one play—boom!",
+   "fr": "Double Takes ! Deux coups d'un seul geste — boum !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1457,8 +1457,8 @@
    "group": "perk: Baker's Dozens",
    "hook": "perk_bought",
    "when": "",
-   "en": "Baker's Dozens. Cops and doughnuts. Don't say it.",
-   "fr": "Baker's Dozens. Les flics et les beignets. Ne dis rien.",
+   "en": "Baker's Dozens. Cops and doughnuts—yeah, hilarious.",
+   "fr": "Baker's Dozens. Les flics et les donuts... très drôle.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1468,8 +1468,8 @@
    "group": "perk: Bon Voyages",
    "hook": "perk_bought",
    "when": "",
-   "en": "Bon Voyages. Travel sweets. Evidence I'm losing my mind.",
-   "fr": "Bon Voyages. Des bonbons de voyage. La preuve que je perds la tête.",
+   "en": "Bon Voyages! Tastes like victory—and kinda minty.",
+   "fr": "Bon Voyages ! Un goût de victoire... et de menthe.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1479,8 +1479,8 @@
    "group": "perk: Sour Grudges",
    "hook": "perk_bought",
    "when": "",
-   "en": "Sour Grudges. I've got a few of those on file.",
-   "fr": "Sour Grudges. J'en ai quelques-unes en dossier.",
+   "en": "Sour Grudges! Whoa, kicks harder than my old coach!",
+   "fr": "Sour Grudges ! Ouah, ça secoue pire que mon coach !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1490,8 +1490,8 @@
    "group": "wonder weapon: Exact Change",
    "hook": "ww_obtained",
    "when": "",
-   "en": "A gun that charges a fare. The Rapid finally armed us.",
-   "fr": "Un flingue qui fait payer le trajet. La Rapid nous a enfin armés.",
+   "en": "A gun that charges exact fare? My kind of ticket!",
+   "fr": "Un flingue qui encaisse le tarif exact ? Quel PV !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1501,8 +1501,8 @@
    "group": "wonder weapon: Live Rail",
    "hook": "ww_obtained",
    "when": "",
-   "en": "Live rail, portable. Stand clear of the officer.",
-   "fr": "Du rail sous tension, portatif. Écartez-vous de l'agent.",
+   "en": "Portable third rail! Step back—big play coming!",
+   "fr": "Troisième rail portatif ! Reculez, ça va fumer !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1512,8 +1512,8 @@
    "group": "wonder weapon: the Dispatcher",
    "hook": "ww_obtained",
    "when": "",
-   "en": "Stamp, address, send. Finally, a system that works.",
-   "fr": "Tampon, adresse, envoi. Enfin un système qui marche.",
+   "en": "Stamp 'em, ship 'em out! First-class beatdown!",
+   "fr": "Tamponné, expédié ! Livraison express dans les dents !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1523,8 +1523,8 @@
    "group": "wonder weapon: Top to Bottom",
    "hook": "ww_obtained",
    "when": "",
-   "en": "Spray paint. I've arrested men for less.",
-   "fr": "De la bombe de peinture. J'ai arrêté des types pour moins que ça.",
+   "en": "Spray-paint gun? I used to bust punks for these!",
+   "fr": "Un lance-peinture ? J'embarquais des gamins pour moins !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1534,8 +1534,8 @@
    "group": "Roller seen",
    "hook": "rollers",
    "when": "",
-   "en": "Skaters! On the platform! That's a citation!",
-   "fr": "Des patineurs ! Sur le quai ! C'est une contravention !",
+   "en": "[shouting] Skaters on the platform! Foul—and a citation!",
+   "fr": "[shouting] Patineurs sur le quai ! Faute et contravention !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1545,8 +1545,8 @@
    "group": "Roller seen",
    "hook": "rollers",
    "when": "",
-   "en": "Conga line inbound. Hold the line!",
-   "fr": "Une chenille en approche. Tenez la ligne !",
+   "en": "Roller derby from hell! Hold the line, people!",
+   "fr": "Roller derby de l'enfer ! Tenez la défense !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1556,8 +1556,8 @@
    "group": "the Night Inspector seen",
    "hook": "inspector",
    "when": "",
-   "en": "That's an inspector. Thirty-one years and he's still on shift.",
-   "fr": "Un contrôleur. Trente et un ans de service, toujours de garde.",
+   "en": "Lamp-head's clocking in! Still no retirement?",
+   "fr": "Tête-de-lanterne pointe ! Toujours pas à la retraite ?",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1567,8 +1567,8 @@
    "group": "the Night Inspector marked me",
    "hook": "inspector",
    "when": "",
-   "en": "He's checking my ticket. I never bought one.",
-   "fr": "Il contrôle mon billet. Je n'en ai jamais acheté.",
+   "en": "Back off! Badges ride free—read the union book!",
+   "fr": "Recule ! Les flics passent gratos — lis le règlement !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1578,8 +1578,8 @@
    "group": "the Night Inspector killed",
    "hook": "inspector",
    "when": "",
-   "en": "Inspection over. Case closed.",
-   "fr": "Contrôle terminé. Affaire classée.",
+   "en": "Inspection's over, pal! Hit the showers!",
+   "fr": "Fin du contrôle, l'ami ! Aux vestiaires !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1589,8 +1589,8 @@
    "group": "the Conductor seen",
    "hook": "conductor",
    "when": "",
-   "en": "The conductor. He's got the handle. Take him down.",
-   "fr": "Le chef de bord. Il a la manette. On le neutralise.",
+   "en": "The conductor! He's got the handle—blitz him!",
+   "fr": "Le chef de bord ! Il a la manette — on fonce !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1600,8 +1600,8 @@
    "group": "quest: power",
    "hook": "power_on",
    "when": "",
-   "en": "Lights are on. Now I can see everything I wrote down wrong.",
-   "fr": "La lumière revient. Maintenant je vois tout ce que j'ai mal écrit.",
+   "en": "Lights up! Now I see the mess I signed off on. [sighs] Great.",
+   "fr": "La lumière ! Je vois enfin le carnage que j'ai couvert. [sighs] Super.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1611,8 +1611,8 @@
    "group": "quest: first clock",
    "hook": "clock_wound",
    "when": "",
-   "en": "One clock moving. Write down the time.",
-   "fr": "Une horloge repart. Note l'heure.",
+   "en": "Clock one's moving! Put us on the board!",
+   "fr": "Première horloge lancée ! On ouvre le score !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1622,8 +1622,8 @@
    "group": "quest: last clock",
    "hook": "clock_wound",
    "when": "",
-   "en": "Thirteen minutes. That's all they were short.",
-   "fr": "Treize minutes. C'est tout ce qui leur manquait.",
+   "en": "Thirteen minutes back! Two-minute warning, people!",
+   "fr": "Treize minutes au chrono ! Dernière ligne droite !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1633,8 +1633,8 @@
    "group": "quest: road set",
    "hook": "road_set",
    "when": "",
-   "en": "Road set. Like a crime scene, but on rails.",
-   "fr": "Itinéraire formé. Comme une scène de crime, mais sur rails.",
+   "en": "Tracks locked, green light. Let's run this play!",
+   "fr": "Voie verrouillée, feu vert. On lance l'offensive !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1644,8 +1644,8 @@
    "group": "quest: Handle taken",
    "hook": "conductor",
    "when": "",
-   "en": "Got the handle. Bagging it as evidence.",
-   "fr": "J'ai la manette. Je la mets sous scellés.",
+   "en": "Got the handle! Clean turnover—bagging it!",
+   "fr": "J'ai la manette ! Belle interception — sous scellés !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1655,8 +1655,8 @@
    "group": "quest: boarding",
    "hook": "terminus",
    "when": "",
-   "en": "We're boarding. Somebody tell my sergeant.",
-   "fr": "On embarque. Que quelqu'un prévienne mon sergent.",
+   "en": "Boarding a ghost train. Sarge owes me hazard pay!",
+   "fr": "En route sur un train fantôme. Le sergent me doit une prime !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1666,8 +1666,8 @@
    "group": "quest: Terminus arrival",
    "hook": "terminus",
    "when": "",
-   "en": "Footprints on the floor. Ours. I didn't sign off on this.",
-   "fr": "Des traces de pas au sol. Les nôtres. Je n'ai rien signé de tout ça.",
+   "en": "Our footprints on the floor? Okay, seriously creepy!",
+   "fr": "Nos traces de pas au sol ? Là, ça file les jetons !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1677,8 +1677,8 @@
    "group": "quest: return",
    "hook": "terminus",
    "when": "",
-   "en": "Back on the platform. The clocks say we never left.",
-   "fr": "Retour sur le quai. Les horloges disent qu'on n'est jamais partis.",
+   "en": "Back already, clocks frozen! What a trick play!",
+   "fr": "Déjà revenus, horloges figées ! Quelle feinte !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1688,8 +1688,8 @@
    "group": "zone: the Arcade",
    "hook": "zone_enter",
    "when": "",
-   "en": "The underpass. I used to chase kids out of here.",
-   "fr": "Le passage souterrain. J'en chassais les gamins, avant.",
+   "en": "The arcade! Used to chase kids out—now I miss 'em.",
+   "fr": "La galerie ! Avant je chassais les jeunes — je les regrette presque.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1699,8 +1699,8 @@
    "group": "zone: the Parlour",
    "hook": "zone_enter",
    "when": "",
-   "en": "A Victorian waiting room under my beat. Nobody told me.",
-   "fr": "Une salle d'attente victorienne sous mon secteur. Personne ne m'a rien dit.",
+   "en": "Victorian lounge under my beat? Nobody tells the cop!",
+   "fr": "Un salon victorien sous mon secteur ? On dit rien aux flics !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1710,8 +1710,8 @@
    "group": "zone: the Bellows Vault",
    "hook": "zone_enter",
    "when": "",
-   "en": "That's not a ventilator. That's a lung.",
-   "fr": "Ce n'est pas un ventilateur. C'est un poumon.",
+   "en": "That's no fan—that's a giant metal lung!",
+   "fr": "C'est pas un ventilo — c'est un poumon géant !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1721,8 +1721,8 @@
    "group": "pay phone rings",
    "hook": "pay_phone",
    "when": "",
-   "en": "A pay phone ringing in a sealed station. Don't.",
-   "fr": "Un téléphone public qui sonne dans une station scellée. Non.",
+   "en": "Pay phone ringing in a sealed subway? Hard pass!",
+   "fr": "Un téléphone qui sonne ici ? Touche pas à ça !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1732,8 +1732,8 @@
    "group": "pay phone answered",
    "hook": "pay_phone",
    "when": "",
-   "en": "Transit Police... Hello? It's reading the roster.",
-   "fr": "Police des transports... Allô ? Ça lit la feuille de service.",
+   "en": "Transit Police... Hello? Ugh, just the dead shift roster.",
+   "fr": "Police des transports... Allô ? Super, la liste des disparus.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1743,8 +1743,8 @@
    "group": "a tape picked up",
    "hook": "secret",
    "when": "",
-   "en": "A tape. Somebody tried to tell the truth down here.",
-   "fr": "Une cassette. Quelqu'un a essayé de dire la vérité, ici.",
+   "en": "A tape? Somebody actually tried to blow the whistle.",
+   "fr": "Une cassette ? Quelqu'un a voulu balancer la vérité.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1754,8 +1754,8 @@
    "group": "the hidden song heard",
    "hook": "secret",
    "when": "",
-   "en": "There's music. Nobody file a noise complaint.",
-   "fr": "De la musique. Que personne ne porte plainte pour tapage.",
+   "en": "Turn it up! Nobody's filing a noise complaint tonight!",
+   "fr": "Monte le son ! Zéro PV pour tapage ce soir !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1765,8 +1765,8 @@
    "group": "g27 quest: a relay proving",
    "hook": "relay_on",
    "when": "",
-   "en": "Relay's green. One less red light in my life.",
-   "fr": "Le relais passe au vert. Un feu rouge de moins dans ma vie.",
+   "en": "Relay's green! Boom—moving the chains!",
+   "fr": "Relais au vert ! Boum — ça avance !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1776,8 +1776,8 @@
    "group": "g27 quest: the control-room shutter open",
    "hook": "pap_open",
    "when": "",
-   "en": "Control room's open. Whatever's in there, I'm not taking its statement.",
-   "fr": "La salle de commande est ouverte. Ce qu'il y a dedans, je ne prends pas sa déposition.",
+   "en": "Control room's open! Time to rumble!",
+   "fr": "Salle de commande ouverte ! Ça va chauffer !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1787,8 +1787,8 @@
    "group": "round start (match opening)",
    "hook": "match_start",
    "when": "",
-   "en": "That's the cleanest train in the city. Not for long.",
-   "fr": "C'est le train le plus propre de la ville. Plus pour longtemps.",
+   "en": "Cleanest silver train in Halcyon—tonight it wears my name, end to end.",
+   "fr": "Le train le plus propre de Halcyon — ce soir j'y pose mon blaze.",
    "max_s": 8,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1798,8 +1798,8 @@
    "group": "round start (match opening)",
    "hook": "match_start",
    "when": "",
-   "en": "Zero Kings never died, baby. We just went underground.",
-   "fr": "Les Zero Kings sont jamais morts, bébé. On est juste passés sous terre.",
+   "en": "Zero Kings never faded—we just took the show underground.",
+   "fr": "Les Zero Kings vivent encore — on a juste pris le métro.",
    "max_s": 8,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1809,8 +1809,8 @@
    "group": "round start (every fifth round)",
    "hook": "round_start",
    "when": "",
-   "en": "Another wave. Another wall. I got paint for all of 'em.",
-   "fr": "Encore une vague. Encore un mur. J'ai de la peinture pour tout le monde.",
+   "en": "Fresh wave, fresh beat. Step up—I got bars and bullets.",
+   "fr": "Nouvelle vague, nouveau couplet. J'ai du flow et du plomb.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1820,8 +1820,8 @@
    "group": "low ammo",
    "hook": "player_vo",
    "when": "",
-   "en": "Out of shots. Never out of style.",
-   "fr": "Plus de balles. Mais le style, jamais.",
+   "en": "Clip's running thin, still smooth with the spin!",
+   "fr": "Chargeur presque vide, mais toujours fluide !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1831,8 +1831,8 @@
    "group": "low ammo",
    "hook": "player_vo",
    "when": "",
-   "en": "Can's almost empty. The gun! I mean the gun!",
-   "fr": "La bombe est presque vide. Le flingue ! Je veux dire le flingue !",
+   "en": "Rattling empty! The gun—not my spray can!",
+   "fr": "Je tourne à vide ! Le flingue, pas la bombe !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1842,8 +1842,8 @@
    "group": "reviving a teammate",
    "hook": "player_vo",
    "when": "",
-   "en": "Get up! You're smudging my floor.",
-   "fr": "Lève-toi ! Tu salis mon sol.",
+   "en": "Get up! You're smudging my clean concrete!",
+   "fr": "Debout ! Tu vas gâcher mon béton propre !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1853,8 +1853,8 @@
    "group": "reviving a teammate",
    "hook": "player_vo",
    "when": "",
-   "en": "Up, up! Nobody leaves the crew on my watch.",
-   "fr": "Debout, debout ! Personne ne lâche le crew sous ma garde.",
+   "en": "Rise and shine! Nobody leaves the crew tonight.",
+   "fr": "Debout ! Personne lâche le crew ce soir.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1864,8 +1864,8 @@
    "group": "thanks when revived",
    "hook": "player_vo",
    "when": "",
-   "en": "Respect. I'm putting your name on a wall.",
-   "fr": "Respect. Je vais écrire ton nom sur un mur.",
+   "en": "Much love! Putting your tag ten feet tall.",
+   "fr": "Respect ! Je pose ton blaze en lettres géantes.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1875,8 +1875,8 @@
    "group": "downed",
    "hook": "player_vo",
    "when": "",
-   "en": "[shouting] I'm down! Somebody, I'm down!",
-   "fr": "[shouting] Je suis à terre ! Quelqu'un, je suis à terre !",
+   "en": "[shouting] Yo, I'm down! Cut the beat—grab me!",
+   "fr": "[shouting] À terre ! Coupe le son — venez m'aider !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1886,8 +1886,8 @@
    "group": "downed",
    "hook": "player_vo",
    "when": "",
-   "en": "Don't let 'em paint over me!",
-   "fr": "Les laissez pas me repeindre par-dessus !",
+   "en": "[panicked] Don't let 'em buff over my masterpiece!",
+   "fr": "[panicked] Laissez pas ces morts effacer mon œuvre !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1897,8 +1897,8 @@
    "group": "downed",
    "hook": "player_vo",
    "when": "",
-   "en": "[panicked] Yo! The King needs a hand! Now!",
-   "fr": "[panicked] Yo ! Le King a besoin d'un coup de main ! Maintenant !",
+   "en": "[panicked] Hey! The King's down—need a hand now!",
+   "fr": "[panicked] Eh ! Le King au sol — un coup de main !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1908,8 +1908,8 @@
    "group": "perk: Double Takes",
    "hook": "perk_bought",
    "when": "",
-   "en": "Double Takes! Two shots, one signature.",
-   "fr": "Double Takes ! Deux coups, une signature.",
+   "en": "Double Takes! Two shots, one flow—stereo!",
+   "fr": "Double Takes ! Deux coups, un flow — en stéréo !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1919,8 +1919,8 @@
    "group": "perk: Baker's Dozens",
    "hook": "perk_bought",
    "when": "",
-   "en": "Baker's Dozens. Thirteen! That's my lucky number now.",
-   "fr": "Baker's Dozens. Treize ! C'est mon chiffre porte-bonheur maintenant.",
+   "en": "Baker's Dozens—thirteen! Lucky number on the beat!",
+   "fr": "Baker's Dozens — treize ! Mon chiffre porte-bonheur !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1930,8 +1930,8 @@
    "group": "perk: Bon Voyages",
    "hook": "perk_bought",
    "when": "",
-   "en": "Bon Voyages! Sweets for the road. I don't do roads.",
-   "fr": "Bon Voyages ! Des bonbons pour la route. Moi, je fais pas la route.",
+   "en": "Bon Voyages! Sweet ride, zero fare—my style.",
+   "fr": "Bon Voyages ! Trajet sucré, zéro ticket — mon style.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1941,8 +1941,8 @@
    "group": "perk: Sour Grudges",
    "hook": "perk_bought",
    "when": "",
-   "en": "Sour Grudges. I been holding these since seventy-nine.",
-   "fr": "Sour Grudges. Je les garde depuis soixante-dix-neuf.",
+   "en": "Sour Grudges! Sharp bite, heavy bass—just like seventy-nine.",
+   "fr": "Sour Grudges ! Goût acide, gros groove — comme en soixante-dix-neuf.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1952,8 +1952,8 @@
    "group": "wonder weapon: Exact Change",
    "hook": "ww_obtained",
    "when": "",
-   "en": "A gun that eats tokens? I been jumping turnstiles my whole life!",
-   "fr": "Un flingue à jetons ? J'ai sauté des tourniquets toute ma vie !",
+   "en": "A token blaster? Been hopping turnstiles my whole life!",
+   "fr": "Un flingue à jetons ? Je saute les tourniquets depuis toujours !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1963,8 +1963,8 @@
    "group": "wonder weapon: Live Rail",
    "hook": "ww_obtained",
    "when": "",
-   "en": "Third rail in my hands. Don't try this at home, kids.",
-   "fr": "Le troisième rail dans mes mains. Faites pas ça chez vous, les gosses.",
+   "en": "Live third rail in my grip—pure electric drip!",
+   "fr": "Troisième rail en main — haute tension, haute pression !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1974,8 +1974,8 @@
    "group": "wonder weapon: the Dispatcher",
    "hook": "ww_obtained",
    "when": "",
-   "en": "Stamp 'em and send 'em! Return to sender!",
-   "fr": "On tamponne et on expédie ! Retour à l'envoyeur !",
+   "en": "Stamp 'em, send 'em! Return to sender, jack!",
+   "fr": "Tamponné, plié ! Retour direct à l'envoyeur !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1985,8 +1985,8 @@
    "group": "wonder weapon: Top to Bottom",
    "hook": "ww_obtained",
    "when": "",
-   "en": "[laughing] Top to Bottom! Undercoat, this one's for you!",
-   "fr": "[laughing] Top to Bottom ! Undercoat, celle-là, c'est pour toi !",
+   "en": "[laughing] Top to Bottom! Undercoat, watch me paint the dead!",
+   "fr": "[laughing] Top to Bottom ! Undercoat, mate-moi repeindre la station !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -1996,8 +1996,8 @@
    "group": "Roller seen",
    "hook": "rollers",
    "when": "",
-   "en": "Skaters! Oh, they got moves. I got more.",
-   "fr": "Des patineurs ! Ils ont du mouvement. Moi, j'en ai plus.",
+   "en": "Skaters! Smooth glide—wait till they catch my stride!",
+   "fr": "Des patineurs ! Joli style — mais je mène la danse !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2007,8 +2007,8 @@
    "group": "Roller seen",
    "hook": "rollers",
    "when": "",
-   "en": "Disco's dead, man! Stay dead!",
-   "fr": "Le disco est mort, mec ! Restez morts !",
+   "en": "[laughing] Disco's dead, fools! Roll back underground!",
+   "fr": "[laughing] Le disco est mort ! Retournez dans la tombe !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2018,8 +2018,8 @@
    "group": "the Night Inspector seen",
    "hook": "inspector",
    "when": "",
-   "en": "Inspector! Run! Old habits, man, old habits.",
-   "fr": "Un contrôleur ! Cours ! Vieilles habitudes, mec, vieilles habitudes.",
+   "en": "Inspector! Scatter! Whoa—old subway reflex.",
+   "fr": "Un contrôleur ! Planquez-vous ! Vieux réflexe de métro.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2029,8 +2029,8 @@
    "group": "the Night Inspector marked me",
    "hook": "inspector",
    "when": "",
-   "en": "He wants my ticket. I ain't never had a ticket!",
-   "fr": "Il veut mon billet. J'ai jamais eu de billet de ma vie !",
+   "en": "Wants my stub? The King rides strictly free!",
+   "fr": "Mon billet ? Le King paie jamais sa place !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2040,8 +2040,8 @@
    "group": "the Night Inspector killed",
    "hook": "inspector",
    "when": "",
-   "en": "Fare dodged. Permanently.",
-   "fr": "Fraude réussie. Définitivement.",
+   "en": "Fare dodged, mic dropped. Catch you never.",
+   "fr": "Contrôle esquivé, micro posé. Sans rancune.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2051,8 +2051,8 @@
    "group": "the Conductor seen",
    "hook": "conductor",
    "when": "",
-   "en": "Conductor's got the handle. I want that handle.",
-   "fr": "Le chef de bord a la manette. Je la veux, cette manette.",
+   "en": "Conductor's got the handle. Time to jack his ride!",
+   "fr": "Le chef de bord a la manette. On lui pique son train !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2062,8 +2062,8 @@
    "group": "quest: power",
    "hook": "power_on",
    "when": "",
-   "en": "Lights on! Now everybody can see my work.",
-   "fr": "La lumière ! Maintenant tout le monde peut voir mon œuvre.",
+   "en": "Spotlights on! Can't bomb a station in the dark.",
+   "fr": "Les projos ! On repeint pas une station dans le noir.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2073,8 +2073,8 @@
    "group": "quest: first clock",
    "hook": "clock_wound",
    "when": "",
-   "en": "One clock ticking. Tick, tick, King.",
-   "fr": "Une horloge qui tourne. Tic, tac, le King.",
+   "en": "Clock one's ticking—got a beat now! Tick, tock.",
+   "fr": "Première horloge lancée — ça donne le tempo ! Tic, tac.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2084,8 +2084,8 @@
    "group": "quest: last clock",
    "hook": "clock_wound",
    "when": "",
-   "en": "Midnight's coming. Finally, a party.",
-   "fr": "Minuit approche. Enfin une fête.",
+   "en": "Midnight's on cue. About time this party dropped!",
+   "fr": "Minuit arrive. Il était temps que la fête démarre !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2095,8 +2095,8 @@
    "group": "quest: road set",
    "hook": "road_set",
    "when": "",
-   "en": "Road's set. A line's a line, man. I know lines.",
-   "fr": "Itinéraire posé. Une ligne, c'est une ligne, mec. Je connais les lignes.",
+   "en": "Rails locked, clean line. Trust me—I know lines.",
+   "fr": "Voie tracée, ligne nickel. Les belles lignes, ça me connaît.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2106,8 +2106,8 @@
    "group": "quest: Handle taken",
    "hook": "conductor",
    "when": "",
-   "en": "Got the handle! Train's mine now.",
-   "fr": "J'ai la manette ! Le train est à moi maintenant.",
+   "en": "[laughing] Got the handle! Zero Forty-Seven's mine!",
+   "fr": "[laughing] J'ai la manette ! Le 047 roule pour moi !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2117,8 +2117,8 @@
    "group": "quest: boarding",
    "hook": "terminus",
    "when": "",
-   "en": "All aboard the King's express!",
-   "fr": "Tout le monde à bord de l'express du King !",
+   "en": "All aboard the King's express—next stop, crazy!",
+   "fr": "En voiture dans l'express du King — prochain arrêt, le délire !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2128,8 +2128,8 @@
    "group": "quest: Terminus arrival",
    "hook": "terminus",
    "when": "",
-   "en": "Paper. Everything's paper. Somebody give me a marker.",
-   "fr": "Du papier. Tout est en papier. Quelqu'un me file un marqueur.",
+   "en": "Whole platform's paper? Toss me a fat marker!",
+   "fr": "Tout le quai en papier ? Filez-moi un gros marqueur !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2139,8 +2139,8 @@
    "group": "quest: return",
    "hook": "terminus",
    "when": "",
-   "en": "We back. Did we even leave?",
-   "fr": "On est de retour. On est seulement partis ?",
+   "en": "Already back? Wild remix in zero seconds flat.",
+   "fr": "Déjà revenus ? Un sacré trip en zéro seconde.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2150,8 +2150,8 @@
    "group": "zone: the Arcade",
    "hook": "zone_enter",
    "when": "",
-   "en": "The underpass! Best walls in Halcyon. Look at 'em. Untouched.",
-   "fr": "Le passage ! Les meilleurs murs de Halcyon. Regarde-les. Intacts.",
+   "en": "The underpass! Smoothest tile in Halcyon, untouched.",
+   "fr": "La galerie ! Les plus beaux murs de Halcyon, intacts.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2161,8 +2161,8 @@
    "group": "zone: the Parlour",
    "hook": "zone_enter",
    "when": "",
-   "en": "Gold leaf, velvet... somebody already tagged this place in eighteen-ninety.",
-   "fr": "Feuille d'or, velours... quelqu'un a déjà tagué cet endroit en mille huit cent quatre-vingt-dix.",
+   "en": "Gold leaf and velvet? Somebody bombed this in eighteen-ninety.",
+   "fr": "Feuille d'or et velours ? Ça décorait déjà en dix-huit cent quatre-vingt-dix.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2172,8 +2172,8 @@
    "group": "zone: the Bellows Vault",
    "hook": "zone_enter",
    "when": "",
-   "en": "That thing's breathing. Walls don't breathe. Usually.",
-   "fr": "Ce truc respire. Les murs respirent pas. D'habitude.",
+   "en": "That machine's breathing. Walls shouldn't have a pulse.",
+   "fr": "Ce truc respire. Un mur, ça a pas de pouls.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2183,8 +2183,8 @@
    "group": "pay phone rings",
    "hook": "pay_phone",
    "when": "",
-   "en": "Phone's ringing. Probably my mom.",
-   "fr": "Le téléphone sonne. Sûrement ma mère.",
+   "en": "Phone ringing down here? Ten bucks that's my mom.",
+   "fr": "Ça sonne ici ? Dix balles que c'est ma mère.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2194,8 +2194,8 @@
    "group": "pay phone answered",
    "hook": "pay_phone",
    "when": "",
-   "en": "Yeah? ... Who's this? ... It hung up. It hung up on me.",
-   "fr": "Ouais ? ... C'est qui ? ... Ça a raccroché. Ça m'a raccroché au nez.",
+   "en": "Yo, who's this? ... Seriously, it hung up on the King!",
+   "fr": "Ouais, qui c'est ? ... Ça a raccroché au nez du King !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2205,8 +2205,8 @@
    "group": "a tape picked up",
    "hook": "secret",
    "when": "",
-   "en": "A tape! Tell me it's a mixtape. Please be a mixtape.",
-   "fr": "Une cassette ! Dis-moi que c'est une mixtape. Pitié, une mixtape.",
+   "en": "A tape! Please be a mixtape, not elevator jazz.",
+   "fr": "Une cassette ! Pitié, du bon son, pas de l'ascenseur.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2216,8 +2216,8 @@
    "group": "the hidden song heard",
    "hook": "secret",
    "when": "",
-   "en": "Now that's a jam. Somebody hit the lights!",
-   "fr": "Ça, c'est un son. Quelqu'un, les lumières !",
+   "en": "[laughing] Now that's a groove! Watch me work!",
+   "fr": "[laughing] Ça c'est du lourd ! Regarde l'artiste !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2227,8 +2227,8 @@
    "group": "g27 quest: a relay proving",
    "hook": "relay_on",
    "when": "",
-   "en": "Relay's green. Green's a good color. Ask me.",
-   "fr": "Relais au vert. Le vert, c'est une bonne couleur. Demande-moi.",
+   "en": "Relay's emerald green! Now that's my palette.",
+   "fr": "Relais vert émeraude ! Ma couleur préférée.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2238,8 +2238,8 @@
    "group": "g27 quest: the control-room shutter open",
    "hook": "pap_open",
    "when": "",
-   "en": "Door's open! VIP room, Zero Kings only.",
-   "fr": "La porte est ouverte ! Carré VIP, Zero Kings seulement.",
+   "en": "Shutter's up! Backstage VIP—Zero Kings only!",
+   "fr": "Rideau levé ! Accès VIP — Zero Kings seulement !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2249,8 +2249,8 @@
    "group": "round start (match opening)",
    "hook": "match_start",
    "when": "",
-   "en": "The diagram says it is approaching. The diagram has no right to.",
-   "fr": "Le schéma dit qu'il est en approche. Le schéma n'a pas le droit.",
+   "en": "Board shows a train on dead tracks. That breaks three laws of physics—minimum!",
+   "fr": "Un train sur une ligne hors tension ! Ça viole au moins trois lois physiques !",
    "max_s": 8,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2260,8 +2260,8 @@
    "group": "round start (match opening)",
    "hook": "match_start",
    "when": "",
-   "en": "I was sent to pull one fuse. One. I have a clipboard.",
-   "fr": "On m'a envoyé retirer un fusible. Un seul. J'ai un porte-bloc.",
+   "en": "Sent to pull one fuse! One! All I brought was a clipboard!",
+   "fr": "Envoyé tirer un fusible ! Un seul ! J'ai juste un porte-bloc !",
    "max_s": 8,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2271,8 +2271,8 @@
    "group": "round start (every fifth round)",
    "hook": "round_start",
    "when": "",
-   "en": "Departure logged. Arrival pending. That is a fault condition.",
-   "fr": "Départ enregistré. Arrivée en attente. C'est une condition de défaut.",
+   "en": "Another departure, zero arrivals! Straight out of Captain Volt issue twelve!",
+   "fr": "Encore un départ sans arrivée ! Tout craché Capitaine Volt numéro douze !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2282,8 +2282,8 @@
    "group": "low ammo",
    "hook": "player_vo",
    "when": "",
-   "en": "Ammunition below threshold. Recommend immediate replenishment.",
-   "fr": "Munitions sous le seuil. Réapprovisionnement immédiat recommandé.",
+   "en": "[panicked] Ammo critically low! Statistically, I'm doomed!",
+   "fr": "[panicked] Munitions critiques ! Statistiquement, je suis foutu !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2293,8 +2293,8 @@
    "group": "low ammo",
    "hook": "player_vo",
    "when": "",
-   "en": "I'm nearly out. This was not in the work order.",
-   "fr": "Je suis presque à court. Ce n'était pas dans l'ordre de travail.",
+   "en": "Nearly dry! Undead commuters weren't on my work order!",
+   "fr": "Presque à sec ! Des zombies, c'était PAS sur ma fiche !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2304,8 +2304,8 @@
    "group": "reviving a teammate",
    "hook": "player_vo",
    "when": "",
-   "en": "Hold still. I'm restoring your circuit.",
-   "fr": "Ne bougez pas. Je rétablis votre circuit.",
+   "en": "Hold still! Rerouting your circuit—like in Astrolab Nine!",
+   "fr": "Bougez pas ! Je réamorce votre circuit — comme dans Astrolab Neuf !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2315,8 +2315,8 @@
    "group": "reviving a teammate",
    "hook": "player_vo",
    "when": "",
-   "en": "Come on, come on. Proving... proving... proved!",
-   "fr": "Allez, allez. Contrôle... contrôle... contrôle établi !",
+   "en": "Come on! Proving... proving... green light! You're back!",
+   "fr": "Allez ! Contrôle... contrôle... feu vert ! De retour !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2326,8 +2326,8 @@
    "group": "thanks when revived",
    "hook": "player_vo",
    "when": "",
-   "en": "Thank you. I've logged it. With a gold star.",
-   "fr": "Merci. Je l'ai consigné. Avec une étoile dorée.",
+   "en": "Thank you! Logged under heroic saves—gold star!",
+   "fr": "Merci ! Noté en sauvetage héroïque — étoile d'or !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2337,8 +2337,8 @@
    "group": "downed",
    "hook": "player_vo",
    "when": "",
-   "en": "[panicked] I'm down! This is a failure state! Help!",
-   "fr": "[panicked] Je suis à terre ! C'est un état de défaillance ! À l'aide !",
+   "en": "[panicked] I'm down! System failure! Somebody debug me!",
+   "fr": "[panicked] À terre ! Panne totale ! Redémarrez-moi !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2348,8 +2348,8 @@
    "group": "downed",
    "hook": "player_vo",
    "when": "",
-   "en": "Help! Somebody reset me!",
-   "fr": "À l'aide ! Quelqu'un, réinitialisez-moi !",
+   "en": "[panicked] Help! Don't let them crease my clipboard—or eat me!",
+   "fr": "[panicked] À l'aide ! Qu'ils froissent pas mes fiches — ni moi !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2359,8 +2359,8 @@
    "group": "downed",
    "hook": "player_vo",
    "when": "",
-   "en": "Please, please, I haven't finished my report!",
-   "fr": "S'il vous plaît, je n'ai pas fini mon rapport !",
+   "en": "[panicked] Please! I haven't filed my incident report yet!",
+   "fr": "[panicked] Pitié ! J'ai même pas bouclé mon rapport !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2370,8 +2370,8 @@
    "group": "perk: Double Takes",
    "hook": "perk_bought",
    "when": "",
-   "en": "Double Takes. Redundancy. I approve of redundancy.",
-   "fr": "Double Takes. La redondance. J'approuve la redondance.",
+   "en": "Double Takes! Dual redundancy—an engineer's dream!",
+   "fr": "Double Takes ! Double redondance — le rêve !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2381,8 +2381,8 @@
    "group": "perk: Baker's Dozens",
    "hook": "perk_bought",
    "when": "",
-   "en": "Baker's Dozens. Every thirteenth. A counter. I love a counter.",
-   "fr": "Baker's Dozens. Tous les treize. Un compteur. J'adore les compteurs.",
+   "en": "Baker's Dozens! Every thirteenth shot—a modulo counter!",
+   "fr": "Baker's Dozens ! Un tir sur treize — un compteur modulo !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2392,8 +2392,8 @@
    "group": "perk: Bon Voyages",
    "hook": "perk_bought",
    "when": "",
-   "en": "Bon Voyages. For transit. Fitting, technically.",
-   "fr": "Bon Voyages. Pour le transport. Approprié, techniquement.",
+   "en": "Bon Voyages! Transit glucose—technically optimal!",
+   "fr": "Bon Voyages ! Glucose de transit — optimal !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2403,8 +2403,8 @@
    "group": "perk: Sour Grudges",
    "hook": "perk_bought",
    "when": "",
-   "en": "Sour Grudges. I'm adding them to my list.",
-   "fr": "Sour Grudges. Je les ajoute à ma liste.",
+   "en": "Sour Grudges! Whoa, tart! Adding them to my spreadsheet.",
+   "fr": "Sour Grudges ! Ouh, acide ! Direct sur ma liste noire.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2414,8 +2414,8 @@
    "group": "wonder weapon: Exact Change",
    "hook": "ww_obtained",
    "when": "",
-   "en": "It deducts a fare per discharge. Accounting would be thrilled.",
-   "fr": "Il déduit un tarif à chaque tir. La comptabilité serait ravie.",
+   "en": "Bills a token per shot! Accounting would weep!",
+   "fr": "Un jeton par tir ! La compta en pleurerait !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2425,8 +2425,8 @@
    "group": "wonder weapon: Live Rail",
    "hook": "ww_obtained",
    "when": "",
-   "en": "A portable live rail. Six hundred volts, give or take my nerves.",
-   "fr": "Un rail sous tension portatif. Six cents volts, à mes nerfs près.",
+   "en": "Six hundred volts handheld! I'm basically Captain Volt now!",
+   "fr": "Six cents volts portatifs ! Me voilà Capitaine Volt !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2436,8 +2436,8 @@
    "group": "wonder weapon: the Dispatcher",
    "hook": "ww_obtained",
    "when": "",
-   "en": "Addressed and dispatched. That is correct procedure.",
-   "fr": "Adressé et expédié. C'est la procédure correcte.",
+   "en": "Stamped, addressed, pneumatically dispatched! Textbook!",
+   "fr": "Tamponné, adressé, expédié ! Procédure impeccable !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2447,8 +2447,8 @@
    "group": "wonder weapon: Top to Bottom",
    "hook": "ww_obtained",
    "when": "",
-   "en": "The livery code. Colour as instruction. The dead obey the paint.",
-   "fr": "Le code des livrées. La couleur comme instruction. Les morts obéissent à la peinture.",
+   "en": "The livery code! The dead literally obey the paint!",
+   "fr": "Le code couleur ! Les morts obéissent à la peinture !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2458,8 +2458,8 @@
    "group": "Roller seen",
    "hook": "rollers",
    "when": "",
-   "en": "Unbraked rolling stock on the platform!",
-   "fr": "Matériel roulant non freiné sur le quai !",
+   "en": "[panicked] Unbraked rolling stock on the platform! Watch your shins!",
+   "fr": "[panicked] Matériel sans freins sur le quai ! Attention aux tibias !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2469,8 +2469,8 @@
    "group": "Roller seen",
    "hook": "rollers",
    "when": "",
-   "en": "They can't stop! They have no stopping distance!",
-   "fr": "Ils ne peuvent pas s'arrêter ! Ils n'ont aucune distance de freinage !",
+   "en": "[panicked] Zero friction! They have no stopping distance!",
+   "fr": "[panicked] Zéro adhérence ! Aucune distance de freinage !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2480,8 +2480,8 @@
    "group": "the Night Inspector seen",
    "hook": "inspector",
    "when": "",
-   "en": "A fare inspector. Is my ticket valid? Is anything valid?",
-   "fr": "Un contrôleur. Mon billet est-il valable ? Est-ce que quelque chose l'est ?",
+   "en": "Lamp-headed inspector! Is my pass valid? Is reality?",
+   "fr": "Un contrôleur lanterne ! Ma carte passe ? La réalité passe ?",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2491,8 +2491,8 @@
    "group": "the Night Inspector marked me",
    "hook": "inspector",
    "when": "",
-   "en": "He's marked me! I have a staff pass! Somewhere!",
-   "fr": "Il m'a marqué ! J'ai une carte d'agent ! Quelque part !",
+   "en": "[panicked] He marked me! I'm HRT staff—check my badge!",
+   "fr": "[panicked] Il m'a ciblé ! Je suis de la maison — mon badge !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2502,8 +2502,8 @@
    "group": "the Night Inspector killed",
    "hook": "inspector",
    "when": "",
-   "en": "Inspection terminated. Abnormally.",
-   "fr": "Contrôle interrompu. Anormalement.",
+   "en": "Inspection terminated! Way outside normal specs!",
+   "fr": "Contrôle interrompu ! Hors de toutes les normes !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2513,8 +2513,8 @@
    "group": "the Conductor seen",
    "hook": "conductor",
    "when": "",
-   "en": "That's the conductor of 047. He has the controller key.",
-   "fr": "C'est le chef de bord du 047. Il a la clé du manipulateur.",
+   "en": "047's conductor! He's got the master key—get it!",
+   "fr": "Le chef du 047 ! Il a la clé — prenez-la !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2524,8 +2524,8 @@
    "group": "quest: power",
    "hook": "power_on",
    "when": "",
-   "en": "G-2 is running. I restarted a generator tagged do not restart. I'm so sorry.",
-   "fr": "Le G-2 tourne. J'ai redémarré un groupe étiqueté « ne pas redémarrer ». Je suis vraiment désolé.",
+   "en": "G-2's running! I restarted a 'do not restart' unit. I'm fired.",
+   "fr": "Le G-2 tourne ! J'ai relancé un groupe condamné. Je suis viré.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2535,8 +2535,8 @@
    "group": "quest: first clock",
    "hook": "clock_wound",
    "when": "",
-   "en": "One clock advanced. The others are still wrong. Correctly wrong.",
-   "fr": "Une horloge avancée. Les autres sont toujours fausses. Exactement fausses.",
+   "en": "Clock one's moving! Others are still thirteen minutes off.",
+   "fr": "Première horloge repartie ! Les autres retardent de treize minutes.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2546,8 +2546,8 @@
    "group": "quest: last clock",
    "hook": "clock_wound",
    "when": "",
-   "en": "Thirteen minutes restored. ZERO expects the run now.",
-   "fr": "Treize minutes rétablies. ZERO attend le train, maintenant.",
+   "en": "Thirteen minutes restored! Bracing for temporal weirdness!",
+   "fr": "Treize minutes rétablies ! Attention au bug temporel !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2557,8 +2557,8 @@
    "group": "quest: road set",
    "hook": "road_set",
    "when": "",
-   "en": "The road is set. Points locked, signal clear. Beautiful.",
-   "fr": "L'itinéraire est formé. Aiguilles verrouillées, signal ouvert. Magnifique.",
+   "en": "Points locked, signal green, road set! Gorgeous engineering.",
+   "fr": "Aiguilles verrouillées, feu vert, voie libre ! Quelle mécanique.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2568,8 +2568,8 @@
    "group": "quest: Handle taken",
    "hook": "conductor",
    "when": "",
-   "en": "The dead-man's handle. An ironic name, in context.",
-   "fr": "La manette d'homme mort. Un nom ironique, dans le contexte.",
+   "en": "Dead-man's handle! Slightly ironic, given our commuter crowd.",
+   "fr": "Manette d'homme mort ! Assez ironique vu la clientèle.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2579,8 +2579,8 @@
    "group": "quest: boarding",
    "hook": "terminus",
    "when": "",
-   "en": "We're boarding. The train is not moving. And yet.",
-   "fr": "On embarque. Le train ne bouge pas. Et pourtant.",
+   "en": "Boarding a parked train to nowhere. Even Professor Flux never saw this.",
+   "fr": "Train à l'arrêt pour nulle part. Même Professeur Flux aurait douté.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2590,8 +2590,8 @@
    "group": "quest: Terminus arrival",
    "hook": "terminus",
    "when": "",
-   "en": "The floor is a timetable. These are our times. These are our footprints.",
-   "fr": "Le sol est un horaire. Ce sont nos horaires. Ce sont nos traces de pas.",
+   "en": "[whispering] The floor's a timetable... with our names and footprints!",
+   "fr": "[whispering] Le sol est un listing... avec nos noms et nos pas !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2601,8 +2601,8 @@
    "group": "quest: return",
    "hook": "terminus",
    "when": "",
-   "en": "Same second. The same second! Somebody write that down!",
-   "fr": "La même seconde. La même seconde ! Que quelqu'un le note !",
+   "en": "Same second! Zero elapsed time! Write that down—I'm getting published!",
+   "fr": "La même seconde ! Zéro temps écoulé ! Notez ça — je publie !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2612,8 +2612,8 @@
    "group": "zone: the Arcade",
    "hook": "zone_enter",
    "when": "",
-   "en": "The seventy-eight refit. Original fluorescent ballasts. Mostly dead.",
-   "fr": "La rénovation de soixante-dix-huit. Ballasts fluorescents d'origine. Presque tous morts.",
+   "en": "Seventy-eight refit! Original ballasts—listen to that sixty-hertz hum!",
+   "fr": "Réno de soixante-dix-huit ! Ballasts d'origine — écoutez ce bourdonnement !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2623,8 +2623,8 @@
    "group": "zone: the Parlour",
    "hook": "zone_enter",
    "when": "",
-   "en": "Vayle's salon. Those are tuning forks. The whole wall is tuned.",
-   "fr": "Le salon de Vayle. Ce sont des diapasons. Tout le mur est accordé.",
+   "en": "Vayle's salon! A wall of tuning forks—like a Victorian ray-gun lab!",
+   "fr": "Le salon de Vayle ! Un mur de diapasons — un vrai labo rétro-futuriste !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2634,8 +2634,8 @@
    "group": "zone: the Bellows Vault",
    "hook": "zone_enter",
    "when": "",
-   "en": "The Bellows. If that blower starts, the whole main sings.",
-   "fr": "La Soufflerie. Si ce ventilateur démarre, toute la conduite se met à chanter.",
+   "en": "The Bellows! If that starts, the whole tunnel becomes an organ!",
+   "fr": "La Soufflerie ! Si ça démarre, tout le tunnel joue de l'orgue !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2645,8 +2645,8 @@
    "group": "pay phone rings",
    "hook": "pay_phone",
    "when": "",
-   "en": "That phone's line was cut in January. I signed the docket.",
-   "fr": "La ligne de ce téléphone a été coupée en janvier. J'ai signé le bon.",
+   "en": "I signed the cutoff order for that phone in January! How's it ringing?!",
+   "fr": "J'ai coupé cette ligne en janvier ! Comment elle sonne ?!",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2656,8 +2656,8 @@
    "group": "pay phone answered",
    "hook": "pay_phone",
    "when": "",
-   "en": "Hello, Signals? ... It's the Voice. She's reading me timetables.",
-   "fr": "Allô, la signalisation ? ... C'est la Voix. Elle me lit des horaires.",
+   "en": "[whispering] Signals? ... It's the Voice! Reading departures that don't exist!",
+   "fr": "[whispering] Signalisation ? ... C'est la Voix ! Elle lit des trains fantômes !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2667,8 +2667,8 @@
    "group": "a tape picked up",
    "hook": "secret",
    "when": "",
-   "en": "A Lodestar micro-cassette. Dr. Strand's. She was right, wasn't she.",
-   "fr": "Une microcassette Lodestar. Celle du docteur Strand. Elle avait raison, n'est-ce pas.",
+   "en": "Dr. Strand's cassette! I read her thesis—she was totally right!",
+   "fr": "La cassette de Strand ! J'ai lu sa thèse — elle avait raison !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2678,8 +2678,8 @@
    "group": "the hidden song heard",
    "hook": "secret",
    "when": "",
-   "en": "That's not on any frequency we use.",
-   "fr": "Ce n'est sur aucune des fréquences qu'on utilise.",
+   "en": "Not on any HRT radio band! Catchy waveform, though!",
+   "fr": "Sur aucune fréquence du réseau ! Mais bon rythme !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2689,8 +2689,8 @@
    "group": "g27 quest: a relay proving",
    "hook": "relay_on",
    "when": "",
-   "en": "Relay proving. Green lamp. I could cry.",
-   "fr": "Le relais est en contrôle. Lampe verte. Je pourrais pleurer.",
+   "en": "Relay proving! Green lamp—I'm tearing up a little!",
+   "fr": "Relais validé ! Lampe verte — j'en ai la larme à l'œil !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2700,8 +2700,8 @@
    "group": "g27 quest: the control-room shutter open",
    "hook": "pap_open",
    "when": "",
-   "en": "All three relays proving. The control-room shutter is released.",
-   "fr": "Les trois relais en contrôle. Le rideau de la salle de commande est libéré.",
+   "en": "All relays proving! Shutter's open—signal techs save the day!",
+   "fr": "Tous les relais validés ! Rideau ouvert — vive la signalisation !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2711,8 +2711,8 @@
    "group": "round start (match opening)",
    "hook": "match_start",
    "when": "",
-   "en": "Channel 9 Night Desk, one year after the gas incident, and I am standing in the gas incident.",
-   "fr": "Channel 9, Night Desk, un an après l'incident du gaz, et je me tiens en plein dans l'incident du gaz.",
+   "en": "Channel 9 Night Desk, live from the 'gas leak'—which is totally trying to bite me.",
+   "fr": "Channel 9 en direct de la « fuite de gaz » — qui essaie carrément de me mordre.",
    "max_s": 8,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2722,8 +2722,8 @@
    "group": "round start (match opening)",
    "hook": "match_start",
    "when": "",
-   "en": "We're live. We're... still live? Keep rolling.",
-   "fr": "On est en direct. On est... toujours en direct ? Continue de tourner.",
+   "en": "Mic's still hot? Keep rolling! If I live, I'm winning every award.",
+   "fr": "Micro ouvert ? Garde l'antenne ! Si j'en sors, je rafle tout.",
    "max_s": 8,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2733,8 +2733,8 @@
    "group": "round start (every fifth round)",
    "hook": "round_start",
    "when": "",
-   "en": "Breaking news: they keep coming. Back to you, studio. Studio?",
-   "fr": "Flash spécial : ils continuent d'arriver. À vous les studios. Les studios ?",
+   "en": "Breaking news: gross dead commuters won't quit! Back to you, studio. Hello?",
+   "fr": "Flash spécial : les zombies lâchent pas l'affaire ! À vous, studio. Allô ?",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2744,8 +2744,8 @@
    "group": "low ammo",
    "hook": "player_vo",
    "when": "",
-   "en": "Running low! Somebody cut to commercial!",
-   "fr": "Je suis presque à sec ! Qu'on passe une page de pub !",
+   "en": "Almost out of ammo! Cut to commercial—like, now!",
+   "fr": "Presque plus de balles ! Balancez la pub, vite !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2755,8 +2755,8 @@
    "group": "low ammo",
    "hook": "player_vo",
    "when": "",
-   "en": "Last round. If I miss, that's a wrap.",
-   "fr": "Dernière cartouche. Si je rate, c'est la fin de l'émission.",
+   "en": "Last round! If I miss, cancel my ten o'clock.",
+   "fr": "Dernière balle ! Si je rate, annulez le vingt-deux heures.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2766,8 +2766,8 @@
    "group": "reviving a teammate",
    "hook": "player_vo",
    "when": "",
-   "en": "Stay with me! You're my only witness.",
-   "fr": "Reste avec moi ! Tu es mon seul témoin.",
+   "en": "Ugh, get up! Not dying before I get my quote!",
+   "fr": "Debout ! Tu crèves pas avant mon interview !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2777,8 +2777,8 @@
    "group": "reviving a teammate",
    "hook": "player_vo",
    "when": "",
-   "en": "Up! I need you on camera.",
-   "fr": "Debout ! J'ai besoin de toi à l'image.",
+   "en": "Up! You look awful on the floor—bad angle.",
+   "fr": "Debout ! Par terre, c'est pas ton meilleur profil.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2788,8 +2788,8 @@
    "group": "thanks when revived",
    "hook": "player_vo",
    "when": "",
-   "en": "Thank you. You'll get a credit. Small font.",
-   "fr": "Merci. Tu seras au générique. En petits caractères.",
+   "en": "Thanks! You're totally in the credits. Small font.",
+   "fr": "Merci ! Tu passes au générique. En tout petit.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2800,7 +2800,7 @@
    "hook": "player_vo",
    "when": "",
    "en": "[panicked] I'm down! Is the camera still on? Help me!",
-   "fr": "[panicked] Je suis à terre ! La caméra tourne encore ? Aidez-moi !",
+   "fr": "[panicked] À terre ! Ça tourne encore ? Aidez-moi !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2810,8 +2810,8 @@
    "group": "downed",
    "hook": "player_vo",
    "when": "",
-   "en": "Somebody! This is not the story I pitched!",
-   "fr": "Quelqu'un ! Ce n'est pas le sujet que j'avais proposé !",
+   "en": "[panicked] Somebody! As if I pitched getting eaten live!",
+   "fr": "[panicked] Au secours ! J'avais pas vendu ce sujet-là !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2821,8 +2821,8 @@
    "group": "downed",
    "hook": "player_vo",
    "when": "",
-   "en": "[sobbing] Help! Please, I'm not done yet!",
-   "fr": "[sobbing] À l'aide ! Je vous en prie, je n'ai pas fini !",
+   "en": "[sobbing] Help! I am NOT ending my career down here!",
+   "fr": "[sobbing] À l'aide ! Je finis pas ma carrière ici !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2832,8 +2832,8 @@
    "group": "perk: Double Takes",
    "hook": "perk_bought",
    "when": "",
-   "en": "Double Takes. Every reporter needs a second take.",
-   "fr": "Double Takes. Toute reporter a besoin d'une deuxième prise.",
+   "en": "Double Takes! Like I ever need a second take.",
+   "fr": "Double Takes ! Comme si j'avais besoin d'une deuxième prise.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2843,8 +2843,8 @@
    "group": "perk: Baker's Dozens",
    "hook": "perk_bought",
    "when": "",
-   "en": "Baker's Dozens. The doughnut stand outlived the station.",
-   "fr": "Baker's Dozens. Le stand de beignets a survécu à la station.",
+   "en": "Baker's Dozens! Even here, the doughnut stand lives. Iconic.",
+   "fr": "Baker's Dozens ! Même ici, les donuts survivent. Culte.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2854,8 +2854,8 @@
    "group": "perk: Bon Voyages",
    "hook": "perk_bought",
    "when": "",
-   "en": "Bon Voyages. A sponsored segment. I'm keeping it.",
-   "fr": "Bon Voyages. Un segment sponsorisé. Je le garde.",
+   "en": "Bon Voyages! Free sponsor candy? Fine, I'll take it.",
+   "fr": "Bon Voyages ! Bonbons de sponsor ? Allez, je prends.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2865,8 +2865,8 @@
    "group": "perk: Sour Grudges",
    "hook": "perk_bought",
    "when": "",
-   "en": "Sour Grudges. I have a list. It's alphabetical.",
-   "fr": "Sour Grudges. J'ai une liste. Elle est alphabétique.",
+   "en": "Sour Grudges! Honey, my list is alphabetical.",
+   "fr": "Sour Grudges ! Chéri, ma liste est alphabétique.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2876,8 +2876,8 @@
    "group": "wonder weapon: Exact Change",
    "hook": "ww_obtained",
    "when": "",
-   "en": "A gun that charges a fare. That's the story of this city.",
-   "fr": "Un flingue qui fait payer le trajet. C'est toute l'histoire de cette ville.",
+   "en": "A gun charging fare? Seriously, so Port Halcyon.",
+   "fr": "Un flingue payant ? Tellement Port Halcyon.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2887,8 +2887,8 @@
    "group": "wonder weapon: Live Rail",
    "hook": "ww_obtained",
    "when": "",
-   "en": "Live rail. Do not touch the talent.",
-   "fr": "Rail sous tension. On ne touche pas à la vedette.",
+   "en": "Live rail! Back off—nobody touches the talent!",
+   "fr": "Rail sous tension ! Reculez — pas touche à la star !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2898,8 +2898,8 @@
    "group": "wonder weapon: the Dispatcher",
    "hook": "ww_obtained",
    "when": "",
-   "en": "Stamped and sent. I've always wanted to do that to a producer.",
-   "fr": "Tamponné et expédié. J'ai toujours rêvé de faire ça à un producteur.",
+   "en": "Stamped and shipped! Wish I could mail my producer.",
+   "fr": "Tamponné, expédié ! Je ferais pareil à mon producteur.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2909,8 +2909,8 @@
    "group": "wonder weapon: Top to Bottom",
    "hook": "ww_obtained",
    "when": "",
-   "en": "Magenta. It's not my colour. It's theirs now.",
-   "fr": "Magenta. Ce n'est pas ma couleur. C'est la leur, maintenant.",
+   "en": "Neon paint? Gag me—totally not my color. Wear it!",
+   "fr": "Peinture fluo ? Quelle horreur — cadeau, les moches !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2920,8 +2920,8 @@
    "group": "Roller seen",
    "hook": "rollers",
    "when": "",
-   "en": "The Orbit Rink party! They chartered car six. I have the press release.",
-   "fr": "La soirée de l'Orbit Rink ! Ils avaient la voiture six. J'ai le communiqué.",
+   "en": "Orbit Rink skaters! Car six—ugh, those outfits are criminal!",
+   "fr": "Patineurs d'Orbit Rink ! Voiture six — ces tenues, un crime !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2931,8 +2931,8 @@
    "group": "Roller seen",
    "hook": "rollers",
    "when": "",
-   "en": "Skates. Of course there are skates.",
-   "fr": "Des patins. Évidemment qu'il y a des patins.",
+   "en": "Roller skates? Seriously? Could tonight get tackier?",
+   "fr": "Des patins ? Sérieux ? Encore plus ringard ?",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2942,8 +2942,8 @@
    "group": "the Night Inspector seen",
    "hook": "inspector",
    "when": "",
-   "en": "That's... a fare inspector. With a lamp for a head. Are you getting this?",
-   "fr": "C'est... un contrôleur. Avec une lanterne pour tête. Tu filmes ?",
+   "en": "Ew—lamp-headed inspector?! Tell me we're filming this!",
+   "fr": "Beurk — un contrôleur lanterne ?! Dis-moi qu'on filme !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2953,8 +2953,8 @@
    "group": "the Night Inspector marked me",
    "hook": "inspector",
    "when": "",
-   "en": "He's coming for me. I put my ticket on expenses!",
-   "fr": "Il vient pour moi. J'ai mis mon billet en note de frais !",
+   "en": "Back off! I'm press—my ticket's on expenses!",
+   "fr": "Lâche-moi ! Carte de presse — note de frais !",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2964,8 +2964,8 @@
    "group": "the Night Inspector killed",
    "hook": "inspector",
    "when": "",
-   "en": "The inspector is down. You heard it here first.",
-   "fr": "Le contrôleur est à terre. Vous l'avez appris ici en premier.",
+   "en": "Inspector's toast! Channel 9 exclusive, folks.",
+   "fr": "Contrôleur hors-jeu ! Exclu Channel 9.",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2975,8 +2975,8 @@
    "group": "the Conductor seen",
    "hook": "conductor",
    "when": "",
-   "en": "The conductor of the twenty-three forty-seven. Smiling. Why is he smiling?",
-   "fr": "Le chef de bord du vingt-trois heures quarante-sept. Il sourit. Pourquoi il sourit ?",
+   "en": "The twenty-three forty-seven conductor! Ugh, why's he smiling?",
+   "fr": "Le chef du vingt-trois heures quarante-sept ! Pourquoi il sourit ?",
    "max_s": 5.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2986,8 +2986,8 @@
    "group": "quest: power",
    "hook": "power_on",
    "when": "",
-   "en": "The lights are back. My cameraman isn't.",
-   "fr": "La lumière est revenue. Mon caméraman, non.",
+   "en": "Lights are back! Cameraman's still MIA—and my hair's wrecked.",
+   "fr": "Lumière revenue ! Caméraman disparu — et ma coiffure fichue.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -2997,8 +2997,8 @@
    "group": "quest: first clock",
    "hook": "clock_wound",
    "when": "",
-   "en": "One clock moving. Get a shot of that.",
-   "fr": "Une horloge repart. Fais-moi un plan là-dessus.",
+   "en": "Clock one's moving! Where's my camera guy when I get visuals?",
+   "fr": "Première horloge ! Où est mon cadreur quand ça bouge ?",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3008,8 +3008,8 @@
    "group": "quest: last clock",
    "hook": "clock_wound",
    "when": "",
-   "en": "Midnight, after a year. Channel 9 had it first.",
-   "fr": "Minuit, après un an. Channel 9 l'a eu en premier.",
+   "en": "Midnight, a year late! Channel 9 totally scooped everyone!",
+   "fr": "Minuit, un an trop tard ! Channel 9 rafle l'exclu !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3019,8 +3019,8 @@
    "group": "quest: road set",
    "hook": "road_set",
    "when": "",
-   "en": "Road set. I have no idea what that means and I'm reporting it anyway.",
-   "fr": "Itinéraire formé. Je n'ai aucune idée de ce que ça veut dire et je l'annonce quand même.",
+   "en": "'Road set.' Whatever that means, I'm saying it like a pro.",
+   "fr": "« Voie libre. » Aucune idée, mais je le sors avec aplomb.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3030,8 +3030,8 @@
    "group": "quest: Handle taken",
    "hook": "conductor",
    "when": "",
-   "en": "We have the handle. Exclusive.",
-   "fr": "On a la manette. En exclusivité.",
+   "en": "Got the handle! Eat it, morning desk—exclusive!",
+   "fr": "On a la manette ! Prends ça, la matinale — exclu !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3041,8 +3041,8 @@
    "group": "quest: boarding",
    "hook": "terminus",
    "when": "",
-   "en": "We're boarding the twenty-three forty-seven. If this airs, I want the eleven o'clock slot.",
-   "fr": "On embarque dans le vingt-trois heures quarante-sept. Si ça passe à l'antenne, je veux le créneau de vingt-trois heures.",
+   "en": "Boarding a ghost train! If this airs, I'm taking the anchor chair.",
+   "fr": "En route sur un train fantôme ! Si ça passe, je prends le JT.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3052,8 +3052,8 @@
    "group": "quest: Terminus arrival",
    "hook": "terminus",
    "when": "",
-   "en": "A platform made of printout. Our names are on it. [whispering] Keep rolling.",
-   "fr": "Un quai fait de listings. Nos noms sont dessus. [whispering] Continue de tourner.",
+   "en": "A platform of printout... with our names. [whispering] Keep rolling.",
+   "fr": "Un quai de listings... avec nos noms. [whispering] Continue de tourner.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3063,8 +3063,8 @@
    "group": "quest: return",
    "hook": "terminus",
    "when": "",
-   "en": "We're back. Same second. Nobody will believe the tape.",
-   "fr": "On est revenus. La même seconde. Personne ne croira la cassette.",
+   "en": "Back in the same second? Nobody at the desk's buying this tape.",
+   "fr": "Revenus la même seconde ? Personne à la rédac ne va y croire.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3074,8 +3074,8 @@
    "group": "zone: the Arcade",
    "hook": "zone_enter",
    "when": "",
-   "en": "The underpass arcade. I did a piece here on the refit, in seventy-eight.",
-   "fr": "La galerie du passage souterrain. J'ai fait un sujet ici sur la rénovation, en soixante-dix-huit.",
+   "en": "The arcade! Did a fluff piece here—gross then, grosser now.",
+   "fr": "La galerie ! J'y ai tourné un sujet — glauque avant, pire maintenant.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3085,8 +3085,8 @@
    "group": "zone: the Parlour",
    "hook": "zone_enter",
    "when": "",
-   "en": "Gaslight, gold leaf, and nobody knew. That's a lead.",
-   "fr": "Lustres à gaz, feuille d'or, et personne ne savait. Ça, c'est une piste.",
+   "en": "Gaslight and gold leaf under the subway? Okay, real scoop.",
+   "fr": "Lustres à gaz et dorures sous le métro ? Vrai scoop.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3096,8 +3096,8 @@
    "group": "zone: the Bellows Vault",
    "hook": "zone_enter",
    "when": "",
-   "en": "Something down here is breathing. I can hear it on the mic.",
-   "fr": "Quelque chose respire, ici. Je l'entends dans le micro.",
+   "en": "Ew—something giant's breathing! I hear it on my mic.",
+   "fr": "Beurk — un truc géant respire ! Je l'entends au micro.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3107,8 +3107,8 @@
    "group": "pay phone rings",
    "hook": "pay_phone",
    "when": "",
-   "en": "Who calls a sealed station on New Year's Eve?",
-   "fr": "Qui appelle une station scellée un soir de réveillon ?",
+   "en": "Seriously, who calls a sealed subway on New Year's Eve?",
+   "fr": "Sérieux, qui appelle un métro condamné au réveillon ?",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3118,8 +3118,8 @@
    "group": "pay phone answered",
    "hook": "pay_phone",
    "when": "",
-   "en": "Channel 9 Night Desk... She's reading the departures. To me.",
-   "fr": "Channel 9, Night Desk... Elle lit les départs. Pour moi.",
+   "en": "Channel 9... [whispering] So creepy. She's reading departures just for me.",
+   "fr": "Channel 9... [whispering] Trop flippant. Elle lit les départs pour moi.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3129,8 +3129,8 @@
    "group": "a tape picked up",
    "hook": "secret",
    "when": "",
-   "en": "Dr. Strand's tape. This is the story. This was always the story.",
-   "fr": "La cassette du docteur Strand. Voilà le sujet. Ça a toujours été le sujet.",
+   "en": "Strand's tape! Hello, prime time—this was the story all along!",
+   "fr": "La cassette de Strand ! Bonjour le prime time — voilà le vrai scoop !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3140,8 +3140,8 @@
    "group": "the hidden song heard",
    "hook": "secret",
    "when": "",
-   "en": "Is that... music? Somebody get the boom mic.",
-   "fr": "C'est... de la musique ? Qu'on m'apporte la perche.",
+   "en": "Actual music? Finally! Get the boom mic over here!",
+   "fr": "De la vraie musique ? Enfin ! Amenez la perche !",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3151,8 +3151,8 @@
    "group": "g27 quest: a relay proving",
    "hook": "relay_on",
    "when": "",
-   "en": "Relay restored. I'm narrating rewiring now. This is my career.",
-   "fr": "Relais rétabli. Je commente du câblage, maintenant. Voilà ma carrière.",
+   "en": "Relay's green! Live-reporting subway wiring now. Peak journalism.",
+   "fr": "Relais vert ! Je commente du câblage. Le sommet du journalisme.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   },
@@ -3162,8 +3162,8 @@
    "group": "g27 quest: the control-room shutter open",
    "hook": "pap_open",
    "when": "",
-   "en": "The control room is open. Whatever's in there, it's on the record.",
-   "fr": "La salle de commande est ouverte. Quoi qu'il y ait dedans, c'est officiel.",
+   "en": "Control room's open! Smile, creeps—you're totally on the record.",
+   "fr": "Salle de commande ouverte ! Souriez — vous passez à l'antenne.",
    "max_s": 7.5,
    "routing": "unproven: new hero lines need their own aliases and a per-character routing (11-AUDIO-DIRECTION 5.2)"
   }
