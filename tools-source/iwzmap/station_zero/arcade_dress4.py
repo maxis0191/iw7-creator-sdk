@@ -316,6 +316,8 @@ def shop(A, m, D, i, report):
     hue = HUE[kind]
     brd = R3.BOARD[kind]
     lv = (24.0, 46.0, 68.0, 90.0, 112.0, 134.0, 156.0)
+    D.rooms.append((left, yb + A.WT, right, yp + 10.0))                 # the stock leans on the partition: its jittered boxes may touch the partition's thickness
+    D.rooms.append((left, yp + 10.0, right, wallb + 6.0))
     m.use('dressing')
     box(m, [left, yb + A.WT, 0.0, left + 2.0, wallb, 8.0], BLACK, id='skirt_l_%d' % (i + 1))
     box(m, [right - 2.0, yb + A.WT, 0.0, right, wallb, 8.0], BLACK, id='skirt_r_%d' % (i + 1))
@@ -334,7 +336,7 @@ def shop(A, m, D, i, report):
     n_stock = 0
     for side, (u0, u1) in enumerate(((18.0, 116.0), (204.0, 302.0))):
         sh = R2.Shelf(m, 'shelf_p%d_%d' % (side, i), (U(u0), yp - 32.0, U(u1), yp), 's', lv, board=brd, top=172.0)
-        n_stock += R2.stock(D, sh, items[side], step, yaw=270.0, jitter=14.0, skip=0.04)
+        n_stock += R2.stock(D, sh, items[side], step * 1.5, yaw=270.0, jitter=14.0, skip=0.04, scale=1.5)
     # a transom shelf above the doorway, packed boxes
     sh = R2.Shelf(m, 'shelf_t_%d' % i, (U(116.0), yp - 22.0, U(204.0), yp), 's', (110.0, 134.0, 158.0), board=brd, top=172.0, clip=False)      # above the doorway (96 high): no collision
     n_stock += R2.stock(D, sh, ['boxc', 'boxa', 'boxc'] if kind != 'needle' else ['crate', 'boxa', 'crate'], 28.0, yaw=270.0, jitter=10.0, skip=0.0)
@@ -419,8 +421,8 @@ def corridor_dense(A, m, D, report):
             D.wall(M['ladder'], 'n', mid - 20.0, tag='pier_ladder%d' % k)
             D.wall(M['bucket'], 'n', mid + 20.0, tag='pier_bucket%d' % k)
     # scatter: mid-size (stacks, cones, buckets, pallets, stools) and small litter in clusters
-    mids = [M['crate1'], M['crate2'], M['cone'], M['bucket'], M['pallet'], M['stool2'], M['fchair'], M['barrel'], M['boxa'], M['boxc'], M['bag']]
-    smalls = [M['bag'], M['chips'], M['cup'], M['paper'], M['can'], M['pile'], M['smokes'], M['stackp'], M['mags'], M['mug']]
+    mids = [M['crate1'], M['crate2'], M['cone'], M['bucket'], M['pallet'], M['stool2'], M['fchair'], M['barrel'], M['cone'], M['bucket']]
+    smalls = [M['chips'], M['cup'], M['paper'], M['can'], M['smokes'], M['stackp'], M['mags'], M['mug'], M['cup'], M['paper']]
     x0, x1 = A.X0 + 50.0, A.X1 - 50.0
     bands = [(3524.0, 3588.0), (3702.0, 3860.0), (3940.0, 4128.0), (4242.0, 4276.0)]
     placed_mid = 0
@@ -442,11 +444,11 @@ def corridor_dense(A, m, D, report):
         B.decal(m, POSTERS[k % len(POSTERS)], (x, A.Y0 + A.WT, 150.0 + 4.0 * (k % 3)), (0.0, 1.0, 0.0), (28.0, 40.0), id='dec_post_s%d' % k)
     for k, (a, b) in enumerate(PIERS):
         B.decal(m, POSTERS[(k * 2) % len(POSTERS)], ((a + b) / 2.0 - 14.0 + (12.0 if k % 2 else 0.0), A.Y1 - A.WT, 150.0), (0.0, -1.0, 0.0), (28.0, 40.0), id='dec_post_n%d' % k)
-    for k in range(34):
-        x = A.X0 + 60.0 + k * 50.0
+    for k in range(12):
+        x = A.X0 + 100.0 + k * 140.0
         yy = rng.choice((3610.0, 3700.0, 3830.0, 3950.0, 4090.0, 4230.0)) + rng.uniform(-25.0, 25.0)
-        B.decal(m, ('w/asphalt_flooring_stain_01', 'w/fac_darkstain_01_dec', 'w/dirt_stain_water_drips_01')[k % 3], (x + rng.uniform(-20, 20), yy, 1.8), (0.0, 0.0, 1.0),
-                (rng.uniform(70.0, 130.0), rng.uniform(60.0, 120.0)), rot=rng.uniform(0, 360), id='dec_floor_%d' % k)
+        B.decal(m, ('w/dirt_stain_water_drips_01', 'w/wall_stain_01_dec', 'w/dirt_stain_water_drips_01')[k % 3], (x + rng.uniform(-20, 20), yy, 1.8), (0.0, 0.0, 1.0),
+                (rng.uniform(36.0, 70.0), rng.uniform(36.0, 64.0)), rot=rng.uniform(0, 360), id='dec_floor_%d' % k)
 
 
 # ------------------------------------------------------------------------------------------------ light
