@@ -9,7 +9,7 @@ height u16 @0x32, depth @0x34, numElements @0x36, levelCount u8 @0x38, streamed 
 DDS: 'DDS ' + 124-byte header + DX10 header (dxgiFormat), single 2D surface, one mip.
 Block compression goes through texconv (DirectXTex, GPU BC6H) - see encode().
 """
-import os, struct, subprocess, tempfile
+import os, shutil, struct, subprocess, tempfile
 import numpy as np
 
 TEXCONV = os.environ.get('IWZ_TEXCONV') or os.path.join(
@@ -106,7 +106,26 @@ def texconv(src, fmt, outdir, extra=()):
 
 
 # ------------------------------------------------------------------ encode / decode
+def _scratch(fn, work, *a):
+    # a scratch folder made here is removed here (a leaked iwzlm_* folder held 16 GB on 25 Nov 2026)
+    if work:
+        return fn(*a, work=work)
+    tmp = tempfile.mkdtemp(prefix='iwzlm_')
+    try:
+        return fn(*a, work=tmp)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def encode(arr, fmt, work=None):
+    return _scratch(_encode, work, arr, fmt)
+
+
+def decode(fmt, w, h, data, work=None):
+    return _scratch(_decode, work, fmt, w, h, data)
+
+
+def _encode(arr, fmt, work=None):
     """arr: float32 HxWxC (C = 1, 2 or 3/4). Returns the payload in the given DXGI format name."""
     h, w = arr.shape[:2]
     if fmt == 'R8G8_UNORM':
@@ -134,7 +153,7 @@ def encode(arr, fmt, work=None):
     return data
 
 
-def decode(fmt, w, h, data, work=None):
+def _decode(fmt, w, h, data, work=None):
     """Payload -> float32 HxWx4 (RGBA order; R8G8 -> (r, g, 0, 1); BC4/R8 -> (r, 0, 0, 1))."""
     if fmt == 49:
         rg = np.frombuffer(data, np.uint8).reshape(h, w, 2).astype(np.float32) / 255.0

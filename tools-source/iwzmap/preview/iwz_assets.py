@@ -14,6 +14,7 @@ import os
 import struct
 import subprocess
 import sys
+import shutil
 import tempfile
 
 import numpy as np
@@ -258,26 +259,32 @@ def _write_dds(path, fmt, w, h, data):
 def to_png(fmt, w, h, data, out_png):
     """Top-mip payload -> PNG with texconv (values kept as stored; colour maps are sRGB encoded)."""
     tmp = tempfile.mkdtemp(prefix='iwzpv_')
-    src = os.path.join(tmp, 'i.dds')
-    _write_dds(src, fmt, w, h, data[:mip_bytes(fmt, w, h)])
-    cmd = [texconv_exe(), '-nologo', '-y', '-m', '1', '-ft', 'png', '-f', 'R8G8B8A8_UNORM', '-o', tmp, '--', src]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    p = os.path.join(tmp, 'i.png')
-    if r.returncode != 0 or not os.path.isfile(p):
-        raise RuntimeError('texconv: ' + (r.stdout + r.stderr)[-300:])
-    os.makedirs(os.path.dirname(out_png), exist_ok=True)
-    os.replace(p, out_png)
+    try:
+        src = os.path.join(tmp, 'i.dds')
+        _write_dds(src, fmt, w, h, data[:mip_bytes(fmt, w, h)])
+        cmd = [texconv_exe(), '-nologo', '-y', '-m', '1', '-ft', 'png', '-f', 'R8G8B8A8_UNORM', '-o', tmp, '--', src]
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        p = os.path.join(tmp, 'i.png')
+        if r.returncode != 0 or not os.path.isfile(p):
+            raise RuntimeError('texconv: ' + (r.stdout + r.stderr)[-300:])
+        os.makedirs(os.path.dirname(out_png), exist_ok=True)
+        os.replace(p, out_png)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def dds_to_png(dds, out_png):
     tmp = tempfile.mkdtemp(prefix='iwzpv_')
-    cmd = [texconv_exe(), '-nologo', '-y', '-m', '1', '-ft', 'png', '-f', 'R8G8B8A8_UNORM', '-o', tmp, '--', dds]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    p = os.path.join(tmp, os.path.splitext(os.path.basename(dds))[0] + '.png')
-    if r.returncode != 0 or not os.path.isfile(p):
-        raise RuntimeError('texconv: ' + (r.stdout + r.stderr)[-300:])
-    os.makedirs(os.path.dirname(out_png), exist_ok=True)
-    os.replace(p, out_png)
+    try:
+        cmd = [texconv_exe(), '-nologo', '-y', '-m', '1', '-ft', 'png', '-f', 'R8G8B8A8_UNORM', '-o', tmp, '--', dds]
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        p = os.path.join(tmp, os.path.splitext(os.path.basename(dds))[0] + '.png')
+        if r.returncode != 0 or not os.path.isfile(p):
+            raise RuntimeError('texconv: ' + (r.stdout + r.stderr)[-300:])
+        os.makedirs(os.path.dirname(out_png), exist_ok=True)
+        os.replace(p, out_png)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
     return out_png
 
 
