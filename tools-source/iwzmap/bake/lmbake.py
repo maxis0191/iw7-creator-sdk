@@ -1,6 +1,7 @@
 """Lightmap baker for generated IW7 worlds (iwzmap).
 
 usage: lmbake.py <source dir> <lights.json> <out dir> [--texel 8] [--rays 100] [--bounces 2] [--quick] [--denoise 1]
+                 [--reuse <an earlier baked dir>]   (bake/lmreuse.py: charts nothing changed for keep that bake's texels, the others are baked again)
 
 <source dir> is an iwzcompile source (world.bin, colmap.hkx, ...). The out dir receives a copy of it with
   world.bin          lightmap coordinates rewritten to the baked atlas (one chart per planar triangle group)
@@ -8,6 +9,8 @@ usage: lmbake.py <source dir> <lights.json> <out dir> [--texel 8] [--rays 100] [
                      images the compiler (x64-zt iwzmap_lightmap.cpp) ships as the world lightmap
   lighting.txt       light grid relight boxes computed from the same bake (models match walls)
   bake.json          atlas, charts, light list, timings, encode error; bake.npz float images and texels
+  bake_config.json   the lights.json this bake was given; world_unbaked.bin the world.bin it started from (with bake.npz and bake.json: what a
+                     later bake of a changed map needs to reuse this one, `reuse`)
   preview_*.png      tone-mapped previews (E = irradiance seen by the flat surface normal)
 
 Engine format (from the lit-surface pixel shaders, see bake/README.md):
@@ -25,6 +28,9 @@ lights.json:
   {"texel": 8, "albedo": {"w/concrete_floor_polished_01": [r, g, b], ...}, "default_albedo": [0.5, 0.5, 0.5],
    "emissive": {"<material>": [r, g, b]}, "sky": [r, g, b], "ambient": {"color": [r, g, b], "ao_radius": 96},
    "sun": {"dir": [x, y, z], "color": [r, g, b]},          # optional: baked sun visibility -> primary
+   "ambient": {..., "rooms": [{"box": [x0, y0, z0, x1, y1, z1], "color": [r, g, b]}]}   # optional: the ambient fill of the texels inside a box
+                                                                                      # (a later room wins); none: one ambient for the map
+   "seed": 7,                                              # optional: the seed of the bounce rays (another value: another grain of the same light)
    "lights": [{"type": "point"|"spot", "origin": [x, y, z], "color": [r, g, b], "intensity": I,
                "radius": R, "size": s, "dir": [x, y, z], "inner": deg, "outer": deg}],
    "probe_cell": 128}
@@ -32,7 +38,7 @@ lights.json:
 import argparse, json, math, os, shutil, struct, sys, time
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import iw7image, rt
+import iw7image, rt, lmreuse
 
 PAD = 2
 
@@ -346,22 +352,68 @@ def chart_filter(val, x, y, chart, W, H, r):
     return acc / np.maximum(cnt, 1)[:, None]
 
 
-def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False, pattern=None, denoise=1):
+def reuse_plan(reuse, cfg, texel, bounces, rays, pattern, charts, w):
+    """the plan of a bake that starts from an earlier one (bake/lmreuse.py) -> (seed, plan) or (None, the reason it is refused)"""
+    try:
+        seed = lmreuse.load_seed(reuse)
+        lmreuse.check_settings(seed, cfg, texel, bounces, rays, pattern)
+        ow = read_world(seed['world_path'])
+        ow['bounds'] = room_bounds(ow)
+        ocharts, _ = build_charts(ow, texel)
+        split_shared_vertices(ow, ocharts)
+        return seed, lmreuse.plan(seed, ocharts, ow, charts, w, cfg, float(reuse.get('reach', lmreuse.REACH)))
+    except lmreuse.Refused as e:
+        return None, str(e)
+
+
+def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False, pattern=None, denoise=1, reuse=None):
     t_start = time.time(); timing = {}
     cfg = json.load(open(lights_path))
     texel = texel or cfg.get('texel', 8)
     bounces = bounces if bounces is not None else int(cfg.get('bounces', 2))
     w = read_world(os.path.join(src, 'world.bin'))
+    world_unbaked = open(os.path.join(src, 'world.bin'), 'rb').read()
     w['bounds'] = room_bounds(w)                 # the room, not its sky box (the light grid is cut over these bounds)
     charts, front = build_charts(w, texel)
     nv0 = len(w['verts'])
     sp = split_shared_vertices(w, charts)
     front = [(a, b, c, ch['surface']) for ch in charts for a, b, c in ch['tris']]
     print('lightmap charts own their vertices: %d vertices added (%d -> %d) on %d surfaces' % (sp['added'], nv0, len(w['verts']), sp['surfaces_split']))
-    W, H = pack(charts)
+    seed = plan = None
+    reuse_rep = None
+    if reuse:
+        t0 = time.time()
+        seed, plan = reuse_plan(reuse, cfg, texel, bounces, 16 if quick else nrays, pattern, charts, w)
+        if seed is None:
+            reuse_rep = {'used': False, 'seed': reuse.get('baked'), 'refused': plan}
+            print('reuse refused, a full bake: %s' % plan)
+            plan = None
+        timing['reuse_plan'] = time.time() - t0
+    if plan is not None:
+        try:
+            W, H, grown = lmreuse.pack_keep(charts, plan['old'], seed, PAD)
+        except lmreuse.Refused as e:
+            reuse_rep = {'used': False, 'seed': reuse.get('baked'), 'refused': str(e)}
+            print('reuse refused, a full bake: %s' % e)
+            seed = plan = None
+    if plan is None:
+        W, H = pack(charts)
     tx = chart_texels(charts, w, W, H)
     n = len(tx['x'])
     print('charts %d, atlas %d x %d, texels %d (texel %.1f units), triangles %d' % (len(charts), W, H, n, texel, len(front)))
+    bk = np.ones(n, bool)                           # the texels this bake computes (all of them without a seed)
+    car_new = car_old = np.zeros(0, np.int64)
+    if plan is not None:
+        car_new, car_old = lmreuse.texel_map(plan, charts, tx['chart'], tx['pos'], seed)
+        bk[car_new] = False
+        Z = seed['npz']
+        reuse_rep = {'used': True, 'seed': seed['baked'], 'reach': plan['reach'], 'charts': dict(plan['counts'], removed_from_seed=plan['removed']),
+                     'charts_carried': plan['counts']['carried'], 'charts_baked': len(charts) - plan['counts']['carried'],
+                     'texels_carried': int(len(car_new)), 'texels_baked': int(bk.sum()), 'atlas_grown': bool(grown), 'changes': plan['changes']}
+        print('reuse of %s: %d of %d charts carried (%d texels), %d baked (%d texels): %s' % (seed['baked'], plan['counts']['carried'], len(charts), len(car_new),
+              len(charts) - plan['counts']['carried'], int(bk.sum()), ', '.join('%s %d' % (k, v) for k, v in plan['counts'].items() if v and k != 'carried')))
+    bki = np.nonzero(bk)[0]
+    nb = len(bki)
     timing['charts'] = time.time() - t_start
 
     # scene: baked triangles (+ occluder boxes)
@@ -418,7 +470,14 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
     p, nn = np.ascontiguousarray(tx['pos']), np.ascontiguousarray(tx['n'])
     tu, tv = np.ascontiguousarray(tx['tu']), np.ascontiguousarray(tx['tv'])
     t0 = time.time()
-    Edir, Wdir = rt.direct_light(p, nn, tu, tv, 1 if quick else 3, L, 1, *S_args)
+    if plan is None:
+        Edir, Wdir = rt.direct_light(p, nn, tu, tv, 1 if quick else 3, L, 1, *S_args)
+    else:
+        Edir = np.zeros((n, 3)); Wdir = np.zeros((n, 3))
+        if nb:
+            Edir[bki], Wdir[bki] = rt.direct_light(np.ascontiguousarray(p[bki]), np.ascontiguousarray(nn[bki]), np.ascontiguousarray(tu[bki]),
+                                                   np.ascontiguousarray(tv[bki]), 1 if quick else 3, L, 1, *S_args)
+        Edir[car_new] = Z['Edir'][car_old]
     timing['direct'] = time.time() - t0
     print('direct light: %d lights, %.1f s' % (len(L), timing['direct']))
 
@@ -445,18 +504,30 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
     sky = np.array(cfg.get('sky', [0, 0, 0]), float)
     amb = cfg.get('ambient', {})
     fill = np.array(amb.get('color', [0, 0, 0]), float)
-    # rays traced in texel chunks and reduced at once to hit texel ids (int32: n x rays x 4 bytes is what stays)
-    idx = np.empty((n, nr_), np.int32); ao = np.empty(n)
-    for c0 in range(0, n, 65536):
-        c1 = min(n, c0 + 65536)
-        htri, hu, hv, hdist, hside = rt.gather_rays(p[c0:c1], nn[c0:c1], tu[c0:c1], tv[c0:c1], nr_, 7 + c0, *S_args)
+    if amb.get('rooms'):                             # an ambient of its own for the texels inside a box (a later room wins)
+        fill = np.repeat(fill[None], n, 0)
+        for room in amb['rooms']:
+            rb = np.array(room['box'], float)
+            fill[np.all((p >= rb[:3] - 0.01) & (p <= rb[3:] + 0.01), 1)] = np.array(room['color'], float)
+    ray_seed = int(cfg.get('seed', 7))
+    # rays traced in texel chunks and reduced at once to hit texel ids (int32: n x rays x 4 bytes is what stays); with a seed bake only the
+    # texels of the charts baked again trace rays (row k of idx is texel bki[k])
+    pb, nnb, tub, tvb = (p, nn, tu, tv) if plan is None else tuple(np.ascontiguousarray(x[bki]) for x in (p, nn, tu, tv))
+    idx = np.empty((nb, nr_), np.int32); ao = np.empty(n)
+    aob = np.empty(nb)
+    for c0 in range(0, nb, 65536):
+        c1 = min(nb, c0 + 65536)
+        htri, hu, hv, hdist, hside = rt.gather_rays(pb[c0:c1], nnb[c0:c1], tub[c0:c1], tvb[c0:c1], nr_, ray_seed + c0, *S_args)
         hits = hit_texels(htri, hu, hv, hside)        # -1 sky, -2 back face/occluder (black)
         idx[c0:c1] = np.where(hits == -1, n, np.where(hits == -2, n + 1, np.where(hits <= -3, n + 2 + (-3 - hits), hits)))
-        ao[c0:c1] = (hdist > amb.get('ao_radius', 96)).mean(1)
+        aob[c0:c1] = (hdist > amb.get('ao_radius', 96)).mean(1)
         del htri, hu, hv, hdist, hside, hits
+    ao[bki] = aob
     timing['gather_rays'] = time.time() - t0
     a_tex = alb[tx['mat']]; e_tex = emi[tx['mat']]
     Eind = np.zeros((n, 3))
+    if plan is not None:
+        Eind[car_new] = Z['Eind'][car_old]; ao[car_new] = Z['ao'][car_old]
     emit_rad = np.array(emitters, float).reshape(-1, 3)
     # The sun. Its own light on a surface is the engine's at run time (the primary light x the baked visibility S), so it is not stored as direct light. What the sunlit
     # surfaces throw back is baked light like any other bounce: without it a roofed room beside a sunlit yard gets the sky's light only (measured in the game, S7: the
@@ -466,18 +537,31 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
         sd = norm(np.array(cfg['sun']['dir'], float))
         far = p + nn * 0.5 - sd[None] * 1e5
         cosn = np.dot(nn, -sd)
-        S = rt.visible(p + nn * 0.5, far, *S_args).astype(float) * (cosn > 0)
+        if plan is None:
+            S = rt.visible(p + nn * 0.5, far, *S_args).astype(float) * (cosn > 0)
+        else:
+            if nb:
+                S[bki] = rt.visible(np.ascontiguousarray((p + nn * 0.5)[bki]), np.ascontiguousarray(far[bki]), *S_args).astype(float) * (cosn[bki] > 0)
+            S[car_new] = Z['S'][Z['tx_y'][car_old], Z['tx_x'][car_old]]
         if cfg.get('sun_bounce', True) and cfg['sun'].get('color'):
             Esun = (S * np.maximum(cosn, 0.0))[:, None] * np.array(cfg['sun']['color'], float)[None]
     for k in range(bounces):
         Lout = np.vstack([a_tex * (Edir + Esun + Eind) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])
-        Eind = np.concatenate([Lout[idx[r0:r0 + 8192]].mean(1) for r0 in range(0, n, 8192)])
+        Eb = np.concatenate([Lout[idx[r0:r0 + 8192]].mean(1) for r0 in range(0, nb, 8192)]) if nb else np.zeros((0, 3))
+        if plan is None:
+            Eind = Eb
+        else:
+            Eind[bki] = Eb                          # the carried texels keep the seed's bounced light: they are what the baked ones gather from
     timing['indirect'] = time.time() - t0
     print('indirect: %d rays/texel, %d bounces, %.1f s; mean AO %.3f' % (nr_, bounces, timing['indirect'], ao.mean()))
 
     # light grid samples (lighting.txt): SH order 1 (constant + vertical) of the radiance around each cell centre
     t0 = time.time()
     Lfinal = np.vstack([a_tex * (Edir + Esun + Eind + fill * ao[:, None]) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])
+    if plan is not None:                             # the light grid on the seed's lattice: a room that extends the bounds must not shift every cell
+        b_ = list(w['bounds'])
+        b_[:3] = [float(v) for v in lmreuse.grid_origin(seed, b_[:3], cfg.get('probe_cell', 128))]
+        w['bounds'] = tuple(b_)
     light_lines, grid = light_grid(cfg, w, Lfinal, n, grid_scene, grid_world[1], grid_world[2], tid, W, H, L, quick)
     timing['light_grid'] = time.time() - t0
 
@@ -514,9 +598,18 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
     imgD = np.zeros((H, W, 2), np.float32); imgS = np.zeros((H, W), np.float32)
     valid = np.zeros((H, W), bool)
     y, x = tx['y'], tx['x']
+    if plan is not None and len(car_new):            # the carried texels: the seed's values as they are
+        oy, ox = Z['tx_y'][car_old], Z['tx_x'][car_old]
+        A[car_new] = Z['A'][oy, ox]; B[car_new] = Z['B'][oy, ox]; rg[car_new] = Z['D'][oy, ox]
     imgA[y, x] = A; imgB[y, x] = B; imgD[y, x] = rg; imgS[y, x] = S; valid[y, x] = True
     imgD[~valid] = oct_encode(np.array([0.0, 0.0, 1.0]))
     imgA, imgB, imgD, imgS = dilate(imgA, valid), dilate(imgB, valid), dilate(imgD, valid), dilate(imgS, valid)
+    if plan is not None:                             # and their whole rectangle, border texels included: the same blocks in the encoded images
+        zA, zB, zD, zS = Z['A'], Z['B'], Z['D'], Z['S']
+        for ci in np.nonzero(plan['why'] == 0)[0]:
+            c = charts[ci]
+            sl = (slice(c['y'], c['y'] + c['h']), slice(c['x'], c['x'] + c['w']))
+            imgA[sl] = zA[sl]; imgB[sl] = zB[sl]; imgD[sl] = zD[sl]; imgS[sl] = zS[sl]
 
     os.makedirs(out, exist_ok=True)
     # the baked source is the whole source: files and folders (modules/ holds the game-script modules the level
@@ -546,6 +639,8 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
     shutil.rmtree(work, ignore_errors=True)
 
     write_world(w, os.path.join(out, 'world.bin'))
+    open(os.path.join(out, 'world_unbaked.bin'), 'wb').write(world_unbaked)
+    json.dump(dict(cfg, _bake={'texel': texel, 'rays': nr_, 'bounces': bounces, 'quick': bool(quick), 'denoise': denoise}), open(os.path.join(out, 'bake_config.json'), 'w'), indent=1)
     open(os.path.join(out, 'lighting.txt'), 'w', newline='\n').write('\n'.join(light_lines) + '\n')
     E_flat = imgA + imgB * oct_decode(imgD)[..., 2:3]
     preview(os.path.join(out, 'preview_E.png'), E_flat)
@@ -561,6 +656,11 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
            'encode': enc_err, 'timing_s': {k: round(v, 2) for k, v in timing.items()}, 'total_s': round(time.time() - t_start, 1),
            'chart_list': [{'surface': c['surface'], 'material': mats[c['mat']], 'rect': [c['x'], c['y'], c['w'], c['h']],
                            'texels': [c['ns'], c['nr']], 'normal': [round(float(v), 3) for v in c['n']]} for c in charts]}
+    if reuse_rep is not None:
+        if plan is not None:
+            for c, k in zip(rep['chart_list'], plan['why']):
+                c['bake'] = lmreuse.REASONS[int(k)]
+        rep['reuse'] = reuse_rep
     json.dump(rep, open(os.path.join(out, 'bake.json'), 'w'), indent=1)
     print('bake done in %.1f s -> %s' % (time.time() - t_start, out))
     return rep
@@ -627,6 +727,10 @@ if __name__ == '__main__':
     ap.add_argument('--bounces', type=int, default=None, help='indirect bounces (default: lights.json "bounces", else 2)'); ap.add_argument('--quick', action='store_true')
     ap.add_argument('--denoise', type=int, default=1, help='chart-local box filter radius of the indirect term (0 = off)')
     ap.add_argument('--pattern', help='json list of calibration patches {box, normal, A, B, Dz, name}')
+    ap.add_argument('--reuse', help='an earlier baked dir of nearly the same map (bake.npz, bake.json, bake_config.json, world_unbaked.bin): see bake/lmreuse.py')
+    ap.add_argument('--reuse-config', help='the lights.json of that bake, when it holds no bake_config.json')
+    ap.add_argument('--reuse-world', help='the unbaked world.bin of that bake, when it holds no world_unbaked.bin')
     a = ap.parse_args()
+    ru = {'baked': a.reuse, **({'config': a.reuse_config} if a.reuse_config else {}), **({'world': a.reuse_world} if a.reuse_world else {})} if a.reuse else None
     bake(a.src, a.lights, a.out, a.texel, a.rays, a.bounces, a.quick, json.load(open(a.pattern)) if a.pattern else None,
-         a.denoise)
+         a.denoise, ru)

@@ -59,6 +59,7 @@ def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emis
       prop_shadows        true (default) | false     static models block light in the bake (bake/occluders.py)
       prop_shadow_max_extent  200                      boxes larger than this (units) are not occluders
       ambient             number | [r,g,b] | {color [r,g,b], level, ao_radius}   fill light (default grey 0.02, blue x 1.1)
+      ambient_rooms       [{box [x0,y0,z0,x1,y1,z1], ambient: number | [r,g,b], zone}]   the fill light of the surfaces inside a box (a zone's own ambient)
       bounces             indirect bounces (written only when set here, or by `bounces_default` / --default-bounces; else lmbake's own default 2)
       sky                 [r,g,b] radiance of the sky seen by escaping rays (default 0: interiors)
       sun                 {dir [x,y,z], color [r,g,b]} baked sun visibility
@@ -118,6 +119,13 @@ def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emis
     cfg = {'texel': texel, 'probe_cell': 128, 'albedo': albedo, 'default_albedo': [0.45, 0.45, 0.45], 'emissive': emi,
            'sky': _rgb(st.get('sky'), [0, 0, 0]), 'ambient': {'color': [round(c, 5) for c in acol], 'ao_radius': ao},
            'lights': lights}
+    rooms = []
+    for r in st.get('ambient_rooms') or []:
+        v = r.get('ambient')
+        rc = [float(v), float(v), float(v) * 1.1] if isinstance(v, (int, float)) else _rgb(v)
+        rooms.append({'box': [float(c) for c in r['box']], 'color': [round(c, 5) for c in rc]})
+    if rooms:
+        cfg['ambient']['rooms'] = rooms
     if st.get('bounces') is not None or bounces_default is not None:
         cfg['bounces'] = int(st['bounces'] if st.get('bounces') is not None else bounces_default)
     if st.get('sun'):
