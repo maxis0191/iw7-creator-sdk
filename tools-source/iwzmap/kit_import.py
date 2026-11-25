@@ -27,7 +27,7 @@ techsets_<zone>, which it loads first).
 A material, image or techset already present in the zone csv (full or `,name` reference) is shared: the template map's
 zones provide it at runtime and nothing is linked for it.
 
-usage: kit_import.py <work dir> <map> --dump <zone>=<dump root>[;<root>...] [--dump ...] (--models a,b,c | --kit kit_final.json
+usage: kit_import.py <work dir> <map> --dump <zone>=<dump root>[;<root>...] [--dump ...] (--models a,b,c | --materials zone:w/m,... | --kit kit_final.json
        [--tier core] [--zones cp_disco,cp_final]) [--runtime-csv <csv> ...] [--allow-require] [--report report.json]
        [--dry-run]
        dump roots of a zone: the -dumpzonetypes dump of <zone> and the -dumpzone dump of techsets_<zone>
@@ -120,6 +120,9 @@ def main(argv=None):
     ap.add_argument('work'); ap.add_argument('map')
     ap.add_argument('--dump', action='append', default=[], help='<zone>=<dump root of that zone>')
     ap.add_argument('--models', default='')
+    ap.add_argument('--materials', default='', help='<zone>:<w/material>,...: stock WORLD materials of a zone dump, brought without a model: the material, its '
+                    'technique state and constant buffer files, its technique set (embedded when the map has none) and its image headers, and a `material,<name>` row before '
+                    'the world rows (a map surface names them)')
     ap.add_argument('--kit', default='')
     ap.add_argument('--tier', default='')
     ap.add_argument('--zones', default='')
@@ -274,6 +277,64 @@ def main(argv=None):
     def add(src, rel):
         plan.append((src, os.path.join(dst, rel)))
 
+    def bring_material(zone, mat):
+        """the material's own file, its technique state and constant buffer files, its technique set (shared, referenced or embedded) and its image
+        headers into the plan; a material the csv or a runtime zone holds is shared"""
+        if mat in seen_mat:
+            return
+        seen_mat.add(mat)
+        if ('material', mat) in have:
+            rep['materials']['shared'].append(mat); return
+        if a.share_runtime and ('material', mat) in runtime:
+            ref('material', mat); rep['materials']['shared'].append(mat); return
+        mj = find(zone, os.path.join('materials', mat + '.json'))
+        md = json.load(open(mj))
+        add(mj, os.path.join('materials', mat + '.json'))
+        rep['materials']['new'].append(mat)
+        tech = md.get('techniqueSet->name') or ''
+        if tech:
+            for sub, exts, need in (('state', ('.stateinfo', '.statebits', '.statebitsmap'), ('.statebits', '.statebitsmap')),
+                                    ('constantbuffer', ('.cbi', '.cbt'), ())):
+                for ext in exts:
+                    p = find(zone, os.path.join('techsets', sub, tech, mat + ext))
+                    if p:
+                        add(p, os.path.join('techsets', sub, tech, mat + ext))
+                    elif ext in need or (sub == 'constantbuffer' and md.get('constantTable')):
+                        missing.append('%s %s/%s%s' % (sub, tech, mat, ext))
+            if ('techset', tech) in have or ('techset', tech) in runtime:
+                ref('techset', tech)
+                if tech not in rep['techsets']['shared']:
+                    rep['techsets']['shared'].append(tech)
+            elif tech not in rep['techsets']['embedded'] and tech not in rep['techsets']['required']:
+                if not embed_techset(zone, tech):
+                    if a.allow_require:
+                        rep['techsets']['required'][tech] = zone; req_zones.add(zone)
+                    else:
+                        missing.append('techset:%s (no techsets_%s dump)' % (tech, zone))
+        for t in md.get('textureTable', []):
+            img = t.get('image')
+            if not img or img in seen_img:
+                continue
+            seen_img.add(img)
+            if ('image', img) in have:
+                rep['images']['shared'] += 1; continue
+            if img.startswith('$'):               # an engine image ($identitynormalmap...): always loaded
+                ref('image', img); rep['images']['shared'] += 1; continue
+            ip = find(zone, os.path.join('images', img + '.iw7Image'))
+            if ip:
+                add(ip, os.path.join('images', img + '.iw7Image'))
+            else:
+                # ported / authored models (x64-zt-extensions env-model): the pixels are embedded from a .dds
+                ip = find(zone, os.path.join('images', img + '.dds'))
+                if not ip and a.share_runtime and ',image' in types_of(zone, img) and 'image' not in types_of(zone, img):
+                    # the source zones themselves only reference it (no dump defines it): referenced the same way
+                    ref('image', img); rep['images'].setdefault('referencedOnly', []).append(img); continue
+                if not ip:
+                    missing.append('image:' + img); continue
+                add(ip, os.path.join('images', img + '.dds'))
+                rep['images']['embedded'] = rep['images'].get('embedded', 0) + 1
+            rep['images']['new'] += 1; rep['images']['bytes'] += os.path.getsize(ip)
+
     for name, zone in sorted(models.items()):
         if not dumps.get(zone or ''):
             missing.append('zone dump for %s (%s)' % (name, zone)); continue
@@ -351,62 +412,22 @@ def main(argv=None):
         if not info['surfaces']:
             missing.append('xsurface:' + name)
         for mat in info['materials']:
-            if mat in seen_mat:
-                continue
-            seen_mat.add(mat)
-            if ('material', mat) in have:
-                rep['materials']['shared'].append(mat); continue
-            if a.share_runtime and ('material', mat) in runtime:
-                ref('material', mat); rep['materials']['shared'].append(mat); continue
-            mj = find(zone, os.path.join('materials', mat + '.json'))
-            md = json.load(open(mj))
-            add(mj, os.path.join('materials', mat + '.json'))
-            rep['materials']['new'].append(mat)
-            tech = md.get('techniqueSet->name') or ''
-            if tech:
-                for sub, exts, need in (('state', ('.stateinfo', '.statebits', '.statebitsmap'), ('.statebits', '.statebitsmap')),
-                                        ('constantbuffer', ('.cbi', '.cbt'), ())):
-                    for ext in exts:
-                        p = find(zone, os.path.join('techsets', sub, tech, mat + ext))
-                        if p:
-                            add(p, os.path.join('techsets', sub, tech, mat + ext))
-                        elif ext in need or (sub == 'constantbuffer' and md.get('constantTable')):
-                            missing.append('%s %s/%s%s' % (sub, tech, mat, ext))
-                if ('techset', tech) in have or ('techset', tech) in runtime:
-                    ref('techset', tech)
-                    if tech not in rep['techsets']['shared']:
-                        rep['techsets']['shared'].append(tech)
-                elif tech not in rep['techsets']['embedded'] and tech not in rep['techsets']['required']:
-                    if not embed_techset(zone, tech):
-                        if a.allow_require:
-                            rep['techsets']['required'][tech] = zone; req_zones.add(zone)
-                        else:
-                            missing.append('techset:%s (no techsets_%s dump)' % (tech, zone))
-            for t in md.get('textureTable', []):
-                img = t.get('image')
-                if not img or img in seen_img:
-                    continue
-                seen_img.add(img)
-                if ('image', img) in have:
-                    rep['images']['shared'] += 1; continue
-                if img.startswith('$'):               # an engine image ($identitynormalmap...): always loaded
-                    ref('image', img); rep['images']['shared'] += 1; continue
-                ip = find(zone, os.path.join('images', img + '.iw7Image'))
-                if ip:
-                    add(ip, os.path.join('images', img + '.iw7Image'))
-                else:
-                    # ported / authored models (x64-zt-extensions env-model): the pixels are embedded from a .dds
-                    ip = find(zone, os.path.join('images', img + '.dds'))
-                    if not ip and a.share_runtime and ',image' in types_of(zone, img) and 'image' not in types_of(zone, img):
-                        # the source zones themselves only reference it (no dump defines it): referenced the same way
-                        ref('image', img); rep['images'].setdefault('referencedOnly', []).append(img); continue
-                    if not ip:
-                        missing.append('image:' + img); continue
-                    add(ip, os.path.join('images', img + '.dds'))
-                    rep['images']['embedded'] = rep['images'].get('embedded', 0) + 1
-                rep['images']['new'] += 1; rep['images']['bytes'] += os.path.getsize(ip)
+            bring_material(zone, mat)
         rep['models'][name] = info
         rows.append('xmodel,' + name)
+
+    for spec in sorted(x for x in a.materials.split(',') if x):
+        z, _, mname = spec.partition(':')
+        if not mname:
+            missing.append('material spec %r (want <zone>:<name>)' % spec); continue
+        if not dumps.get(z):
+            missing.append('zone dump for %s (%s)' % (mname, z)); continue
+        if not find(z, os.path.join('materials', mname + '.json')):
+            missing.append('material:%s (%s)' % (mname, z)); continue
+        before = len(rep['materials']['new'])
+        bring_material(z, mname)
+        if len(rep['materials']['new']) > before:
+            rows.append('material,' + mname)
 
     rep['missing'] = missing
     rep['rows'] = rows
