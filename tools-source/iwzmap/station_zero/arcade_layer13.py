@@ -29,8 +29,8 @@ from studio import build as B  # noqa: E402
 BASE_EMIT = os.environ.get('ARC13_BASE', r'C:\studio-data\sb\base_sb')
 UP = float(os.environ.get('ARC13_UP', '0.4'))
 SIGN_K = float(os.environ.get('ARC13_SIGN_K', '3.5'))          # the text signs' emissive strength, times
-PANEL4 = ('w/signage_theater_menu_01', 'w/signage_zmb_park_poster_04', 'w/signage_zmb_park_poster_08')
-PANEL5 = ('w/signage_zmb_park_poster_05', 'w/signage_zmb_park_poster_06', 'w/signage_zmb_park_poster_07')
+PANEL4 = ('w/signage_theater_menu_01', 'w/zombies_blank_photo', 'w/signage_theater_menu_01')      # doc_d: park_poster_04..07 drew near black in chk_bay4/5
+PANEL5 = ('w/signage_theater_menu_01', 'w/zombies_teddy_photo', 'w/zombies_blank_photo')
 
 
 def uplights13(m, report):
