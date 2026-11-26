@@ -26,6 +26,8 @@ if($Kit){
   $env:IWZ_KIT_MATERIAL_MAP='mopw/glass_opaque_02=m/clk_glass_grunge_mild'
 } elseif(-not $KitBaseline){ Remove-Item Env:IWZ_KIT -ErrorAction SilentlyContinue }
 $env:IWZ_DOUBLE_SIDED='1'
+# this route's build-sz2 does not stage kit xmodels next to smodels.txt (Studio's compile does): kit decor stays script_models here
+$env:IWZ_KIT_SCRIPT_MODELS='1'
 # stock-stair study: -StairStyle stock = cp_zmb-style clip sheet over 8-unit steps (A/B against g27c)
 $env:IWZ_STAIR_STYLE=$StairStyle
 # -Train: the train agent's track kit + hero car (SDK codex/iwzmap-hero-train 902d744, merged), BO3 ports in train\port
@@ -52,7 +54,7 @@ if($Fx -and $FxTxt){ $env:IWZ_FX_TXT=$FxTxt } else { Remove-Item Env:IWZ_FX_TXT 
 # -Darkness: the generator makes the power fittings with dark diffusers / unlit + lit fixture models and fills the //@DARK@ hook of cp_iwz2.gsc
 # (level thread ...cp_iwz_darkness::init()); see darkness\README.md. Without it IWZ_DARK is removed (the lit build is unchanged).
 if($Darkness){ $env:IWZ_DARK='1' } else { Remove-Item Env:IWZ_DARK -ErrorAction SilentlyContinue }
-# (sz-rc5) switches the generator hands to the build recipe it writes (build.json, sz2_recipe.py); build-sz2 ignores that file
+# switches the generator hands to the build recipe it writes (build.json, sz2_recipe.py); build-sz2 ignores that file
 if($Train){ $env:IWZ_TRAIN_SET=$TrainSet } else { Remove-Item Env:IWZ_TRAIN_SET -ErrorAction SilentlyContinue }
 if($DarkZoneFill){ $env:IWZ_DARK_ZONE_FILL=$DarkZoneFillSpec } else { Remove-Item Env:IWZ_DARK_ZONE_FILL -ErrorAction SilentlyContinue }
 if($NavObstacles){ $env:IWZ_NAV_OBSTACLES='1' } else { Remove-Item Env:IWZ_NAV_OBSTACLES -ErrorAction SilentlyContinue }
