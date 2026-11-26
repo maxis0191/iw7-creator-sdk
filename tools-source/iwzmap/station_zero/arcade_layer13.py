@@ -120,6 +120,8 @@ def build(name='sz_arcade_r13'):
     L12.cameras12(m, rep)
     panels13(m, rep)
     gameplay13(m, rep)
+    m.settings.setdefault('build', {}).setdefault('darkness', {})['power'] = {'flag': 'power_on', 'interaction': 'generator'}      # the regenerated base's recipe lacks it (base_r10 had it)
+    rep['power_recipe'] = 'power_on/generator'
     m.report9 = rep
     return m
 
