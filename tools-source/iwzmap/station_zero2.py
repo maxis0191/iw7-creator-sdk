@@ -3593,3 +3593,7 @@ json.dump(plan, open(os.path.join(out, 'plan.json'), 'w'))
 json.dump({'quads': B.records}, open(os.path.join(out, 'surfaces.json'), 'w'))
 print('verts', nv, 'indices', ni, 'surfaces', ns, 'quads', B.quads, 'trim_quads', B.trim_quads, 'bounds', wb, 'collision', info, 'nav areas', nareas,
       'nav bytes', len(nav), 'materials', len(B.used), 'lights', len(LIGHTS), 'signs', len(SIGNS))
+# (sz-rc5) the recipe of the map's own switches, for the Studio build (compile/RECIPE.md); every other output is unchanged. IWZ_RECIPE=0 skips it.
+if os.environ.get('IWZ_RECIPE') != '0':
+    import sz2_recipe
+    sz2_recipe.write(os.environ, out)
