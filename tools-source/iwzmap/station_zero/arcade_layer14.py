@@ -50,12 +50,12 @@ WARM = (1.0, 0.86, 0.66)
 BAYS = ['photo', 'heel', 'hole9', 'copy', 'needle']
 KE = float(os.environ.get('ARC9_KE', '1.0'))
 UP = float(os.environ.get('ARC13_UP', '0.4'))
-LANE_MAT = os.environ.get('ARC14_LANE', 'w/concrete_floor_polished_01')           # r13: w/aq_stone_concrete_patch02 (blotches seen stretched along the lanes by 2 of 3 readers)
-LANE_TILE = float(os.environ.get('ARC14_LANE_TILE', '64'))
 LITEV = float(os.environ.get('ARC14_LITEV', '-3.0'))           # the fixed exposure of the lit vision (the dark vision's is -3)
 SCALE = float(os.environ.get('ARC14_SCALE', '0'))             # 0 = the base's darkness.lights.scale (840)
+AUTO = os.environ.get('ARC14_AUTO', '1') != '0'
+LITKEYS = os.environ.get('ARC14_LITKEYS', '')
 PLAT_I = float(os.environ.get('ARC14_PLAT_I', '1.2'))
-BENCH_I = float(os.environ.get('ARC14_BENCH_I', '1.0'))      # r13: three downward spots at z 120: the wall was lit only below z 120, a hard horizontal edge
+BENCH_I = float(os.environ.get('ARC14_BENCH_I', '2.6'))      # r13: three downward spots at z 120: the wall was lit only below z 120, a hard horizontal edge
 SIGN_K = float(os.environ.get('ARC13_SIGN_K', '3.5'))
 FLOOR_SKIN = 'w/building_ship_hallway_floor_06_tile_gray_glossy'
 PANEL_DEAD = 'w/concrete_wall_panel_05'
@@ -66,15 +66,17 @@ SHUT_SHARE = {0: 0.20, 1: 0.35, 2: 0.20, 3: 0.20, 4: 0.35}
 WALLBAND = 'w/ceramic_tile_01_blue'
 
 def vision14(m, report):
-    """the lit vision with a FIXED exposure. r13's lit vision was auto (`tonemapAutoExposureAdjust -2.5`): the engine meters the frame's log-average luminance and exposes to a target
-    (iwz_tonemap.auto_key), so a bright ceiling or floor lowers every other pixel, and an emissive board (fixed radiance) came out at 0.5 of its dark-state display value (FE52). With
-    `tonemapAuto 0` the exposure is the dark vision's kind (a constant: `tonemapExposureAdjust` LITEV): a sign has the same display value in both states and the power lights only add.
-    `settings.build.darkness.args` is a list that the merge replaces, so the whole base list is copied (FE44) with only the `--lit` string changed (r12 did the same with a scale change as well: not here)."""
+    """the lit vision keeps the base's AUTO exposure (r12's manual lit vision measured too bright ON, too dark OFF) and adds clamp keys from ARC14_LITKEYS (tonemapMin/MaxExposureAdjust: iwz_tonemap.auto_key
+    clamps the metered target to 0.18 * 2^min .. 0.18 * 2^max). `settings.build.darkness.args` is a list that the merge replaces, so the whole base list is copied (FE44) with only `--lit` changed.
+    ARC14_AUTO=0 gives the manual variant (experiments only)."""
     base = json.load(open(os.path.join(BASE_EMIT, 'build.json'), encoding='utf-8'))['darkness']
     args = list(base['args'])
     i = args.index('--lit')
     keep = [kv for kv in args[i + 1].split(';') if not kv.startswith(('tonemapAutoExposureAdjust', 'tonemapAuto=', 'tonemapExposureAdjust'))]
-    args[i + 1] = ';'.join(keep + ['tonemapAuto=0', 'tonemapExposureAdjust=%g' % LITEV])
+    if AUTO:                                   # experiments: keep the base's auto exposure and add keys (a clamp)
+        args[i + 1] = args[i + 1] + (';' + LITKEYS if LITKEYS else '')
+    else:
+        args[i + 1] = ';'.join(keep + ['tonemapAuto=0', 'tonemapExposureAdjust=%g' % LITEV] + ([LITKEYS] if LITKEYS else []))
     b = m.settings.setdefault('build', {})
     dk = b.setdefault('darkness', {})
     dk['args'] = args
@@ -209,7 +211,7 @@ def fixes9(m, report):
     n = 0
     for o in m.objects():
         if o['kind'] == 'box' and o.get('material') == 'w/asphalt_flooring_01_wet':
-            m.update(o['id'], material=LANE_MAT, uv={'top': {'tile': [LANE_TILE, LANE_TILE]}})
+            m.update(o['id'], material='w/aq_stone_concrete_patch02', uv=None)      # `studio pick` of the strips in r13's arc_west_long / arc_east_long / arc_south_lane_east: lane_1_28, lane_1_31, lane_0_13, this material, uv tile [44, 44] forced (a square tile on an image that need not be square); no override = the material's own size
             n += 1
     report['lanes_retextured'] = n
 
