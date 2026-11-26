@@ -8,6 +8,7 @@ This repository is private. It complements the owner's public forks and does not
 
 - Where everything is: [docs/INDEX.md](docs/INDEX.md).
 - Rules for agents: [AGENTS.md](AGENTS.md).
+- Before every commit: `python -B ops/quality/fast_gate.py` (about 0.2 s; `--fix` classifies and sorts new files in `product.json`; `--install-hook` makes it an opt-in pre-commit hook of this clone). The full judge is `bootstrap.ps1` then `checks.ps1`.
 
 ## What is in it
 
