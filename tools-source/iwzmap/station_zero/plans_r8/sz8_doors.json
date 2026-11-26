@@ -1,0 +1,418 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "sz8_doors",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "libraries": [
+  "doorprobe",
+  "g1probe"
+ ],
+ "about": "Round 8: the Arcade layer behind D4 (debris_1000, hall wall x -1200, y 3804..3996): closed blocks hull and zombies, bought opens, zone active, the Arcade spawners and a hall spawner reach the player inside, both wall buys.",
+ "steps": [
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "money",
+   "value": 20000
+  },
+  {
+   "do": "tp",
+   "at": [
+    -1000,
+    3900,
+    1
+   ],
+   "yaw": 180,
+   "snap": true
+  },
+  {
+   "do": "state",
+   "name": "start"
+  },
+  {
+   "do": "call",
+   "fn": "g1_zone",
+   "args": [
+    "zone_arc_closed",
+    "arcade"
+   ],
+   "s": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:zone_arc_closed.defined",
+   "eq": 1,
+   "why": "the layer's zone is a spawn volume of the map"
+  },
+  {
+   "do": "expect",
+   "that": "probe:zone_arc_closed.active",
+   "eq": 0,
+   "why": "not active before its door is bought"
+  },
+  {
+   "do": "trace",
+   "name": "closed",
+   "hull": true,
+   "points": [
+    [
+     -1140,
+     3850,
+     20,
+     -1270,
+     3850,
+     20
+    ],
+    [
+     -1140,
+     3900,
+     20,
+     -1270,
+     3900,
+     20
+    ],
+    [
+     -1140,
+     3950,
+     20,
+     -1270,
+     3950,
+     20
+    ]
+   ]
+  },
+  {
+   "do": "expect",
+   "that": "trace:closed_0.hit",
+   "eq": 1,
+   "why": "the closed D4 stops the hull (y 3850)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:closed_1.hit",
+   "eq": 1,
+   "why": "at y 3900"
+  },
+  {
+   "do": "expect",
+   "that": "trace:closed_2.hit",
+   "eq": 1,
+   "why": "at y 3950"
+  },
+  {
+   "do": "call",
+   "fn": "dp_cross",
+   "args": [
+    "cross_closed",
+    0,
+    -1200,
+    3900,
+    10
+   ],
+   "s": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:cross_closed.phys_blocked",
+   "eq": 1,
+   "why": "a player-physics line across the door plane is stopped"
+  },
+  {
+   "do": "spawn",
+   "tag": "shut",
+   "at": [
+    -1400,
+    3900,
+    1
+   ],
+   "count": 2,
+   "place": true
+  },
+  {
+   "do": "chase",
+   "tag": "shut",
+   "s": 20,
+   "reach": 96,
+   "allow_partial": true
+  },
+  {
+   "do": "expect",
+   "that": "chase:shut.reached",
+   "eq": 0,
+   "why": "zombies placed in the Arcade do not path through the closed door"
+  },
+  {
+   "do": "kill",
+   "tag": "shut"
+  },
+  {
+   "do": "use",
+   "name": "door",
+   "kind": "debris_1000",
+   "near": [
+    -1160.0,
+    3900.0,
+    24.0
+   ]
+  },
+  {
+   "do": "expect",
+   "that": "use:door.found",
+   "eq": 1,
+   "why": "D4's purchase struct is a stock interaction"
+  },
+  {
+   "do": "expect",
+   "that": "use:door.spent",
+   "eq": 1000,
+   "why": "the door costs what the document says"
+  },
+  {
+   "do": "wait",
+   "s": 1
+  },
+  {
+   "do": "trace",
+   "name": "open",
+   "hull": true,
+   "points": [
+    [
+     -1140,
+     3850,
+     20,
+     -1270,
+     3850,
+     20
+    ],
+    [
+     -1140,
+     3900,
+     20,
+     -1270,
+     3900,
+     20
+    ],
+    [
+     -1140,
+     3950,
+     20,
+     -1270,
+     3950,
+     20
+    ]
+   ]
+  },
+  {
+   "do": "expect",
+   "that": "trace:open_0.hit",
+   "eq": 0,
+   "why": "the bought door lets the hull through (y 3850)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:open_1.hit",
+   "eq": 0,
+   "why": "y 3900"
+  },
+  {
+   "do": "expect",
+   "that": "trace:open_2.hit",
+   "eq": 0,
+   "why": "y 3950"
+  },
+  {
+   "do": "spawn",
+   "tag": "thru",
+   "at": [
+    -1400,
+    3900,
+    1
+   ],
+   "count": 2,
+   "place": true
+  },
+  {
+   "do": "chase",
+   "tag": "thru",
+   "s": 30,
+   "reach": 96,
+   "allow_partial": true
+  },
+  {
+   "do": "expect",
+   "that": "chase:thru.reached",
+   "eq": 2,
+   "why": "control: the same placed zombies come through once the door is bought"
+  },
+  {
+   "do": "kill",
+   "tag": "thru"
+  },
+  {
+   "do": "call",
+   "fn": "g1_zone",
+   "args": [
+    "zone_arc_open",
+    "arcade"
+   ],
+   "s": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:zone_arc_open.active",
+   "eq": 1,
+   "why": "buying the door activates the Arcade zone"
+  },
+  {
+   "do": "tp",
+   "at": [
+    -2000,
+    3900,
+    1
+   ],
+   "yaw": 0,
+   "snap": true
+  },
+  {
+   "do": "call",
+   "fn": "g1_zone",
+   "args": [
+    "zone_arc_in",
+    "arcade"
+   ],
+   "s": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:zone_arc_in.touching",
+   "eq": 1,
+   "why": "the player in the Arcade is in its volume"
+  },
+  {
+   "do": "spawn",
+   "tag": "new",
+   "at": [
+    -2238,
+    4535,
+    1
+   ],
+   "count": 2,
+   "place": false
+  },
+  {
+   "do": "chase",
+   "tag": "new",
+   "s": 40,
+   "reach": 96,
+   "allow_partial": true
+  },
+  {
+   "do": "expect",
+   "that": "chase:new.reached",
+   "eq": 2,
+   "why": "zombies of the Arcade's own spawner (bay 3) reach the player in the Arcade (no 'no nav cell under the source')"
+  },
+  {
+   "do": "kill",
+   "tag": "new"
+  },
+  {
+   "do": "spawn",
+   "tag": "old",
+   "at": [
+    -96,
+    4416,
+    1
+   ],
+   "count": 2,
+   "place": false
+  },
+  {
+   "do": "chase",
+   "tag": "old",
+   "s": 120,
+   "reach": 96,
+   "allow_partial": true
+  },
+  {
+   "do": "expect",
+   "that": "chase:old.reached",
+   "eq": 2,
+   "why": "zombies of a ticket hall spawner cross the hall and the bought door to the player in the Arcade"
+  },
+  {
+   "do": "kill",
+   "tag": "old"
+  },
+  {
+   "do": "tp",
+   "at": [
+    -2560,
+    3560,
+    1
+   ],
+   "yaw": 270,
+   "snap": true
+  },
+  {
+   "do": "use",
+   "name": "buy0",
+   "kind": "iw7_ump45_zml",
+   "near": [
+    -2560,
+    3522,
+    64.0
+   ]
+  },
+  {
+   "do": "expect",
+   "that": "use:buy0.found",
+   "eq": 1,
+   "why": "wall buy 0 (iw7_ump45_zml) is a stock interaction"
+  },
+  {
+   "do": "expect",
+   "that": "use:buy0.has",
+   "eq": 1,
+   "why": "the player holds the weapon"
+  },
+  {
+   "do": "tp",
+   "at": [
+    -1860,
+    3560,
+    1
+   ],
+   "yaw": 270,
+   "snap": true
+  },
+  {
+   "do": "use",
+   "name": "buy1",
+   "kind": "iw7_m1c_zm",
+   "near": [
+    -1860,
+    3522,
+    64.0
+   ]
+  },
+  {
+   "do": "expect",
+   "that": "use:buy1.found",
+   "eq": 1,
+   "why": "wall buy 1 (iw7_m1c_zm) is a stock interaction"
+  },
+  {
+   "do": "expect",
+   "that": "use:buy1.has",
+   "eq": 1,
+   "why": "the player holds the weapon"
+  },
+  {
+   "do": "state",
+   "name": "end"
+  }
+ ]
+}

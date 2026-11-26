@@ -1,0 +1,175 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "sz8_rounds",
+ "map": "cp_iwz",
+ "conditions": "normal",
+ "libraries": [
+  "g1probe",
+  "szaccept",
+  "sz8arc"
+ ],
+ "about": "Round 8: rounds 1 to 3 played with the stock spawning and round loop, the player standing in the Arcade behind the bought D4; every zombie that stays in play must reach the player (stuck 0, stall 0).",
+ "steps": [
+  {
+   "do": "money",
+   "value": 20000
+  },
+  {
+   "do": "use",
+   "name": "door",
+   "kind": "debris_1000",
+   "near": [
+    -1160.0,
+    3900.0,
+    24.0
+   ]
+  },
+  {
+   "do": "expect",
+   "that": "use:door.spent",
+   "eq": 1000,
+   "why": "D4 bought"
+  },
+  {
+   "do": "tp",
+   "at": [
+    -2000,
+    3900,
+    1
+   ],
+   "yaw": 0,
+   "snap": true
+  },
+  {
+   "do": "call",
+   "fn": "g1_zone",
+   "args": [
+    "zone_in",
+    "arcade"
+   ],
+   "s": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:zone_in.touching",
+   "eq": 1,
+   "why": "the player stands in the Arcade"
+  },
+  {
+   "do": "ignore",
+   "on": false
+  },
+  {
+   "do": "waves",
+   "on": true
+  },
+  {
+   "do": "call",
+   "fn": "sz8_round_play",
+   "args": [
+    "r1",
+    1,
+    0,
+    240,
+    60
+   ],
+   "s": 0.5
+  },
+  {
+   "do": "expect",
+   "that": "probe:r1.started",
+   "eq": 1,
+   "why": "round 1 began"
+  },
+  {
+   "do": "expect",
+   "that": "probe:r1.stall",
+   "eq": 0,
+   "why": "round 1 did not stall"
+  },
+  {
+   "do": "expect",
+   "that": "probe:r1.stuck",
+   "eq": 0,
+   "why": "no zombie stuck in round 1"
+  },
+  {
+   "do": "expect",
+   "that": "probe:r1.seen",
+   "ge": 3,
+   "why": "round 1 spawned zombies"
+  },
+  {
+   "do": "call",
+   "fn": "sz8_round_play",
+   "args": [
+    "r2",
+    2,
+    0,
+    240,
+    60
+   ],
+   "s": 0.5
+  },
+  {
+   "do": "expect",
+   "that": "probe:r2.started",
+   "eq": 1,
+   "why": "round 2 began"
+  },
+  {
+   "do": "expect",
+   "that": "probe:r2.stall",
+   "eq": 0,
+   "why": "round 2 did not stall"
+  },
+  {
+   "do": "expect",
+   "that": "probe:r2.stuck",
+   "eq": 0,
+   "why": "no zombie stuck in round 2"
+  },
+  {
+   "do": "expect",
+   "that": "probe:r2.seen",
+   "ge": 3,
+   "why": "round 2 spawned zombies"
+  },
+  {
+   "do": "call",
+   "fn": "sz8_round_play",
+   "args": [
+    "r3",
+    3,
+    0,
+    240,
+    60
+   ],
+   "s": 0.5
+  },
+  {
+   "do": "expect",
+   "that": "probe:r3.started",
+   "eq": 1,
+   "why": "round 3 began"
+  },
+  {
+   "do": "expect",
+   "that": "probe:r3.stall",
+   "eq": 0,
+   "why": "round 3 did not stall"
+  },
+  {
+   "do": "expect",
+   "that": "probe:r3.stuck",
+   "eq": 0,
+   "why": "no zombie stuck in round 3"
+  },
+  {
+   "do": "expect",
+   "that": "probe:r3.seen",
+   "ge": 3,
+   "why": "round 3 spawned zombies"
+  }
+ ]
+}

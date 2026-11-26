@@ -31,3 +31,7 @@ Lit 6.5 / 6 / 6.5, dark 5 / 5 / 6; target 7.5; verdict "not yet" from all three.
 4. Dark start too dark to navigate at stair A, stair B, the hero car and the service tunnel.
 5. Pack-a-Punch alcove reads empty: the alcove camera faces the side wall (the machine is out of frame) and the alcove has no
    signage or dressing; repeated posters and identical seats in the ticket hall; a black blob on the ticket-hall floor.
+
+## Arcade round 8 (26 Nov 2026, worker SZ8)
+- Layer builder `tools-source/iwzmap/station_zero/arcade_layer8.py` (base = g27r emit); `studio check` 0 errors; `bake --final` 354 s, `live start` 100 s; 34 clean frames (17 cameras, power off and on) in `C:\studio-data\sz\arcade\r8\lf`, no FE19 (power-on answered, all shots taken).
+- Forge plans `station_zero/plans_r8` (generator `make_plans.py`): power and perks 19/19, rounds 1-3 14/14, doors 19/21 (hull stays blocked at y 3900/3950 by a base obstacle at x -1143, FE24), HUD plan ended by the game at the first new-row perk (FE21). Frames not yet independently reviewed (FE26).
