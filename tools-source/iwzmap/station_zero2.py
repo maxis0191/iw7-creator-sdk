@@ -3206,7 +3206,7 @@ for gx in (PAP_ARCH['a'] - 28, PAP_ARCH['a'] - 28 + 156):
                     origin=fmt((gx, 4002, PAP_ARCH['z0'])), angles='0 0 0'))
 # IWZ_SMODELS=1: template-zone decor becomes compiled static models (smodels.txt, x64-zt codex/iwzmap-static-models
 # a99270f merged in door-brushmodels bd5e7fb): drawn and bullet-blocking without entity cost; player / zombie blocking
-# stays with the decor clip boxes (world collision + nav cut). Foreign-zone kit models stay script_models (kit_import).
+# stays with the decor clip boxes (world collision + nav cut). Foreign-zone kit models are static too (see KIT_SCRIPT_MODELS below).
 SMODELS = os.environ.get('IWZ_SMODELS') == '1'
 # compiled static models only for models that have a stock static instance in the template: the compiler gives a model
 # without one another model's draw settings. g19 / g20 / g21 hit an access violation at iw7_ship+0xDCE6E7 (material #4
@@ -3227,13 +3227,21 @@ if SMODELS and os.environ.get('IWZ_SMODEL_STOCK_ONLY') == '1' and os.path.isfile
 # models without a light grid lit template instance and without a same-layout donor: the compiler refuses them as
 # static models (compile-only probe with IWZ_SMODEL_ALLOW_SHAPE_MISMATCH=1 on g25, 2026-11-08); script_models instead
 SMODEL_NO_DONOR = {'pardon_our_dust_sign'}
+# A decor model is a static model unless a script needs it as an entity: DECOR rows with a targetname (door dressing, flicker and power
+# fixtures, relays, shutter, perk bodies, ...) and the rows the generator writes as direct entities above stay script_models; no level
+# script finds an unnamed decor model by its model name or classname (cp_iwz2.gsc iwz_door_dressing reads only iwz_doordress_ names,
+# fixtures/train_kit.gsc is a proof harness, not part of the level). A kit model (cp_disco_, cp_final_, iwz_ train kit, ...) is drawn as a
+# static one too since Studio's compile stages foreign xmodels next to smodels.txt (compile.build, kit_import --stage-xmodels): Station Zero's
+# base went from 320 to 181 script_models (SB, 26 Nov 2026). IWZ_KIT_SCRIPT_MODELS=1 restores the old rule for a build route that does not
+# stage kit xmodels (build-g.ps1 sets it), where a kit model is drawn only as a script_model.
+KIT_SCRIPT_MODELS = os.environ.get('IWZ_KIT_SCRIPT_MODELS') == '1'
 smodel_lines = []
 for d in DECOR:
     if os.environ.get('IWZ_KIT_ONLY') and d['model'] in KIT_MODELS and d['model'] != os.environ['IWZ_KIT_ONLY']:
         continue     # kit crash bisect: one imported model per build
     if os.environ.get('IWZ_KIT_BASELINE') == '1' and d['model'] in KIT_MODELS:
         continue     # kit proof baseline: the same map (placements, clips, views) without the imported models
-    if SMODELS and not d.get('targetname') and d['model'] not in KIT_MODELS and d['model'] not in SMODEL_NO_DONOR and (SMODEL_STOCK is None or d['model'] in SMODEL_STOCK):
+    if SMODELS and not d.get('targetname') and (not KIT_SCRIPT_MODELS or d['model'] not in KIT_MODELS) and d['model'] not in SMODEL_NO_DONOR and (SMODEL_STOCK is None or d['model'] in SMODEL_STOCK):
         x_, y_, z_ = d['origin']
         smodel_lines.append('%s %g %g %g %g %g %g 1' % (d['model'], x_, y_, z_, d.get('pitch', 0), d.get('yaw', 0), d.get('roll', 0)))
         d['static'] = True
