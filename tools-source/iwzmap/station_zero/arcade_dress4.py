@@ -338,7 +338,7 @@ def shop(A, m, D, i, report):
         sh = R2.Shelf(m, 'shelf_p%d_%d' % (side, i), (U(u0), yp - 32.0, U(u1), yp), 's', lv, board=brd, top=172.0)
         n_stock += R2.stock(D, sh, items[side], step * 1.5, yaw=270.0, jitter=14.0, skip=0.04, scale=1.5)
     # a transom shelf above the doorway, packed boxes
-    sh = R2.Shelf(m, 'shelf_t_%d' % i, (U(116.0), yp - 22.0, U(204.0), yp), 's', (110.0, 134.0, 158.0), board=brd, top=172.0, clip=False)      # above the doorway (96 high): no collision
+    sh = R2.Shelf(m, 'shelf_t_%d' % i, (U(116.0), yp - 22.0, U(204.0), yp), 's', (110.0, 134.0, 158.0), board=brd, top=172.0, clip=False, frame_parts=False)      # above the doorway (96 high): no collision
     n_stock += R2.stock(D, sh, ['boxc', 'boxa', 'boxc'] if kind != 'needle' else ['crate', 'boxa', 'crate'], 28.0, yaw=270.0, jitter=10.0, skip=0.0)
     # the hung things behind the aperture (as round 3) and the posters on both side walls
     cx = s + A.BAY_W / 2.0
