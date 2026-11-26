@@ -12,7 +12,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-sys.path.insert(0, r'C:\studio')
+sys.path.insert(0, os.environ.get('STUDIO_ROOT', r'C:\studio'))
 import arcade as R1  # noqa: E402
 from studio import Map, build as B  # noqa: E402
 
