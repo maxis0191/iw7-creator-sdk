@@ -2,7 +2,7 @@
 
 usage: python -I story_plates.py <art dir>     -> <art dir>/story/<name>.png (preview) and <name>_c.tga (texture)
   story_run_047        cab run-number plate: white 047 on black enamel (hero car west cab, below the left window)
-  story_headsign_2347  destination blind: "23:47  STATION ZERO" amber dot-matrix on black (hero car header)
+  story_headsign_2347  destination blind: "047   ZERO LINE" amber dot-matrix on black (hero car header)
   story_danger_g2      DANGER placard for the G-2 cordon: "DANGER / G-2 LOCKED OUT / DO NOT RESTART / 23:47"
   story_lockout_tag    red DO NOT OPERATE lockout tag with a hasp hole
   story_clock_big      a large stopped station clock face at 23:47 (over the Platform A stair arch)
@@ -51,7 +51,7 @@ def headsign():
     w, h = 512, 64
     im = Image.new('RGB', (w, h), (6, 6, 6))
     txt = Image.new('L', (w, h), 0)
-    centred(ImageDraw.Draw(txt), (0, 0, w, h), '23:47   STATION ZERO', bahn(44), 255)
+    centred(ImageDraw.Draw(txt), (0, 0, w, h), '047   ZERO LINE', bahn(44), 255)
     d = ImageDraw.Draw(im)
     for y in range(2, h, 4):          # dot matrix: lit dots where the text is, dim dots elsewhere
         for x in range(2, w, 4):

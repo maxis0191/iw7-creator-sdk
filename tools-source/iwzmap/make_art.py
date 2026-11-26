@@ -88,11 +88,11 @@ def fit_font(make, text, max_w, start):
 if PLATE:
     words = plate_title.upper().split()
     LINE1, LINE2 = (' '.join(words[:-1]), words[-1]) if len(words) > 1 else ('', words[0])
-    TAGLINE, FOOT1, FOOT2, BOARD = 'A  CUSTOM  ZOMBIES  MAP', 'AN  INFINITE WARFARE ZOMBIES  CUSTOM MAP', 'BUILT WITH THE IWZ MAP BUILDER', 'NOW  LOADING'
+    TAGLINE, FOOT1, FOOT2, BOARD = 'CUSTOM  ZOMBIES  MAP', 'INFINITE WARFARE ZOMBIES', "MAXIS' PARIS", 'NOW  LOADING'
     VOTE_TITLE = plate_title.upper()
 else:
     LINE1, LINE2 = 'STATION', 'ZERO'
-    TAGLINE, FOOT1, FOOT2, BOARD = 'LAST TRAIN OUT.  NO RETURN TICKET.', 'AN  ORIGINAL  INFINITE WARFARE ZOMBIES  CUSTOM MAP', 'GENERATED  WORLD  \u2022  NAVMESH  \u2022  STOCK  ZOMBIES  SYSTEMS', 'NOW  BOARDING'
+    TAGLINE, FOOT1, FOOT2, BOARD = 'NEXT STOP: NOWHERE.', 'A  WILLARD WYLER  PICTURE  \u00b7  PORT HALCYON 1986', "CUSTOM  ZOMBIES  MAP  \u00b7  MAXIS' PARIS", 'NOW  BOARDING'
     VOTE_TITLE = 'STATION ZERO'
 
 # poster 512x768
@@ -131,7 +131,7 @@ for x in range(VW):
     sd.line([(x, 0), (x, VH)], fill=int(200 * max(0.0, 1 - x / (VW * 0.75))))
 vote.paste(Image.new('RGBA', (VW, VH), (4, 6, 8, 255)), (0, 0), shade)
 glow_text(vote, (24, 96), VOTE_TITLE, fit_font(title_font, VOTE_TITLE, VW - 48, 64), (235, 255, 225), NEON, 8, anchor='lm')
-ImageDraw.Draw(vote).text((26, 150), 'Infinite Warfare Zombies custom map', font=body_font(20), fill=(220, 220, 210, 255), anchor='lm')
+ImageDraw.Draw(vote).text((26, 150), 'Infinite Warfare Zombies custom map' if PLATE else 'Next stop: nowhere.', font=body_font(20), fill=(220, 220, 210, 255), anchor='lm')
 vote_rgb = vote.convert('RGB')
 
 

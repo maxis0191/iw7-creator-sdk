@@ -187,10 +187,10 @@ def clock_face_stopped(size=512, seed=2347, hhmm=INCIDENT, second=37):
 
 # ----------------------------------------------------------------------------------- split-flap departure board
 BOARD_ROWS = [
-    ('23:47', 'COSMIC HEIGHTS', 'A', 'SERVICE SUSPENDED'),
-    ('23:52', 'REDWOODS', 'A', 'SERVICE SUSPENDED'),
-    ('23:58', 'ARCADIA', 'A', 'SERVICE SUSPENDED'),
-    ('00:05', 'POLAR PEAK', 'A', 'SERVICE SUSPENDED'),
+    ('23:47', 'HARBOUR EXCHANGE', 'A', 'BOARDING'),
+    ('23:52', 'CALDER ROAD', 'A', 'SERVICE SUSPENDED'),
+    ('23:58', 'MARLOW STREET', 'A', 'SERVICE SUSPENDED'),
+    ('00:05', 'TIDEWATER', 'A', 'SERVICE SUSPENDED'),
 ]
 
 

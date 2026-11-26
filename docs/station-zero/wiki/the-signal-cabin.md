@@ -11,9 +11,9 @@ Built in 1931 with the station, the cabin housed a lever frame of forty painted 
 - **The lever frame.** Forty levers in colour bands, of which eight have polished handles and still move. Each polished lever has a brass plate naming a route: BYPASS UP, CROSSOVER, ZERO, and others.
 - **The track diagram.** An illuminated panel of the Zero Line's approach, with lamps for each section.
 - **A stove and a kettle**, as in any cabin, and a mug on a shelf.
-- **The train register**, a ledger of every movement, open at 23:44. The last entry is three lever names, the three the diagram lights, in Signalwoman Ruth Prescott's hand.
+- **The train register**, a ledger of every movement, open at 23:44. The last entry is three lever names, the three the diagram lights, in Signalwoman Linda Prescott's hand.
 
-Ruth Prescott was the night signaller. She is one of the three staff on the missing posters.
+Linda Prescott was the night signaller. She is one of the three staff on the missing posters.
 
 ## The road
 

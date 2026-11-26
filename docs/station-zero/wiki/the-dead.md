@@ -37,7 +37,7 @@ They commute. A dead man with nowhere to walk goes to the nearest waiting place 
 
 ## The missing
 
-Three of the 58 night staff have posters on the concourse: Dennis Malone, token clerk; Ruth Prescott, signalwoman; and Walter Hughes, track walker. The Rapid printed the posters on 2 January 1985. Nobody has asked about them since.
+Three of the 58 night staff have posters on the concourse: Dennis Malone, token clerk; Linda Prescott, night signaller; and Walter Hughes, track walker. The Rapid printed the posters on 2 January 1985. Nobody has asked about them since.
 
 ## In the map
 

@@ -558,7 +558,7 @@ ticket_hud()
     }
     if ( self.szp_ticket > 0 )
     {
-        self.szp_ticket_hud settext( "VALIDATED TICKET  next perk free" );
+        self.szp_ticket_hud settext( "VALIDATED TICKET - NEXT PERK FREE" );
         self.szp_ticket_hud.alpha = 1;
     }
     else

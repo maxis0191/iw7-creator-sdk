@@ -37,7 +37,7 @@ init()
     q.bursts = 0;
     q.burst_made = 0;
     q.events = 0;
-    q.board = "047 - POWER: G-2 OFFLINE - CONVERTER HALL";
+    q.board = "047 · POWER: G-2 OFFLINE · CONVERTER HALL";
     q.markers = q1_markers();
     // a new random set of three lit levers per match (the step resets between matches)
     idx = [ 0, 1, 2, 3, 4, 5, 6, 7 ];
@@ -104,9 +104,9 @@ q1_main()
         wait 0.5;
     scripts\engine\utility::flag_wait( "power_on" );
     q1_log( "POWER on" );
-    q1_board( "047 - DUE 00:00 - NOW --:-- - CLOCKS 0/4" );
+    q1_board( "047 · DUE 00:00 · CLOCKS 0/4" );
     foreach ( c in q.clocks )
-        c sethintstring( "Hold Use to wind the clock (stopped at 23:47)" );
+        c sethintstring( "Hold Use to wind the clock [23:47]" );
     level thread q1_round_watch();
 }
 
@@ -321,7 +321,7 @@ q1_clock_use()
             continue;
         if ( !scripts\engine\utility::flag( "power_on" ) )
         {
-            q1_msg( p, "THE CLOCK WILL NOT TURN: NO POWER", 2 );
+            q1_msg( p, "CLOCK LOCKED - NO POWER", 2 );
             q1_local_sound( p, "purchase_deny" );
             continue;
         }
@@ -333,7 +333,7 @@ q1_clock_use()
         self.iwz_busy = undefined;
         if ( !ok )
         {
-            q1_msg( p, "KEEP HOLDING USE TO WIND THE CLOCK", 1.5 );
+            q1_msg( p, "HOLD USE TO WIND", 1.5 );
             continue;
         }
         self.iwz_wound = 1;
@@ -353,12 +353,12 @@ q1_clock_use()
         level thread q1_burst( self.origin, n, "clock_" + self.iwz_id );
         if ( q.clocks_wound >= q.clocks.size && q.clocks.size > 0 )
         {
-            q1_board( "047 - DUE 00:00 - SET THE ROAD: SIGNAL CABIN" );
+            q1_board( "047 · SET THE ROAD · SIGNAL CABIN" );
             q1_log( "STEP1 done" );
             q1_levers_ready();
         }
         else
-            q1_board( "047 - DUE 00:00 - NOW --:-- - CLOCKS " + q.clocks_wound + "/4" );
+            q1_board( "047 · DUE 00:00 · CLOCKS " + q.clocks_wound + "/4" );
     }
 }
 
@@ -455,7 +455,7 @@ q1_levers_ready()
 {
     q = level.iwz_q1;
     if ( isdefined( q.diagram ) )
-        q.diagram sethintstring( "Track diagram, lit: " + q1_lit_names() );
+        q.diagram sethintstring( "LIT LEVERS: " + q1_lit_names() );
     foreach ( l in q.levers )
         q1_lever_hint( l );
 }
@@ -470,9 +470,9 @@ q1_lever_hint( l )
 {
     q = level.iwz_q1;
     if ( q.road_set )
-        l sethintstring( "Lever " + ( l.iwz_k + 1 ) + ": " + q.lever_names[l.iwz_k] + " (road set for 047)" );
+        l sethintstring( "Lever " + ( l.iwz_k + 1 ) + ": " + q.lever_names[l.iwz_k] + " [ROAD SET]" );
     else if ( l.iwz_pulled )
-        l sethintstring( "Lever " + ( l.iwz_k + 1 ) + ": " + q.lever_names[l.iwz_k] + " (locked over, lamp green)" );
+        l sethintstring( "Lever " + ( l.iwz_k + 1 ) + ": " + q.lever_names[l.iwz_k] + " [LOCKED - GREEN]" );
     else
         l sethintstring( "Pull lever " + ( l.iwz_k + 1 ) + ": " + q.lever_names[l.iwz_k] );
 }
@@ -484,7 +484,7 @@ q1_diagram_use()
     {
         self waittill( "trigger", p );
         if ( isplayer( p ) && level.iwz_q1.clocks_wound >= 4 )
-            q1_msg( p, "THE DIAGRAM LIGHTS: " + q1_lit_names(), 4 );
+            q1_msg( p, "DIAGRAM LIT: " + q1_lit_names(), 4 );
     }
 }
 
@@ -499,7 +499,7 @@ q1_lever_use()
             continue;
         if ( q.clocks_wound < 4 )
         {
-            q1_msg( p, "THE LEVER FRAME IS LOCKED: WIND THE FOUR CLOCKS", 2 );
+            q1_msg( p, "FRAME LOCKED - WIND ALL 4 CLOCKS", 2 );
             q1_local_sound( p, "purchase_deny" );
             continue;
         }
@@ -519,7 +519,7 @@ q1_lever_use()
             }
             q1_sound( self, "zmb_shooting_gal_buzz" );
             q1_log( "LEVER wrong k=" + self.iwz_k + " name=" + q.lever_names[self.iwz_k] + " by=" + p.name + " wrong=" + q.wrong );
-            q1_msg( p, "WRONG LEVER: THE FRAME SPRINGS BACK", 2.5 );
+            q1_msg( p, "WRONG LEVER - FRAME RESET", 2.5 );
             level thread q1_burst( self.origin, 4, "wrong_lever" );
             continue;
         }
@@ -534,8 +534,8 @@ q1_lever_use()
             q.road_set = 1;
             foreach ( l in q.levers )
                 q1_lever_hint( l );
-            q1_board( "047 - ROAD SET FOR 047" );
-            q1_msg_all( "ROAD SET FOR 047: THE SIGNAL DROPS TO GREEN", 3 );
+            q1_board( "047 · ROAD SET · SIGNAL GREEN" );
+            q1_msg_all( "ROAD SET FOR 047 - SIGNAL GREEN", 3 );
             q1_sound( self, "zmb_challenge_complete" );
             q1_log( "STEP2 done" );
             level thread q1_conductor_cycle();
@@ -599,7 +599,7 @@ q1_conductor_spawn()
     q.conductor_state = "walking";
     q.conductor_spawns++;
     q1_sound( z, "zmb_challenge_start" );
-    q1_board( "047 - THE CONDUCTOR IS ON THE PLATFORM" );
+    q1_board( "047 · CONDUCTOR ON PLATFORM A" );
     q1_log( "CONDUCTOR spawned health=" + z.health + " at=" + z.origin + " spawns=" + q.conductor_spawns );
     z thread q1_conductor_death();
 }
@@ -629,7 +629,7 @@ q1_conductor_leave()
     z.iwz_leaving = 1;
     z dodamage( z.health + 1000, z.origin );
     q.conductor_state = "left";
-    q1_board( "047 - THE CONDUCTOR WILL RETURN NEXT ROUND" );
+    q1_board( "047 · CONDUCTOR RETURNS NEXT ROUND" );
     q1_log( "CONDUCTOR left (round ended)" );
 }
 
@@ -644,7 +644,7 @@ q1_handle_drop( origin )
     q.handle_state = "dropped";
     q.carrier = undefined;
     q1_fx( "iwz_rail_spark", g );
-    q1_board( "047 - THE DEAD-MAN'S HANDLE LIES ON THE GROUND" );
+    q1_board( "047 · DEAD-MAN'S HANDLE DROPPED" );
     q1_log( "HANDLE dropped at=" + g );
     q.handle thread q1_handle_use();
 }
@@ -662,8 +662,8 @@ q1_handle_use()
         q.handle_state = "carried";
         q.carrier = p;
         q1_local_sound( p, "zmb_item_pickup" );
-        q1_msg( p, "YOU CARRY THE DEAD-MAN'S HANDLE: FIT IT IN THE CAB OF CAR 1", 4 );
-        q1_board( "047 - HANDLE CARRIED - THE CAB OF CAR 1" );
+        q1_msg( p, "DEAD-MAN'S HANDLE - FIT IT IN CAR 1 CAB", 4 );
+        q1_board( "047 · FIT HANDLE IN CAR 1 CAB" );
         q1_log( "HANDLE taken by=" + p.name );
         level thread q1_carrier_watch( p );
         q.handle = undefined;
@@ -750,9 +750,9 @@ q1_cab_use()
             q.handle_state = "fitted";
             q.carrier = undefined;
             q1_sound( self, "zmb_packapunch_machine_on" );
-            self sethintstring( "Use the Dead-Man's Handle: depart for the TERMINUS" );
-            q1_board( "047 - TERMINUS - BOARDING" );
-            q1_msg_all( "047 TERMINUS: BOARDING", 3 );
+            self sethintstring( "Hold Use: depart for the TERMINUS" );
+            q1_board( "047 · TERMINUS · BOARDING" );
+            q1_msg_all( "047 · TERMINUS · BOARDING", 3 );
             q1_log( "STEP4 done armed=1 by=" + p.name );
             continue;
         }
@@ -783,7 +783,7 @@ q1_trip( starter )
     level endon( "game_ended" );
     q = level.iwz_q1;
     q.tp_state = "boarding";
-    q.cab sethintstring( "BOARDING: the doors close in 4 s" );
+    q.cab sethintstring( "BOARDING - DOORS CLOSING (4s)" );
     q1_log( "TRIP boarding by=" + starter.name );
     for ( i = 0; i < 2; i++ )
     {
@@ -815,7 +815,7 @@ q1_trip( starter )
     if ( travellers.size == 0 )
     {
         q.tp_state = "idle";
-        q.cab sethintstring( "Use the Dead-Man's Handle: depart for the TERMINUS" );
+        q.cab sethintstring( "Hold Use: depart for the TERMINUS" );
         q1_log( "TRIP nobody_aboard pushed=" + pushed );
         return;
     }
@@ -838,7 +838,7 @@ q1_trip( starter )
     }
     wait 3.2;
     q.tp_state = "away";
-    q1_board( "047 - AT THE TERMINUS" );
+    q1_board( "047 · AT THE TERMINUS" );
     q1_log( "TRIP arrived travellers=" + travellers.size );
     level thread q1_spawn_pause();
     // the only running clock of the map: 23:59:19 to 23:59:59, 40 s; midnight never comes
@@ -876,11 +876,11 @@ q1_trip( starter )
     // 150 s not in service: 40 s away in every 190 at most
     q.tp_state = "cooldown";
     q.cab sethintstring( "NOT IN SERVICE" );
-    q1_board( "047 - NOT IN SERVICE" );
+    q1_board( "047 · NOT IN SERVICE" );
     wait 150;
     q.tp_state = "idle";
-    q.cab sethintstring( "Use the Dead-Man's Handle: depart for the TERMINUS" );
-    q1_board( "047 - TERMINUS - BOARDING" );
+    q.cab sethintstring( "Hold Use: depart for the TERMINUS" );
+    q1_board( "047 · TERMINUS · BOARDING" );
     q1_log( "TRIP ready" );
 }
 

@@ -148,15 +148,15 @@ def notice_closed_layers(size=512, seed=1984):
 
     def oldest(doc):            # 1984: the transit authority's printed closure notice, serif, navy
         w = doc.w
-        doc.text((w / 2, 34), 'ZERO LINE TRANSIT AUTHORITY', P.font('serif_bold', 17), NAVY_INK, anchor='mm', tracking=1.5)
+        doc.text((w / 2, 34), 'HALCYON RAPID TRANSIT', P.font('serif_bold', 17), NAVY_INK, anchor='mm', tracking=1.5)
         doc.line([(40, 50), (w - 40, 50)], NAVY_INK, 1.2)
         doc.text((w / 2, 98), 'STATION', P.font('serif_bold', 62), INK, anchor='mm')
         doc.text((w / 2, 158), 'CLOSED', P.font('serif_bold', 62), INK, anchor='mm')
-        y = doc.para(46, 200, 'This station is closed to passengers. Trains will not stop here. Passengers should use '
-                     'STATION ZERO, Platform A, by the subway on the right.', P.font('serif', 17), INK, w - 92, 1.3,
+        y = doc.para(46, 200, 'This station is closed to passengers. Trains will not stop here. Use '
+                     'STATION ZERO, Platform A, via the east subway.', P.font('serif', 17), INK, w - 92, 1.3,
                      align='center')
         doc.text((w / 2, y + 26), 'By order of the General Manager', P.font('serif_italic', 15), INK, anchor='mm')
-        doc.text((w / 2, y + 50), '2nd July 1984', P.font('serif_italic', 15), INK, anchor='mm')
+        doc.text((w / 2, y + 50), '2 July 1984', P.font('serif_italic', 15), INK, anchor='mm')
 
     def middle(doc):            # later: engineering notice, red header bar, DIN
         w = doc.w
@@ -166,7 +166,7 @@ def notice_closed_layers(size=512, seed=1984):
         doc.text((w / 2, 134), 'FURTHER NOTICE', P.font('din', 40, 'Bold Condensed'), INK, anchor='mm')
         doc.para(28, 168, 'Structural survey in progress. No entry beyond this point. Unauthorised persons will be '
                  'removed.', P.font('din', 16, 'SemiBold'), INK, w - 56, 1.3, align='center')
-        doc.text((w / 2, 252), 'ENGINEERING DEPARTMENT  ·  ZERO LINE', P.font('din', 12, 'Bold'), RED_INK, anchor='mm')
+        doc.text((w / 2, 252), 'ENGINEERING DEPARTMENT  ·  HALCYON RAPID TRANSIT', P.font('din', 12, 'Bold'), RED_INK, anchor='mm')
 
     def newest(doc):            # the night of the incident: a hurried printed slip
         w = doc.w
@@ -204,7 +204,7 @@ def notice_quarantine(w=512, h=768, seed=2348):
     doc = P.Doc(w, h)
     doc.rect((0, 0, w, 74), RED_INK)
     doc.text((w / 2, 38), 'EMERGENCY NOTICE', P.font('din', 44, 'Bold'), (1, 1, 1), anchor='mm', knock=RED_INK)
-    doc.text((w / 2, 104), 'ZERO LINE TRANSIT AUTHORITY  ·  OFFICE OF CIVIL DEFENSE', P.font('din', 13, 'Bold'),
+    doc.text((w / 2, 104), 'HALCYON RAPID TRANSIT  ·  OFFICE OF CIVIL DEFENSE', P.font('din', 13, 'Bold'),
              INK, anchor='mm')
     doc.line([(30, 120), (w - 30, 120)], INK, 1.5)
     doc.text((w / 2, 168), 'EVACUATION ORDER', P.font('din', 50, 'Bold Condensed'), INK, anchor='mm')
@@ -215,10 +215,10 @@ def notice_quarantine(w=512, h=768, seed=2348):
     y = doc.para(36, 282, 'Following an incident on Platform A, this station is closed and placed under quarantine. '
                  'All passengers and staff must leave immediately by the nearest marked exit.', body, INK, w - 72, 1.3)
     y += 10
-    rules = ['Do not use the lifts.',
+    rules = ['Do not use the lifts or escalators.',
              'Do not return for luggage or belongings.',
              'Do not approach persons who appear unwell, confused or aggressive.',
-             'Report any bite or scratch to the first-aid post in the ticket hall.',
+             'Report any dizziness, confusion, or injury to the first-aid post in the Fare Hall.',
              'Do not re-enter until the all-clear is given by Control.']
     nf = P.font('din', 15, 'Bold')
     for i, rtext in enumerate(rules):
@@ -233,7 +233,7 @@ def notice_quarantine(w=512, h=768, seed=2348):
     doc.text((36, yb + 6), 'Station Supervisor', P.font('din', 12, 'SemiBold'), INK)
     scribble(doc, 50, yb - 14, 140, seed + 1)
     doc.text((w - 36, yb + 6), 'ORDER No. Z-2347', P.font('din', 12, 'Bold'), INK, anchor='ra')
-    doc.text((w / 2, h - 40), 'ZERO LINE  ·  EVERY STATION, ALL NIGHT', P.font('din', 11, 'Bold'), (0.4, 0.4, 0.42),
+    doc.text((w / 2, h - 40), 'HALCYON RAPID TRANSIT  ·  EVERY STATION, ALL NIGHT', P.font('din', 11, 'Bold'), (0.4, 0.4, 0.42),
              anchor='mm')
     pap = P.paper(w, h, seed, (0.95, 0.94, 0.90))
     rgb = doc.render(pap, seed, uneven=0.1)
@@ -278,7 +278,7 @@ def notice_do_not_restart(w=512, h=768, seed=4747):
     # roster
     y = y + 70
     doc.line([(20, y), (w - 20, y)], INK, 1.5)
-    doc.text((w / 2, y + 20), 'NIGHT SHIFT ROSTER  ·  STATION ZERO  ·  WEEK 44', P.font('typewriter_bold', 15), INK,
+    doc.text((w / 2, y + 20), 'NIGHT SHIFT ROSTER  ·  STATION ZERO  ·  31 DEC 1984', P.font('typewriter_bold', 15), INK,
              anchor='mm')
     y += 40
     cols = [(24, 'NAME'), (150, 'DUTY'), (268, 'SHIFT'), (372, 'IN'), (432, 'OUT')]
@@ -350,8 +350,8 @@ def poster_missing(variant, photo_path, w=512, h=768, seed=None):
         doc.text((w / 2, 522), 'DANIEL MALONE', P.font('din', 40, 'Bold'), INK, anchor='mm')
         doc.text((w / 2, 556), 'AGE 46  ·  5\'10"  ·  BROWN EYES  ·  MOUSTACHE', P.font('din', 16, 'Bold'), INK,
                  anchor='mm')
-        y = doc.para(40, 576, 'Signal technician, Zero Line. Last seen on the night shift at STATION ZERO, about 23:40. '
-                     'Wearing a navy work jacket.', P.font('din', 16, 'SemiBold'), INK, w - 80, 1.3, align='center')
+        y = doc.para(40, 576, 'Signal technician, Halcyon Rapid Transit. Last seen on night shift at Station Zero, 23:40. '
+                     'Navy work jacket.', P.font('din', 16, 'SemiBold'), INK, w - 80, 1.3, align='center')
         doc.text((w / 2, y + 22), 'PLEASE CALL 555-0147', P.font('din', 28, 'Bold'), INK, anchor='mm')
         doc.text((w / 2, y + 54), 'ANY INFORMATION  ·  DAY OR NIGHT', P.font('din', 14, 'Bold'), INK, anchor='mm')
         pap = P.paper(w, h, seed, (0.95, 0.95, 0.93), grain=0.02)
@@ -368,8 +368,8 @@ def poster_missing(variant, photo_path, w=512, h=768, seed=None):
         doc.text((w / 2, 102), 'OUR DAUGHTER?', P.font('din', 46, 'Bold Condensed'), RED_INK, anchor='mm')
         doc.text((w / 2, 532), 'LINDA PRESCOTT', P.font('din', 38, 'Bold'), INK, anchor='mm')
         doc.text((w / 2, 566), 'AGE 28  ·  5\'5"  ·  LIGHT BROWN HAIR', P.font('din', 16, 'Bold'), INK, anchor='mm')
-        y = doc.para(40, 586, 'Linda took the last train home from STATION ZERO on the night of the incident and never '
-                     'arrived. Denim jacket, striped top, gold hoop earrings.', P.font('din', 15, 'SemiBold'), INK,
+        y = doc.para(40, 586, 'Linda worked the night shift at STATION ZERO on New Year\'s Eve and never came home. '
+                     'HRT navy coat, gold hoop earrings.', P.font('din', 15, 'SemiBold'), INK,
                      w - 80, 1.3, align='center')
         doc.text((w / 2, y + 24), 'CALL 555-0183', P.font('din', 30, 'Bold'), RED_INK, anchor='mm')
         doc.text((w / 2, y + 54), 'WE LOVE YOU, LINDA. PLEASE COME HOME.', P.font('din', 14, 'Bold'), INK, anchor='mm')
@@ -412,8 +412,8 @@ def poster_missing(variant, photo_path, w=512, h=768, seed=None):
         doc.image(Image.fromarray((g * 255).astype(np.uint8)), (px, py, px + pw, py + ph))
         doc.text((w / 2, 500), 'WALTER HUGHES', P.font('din', 38, 'Bold'), INK, anchor='mm')
         doc.text((w / 2, 532), 'AGE 67  ·  GLASSES  ·  GREY CARDIGAN', P.font('din', 16, 'Bold'), INK, anchor='mm')
-        y = doc.para(40, 552, 'Walter rides the Zero Line every evening. He was last seen waiting on Platform A at '
-                     'STATION ZERO. He may be confused and need help.', P.font('din', 15, 'SemiBold'), INK, w - 80,
+        y = doc.para(40, 552, 'Walter rode the Rapid every evening. Last seen waiting on Platform A at STATION ZERO '
+                     'on New Year\'s Eve. May be disoriented.', P.font('din', 15, 'SemiBold'), INK, w - 80,
                      1.3, align='center')
         doc.text((w / 2, y + 24), 'PHONE 555-0129', P.font('din', 28, 'Bold'), INK, anchor='mm')
         pap = P.paper(w, h, seed, (0.94, 0.94, 0.92))
@@ -456,12 +456,11 @@ def ad_panel_broken(illustration_path, w=1024, h=512, seed=6060):
         d.text((xy[0] + 3 * S, xy[1] + 3 * S), text, font=f, fill=sh, anchor='la')
         d.text(xy, text, font=f, fill=fill, anchor='la')
 
-    shadowed((tx, 70 * S), 'THE BEACH IS', h1, (18, 40, 86), sh=(255, 255, 255))
-    shadowed((tx, 128 * S), '40 MINUTES', h1, (18, 40, 86), sh=(255, 255, 255))
-    shadowed((tx, 186 * S), 'AWAY', h1, (214, 56, 36), sh=(255, 255, 255))
-    sub = 'Radioactive Beach, every 12 minutes.'
+    shadowed((tx, 70 * S), 'THE FUTURE', h1, (18, 40, 86), sh=(255, 255, 255))
+    shadowed((tx, 128 * S), 'RUNS ITSELF.', h1, (214, 56, 36), sh=(255, 255, 255))
+    sub = 'Harbour Exchange - every 12 minutes.'
     h2 = P.fit_font('din', sub, W - frame * S - 24 * S - tx, 26 * S, 'SemiBold')
-    d.text((tx, 262 * S), 'Zero Line summer service to', font=h2, fill=(18, 40, 86), anchor='la')
+    d.text((tx, 262 * S), 'Zero Line express to', font=h2, fill=(18, 40, 86), anchor='la')
     d.text((tx, 294 * S), sub, font=h2, fill=(18, 40, 86), anchor='la')
     bx, by = W - 70 * S, H - 74 * S
     B.zero_badge(d, bx, by, 28 * S, width=3 * S)
@@ -566,10 +565,10 @@ def poster_station_zero_v2(illustration_path, w=1024, h=1536, seed=6161):
            stroke_fill=(10, 30, 10, 255))
     d.text((w / 2, y2), 'ZERO', font=t2, fill=(150, 255, 120, 255), anchor='mm', stroke_width=4,
            stroke_fill=(10, 30, 10, 255))
-    tag = 'THE CITY ABOVE IS NEXT'
+    tag = 'NEXT STOP: NOWHERE.'
     d.text((w / 2, h * 0.919), tag, font=P.fit_font('din', tag, w * 0.84, int(h * 0.036), 'Regular'),
            fill=(255, 120, 205, 255), anchor='mm')
-    cred = 'WILLARD WYLER PRESENTS  •  A ZERO LINE PICTURE  •  NOW SHOWING'
+    cred = 'A WILLARD WYLER PICTURE  •  NOW SHOWING'
     d.text((w / 2, h * 0.958), cred, font=P.fit_font('din', cred, w * 0.86, int(h * 0.0185), 'Regular'),
            fill=(205, 205, 215, 255), anchor='mm')
     return np.asarray(p.convert('RGB'), np.float32) / 255, plain

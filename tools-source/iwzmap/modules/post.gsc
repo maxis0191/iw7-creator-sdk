@@ -147,7 +147,7 @@ t1_main()
             g = m[3] + f * 40;
         h.iwz_out = g;
         h makeusable();
-        h sethintstring( "CAPSULE POST " + m[1] + ": THE BELLOWS IS COLD (NO POWER)" );
+        h sethintstring( "CAPSULE POST " + m[1] + " - NO POWER" );
         s.hatches[m[1]] = h;
         h thread t1_hatch_use();
     }
@@ -165,7 +165,7 @@ t1_main()
         s.lever.iwz_base = s.lever.angles;
         s.lever.targetname = "iwz_t1_lever";
         s.lever makeusable();
-        s.lever sethintstring( "BELLOWS LEVER: COLD (NO POWER)" );
+        s.lever sethintstring( "BELLOWS LEVER - NO POWER" );
         s.lever thread t1_lever_use();
     }
     t1_log( "INIT hatches=" + s.hatches.size + " lever=" + isdefined( s.lever ) + " dir=" + s.dir );
@@ -278,11 +278,11 @@ t1_hints()
     if ( isdefined( s.lever ) )
     {
         if ( gettime() < s.changeover_until )
-            s.lever sethintstring( "BELLOWS: CHANGEOVER (all lamps amber)" );
+            s.lever sethintstring( "BELLOWS: REVERSING (AMBER)" );
         else if ( gettime() < s.lever_ready_at )
-            s.lever sethintstring( "BELLOWS LEVER: " + s.dir + " (resetting)" );
+            s.lever sethintstring( "BELLOWS: " + s.dir + " (RESETTING)" );
         else
-            s.lever sethintstring( "BELLOWS LEVER: " + s.dir + " - Use to throw" );
+            s.lever sethintstring( "BELLOWS: " + s.dir + " - Press Use to reverse" );
     }
 }
 
@@ -293,29 +293,29 @@ t1_hint( h )
         return;
     if ( h.iwz_sealed )
     {
-        h sethintstring( "Hold Use: unseal the " + h.iwz_id + " hatch (750)" );
+        h sethintstring( "Hold Use to unseal " + h.iwz_id + " hatch (750)" );
         return;
     }
     if ( gettime() < h.iwz_insp_until )
     {
-        h sethintstring( h.iwz_id + ": INSPECTION" );
+        h sethintstring( h.iwz_id + " - UNDER INSPECTION" );
         return;
     }
     if ( gettime() < s.changeover_until )
     {
-        h sethintstring( h.iwz_id + ": CHANGEOVER (all lamps amber)" );
+        h sethintstring( h.iwz_id + " - REVERSING (AMBER)" );
         return;
     }
     if ( h.iwz_dial < 0 || s.hatches[s.ring[h.iwz_dial]].iwz_sealed )
         h.iwz_dial = t1_next_address( h );
     if ( h.iwz_dial < 0 )
     {
-        h sethintstring( h.iwz_id + ": NO OTHER HATCH UNSEALED (TUBE SEALED)" );
+        h sethintstring( h.iwz_id + " - TUBE SEALED (UNSEAL ANOTHER HATCH)" );
         return;
     }
     to = s.ring[h.iwz_dial];
     segs = t1_segments( h.iwz_id, to, s.dir );
-    h sethintstring( "To " + to + " " + t1_lamps( segs ) + " " + s.price[segs] + " - tap Use: next address, hold Use: send" );
+    h sethintstring( "To " + to + " " + t1_lamps( segs ) + " (" + s.price[segs] + ") - Tap Use: dial · Hold Use: send" );
 }
 
 // ---------------------------------------------------------------------------------------------- use
@@ -359,14 +359,14 @@ t1_press( h, p )
     p.iwz_t1_pressing = 1;
     if ( !scripts\engine\utility::flag( "power_on" ) )
     {
-        t1_refuse( p, h, "power", "THE BELLOWS IS COLD: NO POWER" );
+        t1_refuse( p, h, "power", "NO POWER - START GENERATOR G-2" );
     }
     else if ( h.iwz_sealed )
     {
         if ( t1_hold( p, h, 1.5 ) )
             t1_unseal( h, p );
         else if ( isdefined( p ) )
-            t1_msg( p, "HOLD USE ON THE PRESSURE WHEEL TO UNSEAL", 1.5 );
+            t1_msg( p, "HOLD USE TO TURN THE WHEEL", 1.5 );
     }
     else
     {
@@ -452,17 +452,17 @@ t1_send( h, p, to )
     if ( to < 0 )
         to = h.iwz_dial;
     if ( t1_downed( p ) )
-        return t1_refuse( p, h, "downed", "DOWNED RIDERS CANNOT BOARD" );
+        return t1_refuse( p, h, "downed", "CAN'T BOARD WHILE DOWNED" );
     if ( isdefined( p.iwz_busy ) )
         return t1_refuse( p, h, "busy", "NOT NOW" );
     if ( gettime() < s.changeover_until )
-        return t1_refuse( p, h, "changeover", "CHANGEOVER: ALL LAMPS AMBER" );
+        return t1_refuse( p, h, "changeover", "TUBES REVERSING - ALL LAMPS AMBER" );
     if ( t1_inspected( h ) )
-        return t1_refuse( p, h, "inspection", "INSPECTION: THIS HATCH IS CLOSED" );
+        return t1_refuse( p, h, "inspection", "INSPECTION - HATCH LOCKED" );
     if ( h.iwz_sealed || to < 0 || !isdefined( s.hatches[s.ring[to]] ) || s.hatches[s.ring[to]].iwz_sealed || s.ring[to] == h.iwz_id )
         return t1_refuse( p, h, "sealed", "TUBE SEALED" );
     if ( isdefined( p.iwz_t1_rest_until ) && gettime() < p.iwz_t1_rest_until )
-        return t1_refuse( p, h, "rest", "REST: YOU HAVE JUST ARRIVED" );
+        return t1_refuse( p, h, "rest", "CATCH YOUR BREATH - WAIT A SECOND" );
     cap = -1;
     for ( k = 0; k < h.iwz_caps.size; k++ )
     {
@@ -473,11 +473,11 @@ t1_send( h, p, to )
         }
     }
     if ( cap < 0 )
-        return t1_refuse( p, h, "capsule", "NO CAPSULE: WAIT FOR ONE TO RETURN" );
+        return t1_refuse( p, h, "capsule", "NO CAPSULE - ONE IS ON THE WAY" );
     segs = t1_segments( h.iwz_id, s.ring[to], s.dir );
     price = t1_price( p, segs );
     if ( !p scripts\cp\cp_persistence::player_has_enough_currency( price ) )
-        return t1_refuse( p, h, "points", "NOT ENOUGH POINTS (" + price + ")" );
+        return t1_refuse( p, h, "points", "NEED " + price + " POINTS" );
     // from here nothing waits: the first of two players on the last capsule wins it, the second is refused above
     h.iwz_caps[cap] = gettime() + 30000;
     p scripts\cp\cp_persistence::take_player_currency( price, 1, "trap" );
@@ -659,13 +659,13 @@ t1_lever_use()
         if ( !scripts\engine\utility::flag( "power_on" ) )
         {
             t1_local_sound( p, "purchase_deny" );
-            t1_msg( p, "THE BELLOWS IS COLD: NO POWER", 2 );
+            t1_msg( p, "NO POWER - START GENERATOR G-2", 2 );
             continue;
         }
         if ( gettime() < s.changeover_until || gettime() < s.lever_ready_at )
         {
             t1_local_sound( p, "purchase_deny" );
-            t1_msg( p, "THE LEVER IS RESETTING", 2 );
+            t1_msg( p, "LEVER RESETTING", 2 );
             s.refusals++;
             continue;
         }
@@ -684,7 +684,7 @@ t1_changeover()
     level endon( "game_ended" );
     s = level.iwz_t1;
     foreach ( p in level.players )
-        t1_msg( p, "THE BELLOWS CHANGES OVER: ALL LAMPS AMBER", 3 );
+        t1_msg( p, "TUBES REVERSING - ALL LAMPS AMBER", 3 );
     wait 12;
     if ( s.dir == "BLOW" )
         s.dir = "DRAW";
