@@ -82,6 +82,20 @@ def panels13(m, report):
     report['panels13'] = {'updated': n}
 
 
+def gameplay13(m, report):
+    """DG's two fixes. FE24: the base hall bench (cp_disco_worn_subway_bench at -1138 4000) and its clip box stand in the D4 opening (y 3804-3996): removed.
+    FE42: the bay spawners at y 4535 (facing south) carry the zombie's emergence up to 62 units into the partition walls (y 4470-4482): moved to y 4565."""
+    m.use('arcade_door' if 'arcade_door' in m.layers else 'shell')
+    B.replace(m, box=[-1170, 3900, -1, -1106, 4100, 100], what=['props'], id='clear_bench_props')
+    B.replace(m, box=[-1170, 3900, 2, -1106, 4100, 100], what=['collision'], clip=True, id='clear_bench_clip')
+    n = 0
+    for o in [o for o in m.objects() if o['kind'] == 'spawner' and str(o['id']).startswith('spawn_b')]:
+        x, y, z = o['at']
+        m.update(o['id'], at=[x, 4565.0, z])
+        n += 1
+    report['gameplay13'] = {'bench_replace': 2, 'spawners_moved': n}
+
+
 def build(name='sz_arcade_r13'):
     A.BAYWALL[2] = 'w/brick_cinderblock_04_beige_dirty'               # as round 11
     A.BAYFLOOR[2] = 'w/building_ship_hallway_floor_06_tile_gray_glossy'
@@ -105,6 +119,7 @@ def build(name='sz_arcade_r13'):
     L12.cutwall12(m, rep)
     L12.cameras12(m, rep)
     panels13(m, rep)
+    gameplay13(m, rep)
     m.report9 = rep
     return m
 
