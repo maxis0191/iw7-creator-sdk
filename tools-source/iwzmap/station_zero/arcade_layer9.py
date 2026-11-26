@@ -31,6 +31,7 @@ from studio import prefab  # noqa: E402
 K = float(os.environ.get('ARC9_K', '1.0'))                  # global multiplier of the new fills (tuning knob, 1.0 = as designed)
 KE = float(os.environ.get('ARC9_KE', '1.0'))                # global multiplier of the emergency layer
 WARM = (1.0, 0.86, 0.66)
+RK = float(os.environ.get('ARC9_RK', '0.45'))                 # radius multiplier: the compiler's voxel light lists hold 65535 entries (r9 first build: exceeded with reaches 300 to 480)
 STOCK = re.compile(r'box_cardboard|crate|gear_shoes|toolbox|grocery|donuts|mug|cup_|bottle|glassware|ashtray|pizza|padlock|tools_nail|bag|trash|snacks|coffee|register|_mags|cigarette|speaker|tv_crt|stackp|chips|paper')
 NOSETTLE = re.compile(r'hanging|fluorescent|light|lamp|hook|poster|sign|cage|neon|wall|deco')
 
@@ -161,62 +162,56 @@ def mix(c, d, t):
 
 
 def lights9(m, report):
+    """Light model of the baker (bake/lmbake.py): E = I * (100/d)^2 * cos * (1 - (d/R)^4)^2, zero beyond R. Round 8's panels hung at z 176 with R 170: the floor (d >= 176) got none.
+    Here every light that is meant for the floor hangs 110 to 130 above it with R 190 to 220, cones stop at 80 degrees so the ceiling gets nothing direct. The compiler's voxel
+    light lists hold 65535 entries: the sum of R^3 of the document's lights was 321e6 in round 8 (built), 542e6 and 619e6 here (542 built, 619 refused), so the budget is about 560e6."""
     n = 0
     old = {o['id']: o for o in m.objects() if o['kind'] == 'light'}
-    # 1. the ceiling panels: spots hung 176 above the floor with a reach of 170 gave the floor nothing; reach 420, wide soft cone
-    for pid, o in old.items():
+    for pid, o in old.items():                                  # the twelve ceiling panels: the light sits 56 under the fixture, in its throw
         if pid.startswith('light_pool_'):
             single = o['intensity'] < 1.5
-            m.update(pid, radius=420.0, intensity=round(1.5 * K * (0.6 if single else 1.0), 3), inner=36.0, outer=88.0)
-    # 2. the omnis that hung 108 under the ceiling (the cream ceiling) become downward spots lower on the column, and the back room lamps too
+            x, y, z = o['origin']
+            m.update(pid, origin=[x, y, 120.0], radius=190.0, intensity=round(1.6 * K * (0.6 if single else 1.0), 3), inner=40.0, outer=80.0)
     for pid, o in old.items():
-        if pid.startswith(('light_colS_', 'light_colN_')):
+        if pid.startswith(('light_colS_', 'light_colN_')):      # the omnis 108 under the ceiling (the cream ceiling) go; one downward spot per column on the south side
             x, y, z = o['origin']
             m.remove(pid)
-            light(m, (x, y, 130.0), pid, color=(1.0, 0.86, 0.62), radius=300.0, intensity=round(0.55 * K, 3), type='spot', dir=(0.0, 0.0, -1.0), inner=30.0, outer=85.0)
+            if 'colN' in pid:
+                continue
+            light(m, (x, y, 120.0), pid, color=(1.0, 0.86, 0.62), radius=170.0, intensity=round(0.6 * K, 3), type='spot', dir=(0.0, 0.0, -1.0), inner=30.0, outer=80.0)
             n += 1
         elif pid.startswith('light_back_'):
             x, y, z = o['origin']
             m.remove(pid)
-            light(m, (x, y, 170.0), pid, color=WARM, radius=300.0, intensity=round(1.1 * K, 3), type='spot', dir=(0.0, 0.0, -1.0), inner=35.0, outer=90.0)
+            light(m, (x, y, 120.0), pid, color=WARM, radius=170.0, intensity=round(1.3 * K, 3), type='spot', dir=(0.0, 0.0, -1.0), inner=40.0, outer=80.0)
             n += 1
         elif pid == 'light_kiosk':
             m.update(pid, intensity=0.35)
-    # the light box of each back room took the shop's hue (pink in bay 3 on a .62 albedo wall): its colour is the hue half way to warm white
-    for i in range(5):
+    for i in range(5):                                          # the back light box took the shop's hue (pink in bay 3 on a .62 albedo wall): half way to warm white
         pid = 'fx_back_%d_l1' % (i + 1)
         if pid in old:
             m.update(pid, color=list(mix(old[pid]['color'], WARM, 0.65)), intensity=round(old[pid]['intensity'] * 1.5, 3))
-    # the two ends: the vanishing points were the dark doorway of D4 (the hall behind it) and the plated D7
-    m.update('light_d4', intensity=round(0.9 * K, 3), radius=300.0, inner=30.0, outer=85.0)
-    m.update('light_d7_cage', intensity=round(1.2 * K, 3), radius=320.0, inner=30.0, outer=85.0)
-    # 3. a grid of wide fills in the lanes (floor and the lower walls carry light between the panels' clusters)
-    for k, x in enumerate((-2850.0, -2550.0, -2250.0, -1950.0, -1650.0, -1350.0)):
+    m.update('light_d4', origin=[A.X1 - 60.0, 3900.0, 120.0], intensity=round(0.3 * K, 3), radius=190.0, inner=40.0, outer=80.0)         # the vanishing points: D4 and D7
+    m.update('light_d7_cage', origin=[A.X0 + 70.0, 4040.0, 120.0], intensity=round(0.6 * K, 3), radius=190.0, inner=40.0, outer=80.0)
+    for k, x in enumerate((-2850.0, -2550.0, -2250.0, -1950.0, -1650.0, -1350.0)):      # fills in the lanes between the panel clusters
         for j, y in enumerate((3620.0, 4180.0)):
-            light(m, (x, y, 214.0), 'light_fill_%d_%d' % (k, j), color=(1.0, 0.92, 0.78), radius=480.0, intensity=round(0.9 * K, 3), type='spot', dir=(0.0, 0.0, -1.0), inner=40.0, outer=95.0)
+            if (k + j) % 2:
+                continue
+            light(m, (x, y, 110.0), 'light_fill_%d_%d' % (k, j), color=(1.0, 0.92, 0.78), radius=175.0, intensity=round(1.3 * K, 3), type='spot', dir=(0.0, 0.0, -1.0), inner=40.0, outer=80.0)
             n += 1
-    # the spine (columns, islands, kiosk): a few downward fills over its gaps
     for k, x in enumerate(D4.GAPS):
-        light(m, (x, D4.SPINE_Y, 214.0), 'light_spine_%d' % k, color=(1.0, 0.9, 0.74), radius=420.0, intensity=round(0.8 * K, 3), type='spot', dir=(0.0, 0.0, -1.0), inner=40.0, outer=95.0)
+        if k % 2:
+            continue
+        light(m, (x, D4.SPINE_Y, 110.0), 'light_spine_%d' % k, color=(1.0, 0.9, 0.74), radius=190.0, intensity=round(1.2 * K, 3), type='spot', dir=(0.0, 0.0, -1.0), inner=40.0, outer=80.0)
         n += 1
-    # south wall washers (posters, wall buys, the wainscot)
-    for k, x in enumerate((-2850.0, -2550.0, -2250.0, -1950.0, -1650.0, -1350.0)):
-        light(m, (x, 3650.0, 214.0), 'light_wash_s_%d' % k, color=(1.0, 0.9, 0.74), radius=420.0, intensity=round(0.9 * K, 3), type='spot', dir=(0.0, -0.8, -0.6), inner=22.0, outer=75.0)
+    for k, x in enumerate((-2850.0, -2250.0, -1650.0)):         # south wall washers
+        light(m, (x, 3650.0, 150.0), 'light_wash_s_%d' % k, color=(1.0, 0.9, 0.74), radius=200.0, intensity=round(1.1 * K, 3), type='spot', dir=(0.0, -0.8, -0.4), inner=20.0, outer=70.0)
         n += 1
-    # the ends of the corridor: the walls of D7 and D4 get a wash each
-    light(m, (A.X0 + 260.0, 3900.0, 214.0), 'light_wash_w', color=(1.0, 0.88, 0.7), radius=420.0, intensity=round(0.9 * K, 3), type='spot', dir=(-1.0, 0.0, -0.45), inner=25.0, outer=80.0)
-    light(m, (A.X1 - 260.0, 3900.0, 214.0), 'light_wash_e', color=(1.0, 0.88, 0.7), radius=420.0, intensity=round(0.9 * K, 3), type='spot', dir=(1.0, 0.0, -0.45), inner=25.0, outer=80.0)
-    n += 2
-    # 4. the shop interiors, lit from inside: a wide key at the front third, one at the back third, warm
-    for i in range(5):
+    for i in range(5):                                          # the shop interiors, lit from inside
         cx = A.BAY_X[i] + A.BAY_W / 2.0
         hue = D4.HUE[A.BAYS[i]]
-        light(m, (cx, 4395.0, 186.0), 'light_in_front_%d' % (i + 1), color=mix(hue, WARM, 0.7), radius=330.0, intensity=round(1.0 * K, 3), type='spot', dir=(0.0, 0.0, -1.0), inner=40.0, outer=95.0)
-        light(m, (cx, 4530.0, 186.0), 'light_in_back_%d' % (i + 1), color=mix(hue, WARM, 0.7), radius=300.0, intensity=round(0.8 * K, 3), type='spot', dir=(0.0, 0.0, -1.0), inner=40.0, outer=95.0)
-        for sgn in (-1, 1):                                          # the stock shelves on both side walls
-            light(m, (cx + sgn * 40.0, 4470.0, 150.0), 'light_in_side_%d_%d' % (i + 1, sgn > 0), color=mix(hue, WARM, 0.7), radius=260.0, intensity=round(0.5 * K, 3), type='spot',
-                  dir=(sgn * 0.9, 0.0, -0.3), inner=30.0, outer=85.0)
-        n += 4
+        light(m, (cx, 4400.0, 130.0), 'light_in_front_%d' % (i + 1), color=mix(hue, WARM, 0.7), radius=165.0, intensity=round(1.5 * K, 3), type='spot', dir=(0.0, 0.0, -1.0), inner=40.0, outer=80.0)
+        n += 1
     report['lights9'] = {'added': n}
 
 
@@ -232,21 +227,25 @@ def emergency9(m, report):
         for pid in ('fx_sign_%d_l1' % (i + 1),):
             if pid in m:
                 o = m.get(pid)
-                m.update(pid, group='emergency', intensity=round(o['intensity'] * 3.0 * KE, 3), radius=round(o['radius'] * 1.8, 1))
-    for k, x in enumerate((-2850.0, -2550.0, -2250.0, -1950.0, -1650.0, -1350.0)):     # red lamps along the south wall
-        fx('emergency_wall', (x, A.Y0 + A.WT + 1.0, 150.0), 90.0, intensity=5.0 * KE, radius=2.6)
+                m.update(pid, group='emergency', intensity=round(o['intensity'] * 3.0 * KE, 3), radius=round(o['radius'] * 1.4, 1))
+    for k, x in enumerate((-2800.0, -2300.0, -1800.0, -1350.0)):     # red lamps along the south wall
+        fx('emergency_wall', (x, A.Y0 + A.WT + 1.0, 150.0), 90.0, intensity=7.0 * KE, radius=1.4)
     xs = [(A.aperture(i)[1] + A.aperture(i + 1)[0]) / 2.0 for i in range(4)]            # and the piers between the shop openings, on the north wall
     for k, x in enumerate(xs):
-        fx('emergency_wall', (x, A.Y1 - A.WT - 1.0, 150.0), 270.0, intensity=5.0 * KE, radius=2.6)
-    fx('exit_sign', (A.X1 - A.WT - 1.0, 3900.0, 205.0), 180.0, intensity=4.0 * KE, radius=2.5)           # over D4
-    fx('exit_sign', (A.X0 + A.WT + 1.0, 4040.0, 205.0), 0.0, intensity=4.0 * KE, radius=2.5)             # over D7
+        if k % 2:
+            continue
+        fx('emergency_wall', (x, A.Y1 - A.WT - 1.0, 150.0), 270.0, intensity=7.0 * KE, radius=1.4)
+    fx('exit_sign', (A.X1 - A.WT - 1.0, 3900.0, 205.0), 180.0, intensity=4.0 * KE, radius=1.9)           # over D4
+    fx('exit_sign', (A.X0 + A.WT + 1.0, 4040.0, 205.0), 0.0, intensity=4.0 * KE, radius=1.9)             # over D7
     for k, x in enumerate((-2850.0, -2550.0, -2250.0, -1950.0, -1650.0, -1350.0)):     # orange beacons on the floor of both lanes
         for j, y in enumerate((3640.0, 4170.0)):
-            fx('emergency_beacon', (x + (60.0 if j else -60.0), y, 0.0), 0.0, intensity=2.2 * KE, radius=2.2)
+            if (k + j) % 2 or k % 2:
+                continue
+            fx('emergency_beacon', (x + (60.0 if j else -60.0), y, 0.0), 0.0, intensity=2.2 * KE, radius=1.8)
     for i in range(5):                                        # an amber lamp inside each shop, on its east wall
-        fx('beacon_wall', (A.BAY_X[i] + A.BAY_W - A.WT - 0.5, 4390.0, 165.0), 180.0, intensity=4.0 * KE, radius=2.4)
-    for k, (x, y) in enumerate(((-1100.0, 3820.0), (-1100.0, 3980.0), (-950.0, 3900.0), (-800.0, 3780.0), (-800.0, 4020.0))):   # the hall side of D4
-        fx('emergency_beacon', (x, y, 0.0), 0.0, intensity=2.5 * KE, radius=2.4)
+        fx('beacon_wall', (A.BAY_X[i] + A.BAY_W - A.WT - 0.5, 4390.0, 165.0), 180.0, intensity=4.0 * KE, radius=1.9)
+    for k, (x, y) in enumerate(((-1100.0, 3820.0), (-950.0, 3900.0), (-800.0, 4020.0))):   # the hall side of D4
+        fx('emergency_beacon', (x, y, 0.0), 0.0, intensity=2.5 * KE, radius=1.9)
     report['emergency9'] = {'ids': len(ids)}
 
 
