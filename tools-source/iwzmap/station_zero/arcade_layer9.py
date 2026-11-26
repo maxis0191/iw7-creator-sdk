@@ -191,7 +191,6 @@ def lights9(m, report):
         pid = 'fx_back_%d_l1' % (i + 1)
         if pid in old:
             m.update(pid, color=list(mix(old[pid]['color'], WARM, 0.65)), intensity=round(old[pid]['intensity'] * 1.5, 3))
-    m.update('light_d4', origin=[A.X1 - 60.0, 3900.0, 120.0], intensity=round(0.3 * K, 3), radius=190.0, inner=40.0, outer=80.0)         # the vanishing points: D4 and D7
     m.update('light_d7_cage', origin=[A.X0 + 70.0, 4040.0, 120.0], intensity=round(0.6 * K, 3), radius=190.0, inner=40.0, outer=80.0)
     for k, x in enumerate((-2850.0, -2550.0, -2250.0, -1950.0, -1650.0, -1350.0)):      # fills in the lanes between the panel clusters
         for j, y in enumerate((3620.0, 4180.0)):
