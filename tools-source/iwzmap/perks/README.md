@@ -14,7 +14,7 @@ balance table: `docs/station-zero/P1-PERKS.md`.
 | `cp_iwz_perk_grudges.gsc` | Sour Grudges |
 | `cp_iwz_perk_doubletakes.gsc` | Double Takes |
 | `add_perks.py` | build step (always run by `build-sz2.ps1`): the scripts as rawfiles after the level script, one 2D icon material per new perk, Deadeye's stock icon material (image from the cp_disco dump), five new rows in the stock HUD bit table |
-| `make_perk_icons.py` | the new perks' icons (vector-drawn placeholders, 128 x 128 TGA, and a contact sheet); `add_perks.py` draws them into the work folder when missing |
+| `perk_icons.py` | the new perks' icons in the stock perk-tile system (128 x 128 TGA: the stock revive tile's own alpha mask `stock_tile_alpha.png`, one body colour per perk, white glyph; plus a PNG and a contact sheet with `--stock-dir` measurements); `add_perks.py` draws them into the work folder on every build |
 | `p1plans.py` | the headless test plans (library `szperks` of iw7-paris-server) |
 | `add_localize.py`, `strings.json` | build step: every localized string the zone's scripts use, from the dumped English language zones (`zonetool -dumpzonetypes eng_cp_zmb localize`, `eng_patch_cp_zmb`; the zones must be under `<work>\zone\english`), plus the new perks' own hint strings; a usermap loads no language zone of its template, so without it raw keys show |
 | `add_perk_sounds.py` | build step: the stock perk jingles (attract, purchase) of the six stock perks and the machine power-on sound into the map's bank (aliases from the cp_zmb and cp_disco alias tables, audio from the stock banks) |
@@ -56,7 +56,7 @@ Each caller tests `isdefined()` first, so nothing depends on this module being i
 ## Commands
 
 ```powershell
-python -I -B perks\make_perk_icons.py <out>                 # <out>\*.tga, *.png, icons_sheet.png
+python -I -B perks\perk_icons.py <out>                 # <out>\*.tga, *.png, icons_sheet.png
 python -I -B perks\p1plans.py <src> <plans out> [--given]    # --given: the five perks without a stock machine given by script
 ```
 

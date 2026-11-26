@@ -1,0 +1,271 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "sz8_power_perks",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "libraries": [
+  "szperks",
+  "szaccept"
+ ],
+ "about": "Round 8: power off then on (the map's own generator activation), perk machines gated by power, each of the five new perks bought at its price and active (six perks held).",
+ "steps": [
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "ignore",
+   "on": true
+  },
+  {
+   "do": "doors"
+  },
+  {
+   "do": "money",
+   "value": 100000
+  },
+  {
+   "do": "call",
+   "fn": "szp_setup",
+   "args": [
+    "b_setup"
+   ],
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "szp_state",
+   "args": [
+    "b0"
+   ],
+   "s": 1
+  },
+  {
+   "do": "use",
+   "name": "revive",
+   "kind": "perk_machine_revive",
+   "near": [
+    370,
+    3460,
+    0
+   ],
+   "s": 4
+  },
+  {
+   "do": "use",
+   "name": "tough_nopower",
+   "kind": "perk_machine_tough",
+   "near": [
+    1100,
+    2370,
+    -320
+   ],
+   "s": 3
+  },
+  {
+   "do": "use",
+   "name": "deadeye_nopower",
+   "kind": "perk_machine_deadeye",
+   "near": [
+    3570,
+    3650,
+    -320
+   ],
+   "s": 3
+  },
+  {
+   "do": "call",
+   "fn": "sz_power_direct",
+   "args": [
+    "power",
+    20
+   ],
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "szp_state",
+   "args": [
+    "b_power"
+   ],
+   "s": 1
+  },
+  {
+   "do": "use",
+   "name": "b_deadeye",
+   "kind": "perk_machine_deadeye",
+   "near": [
+    3570,
+    3650,
+    -320
+   ],
+   "s": 4
+  },
+  {
+   "do": "use",
+   "name": "b_bakers",
+   "kind": "perk_machine_bakers",
+   "near": [
+    382,
+    3750,
+    0
+   ],
+   "s": 4
+  },
+  {
+   "do": "use",
+   "name": "b_voyage",
+   "kind": "perk_machine_voyage",
+   "near": [
+    -1900,
+    2382,
+    -320
+   ],
+   "s": 4
+  },
+  {
+   "do": "use",
+   "name": "b_grudge",
+   "kind": "perk_machine_grudge",
+   "near": [
+    3350,
+    3182,
+    -320
+   ],
+   "s": 4
+  },
+  {
+   "do": "use",
+   "name": "b_double",
+   "kind": "perk_machine_double",
+   "near": [
+    382,
+    4200,
+    0
+   ],
+   "s": 4
+  },
+  {
+   "do": "call",
+   "fn": "szp_state",
+   "args": [
+    "b_end"
+   ],
+   "s": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:b_setup.module",
+   "eq": 1,
+   "why": "the perk module runs in the map"
+  },
+  {
+   "do": "expect",
+   "that": "use:revive.perks1",
+   "eq": 1,
+   "why": "Up 'N Atoms given before the power (its own generator)"
+  },
+  {
+   "do": "expect",
+   "that": "use:tough_nopower.spent",
+   "eq": 0,
+   "why": "Tuff 'Nuff refuses before the power"
+  },
+  {
+   "do": "expect",
+   "that": "use:tough_nopower.perks1",
+   "eq": 1,
+   "why": "nothing given before the power"
+  },
+  {
+   "do": "expect",
+   "that": "use:deadeye_nopower.spent",
+   "eq": 0,
+   "why": "Deadeye (a new perk) refuses before the power"
+  },
+  {
+   "do": "expect",
+   "that": "use:deadeye_nopower.perks1",
+   "eq": 1,
+   "why": "nothing given before the power"
+  },
+  {
+   "do": "expect",
+   "that": "probe:power.found",
+   "eq": 1,
+   "why": "the generator interaction exists"
+  },
+  {
+   "do": "expect",
+   "that": "probe:power.power",
+   "eq": 1,
+   "why": "power on after the generator"
+  },
+  {
+   "do": "expect",
+   "that": "probe:b_end.count",
+   "eq": 6,
+   "why": "the player holds six perks: revive and the five new ones"
+  },
+  {
+   "do": "expect",
+   "that": "use:b_deadeye.spent",
+   "eq": 1500,
+   "why": "deadeye at 1500"
+  },
+  {
+   "do": "expect",
+   "that": "use:b_bakers.spent",
+   "eq": 3000,
+   "why": "bakers at 3000"
+  },
+  {
+   "do": "expect",
+   "that": "use:b_voyage.spent",
+   "eq": 2000,
+   "why": "voyage at 2000"
+  },
+  {
+   "do": "expect",
+   "that": "use:b_grudge.spent",
+   "eq": 2500,
+   "why": "grudge at 2500"
+  },
+  {
+   "do": "expect",
+   "that": "use:b_double.spent",
+   "eq": 3000,
+   "why": "double at 3000"
+  },
+  {
+   "do": "expect",
+   "that": "use:b_deadeye.perks1",
+   "eq": 2,
+   "why": "deadeye is active (perk count 2)"
+  },
+  {
+   "do": "expect",
+   "that": "use:b_bakers.perks1",
+   "eq": 3,
+   "why": "bakers is active (perk count 3)"
+  },
+  {
+   "do": "expect",
+   "that": "use:b_voyage.perks1",
+   "eq": 4,
+   "why": "voyage is active (perk count 4)"
+  },
+  {
+   "do": "expect",
+   "that": "use:b_grudge.perks1",
+   "eq": 5,
+   "why": "grudge is active (perk count 5)"
+  },
+  {
+   "do": "expect",
+   "that": "use:b_double.perks1",
+   "eq": 6,
+   "why": "double is active (perk count 6)"
+  }
+ ]
+}

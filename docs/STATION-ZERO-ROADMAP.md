@@ -16,6 +16,12 @@ g27 zones map onto bible zones (ticket hall = Fare Hall, platform A = Platform A
 = Converter Hall, control room = Signal Cabin, service tunnel + platform B = Car Barn approach). Step 0 below moves the g27
 systems into the scene line and proves the same acceptance suite on it before anything new is built.
 
+> **Changed 24 Nov 2026 (RC5 thread).** The one line is neither generator: it is the **Studio document** of Station Zero
+> (`C:\studio`, repository `iw7-studio`), whose base is the emit of `station_zero2.py` and whose layers and new sections carry
+> everything built from now on. `scenegen.py` builds nothing more; `scenes/station_zero.json` and `02-WORLD.md` stay the source
+> of the 19 zones' bounds, doors and contents, built as Studio sections in the bible's order (the Underpass Arcade first).
+> Package 0 below is replaced by "RC5: plan and state" at the end of this page; packages 1 to 7 keep their order.
+
 ## Packages (order; each ends in a measured proof)
 
 | # | Piece | Exists today | Engine / tool work it needs | Proof |
@@ -35,3 +41,101 @@ Stock cp_zmb renders at mean luma 0.175 (p90 0.34) under the same vision values 
 rendered at 0.442 (p90 0.82) because its many evenly spread lights and fill give the auto exposure nothing dark to keep.
 Fields the renderer reads and their offsets: `<runtime>\iwz-stage2\darkness\NOTES.md`, 22 Nov. Dressing a zone includes its
 light budget against that target.
+
+## RC5: plan and state (thread of 24 Nov 2026, branch `claude/sz-rc5`)
+
+Tool faults and gaps met on the way are written, one entry each, in `C:\studio-data\sz\TOOL-FAULTS.md` (owner of the fixes:
+the Studio lead session). Notes of the thread: `C:\studio-data\sz\notes`.
+
+### What Station Zero needs to be accepted, in order
+
+| # | Item | Cause or content known today | Route | What the new tools change | Proof |
+|---|---|---|---|---|---|
+| S2 | The map as a Studio document, same map | base = generator emit; the build needs Station Zero's recipe (train, kit of cp_disco and cp_final, FX, audio, darkness with its dark bake, P1, nav obstacles) | recipe file `build.json` in the emit, written by `station_zero2.py`; Studio's build reads it | possible once fault F1 is fixed (accepted by the Studio lead, in work); then an edit is seen in 10 to 20 s instead of 403 s + 154 s | emit files equal; full build's row list equal to g27r's; the RC4 suite on the Studio build |
+| L1 | Look: lit state reads as "power on", dark state readable without the flashlight | RC4 review items 3, 4: generator room, platform B, stair exits, tunnel end are black without the flashlight; lit exposure was matched to the stock mean | light per zone in the document: key and wash spots, pools, emissive fixtures, a light budget per zone against stock frames; darkness kept (emergency group) | Studio's bake with prop shadows and emissive, `live sync` for a light in 12 s, `view.shot` without the game. Open in the tool: the dark/lit two-state bake is not a Studio notion (part of F1) | three blind reviewers per round, lines fixed before, raw answers kept: 7.5 or more per zone, lit and dark |
+| L2 | Look: flashlight pool with a hard edge, treads blown white | RC4 item 1; the flashlight is one spot particle (fov 40, inner 2, brightness 3.5, radius 900) | effect numbers in the recipe (`darkness.vfx`): wider inner cone, lower brightness, halo carries the falloff | each try is a rebuild of nine effects: needs the recipe build | frames at stair B, platform A, ticket hall; reviewers |
+| L3 | Look: hard vertical light cuts on the well walls, angular floor patch on platform B | RC4 item 2; to be read on the lightmap (chart seams or a light's culling box) before any change | bake or light volume, at the cause | `tools/bakecompare.py`, `view.shot` | frames well_e x 1060, well_w x 250 to 330 |
+| L4 | Look: black blob on the ticket-hall floor, black rock pile in the tunnel, platform-lip white band, Pack-a-Punch without its own light | models drawn without their material or light: to be identified by position | the model or its material in the document's layer | `python -m store` facts for the model, `live shot` | frames; reviewers |
+| L5 | Look: density and composition of every zone | 26 to 160 props per 1000 x 1000 against a stock median of 555 | layers of dressing per zone as the Arcade's rounds: stock models of every dumped zone, lifted stock rooms where they fit, signs, decals | the asset store, prefabs, `prop_scatter`, density and empty-area answers in milliseconds | density numbers per zone against stock; reviewers |
+| N1 | New zone 4, Underpass Arcade | box x -3000..-1200, y 3500..4300, floor 0, ceiling 256, five bays y 4300..4600; D4 (1000) in the Fare Hall's west wall x = -1200; free of the present map (stair B ends at y 3400, platform B's roof at z -16) | geometry, dressing and light as a Studio section; door, zone, 12 spawners, Double Takes, wheel position, two wall buys through the generator until fault F2 is fixed | section building in the live loop; gameplay of a layer is NOT merged into a base (F2) | D4 buys and opens; zombies spawn in the Arcade and reach the player; rounds with the player there; reviewers 7.5 |
+| G1 | Stair A crowd at the choke | zombies with no melee slot run in place 350 to 430 below a player under the 192-wide top door (x -510, y 2720..2800); nav route normal | to be decided on a census of slots and goals: wider top landing and door, or the stock behaviour for zombies without a slot | `forge run` census plans in 20 s; a geometry try in the live loop | rounds 1-2 and 11-12 pass 3 of 3 with the progress rule |
+| G2 | Walkers on long routes without progress for 50 s (rounds 3, 12) | not yet read: census of goal, path length and speed needed | at the cause | same | round plans 11 of 11, three runs |
+| G3 | One round 2 stalled 90 s with every zombie dead (g27q, once) | not reproduced | an always-on recorder of the round state in the acceptance script, not retests | none needed | the recorder's line when it happens again; 30 round-2 runs without it |
+| R1 | Release candidate 5 | full build, whole suite, real-time run with a joined client, package with manifest | Studio `--full` with the recipe, else the SDK chain | row-list equality of both paths | `STATION-ZERO-RC5.md` |
+| R2 | Official-client gate | v1.1.0 has no usermap support and crashes joining the lab server | not in this thread's hands: an upstream release, or the proof on a client built from upstream main | none | stays open; said in RC5 |
+
+Then the packages 2 to 7 of the table above (quest, wonder weapons, enemies, Tab pages, camos and emotes, crowd), each with
+its engine limit named where it cannot be done.
+
+### State
+
+- 24 Nov 2026, step 1 (read, no build). Measured: the document with the g27r emit as base and no layer emits 22 of 22 files
+  byte-identical in 0.12 s (`C:\studio-data\sz\a1`); `studio check` 2.4 s; today's SDK main regenerates the g27r emit (17 of
+  17 generator files equal, 4 s, `C:\studio-data\sz\regen`); Studio's compiler contains the RC4 light-volume commit; the RC4
+  package's fastfile has the manifest's hash. Does not exist: a Studio build of Station Zero (F1), layer gameplay on a base (F2).
+- 24 Nov 2026, baseline. The RC4 headless batch run again on the g27r build through Forge (compressed time, server with one
+  bot; `C:\studio-data\sz\baseline\g27r_headless_24nov.log`, 531 s of runs): doors 70/70, economy 76/76, wells 9/9, stairs 9/9,
+  post routes 128/128 and rules 39/39, start closed 20/20, rounds 3 to 10 and 13 to 15 pass; rounds 1-2 fail (round 2: 2 stuck,
+  75 %) and 11-12 fail (round 11: 1 stuck at (-534, 2858, -121), 242 from its goal, the bot on stair A): the same two as on
+  22 Nov. So the suite and its two failures reproduce today; this is the reference every Studio build is compared with.
+- Work places: Station Zero's document scripts live in `tools-source/iwzmap/station_zero/` of this repository (branch
+  `claude/sz-rc5`; `arcade.py` first); documents, builds, frames, plans and notes under `C:\studio-data\sz`.
+- L4, read from the layout (not yet seen fixed): the black blob and the black rock pile are 27 placements of the static model
+  `debris_concrete_rubble_pile_01_dark` (a dark-tinted material variant; the plain `debris_concrete_rubble_pile_01` is in the
+  same dumps). Candidate: the plain variant; to be seen on the first recipe build.
+- 24 Nov 2026, winding: g27r (RC4) is an UNREVERSED build. `build-sz2.ps1` at the RC4 head `2dce3fd` had no `iwz_wind.py`
+  step; since 22 Nov (night) every build reverses the triangles for the engine's clockwise front. A build of the same emit today
+  is therefore not the RC4 picture: the RC4 look scores are the baseline of the unreversed map only. Asked of the Studio build
+  (fault F1, recipe key `keep_winding`): both usermaps of the g27r emit, to be shot at the RC4 cameras before any look work.
+- 24 Nov 2026, G1 and G2 (stair A crowd, long-route walkers): the cause is the acceptance script's rule, not the map.
+  `szaccept.gsc` lines 398 to 417 take the first `pathdisttogoal()` sample of a new zombie as its best; with no goal yet that
+  sample is 0, the progress clock never restarts, and every zombie alive 50 s more than 200 from the bot counts as stuck.
+  Measured on g27r (75 runs, compressed time, server with one bot; `C:\studio-data\sz\g1\REPORT.md`): the 7 flagged at the
+  stair-top position walked at 34 to 63 units a second with the distance to the bot falling at every 5 s sample; counts
+  follow the route's length (deck 8, stair top 7, half flight 2, hall 0); with a displacement rule (not moved 64 units in
+  50 s while more than 200 from the bot) 0 of 30 round-runs flag a zombie and every zombie the old rule flagged reached the
+  bot; at most 4 zombies within 110 of the bot (the probe kills on arrival, so a full ring cannot form in it: the crowd at
+  the choke with a living player is NOT measured by this probe). Long routes (rounds 3-4, 11-12, 3 runs each): every flagged
+  zombie moving at 27 to 70 units a second with 700 to 6,400 of path left. One real halt in 75 runs (deck, (-304, 2332,
+  -319), free room, bot not its enemy), not reproduced: open, with G3, for a recorder. The script is the Platform lane's
+  (fault FG1 reported); until its fix the round plans run with the corrected copy `C:\studio-data\sz\g1\lib\szg1.gsc`
+  through `--library-dir` (a workaround, named as such in every result).
+- 24 Nov 2026, Arcade round 1 (`station_zero/arcade.py`, document `C:\studio-data\sz\arcade\r1\doc`): in the game through
+  `studio live` (start 61 s, a sync 12 to 19 s): check 0 errors, 12 of 12 spawners reach, 746 props, 63 models, 37 lights;
+  frame p50 0.17 to 0.22 on nine cameras, p95 0.60 to 0.71 (below the stock band). Refused by the lead before any review:
+  Spaceland props and five shop boxes flooded with one colour each; round 2 (cp_disco kit, dressed shops, small tile floor,
+  emissive panels) in work. No play proof yet.
+- 24 Nov 2026, S2 part 1: the first Studio builds of Station Zero (full mode through the recipe `build.json`, Studio branch
+  `claude/c2-recipe`, not merged yet; usermaps `C:\studio-data\c2\twin\cp_iwz` with the release's winding and
+  `C:\studio-data\c2\reversed\cp_iwz` with the engine's), measured by this thread:
+  - the acceptance batch on `reversed` (compressed time, server with one bot; `C:\studio-data\sz\wind\reversed_headless.log`):
+    doors 70/70, economy 76/76, wells 9/9, stairs 9/9, post routes 128/128, rules 39/39, start closed 20/20, rounds 5 to 10
+    and 13 to 15 pass; rounds 1-2, 3-4 and 11-12 fail on the `stuck` rule only (the script's fault above), as on g27r;
+  - the 30 RC4 cameras on both (client; runs `C:\forge-run\runs\20261124-042744-0130-szf_rc4_look` and
+    `...-043325-0140-...`; table `C:\studio-data\sz\wind\wind_compare.json`): `twin` against the release's own frames of 22 Nov
+    differs by 0.6 to 3.6 of 255 on 28 cameras (the grain of two sessions); `reversed` against `twin` by 0.6 to 2.5 on 24
+    cameras; lit mean luminance 0.162 and 0.163, near-black share 8.7 and 8.6 %. The four cameras that differ more
+    (dark platform B, dark generator room, dark maintenance corridor, lit control room: 6 to 23) show a burning zombie's
+    smoke and fire in front of the camera in one of the two takes (lead's reading of
+    `C:\studio-data\sz\wind\twin_left_reversed_right_top4.jpg`), not a difference of the builds.
+  So: the winding makes no visible difference on Station Zero (the generator emits double-sided geometry), the Studio build
+  is the RC4 map, and RC5 is built with the engine's winding. Fault of the look plan itself: zombies die in frame
+  (`szf_rc4_look.json`): review frames need a take with no zombie alive.
+- 24 Nov 2026, Arcade rounds 2 and 3 (documents `C:\studio-data\sz\arcade\r2`, `r3`; `station_zero/arcade3.py`): round 2 refused
+  by the lead (right theme, an empty hall, a bright orange floor, flat light). Round 3 in the game on a FINAL bake (44 s):
+  a spine of columns with islands, a dark floor with an inlay line, 12 live ceiling panels with pools, the five shop names as
+  lit text signs (PHOTOS, HEEL & KEY, HOLE NUMBER NINE, COPY STOP, NEEDLE DROP: read the right way round), dark south wall;
+  673 props, 46 models, 37 lights, 12 of 12 spawners reach; frame p50 0.13 to 0.27, p95 0.46 to 0.69 (band 0.72 to 0.77 not
+  reached), corridor still 77 props per 1000 x 1000. Lead's reading: for the first time it is the place; still bare, pale
+  floor pools, plain columns. First blind review (three reviewers, eight shipped shop fronts as reference, lines fixed before:
+  median 7.5, no frame under 6.5, within 0.5 of stock, half of ours taken for shipped) in work. No play proof yet.
+- 24 Nov 2026, Arcade blind review 1 (round 3 on a final bake, twelve cameras; three independent reviewers, the eight shipped
+  shop fronts and the rubric of Studio's own Arcade rounds; raw answers `C:\studio-data\sz\arcade\r3b\review`): ours 4.70,
+  stock 6.60; lines fixed before: median 7.5 NOT MET, no frame under 6.5 NOT MET (lowest 3.0), within 0.5 of stock NOT MET
+  (-1.9), half taken for shipped NOT MET (0 of 12). Per criterion ours / stock: finished 5 / 7, density 3 / 6.5, lighting
+  5 / 6, surfaces 5 / 6.5, composition 5 / 6. Round 4 (density first: vignettes, dressing taken from studio rooms prop by
+  prop, shops as lit pockets, no model cap, prop cap 1,500 instead of the bible's 760) in work with its own review.
+- 26 Nov 2026, Arcade round 4 (`station_zero/arcade4.py`, `arcade_dress4.py`, layer `arcade_layer.py`; frames `C:\studio-data\sz\arcade\r4\frames`, sheet `frames\sheet.jpg`, document `r4\doc4`, layer `r4\layer_doc`): check 0 errors, 12 of 12 spawners reach; props 673 to 1,337, models 46 to 132, corridor 77 to 426 props per 1000 x 1000, bays 940 to 1,670 became 1,170 to 2,150; frame median luminance 0.12 to 0.26 became 0.25 to 0.68 (too bright now: to tune). Shops dressed with `P.dress_like`. As a layer of Station Zero: check 0 errors, 63 of 63 spawners reach, full build ok, power OFF frames through D4 read; power ON breaks the live session (FE5). Blind review of round 4 not run yet.
+- 26 Nov 2026, Arcade round 5 (`station_zero/arcade5.py`, `arcade_dress5.py`; document `C:\studio-data\sz\arcade\r5\doc5`, frames `r5\frames`, sheet `r5\frames\sheet.jpg`): after the round 4 review (5.0 against 8.0): floor of several materials with wear, tiled aprons, broken lane lines; stories instead of a stamp; plated D7 door with notices and pipes; kiosk and pillar seams, vents, plates; shop spots out of every opening; real fluorescent fixtures under the live panels; the doorway of every shop was closed by a full height shelf back panel since round 3 (the blotchy back wall): fixed, bay 3 opens into the back room. Still wrong: black smears on the floor, dark ceiling slabs, sparse stock in the back rooms, saturated colour. check 0 errors, 12 of 12. Not reviewed.
+- 26 Nov 2026, Arcade round 6 (`station_zero/arcade6.py`, `arcade_dress6.py`; document `C:\studio-data\sz\arcade\r6\doc6`, frames `r6\frames`, sheet `r6\frames\sheet.jpg`): after round 5's review (5.9 against 6.8): D7 an asymmetric door with a wheel and a hazard frame, the pillar's foot piled; bay 3 shelving in steel and painted wood, themed second row, the back room stocked (the barrel and crate that stood in front of its shelf are moved); the planter and the kiosk from stock models and real materials; beams, rails, lips and boxes that were black are steel or concrete, ducts alternate rectangular and round with bands and hangers; neon tubes round the apertures, washes and fills warm white; round 5's floor smears gone in 11 of 12 frames. check 0 errors, 12 of 12. Not reviewed.
+- 26 Nov 2026, Arcade round 7 (`station_zero/arcade7.py`, `arcade_dress7.py`; document `C:\studio-data\sz\arcade\r7\doc7`, frames `r7\frames` = cycle 3, sheet `r7\frames\sheet.jpg`): after round 6's review (5.7 against 6.7, a plateau: form and surfaces): stock models in place of box parts where one fits (fluorescent fixtures for the ceiling panels, I-beams and brackets for the beams, duct supports and vents, concession carts and a striped awning on I-beam posts for the kiosk, the dojo column on the spine), five floor zones of four stock tiles, every coloured light with a fixture, and the haze set in the vision (veil 0, air 0.02, spot beams 0.15) with exposure -0.5. The dojo columns are slim and dark and nearly vanish in the hall: `ARC7_COLUMNS=pier` gives round 6's piers (not shot: from the 12th failed `live start` on, the machine would not start the session, FE13). check 0 errors, 12 of 12. Not reviewed.

@@ -1,0 +1,211 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "sz8_hud",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "libraries": [
+  "szperks",
+  "szaccept"
+ ],
+ "about": "Round 8: the HUD perk row with each new perk given in turn (the player stands in the Arcade, power on): one frame after each, the HUD on.",
+ "steps": [
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "ignore",
+   "on": true
+  },
+  {
+   "do": "money",
+   "value": 100000
+  },
+  {
+   "do": "call",
+   "fn": "szp_setup",
+   "args": [
+    "b_setup"
+   ],
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "sz_power_direct",
+   "args": [
+    "power",
+    20
+   ],
+   "s": 1
+  },
+  {
+   "do": "tp",
+   "at": [
+    -2000,
+    3900,
+    1
+   ],
+   "yaw": 0,
+   "snap": true
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "capture",
+   "name": "hud_0_none",
+   "pause": 0.5
+  },
+  {
+   "do": "call",
+   "fn": "szp_give",
+   "args": [
+    "perk_machine_revive"
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "capture",
+   "name": "hud_1_revive",
+   "pause": 0.5
+  },
+  {
+   "do": "call",
+   "fn": "szp_state",
+   "args": [
+    "st_revive"
+   ],
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "szp_give",
+   "args": [
+    "perk_machine_deadeye"
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "capture",
+   "name": "hud_2_deadeye",
+   "pause": 0.5
+  },
+  {
+   "do": "call",
+   "fn": "szp_state",
+   "args": [
+    "st_deadeye"
+   ],
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "szp_give",
+   "args": [
+    "perk_machine_bakers"
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "capture",
+   "name": "hud_3_bakers",
+   "pause": 0.5
+  },
+  {
+   "do": "call",
+   "fn": "szp_state",
+   "args": [
+    "st_bakers"
+   ],
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "szp_give",
+   "args": [
+    "perk_machine_voyage"
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "capture",
+   "name": "hud_4_voyage",
+   "pause": 0.5
+  },
+  {
+   "do": "call",
+   "fn": "szp_state",
+   "args": [
+    "st_voyage"
+   ],
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "szp_give",
+   "args": [
+    "perk_machine_grudge"
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "capture",
+   "name": "hud_5_grudge",
+   "pause": 0.5
+  },
+  {
+   "do": "call",
+   "fn": "szp_state",
+   "args": [
+    "st_grudge"
+   ],
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "szp_give",
+   "args": [
+    "perk_machine_double"
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "capture",
+   "name": "hud_6_double",
+   "pause": 0.5
+  },
+  {
+   "do": "call",
+   "fn": "szp_state",
+   "args": [
+    "st_double"
+   ],
+   "s": 1
+  }
+ ]
+}

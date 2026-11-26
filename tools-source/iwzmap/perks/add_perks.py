@@ -4,7 +4,7 @@
   (the level script calls scripts\\cp\\maps\\<map>\\cp_iwz_perks::init and ::register), their rows right after the level
   script row of zone_source/<map>.csv;
 - the HUD icons: one 2D material per new perk (a copy of the stock perk icon material cp_zmb_perk_icon_tough with its
-  own image; the images are the TGAs of make_perk_icons.py, drawn at build time), and Deadeye Dewdrops' stock icon material, whose image
+  own image; the images are the TGAs of perk_icons.py, drawn at build time), and Deadeye Dewdrops' stock icon material, whose image
   comes from the cp_disco dump (the template map's zone has no Deadeye icon);
 - the stock perk bit table (stringtable cp/zombies/zombie_perks_bit_mask_table.csv, already in the zone from the
   template's patch zone) gets one row per new perk: the stock HUD draws the icon of every bit the server sets in the
@@ -62,7 +62,7 @@ def main(argv=None):
     ap.add_argument('map')
     ap.add_argument('--template-dump', required=True)
     ap.add_argument('--deadeye-image', default='')
-    ap.add_argument('--icons', default='')        # default: <asset root>/../perk_icons, drawn by make_perk_icons.py when missing
+    ap.add_argument('--icons', default='')        # default: <asset root>/../perk_icons, drawn by perk_icons.py when missing
     a = ap.parse_args(argv)
     m, root = a.map, a.root
     tdump = os.path.join(a.template_dump, 'techsets_cp_zmb')
@@ -75,12 +75,12 @@ def main(argv=None):
         rows.append('rawfile,' + rel)
     mats = []
     icons = a.icons or os.path.join(os.path.dirname(os.path.abspath(root)), 'perk_icons')
-    if not all(os.path.exists(os.path.join(icons, r[2] + '.tga')) for r in NEW_ROWS):
-        subprocess.check_call([sys.executable, '-I', '-B', os.path.join(HERE, 'make_perk_icons.py'), icons])
+    if not a.icons:   # drawn on every build (a second of Pillow): the stock-tile icons of perk_icons.py, never a stale copy
+        subprocess.check_call([sys.executable, '-I', '-B', os.path.join(HERE, 'perk_icons.py'), icons])
     for bit, perk, mat in NEW_ROWS:
         tga = os.path.join(icons, mat + '.tga')
         if not os.path.exists(tga):
-            raise SystemExit('missing icon %s (make_perk_icons.py)' % tga)
+            raise SystemExit('missing icon %s (perk_icons.py)' % tga)
         copy_new(tga, os.path.join(root, 'images', mat + '.tga'))
         icon_material(root, tdump, mat, mat)
         mats.append(mat)

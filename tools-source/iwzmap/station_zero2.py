@@ -3584,7 +3584,7 @@ for t_ in B.mesh.col:
     if len(pts_) < 2:
         continue
     COL_WALLS.append([pts_[0][0], pts_[0][1], pts_[-1][0], pts_[-1][1], round(min(az_, bz_, cz_), 1), round(max(az_, bz_, cz_), 1)])
-plan = {'regions': [{'name': r['name'], 'zone': r['zone'], 'rect': r['rect']} for r in REGIONS], 'adj': [sorted(a) for a in ADJ],
+plan = {'regions': [{'name': r['name'], 'zone': r['zone'], 'rect': r['rect']} for r in REGIONS], 'adj': sorted(sorted(a) for a in ADJ),     # sorted: ADJ is a set and `python -I` ignores PYTHONHASHSEED, so its order changed every run (found 24 Nov 2026)
         'cells': [[i, j, z, owner[(i, j)]] for (i, j), z in cells.items()],
         'cell_corners': [[i, j, list(c_)] for (i, j), c_ in corner_z.items() if (i, j) in cells],
         'nav_seams': NAV_SEAM_REPORT, 'blockers': B.blockers,
