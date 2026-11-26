@@ -171,6 +171,10 @@ def lights9(m, report):
         if pid.startswith('light_pool_'):
             single = o['intensity'] < 1.5
             x, y, z = o['origin']
+            if x > A.X1 - 130.0:                                # panels 32 from an end wall blew the wall (arc_cutwall: 28 % clipped): pulled 80 inward
+                x -= 80.0
+            elif x < A.X0 + 130.0:
+                x += 80.0
             m.update(pid, origin=[x, y, 120.0], radius=190.0, intensity=round(1.6 * K * (0.6 if single else 1.0), 3), inner=40.0, outer=80.0)
     for pid, o in old.items():
         if pid.startswith(('light_colS_', 'light_colN_')):      # the omnis 108 under the ceiling (the cream ceiling) go; one downward spot per column on the south side
