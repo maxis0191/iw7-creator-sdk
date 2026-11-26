@@ -225,6 +225,26 @@ def lights9(m, report):
     report['lights9'] = {'added': n}
 
 
+def lights11(m, report):
+    """round 11 (FL1 fixed: the downward power spots now light the floor). Numbers: studio light --survey --zone arcade (r11a document, power on): the five `light_key_*` (R 280 in the document, 504 built)
+    put 51 to 71 % of their light behind the shutters, partitions and walls; `fx_back_*` sat INSIDE the partition (y 4474.8, the wall is 4470..4482): 100 % blocked by their own wall;
+    `fx_tube_*` 36 to 80 % behind geometry, 72 to 81 % of the rest on walls. r11a frames (power on, display luminance): the floor third 0.22 to 0.77 on 14 cameras, the mean 0.18 to 0.45."""
+    n = 0
+    for o in [o for o in m.objects() if o['kind'] == 'light']:
+        pid = o['id']
+        if pid.startswith('light_key_'):
+            m.update(pid, radius=200.0, intensity=round(o['intensity'] * 0.8, 3)); n += 1
+        elif pid.startswith('fx_back_'):
+            x, y, z = o['origin']
+            m.update(pid, origin=[x, 4464.0, z]); n += 1                  # out of the partition, into the shop
+        elif pid.startswith('fx_tube_'):
+            m.update(pid, radius=125.0); n += 1
+        elif pid.startswith(('light_pool_', 'light_spine_', 'light_fill_')):
+            hall_side = o['origin'][0] > -1450.0                                  # r11 frames: conv_bench and hall_far (the hall end) lost their floor light at 0.7
+            m.update(pid, intensity=round(o['intensity'] * (1.2 if hall_side else 0.7), 3)); n += 1
+    report['lights11'] = {'updated': n}
+
+
 def emergency9(m, report):
     """group 'emergency': baked in both states and switched by nothing. Neon that stays lit, exit signs, red wall lamps, orange floor beacons, amber bay lamps"""
     ids = []
@@ -293,6 +313,7 @@ def build(name='sz_arcade_r11'):
     unclip_columns(m, rep)
     settle(m, rep)
     lights9(m, rep)
+    lights11(m, rep)
     emergency9(m, rep)
     cameras10(m, rep)
     rep['base10'] = {'emit': BASE10_EMIT}
