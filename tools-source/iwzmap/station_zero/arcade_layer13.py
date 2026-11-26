@@ -5,7 +5,7 @@ r"""The Underpass Arcade (round 13) as a LAYER of the Station Zero document: rou
 What round 12 taught (numbers in C:\studio-data\sz\arcade\r12\numbers.md) and what this file does:
   1. The lit vision stays r11's AUTO exposure and the power lights stay at `darkness.lights.scale` 840 (r12's manual lit vision with scale 210 gave ON mean 0.378 against 0.239, clip 3.0 %
      against 0.57 %, and OFF frames at 0.035 against 0.089: the same scale also divides the emergency light of the dark state). Nothing of the vision is overridden here: the base's recipe is used.
-  2. Signs dimmer ON than OFF (auto exposure meters the lit frame, a sign is fixed radiance: p98 0.43 -> 0.21 in arc_bay2). The neon alone gets an extra light in group `power` (on the sign,
+  2. Signs dimmer ON than OFF: the text signs (cn_* boards, the five shop name signs) get a higher emissive strength (SIGN_K); an ON-only light on the neon fixtures was tried (doc_c) and washed the ceiling.
      baked into the lit lightmap only): ON adds to the emergency light that both states have, nothing else changes.
   3. Kept from r12: the cut wall's lintel, the three conv_bench downlights. Uplights (ceiling, upper walls) at ARC13_UP (default 0.3; r12 was 1.2: top third ON 0.354).
   4. Hung graphics of bays 4 and 5 (`hg_3_*`: `w/zombies_underground_map`, a tile pattern at this size; `hg_4_*`: theater posters, dark): other materials that `store find --draw` lists.
@@ -27,8 +27,8 @@ import arcade_layer12 as L12  # noqa: E402
 from studio import build as B  # noqa: E402
 
 BASE_EMIT = os.environ.get('ARC13_BASE', r'C:\studio-data\sb\base_sb')
-UP = float(os.environ.get('ARC13_UP', '0.3'))
-SIGN_ON = float(os.environ.get('ARC13_SIGN_ON', '1.8'))        # the extra ON-only sign light, times the sign's emergency light
+UP = float(os.environ.get('ARC13_UP', '0.4'))
+SIGN_K = float(os.environ.get('ARC13_SIGN_K', '3.5'))          # the text signs' emissive strength, times
 PANEL4 = ('w/signage_theater_menu_01', 'w/signage_zmb_park_poster_04', 'w/signage_zmb_park_poster_08')
 PANEL5 = ('w/signage_zmb_park_poster_05', 'w/signage_zmb_park_poster_06', 'w/signage_zmb_park_poster_07')
 
@@ -55,20 +55,18 @@ def uplights13(m, report):
 
 
 def signs13(m, report):
-    """an extra light on each shop neon, group power: only the lit state has it"""
-    ids = []
-    m.use('lights')
-    for i in range(1, 6):
-        pid = 'fx_sign_%d_l1' % i
-        if pid not in m:
-            continue
-        o = m.get(pid)
-        kw = dict(color=o['color'], radius=o['radius'], intensity=round(o['intensity'] * SIGN_ON, 3), group='power', type=o['type'], zone=o.get('zone'), id='fx_sign_%d_on' % i)
-        if o['type'] == 'spot':
-            kw.update(dir=o['dir'], inner=o.get('inner'), outer=o.get('outer'))
-        B.light(m, o['origin'], layer='lights', **kw)
-        ids.append(kw['id'])
-    report['signs13'] = {'on_lights': ids, 'factor': SIGN_ON}
+    """round 13a (an extra ON-only light on the neon fixtures) washed the ceiling in the signs' colours and moved the text boards' ON p98 down (0.208 -> 0.112 in arc_bay2): the boards that are measured
+    are text signs with `emissive` (cn_* 1.2, the five shop name signs strength 2.2), a fixed radiance that the auto exposure of the lit state darkens. Their emissive is multiplied by SIGN_K."""
+    n = 0
+    for o in [o for o in m.objects() if o['kind'] == 'sign' and o.get('emissive')]:
+        e = o['emissive']
+        if isinstance(e, dict):
+            e = dict(e, strength=round(float(e.get('strength', 1.5)) * SIGN_K, 3))
+        else:
+            e = round(float(1.5 if e is True else e) * SIGN_K, 3)
+        m.update(o['id'], emissive=e)
+        n += 1
+    report['signs13'] = {'emissive_signs': n, 'factor': SIGN_K}
 
 
 def panels13(m, report):
