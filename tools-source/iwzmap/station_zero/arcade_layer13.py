@@ -29,7 +29,7 @@ from studio import build as B  # noqa: E402
 BASE_EMIT = os.environ.get('ARC13_BASE', r'C:\studio-data\sb\base_sb')
 UP = float(os.environ.get('ARC13_UP', '0.3'))
 SIGN_ON = float(os.environ.get('ARC13_SIGN_ON', '1.8'))        # the extra ON-only sign light, times the sign's emergency light
-PANEL4 = ('w/signage_theater_menu_01', 'w/signage_zmb_park_poster_04', 'w/cp_disco_peepshow_flyer_02')
+PANEL4 = ('w/signage_theater_menu_01', 'w/signage_zmb_park_poster_04', 'w/signage_zmb_park_poster_08')
 PANEL5 = ('w/signage_zmb_park_poster_05', 'w/signage_zmb_park_poster_06', 'w/signage_zmb_park_poster_07')
 
 
