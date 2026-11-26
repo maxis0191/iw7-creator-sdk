@@ -3,7 +3,7 @@
 Usage: python -I -B perk_icons.py <out dir> [--stock-dir <dir with stock_revive.png, stock_deadeye.png>]
 Output names are the ones add_perks.py wires (iwz_perk_icon_bakers/voyage/grudge/double/double_cd).
 
-Tile: stock_tile_alpha.png is the alpha channel of the stock cp_zmb_perk_icon_revive image (the skewed
+Tile: stock_tile_alpha.png (kept OUT of the repository: extracted game content stays on the PC; path from IWZ_PERK_TILE, default C:\studio-data\sz\perk_stock\stock_tile_alpha.png) is the alpha channel of the stock cp_zmb_perk_icon_revive image (the skewed
 parallelogram: a 3 px rim at alpha ~117, the body at ~168, the same alpha the stock tiles use). The rim is
 white like the stock rim, the body is one flat colour per perk with a light top-to-bottom shade, the glyph is
 white with a thin dark outline of the body colour. Glyphs are simple filled shapes drawn at 4x and
@@ -19,7 +19,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 S = 4
 N = 128 * S
 HERE = os.path.dirname(os.path.abspath(__file__))
-TILE = os.path.join(HERE, "stock_tile_alpha.png")
+TILE = os.environ.get("IWZ_PERK_TILE") or r"C:\studio-data\sz\perk_stock\stock_tile_alpha.png"   # extracted game content: never in the repository
 
 # body colours; the stock tiles in the HUD row are revive (cyan, hue 195) and deadeye (green, hue 120)
 BODY = {
@@ -169,6 +169,8 @@ def main():
         del args[i:i + 2]
     out = args[0] if args else os.path.join(HERE, "icons")
     os.makedirs(out, exist_ok=True)
+    if not os.path.isfile(TILE):
+        raise SystemExit("perk_icons: the stock tile mask is not on this PC: %s (save the alpha channel of the stock cp_zmb_perk_icon_revive image there, 128x128 L, or set IWZ_PERK_TILE)" % TILE)
     tile = Image.open(TILE).convert("L")
     assert tile.size == (128, 128)
     icons = {"iwz_perk_icon_" + k: compose(k, rgb, tile) for k, rgb in BODY.items()}
