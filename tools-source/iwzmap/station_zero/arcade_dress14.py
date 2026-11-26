@@ -286,7 +286,7 @@ def box(m, b, mat, mode='render', **kw):
 
 class Shelf:
     """a geometry shelf unit: uprights, boards, an invisible collision box; slots() yields stock positions per level"""
-    def __init__(self, m, id, rect, front, levels, board='w/wood_antique_panel_trim_01', frame='w/metal_painted_01_black', top=96.0, clip=True, frame_parts=True):
+    def __init__(self, m, id, rect, front, levels, board='w/wood_antique_panel_trim_01', frame='w/metal_galvanized_bare_dark_01', top=96.0, clip=True, frame_parts=True):
         self.rect, self.front, self.levels, self.top = rect, front, levels, top
         x0, y0, x1, y1 = rect
         if clip:
@@ -564,10 +564,10 @@ def shop(A, m, D, i, report):
     n_stock += stock(D, sh, ['boxc', 'boxa', 'boxc'] if kind != 'needle' else ['crate', 'boxa', 'crate'], 28.0, yaw=270.0, jitter=10.0, skip=0.0)
     # the hung things behind the aperture (as round 3) and the posters on both side walls
     cx = s + A.BAY_W / 2.0
-    hy = V(44.0)
+    hy = V(HUNG_Y)
     if kind == 'photo':
         for k in range(9):
-            hung(m, 'hg_%d_%d' % (i, k), cx - 100.0 + 25.0 * k, hy + (6.0 if k % 2 else 0.0), 58.0 + (6.0 if k % 2 else 0.0), 11.0, 22.0, ('w/zombies_blank_photo', 'w/zombies_teddy_photo')[k % 2])
+            hung_pic(m, 'hg_%d_%d' % (i, k), cx - 100.0 + 25.0 * k, hy + (6.0 if k % 2 else 0.0), HUNG_Z + 6.0 * (k % 3), 14.0, 18.0, 'photo_%d.png' % (k % 3))
     elif kind == 'heel':
         for q, ux in enumerate((-90.0, 90.0)):
             box(m, [cx + ux - 22.0, hy + 4.0, 56.0, cx + ux + 22.0, hy + 5.5, 86.0], 'w/wood_worn_painted_01_green', id='keyboard_%d_%d' % (i, q))
@@ -576,18 +576,17 @@ def shop(A, m, D, i, report):
             for k in range(8):
                 D.put(M['hook'], cx + ux - 18.0 + 5.0 * k, hy + 4.0, 270.0, z=60.0 + 12.0 * (k % 2) + 8.0, scale=2.5, ignore_keep=True, margin=0.0)
     elif kind == 'hole9':
-        for k in range(5):
-            hung(m, 'hg_%d_%d' % (i, k), cx - 90.0 + 45.0 * k, hy + (5.0 if k % 2 else 0.0), 52.0, 30.0, 26.0, 'w/signage_theater_menu_01')
+        for k in range(3):
+            hung_pic(m, 'hg_%d_%d' % (i, k), cx - 80.0 + 80.0 * k, hy + (5.0 if k % 2 else 0.0), HUNG_Z, 36.0, 30.0, 'menu_%d.png' % k)
     elif kind == 'copy':
         for k in range(6):
-            hung(m, 'hg_%d_%d' % (i, k), cx - 100.0 + 40.0 * k, hy + (6.0 if k % 2 else 0.0), 50.0 + (8.0 if k % 2 else 0.0), 26.0, 22.0, 'w/zombies_underground_map')
+            hung_pic(m, 'hg_%d_%d' % (i, k), cx - 100.0 + 40.0 * k, hy + (6.0 if k % 2 else 0.0), HUNG_Z + (8.0 if k % 2 else 0.0), 22.0, 28.0, 'sheet_%d.png' % (k % 3))
     else:
-        for k in range(14):
-            hung(m, 'hg_%d_%d' % (i, k), cx - 104.0 + 16.0 * k, hy + (6.0 if k % 2 else 0.0), 54.0 + 8.0 * (k % 3), 12.0, 12.0,
-                 ('w/zombies_theater_poster01', 'w/zombies_theater_poster02', 'w/signage_zmb_park_poster_03')[k % 3])
+        for k in range(8):
+            hung_pic(m, 'hg_%d_%d' % (i, k), cx - 98.0 + 28.0 * k, hy + (6.0 if k % 2 else 0.0), HUNG_Z + 8.0 * (k % 3), 16.0, 16.0, 'sleeve_%d.png' % k)
     for k, (zz, vv) in enumerate(((100.0, 50.0), (96.0, 96.0), (104.0, 130.0))):
-        B.decal(m, POSTERS[(i + k) % len(POSTERS)], (left, V(vv), zz), (1.0, 0.0, 0.0), (26.0, 36.0), id='post_l_%d_%d' % (i, k))
-        B.decal(m, POSTERS[(i + k + 3) % len(POSTERS)], (right, V(vv + 8.0), zz), (-1.0, 0.0, 0.0), (26.0, 36.0), id='post_r_%d_%d' % (i, k))
+        B.decal(m, image='poster_%d.png' % ((i + k) % 6), at=(left, V(vv), zz), normal=(1.0, 0.0, 0.0), size=(26.0, 36.0), id='post_l_%d_%d' % (i, k))
+        B.decal(m, image='poster_%d.png' % ((i + k + 3) % 6), at=(right, V(vv + 8.0), zz), normal=(-1.0, 0.0, 0.0), size=(26.0, 36.0), id='post_r_%d_%d' % (i, k))
     # the emissive light strips in the shop's hue under the ceiling (they light the stock and the floor through the bake) and a black housing
     for k, vv in enumerate((58.0, 118.0)):
         box(m, [cx - 96.0, V(vv) - 3.0, 194.0, cx + 96.0, V(vv) + 3.0, 198.0], TUBE[kind], id='strip_%d_%d' % (i + 1, k))
@@ -615,6 +614,18 @@ def stock(D, shelf, items, step, yaw=0.0, jitter=0.0, skip=0.0, scale=1.0):
         if D.put(M[mod] if mod in M else mod, x, y, yaw + D.rng.uniform(-jitter, jitter), z=z, ignore_keep=True, margin=0.0, scale=scale):
             n += 1
     return n
+
+
+HUNG_Y = 76.0           # r13: 44 (34 units from the chk cameras, 41 % of their frame); the boards now hang 76 into the shop
+HUNG_Z = 76.0           # r13: 52 (the player's eye line, and 41 % of the chk cameras' frame); now above a standing player's head and inside the chk cameras' frame (z 70, +-31 at 66 units)
+
+
+def hung_pic(m, id, x, y, z, w, h, picture, ceil=200.0):
+    """a board hung by a rod at each end: a dark backing and the picture (a file Studio draws, UV 0..1 over the whole image) 3.6 in front of it, facing the entrance"""
+    box(m, [x - w / 2.0, y - 0.4, z, x + w / 2.0, y + 0.4, z + h], BLACK, id=id)
+    rod(m, id + '_ra', x - w / 2.0 + 1.0, y, z + h, ceil)
+    rod(m, id + '_rb', x + w / 2.0 - 1.0, y, z + h, ceil)
+    B.sign(m, image=picture, at=(x, y - 0.4, z + h / 2.0), normal=(0.0, -1.0, 0.0), size=(w - 1.6, h - 1.6), emissive={'color': [1.0, 0.95, 0.85], 'strength': 0.6}, id=id + '_pic')
 
 
 def hung(m, id, x, y, z, w, h, mat, ceil=200.0):
@@ -1603,9 +1614,112 @@ def litter8(A, m, report):
     report['litter8'] = {'dropped_grid_props': gone, 'themes': reps}
 
 
+def _grad(size, c0, c1):
+    from PIL import Image
+    w, h = size
+    im = Image.new('RGB', size)
+    px = im.load()
+    for y in range(h):
+        t = y / max(h - 1, 1)
+        col = tuple(int(c0[k] + (c1[k] - c0[k]) * t) for k in range(3))
+        for x in range(w):
+            px[x, y] = col
+    return im
+
+
+def shop_pictures(folder):
+    """r14: the shops' hung boards and wall posters as pictures Studio draws (no store material, no letters): the store posters drew black or tiled noise at this size (FE54), and a box
+    face tiles its material (a hung sheet showed a window of a poster, magnified); a sign quad carries the whole image. Drawn at 3x and reduced, 512 px wide at most (a hung board is seen
+    from 40 units: about 17 px per unit on a 1280 frame)"""
+    from PIL import Image, ImageDraw
+    rng = random.Random(1978)
+    S = 3
+
+    def finish(im, name, size):
+        im.resize(size, Image.LANCZOS).save('%s/%s' % (folder, name))
+
+    pal = [((250, 214, 120), (178, 60, 40)), ((130, 190, 235), (24, 48, 110)), ((240, 150, 190), (92, 28, 88)), ((170, 220, 160), (22, 80, 70)), ((245, 235, 215), (120, 100, 90)), ((255, 170, 80), (70, 30, 20))]
+    for k in range(6):                                    # wall posters 320 x 448: a sky gradient, a sun or moon, two rows of buildings, a white border
+        w, h = 320 * S, 448 * S
+        top, bot = pal[k]
+        im = _grad((w, h), top, bot)
+        d = ImageDraw.Draw(im)
+        cx, cy, r = int(w * (0.3 + 0.4 * rng.random())), int(h * 0.34), int(w * 0.17)
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 245, 220))
+        for row, shade in ((0.62, 0.55), (0.76, 0.32)):
+            x = 0
+            col = tuple(int(c * shade) for c in bot)
+            while x < w:
+                bw = int(w * rng.uniform(0.07, 0.16))
+                bh = int(h * rng.uniform(0.10, 0.26))
+                d.rectangle([x, int(h * row) - bh, x + bw, h], fill=col)
+                x += bw + int(w * rng.uniform(0.0, 0.02))
+        d.rectangle([0, 0, w - 1, h - 1], outline=(240, 240, 236), width=int(14 * S / 2))
+        finish(im, 'poster_%d.png' % k, (320, 448))
+    for k in range(3):                                    # photo prints 240 x 320: a white margin, a scene (horizon, a figure, a window)
+        w, h = 240 * S, 320 * S
+        im = Image.new('RGB', (w, h), (244, 240, 230))
+        d = ImageDraw.Draw(im)
+        m0 = int(w * 0.07)
+        sky, ground = pal[(k + 1) % 6]
+        scene = _grad((w - 2 * m0, int(h * 0.74)), sky, ground)
+        im.paste(scene, (m0, m0))
+        d = ImageDraw.Draw(im)
+        hz = m0 + int(h * 0.74 * 0.62)
+        d.rectangle([m0, hz, w - m0, m0 + int(h * 0.74)], fill=tuple(int(c * 0.35) for c in ground))
+        fx = int(w * (0.35 + 0.3 * rng.random()))
+        d.ellipse([fx - 30 * S, hz - 80 * S, fx + 30 * S, hz - 20 * S], fill=(40, 34, 30))
+        d.rectangle([fx - 34 * S, hz - 24 * S, fx + 34 * S, hz + 40 * S], fill=(40, 34, 30))
+        finish(im, 'photo_%d.png' % k, (240, 320))
+    for k in range(3):                                    # menu boards 480 x 400: a dark board, rows of coloured bars (the items) and short bars (the prices)
+        w, h = 480 * S, 400 * S
+        im = Image.new('RGB', (w, h), (30, 26, 24))
+        d = ImageDraw.Draw(im)
+        d.rectangle([0, 0, w - 1, int(h * 0.16)], fill=((200, 70, 50), (230, 170, 50), (60, 150, 180))[k])
+        for row in range(6):
+            y = int(h * (0.24 + 0.12 * row))
+            lw = int(w * rng.uniform(0.35, 0.6))
+            d.rectangle([int(w * 0.07), y, int(w * 0.07) + lw, y + int(h * 0.05)], fill=(235, 228, 205))
+            d.rectangle([int(w * 0.78), y, int(w * 0.92), y + int(h * 0.05)], fill=(235, 190, 90))
+            d.ellipse([int(w * 0.70), y, int(w * 0.70) + int(h * 0.05), y + int(h * 0.05)], fill=((200, 70, 50), (230, 170, 50), (60, 150, 180))[(k + row) % 3])
+        d.rectangle([0, 0, w - 1, h - 1], outline=(190, 150, 70), width=8 * S)
+        finish(im, 'menu_%d.png' % k, (480, 400))
+    for k in range(3):                                    # paper sheets 320 x 420: white, a coloured header, blocks of grey lines, a stamp
+        w, h = 320 * S, 420 * S
+        im = Image.new('RGB', (w, h), (240, 238, 230))
+        d = ImageDraw.Draw(im)
+        d.rectangle([0, 0, w, int(h * 0.12)], fill=((70, 110, 170), (190, 80, 60), (80, 140, 100))[k])
+        y = int(h * 0.18)
+        while y < h * 0.88:
+            for ln in range(rng.randint(3, 5)):
+                if y >= h * 0.9:
+                    break
+                d.rectangle([int(w * 0.08), y, int(w * 0.08) + int(w * rng.uniform(0.5, 0.84)), y + int(h * 0.012)], fill=(150, 150, 150))
+                y += int(h * 0.03)
+            y += int(h * 0.04)
+        d.ellipse([int(w * 0.62), int(h * 0.74), int(w * 0.9), int(h * 0.74) + int(w * 0.28)], outline=(180, 50, 50), width=6 * S)
+        d.rectangle([0, 0, w - 1, h - 1], outline=(200, 198, 190), width=3 * S)
+        finish(im, 'sheet_%d.png' % k, (320, 420))
+    for k in range(8):                                    # record sleeves 384 x 384: a colour field, a black disc with rings and a label
+        w = h = 384 * S
+        c0, c1 = pal[k % 6]
+        im = _grad((w, h), c1, c0) if k % 2 else _grad((w, h), c0, c1)
+        d = ImageDraw.Draw(im)
+        cx, cy, r = w // 2, h // 2, int(w * 0.38)
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(22, 22, 24))
+        for q in range(1, 5):
+            rr = int(r * (1.0 - 0.17 * q))
+            d.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], outline=(70, 70, 76), width=2 * S)
+        rl = int(r * 0.34)
+        d.ellipse([cx - rl, cy - rl, cx + rl, cy + rl], fill=pal[(k + 2) % 6][0])
+        d.rectangle([0, 0, w - 1, h - 1], outline=(236, 236, 230), width=10 * S)
+        finish(im, 'sleeve_%d.png' % k, (384, 384))
+
+
 def make_pictures(folder):
     """writes the arrow pictograms beside map.json (called after the document is saved)"""
     from PIL import Image, ImageDraw
+    shop_pictures(folder)
     for name, kind in (('arrow_l.png', 'l'), ('arrow_r.png', 'r'), ('arrow_stair.png', 's')):
         im = Image.new('RGB', (256, 80), (20, 60, 150))
         d = ImageDraw.Draw(im)

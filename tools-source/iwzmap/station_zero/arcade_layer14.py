@@ -7,13 +7,14 @@ The document this builder wrote before the round-14 changes was byte-identical t
 import json
 import math
 import os
+import random
 import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.environ.get('STUDIO_ROOT', r'C:\studio'))
-from arcade_dress14 import COLS, GAPS, HUE, REPORT, SPINE_Y, dress, make_pictures  # noqa: E402
+from arcade_dress14 import COLS, GAPS, HUE, REPORT, SPINE_Y, dress, make_pictures, M  # noqa: E402
 from studio import Map  # noqa: E402
 from studio import build as B  # noqa: E402
 from studio import prefab  # noqa: E402
@@ -49,9 +50,13 @@ WARM = (1.0, 0.86, 0.66)
 BAYS = ['photo', 'heel', 'hole9', 'copy', 'needle']
 KE = float(os.environ.get('ARC9_KE', '1.0'))
 UP = float(os.environ.get('ARC13_UP', '0.4'))
+LANE_MAT = os.environ.get('ARC14_LANE', 'w/concrete_floor_polished_01')           # r13: w/aq_stone_concrete_patch02 (blotches seen stretched along the lanes by 2 of 3 readers)
+LANE_TILE = float(os.environ.get('ARC14_LANE_TILE', '64'))
+LITEV = float(os.environ.get('ARC14_LITEV', '-3.0'))           # the fixed exposure of the lit vision (the dark vision's is -3)
+SCALE = float(os.environ.get('ARC14_SCALE', '0'))             # 0 = the base's darkness.lights.scale (840)
+PLAT_I = float(os.environ.get('ARC14_PLAT_I', '1.2'))
+BENCH_I = float(os.environ.get('ARC14_BENCH_I', '1.0'))      # r13: three downward spots at z 120: the wall was lit only below z 120, a hard horizontal edge
 SIGN_K = float(os.environ.get('ARC13_SIGN_K', '3.5'))
-PANEL4 = ('w/signage_theater_menu_01', 'w/zombies_blank_photo', 'w/signage_theater_menu_01')
-PANEL5 = ('w/signage_theater_menu_01', 'w/zombies_teddy_photo', 'w/zombies_blank_photo')
 FLOOR_SKIN = 'w/building_ship_hallway_floor_06_tile_gray_glossy'
 PANEL_DEAD = 'w/concrete_wall_panel_05'
 PANEL_LIVE = 'w/glass_led_light_diffuser_01'
@@ -59,6 +64,46 @@ SHUTTER = 'w/micro_metal_painted_01_dark_gray'
 SHUT_GAP = 80.0
 SHUT_SHARE = {0: 0.20, 1: 0.35, 2: 0.20, 3: 0.20, 4: 0.35}
 WALLBAND = 'w/ceramic_tile_01_blue'
+
+def vision14(m, report):
+    """the lit vision with a FIXED exposure. r13's lit vision was auto (`tonemapAutoExposureAdjust -2.5`): the engine meters the frame's log-average luminance and exposes to a target
+    (iwz_tonemap.auto_key), so a bright ceiling or floor lowers every other pixel, and an emissive board (fixed radiance) came out at 0.5 of its dark-state display value (FE52). With
+    `tonemapAuto 0` the exposure is the dark vision's kind (a constant: `tonemapExposureAdjust` LITEV): a sign has the same display value in both states and the power lights only add.
+    `settings.build.darkness.args` is a list that the merge replaces, so the whole base list is copied (FE44) with only the `--lit` string changed (r12 did the same with a scale change as well: not here)."""
+    base = json.load(open(os.path.join(BASE_EMIT, 'build.json'), encoding='utf-8'))['darkness']
+    args = list(base['args'])
+    i = args.index('--lit')
+    keep = [kv for kv in args[i + 1].split(';') if not kv.startswith(('tonemapAutoExposureAdjust', 'tonemapAuto=', 'tonemapExposureAdjust'))]
+    args[i + 1] = ';'.join(keep + ['tonemapAuto=0', 'tonemapExposureAdjust=%g' % LITEV])
+    b = m.settings.setdefault('build', {})
+    dk = b.setdefault('darkness', {})
+    dk['args'] = args
+    if SCALE:
+        dk['lights'] = {'scale': SCALE}
+    report['vision14'] = {'lit': args[i + 1], 'scale': SCALE or base['lights']['scale']}
+
+
+PLATFORM_FLOOR = -320.0
+PLATFORM_PROPS = (('bin1', -2374.0, 1772.0, 90.0), ('bin2', -2374.0, 1736.0, 90.0), ('wet', -2290.0, 1722.0, 35.0), ('boxa', -2340.0, 1688.0, 20.0), ('boxc', -2316.0, 1690.0, 75.0),
+                  ('chips', -2262.0, 1772.0, 0.0), ('bag', -2232.0, 1742.0, 10.0), ('chips', -2252.0, 1700.0, 140.0), ('cup', -2346.0, 1748.0, 0.0), ('paper', -2310.0, 1660.0, 60.0),
+                  ('can', -2276.0, 1656.0, 0.0), ('smokes', -2299.0, 1806.0, 20.0), ('bag', -2368.0, 1700.0, 100.0), ('boxa', -2368.0, 1670.0, 90.0), ('cup', -2330.0, 1790.0, 0.0))
+
+
+def platform14(m, report):
+    """conv_platform (the stock platform below, seen from the stairs) was a bare floor of tiles: litter and bins along the wall, stains on the floor, two lights over it"""
+    m.use('dressing')
+    n = 0
+    for k, (key, x, y, yaw) in enumerate(PLATFORM_PROPS):
+        B.prop(m, M[key], (x, y, PLATFORM_FLOOR), yaw=yaw, id='plat_%d_%s' % (k, key))
+        n += 1
+    rng = random.Random(1414)
+    for k in range(5):
+        B.decal(m, ('w/asphalt_flooring_stain_01', 'w/dirt_stain_water_drips_01')[k % 2], (rng.uniform(-2370.0, -2230.0), rng.uniform(1650.0, 1800.0), PLATFORM_FLOOR + 0.3), (0.0, 0.0, 1.0),
+                (rng.uniform(60.0, 110.0), rng.uniform(40.0, 80.0)), rot=rng.uniform(0, 360), id='plat_stain_%d' % k)
+    layer12_light(m, (-2320.0, 1740.0, -240.0), 'light_plat_0', color=(1.0, 0.92, 0.76), radius=300.0, intensity=PLAT_I, type='omni')
+    layer12_light(m, (-2300.0, 1640.0, -240.0), 'light_plat_1', color=(1.0, 0.92, 0.76), radius=300.0, intensity=PLAT_I, type='omni')
+    report['platform14'] = {'props': n, 'stains': 5, 'lights': 2}
+
 
 def build(name='sz_arcade_r13'):
     BAYWALL[2] = 'w/brick_cinderblock_04_beige_dirty'               # as round 11
@@ -82,8 +127,9 @@ def build(name='sz_arcade_r13'):
     signs13(m, rep)
     cutwall12(m, rep)
     cameras12(m, rep)
-    panels13(m, rep)
     gameplay13(m, rep)
+    vision14(m, rep)
+    platform14(m, rep)
     m.settings.setdefault('build', {}).setdefault('darkness', {})['power'] = {'flag': 'power_on', 'interaction': 'generator'}      # the regenerated base's recipe lacks it (base_r10 had it)
     rep['power_recipe'] = 'power_on/generator'
     m.report9 = rep
@@ -163,7 +209,7 @@ def fixes9(m, report):
     n = 0
     for o in m.objects():
         if o['kind'] == 'box' and o.get('material') == 'w/asphalt_flooring_01_wet':
-            m.update(o['id'], material='w/aq_stone_concrete_patch02')
+            m.update(o['id'], material=LANE_MAT, uv={'top': {'tile': [LANE_TILE, LANE_TILE]}})
             n += 1
     report['lanes_retextured'] = n
 
@@ -427,7 +473,7 @@ def uplights13(m, report):
         layer12_light(m, (-1290.0, y, 120.0), 'light_upw_%d' % k, color=(1.0, 0.9, 0.74), radius=135.0, intensity=round(UP, 3), type='spot', dir=(1.0, 0.0, 0.5), inner=30.0, outer=85.0)
         n += 1
     for k, (x, y) in enumerate(((-1010.0, 4060.0), (-900.0, 4180.0), (-1080.0, 4200.0))):
-        layer12_light(m, (x, y, 120.0), 'light_bench_%d' % k, color=(1.0, 0.9, 0.72), radius=160.0, intensity=1.4, type='spot', dir=(0.0, 0.0, -1.0), inner=40.0, outer=80.0)
+        layer12_light(m, (x, y, 110.0), 'light_bench_%d' % k, color=(1.0, 0.9, 0.72), radius=170.0, intensity=BENCH_I, type='omni')
         n += 1
     report['uplights13'] = {'added': n, 'up': UP}
 
@@ -441,7 +487,7 @@ def signs13(m, report):
     """round 13a (an extra ON-only light on the neon fixtures) washed the ceiling in the signs' colours and moved the text boards' ON p98 down (0.208 -> 0.112 in arc_bay2): the boards that are measured
     are text signs with `emissive` (cn_* 1.2, the five shop name signs strength 2.2), a fixed radiance that the auto exposure of the lit state darkens. Their emissive is multiplied by SIGN_K."""
     n = 0
-    for o in [o for o in m.objects() if o['kind'] == 'sign' and o.get('emissive')]:
+    for o in [o for o in m.objects() if o['kind'] == 'sign' and o.get('emissive') and not str(o['id']).endswith('_pic')]:        # the hung pictures of the shops (r14) keep their own strength
         e = o['emissive']
         if isinstance(e, dict):
             e = dict(e, strength=round(float(e.get('strength', 1.5)) * SIGN_K, 3))
@@ -468,17 +514,6 @@ def cameras12(m, report):
     report['cameras12'] = ['chk_bay3', 'chk_bay4', 'chk_bay5']
 
 
-def panels13(m, report):
-    """the hung graphics of bays 4 and 5 with materials that draw as posters"""
-    n = 0
-    for o in [o for o in m.objects() if o['kind'] == 'box' and str(o['id']).startswith(('hg_3_', 'hg_4_')) and not str(o['id']).endswith(('_ra', '_rb'))]:
-        i, k = str(o['id']).split('_')[1:3]
-        pool = PANEL4 if i == '3' else PANEL5
-        m.update(o['id'], material=pool[int(k) % len(pool)])
-        n += 1
-    report['panels13'] = {'updated': n}
-
-
 def gameplay13(m, report):
     """DG's two fixes. FE24: the base hall bench (cp_disco_worn_subway_bench at -1138 4000) and its clip box stand in the D4 opening (y 3804-3996): removed.
     FE42: the bay spawners at y 4535 (facing south) carry the zombie's emergence up to 62 units into the partition walls (y 4470-4482): moved to y 4565."""
@@ -498,7 +533,7 @@ def main(argv=None):
     folder = argv[0] if argv else r'C:\studio-data\sz\arcade\r13\layer_doc'
     m = build()
     m.save(folder)
-    json.dump(m.report9, open(os.path.join(folder, 'report13.json'), 'w'), indent=1, default=str)
+    json.dump(m.report9, open(os.path.join(folder, 'report14.json'), 'w'), indent=1, default=str)
     make_pictures(folder)
     print(json.dumps({'folder': folder, 'summary': m.summary(), 'report13': {k: v for k, v in m.report9.items() if k not in ('settle_log', 'placer', 'dress_refusals')}}, indent=1, default=str)[:4000])
 
