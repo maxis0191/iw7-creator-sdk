@@ -26,7 +26,7 @@ Ticket makes one purchase free and does not raise the limit.
 
 What is not finished, plainly (state of build p2, 14 Nov 2026, section 2c): the four authored machines score a
 median 6 of 10 against the stock machines (target 7: bodies too dark, no self-lit neon topper); the four new icons are
-vector pictograms (`perks/make_perk_icons.py`); the new perks' jingles do not exist (to make as sound effects);
+vector pictograms (`perks/perk_icons.py`); the new perks' jingles do not exist (to make as sound effects);
 Deadeye Dewdrops' candy gesture is not in this map's zone; the Double Takes image is the shooting gallery's flat
 civilian cut-out `zmb_civilian_target_02`, not the player's own figure; the Sour Grudges mark is the stock green
 souvenir glow on the zombie's head; the Sour Grudges rim is four thin green bars on the screen edges.

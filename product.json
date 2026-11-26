@@ -509,7 +509,7 @@
     "tools-source/iwzmap/perks/machines/make_machine_art.py",
     "tools-source/iwzmap/perks/machines/perk_machines.py",
     "tools-source/iwzmap/perks/machines/swap_stock_glass.py",
-    "tools-source/iwzmap/perks/make_perk_icons.py",
+    "tools-source/iwzmap/perks/perk_icons.py",
     "tools-source/iwzmap/perks/p1plans.py",
     "tools-source/iwzmap/perks/strings.json",
     "tools-source/iwzmap/pipeline.ps1",
