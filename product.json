@@ -134,6 +134,7 @@
     "ops/modding/Distribution-Compat.py",
     "ops/modding/Install-CommunityMod.Package.py",
     "ops/modding/Package-CommunityMod.py",
+    "ops/quality/fast_gate.py",
     "sdk/modding/BEACON-FF.md",
     "sdk/modding/BEACON-FINALIZE.md",
     "sdk/modding/BO3-IMPORT-PROFILES.md",
