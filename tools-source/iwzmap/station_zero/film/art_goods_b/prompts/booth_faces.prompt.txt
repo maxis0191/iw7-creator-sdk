@@ -1,0 +1,9 @@
+Use case: photorealistic-natural
+Asset type: four frames of a 1984 coin-operated photo booth print, to be cut and stacked into one vertical sample strip for a game prop
+Primary request: a 2 x 2 grid of four separate passport-style photo booth portraits, each a different invented ordinary adult, as printed by a 1980s automatic photo booth
+Subject: top left: a woman in her fifties, short grey perm, cardigan, polite closed-mouth smile; top right: a man in his thirties, moustache, brown corduroy jacket, neutral face; bottom left: a young man around twenty, curly dark hair, denim jacket, half smile; bottom right: a woman in her forties, glasses with large frames, shoulder-length auburn hair, blouse with a collar, serious face. All four are fictional, plain, unremarkable people; none resembles any real or famous person.
+Style/medium: genuine early-1980s photo booth chemical print: slightly warm colour, soft focus, flat frontal flash, a plain grey-blue curtain backdrop behind each head, mild film grain, each frame head-and-shoulders, centred, facing the camera
+Composition/framing: square image; four equal frames in a 2 x 2 grid separated by thin white borders; each frame square
+Lighting/mood: hard on-camera flash, ordinary, a little awkward, not glamorous
+Constraints: no text, no logos, no watermark, no frames other than the thin white borders; adults only
+Avoid: celebrity likeness, modern hairstyles, smartphones, beauty retouching, black-and-white

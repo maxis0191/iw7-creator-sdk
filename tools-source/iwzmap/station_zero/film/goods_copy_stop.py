@@ -1,0 +1,297 @@
+r"""goods_copy_stop: the goods of COPY STOP (Ines Varga, draughtswoman; process blue and white), worker A3b, 27 Nov 2026.
+
+`add(m, anchors)` (contract: film/arcade_doc.py). As she left it at 23:30 on 31 December 1984: the machines left running, paper everywhere,
+the gala programmes she printed stacked on the counter, and in the front pigeonhole the uncollected forty-copy job (FILM-LAYER 5: the top
+sheet of Dr. Strand's 1983 memo, its words not ours: typewriter texture, the LODESTAR mark, a red stamp COPY 1 OF 40 = PLACEHOLDER words).
+
+Shell facts this module builds on (arcade_shell.py): unit x -2630..-1980, front glass y 4306, partition y 4480; the wheel at (-2554, 4460):
+nothing of ours within 64 of it; the back-room door x -2337..-2273 kept clear; copiers at x -2455 and -2375 (bodies y 4435..4465);
+counter x -2265..-2085, y 4376..4402, top 40; plan chest x -2614..-2574, y 4340..4420, top 36; pigeonholes x -2018..-1998, y 4402..4470;
+photo booth x -2042..-1998, y 4328..4392 (front face y 4328, curtain on its west side).
+"""
+import math
+
+import goods_kit_b as GK
+from goods_kit_b import M, art, art_b, obox, prism, tilt, paper_stack, ream, Kit
+from studio import build as B
+import shellgeo as G
+
+SHOP = 'copy_stop'
+GY = 4306.0            # the front glass
+PART_Y = 4480.0
+WHEEL = (-2554.0, 4460.0)
+
+
+def _far_from_wheel(x, y, r=0.0):
+    assert math.hypot(x - WHEEL[0], y - WHEEL[1]) - r >= 64.0, ('within 64 of the wheel', x, y)
+
+
+def window_west(K):
+    """the west window: what a passer-by sees first. Tube rack, the light table with a drawing, a pyramid of reams, an easel with a blueprint"""
+    # one clip for the whole display strip along the glass (nobody walks between the goods and the glass)
+    K.clip(K.item('window_display'), [-2606.0, GY + 1.0, 0.0, -2404.0, 4342.0, 64.0])
+    # the drawing-tube rack: a wooden frame, blueprint rolls and kraft tubes standing in it
+    it = K.item('tube_rack')
+    c = (-2594.0, 4326.0)
+    K.box(it, 'base', [c[0] - 10, c[1] - 10, 0.0, c[0] + 10, c[1] + 10, 2.0], M['wood'])
+    for k, (dx, dy) in enumerate(((-9, -9), (9, -9), (9, 9), (-9, 9))):
+        K.box(it, 'post%d' % k, [c[0] + dx - 1, c[1] + dy - 1, 2.0, c[0] + dx + 1, c[1] + dy + 1, 24.0], M['wood'])
+    for k, (a, b) in enumerate((((-10, -10), (10, -9)), ((-10, 9), (10, 10)), ((-10, -10), (-9, 10)), ((9, -10), (10, 10)))):
+        K.box(it, 'rail%d' % k, [c[0] + a[0], c[1] + a[1], 22.0, c[0] + b[0], c[1] + b[1], 24.0], M['wood'])
+    for k, (dx, dy) in enumerate(((-5, -5), (0, -5), (5, -4), (-5, 0), (5, 1), (-4, 5), (1, 5), (6, 6))):
+        if k % 3 == 1:
+            tube = K.item('drawing_tube')
+            K.mesh(tube, 'body', M['beige'], prism((c[0] + dx, c[1] + dy, 2.0), 1.7, 31.0 + (k % 2) * 4, 10))
+            K.mesh(tube, 'cap', M['black'], prism((c[0] + dx, c[1] + dy, 33.0 + (k % 2) * 4), 1.8, 1.2, 10))
+        else:
+            K.prop('blueprint_roll', 'cp_town_blueprint_teleporter_roll', (c[0] + dx, c[1] + dy, 2.0 + 13.8 + (k % 3) * 3), yaw=30.0 * k)
+    # the light table: a lit top tilted toward the hall, a pencil drawing on vellum, a lamp on its side shelf (the shop's one practical)
+    it = K.item('light_table')
+    x0, x1, y0, y1 = -2570.0, -2516.0, 4314.0, 4338.0
+    for k, (x, y) in enumerate(((x0 + 2, y0 + 2), (x1 - 2, y0 + 2), (x0 + 2, y1 - 2), (x1 - 2, y1 - 2))):
+        K.box(it, 'leg%d' % k, [x - 1.2, y - 1.2, 0.0, x + 1.2, y + 1.2, 30.0 if y < 4330 else 38.0], M['grey'])
+    top = obox(((x0 + x1) / 2, (y0 + y1) / 2, 0.0), (x1 - x0, y1 - y0, 1.5), faces='tnsewb', fit=False, tile=16.0)
+    top = ([[[p[0], p[1], p[2] + 33.0] for p in t] for t in top[0]], top[1])
+    K.mesh(it, 'frame', M['grey'], tilt(top, (0, (y0 + y1) / 2, 34.0), 14.0))
+    glow = obox(((x0 + x1) / 2, (y0 + y1) / 2, 0.0), (x1 - x0 - 3, y1 - y0 - 3, 0.1), faces='t')
+    glow = ([[[p[0], p[1], p[2] + 34.55] for p in t] for t in glow[0]], glow[1])
+    K.mesh(it, 'glass', M['white_glow'], tilt(glow, (0, (y0 + y1) / 2, 34.0), 14.0))
+    n = (0.0, -math.sin(math.radians(14.0)), math.cos(math.radians(14.0)))
+    K.decal(it, 'drawing', art_b('cs_vellum_drawing.png'), ((x0 + x1) / 2, (y0 + y1) / 2 + 0.6, 34.6), n, (44.0, 18.0), lift=0.25)
+    K.box(it, 'shelf', [x1 - 1.0, y0 + 4.0, 26.0, x1 + 10.0, y0 + 18.0, 27.2], M['grey'])
+    K.box(it, 'shelf_leg', [x1 + 7.0, y0 + 9.0, 0.0, x1 + 9.0, y0 + 11.0, 26.0], M['grey'])
+    K.fixture('desk_lamp', 'desk_lamp', (x1 + 4.5, y0 + 11.0, 27.2), 200.0, kelvin=3600, intensity=0.9, radius=0.9)
+    # a pyramid of wrapped reams, labels to the hall
+    for k, (dx, dz) in enumerate(((-12, 0), (0, 0), (12, 0), (-6, 2.1), (6, 2.1), (0, 4.2))):
+        ream(K, (-2489.0 + dx, 4322.0, dz), yaw=(k * 3) % 7 - 3)
+    for k in range(3):                                                       # two more pallets of stock under the easel
+        ream(K, (-2468.0 + (k % 2) * 3, 4330.0, 2.1 * k), yaw=90.0 + k * 4)
+    # the easel with a blueprint print pinned to it, facing the glass
+    it = K.item('easel')
+    ex, ey = -2432.0, 4324.0
+    K.box(it, 'board', [ex - 26.0, ey - 0.6, 26.0, ex + 26.0, ey + 0.6, 66.0], M['wood'])
+    for k, dx in enumerate((-20.0, 20.0)):
+        K.box(it, 'leg%d' % k, [ex + dx - 1, ey - 1, 0.0, ex + dx + 1, ey + 1, 68.0], M['wood'])
+    K.box(it, 'ledge', [ex - 26.0, ey - 4.0, 24.0, ex + 26.0, ey + 0.6, 26.0], M['wood'])
+    K.sign(it, 'print', art_b('cs_blueprint_sheet.png'), (ex, ey - 0.6, 46.0), (0.0, -1.0, 0.0), (48.0, 24.0))
+    paper_stack(K, 'copies_stack', (ex - 12.0, ey - 2.2, 26.0), (8.5, 3.0, 1.2), top='cs_copy_page.png')
+    # her cards on the glass, eye level
+    for k, (x, card) in enumerate(((-2560.0, 'cs_card_1.png'), (-2442.0, 'cs_card_2.png'))):
+        K.sign(K.item('window_card'), 'card', art_b(card), (x, GY + 0.35, 84.0 - 3 * k), (0.0, -1.0, 0.0), (14.0, 8.75), rot=(-2.0, 1.5)[k])
+
+
+def window_east(K):
+    """the east window: reams along the glass, a hanging board of samples, the two remaining cards"""
+    K.clip(K.item('window_sill_goods'), [-2232.0, GY + 1.0, 0.0, -2048.0, 4316.0, 40.0])
+    for k, x in enumerate((-2222.0, -2210.0, -2198.0, -2120.0, -2108.0)):
+        for j in range(1 + (k % 3)):
+            ream(K, (x, 4311.5, 2.1 * j), yaw=90.0 + ((k + j) % 3) * 2.0 - 2.0)
+    # spiral-bound sample books standing open along the glass
+    for k, x in enumerate((-2178.0, -2160.0, -2142.0)):
+        it = K.item('sample_book')
+        for s, side in enumerate((-1, 1)):
+            leaf = obox((x + side * 4.3, 4312.0, 0.0), (8.5, 0.4, 11.0), yaw=side * 10.0, faces='nsew', fit=True)
+            K.mesh(it, 'leaf%d' % s, K.mat('mat_cs_programme.png') if (k == 1 and s == 0) else M['white'], leaf)
+        K.mesh(it, 'spine', M['black'], prism((x, 4312.0, 0.0), 0.5, 11.0, 6))
+    # a board of samples hung on chains from the transom (laminated cards, a programme, copies): no floor footprint
+    it = K.item('sample_board')
+    bx, by = -2196.0, 4314.0
+    K.box(it, 'board', [bx - 22.0, by - 0.5, 96.0, bx + 22.0, by + 0.5, 126.0], M['blue'])
+    for k, dx in enumerate((-18.0, 18.0)):
+        K.box(it, 'chain%d' % k, [bx + dx - 0.2, by - 0.2, 126.0, bx + dx + 0.2, by + 0.2, 132.0], M['chrome'])
+    for k, (dx, pic, w, h) in enumerate(((-13.0, 'cs_copy_page.png', 12.0, 15.5), (0.5, 'cs_card_3.png', 12.0, 7.5), (14.0, 'cs_copy_page.png', 12.0, 15.5))):
+        K.sign(it, 'sample%d' % k, art_b(pic), (bx + dx, by - 0.5, 111.0 + (3.0 if k == 1 else 0.0)), (0.0, -1.0, 0.0), (w, h), rot=(-3.0, 0.0, 2.5)[k], lift=0.12 + 0.03 * k)
+    K.sign(it, 'programme', art_b('mat_cs_programme.png'), (bx + 0.5, by - 0.5, 102.0), (0.0, -1.0, 0.0), (5.0, 7.5), lift=0.2)
+    for k, (x, card) in enumerate(((-2072.0, 'cs_card_3.png'), (-2215.0, 'cs_card_4.png'))):
+        K.sign(K.item('window_card'), 'card', art_b(card), (x, GY + 0.35, 80.0 + 2 * k), (0.0, -1.0, 0.0), (14.0, 8.75), rot=(1.5, -2.5)[k])
+
+
+def blueprint_bay(K):
+    """the diazo machine on the plan chest with a long print half out of it, draping down the drawers; rolls; the paper stock shelf"""
+    it = K.item('blueprint_machine')
+    x0, x1, y0, y1, z = -2612.0, -2590.0, 4342.0, 4390.0, 36.0
+    K.box(it, 'body', [x0, y0, z, x1, y1, z + 13.0], M['beige'])
+    K.box(it, 'top', [x0 - 0.5, y0 - 0.5, z + 13.0, x1 + 0.5, y1 + 0.5, z + 14.5], M['grey'])
+    K.box(it, 'feed', [x1, y0 + 2.0, z + 9.0, x1 + 6.0, y1 - 2.0, z + 10.0], M['grey'])
+    K.mesh(it, 'roller', M['chrome'], G.cylinder((x1 + 0.6, y0 + 2.0, z + 11.0), (x1 + 0.6, y1 - 2.0, z + 11.0), 0.9, 10))
+    K.box(it, 'lamp_window', [x1 - 0.2, y0 + 6.0, z + 3.0, x1 + 0.05, y1 - 6.0, z + 6.0], M['white_glow'])
+    K.box(it, 'panel', [x1 - 0.1, y0 + 2.0, z + 2.0, x1 + 0.1, y0 + 5.0, z + 8.0], M['black'])
+    # the print: out of the feed onto the chest top and over its edge
+    p = K.item('blueprint_print')
+    K.decal(p, 'flat', art_b('cs_blueprint_sheet.png'), (x1 + 8.0, (y0 + y1) / 2, 36.0), (0.0, 0.0, 1.0), (14.0, 40.0), rot=90.0)
+    K.sign(p, 'drape', art_b('cs_blueprint_sheet.png'), (-2574.0, (y0 + y1) / 2, 22.0), (1.0, 0.0, 0.0), (40.0, 26.0), lift=0.3)
+    for k in range(2):                                                       # rolls of drawings on the machine
+        K.prop('blueprint_roll', 'cp_town_blueprint_teleporter_roll', (x0 + 6.0 + 5 * k, (y0 + y1) / 2, z + 14.5 + 1.3), angles=[90.0, 90.0 + 4 * k, 0.0])
+    # the paper stock shelf on the west wall over the chest (no floor footprint; 82 or more from the wheel)
+    sh = K.item('stock_shelf')
+    for k, z in enumerate((92.0, 112.0)):
+        K.box(sh, 'board%d' % k, [-2614.0, 4342.0, z - 1.0, -2600.0, 4392.0, z], M['white'])
+        for j, yy in enumerate((4346.0, 4386.0)):
+            K.box(sh, 'bracket%d_%d' % (k, j), [-2614.0, yy - 0.5, z - 6.0, -2604.0, yy + 0.5, z - 1.0], M['grey'])
+        for j in range(4):
+            for h in range(1 + (j + k) % 3):
+                ream(K, (-2607.5, 4348.5 + 11.5 * j, z + 2.1 * h), yaw=90.0 + ((j + h) % 2) * 2.0)
+    for k in range(3):
+        K.prop('blueprint_roll', 'cp_town_blueprint_teleporter_roll', (-2606.0 + (k % 2) * 3.0, 4367.0 + k * 2.0, 133.4 + (k // 2) * 2.4), angles=[90.0, 90.0, 0.0])
+    _far_from_wheel(-2590.0, 4392.0)
+
+
+def copiers(K):
+    """the two copiers, left running: copies in the output trays, an original on the lid, reams between them, the toner drum"""
+    for k, ccx in enumerate((-2455.0, -2375.0)):
+        cy = 4450.0
+        paper_stack(K, 'copies_out', (ccx + 27.0, cy, 21.5), (8.5, 11.0, 1.0 + 0.8 * k), yaw=90.0 + 3.0 * k, top='cs_copy_page.png')
+        orig = K.item('original_on_glass')
+        K.decal(orig, 'sheet', art_b('cs_copy_page.png'), (ccx - 2.0 + 3 * k, cy - 1.0, 40.0), (0.0, 0.0, 1.0), (8.5, 11.0), rot=-8.0 + 20 * k)
+    K.clip(K.item('ream_pile'), [-2423.0, 4436.0, 0.0, -2398.0, 4464.0, 40.0])
+    for k, (x, y, z, yaw) in enumerate(((-2416.0, 4442.0, 0.0, 90.0), (-2405.0, 4442.0, 0.0, 92.0), (-2416.0, 4456.0, 0.0, 88.0),
+                                        (-2405.0, 4456.0, 0.0, 90.0), (-2410.0, 4445.0, 2.1, 86.0), (-2411.0, 4455.0, 2.1, 93.0),
+                                        (-2410.0, 4450.0, 4.2, 90.0), (-2416.0, 4442.0, 2.1, 91.0))):
+        ream(K, (x, y, z), yaw=yaw)
+    paper_stack(K, 'opened_ream', (-2410.0, 4450.0, 6.3), (8.5, 11.0, 1.4), yaw=4.0)
+    it = K.item('toner_drum')
+    tx, ty = -2486.0, 4436.0
+    _far_from_wheel(tx, ty, 6.0)
+    K.mesh(it, 'drum', M['black'], prism((tx, ty, 0.0), 6.0, 19.0, 12))
+    K.mesh(it, 'lid', M['grey'], prism((tx, ty, 19.0), 6.2, 1.2, 12))
+    K.sign(it, 'label', art_b('cs_toner_PLACEHOLDER.png'), (tx, ty - 6.0, 10.0), (0.0, -1.0, 0.0), (10.0, 2.5), lift=0.2)
+    K.clip(it, [tx - 6.0, ty - 6.0, 0.0, tx + 6.0, ty + 6.0, 20.0])
+
+
+def counter(K):
+    """the service counter, west to east: guillotine, binder, the gala programmes, the job tray, the stamp tree, stapler, laminator, till;
+    behind it the price board and her two notices"""
+    z = 40.0
+    yc = 4389.0
+    # guillotine cutter (blade along y, raised at the front)
+    it = K.item('guillotine')
+    gx = -2250.0
+    K.box(it, 'base', [gx - 9.0, yc - 12.0, z, gx + 9.0, yc + 12.0, z + 1.2], M['white'])
+    K.box(it, 'grid', [gx - 8.0, yc - 11.0, z + 1.2, gx + 6.0, yc + 11.0, z + 1.25], 'w/linoleum_floor_tiles_02_dark')
+    K.box(it, 'fence', [gx - 9.0, yc + 10.5, z + 1.2, gx + 9.0, yc + 12.0, z + 2.6], M['alu'])
+    blade = G.merge(obox((gx + 7.5, yc, z + 1.2), (1.2, 24.0, 1.6), fit=False, tile=8.0), obox((gx + 7.5, yc - 11.0, z + 2.8), (2.4, 3.0, 2.4), fit=False))
+    K.mesh(it, 'blade', M['chrome'], tilt(blade, (0, yc + 11.0, z + 2.0), -32.0))
+    paper_stack(K, 'cut_sheets', (gx - 2.0, yc - 1.0, z + 1.25), (8.5, 11.0, 0.8), yaw=2.0, top='cs_copy_page.png')
+    # spiral binder
+    it = K.item('spiral_binder')
+    bx = -2230.0
+    K.box(it, 'body', [bx - 7.0, yc - 6.0, z, bx + 7.0, yc + 5.0, z + 5.0], M['grey'])
+    K.box(it, 'deck', [bx - 7.5, yc - 6.5, z + 5.0, bx + 7.5, yc + 5.5, z + 5.6], M['black'])
+    K.mesh(it, 'lever', M['chrome'], tilt(obox((bx + 8.0, yc - 1.0, z + 3.0), (0.6, 12.0, 0.6), fit=False), (0, yc + 5.0, z + 3.0), -24.0))
+    for k in range(3):
+        K.mesh(it, 'comb%d' % k, 'w/plastic_wall_plain_blue_01', prism((bx - 4.0 + 4 * k, yc + 3.0, z + 5.6), 0.5, 2.0, 6))
+    # the gala programmes she printed
+    for k, (dx, h, yaw) in enumerate(((-2206.0, 2.4, 3.0), (-2195.0, 1.8, -7.0), (-2184.0, 3.0, 11.0))):
+        paper_stack(K, 'programmes', (dx, yc - 2.0, z), (6.0, 9.0, h), yaw=yaw, top_mat=K.mat('mat_cs_programme.png'))
+    paper_stack(K, 'programmes', (-2194.0, yc - 8.0, z + 0.01), (6.0, 9.0, 0.15), yaw=58.0, top_mat=K.mat('mat_cs_programme.png'))
+    # the wire tray of uncollected jobs
+    it = K.item('job_tray')
+    jx = -2165.0
+    K.box(it, 'bottom', [jx - 6.5, yc - 8.0, z, jx + 6.5, yc + 8.0, z + 0.4], M['chrome'])
+    for k, b in enumerate(([jx - 6.5, yc - 8.0, z, jx - 6.2, yc + 8.0, z + 3.0], [jx + 6.2, yc - 8.0, z, jx + 6.5, yc + 8.0, z + 3.0],
+                           [jx - 6.5, yc - 8.0, z, jx + 6.5, yc - 7.7, z + 3.0], [jx - 6.5, yc + 7.7, z, jx + 6.5, yc + 8.0, z + 3.0])):
+        K.box(it, 'side%d' % k, b, M['chrome'])
+    for k in range(3):
+        j = paper_stack(K, 'job', (jx, yc, z + 0.4 + 0.9 * k), (8.5, 11.0, 0.8), yaw=(-4.0, 3.0, -1.0)[k], top='cs_copy_page.png' if k < 2 else None)
+    K.decal(j, 'ticket', art_b('cs_ticket_a.png'), (jx + 1.0, yc - 3.0, z + 0.4 + 0.9 * 3), (0.0, 0.0, 1.0), (5.0, 3.1), rot=-6.0)
+    # rubber stamp tree
+    it = K.item('stamp_tree')
+    sx, sy = -2150.0, yc + 2.0
+    K.mesh(it, 'base', M['wood'], prism((sx, sy, z), 4.0, 1.0, 12))
+    K.mesh(it, 'post', M['chrome'], prism((sx, sy, z + 1.0), 0.35, 10.0, 6))
+    for tier, tz in enumerate((z + 6.5, z + 10.0)):
+        for k in range(3):
+            a = math.radians(120 * k + 60 * tier)
+            ex, ey = sx + 3.2 * math.cos(a), sy + 3.2 * math.sin(a)
+            K.mesh(it, 'arm%d%d' % (tier, k), M['chrome'], G.cylinder((sx, sy, tz), (ex, ey, tz), 0.2, 4, caps=False))
+            K.mesh(it, 'handle%d%d' % (tier, k), M['wood'], prism((ex, ey, tz - 2.6), 0.55, 2.4, 8))
+            K.mesh(it, 'die%d%d' % (tier, k), M['rubber'], obox((ex, ey, tz - 3.3), (1.6, 1.0, 0.7), yaw=120 * k, fit=False))
+    # stapler
+    it = K.item('stapler')
+    K.mesh(it, 'base', M['black'], obox((-2140.0, yc - 4.0, z), (1.6, 6.5, 0.8), yaw=-12.0, fit=False))
+    K.mesh(it, 'arm', M['chrome'], obox((-2140.0, yc - 4.0, z + 0.8), (1.4, 6.2, 1.1), yaw=-12.0, fit=False))
+    # laminator with a card half out of it
+    it = K.item('laminator')
+    lx = -2127.0
+    K.box(it, 'body', [lx - 8.0, yc + 1.0, z, lx + 8.0, yc + 9.0, z + 5.0], M['beige'])
+    K.box(it, 'slot', [lx - 6.0, yc + 0.9, z + 2.0, lx + 6.0, yc + 1.0, z + 2.6], M['black'])
+    K.mesh(it, 'card', M['glass'], obox((lx, yc - 2.0, z + 2.1), (9.0, 6.0, 0.15), fit=False))
+    K.decal(it, 'card_face', art_b('cs_card_1.png'), (lx, yc - 2.0, z + 2.25), (0.0, 0.0, 1.0), (8.0, 5.0))
+    # the till: the shop's old blue register, keys to her side
+    K.prop('till', 'cp_town_cash_register', (-2100.0, 4380.0, z), yaw=-90.0)
+    # behind the counter: the price board, her two notices pinned beside it
+    it = K.item('price_board')
+    K.sign(it, 'board', art('board_copy_stop.png'), (-2176.0, PART_Y, 78.0), (0.0, -1.0, 0.0), (44.0, 32.3), lift=0.4)
+    K.box(it, 'frame', [-2199.0, PART_Y - 0.6, 61.0, -2153.0, PART_Y, 95.0], M['black'])
+    for k, (x, pic) in enumerate(((-2216.0, 'cs_notice_drafting.png'), (-2136.0, 'cs_notice_paper_tray.png'))):
+        K.sign(K.item('notice'), 'sheet', art_b(pic), (x, PART_Y, 80.0 - 2 * k), (0.0, -1.0, 0.0), (12.0, 16.0), rot=(2.0, -3.0)[k], lift=0.25)
+
+
+def pigeonholes(K):
+    """the pigeonholes of uncollected jobs (east wall, facing west): dividers, one job a hole; in the front hole the forty-copy job"""
+    x0, x1 = -2018.0, -1998.0
+    y0, y1 = 4402.0, 4470.0
+    levels = (6.0, 28.5, 51.0, 73.5)
+    it = K.item('pigeonhole_dividers')
+    n = 6
+    pitch = (y1 - y0) / n
+    for k in range(1, n):
+        y = y0 + k * pitch
+        K.box(it, 'div%d' % k, [x0, y - 0.4, 6.0, x1 - 0.5, y + 0.4, 94.0], M['white'])
+    import random
+    rnd = random.Random(1984)
+    for lv, z in enumerate(levels):
+        for k in range(n):
+            yc = y0 + (k + 0.5) * pitch
+            if (lv, k) == (2, 0):
+                continue                                                         # the front hole: the forty-copy job, below
+            if rnd.random() < 0.18:
+                continue                                                         # a few holes already collected
+            if rnd.random() < 0.55:
+                it = K.item('job_envelope')
+                h = rnd.choice((0.8, 1.2, 2.0))
+                K.mesh(it, 'body', K.mat('mat_cs_envelope.png'), obox((x0 + 9.5 + rnd.uniform(-1, 1), yc, z), (12.0, 9.0, h), yaw=-90.0 + rnd.uniform(-4, 4), fit=True))
+            else:
+                paper_stack(K, 'job', (x0 + 9.5 + rnd.uniform(-1, 1), yc, z), (8.5, 11.0, rnd.choice((0.6, 1.0, 1.6))), yaw=-90.0 + rnd.uniform(-5, 5),
+                            top=rnd.choice(('cs_copy_page.png', None)))
+    # the forty-copy job: forty copies and the original, squared, the top sheet the memo; her yellow ticket under its edge
+    yc = y0 + 0.5 * pitch
+    job = paper_stack(K, 'forty_copy_job', (x0 + 8.5, yc, levels[2]), (8.5, 11.0, 0.9), yaw=-90.0, top_mat=K.mat('mat_cs_memo_PLACEHOLDER.png'))
+    K.decal(job, 'ticket', art_b('cs_ticket_b.png'), (x0 + 2.2, yc + 1.0, levels[2] + 0.95), (0.0, 0.0, 1.0), (4.2, 2.6), rot=-80.0)
+    return job
+
+
+def booth(K):
+    """the photo booth's lettering, the sample strip by the slot, the stool inside, a strip face down on the floor"""
+    x0, x1, y0 = -2042.0, -1998.0, 4328.0
+    it = K.item('booth_lettering')
+    K.sign(it, 'band', art_b('cs_booth_band.png'), ((x0 + x1) / 2, y0 - 0.6, 79.5), (0.0, -1.0, 0.0), (38.0, 7.1), emissive=1.3, lift=0.1)
+    K.sign(it, 'band_w', art_b('cs_booth_band.png'), (x0, y0 + 32.0, 79.0), (-1.0, 0.0, 0.0), (40.0, 7.5), emissive=1.3, lift=0.1)
+    K.sign(it, 'plate', art_b('cs_booth_plate.png'), ((x0 + x1) / 2, y0, 27.0), (0.0, -1.0, 0.0), (26.0, 8.1), lift=0.1)
+    K.sign(K.item('booth_sample_strip'), 'strip', art_b('cs_booth_strip.png'), (x0 + 21.0, y0 - 0.6, 57.0), (0.0, -1.0, 0.0), (24.0, 24.0), lift=0.1)
+    it = K.item('booth_stool')
+    sx, sy = x0 + 25.0, y0 + 37.0
+    K.mesh(it, 'seat', M['red'], prism((sx, sy, 20.0), 7.0, 3.0, 16))
+    K.mesh(it, 'ring', M['chrome'], prism((sx, sy, 19.4), 7.3, 0.6, 16))
+    it = K.item('strip_face_down')
+    K.mesh(it, 'strip', M['white'], obox((x0 - 9.0, y0 + 46.0, 0.0), (1.8, 7.6, 0.06), yaw=24.0, fit=False))
+
+
+def cameras(K):
+    B.camera(K.m, 'copy_stop_booth_close', (-2021.0, 4246.0, 60.0), 90.0, pitch=2.0, layer=K.layer, id='copy_stop_booth_close')
+    B.camera(K.m, 'copy_stop_memo_close', (-2058.0, 4406.0, 80.0), 0.0, pitch=28.0, layer=K.layer, id='copy_stop_memo_close')
+    B.camera(K.m, 'copy_stop_interior', (-2150.0, 4340.0, 64.0), 168.0, pitch=4.0, layer=K.layer, id='copy_stop_interior')
+    B.camera(K.m, 'copy_stop_window_close', (-2500.0, 4210.0, 62.0), 90.0, pitch=6.0, layer=K.layer, id='copy_stop_window_close')
+
+
+def add(m, anchors):
+    K = Kit(m, SHOP)
+    window_west(K)
+    window_east(K)
+    blueprint_bay(K)
+    copiers(K)
+    counter(K)
+    pigeonholes(K)
+    booth(K)
+    cameras(K)
+    return K
