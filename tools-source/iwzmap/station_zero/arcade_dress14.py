@@ -558,14 +558,17 @@ def shop(A, m, D, i, report):
     # the stock: tall shelving on the partition's face (the back wall the inside camera sees), two units, packed
     items = {'photo': (['boxc', 'photo1', 'mags', 'crackers', 'paper', 'books', 'film'], ['film', 'boxc', 'paper', 'mags', 'photo1', 'books', 'boxa']),
              'heel': (['shoes', 'shoes', 'boxc', 'shoes', 'shoes', 'boxa', 'hook'], ['shoes', 'boxc', 'shoes', 'shoes', 'boxa', 'shoes', 'toolbox']),
-             'hole9': (['crackers', 'donuts', 'mug', 'crackers', 'donuts', 'glass', 'boxc'], ['donuts', 'crackers', 'mug', 'donuts', 'glass', 'boxc', 'crackers']),
+             'hole9': (['crackers', 'donuts', 'mug', 'boxc', 'glass', 'bag', 'boxa'], ['donuts', 'boxa', 'mug', 'crackers', 'glass', 'boxc', 'donuts']),
              'copy': (['ream', 'stack', 'ream', 'books', 'ream', 'stack', 'boxa'], ['ream', 'ream', 'books', 'stack', 'ream', 'boxa', 'books']),
-             'needle': (['sleeve', 'sleeve', 'crate', 'sleeve', 'sleeve', 'crate', 'film'], ['sleeve', 'crate', 'sleeve', 'sleeve', 'crate', 'sleeve', 'sleeve'])}[kind]
+             'needle': (['film', 'crate', 'boxa', 'crate', 'film', 'boxc', 'crate'], ['crate', 'film', 'boxc', 'crate', 'boxa', 'film', 'crate'])}[kind]       # r18: no record_sleeve model (its texture carries a garbled DISCO lettering)
     step = {'photo': 9.0, 'heel': 9.0, 'hole9': 9.0, 'copy': 10.0, 'needle': 5.0}[kind]
     n_stock = back_strips(A, m, D, i, kind, items, brd)
     # a transom shelf above the doorway, packed boxes
     sh = Shelf(m, 'shelf_t_%d' % i, (U(116.0), yp - 22.0, U(204.0), yp), 's', (110.0, 134.0, 158.0), board=brd, top=172.0, clip=False, frame_parts=False)      # above the doorway (96 high): no collision
     n_stock += stock(D, sh, ['boxc', 'boxa', 'boxc'] if kind != 'needle' else ['crate', 'boxa', 'crate'], 28.0, yaw=270.0, jitter=10.0, skip=0.0)
+    for zb in (110.0, 134.0, 158.0):                                                  # r18: two brackets under each board (the boxes hovered on a bare board)
+        for ub in (122.0, 198.0):
+            box(m, [U(ub) - 1.0, yp - 20.0, zb - 8.0, U(ub) + 1.0, yp, zb - 2.0], BLACK, id='shelf_t_%d_br_%d_%d' % (i, int(zb), int(ub)))
     # the hung things behind the aperture (as round 3) and the posters on both side walls
     cx = s + A.BAY_W / 2.0
     hy = V(HUNG_Y)
@@ -579,18 +582,20 @@ def shop(A, m, D, i, report):
             rod(m, 'kb_rb_%d_%d' % (i, q), cx + ux + 20.0, hy + 4.0, 86.0, 200.0)
             for k in range(8):
                 D.put(M['hook'], cx + ux - 18.0 + 5.0 * k, hy + 4.0, 270.0, z=60.0 + 12.0 * (k % 2) + 8.0, scale=2.5, ignore_keep=True, margin=0.0)
-    elif kind == 'hole9':
-        for k in range(3):
-            hung_pic(m, 'hg_%d_%d' % (i, k), cx - 80.0 + 80.0 * k, hy + (5.0 if k % 2 else 0.0), HUNG_Z, 36.0, 30.0, 'menu_%d.png' % k)
-    elif kind == 'copy':
-        for k in range(6):
-            hung_pic(m, 'hg_%d_%d' % (i, k), cx - 100.0 + 40.0 * k, hy + (6.0 if k % 2 else 0.0), HUNG_Z + (8.0 if k % 2 else 0.0), 22.0, 28.0, 'sheet_%d.png' % (k % 3))
-    else:
-        for k in range(8):
-            hung_pic(m, 'hg_%d_%d' % (i, k), cx - 98.0 + 28.0 * k, hy + (6.0 if k % 2 else 0.0), HUNG_Z + 8.0 * (k % 3), 16.0, 16.0, 'sleeve_%d.png' % k)
+    elif kind == 'hole9':                          # r18: the menu boards on the partition's wall above the shelf units (they hung 66 units from the chk camera and read as oversized)
+        wall_pic(m, 'hg_%d_0' % i, U(67.0), yp, 116.0, 84.0, 50.0, 'menu_0.png')
+        wall_pic(m, 'hg_%d_1' % i, U(253.0), yp, 120.0, 56.0, 40.0, 'menu_1.png')
+        B.decal(m, image='menu_2.png', at=(right, V(104.0), 96.0), normal=(-1.0, 0.0, 0.0), size=(40.0, 28.0), id='menu_side_%d' % i)
+    elif kind == 'copy':                           # r18: four pinned notices, two beside each shelf unit's top, on the wall
+        for k, u in enumerate((38.0, 82.0, 238.0, 282.0)):
+            wall_pic(m, 'hg_%d_%d' % (i, k), U(u), yp, 124.0 + (3.0 if k % 2 else 0.0), 24.0, 32.0, 'sheet_%d.png' % k)
+    elif kind == 'needle':                         # r18: record sleeves on wall ledges, two rows of two either side of the door
+        for k, (u, row) in enumerate(((42.0, 0), (70.0, 0), (42.0, 1), (70.0, 1), (250.0, 0), (278.0, 0), (250.0, 1), (278.0, 1))):
+            wall_pic(m, 'hg_%d_%d' % (i, k), U(u), yp, 124.0 + 18.0 * row, 14.0, 14.0, 'sleeve_%d.png' % k, ledge=True)
     for k, (zz, vv) in enumerate(((100.0, 50.0), (96.0, 96.0), (104.0, 130.0))):
         B.decal(m, image='poster_%d.png' % ((i + k) % 6), at=(left, V(vv), zz), normal=(1.0, 0.0, 0.0), size=(26.0, 36.0), id='post_l_%d_%d' % (i, k))
-        B.decal(m, image='poster_%d.png' % ((i + k + 3) % 6), at=(right, V(vv + 8.0), zz), normal=(-1.0, 0.0, 0.0), size=(26.0, 36.0), id='post_r_%d_%d' % (i, k))
+        if not (kind == 'hole9' and k == 1):                       # r18: the bar's house-rules card takes that place
+            B.decal(m, image='poster_%d.png' % ((i + k + 3) % 6), at=(right, V(vv + 8.0), zz), normal=(-1.0, 0.0, 0.0), size=(26.0, 36.0), id='post_r_%d_%d' % (i, k))
     # the emissive light strips in the shop's hue under the ceiling (they light the stock and the floor through the bake) and a black housing
     for k, vv in enumerate((58.0, 118.0)):
         box(m, [cx - 96.0, V(vv) - 3.0, 194.0, cx + 96.0, V(vv) + 3.0, 198.0], TUBE[kind], id='strip_%d_%d' % (i + 1, k))
@@ -603,8 +608,14 @@ def shop(A, m, D, i, report):
     D.put(M['crate3'], U(184.0), wallb - 26.0, 8.0, tag='bk_crate_%d' % i, margin=1.0, clip=False)
     D.put(M['ladder'], U(30.0), V(240.0), 80.0, tag='bk_ladder_%d' % i, margin=1.0, clip=False)
     D.put(M['fcab'], U(290.0), V(256.0), 270.0, tag='bk_fcab_%d' % i, margin=1.0, clip=False)
+    if kind in ('hole9', 'copy', 'needle'):                  # r18: the bay's walls at a correct texel size (the material's own tiling drew bricks 3 times too big and soft): render-only skins, 0.2 thick
+        skin(m, i, brd_mat=A.BAYWALL[i], left=left, right=right, yb=yb + A.WT, yp=yp, s=s)
     n = D.n
     dress_shop(A, m, D, i, report)
+    if kind == 'needle':                                    # r18: the stock model of the record shop's shelves carries a garbled DISCO lettering: the pictures above are the sleeves
+        for o in [o for o in m.objects() if o['kind'] == 'prop' and 'record_sleeve' in str(o.get('model'))]:
+            if A.BAY_X[4] <= o['origin'][0] <= A.BAY_X[4] + A.BAY_W:
+                m.remove(o['id'])
     return n_stock
 
 
@@ -624,6 +635,30 @@ HUNG_Y = 76.0           # r13: 44 (34 units from the chk cameras, 41 % of their 
 HUNG_LAMP = False         # r15 gave every picture its own lamp (FE62); r16 (FE66: the engine's light tiles break above 177 rows of lights.txt) lights them with one lamp per group of boards (arcade_layer14.lamps16)
 ARROW_LAMP = {'intensity': 1.0, 'color': [0.75, 0.85, 1.0]}
 HUNG_Z = 76.0           # r13: 52 (the player's eye line, and 41 % of the chk cameras' frame); now above a standing player's head and inside the chk cameras' frame (z 70, +-31 at 66 units)
+
+
+SKIN_TILE = float(os.environ.get('ARC18_SKIN_TILE', '48'))
+
+
+def skin(m, i, brd_mat, left, right, yb, yp, s):
+    """r18: render-only 0.2 thick skins on the partition's front face (around the doorway: x s+120..s+200 up to z 96) and on the two side walls above the wainscot, the bay's wall material tiled SKIN_TILE units
+    (the exporter's own size drew the bricks of chk_bay3/4/5 about 20 units wide and soft)"""
+    uv = {'*': {'tile': [SKIN_TILE, SKIN_TILE]}}
+    k = i + 1
+    box(m, [left, yp - 0.2, 0.0, s + 120.0, yp, 200.0], brd_mat, mode='render', id='skin_pa_%d' % k, uv=uv)
+    box(m, [s + 200.0, yp - 0.2, 0.0, right, yp, 200.0], brd_mat, mode='render', id='skin_pb_%d' % k, uv=uv)
+    box(m, [s + 120.0, yp - 0.2, 96.0, s + 200.0, yp, 200.0], brd_mat, mode='render', id='skin_pc_%d' % k, uv=uv)
+    box(m, [left, yb, 46.0, left + 0.2, yp, 200.0], brd_mat, mode='render', id='skin_l_%d' % k, uv=uv)
+    box(m, [right - 0.2, yb, 46.0, right, yp, 200.0], brd_mat, mode='render', id='skin_r_%d' % k, uv=uv)
+
+
+def wall_pic(m, id, x, yp, z, w, h, picture, ledge=False):
+    """r18: a picture board fixed to a wall face (y = yp, facing -y): a 3.4 deep dark backing 1 unit larger than the picture all round and the picture sign on its face (`hg_*_pic`: lamps16 lights it);
+    ledge=True also a 5 deep ledge under it (a record sleeve stands on it)"""
+    box(m, [x - w / 2.0 - 1.0, yp - 3.4, z - 1.0, x + w / 2.0 + 1.0, yp, z + h + 1.0], BLACK, id=id)
+    if ledge:
+        box(m, [x - w / 2.0 - 3.0, yp - 5.0, z - 2.5, x + w / 2.0 + 3.0, yp, z - 1.0], BLACK, id=id + '_ledge')
+    B.sign(m, image=picture, at=(x, yp, z + h / 2.0), normal=(0.0, -1.0, 0.0), size=(w, h), lamp=HUNG_LAMP, id=id + '_pic')
 
 
 def hung_pic(m, id, x, y, z, w, h, picture, ceil=200.0):
@@ -1096,19 +1131,18 @@ def column7(A, m, D, k, x):
         yf = SPINE_Y + sgn * half
         y0, y1 = (yf, yf + 1.5) if sgn > 0 else (yf - 1.5, yf)
         if f == 'map':
-            box(m, [x - 13.0, y0, 88.0, x + 13.0, y1, 146.0], DARK, id='col_mapframe_%d_%d' % (k, sgn))
-            y2 = (y1, y1 + 0.8) if sgn > 0 else (y0 - 0.8, y0)
-            box(m, [x - 11.0, y2[0], 92.0, x + 11.0, y2[1], 142.0], 'w/zombies_underground_map', id='col_map_%d_%d' % (k, sgn))
+            box(m, [x - 9.6, y0, 88.0, x + 9.6, y1, 146.0], DARK, id='col_mapframe_%d_%d' % (k, sgn))      # r18: 26 wide stuck out 4 beyond the 17.6 shaft (the pale slabs and the purple top of arc_cutwall); 19.2
+            B.decal(m, image='transit_map.png', at=(x, y1 if sgn > 0 else y0, 117.0), normal=(0.0, float(sgn), 0.0), size=(16.6, 50.0), id='col_map_%d_%d' % (k, sgn))      # r18: the stock map material read white (p98 1.0 in arc_bay1)
         elif f == 'lightbox':
-            box(m, [x - 13.0, y0, 84.0, x + 13.0, y1, 150.0], DARK, id='col_lbframe_%d_%d' % (k, sgn))
+            box(m, [x - 9.6, y0, 84.0, x + 9.6, y1, 150.0], DARK, id='col_lbframe_%d_%d' % (k, sgn))
             y2 = (y1, y1 + 0.8) if sgn > 0 else (y0 - 0.8, y0)
             if LB_FACE:
                 box(m, [x - 11.0, y2[0], 88.0, x + 11.0, y2[1], 146.0], TUBE['photo'] if sgn > 0 else TUBE['heel'], id='col_lb_%d_%d' % (k, sgn))        # r17: off (a blank white face hid the poster decal that fixtures8 puts at the same place)
         elif f in ('poster', 'poster2'):
             for j, zz in enumerate((90.0, 134.0)):
-                box(m, [x - 11.0, y0, zz, x + 11.0, y1, zz + 38.0], DARK, id='col_pframe_%d_%d_%d' % (k, sgn, j))
+                box(m, [x - 9.6, y0, zz, x + 9.6, y1, zz + 38.0], DARK, id='col_pframe_%d_%d_%d' % (k, sgn, j))
                 y2 = (y1, y1 + 0.8) if sgn > 0 else (y0 - 0.8, y0)
-                box(m, [x - 9.5, y2[0], zz + 1.5, x + 9.5, y2[1], zz + 36.5], POSTERS[(k * 3 + j + (0 if sgn > 0 else 2)) % len(POSTERS)], id='col_poster_%d_%d_%d' % (k, sgn, j))
+                box(m, [x - 8.2, y2[0], zz + 1.5, x + 8.2, y2[1], zz + 36.5], POSTERS[(k * 3 + j + (0 if sgn > 0 else 2)) % len(POSTERS)], id='col_poster_%d_%d_%d' % (k, sgn, j))
         elif f == 'extinguisher':
             D.put(M['extg'], x, SPINE_Y + sgn * (half + 4.0), 90.0 + 90.0 * sgn, z=84.0, ignore_keep=True, margin=0.0, clip=False)
     D.put(M['cage'], x + 12.0, SPINE_Y - COL_HALF - 4.0, 270.0, z=150.0, ignore_keep=True, margin=0.0, clip=False)          # a caged lamp on the shaft: its fixture, and the reason the column is lit
@@ -1694,49 +1728,152 @@ def shop_pictures(folder):
         d.ellipse([fx - 30 * S, hz - 80 * S, fx + 30 * S, hz - 20 * S], fill=(40, 34, 30))
         d.rectangle([fx - 34 * S, hz - 24 * S, fx + 34 * S, hz + 40 * S], fill=(40, 34, 30))
         finish(im, 'photo_%d.png' % k, (240, 320))
-    for k in range(3):                                    # menu boards 480 x 400: a dark board, rows of coloured bars (the items) and short bars (the prices)
-        w, h = 480 * S, 400 * S
+    T = _texts()
+    menu_px = ((512, 305), (448, 320), (448, 320))                 # r18: 84 x 50, 56 x 40 and 40 x 28 units, wall-mounted
+    for k, key in enumerate(('menu_main', 'menu_special', 'menu_small')):
+        w, h = menu_px[k][0] * S, menu_px[k][1] * S
+        hdr = ((200, 70, 50), (230, 170, 50), (60, 150, 180))[k]
         im = Image.new('RGB', (w, h), (30, 26, 24))
         d = ImageDraw.Draw(im)
-        d.rectangle([0, 0, w - 1, int(h * 0.16)], fill=((200, 70, 50), (230, 170, 50), (60, 150, 180))[k])
-        for row in range(6):
-            y = int(h * (0.24 + 0.12 * row))
-            lw = int(w * rng.uniform(0.35, 0.6))
-            d.rectangle([int(w * 0.07), y, int(w * 0.07) + lw, y + int(h * 0.05)], fill=(235, 228, 205))
-            d.rectangle([int(w * 0.78), y, int(w * 0.92), y + int(h * 0.05)], fill=(235, 190, 90))
-            d.ellipse([int(w * 0.70), y, int(w * 0.70) + int(h * 0.05), y + int(h * 0.05)], fill=((200, 70, 50), (230, 170, 50), (60, 150, 180))[(k + row) % 3])
+        d.rectangle([0, 0, w - 1, int(h * 0.16)], fill=hdr)
+        lines = T.get(key)
+        if lines:
+            _fit_text(d, lines[0], (int(w * 0.04), int(h * 0.01), int(w * 0.96), int(h * 0.15)), 'impact.ttf', (250, 240, 225), 'c')
+            body = lines[1:]
+            n = max(len(body), 4)
+            top, bot = int(h * 0.20), int(h * 0.96)
+            pitch = (bot - top) / float(n)
+            fsz = int(pitch * 0.74)
+            fnt = _font('arialbd.ttf', fsz)
+            names = [ln.split('|')[0].rstrip() for ln in body]
+            prices = [ln.split('|')[1].strip() if '|' in ln else '' for ln in body]
+            while fsz > 8 and max([d.textlength(t, font=fnt) for t in names] + [1]) + max([d.textlength(t, font=fnt) for t in prices] + [0]) > w * 0.86:
+                fsz -= 2
+                fnt = _font('arialbd.ttf', fsz)
+            for r, (nm, pr) in enumerate(zip(names, prices)):
+                y = int(top + r * pitch + (pitch - fsz) * 0.35)
+                d.text((int(w * 0.06), y), nm, font=fnt, fill=(235, 228, 205))
+                if pr:
+                    d.text((int(w * 0.94 - d.textlength(pr, font=fnt)), y), pr, font=fnt, fill=(235, 190, 90))
+        else:
+            for row in range(6):
+                y = int(h * (0.24 + 0.12 * row))
+                lw = int(w * (0.4 + 0.04 * ((row * 3 + k) % 5)))
+                d.rectangle([int(w * 0.07), y, int(w * 0.07) + lw, y + int(h * 0.05)], fill=(235, 228, 205))
+                d.rectangle([int(w * 0.78), y, int(w * 0.92), y + int(h * 0.05)], fill=(235, 190, 90))
         d.rectangle([0, 0, w - 1, h - 1], outline=(190, 150, 70), width=8 * S)
-        finish(im, 'menu_%d.png' % k, (480, 400))
-    for k in range(3):                                    # paper sheets 320 x 420: white, a coloured header, blocks of grey lines, a stamp
-        w, h = 320 * S, 420 * S
-        im = Image.new('RGB', (w, h), (240, 238, 230))
-        d = ImageDraw.Draw(im)
-        d.rectangle([0, 0, w, int(h * 0.12)], fill=((70, 110, 170), (190, 80, 60), (80, 140, 100))[k])
-        y = int(h * 0.18)
-        while y < h * 0.88:
-            for ln in range(rng.randint(3, 5)):
-                if y >= h * 0.9:
-                    break
-                d.rectangle([int(w * 0.08), y, int(w * 0.08) + int(w * rng.uniform(0.5, 0.84)), y + int(h * 0.012)], fill=(150, 150, 150))
-                y += int(h * 0.03)
-            y += int(h * 0.04)
-        d.ellipse([int(w * 0.62), int(h * 0.74), int(w * 0.9), int(h * 0.74) + int(w * 0.28)], outline=(180, 50, 50), width=6 * S)
-        d.rectangle([0, 0, w - 1, h - 1], outline=(200, 198, 190), width=3 * S)
-        finish(im, 'sheet_%d.png' % k, (320, 420))
-    for k in range(8):                                    # record sleeves 384 x 384: a colour field, a black disc with rings and a label
-        w = h = 384 * S
+        finish(im, 'menu_%d.png' % k, menu_px[k])
+    paper = ((70, 110, 170), (190, 80, 60), (80, 140, 100), (150, 110, 60))
+    for k in range(4):                                    # r18: copy shop notices 288 x 384 (24 x 32 units)
+        _paper(finish, T.get('notice_%d' % k), 'sheet_%d.png' % k, (288, 384), paper[k], S, (240, 238, 230), k)
+    benchc = ((60, 100, 150), (150, 70, 50), (70, 120, 90), (120, 90, 50))
+    for k in range(4):                                    # r18: ticket hall notice board, 288 x 360 (about 24 x 30 units)
+        _paper(finish, T.get('bench_notice_%d' % k), 'bench_notice_%d.png' % k, (288, 360), benchc[k], S, (232, 226, 206), k)
+    for k in range(8):                                    # record sleeves 256 x 256 (14 x 14 units): a colour field, a disc, the band on top and the album under it
+        w = h = 256 * S
         c0, c1 = pal[k % 6]
         im = _grad((w, h), c1, c0) if k % 2 else _grad((w, h), c0, c1)
         d = ImageDraw.Draw(im)
-        cx, cy, r = w // 2, h // 2, int(w * 0.38)
+        lines = T.get('sleeve_%d' % k)
+        cx, cy, r = w // 2, int(h * (0.54 if lines else 0.5)), int(w * (0.27 if lines else 0.38))
         d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(22, 22, 24))
         for q in range(1, 5):
             rr = int(r * (1.0 - 0.17 * q))
             d.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], outline=(70, 70, 76), width=2 * S)
         rl = int(r * 0.34)
         d.ellipse([cx - rl, cy - rl, cx + rl, cy + rl], fill=pal[(k + 2) % 6][0])
+        if lines:
+            d.rectangle([0, 0, w, int(h * 0.22)], fill=(16, 16, 18))
+            _fit_text(d, lines[0], (int(w * 0.05), int(h * 0.02), int(w * 0.95), int(h * 0.20)), 'impact.ttf', (245, 238, 220), 'c')
+            d.rectangle([0, int(h * 0.84), w, h], fill=(16, 16, 18))
+            _fit_text(d, ' / '.join(lines[1:]), (int(w * 0.05), int(h * 0.86), int(w * 0.95), int(h * 0.97)), 'arial.ttf', (225, 215, 190), 'c')
         d.rectangle([0, 0, w - 1, h - 1], outline=(236, 236, 230), width=10 * S)
-        finish(im, 'sleeve_%d.png' % k, (384, 384))
+        finish(im, 'sleeve_%d.png' % k, (256, 256))
+    w, h = 168 * S, 216 * S                               # r18: a turnstile housing panel 14 x 18 units: a green arrow, a red cross (no letters)
+    im = Image.new('RGB', (w, h), (28, 30, 34))
+    d = ImageDraw.Draw(im)
+    d.polygon([(w // 2, int(h * 0.46)), (int(w * 0.22), int(h * 0.20)), (int(w * 0.78), int(h * 0.20))], fill=(50, 190, 90))
+    d.rectangle([int(w * 0.40), int(h * 0.08), int(w * 0.60), int(h * 0.22)], fill=(50, 190, 90))
+    d.line([(int(w * 0.30), int(h * 0.60)), (int(w * 0.70), int(h * 0.92))], fill=(210, 50, 40), width=10 * S)
+    d.line([(int(w * 0.70), int(h * 0.60)), (int(w * 0.30), int(h * 0.92))], fill=(210, 50, 40), width=10 * S)
+    d.rectangle([0, 0, w - 1, h - 1], outline=(150, 150, 150), width=4 * S)
+    finish(im, 'turnstile_panel.png', (168, 216))
+    w, h = 166 * S, 500 * S                               # r18: the column's transit map 16.6 x 50 units: dark navy, coloured routes and station dots (no letters); the stock map material read white
+    im = Image.new('RGB', (w, h), (26, 34, 52))
+    d = ImageDraw.Draw(im)
+    for q, col in enumerate(((220, 70, 60), (60, 160, 220), (230, 190, 60), (80, 190, 110))):
+        pts = [(int(w * (0.12 + 0.76 * ((q * 0.37 + t * 0.29) % 1.0))), int(h * (0.08 + 0.84 * t / 5.0))) for t in range(6)]
+        d.line(pts, fill=col, width=4 * S)
+        for pt in pts:
+            d.ellipse([pt[0] - 5 * S, pt[1] - 5 * S, pt[0] + 5 * S, pt[1] + 5 * S], fill=(230, 230, 225), outline=col, width=2 * S)
+    d.rectangle([0, 0, w - 1, h - 1], outline=(120, 130, 150), width=3 * S)
+    finish(im, 'transit_map.png', (166, 500))
+
+
+TEXT_FILE = os.environ.get('ARC18_TEXT', 'C:/studio-data/sz/arcade/r18/TEXT.json')
+
+
+def _texts():
+    """round 18: the words of every readable picture come from TEXT.json ({surface id: [lines]}, written by the copywriter); a missing file or surface keeps the no-letter placeholder"""
+    import json
+    try:
+        return json.load(open(TEXT_FILE, encoding='utf-8'))
+    except (OSError, ValueError):
+        return {}
+
+
+def _font(name, size):
+    from PIL import ImageFont
+    for base in ('C:/Windows/Fonts/', ''):
+        try:
+            return ImageFont.truetype(base + name, max(int(size), 6))
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
+def _fit_text(d, text, box, fontname, fill, align='l'):
+    """one line in box (x0, y0, x1, y1): the largest size that fits, centred vertically; whitespace is kept"""
+    x0, y0, x1, y1 = box
+    size = y1 - y0
+    fnt = _font(fontname, size)
+    while size > 8 and d.textlength(text, font=fnt) > (x1 - x0):
+        size -= 2
+        fnt = _font(fontname, size)
+    tw = d.textlength(text, font=fnt)
+    x = x0 + ((x1 - x0) - tw) / 2.0 if align == 'c' else x0
+    d.text((x, y0 + ((y1 - y0) - size) * 0.4), text, font=fnt, fill=fill)
+
+
+def _paper(finish, lines, name, size, hdr, S, bg, k):
+    """a paper notice: a coloured header band with the title, the body lines in dark grey, a red stamp ring; no lines = the no-letter placeholder"""
+    from PIL import Image, ImageDraw
+    w, h = size[0] * S, size[1] * S
+    im = Image.new('RGB', (w, h), bg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 0, w, int(h * 0.18)], fill=hdr)
+    if lines:
+        _fit_text(d, lines[0], (int(w * 0.06), int(h * 0.02), int(w * 0.94), int(h * 0.16)), 'impact.ttf', (250, 248, 240), 'c')
+        body = lines[1:]
+        n = max(len(body), 5)
+        top, bot = int(h * 0.23), int(h * 0.90)
+        pitch = (bot - top) / float(n)
+        fsz = int(pitch * 0.62)
+        fnt = _font('arial.ttf', fsz)
+        while fsz > 8 and max([d.textlength(t, font=fnt) for t in body] + [1]) > w * 0.86:
+            fsz -= 2
+            fnt = _font('arial.ttf', fsz)
+        for r, t in enumerate(body):
+            d.text((int(w * 0.07), int(top + r * pitch + (pitch - fsz) * 0.3)), t, font=fnt, fill=(40, 40, 44))
+    else:
+        y = int(h * 0.24)
+        while y < h * 0.88:
+            d.rectangle([int(w * 0.08), y, int(w * (0.5 + 0.08 * ((y // 7) % 5))), y + int(h * 0.016)], fill=(150, 150, 150))
+            y += int(h * 0.05)
+    if k % 2 == 0 and not (lines and len(lines) > 5):
+        d.ellipse([int(w * 0.62), int(h * 0.76), int(w * 0.9), int(h * 0.76) + int(w * 0.28)], outline=(180, 50, 50), width=5 * S)
+    d.rectangle([0, 0, w - 1, h - 1], outline=(200, 198, 190), width=3 * S)
+    finish(im, name, size)
 
 
 def stain_pictures(folder):

@@ -61,8 +61,8 @@ FILL_AIM = float(os.environ.get('ARC15_FILL_AIM', '150'))
 BENCH_I = float(os.environ.get('ARC15_BENCH_I', '1.1'))
 BENCH_Z = float(os.environ.get('ARC15_BENCH_Z', '110'))
 BENCH_R = float(os.environ.get('ARC15_BENCH_R', '190'))
-BENCH_IN = float(os.environ.get('ARC15_BENCH_IN', '55'))
-BENCH_OUT = float(os.environ.get('ARC15_BENCH_OUT', '90'))      # r13: three downward spots at z 120: the wall was lit only below z 120, a hard horizontal edge
+BENCH_IN = float(os.environ.get('ARC18_BENCH_IN', '28'))
+BENCH_OUT = float(os.environ.get('ARC18_BENCH_OUT', '64'))      # r13: three downward spots at z 120: the wall was lit only below z 120, a hard horizontal edge
 SIGN_K = float(os.environ.get('ARC13_SIGN_K', '3.5'))
 LAMP_BASE = 0.04                    # studio/signs.py LAMP_BASE: the intensity of a lamp LAMP_DIST units from its board
 LAMP_DIST = 35.0
@@ -70,7 +70,7 @@ LAMP_K = float(os.environ.get('ARC16_LAMP_K', '1.3'))
 LAMP_BACK = float(os.environ.get('ARC16_LAMP_BACK', '90'))      # a group lamp hangs this far in front of its boards and
 LAMP_UP = float(os.environ.get('ARC16_LAMP_UP', '60'))          # this far above their centre
 LAMP_R = float(os.environ.get('ARC16_LAMP_R', '150'))
-LAMP_SPAN = float(os.environ.get('ARC16_LAMP_SPAN', '170'))     # a bay whose boards span more than this gets two lamps
+LAMP_SPAN = float(os.environ.get('ARC16_LAMP_SPAN', '190'))     # a bay whose boards span more than this gets two lamps
 WASH_K = float(os.environ.get('ARC16_WASH_K', '1.7'))           # the 14 washers of r15 (0.09) became fewer and stronger
 WASH_SOUTH = [float(v) for v in os.environ.get('ARC16_WASH_SOUTH', '').split(',') if v]
 TUBE_K = float(os.environ.get('ARC16_TUBE_K', '1.7'))
@@ -111,7 +111,8 @@ def vision14(m, report):
 PLATFORM_FLOOR = -320.0
 PLATFORM_PROPS = (('bin1', -2374.0, 1772.0, 90.0), ('bin2', -2374.0, 1736.0, 90.0), ('wet', -2290.0, 1722.0, 35.0), ('boxa', -2340.0, 1688.0, 20.0), ('boxc', -2316.0, 1690.0, 75.0),
                   ('chips', -2262.0, 1772.0, 0.0), ('bag', -2232.0, 1742.0, 10.0), ('chips', -2252.0, 1700.0, 140.0), ('cup', -2346.0, 1748.0, 0.0), ('paper', -2310.0, 1660.0, 60.0),
-                  ('can', -2276.0, 1656.0, 0.0), ('smokes', -2299.0, 1806.0, 20.0), ('bag', -2368.0, 1700.0, 100.0), ('boxa', -2368.0, 1670.0, 90.0), ('cup', -2330.0, 1790.0, 0.0))
+                  ('can', -2276.0, 1656.0, 0.0), ('smokes', -2299.0, 1806.0, 20.0), ('bag', -2368.0, 1700.0, 100.0), ('boxa', -2368.0, 1670.0, 90.0), ('cup', -2330.0, 1790.0, 0.0),
+                  ('stackp', -2250.0, 1692.0, 30.0), ('mags', -2306.0, 1738.0, 70.0), ('can', -2352.0, 1812.0, 120.0), ('chips', -2290.0, 1822.0, 200.0), ('paper', -2242.0, 1760.0, 10.0), ('cup', -2268.0, 1802.0, 150.0), ('boxc', -2238.0, 1812.0, 40.0), ('smokes', -2330.0, 1730.0, 300.0))
 
 
 def platform14(m, report):
@@ -141,7 +142,7 @@ def bench17(m, report):
     n = 0
     B.box(m, (-1006.0, Y - 2.2, 84.0, -934.0, Y, 150.0), 'w/wood_antique_panel_trim_01', id='bench_board')
     for j, (dx, dz, w, h) in enumerate(((-17.0, 128.0, 24.0, 30.0), (17.0, 132.0, 24.0, 28.0), (-17.0, 98.0, 24.0, 26.0), (17.0, 100.0, 24.0, 30.0))):
-        B.decal(m, image='poster_%d.png' % ((j + 2) % 6), at=(-970.0 + dx, Y - 2.4, dz), normal=(0.0, -1.0, 0.0), size=(w, h), rot=(-3.0, 4.0, 2.0, -5.0)[j], id='bench_notice_%d' % j)
+        B.decal(m, image='bench_notice_%d.png' % j, at=(-970.0 + dx, Y - 2.4, dz), normal=(0.0, -1.0, 0.0), size=(w, h), rot=(-3.0, 4.0, 2.0, -5.0)[j], id='bench_notice_%d' % j)
         n += 1
     for j, (x, z, img) in enumerate(((-1110.0, 112.0, 1), (-820.0, 108.0, 4))):
         B.decal(m, image='poster_%d.png' % img, at=(x, Y, z), normal=(0.0, -1.0, 0.0), size=(30.0, 42.0), rot=(2.0, -2.0)[j], id='bench_poster_%d' % j)
@@ -150,6 +151,12 @@ def bench17(m, report):
         B.decal(m, POSTERS[(j * 2 + 1) % len(POSTERS)], (x, Y, z), (0.0, -1.0, 0.0), (28.0, 40.0), rot=(1.0, -2.0, 2.0)[j], id='bench_up_%d' % j)
         n += 1
     B.prop(m, M['extg'], (-1075.0, Y - 4.0, 84.0), angles=[0.0, 0.0, 0.0], zone='arcade', id='bench_extg')
+    for j, (x, z, img, rot) in enumerate(((-1745.0, 80.0, 2, 3.0), (-1655.0, 92.0, 5, -2.0), (-1565.0, 76.0, 0, 2.0), (-2440.0, 84.0, 3, -3.0), (-2340.0, 80.0, 1, 2.0), (-2262.0, 90.0, 4, -2.0), (-1420.0, 82.0, 5, 2.0), (-1340.0, 88.0, 2, -3.0))):
+        B.decal(m, image='poster_%d.png' % img, at=(x, 3525.0, z), normal=(0.0, 1.0, 0.0), size=(30.0, 42.0), rot=rot, id='shutter_poster_%d' % j)        # r18: the shop shutters on the south lane were bare grey metal (arc_south_lane_east)
+        n += 1
+    for j, x in enumerate((130.0, 190.0, 250.0)):                           # r18: the turnstile housings were plain grey: a green arrow / red cross panel on the front (housing -16 in y)
+        B.decal(m, image='turnstile_panel.png', at=(x, 3683.6, 28.0), normal=(0.0, -1.0, 0.0), size=(14.0, 18.0), id='turn_panel_%d' % j)
+        n += 1
     report['bench17'] = {'pieces': n + 2}
 
 
@@ -496,8 +503,7 @@ def emergency9(m, report):
             fx('emergency_beacon', (x + (60.0 if j else -60.0), y, 0.0), 0.0, intensity=2.2 * KE, radius=1.8)
     for i in range(5):                                        # an amber lamp inside each shop, on its east wall
         fx('beacon_wall', (BAY_X[i] + BAY_W - WT - 0.5, 4390.0, 165.0), 180.0, intensity=4.0 * KE, radius=1.9)
-    for k, (x, y) in enumerate(((-1100.0, 3820.0), (-950.0, 3900.0), (-800.0, 4020.0))):   # the hall side of D4
-        fx('emergency_beacon', (x, y, 0.0), 0.0, intensity=2.5 * KE, radius=1.9)
+    # r18: the three orange floor beacons on the hall side of D4 are gone: their omni lights (z 8, radius 157, group emergency = on in both power states) were the amber pools of arc_cutwall_close and hall_far that did not follow the power
     report['emergency9'] = {'ids': len(ids)}
 
 
@@ -632,7 +638,10 @@ def cutwall12(m, report):
     """e. a head trim over the doorway: a beam across the top of the opening, proud of the wall on both sides"""
     m.use('shell')
     B.box(m, (-1210.0, 3792.0, 214.0, -1190.0, 4008.0, 228.0), 'w/dt_tile_ceramic_white', id='cutwall_lintel')
-    report['cutwall12'] = {'lintel': 'cutwall_lintel'}
+    for nm, (ya, yb) in (('a', (DOOR_Y0 - 14.0, DOOR_Y0)), ('b', (DOOR_Y1, DOOR_Y1 + 14.0))):        # r18: jamb trims, proud of the wall on both sides, so the opening has a frame
+        B.box(m, (-1212.0, ya, 0.0, -1188.0, yb, 214.0), 'w/dt_tile_ceramic_white', id='cutwall_jamb_' + nm)
+    layer12_light(m, (-1090.0, 3900.0, 300.0), 'light_hallwash_door', color=(1.0, 0.9, 0.74), radius=HALL_R, intensity=HALL_I, type='spot', dir=(0.8944, 0.0, -0.4472), inner=30.0, outer=80.0, group='power')       # the hall behind the opening was near black (arc_cutwall): replaces the 3 floor beacons' light rows
+    report['cutwall12'] = {'lintel': 'cutwall_lintel', 'jambs': 2, 'light': 'light_hallwash_door'}
 
 
 def cameras12(m, report):
