@@ -1,0 +1,6 @@
+Use case: stylized-concept
+Asset type: the front cover artwork of a 12-inch vinyl LP record sleeve, used as a texture on a record-shop wall in a video game set on 31 December 1984
+Composition/framing: square 1:1, full bleed artwork filling the entire square edge to edge, no border, no record, no sleeve mockup, flat front-on scan of printed cover art
+Constraints: absolutely NO text, NO letters, NO numbers, NO logos, NO words anywhere in the image; leave a calm area in the TOP QUARTER of the square for a title that will be added later; printed-matter look (offset print, slight paper grain, faint ring wear), authentic to its year
+Avoid: text, typography, watermark, real artists, real album covers, modern digital look
+Primary request: post-punk album cover, 1983. Style/medium: stark high-contrast black-and-white grainy photograph of an empty concrete corridor with a single fluorescent tube, heavy grain, printed in one colour; a thin cold blue geometric line crossing it, minimal Swiss layout. Color palette: black, white, grey, one ice-blue accent.

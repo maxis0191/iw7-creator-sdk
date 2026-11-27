@@ -1,0 +1,6 @@
+Use case: stylized-concept
+Asset type: the painted front cover artwork of a 1980s VHS rental video box (a fictional film), used as a small texture on a video-rental shelf in a video game set on 31 December 1984
+Composition/framing: portrait 9:16, full bleed artwork edge to edge, flat front-on scan of printed cover art, no box mockup
+Constraints: absolutely NO text, NO letters, NO numbers, NO logos, NO words anywhere; leave a calm dark area in the TOP FIFTH for a title that will be added later; painted 1980s video-cover illustration style, slight print grain
+Avoid: text, typography, watermark, real actors, real films, modern digital look
+Primary request: crime drama. A detective in a trench coat under a sodium street lamp on a foggy harbour quay, cargo cranes and a freighter behind, a revolver in his hand held low. Palette: steel blue, sodium orange, black.
