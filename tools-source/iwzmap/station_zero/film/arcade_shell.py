@@ -32,7 +32,8 @@ MAT = {
     'tile_dmg': 'w/dt_tile_ceramic_white_dmg',    # its damaged twin, in patches
     'band': 'w/ceramic_tile_01_orange',           # the orange band course
     'dark': 'w/fac_tile_black_01',                # skirting, column bases, bulkhead
-    'floor': 'w/linoleum_floor_tiles_orange_01',  # the brown / burnt orange floor
+    'floor': 'w/sz_arcade_quarry',                # the brown / burnt orange floor: OUR quarry tiles (OWN below; pass 2: the stock
+                                                  # linoleum_floor_tiles_orange_01 read as large plain orange squares)
     'slab': 'w/plaster_wall_04_grey_dark_02',     # the structural soffit above the suspended ceiling
     'ceil': 'w/ceiling_tile_01',                  # ceiling panels
     'ceil_stain': 'w/ceiling_waterstains1',       # stained panels
@@ -44,7 +45,7 @@ MAT = {
     'alu_black': 'w/metal_painted_01_black',
     'alu_white': 'w/metal_panel_painted_01_white',
     'glass': 'w/glass_clear_generic_01',
-    'shutter': 'w/door_metal_rollup_grey_large_01',
+    'shutter': 'w/cp_disco_metal_door_rollup_01',   # pass 2: door_metal_rollup_grey_large_01 read as rows of white plates
     'housing': 'w/metal_painted_wall_panel_04',
     'steel': 'w/beacon_brushedmetal_panels_green',  # Shelter 7 blast door leaf
     'steel_frame': 'w/metal_painted_04',
@@ -55,6 +56,12 @@ MAT = {
     'back': 'w/plaster_wall_04_grey',             # back rooms
     'back_floor': 'w/concrete_tiles_01',
     'cork': 'w/wood_antique_panel_trim_01',
+    'pegboard': 'w/sz_arcade_pegboard',           # OUR brown pegboard (pass 2: the stock perforated panel read cyan)
+}
+TILES = r'C:\studio-data\sz\film\art\arcade\tiles'        # drawn by film/tiles.py
+OWN = {   # B.material: name -> its pictures; the table above names them as w/<name>
+    'sz_arcade_quarry': dict(color=TILES + r'\floor_quarry_c.png', gloss=TILES + r'\floor_quarry_g.png', tile=384.0),
+    'sz_arcade_pegboard': dict(color=TILES + r'\pegboard_c.png', gloss=0.25, tile=32.0),
 }
 SHOP_MAT = {   # per shop: walls, floor, ceiling, frame, fascia box, accent, joinery
     'needle_drop': dict(wall='w/plaster_wall_04_grey_dark_01', floor='w/stone_marble_tile_checker_01', ceil='w/plaster_wall_04_grey_dark_02',
@@ -295,7 +302,7 @@ def unit_room(m, name, extra_openings=()):
     share = SHUTTER_STOP[name]
     zb = OPEN_Z - share * OPEN_Z
     if share > 0:
-        bx(m, 'shutter_%s' % name, [a0, Y1 - 3.0, zb, a1, Y1 - 1.0, HOUSING[0]], MAT['shutter'], uv={'south': {'tile': [128.0, 128.0]}})
+        bx(m, 'shutter_%s' % name, [a0, Y1 - 3.0, zb, a1, Y1 - 1.0, HOUSING[0]], MAT['shutter'])
     rbox(m, 'shutter_bar_%s' % name, [a0, Y1 - 4.5, zb - 3.0, a1, Y1 + 0.5, zb], MAT['alu'])
     REPORT.setdefault('shutters', {})[name] = {'curtain_bottom_z': round(zb, 1), 'covers': share}
     return a0, a1
@@ -614,7 +621,7 @@ def heel_key(m):
     anchor('heel_key.counter_top', [a0, Y1 + 2.0, 42.0, a1, Y1 + 30.0, 72.0], 's', 'the key carousel, tagged shoes waiting, the bell')
     peg_y = Y1 + 110.0
     B.wall(m, [x0 + 16.0, peg_y, 0.0, x1 - 16.0, peg_y + 12.0, UNIT_H], sm['wall'], axis='x', id='partition_heel_key')
-    rbox(m, 'hk_pegboard', [x0 + 20.0, peg_y - 1.0, 40.0, x1 - 20.0, peg_y, 150.0], 'w/plastic_ceiling_holes_01', uv={'south': {'tile': [48.0, 48.0]}})
+    rbox(m, 'hk_pegboard', [x0 + 20.0, peg_y - 1.0, 40.0, x1 - 20.0, peg_y, 150.0], MAT['pegboard'])
     rbox(m, 'hk_pegboard_frame', [x0 + 18.0, peg_y - 1.6, 150.0, x1 - 18.0, peg_y, 154.0], sm['join'])
     anchor('heel_key.pegboard', [x0 + 20.0, peg_y - 8.0, 40.0, x1 - 20.0, peg_y - 1.0, 150.0], 's', 'tagged shoes never collected, key blanks; one hook tagged "0"')
     counter(m, 'hk_bench', [x0 + 20.0, Y1 + 60.0, 0.0, cx - 10.0, peg_y - 2.0, 36.0], sm['join'], sm['accent'])
@@ -771,7 +778,8 @@ def gameplay(m):
 
 def cameras(m):
     m.use('cameras')
-    cams = [('arc_east_long', (-1262.0, 3700.0, 60.0), 172.0, 0.0), ('arc_west_long', (-2930.0, 3960.0, 60.0), 2.0, 0.0),
+    # pass 2: at y 3700 the column at x -1420 filled the middle of the entrance view
+    cams = [('arc_east_long', (-1296.0, 3880.0, 60.0), 172.0, 0.0), ('arc_west_long', (-2930.0, 3960.0, 60.0), 2.0, 0.0),
             ('arc_south_wall', (-2100.0, 4160.0, 64.0), 270.0, 0.0), ('arc_directory', (-1100.0, 3930.0, 64.0), 216.0, 0.0)]
     for nm, (x0, x1) in UNITS.items():
         cx = (x0 + x1) / 2
@@ -809,6 +817,8 @@ def build(name='sz_arcade_shell'):
     hangings(m)
     gameplay(m)
     cameras(m)
+    for nm, spec in OWN.items():                                   # our own tiling materials (B.material)
+        B.material(m, nm, **spec, layer='shell')
     FX.use_kit(m)
     REPORT['lights'] = {'total': len(LIGHTS), 'by_role': {r: sum(1 for _, rr in LIGHTS if rr == r) for r in sorted({r for _, r in LIGHTS})}}
     REPORT['light_ids'] = LIGHTS[:]

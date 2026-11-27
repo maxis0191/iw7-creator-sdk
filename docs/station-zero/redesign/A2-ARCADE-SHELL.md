@@ -26,6 +26,21 @@
 
 Rule 25 fails by the slot list of the brief: the hall carries five sign families (fascias, 64 x 96 panels, the directory, the notices, the hanging banner and bunting). Merging the notices into the directory's case would make four; not done without the lead's word.
 
+## Pass 1 (live, 27 Nov 22:32): `C:\studio-data\sz\film\arcade\shell\pass1\sheet_{on,off}_{0,1,2}.jpg`
+- ON equals OFF pixel for pixel (mean luma 4.5 / 8.4 / 7.4 at three cameras in both): `cp_iwz_darkness.gsc` (lines 196-205) releases
+  the dark vision only inside its loop over power banks, and an all-baked map has no bank. Not mine to change; logged in TOOL-FAULTS with
+  the change needed. From pass 2 the lit look is shot on a settings-only variant (`film/arcade_litview.py`: its dark vision = the lit
+  vision), labelled LIT, never ON. A variant synced into the open session failed ("the map did not come back after the reload"), so each
+  state has its own session (`film/arcade_pass.ps1`).
+- Ten largest differences from `concept/arcade.png` at `arc_east_long`, in order: (1) the hall near black, light intensities as stored 0.2
+  to 1.0; (2) fascias dark plates, the target's are lit boxes; (3) ceiling a black lid with 7 small lit panels, the target's grid is
+  bright with a few holes; (4) the directory outside the entrance view; (5) the left wall near the entrance empty, the target runs ad box,
+  directory, phones, column; (6) the polisher far away, the target's is the foreground subject; (7) shop interiors dim (same cause as 1);
+  (8) the wall's orange band invisible; (9) columns black pillars; (10) banner and bunting dim in the middle distance.
+- Round 1 fixes, in that order: `LIGHT_K` 2.5; fascia pictures emissive (1.4); 12 live panels; directory at x -1560 and the phones at
+  x -1790..-1688, beside the entrance; polisher and its circle at (-1590, 3850), socket at x -1650; Heel & Key's front gets two tungsten
+  bulkheads; `arc_east_long` eye at (-1262, 3700), yaw 172; the Needle Drop oblique camera (it stood outside the hall) mirrored.
+
 ## Decisions the brief did not dictate
 - **Tile kit** (one table `MAT` at the top of the builder, the swap to `B.material` is one edit there): wall `w/dt_tile_ceramic_white` with its
   true twin `w/dt_tile_ceramic_white_dmg` (the cp_disco station's pair; the base tint `w/iwz_tile_cream` has no damaged twin), band

@@ -19,7 +19,7 @@ UNITS = {'needle_drop': (-2960.0, -2640.0), 'copy_stop': (-2630.0, -1980.0), 'ho
 ROW_Y = (4200.0, 4600.0)          # a shop's own lights: inside the unit, or at its front (fascia lamps) north of y 4200
 FIXTURE_WORDS = ('light', 'lamp', 'fluo', 'sconce', 'bulb', 'lantern', 'neon')
 KIT = {'wall': 'w/dt_tile_ceramic_white', 'damaged twin': 'w/dt_tile_ceramic_white_dmg', 'band': 'w/ceramic_tile_01_orange',
-       'dark': 'w/fac_tile_black_01', 'floor': 'w/linoleum_floor_tiles_orange_01'}
+       'dark': 'w/fac_tile_black_01', 'floor': 'w/sz_arcade_quarry'}
 
 
 def load(folder):
