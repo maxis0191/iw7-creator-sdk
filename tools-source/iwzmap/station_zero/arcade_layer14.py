@@ -652,6 +652,9 @@ def fill19(m, report):
     lane spots), the kiosk's I-beam posts, the D7 west wall, the base's charcoal / white tile faces at the hall (y 3976, the jambs) which no lamp of the hall reaches. One soft fill each; power group."""
     n = 0
     col = (1.0, 0.9, 0.74)
+    if TRIM < 1.0:       # the voxel light lists (63,374 of 65,535 in r18 at slack 1; slack 2 drops the floor pools of arc_bay2 leaf by leaf): entries grow with r^3, the pool spots reached 340 units from 120 up
+        for o in [o for o in m.objects() if o['kind'] == 'light' and o.get('radius', 0) >= 150.0 and not str(o['id']).startswith('light_plat')]:
+            m.update(o['id'], radius=round(o['radius'] * TRIM, 1))
 
     def L(at, nm, d, r, i, inner=40.0, outer=90.0, typ='spot'):
         nonlocal n
@@ -686,6 +689,7 @@ def fill19(m, report):
     report['fill19'] = {'lights': n + 2, 'bench_props': 11}
 
 
+TRIM = float(os.environ.get('ARC19_TRIM', '0.6'))
 RS = float(os.environ.get('ARC19_RS', '0.8'))      # radius scale of the r19 fills: the voxel light lists (entries grow with r^3; slack 2 made blocky steps in the lights of arc_bay2)
 PIER_X = [(-2970.0, -2930.0), (-2655.0, -2615.0), (-2325.0, -2285.0), (-1995.0, -1955.0), (-1665.0, -1625.0), (-1310.0, -1270.0)]
 PIER_R = float(os.environ.get('ARC19_PIER_R', '140'))
