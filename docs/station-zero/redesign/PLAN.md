@@ -34,6 +34,12 @@ Art direction targets (image generator, not the game): `C:\studio-data\sz\film\c
    runtime lights so that they stay bright in the dark state, and three or four hero power lights per zone for the
    power-on moment (TERMINUS-AND-GAPS E, option ii).
    Base for all new work: `C:\studio-data\sz\film\base_lit` (the generator emit with every light in the baked group).
+   **Revised 28 Nov ([LIGHTING-GAP](LIGHTING-GAP.md), measured on the Arcade's pass 8):** baking every lamp traded
+   "runtime, no bounce" for "bounce, no runtime": a baked light gives no highlight and no coloured pool, and the stock
+   maps have both. The rule is now: key lights (shop pools, sign lights, hero fixtures) are always-on runtime lights
+   whose bounce is baked; fill stays baked. An unnamed runtime light takes a static template slot and no network record,
+   so the count stays at 494. The dark state stays an exposure. Reflection probes are neutral today (one flat colour a
+   room): a real reflection source is its own package (W4 of LIGHTING-GAP).
 4. **Pack-a-Punch moves to the Terminus** (bible zone 19; target frame `concept\terminus.png`): the stock projector
    machine on a validator post in a room of green-bar printer paper, reached from the cab of the 23:47 for a timed visit.
    No sign names the machine. The alcove, the shutter, `sign_pap` and the three-relay quest leave the generator.
