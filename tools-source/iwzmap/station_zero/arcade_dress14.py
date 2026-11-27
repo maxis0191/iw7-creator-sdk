@@ -457,6 +457,10 @@ NAMES = {'photo': 'PHOTOS', 'heel': 'HEEL & KEY', 'hole9': 'HOLE NUMBER NINE', '
 SPINE_Y = 3900.0
 STEEL = 'w/metal_painted_04'
 DOJO = os.environ.get('ARC7_COLUMNS', 'dojo') == 'dojo'
+COL_HALF = float(os.environ.get('ARC17_COL_HALF', '9.0'))      # half the shaft of the stock dojo column (measured 8.8)
+D7_WHEEL = os.environ.get('ARC17_D7_WHEEL', '0') == '1'
+FLOOR_SLABS = os.environ.get('ARC17_FLOOR_SLABS', '0') == '1'
+LB_FACE = os.environ.get('ARC17_LB_FACE', '0') == '1'
 
 COLSPEC = [
     dict(mat='w/ceramic_tile_01_orange', wain=('w/ceramic_tile_01_blue', 112.0), stripe=None, feature='map'),
@@ -765,6 +769,18 @@ def floor7(A, m, D, report):
     report['floor7'] = [z[2] for z in zones]
 
 
+STAIN_FILES = ['stain_0.png', 'stain_1.png', 'stain_2.png']
+SOFT_STAINS = os.environ.get('ARC17_SOFT_STAINS', '1') == '1'
+
+
+def soft_stain(m, k, material, at, size, rot, id):
+    """a floor stain decal. r17: the stock stain materials that are not `_dec` (dirt_stain_water_drips_01, asphalt_flooring_stain_01) drew as hard-edged rectangles on the platform tiles (conv_platform, 3/3 reviewers):
+    our own soft-edged picture (stain_N.png, alpha is the coverage, written by make_pictures) takes their place; a `_dec` material is a blend decal already and stays"""
+    if SOFT_STAINS and not material.endswith('_dec'):
+        return B.decal(m, image=STAIN_FILES[k % len(STAIN_FILES)], at=at, normal=(0.0, 0.0, 1.0), size=size, rot=rot, id=id)
+    return B.decal(m, material, at, (0.0, 0.0, 1.0), size, rot=rot, id=id)
+
+
 def floor5(A, m, D, report):
     m.use('dressing')
     rng = random.Random(55)
@@ -787,7 +803,8 @@ def floor5(A, m, D, report):
             w = rng.uniform(180.0, 460.0)
             half = rng.uniform(30.0, 46.0)
             off = rng.uniform(-14.0, 14.0)
-            box(m, [x, yc + off - half, 0.0, min(x + w, cx1), yc + off + half, 1.3], 'w/asphalt_flooring_01_wet', id='lane_%d_%d' % (k, n), uv=uv(44.0))
+            if FLOOR_SLABS:                                                 # r17: off (the worn lanes were pale cracked-stone slabs with hard edges on the dark tile: 3/3 reviewers, `studio pick` lane_1_31)
+                box(m, [x, yc + off - half, 0.0, min(x + w, cx1), yc + off + half, 1.3], 'w/asphalt_flooring_01_wet', id='lane_%d_%d' % (k, n), uv=uv(44.0))
             x += w + rng.uniform(50.0, 200.0)
             n += 1
         for sgn in (-1, 1):                                                 # the orange line, broken
@@ -808,16 +825,18 @@ def floor5(A, m, D, report):
         box(m, [x, y, 0.0, x + rng.uniform(90.0, 150.0), y + 8.0, 1.45], 'w/metal_deck_painted_black_01', id='drain_%d' % k)
     for k in range(8):                                                      # patches of bare concrete where the tile is gone
         x, y = rng.uniform(cx0 + 40.0, cx1 - 200.0), rng.uniform(cy0 + 40.0, cy1 - 200.0)
-        box(m, [x, y, 0.0, x + rng.uniform(40.0, 90.0), y + rng.uniform(30.0, 70.0), 1.15], 'w/aq_stone_concrete_patch02', id='patch_%d' % k, uv=uv(32.0))
+        pw, ph = rng.uniform(40.0, 90.0), rng.uniform(30.0, 70.0)
+        if FLOOR_SLABS:
+            box(m, [x, y, 0.0, x + pw, y + ph, 1.15], 'w/aq_stone_concrete_patch02', id='patch_%d' % k, uv=uv(32.0))
     for k in range(10):                                                     # puddles are decals (a glossy box drew black: FE9)
-        B.decal(m, 'w/dirt_stain_water_drips_01', (rng.uniform(cx0 + 60.0, cx1 - 200.0), rng.choice((3640.0, 3760.0, 4000.0, 4120.0, 4200.0)) + rng.uniform(-20.0, 20.0), 1.97), (0.0, 0.0, 1.0), (rng.uniform(60.0, 110.0), rng.uniform(40.0, 80.0)), rot=rng.uniform(0, 360), id='puddle_%d' % k)
+        soft_stain(m, k, 'w/dirt_stain_water_drips_01', (rng.uniform(cx0 + 60.0, cx1 - 200.0), rng.choice((3640.0, 3760.0, 4000.0, 4120.0, 4200.0)) + rng.uniform(-20.0, 20.0), 1.97), (rng.uniform(60.0, 110.0), rng.uniform(40.0, 80.0)), rng.uniform(0, 360), 'puddle_%d' % k)
     for k in range(6):
         x = cx0 + 160.0 + k * 300.0
         box(m, [x - 1.0, cy0, 0.0, x + 1.0, cy1, 1.75], DARK, id='joint_%d' % k)
     for k in range(26):                                                     # wear decals
-        B.decal(m, ('w/dirt_stain_water_drips_01', 'w/wall_stain_01_dec', 'w/dirt_stain_water_drips_01')[k % 3],
-                (rng.uniform(cx0 + 60.0, cx1 - 60.0), rng.uniform(cy0 + 60.0, cy1 - 60.0), 1.95), (0.0, 0.0, 1.0), (rng.uniform(40.0, 90.0), rng.uniform(36.0, 80.0)),
-                rot=rng.uniform(0, 360), id='wear_%d' % k)
+        soft_stain(m, k, ('w/dirt_stain_water_drips_01', 'w/wall_stain_01_dec', 'w/dirt_stain_water_drips_01')[k % 3],
+                   (rng.uniform(cx0 + 60.0, cx1 - 60.0), rng.uniform(cy0 + 60.0, cy1 - 60.0), 1.95), (rng.uniform(40.0, 90.0), rng.uniform(36.0, 80.0)),
+                   rng.uniform(0, 360), 'wear_%d' % k)
     report['floor'] = {'materials': ['gray glossy tile', 'wet asphalt', 'bare concrete', 'ceramic apron', 'black tile border', 'deck drain'], 'pieces': n}
 
 
@@ -928,14 +947,14 @@ def fronts_and_doors(A, m, D, report):
     for k, y in enumerate((3808.0, 3900.0, 3992.0)):
         box(m, [xw + 10.0, y - 3.0, 150.0, xw + 13.0, y + 3.0, 156.0], 'w/metal_painted_02', id='d7_bolt_%d' % k)
     box(m, [xw + 10.0, 3880.0, 40.0, xw + 12.0, 3920.0, 70.0], 'w/metal_painted_scratched_yellow_02', id='d7_plate')
-    # the sign box over every shop front (render only): a black frame and an emissive face in the shop's hue
+    # the sign box over every shop front (render only): a black frame and a lit face in the shop's hue
     for k in range(5):
         a0, a1 = A.aperture(k)
         box(m, [a0 - 14.0, cy1 - 16.0, 214.0, a1 + 14.0, cy1, 232.0], BLACK, id='beam_%d' % (k + 1))
         box(m, [a0, cy1 - 12.0, 150.0, a1, cy1, 190.0], BLACK, id='sign_frame_%d' % (k + 1))
         hue = HUE[A.BAYS[k]]
         B.sign(m, at=((a0 + a1) / 2.0, cy1 - 12.0, 170.0), normal=(0.0, -1.0, 0.0), size=(a1 - a0 - 8.0, 32.0), text=NAMES[A.BAYS[k]], font='impact',
-               color=[min(1.0, 0.35 + 0.65 * c) for c in hue], background=[0.02, 0.02, 0.03], emissive={'color': list(hue), 'strength': 2.2}, id='sign_text_%d' % (k + 1))
+               color=[min(1.0, 0.35 + 0.65 * c) for c in hue], background=[0.02, 0.02, 0.03], id='sign_text_%d' % (k + 1))      # r17: a lit sign (the facade washers `light_wash_*` are its lamps, power group). Emissive it was bright with the power off and dark with it on (auto exposure)
 
 
 def ceiling7(A, m, D, report):
@@ -1071,7 +1090,7 @@ def column7(A, m, D, k, x):
     sc = DOJO_SCALE
     D.put(mod, x, SPINE_Y, 90.0 * (k % 4), z=0.0, scale=sc, ignore_keep=True, margin=0.0, clip=False)
     dress4_foot(D, x - 24.0, SPINE_Y - 24.0, x + 24.0, SPINE_Y + 24.0)
-    half = 15.0                         # the shaft of the stock column is about 28 across at this scale: the boards sit on it (the footprint of the base is wider)
+    half = COL_HALF                     # r17: the shaft of the stock column is 17.6 across (`studio pick` on arc_d7: face at 8.8 from the axis at z 87 to 140), not 28: boards at 15 hung 6 units off it (the blades of arc_d7, the white boxes beside the pillars)
     f = spec['feature']
     for sgn in (-1, 1):
         yf = SPINE_Y + sgn * half
@@ -1083,7 +1102,8 @@ def column7(A, m, D, k, x):
         elif f == 'lightbox':
             box(m, [x - 13.0, y0, 84.0, x + 13.0, y1, 150.0], DARK, id='col_lbframe_%d_%d' % (k, sgn))
             y2 = (y1, y1 + 0.8) if sgn > 0 else (y0 - 0.8, y0)
-            box(m, [x - 11.0, y2[0], 88.0, x + 11.0, y2[1], 146.0], TUBE['photo'] if sgn > 0 else TUBE['heel'], id='col_lb_%d_%d' % (k, sgn))
+            if LB_FACE:
+                box(m, [x - 11.0, y2[0], 88.0, x + 11.0, y2[1], 146.0], TUBE['photo'] if sgn > 0 else TUBE['heel'], id='col_lb_%d_%d' % (k, sgn))        # r17: off (a blank white face hid the poster decal that fixtures8 puts at the same place)
         elif f in ('poster', 'poster2'):
             for j, zz in enumerate((90.0, 134.0)):
                 box(m, [x - 11.0, y0, zz, x + 11.0, y1, zz + 38.0], DARK, id='col_pframe_%d_%d_%d' % (k, sgn, j))
@@ -1091,8 +1111,8 @@ def column7(A, m, D, k, x):
                 box(m, [x - 9.5, y2[0], zz + 1.5, x + 9.5, y2[1], zz + 36.5], POSTERS[(k * 3 + j + (0 if sgn > 0 else 2)) % len(POSTERS)], id='col_poster_%d_%d_%d' % (k, sgn, j))
         elif f == 'extinguisher':
             D.put(M['extg'], x, SPINE_Y + sgn * (half + 4.0), 90.0 + 90.0 * sgn, z=84.0, ignore_keep=True, margin=0.0, clip=False)
-    D.put(M['cage'], x + 12.0, SPINE_Y - 17.0, 270.0, z=150.0, ignore_keep=True, margin=0.0, clip=False)          # a caged lamp on the shaft: its fixture, and the reason the column is lit
-    D.put(M['cage'], x - 12.0, SPINE_Y + 17.0, 90.0, z=150.0, ignore_keep=True, margin=0.0, clip=False)
+    D.put(M['cage'], x + 12.0, SPINE_Y - COL_HALF - 4.0, 270.0, z=150.0, ignore_keep=True, margin=0.0, clip=False)          # a caged lamp on the shaft: its fixture, and the reason the column is lit
+    D.put(M['cage'], x - 12.0, SPINE_Y + COL_HALF + 4.0, 90.0, z=150.0, ignore_keep=True, margin=0.0, clip=False)
     if k in (1, 4):
         for (a, b, c, d) in ((x - 34.0, SPINE_Y - 34.0, x + 34.0, SPINE_Y - 32.0), (x - 34.0, SPINE_Y + 32.0, x + 34.0, SPINE_Y + 34.0),
                              (x - 34.0, SPINE_Y - 32.0, x - 32.0, SPINE_Y + 32.0), (x + 32.0, SPINE_Y - 32.0, x + 34.0, SPINE_Y + 32.0)):
@@ -1236,12 +1256,13 @@ def d7_6(A, m, D, report):
     box(m, [xw + 10.0, 3902.0, 0.0, xw + 12.0, 3904.0, zt], DARK, id='d7_split')
     # the wheel (a ring of boxes) and the bolts on the right leaf
     cy, cz = 3954.0, 92.0
-    for a in range(0, 360, 45):
-        r = math.radians(a)
-        box(m, [xw + 10.0, cy + 18.0 * math.cos(r) - 3.0, cz + 18.0 * math.sin(r) - 3.0, xw + 15.0, cy + 18.0 * math.cos(r) + 3.0, cz + 18.0 * math.sin(r) + 3.0], 'w/metal_painted_scratched_yellow_02', id='d7_wheel_%d' % a)
-    box(m, [xw + 10.0, cy - 4.0, cz - 4.0, xw + 17.0, cy + 4.0, cz + 4.0], DARK, id='d7_hub')
-    for k, (dy, dz) in enumerate(((-34.0, 40.0), (34.0, 40.0), (-34.0, 140.0), (34.0, 140.0), (0.0, 150.0))):
-        box(m, [xw + 10.0, cy + dy - 3.0, dz - 3.0, xw + 13.0, cy + dy + 3.0, dz + 3.0], STEEL, id='d7_nut_%d' % k)
+    if D7_WHEEL:                       # r17: off (a ring of eight 6-unit boxes, a hub and five bolts drew as a pixelated black, yellow and white checker patch on the panel wall in arc_bay1, 3/3 reviewers)
+        for a in range(0, 360, 45):
+            r = math.radians(a)
+            box(m, [xw + 10.0, cy + 18.0 * math.cos(r) - 3.0, cz + 18.0 * math.sin(r) - 3.0, xw + 15.0, cy + 18.0 * math.cos(r) + 3.0, cz + 18.0 * math.sin(r) + 3.0], 'w/metal_painted_scratched_yellow_02', id='d7_wheel_%d' % a)
+        box(m, [xw + 10.0, cy - 4.0, cz - 4.0, xw + 17.0, cy + 4.0, cz + 4.0], DARK, id='d7_hub')
+        for k, (dy, dz) in enumerate(((-34.0, 40.0), (34.0, 40.0), (-34.0, 140.0), (34.0, 140.0), (0.0, 150.0))):
+            box(m, [xw + 10.0, cy + dy - 3.0, dz - 3.0, xw + 13.0, cy + dy + 3.0, dz + 3.0], STEEL, id='d7_nut_%d' % k)
     box(m, [xw + 10.0, 3820.0, 108.0, xw + 11.5, 3860.0, 120.0], 'w/signage_decals_corridor_01', id='d7_label')
     box(m, [xw + 10.0, 3981.0, 148.0, xw + 14.0, 3995.0, 162.0], TUBE['needle'], id='d7_lamp')
     box(m, [xw + 10.0, 3794.0, 0.0, xw + 12.0, 4006.0, 12.0], 'w/metal_painted_scratched_yellow', id='d7_foot')
@@ -1330,7 +1351,7 @@ def wall_props(A, m, D):
     for k in range(10):
         x = A.X0 + 120.0 + k * 170.0
         wy = (A.Y0 + A.WT + 30.0) if k % 2 == 0 else (A.Y1 - A.WT - 40.0)
-        B.decal(m, 'w/asphalt_flooring_stain_01' if k % 3 else 'w/fac_darkstain_01_dec', (x + D.rng.uniform(-30, 30), wy + D.rng.uniform(-8, 8), 1.8), (0.0, 0.0, 1.0), (110.0, 110.0), rot=D.rng.uniform(0, 360), id='decal_floor_%d' % k)
+        soft_stain(m, k, 'w/asphalt_flooring_stain_01' if k % 3 else 'w/fac_darkstain_01_dec', (x + D.rng.uniform(-30, 30), wy + D.rng.uniform(-8, 8), 1.8), (110.0, 110.0), D.rng.uniform(0, 360), 'decal_floor_%d' % k)
     for k in range(10):
         x = A.X0 + 80.0 + k * 175.0
         B.decal(m, ('w/plaster_damaged_11_crack_dec', 'w/dirt_stain_water_drips_01', 'w/wall_stain_01_dec')[k % 3], (x, A.Y0 + A.WT, D.rng.uniform(110.0, 170.0)), (0.0, 1.0, 0.0),
@@ -1565,7 +1586,7 @@ def fixtures8(A, m, report):
     for k, x in enumerate(COLS):                                       # the column light boxes were blank white: a poster on each face instead (stock picture materials)
         if COLSPEC[k]['feature'] == 'lightbox':
             for sgn in (-1, 1):
-                B.decal(m, POSTERS[(k + (2 if sgn > 0 else 0)) % len(POSTERS)], (x, SPINE_Y + sgn * 15.5, 118.0), (0.0, float(sgn), 0.0), (24.0, 34.0), id='fx_colposter_%d_%d' % (k, sgn > 0))
+                B.decal(m, POSTERS[(k + (2 if sgn > 0 else 0)) % len(POSTERS)], (x, SPINE_Y + sgn * (COL_HALF + 1.5 + 0.3), 118.0), (0.0, float(sgn), 0.0), (24.0, 34.0), id='fx_colposter_%d_%d' % (k, sgn > 0))
     m.use('dressing')
     report['fixtures8'] = {'dropped': gone, 'placed': len([x for x in n if not str(x).endswith(tuple('l%d' % j for j in range(1, 4)))]), 'ids': len(n)}
 
@@ -1718,10 +1739,35 @@ def shop_pictures(folder):
         finish(im, 'sleeve_%d.png' % k, (384, 384))
 
 
+def stain_pictures(folder):
+    """three soft-edged stain pictures (RGBA: the alpha is the coverage): an irregular blob, dark brown, fading to nothing before the edge of the image"""
+    import numpy as np
+    from PIL import Image, ImageFilter
+    n = 256
+    yy, xx = np.mgrid[0:n, 0:n].astype(np.float32)
+    for i, name in enumerate(STAIN_FILES):
+        rs = np.random.RandomState(1700 + i)
+        a = np.zeros((n, n), np.float32)
+        for _ in range(7):                                                 # a few overlapping soft discs, off centre
+            cx, cy = n / 2 + rs.uniform(-40, 40), n / 2 + rs.uniform(-40, 40)
+            r = rs.uniform(28, 62)
+            a = np.maximum(a, np.clip(1.0 - np.hypot(xx - cx, yy - cy) / r, 0.0, 1.0))
+        a = np.clip(a * 1.6, 0.0, 1.0) ** 1.5                              # soft shoulder
+        noise = Image.fromarray((rs.uniform(0, 255, (n // 8, n // 8))).astype(np.uint8)).resize((n, n), Image.BICUBIC).filter(ImageFilter.GaussianBlur(3))
+        a = a * (0.55 + 0.45 * np.asarray(noise, np.float32) / 255.0)
+        edge = np.clip(1.0 - np.hypot(xx - n / 2, yy - n / 2) / (n / 2 - 2), 0.0, 1.0)       # nothing at the picture's border
+        a = a * np.clip(edge * 4.0, 0.0, 1.0) * 0.8
+        rgba = np.zeros((n, n, 4), np.uint8)
+        rgba[..., 0], rgba[..., 1], rgba[..., 2] = 28, 22, 16
+        rgba[..., 3] = (a * 255).astype(np.uint8)
+        Image.fromarray(rgba, 'RGBA').save('%s/%s' % (folder, name))
+
+
 def make_pictures(folder):
     """writes the arrow pictograms beside map.json (called after the document is saved)"""
     from PIL import Image, ImageDraw
     shop_pictures(folder)
+    stain_pictures(folder)
     for name, kind in (('arrow_l.png', 'l'), ('arrow_r.png', 'r'), ('arrow_stair.png', 's')):
         im = Image.new('RGB', (256, 80), (20, 60, 150))
         d = ImageDraw.Draw(im)

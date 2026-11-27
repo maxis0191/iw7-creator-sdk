@@ -14,7 +14,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.environ.get('STUDIO_ROOT', r'C:\studio'))
-from arcade_dress14 import COLS, GAPS, HUE, REPORT, SPINE_Y, dress, make_pictures, M  # noqa: E402
+from arcade_dress14 import COLS, GAPS, HUE, POSTERS, REPORT, SPINE_Y, dress, make_pictures, soft_stain, M  # noqa: E402
 from studio import Map  # noqa: E402
 from studio import build as B  # noqa: E402
 from studio import prefab  # noqa: E402
@@ -123,11 +123,34 @@ def platform14(m, report):
         n += 1
     rng = random.Random(1414)
     for k in range(5):
-        B.decal(m, ('w/asphalt_flooring_stain_01', 'w/dirt_stain_water_drips_01')[k % 2], (rng.uniform(-2370.0, -2230.0), rng.uniform(1650.0, 1800.0), PLATFORM_FLOOR + 0.3), (0.0, 0.0, 1.0),
-                (rng.uniform(60.0, 110.0), rng.uniform(40.0, 80.0)), rot=rng.uniform(0, 360), id='plat_stain_%d' % k)
+        soft_stain(m, k, ('w/asphalt_flooring_stain_01', 'w/dirt_stain_water_drips_01')[k % 2], (rng.uniform(-2370.0, -2230.0), rng.uniform(1650.0, 1800.0), PLATFORM_FLOOR + 0.3),
+                   (rng.uniform(60.0, 110.0), rng.uniform(40.0, 80.0)), rng.uniform(0, 360), 'plat_stain_%d' % k)
+    for k, (key, x, y, yaw) in enumerate(PLATFORM_PROPS):                  # r17: a soft dark contact patch under the bags and bins (the left bag read as floating: no shadow under it)
+        if key in ('bag', 'bin1', 'bin2', 'boxa'):
+            soft_stain(m, 3 + k, 'contact', (x, y, PLATFORM_FLOOR + 0.5), (46.0, 46.0), 0.0, 'plat_contact_%d' % k)
     layer12_light(m, (-2320.0, 1740.0, -240.0), 'light_plat_0', color=(1.0, 0.92, 0.76), radius=300.0, intensity=PLAT_I, type='omni')
     layer12_light(m, (-2300.0, 1640.0, -240.0), 'light_plat_1', color=(1.0, 0.92, 0.76), radius=300.0, intensity=PLAT_I, type='omni')
     report['platform14'] = {'props': n, 'stains': 5, 'lights': 2}
+
+
+def bench17(m, report):
+    """r17: the ticket hall's north wall behind the benches (y 4400, camera conv_bench) was bare tile with two lamps (5/10): a notice board with four pictures between the lamps (x -1023 and -917),
+    two posters either side, three more up on the light tile, a fire extinguisher. Only pictures and models the arcade already uses."""
+    m.use('dressing')
+    Y = 4400.0
+    n = 0
+    B.box(m, (-1006.0, Y - 2.2, 84.0, -934.0, Y, 150.0), 'w/wood_antique_panel_trim_01', id='bench_board')
+    for j, (dx, dz, w, h) in enumerate(((-17.0, 128.0, 24.0, 30.0), (17.0, 132.0, 24.0, 28.0), (-17.0, 98.0, 24.0, 26.0), (17.0, 100.0, 24.0, 30.0))):
+        B.decal(m, image='poster_%d.png' % ((j + 2) % 6), at=(-970.0 + dx, Y - 2.4, dz), normal=(0.0, -1.0, 0.0), size=(w, h), rot=(-3.0, 4.0, 2.0, -5.0)[j], id='bench_notice_%d' % j)
+        n += 1
+    for j, (x, z, img) in enumerate(((-1110.0, 112.0, 1), (-820.0, 108.0, 4))):
+        B.decal(m, image='poster_%d.png' % img, at=(x, Y, z), normal=(0.0, -1.0, 0.0), size=(30.0, 42.0), rot=(2.0, -2.0)[j], id='bench_poster_%d' % j)
+        n += 1
+    for j, (x, z) in enumerate(((-1120.0, 168.0), (-1060.0, 172.0), (-1000.0, 166.0))):
+        B.decal(m, POSTERS[(j * 2 + 1) % len(POSTERS)], (x, Y, z), (0.0, -1.0, 0.0), (28.0, 40.0), rot=(1.0, -2.0, 2.0)[j], id='bench_up_%d' % j)
+        n += 1
+    B.prop(m, M['extg'], (-1075.0, Y - 4.0, 84.0), angles=[0.0, 0.0, 0.0], zone='arcade', id='bench_extg')
+    report['bench17'] = {'pieces': n + 2}
 
 
 def build(name='sz_arcade_r13'):
@@ -159,6 +182,7 @@ def build(name='sz_arcade_r13'):
     gameplay13(m, rep)
     vision14(m, rep)
     platform14(m, rep)
+    bench17(m, rep)
     m.settings.setdefault('build', {}).setdefault('darkness', {})['power'] = {'flag': 'power_on', 'interaction': 'generator'}      # the regenerated base's recipe lacks it (base_r10 had it)
     rep['power_recipe'] = 'power_on/generator'
     m.report9 = rep
