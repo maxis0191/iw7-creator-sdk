@@ -96,6 +96,32 @@ releases the dark vision on an all-baked map), real ON and OFF (`film/arcade_pas
   differ: rule 11; hall hue classes white, warm, red, magenta: rule 12).
 - Floor gloss 236..252 (was 205..235).
 
+### Passes 6 to 8 (real ON and OFF, all 29 cameras of the document)
+- Pass 6 `C:\studio-data\sz\film\arcade\shell\pass6\sheet_{on,off}_{0..4}.jpg`. The first try lost 57 of 58 shots: goods worker B rewrote
+  its pictures in the shared art folder at 00:05:44, the document's hash changed under the session and every later shot refused as
+  stale. The pass now shoots with `--allow-stale` (each sidecar says `stale`; the rerun had none). ON and OFF now differ (the fix works).
+  Seen: bulb strips under every fascia, the islands, kiosk and gala table break the middle distance, the stall goods of Heel & Key read
+  under the raised shutter. Not yet: no colour on the floor in front of the shops (pool radius 250..280 against a throw of about 240:
+  the falloff's edge), streamers read as straight cables, `arc_west_long` started inside the first island.
+- Round 2 (pass 7): pool radius 380..420 aimed at y 4170, streamers curled 2.8 wide, `arc_west_long` at y 4060. Streamers now read as
+  paper on the floor; the pools still washed out by the white panel light. Round 3 (pass 8): pools doubled (1.6..2.2) with a 30/60 cone.
+- Pass 8 `pass8\sheet_{on,off}_{0..4}.jpg` (58 of 58 shots, none stale), `pass8\compare_east_long_target_stock.jpg` (target, ours,
+  stock `shopfronts_8`): the doubled pools still do not read as colour on the tile in front of the shops; at most a faint warm cast.
+- What still differs from the stock shopfront and subway frames, plainly: (1) their fronts glow by many emissive models (marquee bulbs
+  round the whole sign, neon tubes, lit canopies); ours have one row of bulbs under each fascia and one OPEN neon. (2) Their fronts throw
+  strong coloured light onto the ground; our four coloured spots do not show against the white panel light (not solved: the next step is
+  to dim the hall's panel spots near the shop lane, or to light the fronts by emissive models large enough to pool, not by more spots).
+  (3) Their floors are broken by large forms (cars, rubble heaps, a burst pipe); ours by two bench islands, a kiosk and a buffet table:
+  the hall between them is still wide and even. (4) A year of abandonment: theirs is dirt everywhere (graffiti, rubbish, cracked plaster,
+  pallets); ours is sparse by the brief (water marks, damp wall feet, worn tiles, three litter clusters), and it reads cleaner than theirs.
+  (5) Their floors reflect wet light; ours is glossy in its map but shows no reflection of the fronts (the base's reflection probes; not
+  solved by the gloss map). (6) Their frames have depth haze and volumetric beams; our recipe sets fog 0.03 and no volumetrics.
+- `studio check` (check13.json): ok, reach 61 of 61, networked entities 494 (no record added: every new light is baked, every bulb row
+  is an emissive model), render triangles 102,578 with the goods, collision 36,130. Two CAMERA_BLOCKED warnings are the goods workers'
+  cameras (`copy_stop_memo_close` 35 from the booth curtain, `hole_nine_far` 26 from the payphone I moved to the entrance in round 1).
+- Score (score_pass8.json): rules 1, 2, 9 to 13, 16, 17, 23, 24 pass (47 lights: hall 32, 0.022 per 1,000; 72 % at a fixture model);
+  rule 25 fails with 6 sign families in the hall (the two transit signs added one family to the brief's five).
+
 ## Decisions the brief did not dictate
 - **Tile kit** (one table `MAT` at the top of the builder, the swap to `B.material` is one edit there): wall `w/dt_tile_ceramic_white` with its
   true twin `w/dt_tile_ceramic_white_dmg` (the cp_disco station's pair; the base tint `w/iwz_tile_cream` has no damaged twin), band
