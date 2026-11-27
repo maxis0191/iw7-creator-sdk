@@ -1,0 +1,9 @@
+Use case: photorealistic-natural
+Asset type: the price board of a 1978 shoe repair and key cutting stall; texture for a flat 60 x 44 inch quad.
+Primary request: a cream enamel-painted wooden board, hand-lettered by a sign writer in oxblood slab-serif capitals, with a double oxblood rule under the title; item names on the left, prices aligned on the right, a little worn and finger-marked:
+Title: "HEEL & KEY SERVICES"
+Lines: "HEEL TOP LIFTS    $3.95" | "HALF SOLES RUBBER $9.50" | "FULL LEATHER     $18.50" | "STITCHING FROM    $2.50" | "STANDARD KEY      $0.75" | "CAR OR SAFE KEY   $2.25"
+Spelling: H-E-E-L & K-E-Y S-E-R-V-I-C-E-S; H-E-E-L T-O-P L-I-F-T-S $-3-.-9-5 ; H-A-L-F S-O-L-E-S R-U-B-B-E-R $-9-.-5-0 ; F-U-L-L L-E-A-T-H-E-R $-1-8-.-5-0 ; S-T-I-T-C-H-I-N-G F-R-O-M $-2-.-5-0 ; S-T-A-N-D-A-R-D K-E-Y $-0-.-7-5 ; C-A-R O-R S-A-F-E K-E-Y $-2-.-2-5.
+Composition/framing: landscape 60:44, the board full-bleed.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: any other words, logos, pictures.

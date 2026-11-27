@@ -1,0 +1,8 @@
+Use case: photorealistic-natural
+Asset type: the hand-written card a shopkeeper taped to the inside of his shop's glass door on 31 December 1984; it will be a texture on a flat 10 x 7 inch quad.
+Primary request: a close, flat, straight-on scan of the card alone filling the whole frame edge to edge: a record-shop owner in his thirties: fast black felt-tip marker capitals on the torn-off back flap of a white record mailer card, slightly slanted, a small doodled musical note after the last line. Two short strips of clear yellowed sticky tape across the top corners.
+Text (verbatim, three lines, exactly this line breaking): "DOWN AT CAR 6" / "WITH THE PARTY TAPE." / "BACK AFTER MIDNIGHT.".
+Spelling: D-O-W-N A-T C-A-R 6 / W-I-T-H T-H-E P-A-R-T-Y T-A-P-E-. / B-A-C-K A-F-T-E-R M-I-D-N-I-G-H-T-..
+Composition/framing: landscape 10:7, the card fills the canvas full-bleed, text large and legible, centred.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: glass, door, reflections, hands, any other words, signatures, dates beyond the given text.

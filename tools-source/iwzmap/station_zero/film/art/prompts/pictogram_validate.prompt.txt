@@ -1,0 +1,7 @@
+Use case: logo-brand
+Asset type: a wordless pictogram for overhead transit signs of a 1980s city transit authority, in the family of the 1970s transportation pictogram sets; it will be shown at 24 x 24 inches.
+Primary request: a ticket validation pictogram: a white rounded-square sign plate with a thick black border; inside, a simple black validator box with a horizontal slot on top; a ticket (a plain rectangle, white with a black outline) enters the slot from above; below the box the same ticket comes out with two bold black diagonal stripes printed across it; a short black arrow shows the direction of travel, downward. Uniform stroke weight, geometric, no detail smaller than 1/30 of the plate.
+Style/medium: flat pictogram, black and white only.
+Composition/framing: square 1:1, the rounded-square plate fills about 92 % of the canvas, centred.
+Background: transparent background outside the rounded plate.
+Avoid: any letters, numbers or words, colours, gradients, shadows, 3D, perspective.

@@ -1,0 +1,7 @@
+Use case: illustration-story
+Asset type: the front of a record sleeve (12-INCH 1979) in the sleeve wall of a 1984 record shop; texture for a flat 12 x 12 inch quad.
+Primary request: an original record cover for the band "MARA SOL", album "MIDNIGHT METER", in this style: late-seventies disco twelve-inch: airbrushed chrome and neon on deep purple, a glittering mirror-ball horizon, flowing script title.
+Text (verbatim): the artist "MARA SOL" and the title "MIDNIGHT METER", nothing else. Spelling: M-A-R-A S-O-L / M-I-D-N-I-G-H-T M-E-T-E-R.
+Composition/framing: square 1:1, the cover art full-bleed to all four edges, flat and straight on.
+Constraints: only those words; the cover alone: no vinyl disc showing, no shop, no wall, no shrink-wrap glare, no perspective, no frame drawn. Big bold shapes that still read when the cover is shown at 96 pixels.
+Avoid: real band names or logos, real record labels, barcodes, any other text.

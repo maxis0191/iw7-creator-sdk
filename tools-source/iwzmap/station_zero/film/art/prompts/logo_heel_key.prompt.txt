@@ -1,0 +1,9 @@
+Use case: logo-brand
+Asset type: the trademark of a small shoe repair and key cutting stall opened in 1978 in a city subway underpass, run by an old-school cobbler and locksmith; it will be painted on his sign and stamped on his claim tags. Mark only, no name.
+Primary request: a logo mark: an old-fashioned key standing upright, bit at the bottom, whose bow (the round handle at the top) is the print of a shoe heel: a horseshoe-shaped heel print seen from below, with a row of round nail-head dots along its curved edge and a few short horizontal tread bars across it. Below the bow a short collar, a straight shaft and a stepped bit with two or three teeth.
+Style/medium: flat graphic design of 1978, sturdy and traditional, like a mark cut as a rubber stamp or painted on a shop board; solid shapes, slab-serif feeling in the stepped details (but no letters).
+Color palette: exactly two flat colours: oxblood #6B1E23 for the key and the heel print, and cream #F2E6C9 for the nail dots and the tread bars inside the heel. No other colour, no gradients, no shading, no metal shine.
+Composition/framing: square 1:1, the key vertical and centred, about 85 % of the canvas height, small even margin, nothing cropped.
+Background: transparent background.
+Constraints: must read as a key with a heel-print bow when reduced to 64 pixels wide. Flat, straight on, no perspective, no frame, no mock-up.
+Avoid: any letters, numerals or words; background, ground shadow, drop shadow, 3D, metallic gradients, extra colours, a shoe.

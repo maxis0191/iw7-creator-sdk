@@ -1,0 +1,8 @@
+Use case: photorealistic-natural
+Asset type: the small "today" chalkboard beside the counter of a 1978 doughnut shop; texture for a flat 60 x 44 inch quad.
+Primary request: a slate-black chalkboard in a plain wooden frame edge, straight on, filling the frame, written by hand in white and pink chalk capitals, with old smudged chalk ghosts behind: the heading "TODAY" in pink chalk, underlined, then four lines in white chalk:
+Lines: "MAPLE BAR      55c" | "APPLE FRITTER  60c" | "SPICED CIDER   65c" | "CLOSING AT 23:15"
+Spelling: T-O-D-A-Y; M-A-P-L-E B-A-R 5-5-c ; A-P-P-L-E F-R-I-T-T-E-R 6-0-c ; S-P-I-C-E-D C-I-D-E-R 6-5-c ; C-L-O-S-I-N-G A-T 2-3-:-1-5.
+Composition/framing: landscape 60:44, the chalkboard full-bleed.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: any other words, drawings, logos.

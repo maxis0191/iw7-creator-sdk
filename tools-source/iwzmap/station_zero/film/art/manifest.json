@@ -1,0 +1,1760 @@
+{
+ "worker": "A1",
+ "date": "2026-11-27",
+ "copy_file": "C:/studio-data/sz/film/copy/arcade_copy_raw.txt",
+ "copy_sha256": "3f0d4f719059a1da4465626ac31c747d8c40b49ac07fac3bb9582a2d9cbe3913",
+ "copy_writer_note": "Gemini 4 Hydrogen through the Aside CLI, 27 Nov 2026. FALLBACK: Gemini 4 Neon was refused for this account in this session. Canon-checked by the lead (three place names corrected: Platform A, the fare gates, the Fare Hall window). To be rewritten by Neon when it is reachable.",
+ "fonts": {
+  "bahnschrift.ttf": "HRT directory, notices titles, Copy Stop lettering",
+  "courbd.ttf": "notice bodies (typewriter)",
+  "dot-matrix": "own 5x7 glyph table, tools/dotmatrix.py"
+ },
+ "count_delivered": 47,
+ "missing": [
+  "window_cards_needle_drop.png",
+  "window_cards_copy_stop.png",
+  "window_cards_hole_nine.png",
+  "window_cards_heel_key.png",
+  "sleeve_1.png",
+  "sleeve_2.png",
+  "sleeve_3.png",
+  "sleeve_4.png",
+  "sleeve_5.png",
+  "sleeve_6.png",
+  "sleeve_7.png",
+  "sleeve_8.png",
+  "rental_1.png",
+  "rental_2.png",
+  "rental_3.png",
+  "rental_4.png",
+  "rental_5.png",
+  "rental_6.png"
+ ],
+ "items": [
+  {
+   "folder": "arcade",
+   "file": "logo_needle_drop.png",
+   "units": null,
+   "brand": "needle_drop",
+   "words": [],
+   "made": "generator (transparent), alpha snapped, cropped and centred",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/logo_needle_drop.prompt.txt",
+   "emissive": false,
+   "placement": "the mark alone: for any use at any size (bags, tags, decals, the directory); not a quad of its own size",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/logo_needle_drop.png",
+   "pixels": [
+    1024,
+    1024
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.463,
+   "sha1": "6edbef56eabc"
+  },
+  {
+   "folder": "arcade",
+   "file": "logo_copy_stop.png",
+   "units": null,
+   "brand": "copy_stop",
+   "words": [],
+   "made": "drawn in PIL (two generator tries read as a computer file icon): build_marks.copy_stop_mark",
+   "prompt": null,
+   "emissive": false,
+   "placement": "the mark alone: for any use at any size (bags, tags, decals, the directory); not a quad of its own size",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/logo_copy_stop.png",
+   "pixels": [
+    1024,
+    1024
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.582,
+   "sha1": "cebf4e16cefd"
+  },
+  {
+   "folder": "arcade",
+   "file": "logo_hole_nine.png",
+   "units": null,
+   "brand": "hole_nine",
+   "words": [],
+   "made": "generator (transparent), alpha snapped, cropped and centred",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/logo_hole_nine.prompt.txt",
+   "emissive": false,
+   "placement": "the mark alone: for any use at any size (bags, tags, decals, the directory); not a quad of its own size",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/logo_hole_nine.png",
+   "pixels": [
+    1024,
+    1024
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.667,
+   "sha1": "b12dd017cee9"
+  },
+  {
+   "folder": "arcade",
+   "file": "logo_heel_key.png",
+   "units": null,
+   "brand": "heel_key",
+   "words": [],
+   "made": "generator (transparent), alpha snapped, cropped and centred",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/logo_heel_key.prompt.txt",
+   "emissive": false,
+   "placement": "the mark alone: for any use at any size (bags, tags, decals, the directory); not a quad of its own size",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/logo_heel_key.png",
+   "pixels": [
+    1024,
+    1024
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.843,
+   "sha1": "d4f922b018e2"
+  },
+  {
+   "folder": "arcade",
+   "file": "fascia_needle_drop.png",
+   "units": [
+    300,
+    68
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "NEEDLE DROP",
+     "source": "canon"
+    },
+    {
+     "text": "RECORDS TAPES VIDEO RENTALS",
+     "source": "copy:fascia_tagline.needle_drop"
+    }
+   ],
+   "made": "PIL composition: painted field + accepted logo + generator wordmark (recoloured to the brand ink)",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/wordmark_needle_drop.prompt.txt",
+   "emissive": false,
+   "placement": "hero sign: the fascia box over the front, 300 x 68, centre about +190 over the floor; lit from outside",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/fascia_needle_drop.png",
+   "pixels": [
+    1024,
+    232
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "41c667162eab"
+  },
+  {
+   "folder": "arcade",
+   "file": "fascia_hole_nine.png",
+   "units": [
+    300,
+    68
+   ],
+   "brand": "hole_nine",
+   "words": [
+    {
+     "text": "Hole Number Nine",
+     "source": "canon"
+    },
+    {
+     "text": "FRESH DOUGHNUTS & HOT COFFEE",
+     "source": "copy:fascia_tagline.hole_nine"
+    }
+   ],
+   "made": "PIL composition: painted field + accepted logo + generator wordmark (recoloured to the brand ink)",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/wordmark_hole_nine.prompt.txt",
+   "emissive": false,
+   "placement": "hero sign: the fascia box over the front, 300 x 68, centre about +190 over the floor; lit from outside",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/fascia_hole_nine.png",
+   "pixels": [
+    1024,
+    232
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "7ef3e6522624"
+  },
+  {
+   "folder": "arcade",
+   "file": "fascia_heel_key.png",
+   "units": [
+    300,
+    68
+   ],
+   "brand": "heel_key",
+   "words": [
+    {
+     "text": "HEEL & KEY",
+     "source": "canon"
+    },
+    {
+     "text": "SHOES REPAIRED & KEYS CUT",
+     "source": "copy:fascia_tagline.heel_key"
+    }
+   ],
+   "made": "PIL composition: painted field + accepted logo + generator wordmark (recoloured to the brand ink)",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/wordmark_heel_key.prompt.txt",
+   "emissive": false,
+   "placement": "hero sign: the fascia box over the front, 300 x 68, centre about +190 over the floor; lit from outside",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/fascia_heel_key.png",
+   "pixels": [
+    1024,
+    232
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "2f5db4fd888b"
+  },
+  {
+   "folder": "arcade",
+   "file": "fascia_copy_stop.png",
+   "units": [
+    310,
+    68
+   ],
+   "brand": "copy_stop",
+   "words": [
+    {
+     "text": "COPY STOP",
+     "source": "canon"
+    }
+   ],
+   "made": "PIL: Bahnschrift Bold Condensed slanted 12 degrees, second impression offset (the mark's idea)",
+   "prompt": null,
+   "emissive": false,
+   "placement": "hero sign over the double front (U2+U3), 310 x 68, between the two side panels; lit from outside",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/fascia_copy_stop.png",
+   "pixels": [
+    1024,
+    225
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "4534ee18b59d"
+  },
+  {
+   "folder": "arcade",
+   "file": "fascia_copy_stop_left.png",
+   "units": [
+    150,
+    68
+   ],
+   "brand": "copy_stop",
+   "words": [
+    {
+     "text": "B&W COPIES",
+     "source": "copy:window_cards.copy_stop[0][0]"
+    },
+    {
+     "text": "ARCHITECT BLUEPRINTS",
+     "source": "copy:window_cards.copy_stop[1][0]"
+    }
+   ],
+   "made": "PIL: Bahnschrift Bold Condensed slanted",
+   "prompt": null,
+   "emissive": false,
+   "placement": "left of fascia_copy_stop, same height and band",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/fascia_copy_stop_left.png",
+   "pixels": [
+    1024,
+    464
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "65f016affc78"
+  },
+  {
+   "folder": "arcade",
+   "file": "fascia_copy_stop_right.png",
+   "units": [
+    150,
+    68
+   ],
+   "brand": "copy_stop",
+   "words": [
+    {
+     "text": "PASSPORT PHOTOS",
+     "source": "copy:window_cards.copy_stop[2][0]"
+    },
+    {
+     "text": "RUBBER STAMPS MADE",
+     "source": "copy:window_cards.copy_stop[3][0]"
+    }
+   ],
+   "made": "PIL: Bahnschrift Bold Condensed slanted",
+   "prompt": null,
+   "emissive": false,
+   "placement": "right of fascia_copy_stop, same height and band",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/fascia_copy_stop_right.png",
+   "pixels": [
+    1024,
+    464
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "80637cd45a97"
+  },
+  {
+   "folder": "arcade",
+   "file": "directory_board.png",
+   "units": [
+    120,
+    160
+   ],
+   "brand": "HRT",
+   "words": [
+    {
+     "text": "HALCYON PLAZA UNDERPASS",
+     "source": "copy:directory.header"
+    },
+    {
+     "text": "LOWER CONCOURSE SHOPS  EST. 1978",
+     "source": "copy:directory.subline"
+    },
+    {
+     "text": "NEEDLE DROP / COPY STOP / HOLE NUMBER NINE / HEEL & KEY",
+     "source": "canon"
+    },
+    {
+     "text": "HALCYON RAPID TRANSIT",
+     "source": "canon"
+    }
+   ],
+   "made": "PIL: black enamel field, HRT disc, Bahnschrift (transit grotesque), the four accepted logos on white tiles",
+   "prompt": null,
+   "emissive": false,
+   "placement": "south wall by entry D4, the hall's landmark (rule 25); enamel lit from outside, centre about +110",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/directory_board.png",
+   "pixels": [
+    768,
+    1024
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "1fad4aacdc94"
+  },
+  {
+   "folder": "arcade",
+   "file": "door_card_needle_drop.png",
+   "units": [
+    10,
+    7
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "DOWN AT CAR 6 / WITH THE PARTY TAPE. / BACK AFTER MIDNIGHT.",
+     "source": "copy:door_card.needle_drop"
+    }
+   ],
+   "made": "generator; spelling checked letter by letter",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/door_card_needle_drop.prompt.txt",
+   "emissive": false,
+   "placement": "taped inside the shop door's glass at eye level (+60); opaque card",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/door_card_needle_drop.png",
+   "pixels": [
+    512,
+    358
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "3b7ab9e6d746"
+  },
+  {
+   "folder": "arcade",
+   "file": "door_card_copy_stop.png",
+   "units": [
+    10,
+    7
+   ],
+   "brand": "copy_stop",
+   "words": [
+    {
+     "text": "OUT FOR LAUNCH. / REOPENING 00:15 / JAN 1. - I. VARGA",
+     "source": "copy:door_card.copy_stop"
+    }
+   ],
+   "made": "generator; spelling checked letter by letter",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/door_card_copy_stop.prompt.txt",
+   "emissive": false,
+   "placement": "taped inside the shop door's glass at eye level (+60); opaque card",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/door_card_copy_stop.png",
+   "pixels": [
+    512,
+    358
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "b7a59dbc8bce"
+  },
+  {
+   "folder": "arcade",
+   "file": "door_card_hole_nine.png",
+   "units": [
+    10,
+    7
+   ],
+   "brand": "hole_nine",
+   "words": [
+    {
+     "text": "AT THE GALA TABLE. / OPEN AGAIN AT 12:10 / FOR HOT COFFEE.",
+     "source": "copy:door_card.hole_nine"
+    }
+   ],
+   "made": "generator; spelling checked letter by letter",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/door_card_hole_nine.prompt.txt",
+   "emissive": false,
+   "placement": "taped inside the shop door's glass at eye level (+60); opaque card",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/door_card_hole_nine.png",
+   "pixels": [
+    512,
+    358
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "c437f3218332"
+  },
+  {
+   "folder": "arcade",
+   "file": "door_card_heel_key.png",
+   "units": [
+    10,
+    7
+   ],
+   "brand": "heel_key",
+   "words": [
+    {
+     "text": "GONE TO WATCH / THE 23:47 PULL OUT. / SHOP OPENS 00:05",
+     "source": "copy:door_card.heel_key"
+    }
+   ],
+   "made": "generator; spelling checked letter by letter",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/door_card_heel_key.prompt.txt",
+   "emissive": false,
+   "placement": "taped inside the shop door's glass at eye level (+60); has alpha: clipped tag corners and eyelet hole",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/door_card_heel_key.png",
+   "pixels": [
+    512,
+    358
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.009,
+   "sha1": "2a53de572f9c"
+  },
+  {
+   "folder": "arcade",
+   "file": "lightbox_orbit.png",
+   "units": [
+    64,
+    96
+   ],
+   "brand": "Orbit Rink",
+   "words": [
+    {
+     "text": "ORBIT RINK ROLL-IN",
+     "source": "copy:ad_lightboxes[0].headline"
+    },
+    {
+     "text": "SKATE INTO 1985  DEC 31 AT 8:00 PM",
+     "source": "copy:ad_lightboxes[0].line"
+    }
+   ],
+   "made": "generator; text checked letter by letter on full-resolution crops",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/lightbox_orbit.prompt.txt",
+   "emissive": true,
+   "placement": "south wall light box face, fully emissive (one radiance), in a box housing modelled by the 3D worker",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/lightbox_orbit.png",
+   "pixels": [
+    683,
+    1024
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "4804566fc347"
+  },
+  {
+   "folder": "arcade",
+   "file": "lightbox_lodestar.png",
+   "units": [
+    64,
+    96
+   ],
+   "brand": "Lodestar",
+   "words": [
+    {
+     "text": "The Future Runs Itself",
+     "source": "canon"
+    },
+    {
+     "text": "LODESTAR SIGNAL & TELEPHONE CO.",
+     "source": "copy:ad_lightboxes[1].line"
+    }
+   ],
+   "made": "generator; text checked letter by letter on full-resolution crops",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/lightbox_lodestar.prompt.txt",
+   "emissive": true,
+   "placement": "south wall light box face, fully emissive (one radiance), in a box housing modelled by the 3D worker",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/lightbox_lodestar.png",
+   "pixels": [
+    683,
+    1024
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "c2a8bb18a1e6"
+  },
+  {
+   "folder": "arcade",
+   "file": "lightbox_zero_line.png",
+   "units": [
+    64,
+    96
+   ],
+   "brand": "Zero Line / HRT",
+   "words": [
+    {
+     "text": "RIDE THE ZERO LINE",
+     "source": "copy:ad_lightboxes[2].headline"
+    },
+    {
+     "text": "HALCYON TRANSIT  DEC 31 AT 23:47",
+     "source": "copy:ad_lightboxes[2].line"
+    }
+   ],
+   "made": "generator; text checked letter by letter on full-resolution crops",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/lightbox_zero_line.prompt.txt",
+   "emissive": true,
+   "placement": "south wall light box face, fully emissive (one radiance), in a box housing modelled by the 3D worker",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/lightbox_zero_line.png",
+   "pixels": [
+    683,
+    1024
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "732b909af5ff"
+  },
+  {
+   "folder": "arcade",
+   "file": "lightbox_channel9.png",
+   "units": [
+    64,
+    96
+   ],
+   "brand": "Channel 9 Night Desk",
+   "words": [
+    {
+     "text": "CHANNEL 9 NIGHT DESK",
+     "source": "copy:ad_lightboxes[3].headline"
+    },
+    {
+     "text": "LIVE PORT HALCYON NEWS AT 11:00 PM",
+     "source": "copy:ad_lightboxes[3].line"
+    }
+   ],
+   "made": "generator; text checked letter by letter on full-resolution crops",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/lightbox_channel9.prompt.txt",
+   "emissive": true,
+   "placement": "south wall light box face, fully emissive (one radiance), in a box housing modelled by the 3D worker",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/lightbox_channel9.png",
+   "pixels": [
+    683,
+    1024
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "14b192b8d9cb"
+  },
+  {
+   "folder": "arcade",
+   "file": "notice_1.png",
+   "units": [
+    16,
+    22
+   ],
+   "brand": "HRT",
+   "words": [
+    {
+     "text": "DEC 31 HOURS",
+     "source": "copy:arcade_notices[0].title"
+    },
+    {
+     "text": "HALCYON RAPID TRANSIT / SOUTH GATE CLOSES 22:00 / ON DEC 31 FOR GALA. / USE PLAZA NORTH STAIRS.",
+     "source": "copy:arcade_notices[0].lines"
+    }
+   ],
+   "made": "PIL on generated blank paper: HRT disc in keyline, title Bahnschrift Bold Condensed, body Courier New Bold (courbd.ttf) with per-character typewriter jitter",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/notice_paper.prompt.txt",
+   "emissive": false,
+   "placement": "south wall notice frames or taped to tile, eye level",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/notice_1.png",
+   "pixels": [
+    372,
+    512
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "b8f40ca9feac"
+  },
+  {
+   "folder": "arcade",
+   "file": "notice_2.png",
+   "units": [
+    16,
+    22
+   ],
+   "brand": "HRT",
+   "words": [
+    {
+     "text": "ZERO LINE GALA",
+     "source": "copy:arcade_notices[1].title"
+    },
+    {
+     "text": "MAIN CONCOURSE DEC 31 / REFRESHMENTS FROM 22:30 / BY THE FARE GATES. / PASSENGERS WELCOME.",
+     "source": "copy:arcade_notices[1].lines"
+    }
+   ],
+   "made": "PIL on generated blank paper: HRT disc in keyline, title Bahnschrift Bold Condensed, body Courier New Bold (courbd.ttf) with per-character typewriter jitter",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/notice_paper.prompt.txt",
+   "emissive": false,
+   "placement": "south wall notice frames or taped to tile, eye level",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/notice_2.png",
+   "pixels": [
+    372,
+    512
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "0535986199b1"
+  },
+  {
+   "folder": "arcade",
+   "file": "notice_3.png",
+   "units": [
+    16,
+    22
+   ],
+   "brand": "HRT",
+   "words": [
+    {
+     "text": "INAUGURAL RUN",
+     "source": "copy:arcade_notices[2].title"
+    },
+    {
+     "text": "FIRST DRIVERLESS TRAIN / RUN 047 DEPARTS 23:47 / FROM PLATFORM A. / BOARD BY 23:42 SHARP.",
+     "source": "copy:arcade_notices[2].lines"
+    }
+   ],
+   "made": "PIL on generated blank paper: HRT disc in keyline, title Bahnschrift Bold Condensed, body Courier New Bold (courbd.ttf) with per-character typewriter jitter",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/notice_paper.prompt.txt",
+   "emissive": false,
+   "placement": "south wall notice frames or taped to tile, eye level",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/notice_3.png",
+   "pixels": [
+    372,
+    512
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "af8803907ae4"
+  },
+  {
+   "folder": "arcade",
+   "file": "notice_4.png",
+   "units": [
+    16,
+    22
+   ],
+   "brand": "HRT",
+   "words": [
+    {
+     "text": "LOST PROPERTY",
+     "source": "copy:arcade_notices[3].title"
+    },
+    {
+     "text": "ARTICLES FOUND ON THE / ZERO LINE ARE HELD AT / THE FARE HALL WINDOW. / OPEN DAILY 08:00-18:00",
+     "source": "copy:arcade_notices[3].lines"
+    }
+   ],
+   "made": "PIL on generated blank paper: HRT disc in keyline, title Bahnschrift Bold Condensed, body Courier New Bold (courbd.ttf) with per-character typewriter jitter",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/notice_paper.prompt.txt",
+   "emissive": false,
+   "placement": "south wall notice frames or taped to tile, eye level",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/notice_4.png",
+   "pixels": [
+    372,
+    512
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "0767b133a757"
+  },
+  {
+   "folder": "arcade",
+   "file": "banner_new_year.png",
+   "units": [
+    320,
+    48
+   ],
+   "brand": "arcade dressing",
+   "words": [
+    {
+     "text": "HAPPY NEW YEAR 1985",
+     "source": "PLACEHOLDER (period stock words, not from the copy file)"
+    }
+   ],
+   "made": "generator (transparent), cropped",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/banner_new_year.prompt.txt",
+   "emissive": false,
+   "placement": "hung across the hall under the ceiling, alpha blend",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/banner_new_year.png",
+   "pixels": [
+    1024,
+    154
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.277,
+   "sha1": "0431568d33b9"
+  },
+  {
+   "folder": "arcade",
+   "file": "bunting_strip.png",
+   "units": [
+    256,
+    24
+   ],
+   "brand": "arcade dressing",
+   "words": [],
+   "made": "PIL: pennants in the four shop colours and cream, periodic paper grain; tiles horizontally every 1024 px",
+   "prompt": null,
+   "emissive": false,
+   "placement": "tile along the hall under the ceiling; alpha blend; test: bunting_strip_tiletest.jpg",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/bunting_strip.png",
+   "pixels": [
+    1024,
+    96
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.612,
+   "sha1": "24ca90a6e123"
+  },
+  {
+   "folder": "arcade",
+   "file": "floor_polish_circle.png",
+   "units": [
+    220,
+    220
+   ],
+   "brand": "arcade dressing",
+   "words": [],
+   "made": "PIL: alpha from a generated grayscale swirl mask, warm white, soft edge",
+   "prompt": null,
+   "emissive": false,
+   "placement": "floor decal under the polisher over the brown and orange tile; brightens, alpha blend",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/floor_polish_circle.png",
+   "pixels": [
+    1024,
+    1024
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.342,
+   "sha1": "c9555c9ddd4f"
+  },
+  {
+   "folder": "arcade",
+   "file": "poster_station_zero.png",
+   "units": [
+    64,
+    96
+   ],
+   "brand": "the film",
+   "words": [
+    {
+     "text": "A WILLARD WYLER PICTURE",
+     "source": "canon"
+    },
+    {
+     "text": "STATION ZERO",
+     "source": "canon"
+    },
+    {
+     "text": "NEXT STOP: NOWHERE.",
+     "source": "canon"
+    }
+   ],
+   "made": "concept/poster.png with only the clock region (794..987 x 333..530 of 1024x1536) taken from a generator edit; clock reads 11:47 (minute hand ~284 deg, hour hand ~351 deg)",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/poster_station_zero.prompt.txt",
+   "emissive": false,
+   "placement": "poster frame on the hall wall; lit from outside",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/poster_station_zero.png",
+   "pixels": [
+    683,
+    1024
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "b121598ad5bd"
+  },
+  {
+   "folder": "arcade",
+   "file": "board_copy_stop.png",
+   "units": [
+    60,
+    44
+   ],
+   "brand": "copy_stop",
+   "words": [
+    {
+     "text": "(title and every line)",
+     "source": "copy:copy_stop_board"
+    }
+   ],
+   "made": "generator; every line checked letter by letter",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/board_copy_stop.prompt.txt",
+   "emissive": false,
+   "placement": "inside the shop on the back wall or over the counter, readable through the glass",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/board_copy_stop.png",
+   "pixels": [
+    1024,
+    751
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "3d942c09a442"
+  },
+  {
+   "folder": "arcade",
+   "file": "menu_hole_nine.png",
+   "units": [
+    60,
+    44
+   ],
+   "brand": "hole_nine",
+   "words": [
+    {
+     "text": "(title and every line)",
+     "source": "copy:hole_nine_menu"
+    }
+   ],
+   "made": "generator; every line checked letter by letter",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/menu_hole_nine.prompt.txt",
+   "emissive": false,
+   "placement": "inside the shop on the back wall or over the counter, readable through the glass",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/menu_hole_nine.png",
+   "pixels": [
+    1024,
+    751
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "29dae606c8a2"
+  },
+  {
+   "folder": "arcade",
+   "file": "today_hole_nine.png",
+   "units": [
+    60,
+    44
+   ],
+   "brand": "hole_nine",
+   "words": [
+    {
+     "text": "(title and every line)",
+     "source": "copy:hole_nine_menu.today"
+    }
+   ],
+   "made": "generator; every line checked letter by letter",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/today_hole_nine.prompt.txt",
+   "emissive": false,
+   "placement": "inside the shop on the back wall or over the counter, readable through the glass",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/today_hole_nine.png",
+   "pixels": [
+    1024,
+    751
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "69076d538c27"
+  },
+  {
+   "folder": "arcade",
+   "file": "board_heel_key.png",
+   "units": [
+    60,
+    44
+   ],
+   "brand": "heel_key",
+   "words": [
+    {
+     "text": "(title and every line)",
+     "source": "copy:heel_key_board"
+    }
+   ],
+   "made": "generator; every line checked letter by letter",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/board_heel_key.prompt.txt",
+   "emissive": false,
+   "placement": "inside the shop on the back wall or over the counter, readable through the glass",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/arcade/board_heel_key.png",
+   "pixels": [
+    1024,
+    751
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "683e384b25d4"
+  },
+  {
+   "folder": "arcade",
+   "file": "window_cards_needle_drop.png",
+   "units": [
+    40,
+    28
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "(four cards)",
+     "source": "copy:window_cards.needle_drop"
+    }
+   ],
+   "made": "generator (transparent) — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/window_cards_needle_drop.prompt.txt",
+   "emissive": false,
+   "placement": "inside the window glass, lower third",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "window_cards_copy_stop.png",
+   "units": [
+    40,
+    28
+   ],
+   "brand": "copy_stop",
+   "words": [
+    {
+     "text": "(four cards)",
+     "source": "copy:window_cards.copy_stop"
+    }
+   ],
+   "made": "generator (transparent) — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/window_cards_copy_stop.prompt.txt",
+   "emissive": false,
+   "placement": "inside the window glass, lower third",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "window_cards_hole_nine.png",
+   "units": [
+    40,
+    28
+   ],
+   "brand": "hole_nine",
+   "words": [
+    {
+     "text": "(four cards)",
+     "source": "copy:window_cards.hole_nine"
+    }
+   ],
+   "made": "generator (transparent) — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/window_cards_hole_nine.prompt.txt",
+   "emissive": false,
+   "placement": "inside the window glass, lower third",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "window_cards_heel_key.png",
+   "units": [
+    40,
+    28
+   ],
+   "brand": "heel_key",
+   "words": [
+    {
+     "text": "(four cards)",
+     "source": "copy:window_cards.heel_key"
+    }
+   ],
+   "made": "generator (transparent) — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/window_cards_heel_key.prompt.txt",
+   "emissive": false,
+   "placement": "inside the window glass, lower third",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "sleeve_1.png",
+   "units": [
+    12,
+    12
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "PLASTIC TONE / NO STATIC TONITE",
+     "source": "copy:needle_drop_sleeves[0]"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/sleeve_1.prompt.txt",
+   "emissive": false,
+   "placement": "Needle Drop sleeve wall and window",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "sleeve_2.png",
+   "units": [
+    12,
+    12
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "MARA SOL / MIDNIGHT METER",
+     "source": "copy:needle_drop_sleeves[1]"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/sleeve_2.prompt.txt",
+   "emissive": false,
+   "placement": "Needle Drop sleeve wall and window",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "sleeve_3.png",
+   "units": [
+    12,
+    12
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "IRON QUARRY / SHIFT WHISTLE",
+     "source": "copy:needle_drop_sleeves[2]"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/sleeve_3.prompt.txt",
+   "emissive": false,
+   "placement": "Needle Drop sleeve wall and window",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "sleeve_4.png",
+   "units": [
+    12,
+    12
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "SILO NINE / COLD CORRIDOR",
+     "source": "copy:needle_drop_sleeves[3]"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/sleeve_4.prompt.txt",
+   "emissive": false,
+   "placement": "Needle Drop sleeve wall and window",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "sleeve_5.png",
+   "units": [
+    12,
+    12
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "PIER SEVEN / SAIL TO SUNSET",
+     "source": "copy:needle_drop_sleeves[4]"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/sleeve_5.prompt.txt",
+   "emissive": false,
+   "placement": "Needle Drop sleeve wall and window",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "sleeve_6.png",
+   "units": [
+    12,
+    12
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "DUB SWITCH / NORTH PIER ECHO",
+     "source": "copy:needle_drop_sleeves[5]"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/sleeve_6.prompt.txt",
+   "emissive": false,
+   "placement": "Needle Drop sleeve wall and window",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "sleeve_7.png",
+   "units": [
+    12,
+    12
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "RAYMOND DEAN / TRUCK STOP RAIN",
+     "source": "copy:needle_drop_sleeves[6]"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/sleeve_7.prompt.txt",
+   "emissive": false,
+   "placement": "Needle Drop sleeve wall and window",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "sleeve_8.png",
+   "units": [
+    12,
+    12
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "TONE WHEEL / TWO STEP TEST",
+     "source": "copy:needle_drop_sleeves[7]"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/sleeve_8.prompt.txt",
+   "emissive": false,
+   "placement": "Needle Drop sleeve wall and window",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "rental_1.png",
+   "units": [
+    5,
+    8
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "STEEL HARBOR",
+     "source": "copy:needle_drop_rental[0].title"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/rental_1.prompt.txt",
+   "emissive": false,
+   "placement": "rental tape shelf faces",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "rental_2.png",
+   "units": [
+    5,
+    8
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "NIGHT FREIGHT TO RENO",
+     "source": "copy:needle_drop_rental[1].title"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/rental_2.prompt.txt",
+   "emissive": false,
+   "placement": "rental tape shelf faces",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "rental_3.png",
+   "units": [
+    5,
+    8
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "STAR OF SECTOR SEVEN",
+     "source": "copy:needle_drop_rental[2].title"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/rental_3.prompt.txt",
+   "emissive": false,
+   "placement": "rental tape shelf faces",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "rental_4.png",
+   "units": [
+    5,
+    8
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "FIST OF THE FOUNDRY",
+     "source": "copy:needle_drop_rental[3].title"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/rental_4.prompt.txt",
+   "emissive": false,
+   "placement": "rental tape shelf faces",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "rental_5.png",
+   "units": [
+    5,
+    8
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "TWO DOGS ON A BOAT",
+     "source": "copy:needle_drop_rental[4].title"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/rental_5.prompt.txt",
+   "emissive": false,
+   "placement": "rental tape shelf faces",
+   "delivered": false
+  },
+  {
+   "folder": "arcade",
+   "file": "rental_6.png",
+   "units": [
+    5,
+    8
+   ],
+   "brand": "needle_drop",
+   "words": [
+    {
+     "text": "SUMMER AT PIER FOUR",
+     "source": "copy:needle_drop_rental[5].title"
+    }
+   ],
+   "made": "generator — PENDING quota",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/rental_6.prompt.txt",
+   "emissive": false,
+   "placement": "rental tape shelf faces",
+   "delivered": false
+  },
+  {
+   "folder": "terminus",
+   "file": "paper_greenbar_tile.png",
+   "units": null,
+   "brand": "Terminus",
+   "words": [
+    {
+     "text": "(digits only, as texture)",
+     "source": "none: random numbers"
+    }
+   ],
+   "made": "procedural (PIL): tools-source/iwzmap/station_zero/film/art/tools/terminus_paper.py; 16 bars of 64 px, FFT-periodic fibre noise, faint wrapped dot-matrix digits",
+   "prompt": null,
+   "emissive": false,
+   "placement": "tiling colour texture for every paper surface (walls, floor, ceiling, benches); scale so one bar is about 8 units; seamless (tiletest kept)",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/paper_greenbar_tile.png",
+   "pixels": [
+    1024,
+    1024
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "98127755eac3"
+  },
+  {
+   "folder": "terminus",
+   "file": "paper_greenbar_edge.png",
+   "units": [
+    128,
+    16
+   ],
+   "brand": "Terminus",
+   "words": [],
+   "made": "procedural (PIL): tools-source/iwzmap/station_zero/film/art/tools/terminus_paper.py; holes alpha 0, hole pitch 64 px = bar height",
+   "prompt": null,
+   "emissive": false,
+   "placement": "edge strips along platform edge and sheet borders; tiles horizontally; alpha test (holes)",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/paper_greenbar_edge.png",
+   "pixels": [
+    1024,
+    128
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.058,
+   "sha1": "80d0019cceb4"
+  },
+  {
+   "folder": "terminus",
+   "file": "paper_times_column.png",
+   "units": [
+    48,
+    192
+   ],
+   "brand": "Terminus",
+   "words": [
+    {
+     "text": "23:47 (x32)",
+     "source": "canon"
+    }
+   ],
+   "made": "procedural (PIL): tools-source/iwzmap/station_zero/film/art/tools/terminus_paper.py",
+   "prompt": null,
+   "emissive": false,
+   "placement": "column faces; two lines a bar, bars match the tile",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/paper_times_column.png",
+   "pixels": [
+    256,
+    1024
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "ae7dbd2cca34"
+  },
+  {
+   "folder": "terminus",
+   "file": "sign_terminus.png",
+   "units": [
+    144,
+    28
+   ],
+   "brand": "Terminus",
+   "words": [
+    {
+     "text": "047 · TERMINUS",
+     "source": "canon"
+    }
+   ],
+   "made": "procedural (PIL): tools-source/iwzmap/station_zero/film/art/tools/terminus_paper.py (one 5x7 dot glyph table)",
+   "prompt": null,
+   "emissive": false,
+   "placement": "hanging sign over the platform",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/sign_terminus.png",
+   "pixels": [
+    1024,
+    200
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "2fd6103e2083"
+  },
+  {
+   "folder": "terminus",
+   "file": "sign_fare_validation.png",
+   "units": [
+    64,
+    16
+   ],
+   "brand": "Terminus",
+   "words": [
+    {
+     "text": "FARE VALIDATION",
+     "source": "canon"
+    }
+   ],
+   "made": "procedural (PIL): tools-source/iwzmap/station_zero/film/art/tools/terminus_paper.py",
+   "prompt": null,
+   "emissive": false,
+   "placement": "sign over the projector on the validator post",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/sign_fare_validation.png",
+   "pixels": [
+    512,
+    128
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "c36aac925057"
+  },
+  {
+   "folder": "terminus",
+   "file": "leader_8.png",
+   "units": [
+    24,
+    24
+   ],
+   "brand": "Terminus",
+   "words": [
+    {
+     "text": "8",
+     "source": "film leader numeral (FILM-LAYER 6)"
+    }
+   ],
+   "made": "procedural (PIL): tools-source/iwzmap/station_zero/film/art/tools/terminus_paper.py",
+   "prompt": null,
+   "emissive": false,
+   "placement": "printed along the platform edge, 8 to 2 towards the screen, never 1; alpha blend decal",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/leader_8.png",
+   "pixels": [
+    192,
+    192
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.821,
+   "sha1": "a18e1166f778"
+  },
+  {
+   "folder": "terminus",
+   "file": "leader_7.png",
+   "units": [
+    24,
+    24
+   ],
+   "brand": "Terminus",
+   "words": [
+    {
+     "text": "7",
+     "source": "film leader numeral (FILM-LAYER 6)"
+    }
+   ],
+   "made": "procedural (PIL): tools-source/iwzmap/station_zero/film/art/tools/terminus_paper.py",
+   "prompt": null,
+   "emissive": false,
+   "placement": "printed along the platform edge, 8 to 2 towards the screen, never 1; alpha blend decal",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/leader_7.png",
+   "pixels": [
+    192,
+    192
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.85,
+   "sha1": "2022feb4ddd0"
+  },
+  {
+   "folder": "terminus",
+   "file": "leader_6.png",
+   "units": [
+    24,
+    24
+   ],
+   "brand": "Terminus",
+   "words": [
+    {
+     "text": "6",
+     "source": "film leader numeral (FILM-LAYER 6)"
+    }
+   ],
+   "made": "procedural (PIL): tools-source/iwzmap/station_zero/film/art/tools/terminus_paper.py",
+   "prompt": null,
+   "emissive": false,
+   "placement": "printed along the platform edge, 8 to 2 towards the screen, never 1; alpha blend decal",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/leader_6.png",
+   "pixels": [
+    192,
+    192
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.829,
+   "sha1": "ca9402ca2968"
+  },
+  {
+   "folder": "terminus",
+   "file": "leader_5.png",
+   "units": [
+    24,
+    24
+   ],
+   "brand": "Terminus",
+   "words": [
+    {
+     "text": "5",
+     "source": "film leader numeral (FILM-LAYER 6)"
+    }
+   ],
+   "made": "procedural (PIL): tools-source/iwzmap/station_zero/film/art/tools/terminus_paper.py",
+   "prompt": null,
+   "emissive": false,
+   "placement": "printed along the platform edge, 8 to 2 towards the screen, never 1; alpha blend decal",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/leader_5.png",
+   "pixels": [
+    192,
+    192
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.821,
+   "sha1": "85c10e6dcb38"
+  },
+  {
+   "folder": "terminus",
+   "file": "leader_4.png",
+   "units": [
+    24,
+    24
+   ],
+   "brand": "Terminus",
+   "words": [
+    {
+     "text": "4",
+     "source": "film leader numeral (FILM-LAYER 6)"
+    }
+   ],
+   "made": "procedural (PIL): tools-source/iwzmap/station_zero/film/art/tools/terminus_paper.py",
+   "prompt": null,
+   "emissive": false,
+   "placement": "printed along the platform edge, 8 to 2 towards the screen, never 1; alpha blend decal",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/leader_4.png",
+   "pixels": [
+    192,
+    192
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.837,
+   "sha1": "27285ea2fc3e"
+  },
+  {
+   "folder": "terminus",
+   "file": "leader_3.png",
+   "units": [
+    24,
+    24
+   ],
+   "brand": "Terminus",
+   "words": [
+    {
+     "text": "3",
+     "source": "film leader numeral (FILM-LAYER 6)"
+    }
+   ],
+   "made": "procedural (PIL): tools-source/iwzmap/station_zero/film/art/tools/terminus_paper.py",
+   "prompt": null,
+   "emissive": false,
+   "placement": "printed along the platform edge, 8 to 2 towards the screen, never 1; alpha blend decal",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/leader_3.png",
+   "pixels": [
+    192,
+    192
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.835,
+   "sha1": "49719a3b5d1f"
+  },
+  {
+   "folder": "terminus",
+   "file": "leader_2.png",
+   "units": [
+    24,
+    24
+   ],
+   "brand": "Terminus",
+   "words": [
+    {
+     "text": "2",
+     "source": "film leader numeral (FILM-LAYER 6)"
+    }
+   ],
+   "made": "procedural (PIL): tools-source/iwzmap/station_zero/film/art/tools/terminus_paper.py",
+   "prompt": null,
+   "emissive": false,
+   "placement": "printed along the platform edge, 8 to 2 towards the screen, never 1; alpha blend decal",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/leader_2.png",
+   "pixels": [
+    192,
+    192
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.835,
+   "sha1": "989ca45df3f5"
+  },
+  {
+   "folder": "terminus",
+   "file": "screen_second_platform.png",
+   "units": [
+    384,
+    216
+   ],
+   "brand": "Terminus",
+   "words": [],
+   "made": "generator, then multiplied by the paper tile's luminance (+-6 %) so the bars and faint digits show through",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/screen_second_platform.prompt.txt",
+   "emissive": true,
+   "placement": "the projected rectangle on the paper wall across the track; fully emissive",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/screen_second_platform.png",
+   "pixels": [
+    1024,
+    576
+   ],
+   "mode": "RGB",
+   "has_alpha": false,
+   "transparent_share": 0.0,
+   "sha1": "35ab700be45a"
+  },
+  {
+   "folder": "terminus",
+   "file": "footprints_printed.png",
+   "units": [
+    96,
+    96
+   ],
+   "brand": "Terminus",
+   "words": [],
+   "made": "generator (transparent), cropped",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/footprints_printed.prompt.txt",
+   "emissive": false,
+   "placement": "floor decals, toes pointing away from the edge (up = facing the train); alpha blend",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/footprints_printed.png",
+   "pixels": [
+    768,
+    768
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.734,
+   "sha1": "8f7e085e853e"
+  },
+  {
+   "folder": "terminus",
+   "file": "footprints_fresh.png",
+   "units": [
+    24,
+    24
+   ],
+   "brand": "Terminus",
+   "words": [],
+   "made": "generator (transparent), cropped",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/footprints_fresh.prompt.txt",
+   "emissive": false,
+   "placement": "one fresh pair at the platform edge; alpha blend",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/footprints_fresh.png",
+   "pixels": [
+    192,
+    192
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.562,
+   "sha1": "9d8b97b7619a"
+  },
+  {
+   "folder": "terminus",
+   "file": "pictogram_validate.png",
+   "units": [
+    24,
+    24
+   ],
+   "brand": "HRT",
+   "words": [],
+   "made": "generator (transparent), cropped",
+   "prompt": "tools-source/iwzmap/station_zero/film/art/prompts/pictogram_validate.prompt.txt",
+   "emissive": false,
+   "placement": "overhead signs once the road is set; wordless (replaces any 'PaP' word)",
+   "delivered": true,
+   "path": "C:/studio-data/sz/film/art/terminus/pictogram_validate.png",
+   "pixels": [
+    192,
+    192
+   ],
+   "mode": "RGBA",
+   "has_alpha": true,
+   "transparent_share": 0.061,
+   "sha1": "ff44d52a41e6"
+  }
+ ]
+}

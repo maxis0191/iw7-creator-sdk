@@ -1,0 +1,10 @@
+Use case: ads-marketing
+Asset type: a back-lit advertising light box panel (a translucent printed duratrans sheet lit evenly from behind) on the wall of a city subway underpass, late 1984. It will be a fully glowing (emissive) texture on a flat 64 x 96 inch quad.
+Composition/framing: portrait 2:3, the printed sheet itself only, full-bleed to all four edges, flat and straight on.
+Lighting/mood: back-lit transparency: colours even, saturated and luminous, a little brighter in the middle; no reflections, no room lighting, no vignette from a camera.
+Constraints: no frame, no light-box housing, no wall, no perspective, no mock-up scene, no photo of a sign: only the flat artwork. Text exactly as given, spelled letter by letter, no other words, no small print, no logos of real companies.
+Primary request: an advertisement of 1984 for a local television station's late night news: a night skyline of a north-eastern harbour city in deep blue, lit windows, a bright beam from a news van's microphone flag; a large chunky italic numeral 9 inside a rounded rectangle station badge in red and white at the top, with three thin speed lines; the feel of local TV promotional graphics of the early eighties: chrome bevels, scan-line highlights.
+Text (verbatim): headline "CHANNEL 9 NIGHT DESK" in bold white italic capitals with a red outline, under the badge; bottom line "LIVE PORT HALCYON NEWS AT 11:00 PM" in smaller white condensed capitals on one line.
+Spelling: C-H-A-N-N-E-L 9 N-I-G-H-T D-E-S-K. L-I-V-E P-O-R-T H-A-L-C-Y-O-N N-E-W-S A-T 1-1-colon-0-0 P-M.
+Color palette: night blue, signal red, white, a touch of chrome.
+Avoid: any other words or numbers, faces of real people, real network logos.

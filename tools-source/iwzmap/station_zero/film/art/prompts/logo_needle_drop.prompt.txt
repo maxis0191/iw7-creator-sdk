@@ -1,0 +1,9 @@
+Use case: logo-brand
+Asset type: the trademark of a small independent record shop opened in 1978 in a city subway underpass; it will be printed on its shop sign, its bags and its window. Mark only, no name.
+Primary request: a logo mark: a black vinyl record seen flat from straight above, with a big hot orange centre label; the tone arm of the record player is drawn as the minute hand of a clock: a bold orange clock hand pivoting from the label's centre, its tip ending in a small stylus head, pointing up and slightly to the left (towards the 47-minute position of a clock face). Twelve short orange tick marks around the label like the hour marks of a clock. A few concentric groove lines on the black disc, drawn as thin flat orange-free gaps (black only).
+Style/medium: flat graphic design of 1978 to 1982, screen-printed look, solid shapes, rounded friendly geometry in the spirit of fat rounded display lettering of the period (but no letters). Like a real small-business trademark made by a local designer.
+Color palette: exactly two flat colours: black #111111 and hot orange #FF5A14. No other colour, no gradients, no shading, no highlights, no texture.
+Composition/framing: square 1:1, the mark centred, filling about 80 % of the canvas, small even margin, nothing cropped.
+Background: transparent background.
+Constraints: must stay recognisable when reduced to 64 pixels wide: big simple shapes, no hairlines thinner than 1/60 of the mark's width. Flat, straight on, no perspective, no frame, no mock-up, no scene.
+Avoid: any text, letters, numerals, words; background, ground shadow, drop shadow, 3D, gloss, gradients, extra colours.

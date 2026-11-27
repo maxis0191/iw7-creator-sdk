@@ -1,0 +1,7 @@
+Use case: illustration-story
+Asset type: the front of a 1984 rental videocassette box in a record shop; texture for a flat 5 x 8 inch quad (portrait).
+Primary request: an original film cover for "STEEL HARBOR", a crime drama: a painted 1984 video cover: a rain-soaked harbour at night, a detective's silhouette under a dock lamp, cold blue and orange. The title in big bold period display lettering in the upper third.
+Text (verbatim): "STEEL HARBOR" and nothing else. Spelling: S-T-E-E-L H-A-R-B-O-R.
+Composition/framing: portrait 5:8, the cover art full-bleed to all four edges, flat and straight on.
+Constraints: only the title; the cover alone: no plastic case, no shelf, no glare, no perspective, no frame drawn. Big shapes that read at 40 pixels wide.
+Avoid: real actors, real studio logos, ratings, barcodes, credits, any other text.

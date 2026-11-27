@@ -1,0 +1,7 @@
+Use case: illustration-story
+Asset type: the front of a record sleeve (LP 1978) in the sleeve wall of a 1984 record shop; texture for a flat 12 x 12 inch quad.
+Primary request: an original record cover for the band "PIER SEVEN", album "SAIL TO SUNSET", in this style: 1978 soft rock: a warm faded photograph of a harbour sunset with a sailing boat, rounded brown and orange seventies lettering.
+Text (verbatim): the artist "PIER SEVEN" and the title "SAIL TO SUNSET", nothing else. Spelling: P-I-E-R S-E-V-E-N / S-A-I-L T-O S-U-N-S-E-T.
+Composition/framing: square 1:1, the cover art full-bleed to all four edges, flat and straight on.
+Constraints: only those words; the cover alone: no vinyl disc showing, no shop, no wall, no shrink-wrap glare, no perspective, no frame drawn. Big bold shapes that still read when the cover is shown at 96 pixels.
+Avoid: real band names or logos, real record labels, barcodes, any other text.

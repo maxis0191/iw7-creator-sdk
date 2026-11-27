@@ -1,0 +1,9 @@
+Use case: illustration-story
+Asset type: a decoration texture: a long paper banner hung across a city subway underpass for New Year's Eve 1984, placed on a flat 320 x 48 inch quad with transparent edges.
+Primary request: a long horizontal printed paper banner of cream party paper, hung by its two top corners so its middle sags in a gentle curve; printed on it fireworks bursts in red, royal blue and gold, little stars and streamers, and in the middle the words in fat festive red capitals with a gold outline: "HAPPY NEW YEAR 1985". Slight creases from being folded in a box, a small tear at one end, a strip of tape at each top corner.
+Spelling: H-A-P-P-Y N-E-W Y-E-A-R 1-9-8-5.
+Style/medium: printed party-shop paper banner of the early eighties, flat, seen straight on.
+Composition/framing: very wide landscape: the banner spans the full width of the canvas from edge to edge, its ends at the left and right borders, about one sixth of the canvas tall, centred vertically.
+Background: transparent background around the banner.
+Constraints: only those words; flat, straight on, no perspective, no ceiling, no string beyond the corners.
+Avoid: background, shadows, other text, people.

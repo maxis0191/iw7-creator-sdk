@@ -1,0 +1,8 @@
+Use case: photorealistic-natural
+Asset type: the hand-written card a shopkeeper taped to the inside of his shop's glass door on 31 December 1984; it will be a texture on a flat 10 x 7 inch quad.
+Primary request: a close, flat, straight-on scan of the card alone filling the whole frame edge to edge: a draughtswoman: very neat technical-lettering capitals drawn with a fine blue technical pen on a crisp white index card with pale blue ruled lines. Two short strips of clear yellowed sticky tape across the top corners.
+Text (verbatim, three lines, exactly this line breaking): "OUT FOR LAUNCH." / "REOPENING 00:15" / "JAN 1. - I. VARGA".
+Spelling: O-U-T F-O-R L-A-U-N-C-H-. / R-E-O-P-E-N-I-N-G 0-0-:-1-5 / J-A-N 1-. - I-. V-A-R-G-A.
+Composition/framing: landscape 10:7, the card fills the canvas full-bleed, text large and legible, centred.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: glass, door, reflections, hands, any other words, signatures, dates beyond the given text.

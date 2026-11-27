@@ -1,0 +1,9 @@
+Use case: photorealistic-natural
+Asset type: the menu board over the counter of a 1978 doughnut shop; texture for a flat 60 x 44 inch quad.
+Primary request: a hand-painted menu board by a sign writer, painted on a chocolate brown board with a pink painted border line: the title in pink brush script at the top, then the items in cream hand-lettered capitals on the left with their prices aligned on the right with dotted leaders.
+Title: "HOLE NUMBER NINE MENU"
+Lines: "GLAZED RING          $0.45" | "CHOCOLATE DIP        $0.50" | "JELLY FILLED         $0.55" | "CINNAMON TWIST       $0.55" | "BOX OF 6 ASSORTED    $2.50" | "HOT COFFEE SMALL     $0.55" | "HOT COFFEE LARGE     $0.75" | "HOT COCOA            $0.65"
+Spelling: H-O-L-E N-U-M-B-E-R N-I-N-E M-E-N-U; G-L-A-Z-E-D R-I-N-G $-0-.-4-5 ; C-H-O-C-O-L-A-T-E D-I-P $-0-.-5-0 ; J-E-L-L-Y F-I-L-L-E-D $-0-.-5-5 ; C-I-N-N-A-M-O-N T-W-I-S-T $-0-.-5-5 ; B-O-X O-F 6 A-S-S-O-R-T-E-D $-2-.-5-0 ; H-O-T C-O-F-F-E-E S-M-A-L-L $-0-.-5-5 ; H-O-T C-O-F-F-E-E L-A-R-G-E $-0-.-7-5 ; H-O-T C-O-C-O-A $-0-.-6-5.
+Composition/framing: landscape 60:44, the board full-bleed.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: any other words, pictures of food, logos.

@@ -1,0 +1,9 @@
+Use case: photorealistic-natural
+Asset type: hand-lettered price cards taped inside a 1984 shop window; one sheet holding four separate cards, a texture with transparent background on a flat 40 x 28 inch quad.
+Primary request: four fluorescent day-glo star-burst and rectangle price cards (orange, yellow, green, pink) hand-lettered in thick black marker, the kind record shops taped in windows. The four cards laid out in a loose 2 x 2 grid, each slightly rotated a few degrees, not overlapping, each card two lines of large hand lettering:
+Text (verbatim): card 1: "NEW 45s IN STOCK" / "3 FOR $4.50" ; card 2: "WEEKEND TAPE RENTAL" / "$1.75 PER NIGHT" ; card 3: "BLANK C-90 CASSETTES" / "2 FOR $3.25" ; card 4: "USED LPs BOUGHT" / "CASH OR STORE CREDIT".
+Spelling: N-E-W 4-5-s I-N S-T-O-C-K / 3 F-O-R $-4-.-5-0 ; W-E-E-K-E-N-D T-A-P-E R-E-N-T-A-L / $-1-.-7-5 P-E-R N-I-G-H-T ; B-L-A-N-K C---9-0 C-A-S-S-E-T-T-E-S / 2 F-O-R $-3-.-2-5 ; U-S-E-D L-P-s B-O-U-G-H-T / C-A-S-H O-R S-T-O-R-E C-R-E-D-I-T.
+Composition/framing: landscape 40:28, the four cards fill the canvas with small gaps between them.
+Background: transparent background around and between the cards.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: any other words, glass, a window frame, shadows outside the cards.

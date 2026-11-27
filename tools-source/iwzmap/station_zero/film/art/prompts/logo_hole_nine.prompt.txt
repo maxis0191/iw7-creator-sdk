@@ -1,0 +1,9 @@
+Use case: logo-brand
+Asset type: the trademark of a small doughnut and coffee counter opened in 1978 in a city subway underpass; it will be painted on its sign, its boxes and its cups. Mark only, no name.
+Primary request: a logo mark: a ring doughnut drawn as the numeral 9. The doughnut, seen from above with its hole, is the round bowl of the 9; from its right side a thick tapering brush stroke sweeps down and curls to the left to form the tail of the 9. The doughnut has pink icing drawn as a wavy-edged pink ring over a chocolate-brown dough ring, with a few short chocolate-brown sprinkle dashes on the pink icing. The tail stroke is chocolate brown, painted with one confident sign-painter's brush stroke.
+Style/medium: flat hand-painted sign-writer's brush script of 1978, warm and friendly, like a real neighbourhood bakery mark, solid shapes.
+Color palette: exactly two flat colours: candy pink #F48FB1 and chocolate brown #4E2A1E. No other colour, no gradients, no shading, no highlights.
+Composition/framing: square 1:1, the mark centred, filling about 80 % of the canvas height, small even margin, nothing cropped.
+Background: transparent background (the doughnut's hole is transparent too).
+Constraints: must read as both a doughnut and a 9 when reduced to 64 pixels wide. Flat, straight on, no perspective, no frame, no mock-up.
+Avoid: any letters or words, any second numeral; background, ground shadow, drop shadow, 3D, gradients, extra colours, a plate or a cup.

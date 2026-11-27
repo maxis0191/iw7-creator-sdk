@@ -1,0 +1,7 @@
+Use case: illustration-story
+Asset type: the front of a record sleeve (LP 1981) in the sleeve wall of a 1984 record shop; texture for a flat 12 x 12 inch quad.
+Primary request: an original record cover for the band "PLASTIC TONE", album "NO STATIC TONITE", in this style: early-eighties new wave: flat Memphis-like geometric shapes (squiggle, triangles, a grid) in pastel turquoise, pink and black on white, small sans-serif type.
+Text (verbatim): the artist "PLASTIC TONE" and the title "NO STATIC TONITE", nothing else. Spelling: P-L-A-S-T-I-C T-O-N-E / N-O S-T-A-T-I-C T-O-N-I-T-E.
+Composition/framing: square 1:1, the cover art full-bleed to all four edges, flat and straight on.
+Constraints: only those words; the cover alone: no vinyl disc showing, no shop, no wall, no shrink-wrap glare, no perspective, no frame drawn. Big bold shapes that still read when the cover is shown at 96 pixels.
+Avoid: real band names or logos, real record labels, barcodes, any other text.

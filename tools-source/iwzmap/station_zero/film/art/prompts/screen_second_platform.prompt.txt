@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: the image a 1930s film projector throws onto a wall made of green-bar fan-fold computer printer paper, in a dream-like subway platform; it will be a glowing (emissive) texture on a flat 384 x 216 inch quad.
+Primary request: a projected film frame showing a second subway platform seen across the tracks: a dark six-car 1930s-style subway train waiting at the platform, its two headlamps faintly on, its windows dim; square tiled columns, a long empty bench, two hanging lamps, fog. Nobody on the platform.
+Style/medium: projected black-and-white film warmed by the projector lamp: warm sepia-amber monochrome, soft focus, heavy film grain, slight gate-weave blur, low contrast; through the image, very faintly, the horizontal pale green and white bars of the printer paper it lands on and its fine paper fibre show through.
+Composition/framing: landscape 16:9, the picture fills the whole canvas edge to edge, flat and straight on; the train on the left half going away to the right in gentle one-point perspective (perspective only inside the film's content; the picture itself is flat).
+Lighting/mood: a projected image glowing on paper: brighter in the middle, softly darker towards the corners like a projector hot spot; quiet and uncanny.
+Constraints: no projector, no beam, no room, no audience, no frame or border drawn, no text, no subtitles, no sprocket holes.
+Avoid: colour other than warm monochrome, people, text.

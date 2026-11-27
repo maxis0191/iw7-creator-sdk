@@ -1,0 +1,9 @@
+Use case: photorealistic-natural
+Asset type: hand-lettered price cards taped inside a 1984 shop window; one sheet holding four separate cards, a texture with transparent background on a flat 40 x 28 inch quad.
+Primary request: four buff manila shipping-tag cards with punched reinforced holes, hand-lettered in black pencil and oxblood crayon capitals. The four cards laid out in a loose 2 x 2 grid, each slightly rotated a few degrees, not overlapping, each card two lines of large hand lettering:
+Text (verbatim): card 1: "HOUSE KEYS CUT" / "75 CENTS IN 2 MIN" ; card 2: "LADIES HEEL TIPS" / "$3.95 A PAIR" ; card 3: "FULL LEATHER SOLES" / "$18.50 PAIR" ; card 4: "WATCH BANDS & LACES" / "FROM 95 CENTS".
+Spelling: H-O-U-S-E K-E-Y-S C-U-T / 7-5 C-E-N-T-S I-N 2 M-I-N ; L-A-D-I-E-S H-E-E-L T-I-P-S / $-3-.-9-5 A P-A-I-R ; F-U-L-L L-E-A-T-H-E-R S-O-L-E-S / $-1-8-.-5-0 P-A-I-R ; W-A-T-C-H B-A-N-D-S & L-A-C-E-S / F-R-O-M 9-5 C-E-N-T-S.
+Composition/framing: landscape 40:28, the four cards fill the canvas with small gaps between them.
+Background: transparent background around and between the cards.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: any other words, glass, a window frame, shadows outside the cards.

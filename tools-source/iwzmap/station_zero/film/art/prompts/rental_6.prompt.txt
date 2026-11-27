@@ -1,0 +1,7 @@
+Use case: illustration-story
+Asset type: the front of a 1984 rental videocassette box in a record shop; texture for a flat 5 x 8 inch quad (portrait).
+Primary request: an original film cover for "SUMMER AT PIER FOUR", a teen romance: a soft-focus 1984 video cover photograph: a teenage couple on a boardwalk pier at sunset, pastel pink and turquoise. The title in big bold period display lettering in the upper third.
+Text (verbatim): "SUMMER AT PIER FOUR" and nothing else. Spelling: S-U-M-M-E-R A-T P-I-E-R F-O-U-R.
+Composition/framing: portrait 5:8, the cover art full-bleed to all four edges, flat and straight on.
+Constraints: only the title; the cover alone: no plastic case, no shelf, no glare, no perspective, no frame drawn. Big shapes that read at 40 pixels wide.
+Avoid: real actors, real studio logos, ratings, barcodes, credits, any other text.

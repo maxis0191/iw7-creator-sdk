@@ -1,0 +1,9 @@
+Use case: photorealistic-natural
+Asset type: hand-lettered price cards taped inside a 1984 shop window; one sheet holding four separate cards, a texture with transparent background on a flat 40 x 28 inch quad.
+Primary request: four white index cards hand-lettered in neat blue technical-pen capitals with a ruler-drawn blue underline. The four cards laid out in a loose 2 x 2 grid, each slightly rotated a few degrees, not overlapping, each card two lines of large hand lettering:
+Text (verbatim): card 1: "B&W COPIES" / "10 CENTS EACH" ; card 2: "ARCHITECT BLUEPRINTS" / "FROM $1.20 A SHEET" ; card 3: "PASSPORT PHOTOS" / "4 FOR $4.50 IN 4 MIN" ; card 4: "RUBBER STAMPS MADE" / "NEXT DAY PICKUP".
+Spelling: B-&-W C-O-P-I-E-S / 1-0 C-E-N-T-S E-A-C-H ; A-R-C-H-I-T-E-C-T B-L-U-E-P-R-I-N-T-S / F-R-O-M $-1-.-2-0 A S-H-E-E-T ; P-A-S-S-P-O-R-T P-H-O-T-O-S / 4 F-O-R $-4-.-5-0 I-N 4 M-I-N ; R-U-B-B-E-R S-T-A-M-P-S M-A-D-E / N-E-X-T D-A-Y P-I-C-K-U-P.
+Composition/framing: landscape 40:28, the four cards fill the canvas with small gaps between them.
+Background: transparent background around and between the cards.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: any other words, glass, a window frame, shadows outside the cards.

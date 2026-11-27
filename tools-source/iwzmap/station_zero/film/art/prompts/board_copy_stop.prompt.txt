@@ -1,0 +1,10 @@
+Use case: photorealistic-natural
+Asset type: the price board on the wall of a 1978 copy shop; texture for a flat 60 x 44 inch quad.
+Primary request: a black grooved felt changeable-letter board (the kind with white plastic push-in letters) in a thin aluminium edge, straight on, filling the frame. White plastic capitals set in neat rows, the title in larger letters:
+Title: "COPY STOP PRICE LIST"
+Lines (one per row, keep the spacing between item and price as a gap): "LETTER COPIES     $0.10" | "LEGAL COPIES      $0.14" | "TWO-SIDED         $0.18" | "BLUEPRINT 24X36   $1.20" | "SPIRAL BINDING    $1.75" | "LAMINATING CARD   $0.85"
+A slightly crooked letter here and there, one row a little uneven, like a real letter board.
+Spelling: C-O-P-Y S-T-O-P P-R-I-C-E L-I-S-T; L-E-T-T-E-R C-O-P-I-E-S $-0-.-1-0 ; L-E-G-A-L C-O-P-I-E-S $-0-.-1-4 ; T-W-O---S-I-D-E-D $-0-.-1-8 ; B-L-U-E-P-R-I-N-T 2-4-X-3-6 $-1-.-2-0 ; S-P-I-R-A-L B-I-N-D-I-N-G $-1-.-7-5 ; L-A-M-I-N-A-T-I-N-G C-A-R-D $-0-.-8-5.
+Composition/framing: landscape 60:44, the board full-bleed (the aluminium edge at the very borders is fine).
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: any other words, any logo, a wall around it.
