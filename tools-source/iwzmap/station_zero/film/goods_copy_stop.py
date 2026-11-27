@@ -76,7 +76,10 @@ def window_west(K):
     K.decal(it, 'drawing', art_b('cs_vellum_drawing.png'), ((x0 + x1) / 2, (y0 + y1) / 2 + 0.6, 42.6), n, (36.0, 18.0), lift=0.25)
     K.box(it, 'shelf', [x1 - 1.0, y0 + 4.0, 36.0, x1 + 9.0, y0 + 18.0, 37.2], M['grey'])
     K.box(it, 'shelf_leg', [x1 + 6.0, y0 + 9.0, 0.0, x1 + 8.0, y0 + 11.0, 36.0], M['grey'])
-    K.fixture('desk_lamp', 'desk_lamp', (x1 + 4.0, y0 + 11.0, 37.2), 200.0, kelvin=3600, intensity=0.9, radius=0.9)
+    K.prop('desk_lamp', 'p7_light_lamp_desk_vintage_01_on', (x1 + 4.0, y0 + 11.0, 37.2), yaw=200.0)
+    # the shop's one practical (pass 4: the ream wall read black from the hall, the desk lamp did not reach it): a display light bar on the
+    # window head over the ream wall, lighting its face (baked, emergency)
+    K.fixture('window_light', 'wall_led', (-2552.0, GY + 2.0, 136.0), 90.0, kelvin=4800, intensity=1.4, radius=1.0)
     # the rack of large rolled drawings by the door: a stand, tall rolls in blue and white standing in it up to eye height
     it = K.item('roll_rack')
     c = (-2391.0, 4326.0)

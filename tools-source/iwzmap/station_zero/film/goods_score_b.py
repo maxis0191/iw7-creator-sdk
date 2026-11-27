@@ -30,7 +30,7 @@ TRADE = {
                   'gala_tray_rings', 'ring_tray', 'ring_choc', 'coffee_urn', 'coffee_pot', 'plate', 'ring_on_plate', 'boxes_flat', 'box_made_up',
                   'rack_tray', 'glass_rack', 'rail_rack', 'counter_case'},
 }
-SIGNS = {'window_card', 'hanging_card', 'price_board', 'notice', 'booth_lettering', 'menu_board', 'today_board', 'tv_picture', 'gala_label'}
+SIGNS = {'window_light', 'window_card', 'hanging_card', 'price_board', 'notice', 'booth_lettering', 'menu_board', 'today_board', 'tv_picture', 'gala_label'}
 SHELF = {'ring_choc', 'ream', 'ream_stack', 'rolled_drawing', 'sorted_copies', 'job_envelope', 'job', 'blueprint_roll', 'drawing_tube', 'programmes', 'ring_tray', 'rack_tray', 'box_made_up'}
 FILLER_WORDS = ('box', 'crate', 'pallet', 'trash', 'carton', 'debris')
 
