@@ -34,7 +34,7 @@ def floor(px=1024, n=32, seed=1978):
             m = noise.crop(box).point(lambda v: int(v * 0.35))
             tile = Image.blend(tile, Image.merge('RGB', (m, m, m)), 0.12)
             col.paste(tile, box[:2])
-            gl.paste(rnd.randint(205, 235), box)      # pass 3: glazed quarry, the target's floor carries reflections
+            gl.paste(rnd.randint(236, 252), box)      # pass 3: 150..190 -> 205..235; 28 Nov: 236..252 (the lead: gloss but no reflection of the fronts)
     return col, gl
 
 

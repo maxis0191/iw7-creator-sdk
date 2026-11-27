@@ -24,6 +24,7 @@ from studio import build as B  # noqa: E402
 from studio import fixtures as FX  # noqa: E402
 import shellgeo as G  # noqa: E402
 import standins as S  # noqa: E402
+import shell_hall as SH  # noqa: E402
 
 # ------------------------------------------------------------------------------------------------ materials: ONE table (the swap to our own
 # tile pictures, when B.material lands, is an edit here)
@@ -98,7 +99,7 @@ UNITS = {   # name: (x0, x1, title)
     'hole_nine': (-1970.0, -1650.0),
     'heel_key': (-1640.0, -1320.0),
 }
-SHUTTER_STOP = {'needle_drop': 0.25, 'copy_stop': 0.0, 'hole_nine': 0.0, 'heel_key': 0.5}    # share of the opening the curtain covers
+SHUTTER_STOP = {'needle_drop': 0.25, 'copy_stop': 0.0, 'hole_nine': 0.0, 'heel_key': 0.2}    # Heel & Key 0.5 -> 0.2 (A3a request 1: the pegboard and bench in view)    # share of the opening the curtain covers
 LIGHT_K = float(os.environ.get('A2_LIGHT_K', '2.5'))      # pass 1: at 1.0 the hall read mean luma 4.5 of 255
 RADIUS_K = float(os.environ.get('A2_RADIUS_K', '1.6'))
 
@@ -492,7 +493,7 @@ def copy_stop(m):
     # the blueprint bay at the west: a plan chest and the wheel position against the west wall
     bay = [x0 + 16.0, Y1 + 40.0, x0 + 150.0, PART_Y - 12.0]
     rbox(m, 'cs_bay_floor', [bay[0], bay[1], 0.0, bay[2], bay[3], 0.35], 'w/linoleum_floor_tiles_02_dark')
-    pc = [bay[0], bay[1], 0.0, bay[0] + 40.0, bay[1] + 80.0, 36.0]                 # the plan chest against the west wall
+    pc = [bay[0], bay[1], 0.0, bay[0] + 40.0, 4392.0, 36.0]                       # A3b request 3: 64 clear of the wheel                 # the plan chest against the west wall
     counter(m, 'cs_planchest', pc, MAT['alu_white'], 'w/zmb_brushed_metal_01_blue', kick=MAT['dark'])
     anchor('copy_stop.blueprint_machine', [pc[0], pc[1], 36.0, pc[3], pc[4], 70.0], 'e', 'the blueprint (diazo) machine on the plan chest, rolls of drawings')
     wx = bay[0] + 60.0                                                             # the wheel against the partition, facing the shop
@@ -504,15 +505,16 @@ def copy_stop(m):
     # copiers: two machines on the west half, each with the bar of green-white light under its lid (static: the bar does not move)
     for k, ccx in enumerate((cx - 150.0, cx - 70.0)):
         cy = Y1 + 150.0
-        rbox(m, 'cs_copier_%d_body' % k, [ccx - 22.0, cy - 14.0, 0.0, ccx + 22.0, cy + 14.0, 34.0], 'w/plastic_wall_frp_01_beige')
-        solid(m, 'cs_copier_%d' % k, [ccx - 23.0, cy - 15.0, 0.0, ccx + 32.0, cy + 15.0, 40.0])
+        rbox(m, 'cs_copier_%d_body' % k, [ccx - 22.0, cy - 14.0, 0.0, ccx + 22.0, cy + 14.0, 44.0], 'w/plastic_wall_frp_01_beige')      # 44 high (A3b request 5: it hid behind the riser)
+        solid(m, 'cs_copier_%d' % k, [ccx - 23.0, cy - 15.0, 0.0, ccx + 32.0, cy + 15.0, 56.0])
         rbox(m, 'cs_copier_%d_kick' % k, [ccx - 21.0, cy - 14.4, 0.0, ccx + 21.0, cy + 14.4, 4.0], MAT['dark'])
-        rbox(m, 'cs_copier_%d_deck' % k, [ccx - 23.0, cy - 15.0, 34.0, ccx + 23.0, cy + 15.0, 37.0], MAT['alu_white'])
-        rbox(m, 'cs_copier_%d_bar' % k, [ccx - 16.0, cy - 15.3, 37.0, ccx + 16.0, cy - 13.0, 38.2], 'w/emissive_light_panel_green')
-        rbox(m, 'cs_copier_%d_lid' % k, [ccx - 18.0, cy - 12.0, 38.4, ccx + 18.0, cy + 13.0, 40.0], 'w/metal_painted_wall_panel_04')
-        rbox(m, 'cs_copier_%d_tray' % k, [ccx + 22.0, cy - 9.0, 20.0, ccx + 32.0, cy + 9.0, 21.5], MAT['alu_white'])
-        lamp(m, 'light_cs_copier_%d' % k, (ccx, cy - 24.0, 40.0), nm, color=(0.72, 1.0, 0.8), radius=180.0, intensity=0.35)      # an accent: the blue-white tubes lead (pass 1 score: green led)
-        anchor('copy_stop.copier_%d_top' % (k + 1), [ccx - 18.0, cy - 12.0, 40.0, ccx + 18.0, cy + 13.0, 60.0], 's', 'an original left on the glass, paper on the tray')
+        rbox(m, 'cs_copier_%d_deck' % k, [ccx - 23.0, cy - 15.0, 44.0, ccx + 23.0, cy + 15.0, 47.0], MAT['alu_white'])
+        rbox(m, 'cs_copier_%d_bar' % k, [ccx - 16.0, cy - 15.3, 47.0, ccx + 16.0, cy - 13.0, 48.4], 'w/emissive_light_panel_green')
+        rbox(m, 'cs_copier_%d_lid' % k, [ccx - 18.0, cy - 12.0, 48.6, ccx + 18.0, cy + 13.0, 50.2], 'w/metal_painted_wall_panel_04')
+        rbox(m, 'cs_copier_%d_feeder' % k, [ccx - 14.0, cy - 4.0, 50.2, ccx + 14.0, cy + 12.0, 56.0], 'w/plastic_wall_frp_01_beige')      # the document feeder
+        rbox(m, 'cs_copier_%d_tray' % k, [ccx + 22.0, cy - 9.0, 26.0, ccx + 32.0, cy + 9.0, 27.5], MAT['alu_white'])
+        lamp(m, 'light_cs_copier_%d' % k, (ccx, cy - 24.0, 50.0), nm, color=(0.72, 1.0, 0.8), radius=180.0, intensity=0.35)      # an accent: the blue-white tubes lead (pass 1 score: green led)
+        anchor('copy_stop.copier_%d_top' % (k + 1), [ccx - 18.0, cy - 12.0, 50.2, ccx + 18.0, cy + 13.0, 70.0], 's', 'an original left on the glass, paper on the tray')
     REPORT['fallbacks'].append('cs_copier_*: authored static copier bodies; the green-white bar is a fixed emissive strip and a baked light (no moving scan)')
     # the service counter and the pigeonholes of uncollected jobs on the back wall
     counter(m, 'cs_counter', [cx + 40.0, Y1 + 76.0, 0.0, cx + 220.0, Y1 + 102.0, 40.0], MAT['alu_white'], 'w/zmb_brushed_metal_01_blue', kick=MAT['dark'])
@@ -547,7 +549,6 @@ def photo_booth(m, xe, y0):
     rbox(m, 'pb_lightband', [x0 + 3.0, y0 - 0.6, 76.0, x1 - 3.0, y0, 83.0], MAT['panel_on'])
     rbox(m, 'pb_slot', [x0 + 14.0, y0 - 0.8, 36.0, x0 + 26.0, y0, 38.0], MAT['dark'])
     rbox(m, 'pb_sample_frame', [x0 + 8.0, y0 - 0.6, 44.0, x0 + 34.0, y0, 70.0], trim)
-    rbox(m, 'pb_seat', [x0 + 12.0, y0 + 20.0, 0.0, x1 - 6.0, y1 - 10.0, 20.0], MAT['rubber'])
     solid(m, 'pb', [x0, y0, 0.0, x1, y1, 84.0])
     B.prop(m, 'cp_disco_curtain_left', (x0 - 1.5, y0 + 22.0, 74.0), yaw=0.0, scale=0.6, layer='fronts', id='pb_curtain')
     anchor('copy_stop.booth_sample_strips', [x0 + 8.0, y0 - 1.0, 44.0, x0 + 34.0, y0, 70.0], 's', 'sample strips in the frame on the booth front (Double Takes, the strip secret)')
@@ -600,7 +601,12 @@ def hole_nine(m):
     fix(m, 'neon_open', (cx - 40.0, PART_Y - 0.2, 118.0), 270.0, role=nm, intensity=1.3, radius=1.1)
     fix(m, 'pendant', (cx - 70.0, Y1 + 50.0, UNIT_H), role=nm, color=(1.0, 0.48, 0.72), intensity=0.9, radius=0.65)
     fix(m, 'pendant', (cx + 10.0, Y1 + 50.0, UNIT_H), role=nm, color=(1.0, 0.48, 0.72), intensity=0.9, radius=0.65)
-    fix(m, 'downlight', (cx - 20.0, Y1 + 112.0, UNIT_H), role=nm, kelvin=2700, intensity=1.2, radius=0.85)
+    ids = fix(m, 'downlight', (cx - 20.0, Y1 + 60.0, UNIT_H), role=nm, kelvin=2700, intensity=1.2, radius=0.85)   # A3b request 4: a spot on the rack front, not a new light
+    for lid in ids[1:]:
+        o = m.get(lid)
+        d = (0.0, (Y1 + 100.0) - o['origin'][1], 22.0 - o['origin'][2])
+        ln = math.sqrt(sum(c * c for c in d))
+        m.update(lid, dir=[round(c / ln, 4) for c in d])
     for k, px in enumerate((x0 + 8.0, x1 - 8.0)):
         fix(m, 'outdoor_wall', (px, Y1 - 8.0, 120.0), 270.0, role=nm, intensity=0.8, radius=0.8)
 
@@ -627,12 +633,14 @@ def heel_key(m):
     counter(m, 'hk_bench', [x0 + 20.0, Y1 + 60.0, 0.0, cx - 10.0, peg_y - 2.0, 36.0], sm['join'], sm['accent'])
     anchor('heel_key.bench', [x0 + 22.0, Y1 + 60.0, 36.0, cx - 12.0, peg_y - 2.0, 64.0], 's', 'the key machine, the lasts, the mould of the Dead-Man\'s Handle')
     shelving(m, 'hk_lasts', [x1 - 70.0, Y1 + 50.0, 0.0, x1 - 20.0, peg_y - 2.0, 96.0], 3, sm['join'], 'w')
+    m.remove('hk_lasts_end_a')                                     # A3a request 3: its south end hid the lasts from the hall
     anchor('heel_key.lasts_shelf', [x1 - 70.0, Y1 + 50.0, 6.0, x1 - 22.0, peg_y - 2.0, 96.0], 'w', 'shoe lasts, polish tins, boxes of heels')
     B.wallbuy(m, (cx + 60.0, peg_y - 6.0, 0.0), 'marksman', 1500, 270.0, layer='gameplay', id='buy_marksman_heel_key')
     rbox(m, 'backroom_heel_key_floor', [x0 + 16.0, peg_y + 12.0, 0.0, x1 - 16.0, YB - 16.0, 0.3], MAT['back_floor'])
     B.spawner(m, (x0 + 50.0, 4538.0, 0.0), 0.0, layer='gameplay', id='spawn_heel_key_1')
     # light: one tungsten work lamp on the bench
     fix(m, 'desk_lamp', (cx - 50.0, Y1 + 90.0, 36.0), 0.0, role=nm, kelvin=2400, intensity=1.3, radius=1.0)
+    fix(m, 'downlight', (cx, Y1 + 65.0, UNIT_H), role=nm, kelvin=2600, intensity=1.0, radius=0.9)          # A3a request 2: the stall's goods read from the hall
     for k, px in enumerate((x0 + 8.0, x1 - 8.0)):             # two caged bulkheads on the piers: the stall's front in tungsten (pass 1: its fascia was black)
         fix(m, 'bulkhead', (px, Y1 - 8.0, 140.0), 270.0, role=nm, kelvin=2500, intensity=0.9, radius=0.9)
     # the service passage east of the row (staff door to the hall), the Heel & Key back door opens into it
@@ -682,7 +690,7 @@ def south_wall(m):
     bx(m, 'poster_frame', [px - 36.0, y, 60.0, px + 36.0, y + 2.5, 164.0], MAT['alu_black'])
     picture(m, 'poster_station_zero', 'poster_station_zero.png', (px, y + 2.5, 112.0), (0.0, 1.0, 0.0), (64.0, 96.0))
     # benches and one bin
-    for k, x in enumerate((-2730.0, -2520.0)):
+    for k, x in enumerate((-2730.0, -2470.0)):           # the second bench moved east of the lockers (round of 28 Nov)
         B.prop(m, 'street_bench_long_iw6', (x, y + 20.0, 0.0), yaw=180.0, layer='south', id='bench_%d' % k, clip=[-49.0, -19.0, 0.0, 49.0, 19.0, 20.0])
     B.prop(m, 'cp_disco_street_trashcan_01', (-2210.0, y + 16.0, 0.0), yaw=0.0, layer='south', id='bin_0', clip=[-12.0, -12.0, 0.0, 12.0, 12.0, 30.0])
     fix(m, 'emergency_wall', (-1460.0, y + 0.5, 200.0), 90.0, role='hall', intensity=0.9, radius=1.4)
@@ -787,7 +795,10 @@ def cameras(m):
         dx = -320.0 if cx - 320.0 > XW + 40.0 else 320.0          # pass 1: the Needle Drop oblique stood outside the hall (x -3120)
         cams.append(('arc_%s_oblique' % nm, (cx + dx, 3960.0, 60.0), round(math.degrees(math.atan2(Y1 - 3960.0, -dx)), 1), -6.0))
         if nm != 'heel_key':
-            cams.append(('arc_%s_inside' % nm, (cx + {'copy_stop': 40.0, 'needle_drop': -60.0}.get(nm, 0.0), 4440.0, 60.0), 270.0, 0.0))
+            if nm == 'hole_nine':                                       # A3b request 1: 17 behind the glass rack before
+                cams.append(('arc_hole_nine_inside', (-1730.0, 4440.0, 66.0), 200.0, 0.0))
+            else:
+                cams.append(('arc_%s_inside' % nm, (cx + {'copy_stop': 40.0, 'needle_drop': -60.0}.get(nm, 0.0), 4440.0, 60.0), 270.0, 0.0))
     for nm, eye, yaw, pitch in cams:
         B.camera(m, nm, eye, yaw, pitch=pitch, id=nm)
     REPORT['cameras'] = [c[0] for c in cams]
@@ -807,7 +818,7 @@ def build(name='sz_arcade_shell'):
     ANCHORS.clear()
     LIGHTS.clear()
     m = Map(name, 'Station Zero: the Underpass Arcade (shell, A2)', base={'kind': 'emit', 'path': BASE_EMIT}, settings=recipe())
-    for layer in ('arcade_door', 'shell', 'ceiling', 'fronts', 'south', 'lights', 'gameplay', 'cameras'):
+    for layer in ('arcade_door', 'shell', 'ceiling', 'fronts', 'south', 'hall', 'lights', 'gameplay', 'cameras'):
         m.add_layer(layer)
     hall(m)
     shops(m)
@@ -815,6 +826,8 @@ def build(name='sz_arcade_shell'):
     west_end(m)
     polisher(m)
     hangings(m)
+    SH.hall_life(sys.modules[__name__], m)
+    SH.fronts_by_models(sys.modules[__name__], m)
     gameplay(m)
     cameras(m)
     for nm, spec in OWN.items():                                   # our own tiling materials (B.material)

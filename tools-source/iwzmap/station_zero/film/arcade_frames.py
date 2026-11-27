@@ -48,7 +48,9 @@ def sheets(folder, state, cams):
 def main():
     folder = sys.argv[1]
     doc = sys.argv[2] if len(sys.argv) > 2 else DOC
-    cams = json.load(open(os.path.join(doc, 'shell_report.json'), encoding='utf-8'))['cameras']
+    sys.path.insert(0, os.environ.get('STUDIO_ROOT', r'C:\studio'))
+    from studio import Map
+    cams = [o['name'] for o in Map.load(doc).objects() if o['kind'] == 'camera']      # every camera of the document (shell and goods)
     rep = {'power': {}, 'shots': {}}
     states = os.environ.get('A2_STATES', 'on,off').split(',')       # 'lit' = a lit-vision variant shot as it is (no power switch)
     for state in states:
