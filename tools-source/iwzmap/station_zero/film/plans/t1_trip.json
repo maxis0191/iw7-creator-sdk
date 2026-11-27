@@ -1,0 +1,369 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "t1_trip",
+ "map": "cp_iwz",
+ "conditions": "ignored",
+ "libraries": [
+  "szt1",
+  "szaccept"
+ ],
+ "about": "T1 (b): the trip on the real Terminus. Power on, four zombies spawned (ignoring the player), the player at the cab of car 1 uses it: within 8.5 s he stands in the Terminus box, off the grid; he buys at the machine during the stay; the round's spawning is paused and the zombies alive at arrival are the same 30 s later; after 40 s he is back in car 1 with the protections off, the cab refuses a second use, and it is idle again 150 s later.",
+ "steps": [
+  {
+   "do": "money",
+   "value": 20000
+  },
+  {
+   "do": "call",
+   "fn": "sz_power_direct",
+   "args": [
+    "power",
+    20
+   ],
+   "s": 1
+  },
+  {
+   "do": "spawn",
+   "tag": "plat",
+   "at": [
+    700,
+    1800,
+    -320
+   ],
+   "count": 4
+  },
+  {
+   "do": "wait",
+   "s": 4
+  },
+  {
+   "do": "tp",
+   "at": [
+    265.5,
+    1488,
+    -320
+   ],
+   "yaw": 180,
+   "snap": true
+  },
+  {
+   "do": "call",
+   "fn": "t1_term",
+   "args": [
+    "s0"
+   ],
+   "s": 1
+  },
+  {
+   "do": "use",
+   "name": "cab",
+   "ent": "iwz_terminus_cab",
+   "near": [
+    265.5,
+    1488,
+    -320
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 7.5
+  },
+  {
+   "do": "mark",
+   "name": "arr_m"
+  },
+  {
+   "do": "call",
+   "fn": "t1_term",
+   "args": [
+    "arr"
+   ],
+   "s": 1
+  },
+  {
+   "do": "trace",
+   "name": "under",
+   "hull": true,
+   "points": [
+    [
+     -9700.0,
+     -4712.0,
+     40.0,
+     -9700.0,
+     -4712.0,
+     -40.0
+    ]
+   ]
+  },
+  {
+   "do": "take",
+   "give": "iw7_fhr_zm"
+  },
+  {
+   "do": "money",
+   "value": 20000
+  },
+  {
+   "do": "use",
+   "name": "trip_pap",
+   "kind": "weapon_upgrade",
+   "near": [
+    -10210.0,
+    -4640.0,
+    40.0
+   ],
+   "s": 3
+  },
+  {
+   "do": "state",
+   "name": "trip_pap_after"
+  },
+  {
+   "do": "call",
+   "fn": "t1_term",
+   "args": [
+    "bought"
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 21
+  },
+  {
+   "do": "call",
+   "fn": "t1_term",
+   "args": [
+    "a30"
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 13
+  },
+  {
+   "do": "mark",
+   "name": "back_m"
+  },
+  {
+   "do": "call",
+   "fn": "t1_term",
+   "args": [
+    "back"
+   ],
+   "s": 1
+  },
+  {
+   "do": "use",
+   "name": "again",
+   "ent": "iwz_terminus_cab",
+   "near": [
+    265.5,
+    1488,
+    -320
+   ],
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "t1_term",
+   "args": [
+    "refused"
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 145
+  },
+  {
+   "do": "call",
+   "fn": "t1_term",
+   "args": [
+    "ready"
+   ],
+   "s": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:s0.state",
+   "eq": "idle",
+   "why": "armed by the power, idle at the cab"
+  },
+  {
+   "do": "expect",
+   "that": "use:cab.found",
+   "eq": 1,
+   "why": "the cab usable exists"
+  },
+  {
+   "do": "expect",
+   "that": "probe:arr.state",
+   "eq": "away",
+   "why": "arrived: the stay has begun"
+  },
+  {
+   "do": "expect",
+   "that": "probe:arr.riders",
+   "eq": 1,
+   "why": "the one player in car 1 travelled"
+  },
+  {
+   "do": "expect",
+   "that": "probe:arr.offgrid",
+   "eq": 1,
+   "why": "off the zombies' grid during the stay"
+  },
+  {
+   "do": "expect",
+   "that": "trace:under_0.z",
+   "near": 0,
+   "tol": 2,
+   "why": "the floor holds under the arrival slot"
+  },
+  {
+   "do": "expect",
+   "that": "probe:arr.inside",
+   "eq": 1,
+   "why": "within 8.5 s of the use the player is inside the Terminus box"
+  },
+  {
+   "do": "expect",
+   "that": "arr_m.x",
+   "near": -10200.0,
+   "tol": 700.0,
+   "why": "x inside the Terminus box"
+  },
+  {
+   "do": "expect",
+   "that": "arr_m.y",
+   "near": -4750.0,
+   "tol": 450.0,
+   "why": "y inside the Terminus box"
+  },
+  {
+   "do": "expect",
+   "that": "arr_m.ground",
+   "eq": 1,
+   "why": "standing on the paper floor"
+  },
+  {
+   "do": "expect",
+   "that": "use:trip_pap.found",
+   "eq": 1,
+   "why": "the machine's interaction is found in the island room"
+  },
+  {
+   "do": "expect",
+   "that": "use:trip_pap.picked",
+   "eq": 1,
+   "why": "the stock monitor picks it: the prompt would show"
+  },
+  {
+   "do": "expect",
+   "that": "use:trip_pap.spent",
+   "eq": 5000,
+   "why": "the stock upgrade price was paid"
+  },
+  {
+   "do": "expect",
+   "that": "use:trip_pap.weapon1",
+   "ne": "@use:trip_pap.weapon0",
+   "why": "the weapon came back upgraded (another name)"
+  },
+  {
+   "do": "expect",
+   "that": "probe:bought.paused",
+   "eq": 1,
+   "why": "alone at the Terminus: the round's spawning paused by the module"
+  },
+  {
+   "do": "expect",
+   "that": "probe:bought.zpaused",
+   "eq": 1,
+   "why": "level.zombies_paused is set"
+  },
+  {
+   "do": "expect",
+   "that": "probe:a30.state",
+   "eq": "away",
+   "why": "still away 30 s after arrival"
+  },
+  {
+   "do": "expect",
+   "that": "probe:a30.alive",
+   "eq": "@probe:arr.alive",
+   "why": "the zombies alive at arrival wait: the same count 30 s later"
+  },
+  {
+   "do": "expect",
+   "that": "probe:back.state",
+   "eq": "cooldown",
+   "why": "returned, not in service"
+  },
+  {
+   "do": "expect",
+   "that": "probe:back.car",
+   "eq": 1,
+   "why": "back in car 1"
+  },
+  {
+   "do": "expect",
+   "that": "back_m.x",
+   "near": 465.5,
+   "tol": 270,
+   "why": "x inside car 1"
+  },
+  {
+   "do": "expect",
+   "that": "back_m.y",
+   "near": 1488,
+   "tol": 67,
+   "why": "y inside car 1"
+  },
+  {
+   "do": "expect",
+   "that": "probe:back.offgrid",
+   "eq": 0,
+   "why": "protections off after the return"
+  },
+  {
+   "do": "expect",
+   "that": "probe:back.busy",
+   "eq": 0,
+   "why": "not busy after the return"
+  },
+  {
+   "do": "expect",
+   "that": "probe:back.zpaused",
+   "eq": 0,
+   "why": "the pause released"
+  },
+  {
+   "do": "expect",
+   "that": "probe:back.returned",
+   "eq": 1,
+   "why": "one player returned"
+  },
+  {
+   "do": "expect",
+   "that": "probe:refused.refused",
+   "eq": 1,
+   "why": "the cooldown refuses a second use"
+  },
+  {
+   "do": "expect",
+   "that": "probe:refused.state",
+   "eq": "cooldown",
+   "why": "still not in service"
+  },
+  {
+   "do": "expect",
+   "that": "probe:ready.state",
+   "eq": "idle",
+   "why": "idle again 150 s after the return"
+  }
+ ]
+}

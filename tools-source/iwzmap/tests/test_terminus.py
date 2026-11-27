@@ -78,6 +78,7 @@ class TerminusTrip(unittest.TestCase):
         for n in ('makeusable', 'earthquakeforplayer', 'dontinterpolate', 'setvelocity', 'setplayerangles'):
             b[n] = _ret_undef
         b['sethintstring'] = lambda vm_, obj, h=None, *a: obj.f.__setitem__('hint', h)
+        b['visionsetnakedforplayer'] = lambda vm_, obj, v=None, *a: obj.f.__setitem__('vis', v)
         b['soundexists'] = lambda vm_, obj, n: True
         b['playerphysicstrace'] = lambda vm_, obj, a, z: (z[0], z[1], z[2] + 64)       # lands on the destination
         b['getclosestpointonnavmesh'] = lambda vm_, obj, p: p
@@ -149,7 +150,9 @@ class TerminusTrip(unittest.TestCase):
             self.assertTrue(7300 <= p.f['origin'][0] <= 8700 and 7550 <= p.f['origin'][1] <= 8450, p.f['origin'])
             self.assertEqual(p.f.get('is_off_grid'), 1)      # stock: protected for the whole stay
             self.assertEqual(p.f['tdm'].d.get('iwz_terminus'), 0.0)
+            self.assertEqual(p.f.get('vis'), 'cp_frontend')   # the Terminus's own vision on arrival
         self.assertNotIn('is_off_grid', c.f)
+        self.assertNotIn('vis', c.f)
         # C stands outside: no pause
         vm.run_for(2)
         self.assertFalse(vm.level.f.get('zombies_paused'))
@@ -171,6 +174,7 @@ class TerminusTrip(unittest.TestCase):
             self.assertTrue(197.5 <= o[0] <= 733.5 and 1421.5 <= o[1] <= 1554.5, o)
             self.assertTrue(undef(p.f.get('is_off_grid')))
             self.assertTrue(undef(p.f.get('iwz_busy')))
+            self.assertEqual(p.f.get('vis'), '')               # the station's lit vision again (dvar unset: the map's own)
         self.assertEqual(vm.level.f['iwz_terminus'].f['returned'], 2)
         self.use(vm, a)
         self.assertIn('why=cooldown', str(self.log(vm)[-1]))

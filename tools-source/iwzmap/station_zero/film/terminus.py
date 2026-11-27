@@ -41,11 +41,13 @@ COLS_X = [XM + PITCH * (k - 2) for k in range(5)]
 COL_Y, COL_W = Y1 - 72.0, 48.0
 BENCH_X = [(COLS_X[k] + COLS_X[k + 1]) / 2 for k in range(4)]
 
-# the machine: the stock projector (zmb_pap_machine_animated, 121 x 44.5 x 92, +X forward) on the validator post, yaw 270 = its forward and
-# its lens face the screen (-y). blend_core.pap_offsets puts the machine 10 behind the use point: machine at USE + (0, 10).
+# the machine: the stock projector (zmb_pap_machine_animated, 121 x 44.5 x 92) on the validator post. Measured in pass 1: the relocated scriptable lays the
+# model's long axis 90 degrees from the pap yaw (yaw 270 put it along x, reels east). PAP_YAW 180 lays it along y, lens end south toward the screen, and the
+# user stands at its west side, as at the stock machine. blend_core.pap_offsets puts the machine 10 behind the use point: machine at USE + (10, 0).
 POST_H = 40.0
+PAP_YAW = 180.0
 MACH = (XM, -4640.0)
-USE = (MACH[0], MACH[1] - 10.0, POST_H)
+USE = (MACH[0] - 10.0, MACH[1], POST_H)
 LENS = (MACH[0], MACH[1] - 64.0, POST_H + 52.0)          # the lens end of the body (+X), about 52 over its feet
 SCREEN = (MACH[0], Y0, 150.0, 384.0, 216.0)              # centre x, wall y, centre z, w, h of the projected picture
 
@@ -58,6 +60,9 @@ WALL_TILE = 128.0                    # 16 bars of 64 px in a 1024 px picture: on
 PAPER_GLOSS = 0.12                   # matte paper
 
 LIGHT_GROUP = 'emergency'            # lit-first base: every lamp baked (PLAN decision 3)
+MACHINE_KEY = 6.0                    # pass 3: 2.0 left the body near black
+BEAM = 14.0                          # pass 3: 4.0 gave no visible warm rectangle around the picture
+TUBE_INTENSITY, TUBE_RADIUS = 3.0, 2.2  # pass 1 (1.0, 1.6) read as a dim room; the bible's light is flat office fluorescent
 
 
 def _p(*names):
@@ -73,7 +78,34 @@ def derived_pictures():
     src = _p('paper_greenbar_tile.png')
     if not os.path.isfile(out) or os.path.getmtime(out) < os.path.getmtime(src):
         Image.open(src).convert('RGB').transpose(Image.Transpose.ROTATE_90).save(out)
-    return {'floor': out}
+    return {'floor': out, 'screen': screen_picture()}
+
+
+def screen_picture():
+    """the projected reel as light on paper, not a framed print (lead, pass 1): the art's vignetted border cropped away, the picture brightened, and an alpha
+    that is the picture's own light (dark parts let the paper through) times a feather to nothing over the outer 14 % of each side"""
+    import numpy as np
+    from PIL import Image
+    out = os.path.join(DERIVED, 'screen_second_platform_light.png')
+    src = _p('screen_second_platform.png')
+    if os.path.isfile(out) and os.path.getmtime(out) >= max(os.path.getmtime(src), os.path.getmtime(__file__)):
+        return out
+    im = Image.open(src).convert('RGB')
+    w, h = im.size
+    mx, my = int(w * 0.06), int(h * 0.08)
+    im = im.crop((mx, my, w - mx, h - my)).resize((1024, 576), Image.LANCZOS)
+    a = np.asarray(im).astype(np.float32) / 255.0
+    lum = a @ np.array([0.2126, 0.7152, 0.0722], np.float32)
+    rgb = np.clip(a * 1.35, 0, 1)
+    def ramp(n, f):
+        t = np.minimum(np.arange(n) + 0.5, n - np.arange(n) - 0.5) / (n * f)
+        t = np.clip(t, 0, 1)
+        return t * t * (3 - 2 * t)
+    feather = ramp(576, 0.14)[:, None] * ramp(1024, 0.10)[None, :]
+    alpha = np.clip(0.35 + lum * 1.4, 0, 1) * feather
+    rgba = np.dstack([rgb, alpha])
+    Image.fromarray((rgba * 255 + 0.5).astype('uint8'), 'RGBA').save(out)
+    return out
 
 
 def materials(m):
@@ -237,7 +269,7 @@ def _hung_board(m, mat, id, c, along, w, h, rods_to=ZC):
 def signs_and_clock(m, mat):
     m.use('terminus_signs')
     # "047 . TERMINUS", hung across the platform near the arrival, read from both ends of the platform
-    sx, sy, sz = -9900.0, -4620.0, 252.0
+    sx, sy, sz = -10480.0, -4620.0, 236.0              # pass 3: at -9900 it hung above the arrival view; here it is the far landmark of it
     bx = _hung_board(m, mat, 'terminus_sign_main', (sx, sy, sz), 'y', 224.0, 48.0)
     for nx, s in ((1, 'e'), (-1, 'w')):
         B.sign(m, image=_p('sign_terminus.png'), at=(sx + nx * 2.0 - nx * 3.4, sy, sz), normal=(nx, 0, 0), size=(216.0, 42.2), id='terminus_sign_main_' + s)
@@ -263,8 +295,8 @@ def machine(m, mat):
     B.box(m, [mx - 18.0, my - 18.0, POST_H - 10.0, mx + 18.0, my + 18.0, POST_H - 6.0], P, id='terminus_post_collar')
     B.box(m, [mx - 22.0, my - 44.0, POST_H - 6.0, mx + 22.0, my + 44.0, POST_H], P, id='terminus_post_top')
     # the wordless pictogram (a ticket into a slot, out striped), once: on the post's face toward the user
-    B.decal(m, image=_p('pictogram_validate.png'), at=(mx, my - 13.0, ZD + 20.0), normal=(0, -1, 0), size=(20.0, 20.0), id='terminus_pictogram')
-    B.pap(m, USE, 270.0, id='terminus_pap')
+    B.decal(m, image=_p('pictogram_validate.png'), at=(mx - 13.0, my, ZD + 20.0), normal=(-1, 0, 0), size=(20.0, 20.0), id='terminus_pictogram')
+    B.pap(m, USE, PAP_YAW, id='terminus_pap')
 
 
 def light(m, mat):
@@ -273,18 +305,25 @@ def light(m, mat):
     rows = [Y1 - 180.0, YE + 164.0, (Y0 + YE) / 2]
     for j, y in enumerate(rows):
         for k, x in enumerate(COLS_X):
-            B.fixture(m, 'ceiling_tube', (x, y, ZC), facing=0.0, radius=1.6, intensity=1.0, group=LIGHT_GROUP, bake='baked',
+            B.fixture(m, 'ceiling_tube', (x, y, ZC), facing=0.0, radius=TUBE_RADIUS, intensity=TUBE_INTENSITY, group=LIGHT_GROUP, bake='baked',
                       id='terminus_tube_%d_%d' % (j + 1, k + 1))
     # the beam: from the lens to the middle of the projected picture
     tx, ty, tz = SCREEN[0], SCREEN[1], SCREEN[2]
     d = (tx - LENS[0], ty - LENS[1], tz - LENS[2])
     ln = math.sqrt(sum(v * v for v in d))
     half = math.degrees(math.atan2(SCREEN[3] / 2, ln))
-    B.light(m, LENS, color=(1.0, 0.74, 0.42), radius=ln * 1.5, intensity=4.0, group=LIGHT_GROUP, type='spot',
-            dir=[round(v / ln, 4) for v in d], inner=round(half * 0.7, 1), outer=round(half * 1.15, 1), id='terminus_beam')
+    B.light(m, LENS, color=(1.0, 0.74, 0.42), radius=ln * 1.5, intensity=BEAM, group=LIGHT_GROUP, type='spot',
+            dir=[round(v / ln, 4) for v in d], inner=round(half * 0.85, 1), outer=round(half * 1.3, 1), id='terminus_beam')
+    # the machine's own light (lead, pass 1: a black silhouette): one soft warm spot from above the user's side, so that its red and brass read
+    mk = (MACH[0] - 80.0, MACH[1] + 30.0, 170.0)
+    dm = (MACH[0] - mk[0], MACH[1] - mk[1], POST_H + 50.0 - mk[2])
+    lm = math.sqrt(sum(v * v for v in dm))
+    B.light(m, mk, color=(1.0, 0.86, 0.66), radius=lm * 2.2, intensity=MACHINE_KEY, group=LIGHT_GROUP, type='spot',
+            dir=[round(v / lm, 4) for v in dm], inner=22.0, outer=48.0, id='terminus_machine_key')
     # the next reel on the paper: the second platform, emissive, inside the lit rectangle
-    B.sign(m, image=_p('screen_second_platform.png'), at=(tx, ty, tz), normal=(0, 1, 0), size=(SCREEN[3], SCREEN[4]), emissive=True,
-           id='terminus_screen_picture')
+    # pass 3: the emissive route ignores the picture's alpha (its feathered border drew black), so the reel is a printed-light decal on the paper: alpha
+    # blended (the paper's bars show through its dark parts and its feathered edge) and lit by the beam, as light thrown on paper is
+    B.decal(m, image=screen_picture(), at=(tx, ty, tz), normal=(0, 1, 0), size=(SCREEN[3], SCREEN[4]), id='terminus_screen_picture')
 
 
 def gameplay(m):
@@ -303,8 +342,41 @@ def cameras(m):
     B.camera(m, 'term_edge', (X1 - 30.0, YE + 70.0, 60.0), 182.0, pitch=12.0, id='term_edge')
 
 
+# the Terminus's own vision: the lit keys of the station without its -2.5 EV bias, fog and veil off. Written by the darkness build as a variant under the spare stock
+# vision name cp_frontend (only the frontend map uses it), which modules/terminus.gsc applies to each rider on arrival and takes off on the return.
+VISION_NAME, VISION_VARIANT = 'cp_frontend', 'term'
+VISION_KEYS = os.environ.get('SZ_TERMINUS_VISION') or ('fogMaxOpacity=0;volumetricSpotBrightness=0;volumetricAmbientBrightness=0;veilStrength=0;'
+                                                       'tonemapAdaptSpeed=0.3;tonemapAutoExposureAdjust=0.7')     # pass 3 at 0: mean 0.45, bars p90 0.66
+
+
+def _dark_args(m):
+    return m.settings.setdefault('build', {}).setdefault('darkness', {}).setdefault('args', [])
+
+
+def vision(m):
+    """adds (or replaces) the Terminus variant and its alias in settings.build.darkness.args"""
+    a = _dark_args(m)
+    def put(flag, sep, item, key):
+        if flag not in a:
+            a.extend([flag, item])
+            return
+        i = a.index(flag) + 1
+        parts = [p for p in a[i].split(sep) if p and not key(p)]
+        a[i] = sep.join(parts + [item])
+    put('--variants', '|', '%s:%s' % (VISION_VARIANT, VISION_KEYS), lambda p: p.split(':', 1)[0] == VISION_VARIANT)
+    put('--alias', ',', '%s=%s' % (VISION_NAME, VISION_VARIANT), lambda p: p.split('=', 1)[0] == VISION_NAME)
+
+
+def look_copy(m):
+    """a copy of the document for the room's own frames only: the camera of `live shot` is no rider, so the lit vision itself takes the Terminus keys"""
+    a = _dark_args(m)
+    a[a.index('--lit') + 1] = VISION_KEYS
+    m.name = m.name + '_look'
+
+
 def build(m):
-    """adds the Terminus section to the Studio Map m (layers terminus_*); returns the layer names"""
+    """adds the Terminus section to the Studio Map m (layers terminus_*) and its vision variant; returns the layer names"""
+    vision(m)
     mat = None
     m.use('terminus_materials')
     mat = materials(m)
@@ -324,6 +396,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--out', default=OUT_DOC)
     ap.add_argument('--b1', default=B1_DOC, help='the B1 document (base_lit_nopap, its layers and build settings) the section goes on')
+    ap.add_argument('--look', action='store_true', help='write the look copy (the lit vision = the Terminus vision) into <out>_look as well')
     a = ap.parse_args(argv)
     m = Map.load(a.b1)
     m.name, m.title = 'sz_terminus', 'Station Zero: the Terminus on the lit-first base without Pack-a-Punch (T1)'
@@ -337,6 +410,17 @@ def main(argv=None):
             shutil.copy2(f, dst)
     m.save(a.out)
     print(a.out)
+    if a.look:
+        lk = a.out.rstrip('\\/') + '_look'
+        look_copy(m)
+        os.makedirs(lk, exist_ok=True)
+        for f in glob.glob(os.path.join(a.out, '*.png')):
+            dst = os.path.join(lk, os.path.basename(f))
+            if not os.path.isfile(dst) or os.path.getsize(dst) != os.path.getsize(f):
+                shutil.copy2(f, dst)
+        m.path = None
+        m.save(lk)
+        print(lk)
 
 
 if __name__ == '__main__':

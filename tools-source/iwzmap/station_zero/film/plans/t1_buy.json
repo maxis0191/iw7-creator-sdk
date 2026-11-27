@@ -1,0 +1,470 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "t1_buy",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "libraries": [
+  "szt1",
+  "szaccept"
+ ],
+ "about": "T1 (a): the Pack-a-Punch in the island room, the trip left out. Power on, the player put into the Terminus, stands; 21 hull traces on the deck and the drop; with a weapon and points, the weapon_upgrade interaction (zone terminus never activated) is found, picked, 5,000 paid, the weapon upgraded.",
+ "steps": [
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "call",
+   "fn": "sz_power_direct",
+   "args": [
+    "power",
+    20
+   ],
+   "s": 1
+  },
+  {
+   "do": "tp",
+   "at": [
+    -9700.0,
+    -4640.0,
+    8
+   ],
+   "yaw": 180.0
+  },
+  {
+   "do": "wait",
+   "s": 3
+  },
+  {
+   "do": "mark",
+   "name": "stand_m"
+  },
+  {
+   "do": "call",
+   "fn": "t1_term",
+   "args": [
+    "stand"
+   ],
+   "s": 1
+  },
+  {
+   "do": "trace",
+   "name": "floor",
+   "hull": true,
+   "points": [
+    [
+     -10840.0,
+     -4884.0,
+     40.0,
+     -10840.0,
+     -4884.0,
+     -40.0
+    ],
+    [
+     -10600.0,
+     -4884.0,
+     40.0,
+     -10600.0,
+     -4884.0,
+     -40.0
+    ],
+    [
+     -10380.0,
+     -4884.0,
+     40.0,
+     -10380.0,
+     -4884.0,
+     -40.0
+    ],
+    [
+     -9980.0,
+     -4884.0,
+     40.0,
+     -9980.0,
+     -4884.0,
+     -40.0
+    ],
+    [
+     -9760.0,
+     -4884.0,
+     40.0,
+     -9760.0,
+     -4884.0,
+     -40.0
+    ],
+    [
+     -9560.0,
+     -4884.0,
+     40.0,
+     -9560.0,
+     -4884.0,
+     -40.0
+    ],
+    [
+     -10840.0,
+     -4780.0,
+     40.0,
+     -10840.0,
+     -4780.0,
+     -40.0
+    ],
+    [
+     -10600.0,
+     -4780.0,
+     40.0,
+     -10600.0,
+     -4780.0,
+     -40.0
+    ],
+    [
+     -10380.0,
+     -4780.0,
+     40.0,
+     -10380.0,
+     -4780.0,
+     -40.0
+    ],
+    [
+     -9980.0,
+     -4780.0,
+     40.0,
+     -9980.0,
+     -4780.0,
+     -40.0
+    ],
+    [
+     -9760.0,
+     -4780.0,
+     40.0,
+     -9760.0,
+     -4780.0,
+     -40.0
+    ],
+    [
+     -9560.0,
+     -4780.0,
+     40.0,
+     -9560.0,
+     -4780.0,
+     -40.0
+    ],
+    [
+     -10840.0,
+     -4520.0,
+     40.0,
+     -10840.0,
+     -4520.0,
+     -40.0
+    ],
+    [
+     -10600.0,
+     -4520.0,
+     40.0,
+     -10600.0,
+     -4520.0,
+     -40.0
+    ],
+    [
+     -10380.0,
+     -4520.0,
+     40.0,
+     -10380.0,
+     -4520.0,
+     -40.0
+    ],
+    [
+     -9980.0,
+     -4520.0,
+     40.0,
+     -9980.0,
+     -4520.0,
+     -40.0
+    ],
+    [
+     -9760.0,
+     -4520.0,
+     40.0,
+     -9760.0,
+     -4520.0,
+     -40.0
+    ],
+    [
+     -9560.0,
+     -4520.0,
+     40.0,
+     -9560.0,
+     -4520.0,
+     -40.0
+    ],
+    [
+     -10700.0,
+     -5072.0,
+     -20.0,
+     -10700.0,
+     -5072.0,
+     -100.0
+    ],
+    [
+     -10200.0,
+     -5072.0,
+     -20.0,
+     -10200.0,
+     -5072.0,
+     -100.0
+    ],
+    [
+     -9700.0,
+     -5072.0,
+     -20.0,
+     -9700.0,
+     -5072.0,
+     -100.0
+    ]
+   ]
+  },
+  {
+   "do": "take",
+   "give": "iw7_fhr_zm"
+  },
+  {
+   "do": "money",
+   "value": 20000
+  },
+  {
+   "do": "use",
+   "name": "pap",
+   "kind": "weapon_upgrade",
+   "near": [
+    -10210.0,
+    -4640.0,
+    40.0
+   ],
+   "s": 3
+  },
+  {
+   "do": "state",
+   "name": "pap_after"
+  },
+  {
+   "do": "ents",
+   "name": "wu",
+   "key": "script_noteworthy",
+   "value": "weapon_upgrade"
+  },
+  {
+   "do": "expect",
+   "that": "probe:power.power",
+   "eq": 1,
+   "why": "power on"
+  },
+  {
+   "do": "expect",
+   "that": "probe:stand.state",
+   "eq": "idle",
+   "why": "the trip module found both markers and is armed"
+  },
+  {
+   "do": "expect",
+   "that": "ents:wu.n",
+   "eq": 1,
+   "why": "one weapon_upgrade struct: the Terminus machine"
+  },
+  {
+   "do": "expect",
+   "that": "probe:stand.inside",
+   "eq": 1,
+   "why": "teleported into the Terminus box"
+  },
+  {
+   "do": "expect",
+   "that": "stand_m.x",
+   "near": -10200.0,
+   "tol": 700.0,
+   "why": "x inside the Terminus box"
+  },
+  {
+   "do": "expect",
+   "that": "stand_m.y",
+   "near": -4750.0,
+   "tol": 450.0,
+   "why": "y inside the Terminus box"
+  },
+  {
+   "do": "expect",
+   "that": "stand_m.ground",
+   "eq": 1,
+   "why": "standing on the paper floor"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_0.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-10840, -4884)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_1.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-10600, -4884)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_2.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-10380, -4884)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_3.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-9980, -4884)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_4.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-9760, -4884)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_5.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-9560, -4884)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_6.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-10840, -4780)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_7.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-10600, -4780)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_8.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-10380, -4780)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_9.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-9980, -4780)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_10.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-9760, -4780)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_11.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-9560, -4780)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_12.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-10840, -4520)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_13.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-10600, -4520)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_14.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-10380, -4520)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_15.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-9980, -4520)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_16.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-9760, -4520)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_17.z",
+   "near": 0.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-9560, -4520)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_18.z",
+   "near": -56.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-10700, -5072)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_19.z",
+   "near": -56.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-10200, -5072)"
+  },
+  {
+   "do": "expect",
+   "that": "trace:floor_20.z",
+   "near": -56.0,
+   "tol": 2,
+   "why": "the paper floor holds at (-9700, -5072)"
+  },
+  {
+   "do": "expect",
+   "that": "use:pap.found",
+   "eq": 1,
+   "why": "the machine's interaction is found in the island room"
+  },
+  {
+   "do": "expect",
+   "that": "use:pap.picked",
+   "eq": 1,
+   "why": "the stock monitor picks it: the prompt would show"
+  },
+  {
+   "do": "expect",
+   "that": "use:pap.spent",
+   "eq": 5000,
+   "why": "the stock upgrade price was paid"
+  },
+  {
+   "do": "expect",
+   "that": "use:pap.weapon1",
+   "ne": "@use:pap.weapon0",
+   "why": "the weapon came back upgraded (another name)"
+  }
+ ]
+}
