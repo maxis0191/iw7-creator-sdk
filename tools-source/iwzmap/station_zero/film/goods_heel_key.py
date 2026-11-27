@@ -29,6 +29,7 @@ def add(m, anchors):
     bench(s, anchors)
     pegboard(s, anchors)
     lasts_shelf(s, anchors)
+    front_rail(s)
     B.camera(m, 'heel_key_counter_close', (-1480.0, 4235.0, 62.0), 90.0, pitch=7.0, layer=s.layer, id='heel_key_P__cam_counter_close__1')
 
 
@@ -113,16 +114,12 @@ def pegboard(s, A):
         s.box(iid, 'board', [xa, wy - 16.0, z - 1.0, xe, wy, z], 'wood')
         for k, x in enumerate((xa + 8.0, xe - 8.0)):
             s.prop(s.item('F', 'shelf_bracket'), 'square_hook', (x, wy, z - 1.2), yaw=270.0)
-    # the lower shelf: three pairs never collected, a claim tag hanging from each
-    for k, (x, model, n) in enumerate(((-1604.0, SHOES, 1), (-1583.0, BOOTS, 2), (-1559.0, SHOES, 4))):
-        s.prop(s.item('T', 'shoes_pair' if model == SHOES else 'boots_pair'), model, (x, wy - 8.5, 54.0), yaw=0.0)
-        tag(s, n, (x + 4.0, wy - 16.4, 54.0 - 5.0))
     # the middle shelf: a row of lasts, toes to the hall
     for k, x in enumerate((-1606.0, -1590.0, -1574.0, -1558.0, -1542.0, -1526.0)):
         last(s, (x, wy - 8.0, 76.0), 270.0 + (k % 2) * 6.0)
-    # the top shelf: the drawers of heel tips (one pulled out) and the toolbox
+    # the lowest shelf: the drawers of heel tips (one pulled out) and the toolbox
     iid = s.item('T', 'heel_tip_drawers')
-    bx0, bx1, by0, bz0 = -1604.0, -1572.0, wy - 13.0, 100.0
+    bx0, bx1, by0, bz0 = -1610.0, -1578.0, wy - 13.0, 54.0
     s.box(iid, 'body', [bx0, by0, bz0, bx1, wy, bz0 + 16.0], 'grey')
     for r in range(2):
         for c in range(4):
@@ -135,7 +132,11 @@ def pegboard(s, A):
         tx = bx0 + 1.0 + 2 * 7.5 + 1.0 + (k % 3) * 1.9
         ty = by0 - 4.6 + (k // 3) * 2.2
         s.box(s.item('S', 'heel_tip'), 'tip', [tx, ty, bz0 + 9.0, tx + 1.6, ty + 1.8, bz0 + 9.7], 'rubber')
-    s.prop(s.item('T', 'toolbox'), 'toolbox_small01_iw6', (-1540.0, wy - 7.0, 100.0), yaw=90.0)
+    s.prop(s.item('T', 'toolbox'), 'toolbox_small01_iw6', (-1562.0, wy - 7.0, 54.0), yaw=90.0)
+    # the top shelf: tins of polish and dressing
+    for k, x in enumerate((-1606.0, -1598.0, -1590.0, -1582.0)):
+        s.prop(s.item('T', 'polish_tin'), TIN, (x, wy - 8.0, 100.0), yaw=20.0 * k)
+    s.prop(s.item('T', 'dressing_can'), 'cp_town_motor_oil', (-1570.0, wy - 8.0, 100.0), yaw=0.0)
     # laces for sale and a few blanks on hooks, on the pegboard between the bench and the rifle
     iid = s.item('S', 'laces_card')
     s.pic(iid, 'face', 'hk_laces_card.png', (-1482.0, wy, 62.0), 's', 'laces')
@@ -154,3 +155,13 @@ def lasts_shelf(s, A):
     for k, y in enumerate((4358.0, 4368.0, 4378.0, 4390.0)):
         s.prop(s.item('T', 'polish_tin'), TIN, (-1372.0 + (k % 2) * 6.0, y, 28.5), yaw=25.0 * k)
     s.prop(s.item('T', 'dressing_can'), 'cp_town_motor_oil', (-1360.0, 4400.0, 28.5), yaw=0.0)
+
+
+# ------------------------------------------------------------------------------------------------ the front rail (round 2)
+def front_rail(s):
+    """three pairs never collected hang by their laces from hooks under the shutter's bottom rail (z 72), each with its claim tag: the
+    stall cobbler's front, and what the hall sees of the trade above the counter (pass 4 blind question: the slot alone did not tell it)"""
+    for k, (x, n) in enumerate(((-1590.0, 1), (-1535.0, 2), (-1445.0, 4))):
+        s.prop(s.item('F', 'rail_hook'), 'cp_rave_tiki_key_hook_01', (x, 4298.0, 71.8), yaw=270.0)
+        s.prop(s.item('T', 'shoes_pair_hung'), SHOES, (x, 4294.0, 64.0), angles=[0.0, 0.0, 90.0])
+        tag(s, n, (x + 5.0, 4290.6, 60.0))
