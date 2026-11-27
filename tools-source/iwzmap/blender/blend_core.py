@@ -1032,7 +1032,8 @@ class BlendEmitter(scenegen.Emitter):
     def emit_markers(self):
         for m in self.scene.get('markers', []):
             self.layout['markers'].append({'kind': m['kind'], 'id': m.get('id', ''), 'zone': self.zone_at(m['at']) or self.sc.start_zone,
-                                           'origin': list(m['at']), 'yaw': m.get('yaw', 0)})
+                                           'origin': list(m['at']), 'yaw': m.get('yaw', 0),
+                                           **({'area': list(m['area'])} if m.get('area') else {})})
 
     @staticmethod
     def room_row(z):
@@ -1246,9 +1247,17 @@ class BlendEmitter(scenegen.Emitter):
         for p in self.scene.get('pap', []):
             org = self.snap(p['at']); yaw = float(p.get('yaw', 0))
             self.istruct('weapon_upgrade', org, yaw, zone_of(org), parameters='requires_power', target='iwz_pap_spot')
-            self.relocations.append('pap_machine 0 %g %g %g %g' % (org[0], org[1] + 10, org[2], yaw))
-            self.ent(classname='script_struct', targetname='iwz_pap_spot', origin=self.fmt((org[0], org[1] + 20, org[2] + 14)),
+            (mx, my), (sx, sy) = self.pap_offsets(org, yaw)
+            self.relocations.append('pap_machine 0 %g %g %g %g' % (mx, my, org[2], yaw))
+            self.ent(classname='script_struct', targetname='iwz_pap_spot', origin=self.fmt((sx, sy, org[2] + 14)),
                      angles='0 %g 0' % yaw, model='weapon_e_ak47_rare_wm')
+
+    @staticmethod
+    def pap_offsets(org, yaw):
+        """the machine (10 units) and the weapon spot (20 units) stand behind the use point, against the facing of `yaw`
+        (yaw 270 faces -y: the machine at y + 10, the spot at y + 20, as every map built before 27 Nov 2026 has them)"""
+        fx, fy = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+        return ((round(org[0] - 10 * fx, 2), round(org[1] - 10 * fy, 2)), (round(org[0] - 20 * fx, 2), round(org[1] - 20 * fy, 2)))
 
     def snap(self, at):
         x, y, z = at

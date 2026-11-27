@@ -337,5 +337,16 @@ class EndToEnd(unittest.TestCase):
         self.assertEqual(lt['emissive_props'][0]['model'], 'sign_a'); self.assertEqual(lt['emissive_props'][0]['angles'], [0.0, 90.0, 0.0])
 
 
+class PapOffsets(unittest.TestCase):
+    def test_yaw_270_is_what_every_map_had(self):
+        self.assertEqual(C.BlendEmitter.pap_offsets((100.0, 200.0, 0.0), 270.0), ((100.0, 210.0), (100.0, 220.0)))
+
+    def test_behind_the_use_point_at_every_yaw(self):
+        o = (100.0, 200.0, 0.0)
+        self.assertEqual(C.BlendEmitter.pap_offsets(o, 0.0), ((90.0, 200.0), (80.0, 200.0)))
+        self.assertEqual(C.BlendEmitter.pap_offsets(o, 90.0), ((100.0, 190.0), (100.0, 180.0)))
+        self.assertEqual(C.BlendEmitter.pap_offsets(o, 180.0), ((110.0, 200.0), (120.0, 200.0)))
+
+
 if __name__ == '__main__':
     unittest.main()
