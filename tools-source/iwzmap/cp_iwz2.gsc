@@ -346,6 +346,12 @@ iwz_register_interactions()
 {
     scripts\cp\maps\cp_zmb\cp_zmb_interactions::register_interactions();
     scripts\cp\maps\cp_iwz\cp_iwz_perks::register();     // P1: the new perks and this map's limit of six
+    // the weapon upgrade machine's prompt in this map's own words (the machine is declared by the Terminus section)
+    if ( isdefined( level.interactions["weapon_upgrade"] ) )
+    {
+        level.interactions["weapon_upgrade"].hint_func = ::iwz_weapon_upgrade_hint;
+        level.interaction_hintstrings["weapon_upgrade"] = &"IWZ_INTERACTIONS_VALIDATE_WEAPON";
+    }
     used = [];
     foreach ( s in level.all_interaction_structs )
     {
@@ -372,6 +378,27 @@ iwz_register_interactions()
         disabled += n + " ";
     }
     print( "[IWZ level] INTERACTIONS registered=" + names.size + " init_disabled=" + disabled );
+}
+
+// the stock weapon_upgrade_hint_logic (interaction_weapon_upgrade.gsc:44-64) with this map's two upgrade prompts; the
+// refusal cases keep the stock strings. PLACEHOLDER COPY: the texts of IWZ_INTERACTIONS_VALIDATE_WEAPON (first upgrade)
+// and IWZ_INTERACTIONS_VALIDATE_WEAPON_AGAIN (second) are in perks/strings.json for the copy writer. The stock code
+// gives the weapon name and the cost as &&1 and &&2 (cp_interaction.gsc:859-874).
+iwz_weapon_upgrade_hint( s, p )
+{
+    if ( scripts\engine\utility::is_true( p.wor_phase_shift ) )
+        return "";
+    w = p getcurrentweapon();
+    lvl = scripts\cp\cp_weapon::get_weapon_level( w );
+    if ( lvl == level.pap_max )
+        return &"COOP_INTERACTIONS_UPGRADE_MAXED";
+    if ( p scripts\cp\utility::is_melee_weapon( w, 1 ) )
+        return "";
+    if ( !scripts\cp\cp_weapon::can_upgrade( w ) )
+        return &"CP_ZMB_INTERACTIONS_UPGRADE_WEAPON_FAIL";
+    if ( lvl == 1 )
+        return &"IWZ_INTERACTIONS_VALIDATE_WEAPON";
+    return &"IWZ_INTERACTIONS_VALIDATE_WEAPON_AGAIN";
 }
 
 // flickering fluorescents (old station, service tunnel): short bursts of off/on model swaps. Test dvar

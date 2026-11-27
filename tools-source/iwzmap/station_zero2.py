@@ -3138,6 +3138,20 @@ if POST:    # Capsule Post: the markers and the spawn volumes post.gsc reads (sz
     layout['modules'] = [POST_MODULE]
     for m_ in POST_MODELS:
         ents.append(ent(classname='script_model', model=m_, origin='0 0 -3000', angles='0 0 0'))
+# (B1, 27 Nov 2026) the trip to the Terminus (modules/terminus.gsc, redesign PLAN decision 4): the cab of car 1 of the hero
+# train (train_spec cars[0], the westmost car at platform A) is the marker 'quest_cab' with the car's box as its area
+# (the nav-cut half extents, floor -24 .. floor +150: the car's walkable interior, not the ballast under it); the cab
+# point is on the aisle 24 inside the west end bulkhead. 'terminus_arrival' comes from the Terminus section; without it
+# the module stays idle. IWZ_TERMINUS=0 leaves the marker and the module out.
+TERMINUS_MODULE = 'terminus'
+TERMINUS = os.environ.get('IWZ_TERMINUS', '1') != '0' and bool(TRAIN_SPEC.get('cars'))
+if TERMINUS:
+    car1_ = TRAIN_SPEC['cars'][0]
+    (c1x_, c1y_, _), (c1hx_, c1hy_, _), c1f_ = car1_['origin'], car1_['nav_half'], car1_['floor_z']
+    layout.setdefault('markers', []).append({'kind': 'quest_cab', 'id': 'car1', 'zone': 'platform_a',
+                                             'origin': [round(c1x_ - TRAIN_AISLE_END + 24, 2), c1y_, round(c1f_, 2)], 'yaw': 180,
+                                             'area': [round(v_, 2) for v_ in (c1x_ - c1hx_, c1y_ - c1hy_, c1f_ - 24, c1x_ + c1hx_, c1y_ + c1hy_, c1f_ + 150)]})
+    layout['modules'] = layout.get('modules', []) + [TERMINUS_MODULE]
 # stock fast-travel / hidden-room init runs on every map: give its lookups parked entities so its threads idle
 # instead of looping on undefined (gameplay REPORT defect 7)
 for tn in ('hidden_room_portal', 'center_portal', 'fast_travel_tube_start', 'fast_travel_tube_end', 'hidden_travel_tube_start',
@@ -3259,9 +3273,9 @@ door_lines = [ROWS.door_row(d) for d in DOORS]
 link_lines = [ROWS.link_row(l) for l in ZONE_LINKS]
 gsc = gsc.replace('//@DOORS@', ROWS.table(door_lines)).replace('//@LINKS@', ROWS.table(link_lines))
 gsc = gsc.replace('//@INITIAL@', ROWS.initial_row(INITIAL_ZONES))
-if POST:     # the module is written below; the level script starts it
-    import sz_modules
-    gsc = gsc.replace('//@POST@', sz_modules.calls([POST_MODULE], 'cp_iwz')[0].lstrip())
+import sz_modules
+if layout.get('modules'):     # the modules are written below; the level script starts them (Capsule Post, Terminus trip)
+    gsc = gsc.replace('//@POST@', '\n'.join(sz_modules.calls(layout['modules'], 'cp_iwz')).lstrip())
 else:
     gsc = gsc.replace('    //@POST@\n', '')
 gsc = gsc.replace('//@WHEEL@', '"%s"' % WHEELS[0][3])
@@ -3278,11 +3292,14 @@ gsc = gsc.replace('//@TRAPMIN@', '( %g, %g, %g )' % tb[:3]).replace('//@TRAPMAX@
 gsc = gsc.replace('//@TRAPRAILY@', '%g' % THIRD_Y)
 gsc = gsc.replace('//@TRAPRAILZ@', '%g' % ((-356.31 + 3.5) if TRAIN else (PIT_Z + 12)))   # train kit third rail top / old bed line
 open(os.path.join(out, 'cp_iwz.gsc'), 'w', newline='\n').write(gsc)
-_pm = os.path.join(out, 'modules', 'cp_iwz_' + POST_MODULE + '.gsc')
-if POST:     # only the Capsule Post module: modules/quest.gsc and cap.gsc belong to the 19-zone line
-    sz_modules.emit(os.path.join(out, 'modules'), layout['markers'], layout['volumes'], 'cp_iwz', only=[POST_MODULE])
-elif os.path.isfile(_pm):
-    os.remove(_pm)
+# only the modules of this map (post, terminus): modules/quest.gsc and cap.gsc belong to the 19-zone line; a stale file of a
+# module switched off is removed
+if layout.get('modules'):
+    sz_modules.emit(os.path.join(out, 'modules'), layout['markers'], layout.get('volumes', []), 'cp_iwz', only=layout['modules'])
+for m_ in (POST_MODULE, TERMINUS_MODULE):
+    _pm = os.path.join(out, 'modules', 'cp_iwz_' + m_ + '.gsc')
+    if m_ not in layout.get('modules', []) and os.path.isfile(_pm):
+        os.remove(_pm)
 
 # ============================================================================ capture views, walk path, summaries
 VIEWS = {   # 5 per zone: (x, y, z eye-ish origin of the player, yaw, pitch)

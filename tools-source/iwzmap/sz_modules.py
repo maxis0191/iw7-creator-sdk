@@ -43,9 +43,20 @@ def volume_lines(vols):
     return out
 
 
+OPT_IN = '// sz_modules: opt-in'     # first line of a module written only when a map names it (only=...): modules/terminus.gsc
+
+
+def opt_in(path):
+    with open(path, encoding='utf-8') as f:
+        return f.readline().strip() == OPT_IN
+
+
 def names(only=None):
+    """the modules of MODULES; without `only`, the opt-in modules are left out (the 19-zone scene keeps its own trip in quest)"""
     found = sorted(os.path.splitext(os.path.basename(p))[0] for p in glob.glob(os.path.join(MODULES, '*.gsc')))
-    return found if not only else [n for n in found if n in only]
+    if not only:
+        return [n for n in found if not opt_in(os.path.join(MODULES, n + '.gsc'))]
+    return [n for n in found if n in only]
 
 
 def emit(out_dir, markers, vols, mapname, only=None):
@@ -54,7 +65,8 @@ def emit(out_dir, markers, vols, mapname, only=None):
     ml, vl = '\n'.join(marker_lines(markers)), '\n'.join(volume_lines(vols))
     done = []
     for n in names(only):
-        src = open(os.path.join(MODULES, n + '.gsc'), encoding='utf-8').read()
+        with open(os.path.join(MODULES, n + '.gsc'), encoding='utf-8') as f:
+            src = f.read()
         src = src.replace('//@MARKERS@', ml.lstrip()).replace('//@VOLUMES@', vl.lstrip())
         with open(os.path.join(out_dir, '%s_%s.gsc' % (mapname, n)), 'w', encoding='utf-8', newline='\n') as f:
             f.write(src)
