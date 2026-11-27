@@ -34,4 +34,33 @@ FILM-LAYER 6, TERMINUS-AND-GAPS B and C, B1-BASE. **[m]** measured, **[b]** buil
 | Gameplay | zone `terminus` `island=True`, no spawner; marker `terminus_arrival` at (-9700, -4640, 0) yaw 180 with `area` = the room box (z -72..320); the module's four slots (y -4712, -4664, -4616, -4568) are clear of props |
 | Cameras | `term_arrival`, `term_long`, `term_machine`, `term_screen`, `term_edge` (ids = names, `term_` as the brief names them) |
 
-(Proof, records and frames: below, written when measured.)
+## Changes after the first frames
+
+- **Machine at yaw 180, not 270 [m].** The relocated scriptable lays the model's long axis 90 degrees from the pap yaw (pass 1: yaw 270 put it along x, reels east). At 180 it lies along y, lens end south toward the screen; the user stands at its west side. Emitted `pap_machine 0 -10200 -4640 40 180` (on the post top).
+- **The Terminus's own vision [m].** The station's lit vision (auto exposure, `tonemapAutoExposureAdjust -2.5`) held the room at mean luma 0.13 whatever the tubes did (x3 intensity: 0.127 -> 0.128). The document adds a darkness variant `term` (lit keys, fog and veil off, `tonemapAutoExposureAdjust 0.7`) aliased onto the spare stock vision `cp_frontend` (`cp_zmb_bw` is used by stock weapon passives). `modules/terminus.gsc` sets it on each rider after the crossing and restores the station's (`level.vision_set_override` while the dark holds, else `paris_iwz_lit_vision`, the darkness module's own choice) in `terminus_release` (return, match end). The darkness script re-applies nothing after its release, so the two do not fight; `cp_iwz_darkness.gsc` is unchanged. Room frames were shot with a look copy (`terminus\doc_look`: the lit vision itself = the `term` keys, synced into the session); the client frame after a real trip shows the rider's own.
+- **The reel as light on paper.** The emissive route ignores alpha (its feathered border drew black); the picture (`film\terminus\art\screen_second_platform_light.png`: border cropped, x1.35, alpha = its own light x a feather) is a decal lit by the beam (14).
+- **Module: zombies held while paused [m].** Without it the four zombies alive at arrival were recycled by the stock far-zombie cleanup 20 to 35 s into the stay; the pause watch now renews `delay_cleanup_until` (+2 s) on every alive zombie while its pause holds (stock skips them, `zombies_spawning.gsc:3560`).
+- **Module: the projector runs once armed:** reels `on`, door `open_idle` (as cp_final; `ARMED machine=1` measured). That the reels turn is not seen in a still.
+- **Base regenerated from this worktree** (`terminus\regen.sh`, 6.8 s): 19 of 20 files equal to B1's, the module differs. Studio keeps a base module that differs from what its SDK emits, without error (TOOL-FAULTS T1), and `live start` reuses the build when only the base folder changed (TOOL-FAULTS T1): `live sync --force` after a base change.
+
+## Proof
+
+Usermap of the final build: `C:\studio-data\sz\film\terminus\um\cp_iwz` (23:27). Forge, compressed time (speed 50, server and a bot):
+
+| Plan | Verdict |
+|---|---|
+| `t1_buy` | PASS 13/13 steps, 34/34 expectations: power on, put in the Terminus, standing; 21 hull traces all hit (deck z 0.125, drop z -55.87); `use weapon_upgrade`: found, picked, spent 5,000 in the never-activated island zone; the machine's weapon collected: `iw7_fhr_zm+fhrpap1+mod_recoil+camo1+loot0` |
+| `t1_trip` | PASS 27/27, 31/31: cab used at t 107.2 s, standing in the Terminus at t 114.2 s (7.0 s), off grid, trace under him z 0.125; bought and collected the same during the stay; spawning paused by the module; zombies alive 4 at arrival, 4 at +30 s, 4 when the pause ends (+40 s); back in car 1 (277.5, 1488) protections off; cooldown refused a second use; idle again after 150 s |
+| `sz8_doors`, `sz8_power_perks`, `sz8_rounds` | PASS 30/30 21/21, 17/17 19/19, 9/9 14/14 |
+
+Real time, a listen client (`t1_client`, not a client joined to a dedicated server: `Joined False`): PASS 15/15, 2/2. The prompt at the machine, UI dump `ui-t1_prompt.json`: `Hold ^3F^7 to validate your FHR40 [Cost: 5000]`; no "Pack-a-Punch" anywhere in the dump. Frames `C:\studio-data\sz\film\terminus\client\iwz_t1_arrive.png` (the rider's view on arrival, the Terminus vision), `iwz_t1_prompt.png`.
+
+Records (`studio check`, `build.networked_entities.total`): **487**: 14 under the 501 of the lit-first map with the old Pack-a-Punch, 3 over B1's 484 (the `weapon_upgrade` interaction's spawned use entities).
+
+Frames, look copy (vision `term`), pass 5 (final): `C:\studio-data\sz\film\terminus\pass5\` (sheet `sheet.jpg`, luma `luma.json`): mean 0.568 to 0.585 on the five cameras; light bars p90 `term_arrival` floor 0.758 wall 0.751, `term_long` 0.723 / 0.725.
+
+## Not done
+
+- **The machine reads as a dark silhouette against the paper:** body 0.13 of the paper behind it in `term_machine` (target 0.40), with a baked key and then a runtime emergency key at about 110 units. Why the runtime row does not light the scriptable is not proven.
+- Static that the target shows moving: the clock (stock `sign_clock_04`, hands fixed near 10:10), the beam's dust (no volumetric: a baked spot only, `volumetricSpotBrightness 0` in the vision), the line printer's sound. Bench numbers 1 to 4, the "WAY OUT" sign, the passenger numbers, the hero colours of the fresh pairs, Strand's tape: not built.
+- QUALITY-BAR 19 to 21 fail by design of the bible (an empty paper room 1,400 x 900, no job props, no pipes).
