@@ -563,6 +563,7 @@
     "tools-source/iwzmap/station_zero/arcade_sheet.py",
     "tools-source/iwzmap/station_zero/film/__init__.py",
     "tools-source/iwzmap/station_zero/film/arcade_compare.py",
+    "tools-source/iwzmap/station_zero/film/arcade_doc.py",
     "tools-source/iwzmap/station_zero/film/arcade_frames.py",
     "tools-source/iwzmap/station_zero/film/arcade_litview.py",
     "tools-source/iwzmap/station_zero/film/arcade_pass.ps1",
