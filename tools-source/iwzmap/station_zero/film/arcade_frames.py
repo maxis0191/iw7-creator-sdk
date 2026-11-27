@@ -50,14 +50,16 @@ def main():
     doc = sys.argv[2] if len(sys.argv) > 2 else DOC
     cams = json.load(open(os.path.join(doc, 'shell_report.json'), encoding='utf-8'))['cameras']
     rep = {'power': {}, 'shots': {}}
-    for state in ('on', 'off'):
+    states = os.environ.get('A2_STATES', 'on,off').split(',')       # 'lit' = a lit-vision variant shot as it is (no power switch)
+    for state in states:
         os.makedirs(os.path.join(folder, state), exist_ok=True)
-        rep['power'][state] = studio('live', 'power', doc, state)
+        if state in ('on', 'off'):
+            rep['power'][state] = studio('live', 'power', doc, state)
         for c in cams:
             r = studio('live', 'shot', doc, '--clean', '--camera', c, '--out', os.path.join(folder, state, c + '.png'))
             rep['shots']['%s/%s' % (state, c)] = {k: r.get(k) for k in ('ok', 'settled', 'error', 'stale', 'stderr')}
-    rep['sheets'] = sheets(folder, 'on', cams) + sheets(folder, 'off', cams)
-    json.dump(rep, open(os.path.join(folder, 'frames.json'), 'w', encoding='utf-8'), indent=1, default=str)
+    rep['sheets'] = [p for s in states for p in sheets(folder, s, cams)]
+    json.dump(rep, open(os.path.join(folder, 'frames_%s.json' % '_'.join(states)), 'w', encoding='utf-8'), indent=1, default=str)
     print(json.dumps({'sheets': rep['sheets'], 'failed': [k for k, v in rep['shots'].items() if not v.get('ok')],
                       'power': {k: v.get('ok') for k, v in rep['power'].items()}}, indent=1))
 

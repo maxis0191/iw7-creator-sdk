@@ -92,7 +92,7 @@ UNITS = {   # name: (x0, x1, title)
     'heel_key': (-1640.0, -1320.0),
 }
 SHUTTER_STOP = {'needle_drop': 0.25, 'copy_stop': 0.0, 'hole_nine': 0.0, 'heel_key': 0.5}    # share of the opening the curtain covers
-LIGHT_K = float(os.environ.get('A2_LIGHT_K', '1.0'))
+LIGHT_K = float(os.environ.get('A2_LIGHT_K', '2.5'))      # pass 1: at 1.0 the hall read mean luma 4.5 of 255
 RADIUS_K = float(os.environ.get('A2_RADIUS_K', '1.6'))
 
 REPORT = {'standins': [], 'art': [], 'fallbacks': [], 'refused': []}
@@ -236,7 +236,7 @@ def columns(m):
 # ceiling modules (48 x 48) from the south-west inner corner
 GX0, GY0, MOD = XW, YS, 48.0
 NI, NJ = int((XE - XW) // MOD) + 1, int((BULK_Y - YS) // MOD) + 1
-LIVE = [(2, 2), (10, 2), (18, 2), (26, 2), (34, 2), (6, 12), (22, 12)]          # lit panels: 7 pools
+LIVE = [(2, 2), (10, 2), (18, 2), (26, 2), (34, 2), (6, 12), (22, 12), (14, 6), (30, 6), (6, 9), (22, 9), (34, 12)]   # 12 pools (pass 1: 7 read as a black lid)
 DEAD = [(6, 2), (14, 2), (30, 2), (2, 12), (14, 12), (18, 12), (30, 12), (10, 8), (26, 8)]
 HOLES = [(14, 7), (22, 4), (31, 9), (5, 10), (35, 5), (19, 13)]                   # missing panels: the black plenum
 STAINS = [(3, 5), (8, 9), (12, 3), (17, 10), (21, 6), (27, 11), (29, 3), (33, 13)]
@@ -307,7 +307,7 @@ def fascia(m, name, parts):
     sm = SHOP_MAT[name]
     for k, (fname, cx, w) in enumerate(parts):
         bx(m, 'fascia_%s_%d' % (name, k), [cx - w / 2 - 2.0, fy, z0, cx + w / 2 + 2.0, Y1 - 8.0, z1], sm['fascia'])
-        picture(m, 'sign_fascia_%s_%d' % (name, k), fname, (cx, fy, (z0 + z1) / 2), (0.0, -1.0, 0.0), (w, z1 - z0))
+        picture(m, 'sign_fascia_%s_%d' % (name, k), fname, (cx, fy, (z0 + z1) / 2), (0.0, -1.0, 0.0), (w, z1 - z0), emissive=1.4)     # illuminated fascia boxes (pass 1: unlit plates did not read)
 
 
 def frame_v(m, id, x, y, z0, z1, mat, w=3.0, d=3.0):
@@ -626,6 +626,8 @@ def heel_key(m):
     B.spawner(m, (x0 + 50.0, 4538.0, 0.0), 0.0, layer='gameplay', id='spawn_heel_key_1')
     # light: one tungsten work lamp on the bench
     fix(m, 'desk_lamp', (cx - 50.0, Y1 + 90.0, 36.0), 0.0, role=nm, kelvin=2400, intensity=1.3, radius=1.0)
+    for k, px in enumerate((x0 + 8.0, x1 - 8.0)):             # two caged bulkheads on the piers: the stall's front in tungsten (pass 1: its fascia was black)
+        fix(m, 'bulkhead', (px, Y1 - 8.0, 140.0), 270.0, role=nm, kelvin=2500, intensity=0.9, radius=0.9)
     # the service passage east of the row (staff door to the hall), the Heel & Key back door opens into it
     B.room(m, [-1320.0, Y1, 0.0, X1, YB, UNIT_H], MAT['back'], MAT['back_floor'], MAT['slab'],
            openings=[('s', -1300.0, -1236.0, 0.0, 96.0), ('w', 4500.0, 4564.0, 0.0, 96.0)], id='room_service')
@@ -641,16 +643,16 @@ def south_wall(m):
     y = YS
     # four pay phones in a row
     for k in range(4):
-        B.prop(m, 'cp_disco_street_telephone_booth', (-2560.0 + 34.0 * k, y + 9.6, 0.0), yaw=180.0, layer='south', id='payphone_%d' % k,
+        B.prop(m, 'cp_disco_street_telephone_booth', (-1790.0 + 34.0 * k, y + 9.6, 0.0), yaw=180.0, layer='south', id='payphone_%d' % k,
                clip=[-14.0, -16.0, 0.0, 14.0, 10.0, 84.0])
-    fix(m, 'wall_lantern', (-2508.0, y + 0.5, 128.0), 90.0, role='hall', intensity=0.8, radius=1.0)
+    fix(m, 'wall_lantern', (-1739.0, y + 0.5, 128.0), 90.0, role='hall', intensity=0.8, radius=1.0)
     # four advertising light boxes in modelled frames (emissive pictures)
-    for k, (x, nm) in enumerate(((-2360.0, 'lightbox_orbit.png'), (-2270.0, 'lightbox_lodestar.png'), (-1900.0, 'lightbox_zero_line.png'), (-1810.0, 'lightbox_channel9.png'))):
+    for k, (x, nm) in enumerate(((-2360.0, 'lightbox_orbit.png'), (-2270.0, 'lightbox_lodestar.png'), (-2020.0, 'lightbox_channel9.png'), (-1930.0, 'lightbox_zero_line.png'))):
         bx(m, 'lightbox_%d' % k, [x - 36.0, y, 60.0, x + 36.0, y + 8.0, 164.0], MAT['alu'])
         rbox(m, 'lightbox_%d_lip' % k, [x - 36.0, y + 8.0, 60.0, x + 36.0, y + 9.0, 64.0], MAT['alu_black'])
         picture(m, 'lightbox_%d_face' % k, nm, (x, y + 8.0, 112.0), (0.0, 1.0, 0.0), (64.0, 96.0), emissive=1.6)
     # the directory board, the landmark of the entrance, lit by a sign lamp bar above it
-    dx = -1640.0
+    dx = -1560.0          # pass 1: near the entrance, in the entrance view, seen through D4 from the ticket hall
     bx(m, 'directory_frame', [dx - 66.0, y, 68.0, dx + 66.0, y + 6.0, 236.0], 'w/wood_antique_panel_trim_01')
     rbox(m, 'directory_cap', [dx - 70.0, y, 236.0, dx + 70.0, y + 10.0, 240.0], MAT['alu'])
     picture(m, 'directory_face', 'directory_board.png', (dx, y + 6.0, 152.0), (0.0, 1.0, 0.0), (120.0, 160.0))
@@ -673,7 +675,7 @@ def south_wall(m):
     bx(m, 'poster_frame', [px - 36.0, y, 60.0, px + 36.0, y + 2.5, 164.0], MAT['alu_black'])
     picture(m, 'poster_station_zero', 'poster_station_zero.png', (px, y + 2.5, 112.0), (0.0, 1.0, 0.0), (64.0, 96.0))
     # benches and one bin
-    for k, x in enumerate((-2730.0, -2000.0)):
+    for k, x in enumerate((-2730.0, -2520.0)):
         B.prop(m, 'street_bench_long_iw6', (x, y + 20.0, 0.0), yaw=180.0, layer='south', id='bench_%d' % k, clip=[-49.0, -19.0, 0.0, 49.0, 19.0, 20.0])
     B.prop(m, 'cp_disco_street_trashcan_01', (-2210.0, y + 16.0, 0.0), yaw=0.0, layer='south', id='bin_0', clip=[-12.0, -12.0, 0.0, 12.0, 12.0, 30.0])
     fix(m, 'emergency_wall', (-1460.0, y + 0.5, 200.0), 90.0, role='hall', intensity=0.9, radius=1.4)
@@ -711,7 +713,7 @@ def polisher(m):
     """the floor polisher in its polished circle (authored: no stock 1978 polisher exists; cp_disco_floor_buffer is the bladed trap),
     its cable run to a wall socket. Static."""
     m.use('south')
-    cx, cy = -1880.0, 3990.0
+    cx, cy = -1590.0, 3850.0          # pass 1: the foreground of the entrance view, as in the target
     picture_decal(m, 'polish_circle', 'floor_polish_circle.png', (cx - 30.0, cy, 0.0), (220.0, 220.0))
     px, py, yaw = cx, cy, 160.0
     loc = G.merge(G.cylinder((0, 0, 0.0), (0, 0, 3.0), 10.0, 20), G.cylinder((0, 0, 3.0), (0, 0, 8.0), 9.4, 20))
@@ -730,8 +732,8 @@ def polisher(m):
     # the cable: from the handle down to the floor, a slack loop, then to the socket on the south wall between two columns
     c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
     hx, hy = px + (-12.0) * c, py + (-12.0) * s
-    sx = -1852.0
-    pts = [(hx, hy), (hx - 20.0, hy - 30.0), (hx + 10.0, hy - 90.0), (sx - 30.0, 3800.0), (sx + 20.0, 3700.0), (sx + 10.0, 3620.0), (sx, YS + 2.0)]
+    sx = -1650.0
+    pts = [(hx, hy), (hx - 10.0, hy - 40.0), (-1615.0, 3700.0), (-1640.0, 3600.0), (sx, YS + 2.0)]
     mesh(m, 'polisher_cable', MAT['rubber'], G.ribbon(pts, 0.9))
     mesh(m, 'polisher_cable_rise', MAT['rubber'], G.cylinder((sx, YS + 1.5, 0.3), (sx, YS + 1.5, 16.0), 0.45, 6, caps=False))
     B.prop(m, 'fac_outlet', (sx, YS, 18.0), yaw=180.0, layer='south', id='polisher_socket')
@@ -769,12 +771,13 @@ def gameplay(m):
 
 def cameras(m):
     m.use('cameras')
-    cams = [('arc_east_long', (-1290.0, 3870.0, 60.0), 176.0, 0.0), ('arc_west_long', (-2930.0, 3960.0, 60.0), 2.0, 0.0),
+    cams = [('arc_east_long', (-1262.0, 3700.0, 60.0), 172.0, 0.0), ('arc_west_long', (-2930.0, 3960.0, 60.0), 2.0, 0.0),
             ('arc_south_wall', (-2100.0, 4160.0, 64.0), 270.0, 0.0), ('arc_directory', (-1100.0, 3930.0, 64.0), 216.0, 0.0)]
     for nm, (x0, x1) in UNITS.items():
         cx = (x0 + x1) / 2
-        cams.append(('arc_%s_front' % nm, (cx, 3900.0, 60.0), 90.0, 0.0))
-        cams.append(('arc_%s_oblique' % nm, (cx - 320.0, 3960.0, 60.0), round(math.degrees(math.atan2(Y1 - 3960.0, 320.0)), 1), 0.0))
+        cams.append(('arc_%s_front' % nm, (cx, 3900.0, 60.0), 90.0, -8.0))
+        dx = -320.0 if cx - 320.0 > XW + 40.0 else 320.0          # pass 1: the Needle Drop oblique stood outside the hall (x -3120)
+        cams.append(('arc_%s_oblique' % nm, (cx + dx, 3960.0, 60.0), round(math.degrees(math.atan2(Y1 - 3960.0, -dx)), 1), -6.0))
         if nm != 'heel_key':
             cams.append(('arc_%s_inside' % nm, (cx + {'copy_stop': 40.0, 'needle_drop': -60.0}.get(nm, 0.0), 4440.0, 60.0), 270.0, 0.0))
     for nm, eye, yaw, pitch in cams:
