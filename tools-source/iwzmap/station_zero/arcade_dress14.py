@@ -617,7 +617,7 @@ def stock(D, shelf, items, step, yaw=0.0, jitter=0.0, skip=0.0, scale=1.0):
 
 
 HUNG_Y = 76.0           # r13: 44 (34 units from the chk cameras, 41 % of their frame); the boards now hang 76 into the shop
-HUNG_LAMP = True          # r15: one power spot per hung picture (FE62)
+HUNG_LAMP = False         # r15 gave every picture its own lamp (FE62); r16 (FE66: the engine's light tiles break above 177 rows of lights.txt) lights them with one lamp per group of boards (arcade_layer14.lamps16)
 ARROW_LAMP = {'intensity': 1.0, 'color': [0.75, 0.85, 1.0]}
 HUNG_Z = 76.0           # r13: 52 (the player's eye line, and 41 % of the chk cameras' frame); now above a standing player's head and inside the chk cameras' frame (z 70, +-31 at 66 units)
 

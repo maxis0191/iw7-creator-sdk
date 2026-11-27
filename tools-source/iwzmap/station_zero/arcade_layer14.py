@@ -64,6 +64,22 @@ BENCH_R = float(os.environ.get('ARC15_BENCH_R', '190'))
 BENCH_IN = float(os.environ.get('ARC15_BENCH_IN', '55'))
 BENCH_OUT = float(os.environ.get('ARC15_BENCH_OUT', '90'))      # r13: three downward spots at z 120: the wall was lit only below z 120, a hard horizontal edge
 SIGN_K = float(os.environ.get('ARC13_SIGN_K', '3.5'))
+LAMP_BASE = 0.04                    # studio/signs.py LAMP_BASE: the intensity of a lamp LAMP_DIST units from its board
+LAMP_DIST = 35.0
+LAMP_K = float(os.environ.get('ARC16_LAMP_K', '1.3'))
+LAMP_BACK = float(os.environ.get('ARC16_LAMP_BACK', '90'))      # a group lamp hangs this far in front of its boards and
+LAMP_UP = float(os.environ.get('ARC16_LAMP_UP', '60'))          # this far above their centre
+LAMP_R = float(os.environ.get('ARC16_LAMP_R', '150'))
+LAMP_SPAN = float(os.environ.get('ARC16_LAMP_SPAN', '170'))     # a bay whose boards span more than this gets two lamps
+WASH_K = float(os.environ.get('ARC16_WASH_K', '1.7'))           # the 14 washers of r15 (0.09) became fewer and stronger
+WASH_SOUTH = [float(v) for v in os.environ.get('ARC16_WASH_SOUTH', '').split(',') if v]
+TUBE_K = float(os.environ.get('ARC16_TUBE_K', '1.7'))
+HALL_I = float(os.environ.get('ARC16_HALL_I', '0.7'))
+HALL_R = float(os.environ.get('ARC16_HALL_R', '300'))
+HALL_Y = float(os.environ.get('ARC16_HALL_Y', '4270'))
+HALL_Z = float(os.environ.get('ARC16_HALL_Z', '300'))
+HALL_AIM = float(os.environ.get('ARC16_HALL_AIM', '200'))
+HALL_XS = [float(v) for v in os.environ.get('ARC16_HALL_XS', '-1010,-760').split(',') if v]
 FLOOR_SKIN = 'w/building_ship_hallway_floor_06_tile_gray_glossy'
 PANEL_DEAD = 'w/concrete_wall_panel_05'
 PANEL_LIVE = 'w/glass_led_light_diffuser_01'
@@ -134,6 +150,9 @@ def build(name='sz_arcade_r13'):
     rep['dress_refusals'] = dict(REPORT)
     uplights13(m, rep)
     upperfill15(m, rep)
+    merge16(m, rep)
+    lamps16(m, rep)
+    hallfill16(m, rep)
     signs13(m, rep)
     cutwall12(m, rep)
     cameras12(m, rep)
@@ -490,17 +509,79 @@ def uplights13(m, report):
 
 def upperfill15(m, report):
     """r15: the upper walls were black with the power on (`studio light --at` on the north pillar at z 168: ON 0.03 against 1.07 on the floor; the wall at z 120: 0.04, at z 60: 0.27). A wall washer
-    per north pillar and per gap between two (spot at z 195, 80 units off the wall, aimed at the wall at z 150) and one per south pillar. Group power: dark with the power off."""
+    (spot at z 195, 80 units off the wall, aimed at the wall at z 150). Group power: dark with the power off.
+    r16 (FE66: 14 washers of 0.09 were part of the 200 rows): the five between the north pillars at WASH_K times the intensity (5 rows; the three on the south wall changed `studio light --cam arc_south_wall` top third 0.17 -> 0.19: dropped, light_wash_s_* already wash that wall)."""
     n = 0
     xs_n = [-2950.0, -2635.0, -2305.0, -1975.0, -1645.0, -1290.0]
-    pts = [(x, 4274.0, 1.0) for x in xs_n] + [((a + b) / 2.0, 4274.0, 1.0) for a, b in zip(xs_n, xs_n[1:])] + [(x, 3526.0, -1.0) for x in (-2530.0, -2176.0, -1900.0)]
+    pts = [((a + b) / 2.0, 4274.0, 1.0) for a, b in zip(xs_n, xs_n[1:])] + [(x, 3526.0, -1.0) for x in WASH_SOUTH]
     for x, yw, sgn in pts:
         org = (x, yw - sgn * 80.0, 195.0)
         d = (0.0, sgn * 80.0, -(195.0 - FILL_AIM))
         ln = math.sqrt(sum(v * v for v in d))
-        layer12_light(m, org, 'light_wash_%d_%d' % (int(x), int(sgn)), color=(1.0, 0.88, 0.7), radius=FILL_R, intensity=FILL_I, type='spot', dir=tuple(round(v / ln, 4) for v in d), inner=25.0, outer=75.0)
+        layer12_light(m, org, 'light_wash_%d_%d' % (int(x), int(sgn)), color=(1.0, 0.88, 0.7), radius=FILL_R, intensity=round(FILL_I * WASH_K, 4), type='spot', dir=tuple(round(v / ln, 4) for v in d), inner=25.0, outer=75.0)
         n += 1
-    report['upperfill15'] = {'added': n, 'intensity': FILL_I}
+    report['upperfill15'] = {'added': n, 'intensity': round(FILL_I * WASH_K, 4)}
+
+
+def merge16(m, report):
+    """r16, FE66: lights.txt held 200 rows, the engine's 8x8 pixel light tiles are clean up to 177 (worker SH). Rows that did the same job twice become one, at the sum of their intensity:
+    the pairs of ceiling panels 38 units apart (light_pool_0/1, 5/6, 10/11: one spot between them) and the second neon tube of each shop, 140 from the first and 70 from the shop's key light."""
+    gone = 0
+    for a, b in (('light_pool_0', 'light_pool_1'), ('light_pool_5', 'light_pool_6'), ('light_pool_10', 'light_pool_11')):
+        oa, ob = m.get(a), m.get(b)
+        org = [round((oa['origin'][i] + ob['origin'][i]) / 2.0, 3) for i in range(3)]
+        m.update(a, origin=org, intensity=round(oa['intensity'] + ob['intensity'], 4), radius=round(oa['radius'] * 1.1, 1))
+        m.remove(b)
+        gone += 1
+    for i in range(1, 6):
+        a, b = 'fx_tube_%d_0_l1' % i, 'fx_tube_%d_1_l1' % i
+        oa, ob = m.get(a), m.get(b)
+        org = [round((oa['origin'][k] + ob['origin'][k]) / 2.0, 3) for k in range(3)]
+        m.update(a, origin=org, intensity=round(oa['intensity'] * TUBE_K, 4), radius=round(oa['radius'] * 1.25, 1))
+        m.remove(b)
+        gone += 1
+    report['merge16'] = {'removed': gone}
+
+
+def lamps16(m, report):
+    """r16, FE66: round 15 gave each of the 26 hung picture boards its own `power` spot lamp (26 rows). Now one lamp per group of boards (a bay whose boards span more than LAMP_SPAN gets two):
+    in front of the group's centre at LAMP_BACK, LAMP_UP above, aimed at it, the intensity studio/signs.py gives a lamp at that distance (LAMP_BASE * (d / LAMP_DIST)^2) times LAMP_K, a wide cone."""
+    bays = {}
+    for o in m.objects():
+        mt = re.match(r'hg_(\d+)_\d+_pic$', str(o['id'])) if o['kind'] == 'sign' else None
+        if mt:
+            bays.setdefault(int(mt.group(1)), []).append(o)
+    n = 0
+    boards = 0
+    for i in sorted(bays):
+        ps = sorted(bays[i], key=lambda o: o['at'][0])
+        k = 1 if ps[-1]['at'][0] - ps[0]['at'][0] <= LAMP_SPAN else 2
+        size = -(-len(ps) // k)
+        for j in range(k):
+            ch = ps[j * size:(j + 1) * size]
+            if not ch:
+                continue
+            cx, cy, cz = [sum(float(o['at'][a]) for o in ch) / len(ch) for a in range(3)]
+            dl = math.hypot(LAMP_BACK, LAMP_UP)
+            layer12_light(m, (round(cx, 1), round(cy - LAMP_BACK, 1), round(cz + LAMP_UP, 1)), 'lamp_hg_%d_%d' % (i, j), color=(1.0, 0.95, 0.85), radius=LAMP_R, group='power',
+                          intensity=round(LAMP_BASE * LAMP_K * (dl / LAMP_DIST) ** 2, 4), type='spot', dir=(0.0, round(LAMP_BACK / dl, 4), round(-LAMP_UP / dl, 4)), inner=35.0, outer=65.0)
+            n += 1
+            boards += len(ch)
+    report['lamps16'] = {'lamps': n, 'boards': boards}
+
+
+def hallfill16(m, report):
+    """r16: the ticket hall's north wall (y 4400) was black above the bench spots (conv_bench top third 0.034, hall_far upper right wall): its power lamps hang on the south side (y 3400) and the benches' own spots
+    stop at z 110. Wall washers on the hall side of the arcade door, as the arcade's: a spot HALL_Z high, 130 off the wall (y 4400: picked on the conv_bench frame), aimed at the wall at HALL_AIM; one more for the arcade's east wall seen from the hall."""
+    n = 0
+    washers = [((x, HALL_Y, HALL_Z), (x, 4400.0, HALL_AIM)) for x in HALL_XS]
+    washers.append(((X1 + 140.0, 4200.0, HALL_Z), (X1, 4200.0, HALL_AIM)))               # hall_far: the east wall of the arcade (x -1200) beside the vestibule was black above z 130 (`studio pick` on the frame)
+    for (ox, oy, oz), (ax, ay, az) in washers:
+        d = (ax - ox, ay - oy, az - oz)
+        ln = math.sqrt(sum(v * v for v in d))
+        layer12_light(m, (ox, oy, oz), 'light_hallwash_%d_%d' % (int(ox), int(oy)), color=(1.0, 0.9, 0.74), radius=HALL_R, intensity=HALL_I, type='spot', dir=tuple(round(v / ln, 4) for v in d), inner=30.0, outer=80.0, group='power')
+        n += 1
+    report['hallfill16'] = {'added': n, 'intensity': HALL_I}
 
 
 def layer12_light(m, origin, id, **k):
