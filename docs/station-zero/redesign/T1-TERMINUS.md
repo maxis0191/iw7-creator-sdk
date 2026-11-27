@@ -59,8 +59,15 @@ Records (`studio check`, `build.networked_entities.total`): **487**: 14 under th
 
 Frames, look copy (vision `term`), pass 5 (final): `C:\studio-data\sz\film\terminus\pass5\` (sheet `sheet.jpg`, luma `luma.json`): mean 0.568 to 0.585 on the five cameras; light bars p90 `term_arrival` floor 0.758 wall 0.751, `term_long` 0.723 / 0.725.
 
-## Not done
+## The machine's darkness: the light-grid hypothesis tested (lead, after the merge)
 
+Refuted by measurement:
+- The emitted document's `lighting.txt` (`C:\studio-data\live\doc-383723ba\cp_iwz.emit`, the baked grid, 4,457 lines) holds baked rows over the Terminus box (e.g. `room -10916 -5216 -56 -10532 -4832 328 3.1379 2.5854 2.1284 0.71`: as bright as the room's other rows), and `probes.txt` holds the Terminus room row `room -10948 -5248 -120 -9452 -4252 368 0.900 0.900 0.950 0.60`. An island zone gets both (`basegame.py` adds them, emit report `lighting.txt`/`probes.txt` +2 rows).
+- At close range the machine is lit and teal (client frame `iwz_t1_prompt.png`, 30 units): body luma 0.162, rgb (0.157, 0.164, 0.158), against 0.756 for the paper in the same frame: ratio 0.21 even where light reaches it fully. Across passes `term_machine` reads 0.12 (pass 3), 0.14 (pass 4, baked key 6.0), 0.13 (pass 5, key 3.0 baked + runtime): the keys changed nothing measurable. What the frames show is a dark-albedo object under the same light as near-white paper; the stock room reads the machine because its walls are darker than the machine (stock frame mean 0.149).
+- Also found: the runtime+emergency key is a `lights.txt` row only (`spot -10270 -4660 170 1 0.86 0.66 3000 237.966 -47.6953 -164.056 96`) and no `layout.json` record, so it is NOT baked; `studio light --at -10200,-4640,95` lists only the tubes reaching the machine (0.24 in all, 0.11 + 0.10 from the two nearest) and no contribution of the key. The row's yaw -164 is the reverse of the aim written (70, 20, -80 = yaw 16): whether that is the engine's convention for a spot or an inverted direction is not checked.
+Not fixed. Next probe, if the lead wants it: a plain baked omni of the same strength at the key's place against the same key as runtime with `shadows` off, one frame each (`term_machine`), to settle the runtime row's direction; and a darker paper zone round the post (a ground under the machine) as the design answer the stock room uses.
+
+## Not done
 - **The machine reads as a dark silhouette against the paper:** body 0.13 of the paper behind it in `term_machine` (target 0.40), with a baked key and then a runtime emergency key at about 110 units. Why the runtime row does not light the scriptable is not proven.
 - Static that the target shows moving: the clock (stock `sign_clock_04`, hands fixed near 10:10), the beam's dust (no volumetric: a baked spot only, `volumetricSpotBrightness 0` in the vision), the line printer's sound. Bench numbers 1 to 4, the "WAY OUT" sign, the passenger numbers, the hero colours of the fresh pairs, Strand's tape: not built.
 - QUALITY-BAR 19 to 21 fail by design of the bible (an empty paper room 1,400 x 900, no job props, no pipes).
