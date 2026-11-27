@@ -18,8 +18,8 @@ WORKTREE = os.path.normpath(os.path.join(HERE, '..', '..', '..', '..'))
 DOC = r'C:\studio-data\sz\film\arcade\goods_b\doc'
 STUDIO = r'C:\studio'
 CAMS = ['arc_copy_stop_front', 'arc_copy_stop_oblique', 'arc_copy_stop_inside', 'copy_stop_far', 'copy_stop_window_close', 'copy_stop_interior',
-        'copy_stop_booth_close', 'copy_stop_memo_close', 'arc_hole_nine_front', 'arc_hole_nine_oblique', 'arc_hole_nine_inside', 'hole_nine_far',
-        'hole_nine_counter_close', 'hole_nine_interior', 'hole_nine_back_wall', 'arc_east_long']
+        'copy_stop_booth_close', 'copy_stop_memo_close', 'copy_stop_memo_walkby', 'arc_hole_nine_front', 'arc_hole_nine_oblique', 'arc_hole_nine_inside', 'hole_nine_far',
+        'hole_nine_counter_close', 'hole_nine_order_walkby', 'hole_nine_interior', 'hole_nine_back_wall', 'arc_east_long']
 BLIND = ['copy_stop_far', 'arc_copy_stop_front', 'hole_nine_far', 'arc_hole_nine_front']
 
 

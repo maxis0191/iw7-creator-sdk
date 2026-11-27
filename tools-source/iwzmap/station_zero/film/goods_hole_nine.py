@@ -222,6 +222,7 @@ def rail_rack(K):
 
 def cameras(K):
     B.camera(K.m, 'hole_nine_counter_close', (-1860.0, 4246.0, 74.0), 90.0, pitch=14.0, layer=K.layer, id='hole_nine_counter_close')
+    B.camera(K.m, 'hole_nine_order_walkby', (-1900.0, 4166.0, 62.0), 80.0, pitch=4.0, layer=K.layer, id='hole_nine_order_walkby')  # 150 from the order
     B.camera(K.m, 'hole_nine_far', (-1830.0, 3530.0, 62.0), 90.0, pitch=-3.0, layer=K.layer, id='hole_nine_far')       # 772 from the counter
     B.camera(K.m, 'hole_nine_interior', (-1730.0, 4338.0, 66.0), 140.0, pitch=4.0, layer=K.layer, id='hole_nine_interior')
     B.camera(K.m, 'hole_nine_back_wall', (-1840.0, 4250.0, 66.0), 90.0, pitch=-8.0, layer=K.layer, id='hole_nine_back_wall')

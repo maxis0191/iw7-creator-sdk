@@ -324,6 +324,7 @@ def cameras(K):
     B.camera(K.m, 'copy_stop_booth_close', (-2021.0, 4246.0, 60.0), 90.0, pitch=2.0, layer=K.layer, id='copy_stop_booth_close')
     B.camera(K.m, 'copy_stop_memo_close', (-2044.0, 4409.0, 66.0), -5.0, pitch=26.0, layer=K.layer, id='copy_stop_memo_close')
     B.camera(K.m, 'copy_stop_interior', (-2150.0, 4340.0, 64.0), 168.0, pitch=4.0, layer=K.layer, id='copy_stop_interior')
+    B.camera(K.m, 'copy_stop_memo_walkby', (-2150.0, 4420.0, 62.0), 0.0, pitch=4.0, layer=K.layer, id='copy_stop_memo_walkby')    # 140 from the pigeonholes
     B.camera(K.m, 'copy_stop_far', (-2360.0, 3530.0, 62.0), 90.0, pitch=-3.0, layer=K.layer, id='copy_stop_far')     # 776 from the front glass
     B.camera(K.m, 'copy_stop_window_close', (-2500.0, 4210.0, 62.0), 90.0, pitch=6.0, layer=K.layer, id='copy_stop_window_close')
 
