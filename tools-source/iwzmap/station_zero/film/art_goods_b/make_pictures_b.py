@@ -395,6 +395,16 @@ def mat_ream():
     save(im, 'mat_cs_ream.png')
 
 
+def mat_ream_colours():
+    """reams of coloured paper (the pastel stock of a copy shop): the wrapper in the paper's colour, a white band, no words"""
+    for nm, col in (('yellow', (246, 222, 110)), ('pink', (242, 170, 170)), ('green', (160, 214, 150))):
+        im = paper(256, 256, col, 10, seed=len(nm) * 7 + col[0])
+        d = ImageDraw.Draw(im)
+        d.rectangle([0, 104, 255, 152], fill=(246, 244, 236))
+        d.rectangle([0, 120, 255, 136], fill=tuple(int(c * 0.8) for c in col))
+        save(im, 'mat_cs_ream_%s.png' % nm)
+
+
 def mat_paper_edge():
     """the edge of a stack of paper: fine off-white lines, slightly uneven (tiles)"""
     rnd = random.Random(42)
@@ -540,6 +550,7 @@ def main():
     cs_tickets()
     mat_ream()
     mat_paper_edge()
+    mat_ream_colours()
     mat_envelope()
     cs_toner()
     h9_cards()

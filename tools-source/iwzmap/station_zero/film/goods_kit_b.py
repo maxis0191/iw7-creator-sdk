@@ -174,10 +174,10 @@ def paper_stack(K, kind, c, size, yaw=0.0, top=None, top_mat=None, edge_mat=None
     return iid
 
 
-def ream(K, c, yaw=0.0, kind='ream'):
-    """a wrapped ream of letter paper, 8.5 x 11 x 2"""
+def ream(K, c, yaw=0.0, kind='ream', colour=None):
+    """a wrapped ream of letter paper, 8.5 x 11 x 2; colour 'yellow' | 'pink' | 'green' for the pastel stock"""
     iid = K.item(kind)
-    K.mesh(iid, 'body', K.mat('mat_cs_ream.png'), obox(c, (11.0, 8.5, 2.1), yaw, fit=True))
+    K.mesh(iid, 'body', K.mat('mat_cs_ream_%s.png' % colour if colour else 'mat_cs_ream.png'), obox(c, (11.0, 8.5, 2.1), yaw, fit=True))
     return iid
 
 

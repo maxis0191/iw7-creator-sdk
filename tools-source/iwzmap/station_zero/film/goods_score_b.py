@@ -49,7 +49,7 @@ def items_of(objs, shop):
         parts = oid.split('__')
         if len(parts) < 3 or parts[1] in ('mat', 'cam'):
             continue
-        key = '__'.join(parts[:3])
+        key = '__'.join(parts[:2] + [parts[2].split('_')[0]])        # a fixture's light ids end in _l1
         groups.setdefault(key, []).append(o)
     out = []
     for key, objs_ in groups.items():

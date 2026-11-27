@@ -47,7 +47,7 @@ def window_west(K):
             K.prop('blueprint_roll', 'cp_town_blueprint_teleporter_roll', (c[0] + dx, c[1] + dy, 2.0 + 13.8 + (k % 3) * 3), yaw=30.0 * k)
     # the light table: a lit top tilted toward the hall, a pencil drawing on vellum, a lamp on its side shelf (the shop's one practical)
     it = K.item('light_table')
-    x0, x1, y0, y1 = -2570.0, -2516.0, 4314.0, 4338.0
+    x0, x1, y0, y1 = -2570.0, -2520.0, 4314.0, 4338.0
     for k, (x, y) in enumerate(((x0 + 2, y0 + 2), (x1 - 2, y0 + 2), (x0 + 2, y1 - 2), (x1 - 2, y1 - 2))):
         K.box(it, 'leg%d' % k, [x - 1.2, y - 1.2, 0.0, x + 1.2, y + 1.2, 30.0 if y < 4330 else 38.0], M['grey'])
     top = obox(((x0 + x1) / 2, (y0 + y1) / 2, 0.0), (x1 - x0, y1 - y0, 1.5), faces='tnsewb', fit=False, tile=16.0)
@@ -61,23 +61,34 @@ def window_west(K):
     K.box(it, 'shelf', [x1 - 1.0, y0 + 4.0, 26.0, x1 + 10.0, y0 + 18.0, 27.2], M['grey'])
     K.box(it, 'shelf_leg', [x1 + 7.0, y0 + 9.0, 0.0, x1 + 9.0, y0 + 11.0, 26.0], M['grey'])
     K.fixture('desk_lamp', 'desk_lamp', (x1 + 4.5, y0 + 11.0, 27.2), 200.0, kelvin=3600, intensity=0.9, radius=0.9)
-    # a pyramid of wrapped reams, labels to the hall
-    for k, (dx, dz) in enumerate(((-12, 0), (0, 0), (12, 0), (-6, 2.1), (6, 2.1), (0, 4.2))):
-        ream(K, (-2489.0 + dx, 4322.0, dz), yaw=(k * 3) % 7 - 3)
-    for k in range(3):                                                       # two more pallets of stock under the easel
-        ream(K, (-2468.0 + (k % 2) * 3, 4330.0, 2.1 * k), yaw=90.0 + k * 4)
+    # the paper stock tower in the window (round 1: everything under z 14 hides behind the riser, the goods must stand up into the glass):
+    # a white wire shelving unit, four shelves of reams in white and the pastel colours, wrappers to the hall
+    it = K.item('paper_tower')
+    tx0, tx1, ty0, ty1 = -2510.0, -2468.0, 4312.0, 4334.0
+    for k, (x, y) in enumerate(((tx0, ty0), (tx1, ty0), (tx0, ty1), (tx1, ty1))):
+        K.mesh(it, 'post%d' % k, M['chrome'], prism((x, y, 0.0), 0.6, 100.0, 6))
+    cols = (None, 'yellow', None, 'pink', 'green', None)
+    for lv, z in enumerate((18.0, 44.0, 70.0, 96.0)):
+        K.box(it, 'shelf%d' % lv, [tx0, ty0, z - 0.8, tx1, ty1, z], M['white'])
+        if lv == 3:
+            continue
+        for j in range(3):
+            for h in range(4 - (lv + j) % 2):
+                ream(K, (tx0 + 8.0 + 13.0 * j, (ty0 + ty1) / 2, z + 2.1 * h), yaw=(h % 2) * 3.0 - 1.5, colour=cols[(lv * 3 + j + h // 2) % 6])
+    for j in range(2):                                                       # the top: two boxes of rolls of copier paper, lying
+        K.prop('blueprint_roll', 'cp_town_blueprint_teleporter_roll', (tx0 + 14.0 + 14.0 * j, (ty0 + ty1) / 2, 97.4), angles=[90.0, 0.0, 0.0])
     # the easel with a blueprint print pinned to it, facing the glass
     it = K.item('easel')
-    ex, ey = -2432.0, 4324.0
-    K.box(it, 'board', [ex - 26.0, ey - 0.6, 26.0, ex + 26.0, ey + 0.6, 66.0], M['wood'])
+    ex, ey = -2428.0, 4326.0
+    K.box(it, 'board', [ex - 30.0, ey - 0.6, 40.0, ex + 30.0, ey + 0.6, 82.0], M['wood'])
     for k, dx in enumerate((-20.0, 20.0)):
-        K.box(it, 'leg%d' % k, [ex + dx - 1, ey - 1, 0.0, ex + dx + 1, ey + 1, 68.0], M['wood'])
-    K.box(it, 'ledge', [ex - 26.0, ey - 4.0, 24.0, ex + 26.0, ey + 0.6, 26.0], M['wood'])
-    K.sign(it, 'print', art_b('cs_blueprint_sheet.png'), (ex, ey - 0.6, 46.0), (0.0, -1.0, 0.0), (48.0, 24.0))
-    paper_stack(K, 'copies_stack', (ex - 12.0, ey - 2.2, 26.0), (8.5, 3.0, 1.2), top='cs_copy_page.png')
+        K.box(it, 'leg%d' % k, [ex + dx - 1, ey - 1, 0.0, ex + dx + 1, ey + 1, 84.0], M['wood'])
+    K.box(it, 'ledge', [ex - 30.0, ey - 4.0, 38.0, ex + 30.0, ey + 0.6, 40.0], M['wood'])
+    K.sign(it, 'print', art_b('cs_blueprint_sheet.png'), (ex, ey - 0.6, 61.0), (0.0, -1.0, 0.0), (56.0, 28.0))
+    paper_stack(K, 'copies_stack', (ex - 12.0, ey - 2.2, 40.0), (8.5, 3.0, 1.2), top='cs_copy_page.png')
     # her cards on the glass, eye level
-    for k, (x, card) in enumerate(((-2560.0, 'cs_card_1.png'), (-2442.0, 'cs_card_2.png'))):
-        K.sign(K.item('window_card'), 'card', art_b(card), (x, GY + 0.35, 84.0 - 3 * k), (0.0, -1.0, 0.0), (14.0, 8.75), rot=(-2.0, 1.5)[k])
+    for k, (x, card) in enumerate(((-2560.0, 'cs_card_1.png'), (-2400.0, 'cs_card_2.png'))):
+        K.sign(K.item('window_card'), 'card', art_b(card), (x, GY + 0.35, 88.0 - 3 * k), (0.0, -1.0, 0.0), (20.0, 12.5), rot=(-2.0, 1.5)[k])
 
 
 def window_east(K):
@@ -103,7 +114,7 @@ def window_east(K):
         K.sign(it, 'sample%d' % k, art_b(pic), (bx + dx, by - 0.5, 111.0 + (3.0 if k == 1 else 0.0)), (0.0, -1.0, 0.0), (w, h), rot=(-3.0, 0.0, 2.5)[k], lift=0.12 + 0.03 * k)
     K.sign(it, 'programme', art_b('mat_cs_programme.png'), (bx + 0.5, by - 0.5, 102.0), (0.0, -1.0, 0.0), (5.0, 7.5), lift=0.2)
     for k, (x, card) in enumerate(((-2072.0, 'cs_card_3.png'), (-2215.0, 'cs_card_4.png'))):
-        K.sign(K.item('window_card'), 'card', art_b(card), (x, GY + 0.35, 80.0 + 2 * k), (0.0, -1.0, 0.0), (14.0, 8.75), rot=(1.5, -2.5)[k])
+        K.sign(K.item('window_card'), 'card', art_b(card), (x, GY + 0.35, 86.0 + 2 * k), (0.0, -1.0, 0.0), (20.0, 12.5), rot=(1.5, -2.5)[k])
 
 
 def blueprint_bay(K):
@@ -143,12 +154,21 @@ def copiers(K):
         paper_stack(K, 'copies_out', (ccx + 27.0, cy, 21.5), (8.5, 11.0, 1.0 + 0.8 * k), yaw=90.0 + 3.0 * k, top='cs_copy_page.png')
         orig = K.item('original_on_glass')
         K.decal(orig, 'sheet', art_b('cs_copy_page.png'), (ccx - 2.0 + 3 * k, cy - 1.0, 40.0), (0.0, 0.0, 1.0), (8.5, 11.0), rot=-8.0 + 20 * k)
-    K.clip(K.item('ream_pile'), [-2423.0, 4436.0, 0.0, -2398.0, 4464.0, 40.0])
-    for k, (x, y, z, yaw) in enumerate(((-2416.0, 4442.0, 0.0, 90.0), (-2405.0, 4442.0, 0.0, 92.0), (-2416.0, 4456.0, 0.0, 88.0),
-                                        (-2405.0, 4456.0, 0.0, 90.0), (-2410.0, 4445.0, 2.1, 86.0), (-2411.0, 4455.0, 2.1, 93.0),
-                                        (-2410.0, 4450.0, 4.2, 90.0), (-2416.0, 4442.0, 2.1, 91.0))):
-        ream(K, (x, y, z), yaw=yaw)
-    paper_stack(K, 'opened_ream', (-2410.0, 4450.0, 6.3), (8.5, 11.0, 1.4), yaw=4.0)
+    K.clip(K.item('ream_pile'), [-2423.0, 4436.0, 0.0, -2398.0, 4464.0, 64.0])
+    for k in range(8):                                                       # reams stacked between the copiers, the sorter's side kept free
+        ream(K, (-2404.5, 4443.0 + 13.0 * (k % 2), 2.1 * (k // 2)), yaw=90.0 + (k % 3) - 1.0, colour=(None, None, 'yellow', None)[k % 4])
+    # copier 1's sorter: a tower of ten bins on its east side, copies in every bin (the job was running)
+    it = K.item('sorter')
+    sx0, sx1, sy0, sy1 = -2423.0, -2411.0, 4440.0, 4460.0
+    K.box(it, 'back', [sx1 - 1.0, sy0, 18.0, sx1, sy1, 60.0], M['beige'])
+    for k, yy in enumerate((sy0, sy1 - 1.0)):
+        K.box(it, 'side%d' % k, [sx0, yy, 18.0, sx1, yy + 1.0, 60.0], M['beige'])
+    K.box(it, 'cap', [sx0, sy0, 58.0, sx1, sy1, 60.0], M['grey'])
+    for k in range(10):
+        z = 20.0 + 3.8 * k
+        K.box(it, 'bin%d' % k, [sx0, sy0 + 1.0, z, sx1 - 1.0, sy1 - 1.0, z + 0.4], M['grey'])
+        paper_stack(K, 'sorted_copies', ((sx0 + sx1) / 2 - 0.5, (sy0 + sy1) / 2, z + 0.4), (8.5, 11.0, 0.5 + 0.1 * (k % 4)), yaw=90.0)
+    paper_stack(K, 'opened_ream', (-2404.5, 4449.0, 8.4), (8.5, 11.0, 1.4), yaw=4.0)
     it = K.item('toner_drum')
     tx, ty = -2486.0, 4436.0
     _far_from_wheel(tx, ty, 6.0)
@@ -156,6 +176,15 @@ def copiers(K):
     K.mesh(it, 'lid', M['grey'], prism((tx, ty, 19.0), 6.2, 1.2, 12))
     K.sign(it, 'label', art_b('cs_toner_PLACEHOLDER.png'), (tx, ty - 6.0, 10.0), (0.0, -1.0, 0.0), (10.0, 2.5), lift=0.2)
     K.clip(it, [tx - 6.0, ty - 6.0, 0.0, tx + 6.0, ty + 6.0, 20.0])
+
+
+def drawings_wall(K):
+    """her drawings and prints pinned on the partition over the copiers (seen through the doors from the hall), clear of the wheel"""
+    for k, (x, z, pic, w, h, rot) in enumerate(((-2452.0, 112.0, 'cs_blueprint_sheet.png', 44.0, 22.0, -1.5), (-2400.0, 104.0, 'cs_vellum_drawing.png', 36.0, 27.0, 2.0),
+                                                (-2356.0, 116.0, 'cs_blueprint_sheet.png', 34.0, 17.0, 1.0))):
+        it = K.item('pinned_drawing')
+        K.sign(it, 'sheet', art_b(pic), (x, PART_Y, z), (0.0, -1.0, 0.0), (w, h), rot=rot, lift=0.2 + 0.05 * k)
+    _far_from_wheel(-2474.0, PART_Y)
 
 
 def counter(K):
@@ -279,8 +308,9 @@ def booth(K):
 
 def cameras(K):
     B.camera(K.m, 'copy_stop_booth_close', (-2021.0, 4246.0, 60.0), 90.0, pitch=2.0, layer=K.layer, id='copy_stop_booth_close')
-    B.camera(K.m, 'copy_stop_memo_close', (-2058.0, 4406.0, 80.0), 0.0, pitch=28.0, layer=K.layer, id='copy_stop_memo_close')
+    B.camera(K.m, 'copy_stop_memo_close', (-2044.0, 4409.0, 66.0), -5.0, pitch=26.0, layer=K.layer, id='copy_stop_memo_close')
     B.camera(K.m, 'copy_stop_interior', (-2150.0, 4340.0, 64.0), 168.0, pitch=4.0, layer=K.layer, id='copy_stop_interior')
+    B.camera(K.m, 'copy_stop_far', (-2360.0, 3530.0, 62.0), 90.0, pitch=-3.0, layer=K.layer, id='copy_stop_far')     # 776 from the front glass
     B.camera(K.m, 'copy_stop_window_close', (-2500.0, 4210.0, 62.0), 90.0, pitch=6.0, layer=K.layer, id='copy_stop_window_close')
 
 
@@ -290,6 +320,7 @@ def add(m, anchors):
     window_east(K)
     blueprint_bay(K)
     copiers(K)
+    drawings_wall(K)
     counter(K)
     pigeonholes(K)
     booth(K)
