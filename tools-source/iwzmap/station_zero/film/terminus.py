@@ -26,6 +26,10 @@ ART = os.environ.get('SZ_TERMINUS_ART') or r'C:\studio-data\sz\film\art\terminus
 DERIVED = os.environ.get('SZ_TERMINUS_DERIVED') or r'C:\studio-data\sz\film\terminus\art'     # pictures this file derives from ART
 B1_DOC = r'C:\studio-data\sz\film\b1\doc'
 OUT_DOC = r'C:\studio-data\sz\film\terminus\doc'
+# the base: B1's base_lit_nopap regenerated from THIS worktree (C:\studio-data\sz\film\terminus\regen.sh <out> IWZ_LIT_FIRST=1): 19 of 20 files equal to B1's, the
+# one difference modules/cp_iwz_terminus.gsc (the Terminus vision). Studio rebuilds modules/ only when the base's module equals what this SDK emits
+# (studio/basegame.py), so a module change needs its regenerated base, or the build keeps the base's old module with the markers of the layers left out.
+BASE = r'C:\studio-data\sz\film\terminus\base_lit_nopap'
 
 # ------------------------------------------------------------------------------------------------ the place
 # A far box: 6,300 units west and 6,400 south of the nearest base geometry (x -4004..3809, y 1199..4601) and of every zone of the bible
@@ -397,8 +401,10 @@ def main(argv=None):
     ap.add_argument('--out', default=OUT_DOC)
     ap.add_argument('--b1', default=B1_DOC, help='the B1 document (base_lit_nopap, its layers and build settings) the section goes on')
     ap.add_argument('--look', action='store_true', help='write the look copy (the lit vision = the Terminus vision) into <out>_look as well')
+    ap.add_argument('--base', default=BASE, help='the base emit (default: base_lit_nopap regenerated from this worktree)')
     a = ap.parse_args(argv)
     m = Map.load(a.b1)
+    m.base = {'kind': 'emit', 'path': a.base}
     m.name, m.title = 'sz_terminus', 'Station Zero: the Terminus on the lit-first base without Pack-a-Punch (T1)'
     for n in [n for n in m.order if n.startswith('terminus_')]:
         m.remove_layer(n)
