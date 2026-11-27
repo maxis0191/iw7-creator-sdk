@@ -27,6 +27,7 @@ def add(m, anchors):
     cassettes(s)
     counter(s, anchors)
     corners(s)
+    B.camera(m, 'needle_drop_counter_view', (-2900.0, 4330.0, 62.0), 30.0, pitch=4.0, layer=s.layer, id='needle_drop_P__cam_counter_view__1')
     B.camera(m, 'needle_drop_window_close', (-2751.0, 4225.0, 60.0), 90.0, pitch=6.0, layer=s.layer, id='needle_drop_P__cam_window_close__1')
 
 
@@ -55,20 +56,20 @@ def window(s, A):
     # the film's one-sheet and the rink's Roll-In poster, taped inside the glass at the two ends of the window (FILM-LAYER item 2)
     for name, x, f in (('one_sheet', -2820.0, os.path.join(ART, 'poster_station_zero.png')), ('rollin_poster', -2678.0, os.path.join(ART, 'lightbox_orbit.png'))):
         iid = s.item('P', name)
-        s.pic(iid, 'face', f, (x, 4311.2, 72.0), 's', 'poster')
+        s.pic(iid, 'face', f, (x, 4311.2, 72.0), 's', 'poster', glow=0.6)
     # the "new this week" stand: a two-step riser in the brand's black and orange; four new 45s in front, three LPs behind, the card on top
     iid = s.item('F', 'new_stand')
     s.box(iid, 'step1', [-2790.0, 4315.0, z0, -2712.0, 4330.0, z0 + 4.0], 'black')
     s.box(iid, 'step2', [-2790.0, 4322.0, z0 + 4.0, -2712.0, 4330.0, z0 + 14.0], 'black')
     s.box(iid, 'edge1', [-2790.0, 4314.6, z0 + 3.0, -2712.0, 4315.0, z0 + 4.0], 'orange')
     s.box(iid, 'edge2', [-2790.0, 4321.6, z0 + 13.0, -2712.0, 4322.0, z0 + 14.0], 'orange')
-    s.box(iid, 'card_board', [-2760.0, 4329.0, z0 + 14.0, -2742.0, 4330.0, z0 + 42.0], 'black')
+    s.box(iid, 'card_board', [-2733.0, 4329.0, z0 + 26.0, -2715.0, 4330.0, z0 + 42.0], 'black')
     for k, x in enumerate((-2779.0, -2765.0, -2737.0, -2723.0)):
         s.prop(s.item('S', 'single_45'), 'cp_town_45_record_0%d' % (k + 1), (x, 4318.0, z0 + 4.0 + 6.4), yaw=90.0)
-    for k, x in enumerate((-2771.0, -2751.0, -2731.0)):
+    for k, x in enumerate((-2783.0, -2765.0, -2731.0)):
         sleeve(s, [1, 7, 4][k], (x, 4323.0, z0 + 14.0 + 6.3), 's')
     iid = s.item('P', 'card_new45')
-    s.pic(iid, 'face', 'nd_card_1.png', (-2751.0, 4329.0, z0 + 14.0 + 22.0), 's', 'card')
+    s.pic(iid, 'face', 'nd_card_1.png', (-2724.0, 4329.0, z0 + 14.0 + 20.0), 's', 'card')
     # the window rack behind the plinth: two uprights and three lipped rails of face-out sleeves
     rk = A['needle_drop.window_rack_1']['box']           # y 4332..4340
     iid = s.item('F', 'window_rack')
@@ -79,7 +80,7 @@ def window(s, A):
         for j, xc in enumerate((-2776.0, -2720.0)):
             s.flat('S', 'lp_rail', 'nd_rail_%s.png' % order[j], 'rail', (xc, 4337.0, zc), 's', thick=0.3, mat='black')
     iid = s.item('P', 'card_rental_window')
-    s.pic(iid, 'face', 'nd_card_2.png', (-2751.0, 4311.2, 104.0), 's', 'card')
+    s.pic(iid, 'face', 'nd_card_2.png', (-2790.0, 4311.2, 104.0), 's', 'card')
 
 
 # ------------------------------------------------------------------------------------------------ the record bins (the shell's island)

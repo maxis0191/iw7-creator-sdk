@@ -63,13 +63,20 @@ class Shop:
     def clip(self, iid, b):
         return B.clip(self.m, [round(v, 3) for v in b], layer=self.layer, id='%s__clip' % iid)
 
-    def pic(self, iid, part, name, at, facing, kind, folder=PIC):
+    def pic(self, iid, part, name, at, facing, kind, folder=PIC, glow=None):
+        """a picture on a surface (decal, 0.4 in front). glow: a picture that must read where no lamp reaches (a poster taped inside a
+        window, lit from behind the glass only): an emissive sign of that strength set 0.4 in front, no light added"""
         path = name if os.path.isabs(name) else os.path.join(folder, name)
         if not os.path.isfile(path):
             raise FileNotFoundError(path)
         size = SIZE[kind]
         if PICS_USED.setdefault(path, size) != size:
             raise ValueError('%s used at two sizes: %s and %s' % (path, PICS_USED[path], size))
+        if glow:
+            oid = B.sign(self.m, image=path, at=[round(v, 3) for v in at], normal=NORMAL[facing], size=list(size), emissive=glow, layer=self.layer,
+                         id='%s__%s' % (iid, part))
+            self.m.update(oid, off=0.4)
+            return oid
         return B.decal(self.m, image=path, at=[round(v, 3) for v in at], normal=NORMAL[facing], size=list(size), layer=self.layer,
                        id='%s__%s' % (iid, part))
 

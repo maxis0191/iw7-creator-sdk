@@ -1,6 +1,9 @@
 r"""goods_pass_a: one live pass of the goods of Needle Drop and Heel & Key (worker A3a): start, power on, shots, power off, shots, stop.
 
-    python goods_pass_a.py <pass folder> [doc folder]
+    python goods_pass_a.py <pass folder> [doc folder] [--lit]
+
+--lit: the doc is a lit-vision variant (film/arcade_litview.py: its dark vision is the lit one): no power switch, frames labelled LIT.
+Why: the base emit base_lit predates the darkness fix (SDK e9af6d9: 0 'NO_BANKS' in base_lit/cp_iwz.gsc), so ON equals OFF (pass 1).
 
 Writes <pass>\{on,off}\<camera>.png, sheets sheet_{on,off}_<k>.jpg (six a sheet, the camera named), blind crops blind_<camera>.jpg
 (the ON frame with its top 30 % cut away: the fascia out of the picture, for the question "what does this shop sell?"), pass.json.
@@ -14,12 +17,16 @@ import time
 
 DOC = r'C:\studio-data\sz\film\arcade\goods_a\doc'
 STUDIO = r'C:\studio'
-CAMS = ['arc_needle_drop_front', 'arc_needle_drop_oblique', 'arc_needle_drop_inside', 'needle_drop_window_close',
+# build with THIS worktree's SDK (it has the darkness fix e9af6d9; the main checkout, Studio's default, does not)
+CONFIG = r'C:\studio-data\sz\film\arcade\goods_a\studio_goods_a.json'
+SDK_ROOT = r'C:\Users\ezvalo\Documents\IW7-Products\worktrees\sdk-film-goods-a'
+SETTLE_S = 10.0           # after power on: the release is 2.65 s after the switch, then a 5 s ramp
+CAMS = ['arc_needle_drop_front', 'arc_needle_drop_oblique', 'needle_drop_counter_view', 'needle_drop_window_close',
         'arc_heel_key_front', 'arc_heel_key_oblique', 'heel_key_counter_close', 'arc_east_long']
 
 
 def studio(*args):
-    env = dict(os.environ, STUDIO_ROOT='C:/studio',
+    env = dict(os.environ, STUDIO_ROOT='C:/studio', STUDIO_CONFIG=CONFIG, IWZ_SDK=SDK_ROOT,
                IWZ_ZONETOOL_EXE=r'C:\Users\ezvalo\Documents\IW7-Products\worktrees\x64-zt-serve\build\bin\x64\Release\zonetool.exe')
     t = time.time()
     p = subprocess.run([sys.executable, '-m', 'studio'] + list(args), cwd=STUDIO, env=env, capture_output=True, text=True)
@@ -52,11 +59,11 @@ def sheets(folder, state):
     return out
 
 
-def blind(folder):
+def blind(folder, state):
     from PIL import Image
     out = []
     for c in ('arc_needle_drop_front', 'arc_heel_key_front'):
-        p = os.path.join(folder, 'on', c + '.png')
+        p = os.path.join(folder, state, c + '.png')
         if os.path.isfile(p):
             im = Image.open(p).convert('RGB')
             w, h = im.size
@@ -67,19 +74,26 @@ def blind(folder):
 
 
 def main():
-    folder = sys.argv[1]
-    doc = sys.argv[2] if len(sys.argv) > 2 else DOC
+    a = [x for x in sys.argv[1:] if x not in ('--lit', '--force-sync')]
+    lit = '--lit' in sys.argv
+    folder = a[0]
+    doc = a[1] if len(a) > 1 else DOC
     os.makedirs(folder, exist_ok=True)
     rep = {'start': studio('live', 'start', doc, '--idle-min', '20'), 'power': {}, 'shots': {}}
+    if rep['start'].get('ok') and '--force-sync' in sys.argv:
+        rep['sync'] = studio('live', 'sync', doc, '--force')
     if rep['start'].get('ok'):
-        for state in ('on', 'off'):
+        for state in (('lit',) if lit else ('on', 'off')):
             os.makedirs(os.path.join(folder, state), exist_ok=True)
-            rep['power'][state] = studio('live', 'power', doc, state)
+            if not lit:
+                rep['power'][state] = studio('live', 'power', doc, state)
+                if state == 'on':
+                    time.sleep(SETTLE_S)
             for c in CAMS:
                 r = studio('live', 'shot', doc, '--clean', '--camera', c, '--out', os.path.join(folder, state, c + '.png'))
                 rep['shots']['%s/%s' % (state, c)] = {k: r.get(k) for k in ('ok', 'settled', 'error', 'stale', 'stderr', '_s')}
-        rep['sheets'] = sheets(folder, 'on') + sheets(folder, 'off')
-        rep['blind'] = blind(folder)
+        rep['sheets'] = sheets(folder, 'lit') if lit else sheets(folder, 'on') + sheets(folder, 'off')
+        rep['blind'] = blind(folder, 'lit' if lit else 'on')
     rep['stop'] = studio('live', 'stop', doc)
     json.dump(rep, open(os.path.join(folder, 'pass.json'), 'w', encoding='utf-8'), indent=1, default=str)
     print(json.dumps({'start_ok': rep['start'].get('ok'), 'start_s': rep['start'].get('_s'), 'sheets': rep.get('sheets'),
