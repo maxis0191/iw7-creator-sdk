@@ -58,8 +58,8 @@ def items_of(objs, shop):
             continue
         kind = key.split('__')[1]
         props = [o for o in real if o['kind'] == 'prop']
-        model = props[0]['model'] if (len(real) == 1 and props) else 'authored:' + kind
         lights = [o for o in real if o['kind'] == 'light']
+        model = props[0]['model'] if (props and len(real) - len(lights) == 1) else 'authored:' + kind
         out.append({'id': key, 'kind': kind, 'model': model, 'parts': len(real), 'stock': bool(props) and len(real) - len(lights) == 1})
     return out
 
