@@ -64,7 +64,7 @@ WALL_TILE = 128.0                    # 16 bars of 64 px in a 1024 px picture: on
 PAPER_GLOSS = 0.12                   # matte paper
 
 LIGHT_GROUP = 'emergency'            # lit-first base: every lamp baked (PLAN decision 3)
-MACHINE_KEY = 6.0                    # pass 3: 2.0 left the body near black
+MACHINE_KEY = 3.0                    # baked + runtime (pass 4: 6.0 baked only, body 0.14 of the paper)
 BEAM = 14.0                          # pass 3: 4.0 gave no visible warm rectangle around the picture
 TUBE_INTENSITY, TUBE_RADIUS = 3.0, 2.2  # pass 1 (1.0, 1.6) read as a dim room; the bible's light is flat office fluorescent
 
@@ -319,11 +319,13 @@ def light(m, mat):
     B.light(m, LENS, color=(1.0, 0.74, 0.42), radius=ln * 1.5, intensity=BEAM, group=LIGHT_GROUP, type='spot',
             dir=[round(v / ln, 4) for v in d], inner=round(half * 0.85, 1), outer=round(half * 1.3, 1), id='terminus_beam')
     # the machine's own light (lead, pass 1: a black silhouette): one soft warm spot from above the user's side, so that its red and brass read
-    mk = (MACH[0] - 80.0, MACH[1] + 30.0, 170.0)
+    # pass 4 measured the body at 0.14 of the paper behind it: a scriptable model takes baked light only through the light grid, so the key is ALSO a runtime
+    # emergency light (a lights.txt row: per-pixel on models; no networked record), about 110 units above-front on the user's side as the stock key is (QUALITY-BAR A2)
+    mk = (MACH[0] - 70.0, MACH[1] - 20.0, POST_H + 130.0)
     dm = (MACH[0] - mk[0], MACH[1] - mk[1], POST_H + 50.0 - mk[2])
     lm = math.sqrt(sum(v * v for v in dm))
     B.light(m, mk, color=(1.0, 0.86, 0.66), radius=lm * 2.2, intensity=MACHINE_KEY, group=LIGHT_GROUP, type='spot',
-            dir=[round(v / lm, 4) for v in dm], inner=22.0, outer=48.0, id='terminus_machine_key')
+            dir=[round(v / lm, 4) for v in dm], inner=22.0, outer=48.0, runtime=True, id='terminus_machine_key')
     # the next reel on the paper: the second platform, emissive, inside the lit rectangle
     # pass 3: the emissive route ignores the picture's alpha (its feathered border drew black), so the reel is a printed-light decal on the paper: alpha
     # blended (the paper's bars show through its dark parts and its feathered edge) and lit by the beam, as light thrown on paper is

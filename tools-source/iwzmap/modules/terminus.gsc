@@ -107,7 +107,15 @@ terminus_main()
         wait 0.5;
     t.state = "idle";
     t.cab sethintstring( "Press ^3[{+activate}]^7 to depart for the Terminus" );     // PLACEHOLDER COPY
-    terminus_log( "ARMED" );
+    // the projector runs once the trip is armed: reels turning, door open (as cp_final does at init, cp_final_weapon_upgrade.gsc:37-38; cp_zmb only after
+    // its alien fuses, cp_zmb_ufo.gsc:1185-1196). The stock purchase sequence drives the door itself and ends at open_idle.
+    mach = getent( "pap_machine", "targetname" );
+    if ( isdefined( mach ) )
+    {
+        mach setscriptablepartstate( "reels", "on" );
+        mach setscriptablepartstate( "door", "open_idle" );
+    }
+    terminus_log( "ARMED machine=" + isdefined( mach ) );
 }
 
 terminus_sound( ent, alias )
