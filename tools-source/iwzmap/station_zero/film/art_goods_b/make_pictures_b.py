@@ -610,6 +610,7 @@ def main():
     h9_cards()
     mat_glaze('mat_h9_glaze_pink.png', (238, 128, 170), sprinkles=[(250, 250, 250), (90, 200, 220), (250, 220, 70), (120, 70, 40)], seed=1)
     mat_glaze('mat_h9_glaze_honey.png', (244, 214, 150), dough=(176, 112, 60), seed=2)
+    mat_glaze('mat_h9_glaze_choc.png', (70, 38, 24), dough=(190, 132, 76), sprinkles=[(250, 250, 250), (250, 120, 160), (120, 200, 230)], seed=3)
     h9_tv()
     mat_box()
     mat_bag()

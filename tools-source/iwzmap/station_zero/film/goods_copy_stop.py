@@ -39,7 +39,9 @@ def window_west(K):
     boards = (16.0, 38.0, 60.0, 82.0, 104.0)
     for k, z in enumerate(boards):
         K.box(it, 'board%d' % k, [wx0, wy0, z - 1.0, wx1, wy1, z], M['white'])
-    K.box(it, 'back', [wx0, wy1 - 0.4, 0.0, wx1, wy1, 112.0], M['white'])
+    for k, z in enumerate(boards[1:]):                                       # round 3: shelf-light strips (pass 3: the wall read black from the hall)
+        K.sign(it, 'strip%d' % k, art_b('h9_warm_strip.png'), ((wx0 + wx1) / 2, wy0 + 3.0, z - 1.0), (0.0, 0.0, -1.0), (100.0, 3.0),
+               emissive={'color': [0.92, 0.96, 1.0], 'strength': 2.5}, lift=0.1)
     blocks = (('yellow', 'yellow', 'pink', 'pink', 'green', 'green', 'blue', 'blue'),
               ('pink', 'pink', None, None, 'yellow', 'yellow', 'green', 'green'),
               ('blue', 'blue', 'green', 'green', 'pink', 'pink', None, None),
