@@ -656,15 +656,15 @@ def fill19(m, report):
     def L(at, nm, d, r, i, inner=40.0, outer=90.0, typ='spot'):
         nonlocal n
         ln = math.sqrt(sum(v * v for v in d))
-        layer12_light(m, at, nm, color=col, radius=r, intensity=i, type=typ, dir=tuple(round(v / ln, 4) for v in d), inner=inner, outer=outer, group='power')
+        layer12_light(m, at, nm, color=col, radius=round(r * RS, 1), intensity=i, type=typ, **({'dir': tuple(round(v / ln, 4) for v in d), 'inner': inner, 'outer': outer} if typ == 'spot' else {}), group='power', runtime=True, bake=False)      # pure runtime: the baked copy cast hard stepped shadows of the benches on the lane floor (8 unit lightmap texels, arc_bay2)
         n += 1
     for k, x in enumerate(COLS):                      # the shaft's south face above the cage lamp
         L((x, 3862.0, 100.0), 'light_ups_%d' % k, (0.0, 0.0, 1.0), 120.0, round(0.9 * UP, 3), 30.0, 85.0)
     for k, (a, b) in enumerate(PIER_X):               # the north piers, from the lane
         L(((a + b) / 2.0, 4170.0, 150.0), 'light_pier_%d' % k, (0.0, 1.0, -0.12), PIER_R, PIER_I)
     kx, ky = GAPS[0], SPINE_Y + 105.0                 # the kiosk awning's four posts
-    L((kx, ky - 70.0, 80.0), 'light_kpost_a', (0.0, 1.0, 0.0), 110.0, KPOST_I, 60.0, 120.0)
-    L((kx, ky + 70.0, 80.0), 'light_kpost_b', (0.0, -1.0, 0.0), 110.0, KPOST_I, 60.0, 120.0)
+    L((kx - 100.0, ky, 60.0), 'light_kpost_a', (0.0, 0.0, 1.0), 120.0, KPOST_I, typ='omni')      # omni: the posts' faces toward the lanes (the spots lit the sides only; arc_spine_island's black I-beam)
+    L((kx + 100.0, ky, 60.0), 'light_kpost_b', (0.0, 0.0, 1.0), 120.0, KPOST_I, typ='omni')
     L((X0 + 110.0, 3900.0, 200.0), 'light_d7w', (-1.0, 0.0, -0.3), 200.0, 0.6)       # the west wall and the D7 posts (arc_d7)
     L((-760.0, 3830.0, 190.0), 'light_hall_wall', (0.0, 1.0, -0.3), 240.0, HW_I, 40.0, 95.0)       # hall_far: the wall at y 3976 east of the vestibule
     L((60.0, 3830.0, 190.0), 'light_hall_wall2', (0.0, 1.0, -0.3), 240.0, HW_I, 40.0, 95.0)         # conv_turnstile: the same wall at x 10
@@ -686,10 +686,11 @@ def fill19(m, report):
     report['fill19'] = {'lights': n + 2, 'bench_props': 11}
 
 
+RS = float(os.environ.get('ARC19_RS', '0.8'))      # radius scale of the r19 fills: the voxel light lists (entries grow with r^3; slack 2 made blocky steps in the lights of arc_bay2)
 PIER_X = [(-2970.0, -2930.0), (-2655.0, -2615.0), (-2325.0, -2285.0), (-1995.0, -1955.0), (-1665.0, -1625.0), (-1310.0, -1270.0)]
 PIER_R = float(os.environ.get('ARC19_PIER_R', '140'))
 PIER_I = float(os.environ.get('ARC19_PIER_I', '0.6'))
-KPOST_I = float(os.environ.get('ARC19_KPOST_I', '0.3'))
+KPOST_I = float(os.environ.get('ARC19_KPOST_I', '0.45'))
 HW_I = float(os.environ.get('ARC19_HW_I', '0.8'))
 
 
