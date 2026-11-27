@@ -59,3 +59,26 @@ t1_term( name )
         + " paused=" + paused + " pause_s=" + pause_s + " zpaused=" + zp + " alive=" + alive + " inside=" + inside + " car=" + car + " offgrid=" + og
         + " busy=" + busy + " ground=" + gr + " x=" + o[0] + " y=" + o[1] + " z=" + o[2] );
 }
+
+// the upgraded weapon is a script_weapon the stock machine spawns and makes usable about 7 s after the purchase (interaction_weapon_upgrade.gsc:226-277);
+// its own "trigger" gives it (wait_for_player_to_take_weapon, :441-471). The plan step `use` fires the interaction again, not that entity: this does it as
+// the Use button on it would, for player 0, then reports: found (script_weapons within 300 of x, y, z), weapon (current), pap (1 when its name has "pap").
+t1_take( name, x, y, z )
+{
+    p = level.players[0];
+    n = 0;
+    foreach ( e in getentarray( "script_weapon", "classname" ) )
+    {
+        if ( isdefined( e ) && distance( e.origin, ( x, y, z ) ) < 300 )
+        {
+            e notify( "trigger", p );
+            n++;
+        }
+    }
+    wait 1;
+    w = p getcurrentweapon();
+    pap = 0;
+    if ( issubstr( w, "pap" ) )
+        pap = 1;
+    print( "[IWZ local] GL PROBE name=" + name + " found=" + n + " weapon=" + w + " pap=" + pap + " primaries=" + p getweaponslistprimaries().size );
+}

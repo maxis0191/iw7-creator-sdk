@@ -242,8 +242,19 @@
    "s": 3
   },
   {
-   "do": "state",
-   "name": "pap_after"
+   "do": "wait",
+   "s": 6
+  },
+  {
+   "do": "call",
+   "fn": "t1_take",
+   "args": [
+    "pap_take",
+    -10200.0,
+    -4640.0,
+    80
+   ],
+   "s": 2
   },
   {
    "do": "ents",
@@ -277,14 +288,14 @@
   },
   {
    "do": "expect",
-   "that": "stand_m.x",
+   "that": "probe:stand.x",
    "near": -10200.0,
    "tol": 700.0,
    "why": "x inside the Terminus box"
   },
   {
    "do": "expect",
-   "that": "stand_m.y",
+   "that": "probe:stand.y",
    "near": -4750.0,
    "tol": 450.0,
    "why": "y inside the Terminus box"
@@ -451,7 +462,7 @@
   {
    "do": "expect",
    "that": "use:pap.picked",
-   "eq": 1,
+   "eq": "weapon_upgrade",
    "why": "the stock monitor picks it: the prompt would show"
   },
   {
@@ -464,7 +475,19 @@
    "do": "expect",
    "that": "use:pap.weapon1",
    "ne": "@use:pap.weapon0",
-   "why": "the weapon came back upgraded (another name)"
+   "why": "the weapon went into the machine"
+  },
+  {
+   "do": "expect",
+   "that": "probe:pap_take.found",
+   "eq": 1,
+   "why": "the machine offers the upgraded weapon"
+  },
+  {
+   "do": "expect",
+   "that": "probe:pap_take.pap",
+   "eq": 1,
+   "why": "taken: the upgraded (pap) weapon in hand"
   }
  ]
 }

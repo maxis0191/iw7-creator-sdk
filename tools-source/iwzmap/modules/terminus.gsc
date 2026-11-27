@@ -345,6 +345,8 @@ terminus_pause_watch()
         }
         else if ( !want && t.paused )
             terminus_unpause( t0 );
+        if ( t.paused )
+            terminus_hold_zombies();
         wait 0.5;
     }
     if ( t.paused )
@@ -358,6 +360,21 @@ terminus_unpause( t0 )
     t.paused = 0;
     t.pause_seconds += int( ( gettime() - t0 ) / 1000 );
     terminus_log( "PAUSE off alive=" + terminus_alive_zombies() + " paused_s=" + t.pause_seconds );
+}
+
+// while our pause holds, the zombies alive wait instead of being recycled: the stock far-zombie cleanup (zombies_spawning.gsc, the loop that kills
+// agents far from every player) skips one whose delay_cleanup_until is in the future (:3560). Measured 27 Nov 2026 (t1_trip, compressed time): without
+// this the four zombies alive at arrival were gone 20 to 35 s into the stay. A rolling 2 s hold, renewed each tick: it lapses by itself after the pause.
+terminus_hold_zombies()
+{
+    if ( !isdefined( level.spawned_enemies ) )
+        return;
+    until = gettime() + 2000;
+    foreach ( z in level.spawned_enemies )
+    {
+        if ( isdefined( z ) && isalive( z ) && ( !isdefined( z.delay_cleanup_until ) || z.delay_cleanup_until < until ) )
+            z.delay_cleanup_until = until;
+    }
 }
 
 terminus_alive_zombies()

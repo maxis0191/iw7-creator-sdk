@@ -160,6 +160,7 @@ class TerminusTrip(unittest.TestCase):
         self.place(vm, c, (8100, 8000, 0))
         vm.run_for(1)
         self.assertEqual(vm.level.f.get('zombies_paused'), 1)
+        self.assertGreater(z.f.get('delay_cleanup_until') or 0, 0)      # held from the stock far-zombie cleanup while paused
         # B is revived at the Terminus, then C leaves the box (stands outside): pause released
         b.f['inlaststand'] = 0
         self.place(vm, c, (400, 1700, -320))

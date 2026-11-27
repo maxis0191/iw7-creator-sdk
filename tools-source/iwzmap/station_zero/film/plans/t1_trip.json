@@ -116,8 +116,19 @@
    "s": 3
   },
   {
-   "do": "state",
-   "name": "trip_pap_after"
+   "do": "wait",
+   "s": 6
+  },
+  {
+   "do": "call",
+   "fn": "t1_take",
+   "args": [
+    "trip_pap_take",
+    -10200.0,
+    -4640.0,
+    80
+   ],
+   "s": 2
   },
   {
    "do": "call",
@@ -176,7 +187,11 @@
   },
   {
    "do": "wait",
-   "s": 145
+   "s": 75
+  },
+  {
+   "do": "wait",
+   "s": 76
   },
   {
    "do": "call",
@@ -231,14 +246,14 @@
   },
   {
    "do": "expect",
-   "that": "arr_m.x",
+   "that": "probe:arr.x",
    "near": -10200.0,
    "tol": 700.0,
    "why": "x inside the Terminus box"
   },
   {
    "do": "expect",
-   "that": "arr_m.y",
+   "that": "probe:arr.y",
    "near": -4750.0,
    "tol": 450.0,
    "why": "y inside the Terminus box"
@@ -258,7 +273,7 @@
   {
    "do": "expect",
    "that": "use:trip_pap.picked",
-   "eq": 1,
+   "eq": "weapon_upgrade",
    "why": "the stock monitor picks it: the prompt would show"
   },
   {
@@ -271,7 +286,19 @@
    "do": "expect",
    "that": "use:trip_pap.weapon1",
    "ne": "@use:trip_pap.weapon0",
-   "why": "the weapon came back upgraded (another name)"
+   "why": "the weapon went into the machine"
+  },
+  {
+   "do": "expect",
+   "that": "probe:trip_pap_take.found",
+   "eq": 1,
+   "why": "the machine offers the upgraded weapon"
+  },
+  {
+   "do": "expect",
+   "that": "probe:trip_pap_take.pap",
+   "eq": 1,
+   "why": "taken: the upgraded (pap) weapon in hand"
   },
   {
    "do": "expect",
@@ -311,14 +338,14 @@
   },
   {
    "do": "expect",
-   "that": "back_m.x",
+   "that": "probe:back.x",
    "near": 465.5,
    "tol": 270,
    "why": "x inside car 1"
   },
   {
    "do": "expect",
-   "that": "back_m.y",
+   "that": "probe:back.y",
    "near": 1488,
    "tol": 67,
    "why": "y inside car 1"
