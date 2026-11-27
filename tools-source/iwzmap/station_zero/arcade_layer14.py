@@ -640,7 +640,7 @@ def cutwall12(m, report):
     B.box(m, (-1210.0, 3792.0, 214.0, -1190.0, 4008.0, 228.0), 'w/dt_tile_ceramic_white', id='cutwall_lintel')
     for nm, (ya, yb) in (('a', (DOOR_Y0 - 14.0, DOOR_Y0)), ('b', (DOOR_Y1, DOOR_Y1 + 14.0))):        # r18: jamb trims, proud of the wall on both sides, so the opening has a frame
         B.box(m, (-1212.0, ya, 0.0, -1188.0, yb, 214.0), 'w/dt_tile_ceramic_white', id='cutwall_jamb_' + nm)
-    layer12_light(m, (-1090.0, 3900.0, 300.0), 'light_hallwash_door', color=(1.0, 0.9, 0.74), radius=HALL_R, intensity=HALL_I, type='spot', dir=(0.8944, 0.0, -0.4472), inner=30.0, outer=80.0, group='power')       # the hall behind the opening was near black (arc_cutwall): replaces the 3 floor beacons' light rows
+    layer12_light(m, (-1090.0, 3900.0, 300.0), 'light_hallwash_door', color=(1.0, 0.9, 0.74), radius=170.0, intensity=HALL_I, type='spot', dir=(0.8944, 0.0, -0.4472), inner=30.0, outer=80.0, group='power')       # the hall behind the opening was near black (arc_cutwall): replaces the 3 floor beacons' light rows
     report['cutwall12'] = {'lintel': 'cutwall_lintel', 'jambs': 2, 'light': 'light_hallwash_door'}
 
 

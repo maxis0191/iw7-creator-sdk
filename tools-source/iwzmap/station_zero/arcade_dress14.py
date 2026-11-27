@@ -583,15 +583,15 @@ def shop(A, m, D, i, report):
             for k in range(8):
                 D.put(M['hook'], cx + ux - 18.0 + 5.0 * k, hy + 4.0, 270.0, z=60.0 + 12.0 * (k % 2) + 8.0, scale=2.5, ignore_keep=True, margin=0.0)
     elif kind == 'hole9':                          # r18: the menu boards on the partition's wall above the shelf units (they hung 66 units from the chk camera and read as oversized)
-        wall_pic(m, 'hg_%d_0' % i, U(67.0), yp, 116.0, 84.0, 50.0, 'menu_0.png')
-        wall_pic(m, 'hg_%d_1' % i, U(253.0), yp, 120.0, 56.0, 40.0, 'menu_1.png')
+        wall_pic(m, 'hg_%d_0' % i, U(67.0), yp, 86.0, 84.0, 50.0, 'menu_0.png')
+        wall_pic(m, 'hg_%d_1' % i, U(253.0), yp, 90.0, 56.0, 40.0, 'menu_1.png')
         B.decal(m, image='menu_2.png', at=(right, V(104.0), 96.0), normal=(-1.0, 0.0, 0.0), size=(40.0, 28.0), id='menu_side_%d' % i)
     elif kind == 'copy':                           # r18: four pinned notices, two beside each shelf unit's top, on the wall
         for k, u in enumerate((38.0, 82.0, 238.0, 282.0)):
-            wall_pic(m, 'hg_%d_%d' % (i, k), U(u), yp, 124.0 + (3.0 if k % 2 else 0.0), 24.0, 32.0, 'sheet_%d.png' % k)
+            wall_pic(m, 'hg_%d_%d' % (i, k), U(u), yp, 96.0 + (3.0 if k % 2 else 0.0), 24.0, 32.0, 'sheet_%d.png' % k)
     elif kind == 'needle':                         # r18: record sleeves on wall ledges, two rows of two either side of the door
         for k, (u, row) in enumerate(((42.0, 0), (70.0, 0), (42.0, 1), (70.0, 1), (250.0, 0), (278.0, 0), (250.0, 1), (278.0, 1))):
-            wall_pic(m, 'hg_%d_%d' % (i, k), U(u), yp, 124.0 + 18.0 * row, 14.0, 14.0, 'sleeve_%d.png' % k, ledge=True)
+            wall_pic(m, 'hg_%d_%d' % (i, k), U(u), yp, 94.0 + 18.0 * row, 14.0, 14.0, 'sleeve_%d.png' % k, ledge=True)
     for k, (zz, vv) in enumerate(((100.0, 50.0), (96.0, 96.0), (104.0, 130.0))):
         B.decal(m, image='poster_%d.png' % ((i + k) % 6), at=(left, V(vv), zz), normal=(1.0, 0.0, 0.0), size=(26.0, 36.0), id='post_l_%d_%d' % (i, k))
         if not (kind == 'hole9' and k == 1):                       # r18: the bar's house-rules card takes that place
@@ -1131,18 +1131,18 @@ def column7(A, m, D, k, x):
         yf = SPINE_Y + sgn * half
         y0, y1 = (yf, yf + 1.5) if sgn > 0 else (yf - 1.5, yf)
         if f == 'map':
-            box(m, [x - 9.6, y0, 88.0, x + 9.6, y1, 146.0], DARK, id='col_mapframe_%d_%d' % (k, sgn))      # r18: 26 wide stuck out 4 beyond the 17.6 shaft (the pale slabs and the purple top of arc_cutwall); 19.2
-            B.decal(m, image='transit_map.png', at=(x, y1 if sgn > 0 else y0, 117.0), normal=(0.0, float(sgn), 0.0), size=(16.6, 50.0), id='col_map_%d_%d' % (k, sgn))      # r18: the stock map material read white (p98 1.0 in arc_bay1)
+            box(m, [x - 8.9, y0, 88.0, x + 8.9, y1, 146.0], DARK, id='col_mapframe_%d_%d' % (k, sgn))      # r18: 26 wide stuck out 4 beyond the 17.6 shaft (the pale slabs and the purple top of arc_cutwall); 19.2
+            B.decal(m, image='transit_map.png', at=(x, y1 if sgn > 0 else y0, 117.0), normal=(0.0, float(sgn), 0.0), size=(15.6, 50.0), id='col_map_%d_%d' % (k, sgn))      # r18: the stock map material read white (p98 1.0 in arc_bay1)
         elif f == 'lightbox':
-            box(m, [x - 9.6, y0, 84.0, x + 9.6, y1, 150.0], DARK, id='col_lbframe_%d_%d' % (k, sgn))
+            box(m, [x - 8.9, y0, 84.0, x + 8.9, y1, 150.0], DARK, id='col_lbframe_%d_%d' % (k, sgn))
             y2 = (y1, y1 + 0.8) if sgn > 0 else (y0 - 0.8, y0)
             if LB_FACE:
                 box(m, [x - 11.0, y2[0], 88.0, x + 11.0, y2[1], 146.0], TUBE['photo'] if sgn > 0 else TUBE['heel'], id='col_lb_%d_%d' % (k, sgn))        # r17: off (a blank white face hid the poster decal that fixtures8 puts at the same place)
         elif f in ('poster', 'poster2'):
             for j, zz in enumerate((90.0, 134.0)):
-                box(m, [x - 9.6, y0, zz, x + 9.6, y1, zz + 38.0], DARK, id='col_pframe_%d_%d_%d' % (k, sgn, j))
+                box(m, [x - 8.9, y0, zz, x + 8.9, y1, zz + 38.0], DARK, id='col_pframe_%d_%d_%d' % (k, sgn, j))
                 y2 = (y1, y1 + 0.8) if sgn > 0 else (y0 - 0.8, y0)
-                box(m, [x - 8.2, y2[0], zz + 1.5, x + 8.2, y2[1], zz + 36.5], POSTERS[(k * 3 + j + (0 if sgn > 0 else 2)) % len(POSTERS)], id='col_poster_%d_%d_%d' % (k, sgn, j))
+                box(m, [x - 8.0, y2[0], zz + 1.5, x + 8.0, y2[1], zz + 36.5], POSTERS[(k * 3 + j + (0 if sgn > 0 else 2)) % len(POSTERS)], id='col_poster_%d_%d_%d' % (k, sgn, j))
         elif f == 'extinguisher':
             D.put(M['extg'], x, SPINE_Y + sgn * (half + 4.0), 90.0 + 90.0 * sgn, z=84.0, ignore_keep=True, margin=0.0, clip=False)
     D.put(M['cage'], x + 12.0, SPINE_Y - COL_HALF - 4.0, 270.0, z=150.0, ignore_keep=True, margin=0.0, clip=False)          # a caged lamp on the shaft: its fixture, and the reason the column is lit
