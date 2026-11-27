@@ -787,7 +787,7 @@ def gameplay(m):
 def cameras(m):
     m.use('cameras')
     # pass 2: at y 3700 the column at x -1420 filled the middle of the entrance view
-    cams = [('arc_east_long', (-1296.0, 3880.0, 60.0), 172.0, 0.0), ('arc_west_long', (-2930.0, 3960.0, 60.0), 2.0, 0.0),
+    cams = [('arc_east_long', (-1296.0, 3880.0, 60.0), 172.0, 0.0), ('arc_west_long', (-2930.0, 4060.0, 60.0), 2.0, 0.0),
             ('arc_south_wall', (-2100.0, 4160.0, 64.0), 270.0, 0.0), ('arc_directory', (-1100.0, 3930.0, 64.0), 216.0, 0.0)]
     for nm, (x0, x1) in UNITS.items():
         cx = (x0 + x1) / 2

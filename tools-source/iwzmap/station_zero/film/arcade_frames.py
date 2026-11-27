@@ -58,7 +58,8 @@ def main():
         if state in ('on', 'off'):
             rep['power'][state] = studio('live', 'power', doc, state)
         for c in cams:
-            r = studio('live', 'shot', doc, '--clean', '--camera', c, '--out', os.path.join(folder, state, c + '.png'))
+            extra = ['--allow-stale'] if os.environ.get('A2_ALLOW_STALE') else []          # another worker rewrote shared pictures mid-pass (28 Nov)
+            r = studio('live', 'shot', doc, '--clean', '--camera', c, '--out', os.path.join(folder, state, c + '.png'), *extra)
             rep['shots']['%s/%s' % (state, c)] = {k: r.get(k) for k in ('ok', 'settled', 'error', 'stale', 'stderr')}
     rep['sheets'] = [p for s in states for p in sheets(folder, s, cams)]
     json.dump(rep, open(os.path.join(folder, 'frames_%s.json' % '_'.join(states)), 'w', encoding='utf-8'), indent=1, default=str)

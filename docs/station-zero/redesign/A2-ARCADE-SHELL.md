@@ -74,6 +74,28 @@ greenish grid (kept: the brief's half-dead ceiling).
 7. The polisher is smaller and plainer than the target's, and its cable is not seen from the entrance eye.
 8. The directory and phones stand beside the entrance (behind the entrance eye); the target shows them in the same frame as the fronts.
 
+## Round of 28 Nov: the goods merged, the hall against the stock frames
+Built and shot from now on: `film/arcade_doc.py` (shell + the four goods layers), document `C:\studio-data\sz\film\arcade\shell\docall`,
+this worktree's SDK (`STUDIO_CONFIG` = `C:\studio-data\sz\film\arcade\shell\studio_a2.json`, `IWZ_SDK` = the worktree root: the darkness fix
+releases the dark vision on an all-baked map), real ON and OFF (`film/arcade_pass.ps1`); the lit-view copy is retired.
+- Requests done: Heel & Key shutter at 0.2 (bottom z 120, clip with it), a warm downlight over the stall, the lasts shelf's south end
+  panel removed; Hole Number Nine `arc_hole_nine_inside` at (-1730, 4440, 66) yaw 200, its downlight moved to y 4360 and aimed at the rack
+  front (no new light); Copy Stop `pb_seat` removed, `cs_planchest` to y 4392, copier bodies 44 high with a document feeder and the green
+  bar at z 47 (anchor `copy_stop.copier_N_top` follows, z 50.2).
+- The hall (`film/shell_hall.py`): two bench islands on the centre line (benches back to back, box planters with dead stems: no dead potted
+  plant exists in the five zones, `com_potted_plant_small_des` reads green), a bin each; a shuttered newsstand kiosk in the colonnade
+  (modelled: closed roll shutter, blank fascia, two magazine racks, newspaper bundles); four luggage lockers on the south wall; two hanging
+  Halcyon Rapid Transit signs without words (PIL pictograms: arrow + train, arrow + stair; the roundel on the back).
+- The night it stopped, three clusters: the gala buffet by the banner (folding table, glasses, balloons tied to its leg, a dropped dead
+  bouquet, streamers), the toast under the banner (glasses and cups round the second island), the rush to D4 (streamers trampled toward the
+  door, a bouquet, papers; all of it west of the door's 90-deep mouth). No party hat or streamer model exists: streamers are authored strips.
+- A year of damp: water marks under two dead panels (floor and ceiling), the damp foot of the south wall in three places, worn tiles where
+  a bench and the lockers rub the wall, tracked dust in the shop lane.
+- Fronts by models: bulb strips under the Copy Stop, Hole Number Nine and Heel & Key fascias (emissive props: no light record; Needle Drop
+  keeps its two marquee fixtures), and one spot of each shop's own colour from under its fascia onto the tile in front (four rows that
+  differ: rule 11; hall hue classes white, warm, red, magenta: rule 12).
+- Floor gloss 236..252 (was 205..235).
+
 ## Decisions the brief did not dictate
 - **Tile kit** (one table `MAT` at the top of the builder, the swap to `B.material` is one edit there): wall `w/dt_tile_ceramic_white` with its
   true twin `w/dt_tile_ceramic_white_dmg` (the cp_disco station's pair; the base tint `w/iwz_tile_cream` has no damaged twin), band

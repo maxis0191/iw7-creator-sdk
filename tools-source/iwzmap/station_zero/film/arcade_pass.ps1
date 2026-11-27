@@ -16,6 +16,7 @@ $ok = $LASTEXITCODE
 Pop-Location
 if ($ok -eq 0) {
     $env:A2_STATES = 'on,off'
+    $env:A2_ALLOW_STALE = '1'      # shared art folders are rewritten by other workers during a pass; each sidecar says stale: true when it was
     python "$film\arcade_frames.py" $Pass $Doc > "$Pass\frames.log" 2>&1
 } else { "start failed: exit $ok" }
 Push-Location C:\studio

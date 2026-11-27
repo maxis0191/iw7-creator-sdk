@@ -667,6 +667,7 @@
     "tools-source/iwzmap/station_zero/film/plans/t1_buy.json",
     "tools-source/iwzmap/station_zero/film/plans/t1_client.json",
     "tools-source/iwzmap/station_zero/film/plans/t1_trip.json",
+    "tools-source/iwzmap/station_zero/film/shell_hall.py",
     "tools-source/iwzmap/station_zero/film/shellgeo.py",
     "tools-source/iwzmap/station_zero/film/standins.py",
     "tools-source/iwzmap/station_zero/film/terminus.py",

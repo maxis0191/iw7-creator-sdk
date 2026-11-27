@@ -17,10 +17,10 @@ ISLANDS = (-2800.0, -2140.0)            # the first 89 clear of the Copy Stop ob
 KIOSK = (-2428.0, 3760.0)               # in the colonnade, between the columns at x -2572 and -2284
 STREAMER_MATS = ('w/plastic_wall_plain_red_01', 'w/plastic_wall_plain_blue_01', 'w/plastic_wall_plain_yellow_01', 'w/plastic_wall_plain_green_01')
 POOL = {   # the colour each shop throws on the tile outside its front: (rgb, intensity, radius, z) - four different rows (rule 11)
-    'needle_drop': ((1.0, 0.55, 0.2), 1.0, 270.0, 158.0),
-    'copy_stop': ((0.88, 0.93, 1.0), 0.9, 280.0, 160.0),
-    'hole_nine': ((1.0, 0.45, 0.75), 1.1, 260.0, 162.0),
-    'heel_key': ((1.0, 0.72, 0.45), 0.8, 250.0, 164.0),
+    'needle_drop': ((1.0, 0.55, 0.2), 1.0, 400.0, 158.0),        # pass 6: radius 250..280 put the pool at the falloff's edge (throw ~240)
+    'copy_stop': ((0.88, 0.93, 1.0), 0.9, 420.0, 160.0),
+    'hole_nine': ((1.0, 0.45, 0.75), 1.1, 390.0, 162.0),
+    'heel_key': ((1.0, 0.72, 0.45), 0.8, 380.0, 164.0),
 }
 
 
@@ -108,7 +108,18 @@ def kiosk(A, m):
 
 
 def streamer(A, m, id, pts, mat):
-    A.mesh(m, id, mat, G.ribbon(pts, 1.6, z=0.25))
+    """a paper streamer lying curled on the floor: the polyline with a wave across it (pass 6: straight 1.6 strips read as cables)"""
+    out = []
+    for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+        L = math.hypot(x1 - x0, y1 - y0) or 1.0
+        nx, ny = -(y1 - y0) / L, (x1 - x0) / L
+        steps = max(2, int(L // 6))
+        for s in range(steps):
+            t = s / steps
+            w = 5.0 * math.sin(t * L / 9.0)
+            out.append((x0 + (x1 - x0) * t + nx * w, y0 + (y1 - y0) * t + ny * w))
+    out.append(pts[-1])
+    A.mesh(m, id, mat, G.ribbon(out, 2.8, z=0.25))
 
 
 def night_it_stopped(A, m):
@@ -190,7 +201,7 @@ def fronts_by_models(A, m):
         rgb, inten, rad, z = POOL[name]
         cx = (x0 + x1) / 2
         org = (cx, A.Y1 - 14.0, z)
-        d = (0.0, 4110.0 - org[1], -org[2])
+        d = (0.0, 4170.0 - org[1], -org[2])
         ln = math.sqrt(sum(c * c for c in d))
         A.lamp(m, 'light_pool_%s' % name, org, name, color=rgb, radius=rad, intensity=inten, type='spot', dir=[round(c / ln, 4) for c in d], inner=35.0, outer=75.0)
     A.REPORT.setdefault('hall', {})['bulb_strips'] = n
