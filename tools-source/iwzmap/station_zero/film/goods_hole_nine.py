@@ -63,8 +63,8 @@ def serving_counter(K):
     cx0, cx1, cy0, cy1 = -1952.0, -1906.0, 4305.0, 4327.0
     K.box(it, 'base', [cx0, cy0, z, cx1, cy1, z + 2.0], M['chrome'])
     K.box(it, 'top', [cx0, cy0, z + 27.0, cx1, cy1, z + 28.0], M['chrome'])
-    K.box(it, 'light', [cx0 + 2.0, cy0 + 4.0, z + 26.6, cx1 - 2.0, cy1 - 4.0, z + 27.0], M['white_glow'])
-    K.box(it, 'front', [cx0 + 0.5, cy0, z + 2.0, cx1 - 0.5, cy0 + 0.3, z + 27.0], M['glass'])
+    K.sign(it, 'lamp', art_b('h9_warm_strip.png'), ((cx0 + cx1) / 2, (cy0 + cy1) / 2, z + 27.0), (0.0, 0.0, -1.0), (40.0, 6.0),
+           emissive={'color': [1.0, 0.72, 0.42], 'strength': 2.0}, lift=0.1)
     K.box(it, 'back', [cx0 + 0.5, cy1 - 0.3, z + 2.0, cx1 - 0.5, cy1, z + 27.0], M['glass'])
     for k, x in enumerate((cx0, cx1 - 0.6)):
         K.box(it, 'end%d' % k, [x, cy0, z + 2.0, x + 0.6, cy1, z + 27.0], M['chrome'])
@@ -84,7 +84,7 @@ def serving_counter(K):
     K.mesh(order, 'box', K.mat('mat_h9_box.png'), obox((ox, yc, z), (12.0, 12.0, 3.6), yaw=-4.0, fit=True))
     K.mesh(order, 'bag', K.mat('mat_h9_bag.png'), obox((ox + 0.5, yc + 1.0, z + 3.6), (7.0, 4.4, 9.5), yaw=-4.0, fit=True))
     K.mesh(order, 'bag_fold', K.mat('mat_h9_bag.png'), obox((ox + 0.5, yc + 1.0, z + 13.1), (7.0, 1.4, 1.6), yaw=-4.0, fit=False, tile=6.0))
-    K.mesh(order, 'ticket', K.mat('mat_h9_ticket_PLACEHOLDER.png'), obox((ox + 0.6, yc + 1.0 - 2.25, z + 5.2), (3.8, 0.08, 5.6), yaw=-4.0, faces='s', fit=True))
+    K.mesh(order, 'ticket', K.mat('mat_h9_ticket_PLACEHOLDER.png'), obox((ox + 0.6, yc + 1.0 - 2.25, z + 4.4), (5.0, 0.08, 7.4), yaw=-4.0, faces='s', fit=True))
     # the counter bell
     it = K.item('counter_bell')
     K.mesh(it, 'base', M['black'], prism((-1866.0, yc - 7.0, z), 2.2, 0.6, 12))
@@ -110,6 +110,11 @@ def serving_counter(K):
                rings((-1798.0, yc - 6.0, z + 3.0 * k + 0.4), 5, 3, 4.6, R=1.2, r=0.5, jitter=0.2, seed=20 + k))
     lab = K.item('gala_label')
     K.sign(lab, 'card', art_b('mat_cs_programme.png'), (-1789.0, yc - 9.0, z + 7.5), (0.0, -1.0, 0.0), (5.0, 7.5), rot=4.0, lift=0.25)
+    # a warm lamp strip under the hatch head over the whole counter (an emissive picture, warmer than the pink room; not a light of the count)
+    lamp = K.item('hatch_lamp')
+    K.box(lamp, 'housing', [-1952.0, 4306.0, 135.0, -1770.0, 4316.0, 138.0], M['chrome'])
+    K.sign(lamp, 'strip', art_b('h9_warm_strip.png'), (-1861.0, 4311.0, 135.0), (0.0, 0.0, -1.0), (176.0, 6.0),
+           emissive={'color': [1.0, 0.72, 0.42], 'strength': 2.2}, lift=0.1)
     # her cards on the counter's front, eye level
     for k, (x, card) in enumerate(((-1928.0, 'h9_card_1.png'), (-1846.0, 'h9_card_3.png'))):
         K.sign(K.item('window_card'), 'card', art_b(card), (x, 4302.0, 31.0), (0.0, -1.0, 0.0), (13.0, 8.1), rot=(-3.0, 2.0)[k])
@@ -143,7 +148,7 @@ def display(K):
     tray(K, 'ring_tray', x0 + 6.0, y0 + 2.0, z + 33.4, 26.0, 18.0, glaze='mat_h9_glaze_pink.png', cols=5, rows=3, pitch=4.6, seed=7)
     # the urn: a steel drum on three legs, a spigot to the front, lid and knob, two handles
     it = K.item('coffee_urn')
-    ux, uy = -1799.0, 4412.0
+    ux, uy, z = -1813.0, 4318.0, 42.0                                          # round 2: on the serving counter, the hatch's foreground
     for k in range(3):
         a = math.radians(90 + 120 * k)
         K.mesh(it, 'leg%d' % k, M['black'], prism((ux + 4.0 * math.cos(a), uy + 4.0 * math.sin(a), z), 0.5, 2.2, 6))
@@ -156,8 +161,8 @@ def display(K):
     K.mesh(it, 'tap', M['black'], obox((ux, uy - 7.6, z + 5.6), (0.7, 0.7, 2.0), fit=False))
     for k, dx in enumerate((-6.0, 6.0)):
         K.mesh(it, 'handle%d' % k, M['black'], obox((ux + dx, uy, z + 15.0), (1.2, 2.6, 1.0), fit=False))
-    K.prop('coffee_pot', 'misc_coffee_machine_pot', (-1786.0, 4408.0, z), yaw=200.0)
-    K.prop('cup', 'p7_cup_coffee_mug', (-1787.0, 4418.0, z), yaw=30.0)
+    K.prop('coffee_pot', 'misc_coffee_machine_pot', (-1790.0, 4410.0, 38.0), yaw=200.0)
+    K.prop('cup', 'p7_cup_coffee_mug', (-1800.0, 4416.0, 38.0), yaw=30.0)
 
 
 def back_wall(K):

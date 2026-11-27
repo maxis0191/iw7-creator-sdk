@@ -397,12 +397,64 @@ def mat_ream():
 
 def mat_ream_colours():
     """reams of coloured paper (the pastel stock of a copy shop): the wrapper in the paper's colour, a white band, no words"""
-    for nm, col in (('yellow', (246, 222, 110)), ('pink', (242, 170, 170)), ('green', (160, 214, 150))):
+    for nm, col in (('yellow', (246, 222, 110)), ('pink', (242, 170, 170)), ('green', (160, 214, 150)), ('blue', (150, 190, 232))):
         im = paper(256, 256, col, 10, seed=len(nm) * 7 + col[0])
         d = ImageDraw.Draw(im)
         d.rectangle([0, 104, 255, 152], fill=(246, 244, 236))
         d.rectangle([0, 120, 255, 136], fill=tuple(int(c * 0.8) for c in col))
         save(im, 'mat_cs_ream_%s.png' % nm)
+
+
+def cs_blueprint_tall():
+    """a full-height diazo print for the window, white line on blue: the section of the escalator hall, stairs and landings, a grid,
+    dimension lines and a title block without words"""
+    W, H = 512, 1024
+    im = Image.new('RGB', (W, H), (24, 60, 136))
+    d = ImageDraw.Draw(im)
+    for x in range(0, W, 32):
+        d.line([(x, 0), (x, H)], fill=(38, 78, 154))
+    for y in range(0, H, 32):
+        d.line([(0, y), (W, y)], fill=(38, 78, 154))
+    ln = (228, 238, 250)
+    d.rectangle([60, 80, 452, 900], outline=ln, width=4)
+    for k in range(4):                                                       # landings
+        y = 140 + k * 190
+        d.line([(60, y), (452, y)], fill=ln, width=3)
+    for k in range(3):                                                       # flights of the escalators
+        y0 = 140 + k * 190
+        d.line([(90, y0 + 190), (420, y0)], fill=ln, width=4)
+        d.line([(110, y0 + 190), (440, y0)], fill=ln, width=2)
+        for j in range(12):
+            t = j / 11
+            d.line([(90 + 330 * t, y0 + 190 - 190 * t), (110 + 330 * t, y0 + 190 - 190 * t)], fill=ln, width=1)
+    d.arc([60, 0, 452, 160], 180, 360, fill=ln, width=4)
+    for y in (80, 900):
+        d.line([(20, y), (40, y)], fill=ln, width=2)
+    d.line([(30, 80), (30, 900)], fill=ln, width=2)
+    d.rectangle([300, 930, 500, 1010], outline=ln, width=3)
+    for y in (950, 970, 990):
+        d.line([(300, y), (500, y)], fill=ln, width=1)
+    d.rectangle([6, 6, W - 7, H - 7], outline=ln, width=3)
+    save(im.filter(ImageFilter.GaussianBlur(0.7)), 'cs_blueprint_tall.png')
+
+
+def cs_red_tag():
+    """a plain red job tag with its string hole: the one red thing in the pigeonholes (the forty-copy job)"""
+    im = Image.new('RGBA', (160, 256), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.polygon([(30, 0), (130, 0), (160, 30), (160, 256), (0, 256), (0, 30)], fill=(214, 28, 36, 255))
+    d.ellipse([66, 18, 94, 46], fill=(250, 240, 230, 255))
+    d.rectangle([14, 80, 146, 84], fill=(240, 160, 160, 255))
+    save(im, 'cs_red_tag.png')
+
+
+def h9_warm_strip():
+    """a warm lamp strip (an emissive picture: the bake takes its colour)"""
+    im = Image.new('RGB', (256, 32), (255, 214, 150))
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 0, 255, 3], fill=(200, 150, 90))
+    d.rectangle([0, 28, 255, 31], fill=(200, 150, 90))
+    save(im, 'h9_warm_strip.png')
 
 
 def mat_paper_edge():
@@ -519,7 +571,7 @@ def mat_bag():
 def mat_ticket():
     """the order ticket on the bagged order: an order-pad slip, hand-written STRAND - TO COLLECT (PLACEHOLDER words). Face 4 x 6."""
     W, H = 400, 600
-    im = paper(W, H, (252, 250, 238), 6, seed=52)
+    im = paper(W, H, (252, 228, 96), 6, seed=52)
     d = ImageDraw.Draw(im)
     d.rectangle([0, 0, W, 60], fill=PINK)
     logo = Image.open(os.path.join(ART, 'logo_hole_nine.png')).convert('RGBA').resize((52, 52))
@@ -551,6 +603,8 @@ def main():
     mat_ream()
     mat_paper_edge()
     mat_ream_colours()
+    cs_blueprint_tall()
+    cs_red_tag()
     mat_envelope()
     cs_toner()
     h9_cards()
@@ -560,6 +614,7 @@ def main():
     mat_box()
     mat_bag()
     mat_ticket()
+    h9_warm_strip()
     man = [{'file': n, 'px': list(s), 'placeholder_words': 'PLACEHOLDER' in n or n == 'cs_toner_PLACEHOLDER.png'} for n, s in MADE]
     json.dump(man, open(os.path.join(OUT, 'manifest_goods_b.json'), 'w', encoding='utf-8'), indent=1)
     print(json.dumps({'out': OUT, 'pictures': len(MADE), 'copy_stop': sum(1 for n, _ in MADE if n.startswith(('cs_', 'mat_cs_'))),

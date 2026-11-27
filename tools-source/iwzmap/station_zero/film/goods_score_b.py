@@ -24,13 +24,14 @@ TRADE = {
     'copy_stop': {'drawing_tube', 'blueprint_roll', 'light_table', 'ream', 'copies_stack', 'sample_book', 'sample_board', 'blueprint_machine',
                   'blueprint_print', 'copies_out', 'original_on_glass', 'opened_ream', 'toner_drum', 'guillotine', 'cut_sheets', 'spiral_binder',
                   'programmes', 'job_tray', 'job', 'stamp_tree', 'stapler', 'laminator', 'job_envelope', 'forty_copy_job', 'booth_sample_strip',
-                  'strip_face_down', 'tube_rack', 'stock_shelf'},
+                  'strip_face_down', 'tube_rack', 'stock_shelf', 'ream_stack', 'ream_wall', 'window_print', 'roll_rack',
+                  'rolled_drawing', 'job_line', 'sorter', 'sorted_copies', 'pinned_drawing', 'paper_tower'},
     'hole_nine': {'cake_stand', 'napkin_dispenser', 'sugar_pourer', 'strand_order', 'cup_stack', 'saucer_stack', 'cup', 'gala_tray',
                   'gala_tray_rings', 'ring_tray', 'ring_choc', 'coffee_urn', 'coffee_pot', 'plate', 'ring_on_plate', 'boxes_flat', 'box_made_up',
-                  'rack_tray', 'glass_rack', 'rail_rack'},
+                  'rack_tray', 'glass_rack', 'rail_rack', 'counter_case'},
 }
 SIGNS = {'window_card', 'hanging_card', 'price_board', 'notice', 'booth_lettering', 'menu_board', 'today_board', 'tv_picture', 'gala_label'}
-SHELF = {'ring_choc', 'ream', 'job_envelope', 'job', 'blueprint_roll', 'drawing_tube', 'programmes', 'ring_tray', 'rack_tray', 'box_made_up'}
+SHELF = {'ring_choc', 'ream', 'ream_stack', 'rolled_drawing', 'sorted_copies', 'job_envelope', 'job', 'blueprint_roll', 'drawing_tube', 'programmes', 'ring_tray', 'rack_tray', 'box_made_up'}
 FILLER_WORDS = ('box', 'crate', 'pallet', 'trash', 'carton', 'debris')
 
 

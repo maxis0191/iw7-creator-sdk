@@ -67,8 +67,10 @@ def obox(c, size, yaw=0.0, faces='tnsewb', fit=True, tile=8.0):
         return (round(c[0] + x * cs - y * sn, 3), round(c[1] + x * sn + y * cs, 3), round(c[2] + z, 3))
     x0, x1, y0, y1, z0, z1 = -w / 2, w / 2, -d / 2, d / 2, 0.0, h
 
+    tu, tv = (tile, tile) if isinstance(tile, (int, float)) else tile
+
     def uvs(a, b):
-        return ((0, 0), (1, 0), (1, 1), (0, 1)) if fit else ((0, 0), (a / tile, 0), (a / tile, b / tile), (0, b / tile))
+        return ((0, 0), (1, 0), (1, 1), (0, 1)) if fit else ((0, 0), (a / tu, 0), (a / tu, b / tv), (0, b / tv))
     F = {
         't': (P(x0, y0, z1), P(x1, y0, z1), P(x1, y1, z1), P(x0, y1, z1), uvs(w, d)),
         'b': (P(x0, y1, z0), P(x1, y1, z0), P(x1, y0, z0), P(x0, y0, z0), uvs(w, d)),
@@ -178,6 +180,14 @@ def ream(K, c, yaw=0.0, kind='ream', colour=None):
     """a wrapped ream of letter paper, 8.5 x 11 x 2; colour 'yellow' | 'pink' | 'green' for the pastel stock"""
     iid = K.item(kind)
     K.mesh(iid, 'body', K.mat('mat_cs_ream_%s.png' % colour if colour else 'mat_cs_ream.png'), obox(c, (11.0, 8.5, 2.1), yaw, fit=True))
+    return iid
+
+
+def ream_stack(K, c, n, yaw=0.0, colour=None, kind='ream_stack'):
+    """n wrapped reams stacked (one item): every ream shows its own wrapper band (the picture repeats every 2.1 up, every 11 across)"""
+    iid = K.item(kind)
+    pic = 'mat_cs_ream_%s.png' % colour if colour else 'mat_cs_ream.png'
+    K.mesh(iid, 'body', K.mat(pic), obox(c, (11.0, 8.5, 2.1 * n), yaw, faces='tnsew', fit=False, tile=(11.0, 2.1)))
     return iid
 
 

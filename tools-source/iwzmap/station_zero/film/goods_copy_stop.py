@@ -12,7 +12,7 @@ photo booth x -2042..-1998, y 4328..4392 (front face y 4328, curtain on its west
 import math
 
 import goods_kit_b as GK
-from goods_kit_b import M, art, art_b, obox, prism, tilt, paper_stack, ream, Kit
+from goods_kit_b import M, art, art_b, obox, prism, tilt, paper_stack, ream, ream_stack, Kit
 from studio import build as B
 import shellgeo as G
 
@@ -27,67 +27,79 @@ def _far_from_wheel(x, y, r=0.0):
 
 
 def window_west(K):
-    """the west window: what a passer-by sees first. Tube rack, the light table with a drawing, a pyramid of reams, an easel with a blueprint"""
-    # one clip for the whole display strip along the glass (nobody walks between the goods and the glass)
-    K.clip(K.item('window_display'), [-2606.0, GY + 1.0, 0.0, -2404.0, 4342.0, 64.0])
-    # the drawing-tube rack: a wooden frame, blueprint rolls and kraft tubes standing in it
-    it = K.item('tube_rack')
-    c = (-2594.0, 4326.0)
-    K.box(it, 'base', [c[0] - 10, c[1] - 10, 0.0, c[0] + 10, c[1] + 10, 2.0], M['wood'])
-    for k, (dx, dy) in enumerate(((-9, -9), (9, -9), (9, 9), (-9, 9))):
-        K.box(it, 'post%d' % k, [c[0] + dx - 1, c[1] + dy - 1, 2.0, c[0] + dx + 1, c[1] + dy + 1, 24.0], M['wood'])
-    for k, (a, b) in enumerate((((-10, -10), (10, -9)), ((-10, 9), (10, 10)), ((-10, -10), (-9, 10)), ((9, -10), (10, 10)))):
-        K.box(it, 'rail%d' % k, [c[0] + a[0], c[1] + a[1], 22.0, c[0] + b[0], c[1] + b[1], 24.0], M['wood'])
-    for k, (dx, dy) in enumerate(((-5, -5), (0, -5), (5, -4), (-5, 0), (5, 1), (-4, 5), (1, 5), (6, 6))):
-        if k % 3 == 1:
-            tube = K.item('drawing_tube')
-            K.mesh(tube, 'body', M['beige'], prism((c[0] + dx, c[1] + dy, 2.0), 1.7, 31.0 + (k % 2) * 4, 10))
-            K.mesh(tube, 'cap', M['black'], prism((c[0] + dx, c[1] + dy, 33.0 + (k % 2) * 4), 1.8, 1.2, 10))
-        else:
-            K.prop('blueprint_roll', 'cp_town_blueprint_teleporter_roll', (c[0] + dx, c[1] + dy, 2.0 + 13.8 + (k % 3) * 3), yaw=30.0 * k)
-    # the light table: a lit top tilted toward the hall, a pencil drawing on vellum, a lamp on its side shelf (the shop's one practical)
+    """the west window, built up to eye height (round 2: the riser hides everything under z 14; the wheel's model must not be the first thing
+    that reads): a wall of reams in colour blocks on open shelves (this shop's bottle wall) screening the wheel, a full-height diazo print,
+    the light table with her lamp, a rack of large rolled drawings by the door, and a line of finished jobs hung across the top of the glass"""
+    K.clip(K.item('window_display'), [-2606.0, GY + 1.0, 0.0, -2376.0, 4342.0, 64.0])
+    # the ream wall: open white shelving, five boards, reams in blocks of colour (canary, salmon, green, blue, white), wrappers to the hall
+    it = K.item('ream_wall')
+    wx0, wx1, wy0, wy1 = -2604.0, -2500.0, 4312.0, 4334.0
+    for k, x in enumerate((wx0, (wx0 + wx1) / 2, wx1)):
+        K.box(it, 'upright%d' % k, [x - 0.8, wy0, 0.0, x + 0.8, wy1, 112.0], M['white'])
+    boards = (16.0, 38.0, 60.0, 82.0, 104.0)
+    for k, z in enumerate(boards):
+        K.box(it, 'board%d' % k, [wx0, wy0, z - 1.0, wx1, wy1, z], M['white'])
+    K.box(it, 'back', [wx0, wy1 - 0.4, 0.0, wx1, wy1, 112.0], M['white'])
+    blocks = (('yellow', 'yellow', 'pink', 'pink', 'green', 'green', 'blue', 'blue'),
+              ('pink', 'pink', None, None, 'yellow', 'yellow', 'green', 'green'),
+              ('blue', 'blue', 'green', 'green', 'pink', 'pink', None, None),
+              (None, None, 'yellow', 'yellow', 'blue', 'blue', 'pink', 'pink'))
+    for lv, z in enumerate(boards[:4]):
+        for j in range(8):
+            x = wx0 + 7.5 + 12.6 * j + (1.6 if j >= 4 else 0.0)
+            n = 9 if (lv + j) % 5 else 7
+            ream_stack(K, (x, (wy0 + wy1) / 2 - 1.0, z), n, yaw=((j * 7 + lv) % 3) - 1.0, colour=blocks[lv][j])
+    for j in range(3):                                                       # the top board: rolls of drawings lying, a few reams
+        K.prop('blueprint_roll', 'cp_town_blueprint_teleporter_roll', (wx0 + 20.0 + 16.0 * j, (wy0 + wy1) / 2, 105.3), angles=[90.0, 0.0, 0.0])
+    ream_stack(K, (wx1 - 14.0, (wy0 + wy1) / 2, 104.0), 3)
+    # the diazo print pinned full height on a board
+    it = K.item('window_print')
+    px, py = -2477.0, 4318.0
+    K.box(it, 'board', [px - 20.0, py, 14.0, px + 20.0, py + 1.2, 138.0], M['wood'])
+    K.sign(it, 'print', art_b('cs_blueprint_tall.png'), (px, py, 76.0), (0.0, -1.0, 0.0), (36.0, 72.0), lift=0.2)
+    for k, (dx, dz) in enumerate(((-16, 111), (16, 111), (-16, 41), (16, 41))):
+        K.box(it, 'pin%d' % k, [px + dx - 0.6, py - 0.6, dz - 0.6, px + dx + 0.6, py, dz + 0.6], M['red'])
+    # the light table: a lit top tilted toward the hall, a pencil drawing on vellum, her lamp on its side shelf (the shop's one practical)
     it = K.item('light_table')
-    x0, x1, y0, y1 = -2570.0, -2520.0, 4314.0, 4338.0
+    x0, x1, y0, y1 = -2454.0, -2412.0, 4314.0, 4338.0
     for k, (x, y) in enumerate(((x0 + 2, y0 + 2), (x1 - 2, y0 + 2), (x0 + 2, y1 - 2), (x1 - 2, y1 - 2))):
-        K.box(it, 'leg%d' % k, [x - 1.2, y - 1.2, 0.0, x + 1.2, y + 1.2, 30.0 if y < 4330 else 38.0], M['grey'])
+        K.box(it, 'leg%d' % k, [x - 1.2, y - 1.2, 0.0, x + 1.2, y + 1.2, 38.0 if y < 4330 else 46.0], M['grey'])
     top = obox(((x0 + x1) / 2, (y0 + y1) / 2, 0.0), (x1 - x0, y1 - y0, 1.5), faces='tnsewb', fit=False, tile=16.0)
-    top = ([[[p[0], p[1], p[2] + 33.0] for p in t] for t in top[0]], top[1])
-    K.mesh(it, 'frame', M['grey'], tilt(top, (0, (y0 + y1) / 2, 34.0), 14.0))
+    top = ([[[p[0], p[1], p[2] + 41.0] for p in t] for t in top[0]], top[1])
+    K.mesh(it, 'frame', M['grey'], tilt(top, (0, (y0 + y1) / 2, 42.0), 20.0))
     glow = obox(((x0 + x1) / 2, (y0 + y1) / 2, 0.0), (x1 - x0 - 3, y1 - y0 - 3, 0.1), faces='t')
-    glow = ([[[p[0], p[1], p[2] + 34.55] for p in t] for t in glow[0]], glow[1])
-    K.mesh(it, 'glass', M['white_glow'], tilt(glow, (0, (y0 + y1) / 2, 34.0), 14.0))
-    n = (0.0, -math.sin(math.radians(14.0)), math.cos(math.radians(14.0)))
-    K.decal(it, 'drawing', art_b('cs_vellum_drawing.png'), ((x0 + x1) / 2, (y0 + y1) / 2 + 0.6, 34.6), n, (44.0, 18.0), lift=0.25)
-    K.box(it, 'shelf', [x1 - 1.0, y0 + 4.0, 26.0, x1 + 10.0, y0 + 18.0, 27.2], M['grey'])
-    K.box(it, 'shelf_leg', [x1 + 7.0, y0 + 9.0, 0.0, x1 + 9.0, y0 + 11.0, 26.0], M['grey'])
-    K.fixture('desk_lamp', 'desk_lamp', (x1 + 4.5, y0 + 11.0, 27.2), 200.0, kelvin=3600, intensity=0.9, radius=0.9)
-    # the paper stock tower in the window (round 1: everything under z 14 hides behind the riser, the goods must stand up into the glass):
-    # a white wire shelving unit, four shelves of reams in white and the pastel colours, wrappers to the hall
-    it = K.item('paper_tower')
-    tx0, tx1, ty0, ty1 = -2510.0, -2468.0, 4312.0, 4334.0
-    for k, (x, y) in enumerate(((tx0, ty0), (tx1, ty0), (tx0, ty1), (tx1, ty1))):
-        K.mesh(it, 'post%d' % k, M['chrome'], prism((x, y, 0.0), 0.6, 100.0, 6))
-    cols = (None, 'yellow', None, 'pink', 'green', None)
-    for lv, z in enumerate((18.0, 44.0, 70.0, 96.0)):
-        K.box(it, 'shelf%d' % lv, [tx0, ty0, z - 0.8, tx1, ty1, z], M['white'])
-        if lv == 3:
-            continue
-        for j in range(3):
-            for h in range(4 - (lv + j) % 2):
-                ream(K, (tx0 + 8.0 + 13.0 * j, (ty0 + ty1) / 2, z + 2.1 * h), yaw=(h % 2) * 3.0 - 1.5, colour=cols[(lv * 3 + j + h // 2) % 6])
-    for j in range(2):                                                       # the top: two boxes of rolls of copier paper, lying
-        K.prop('blueprint_roll', 'cp_town_blueprint_teleporter_roll', (tx0 + 14.0 + 14.0 * j, (ty0 + ty1) / 2, 97.4), angles=[90.0, 0.0, 0.0])
-    # the easel with a blueprint print pinned to it, facing the glass
-    it = K.item('easel')
-    ex, ey = -2428.0, 4326.0
-    K.box(it, 'board', [ex - 30.0, ey - 0.6, 40.0, ex + 30.0, ey + 0.6, 82.0], M['wood'])
-    for k, dx in enumerate((-20.0, 20.0)):
-        K.box(it, 'leg%d' % k, [ex + dx - 1, ey - 1, 0.0, ex + dx + 1, ey + 1, 84.0], M['wood'])
-    K.box(it, 'ledge', [ex - 30.0, ey - 4.0, 38.0, ex + 30.0, ey + 0.6, 40.0], M['wood'])
-    K.sign(it, 'print', art_b('cs_blueprint_sheet.png'), (ex, ey - 0.6, 61.0), (0.0, -1.0, 0.0), (56.0, 28.0))
-    paper_stack(K, 'copies_stack', (ex - 12.0, ey - 2.2, 40.0), (8.5, 3.0, 1.2), top='cs_copy_page.png')
+    glow = ([[[p[0], p[1], p[2] + 42.55] for p in t] for t in glow[0]], glow[1])
+    K.mesh(it, 'glass', M['white_glow'], tilt(glow, (0, (y0 + y1) / 2, 42.0), 20.0))
+    n = (0.0, -math.sin(math.radians(20.0)), math.cos(math.radians(20.0)))
+    K.decal(it, 'drawing', art_b('cs_vellum_drawing.png'), ((x0 + x1) / 2, (y0 + y1) / 2 + 0.6, 42.6), n, (36.0, 18.0), lift=0.25)
+    K.box(it, 'shelf', [x1 - 1.0, y0 + 4.0, 36.0, x1 + 9.0, y0 + 18.0, 37.2], M['grey'])
+    K.box(it, 'shelf_leg', [x1 + 6.0, y0 + 9.0, 0.0, x1 + 8.0, y0 + 11.0, 36.0], M['grey'])
+    K.fixture('desk_lamp', 'desk_lamp', (x1 + 4.0, y0 + 11.0, 37.2), 200.0, kelvin=3600, intensity=0.9, radius=0.9)
+    # the rack of large rolled drawings by the door: a stand, tall rolls in blue and white standing in it up to eye height
+    it = K.item('roll_rack')
+    c = (-2391.0, 4326.0)
+    K.box(it, 'base', [c[0] - 8, c[1] - 9, 0.0, c[0] + 8, c[1] + 9, 3.0], M['wood'])
+    K.box(it, 'collar', [c[0] - 8, c[1] - 9, 40.0, c[0] + 8, c[1] + 9, 42.0], M['wood'])
+    for k, (dx, dy) in enumerate(((-7, -8), (7, -8), (7, 8), (-7, 8))):
+        K.box(it, 'post%d' % k, [c[0] + dx - 0.8, c[1] + dy - 0.8, 3.0, c[0] + dx + 0.8, c[1] + dy + 0.8, 40.0], M['wood'])
+    for k, (dx, dy) in enumerate(((-4, -5), (0, -6), (4, -4), (-5, 0), (1, 0), (5, 2), (-3, 5), (2, 6), (6, 6))):
+        roll = K.item('rolled_drawing')
+        K.mesh(roll, 'body', M['blue'] if k % 3 else M['white'], prism((c[0] + dx, c[1] + dy, 3.0), 1.9, 52.0 + (k * 5) % 14, 10))
+    # finished jobs hung on a line across the top of the glass (copies, programmes, prints, a card), each in a bulldog clip
+    it = K.item('job_line')
+    ly, lz = 4319.0, 126.0
+    K.box(it, 'wire', [-2602.0, ly - 0.1, lz - 0.1, -2380.0, ly + 0.1, lz + 0.1], M['black'])
+    hang = (('cs_copy_page.png', 8.5, 11.0), ('mat_cs_programme.png', 6.0, 9.0), ('cs_blueprint_sheet.png', 18.0, 9.0), ('cs_copy_page.png', 8.5, 11.0),
+            ('cs_card_1.png', 12.0, 7.5), ('mat_cs_programme.png', 6.0, 9.0), ('cs_vellum_drawing.png', 16.0, 12.0), ('cs_copy_page.png', 8.5, 11.0),
+            ('mat_cs_programme.png', 6.0, 9.0), ('cs_blueprint_sheet.png', 18.0, 9.0), ('cs_copy_page.png', 8.5, 11.0))
+    x = -2596.0
+    for k, (pic, w, h) in enumerate(hang):
+        x += w / 2
+        K.sign(it, 'sheet%d' % k, art_b(pic), (x, ly, lz - 1.0 - h / 2), (0.0, -1.0, 0.0), (w, h), rot=((k * 37) % 7) - 3.0, lift=0.1)
+        K.box(it, 'clip%d' % k, [x - 0.8, ly - 0.5, lz - 1.6, x + 0.8, ly + 0.3, lz + 0.4], M['black'])
+        x += w / 2 + 6.0
     # her cards on the glass, eye level
-    for k, (x, card) in enumerate(((-2560.0, 'cs_card_1.png'), (-2400.0, 'cs_card_2.png'))):
+    for k, (x, card) in enumerate(((-2560.0, 'cs_card_1.png'), (-2432.0, 'cs_card_2.png'))):
         K.sign(K.item('window_card'), 'card', art_b(card), (x, GY + 0.35, 88.0 - 3 * k), (0.0, -1.0, 0.0), (20.0, 12.5), rot=(-2.0, 1.5)[k])
 
 
@@ -96,7 +108,7 @@ def window_east(K):
     K.clip(K.item('window_sill_goods'), [-2232.0, GY + 1.0, 0.0, -2048.0, 4316.0, 40.0])
     for k, x in enumerate((-2222.0, -2210.0, -2198.0, -2120.0, -2108.0)):
         for j in range(1 + (k % 3)):
-            ream(K, (x, 4311.5, 2.1 * j), yaw=90.0 + ((k + j) % 3) * 2.0 - 2.0)
+            ream(K, (x, 4311.5, 2.1 * j), yaw=90.0 + ((k + j) % 3) * 2.0 - 2.0, colour=('yellow', None, 'blue', 'pink', 'green')[k])
     # spiral-bound sample books standing open along the glass
     for k, x in enumerate((-2178.0, -2160.0, -2142.0)):
         it = K.item('sample_book')
@@ -287,6 +299,8 @@ def pigeonholes(K):
     yc = y0 + 0.5 * pitch
     job = paper_stack(K, 'forty_copy_job', (x0 + 8.5, yc, levels[2]), (8.5, 11.0, 0.9), yaw=-90.0, top_mat=K.mat('mat_cs_memo_PLACEHOLDER.png'))
     K.decal(job, 'ticket', art_b('cs_ticket_b.png'), (x0 + 2.2, yc + 1.0, levels[2] + 0.95), (0.0, 0.0, 1.0), (4.2, 2.6), rot=-80.0)
+    K.sign(job, 'red_tag', art_b('cs_red_tag.png'), (x0, yc, levels[2] - 3.0), (-1.0, 0.0, 0.0), (4.4, 7.0), rot=-6.0, lift=0.3)
+    K.box(job, 'band', [x0 + 3.0, yc - 4.6, levels[2] + 0.2, x0 + 4.0, yc + 4.6, levels[2] + 1.0], M['red'])
     return job
 
 
