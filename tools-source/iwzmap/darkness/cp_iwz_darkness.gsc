@@ -214,6 +214,14 @@ iwz_dark_power()
         }
         wait( randomfloatrange( 0.8, 1.3 ) );
     }
+    // a map with every lamp baked has no bank: the dark vision is still released with the power (27 Nov 2026: a lit-first
+    // base never left the dark vision, ON and OFF frames were identical)
+    if ( !isdefined( level.iwz_dark_released ) )
+    {
+        level.iwz_dark_released = 1;
+        level thread iwz_dark_vision_release( 5.0 );
+        iwz_dark_log( "NO_BANKS vision released" );
+    }
     // flicker lamps outside every bank's zone start with the last bank
     foreach ( m in level.iwz_dark_flicker )
     {
