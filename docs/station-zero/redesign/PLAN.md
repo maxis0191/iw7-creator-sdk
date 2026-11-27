@@ -86,5 +86,23 @@ Rules of the build (numbers are QUALITY-BAR rules):
 | R1 | Stock reference frames (Shaolin Shuffle's shop row and station, the projection room, Spaceland) | Forge client plans | frames in `C:\studio-data\sz\film\stockref` |
 | T1 | The Terminus section | `film/terminus.py` | after P1 and B1: the trip in the game, frames against `concept\terminus.png` |
 
+## 5. PAUSED by the owner (27 Nov 2026, about 22:30)
+
+Every worker is stopped; no `studio live` session is recorded for any document of this package; every branch below is
+pushed (0 unpushed, clean worktrees). One idle Forge cell on `cp_iwz` is the daemon's own. Nothing was reviewed by the
+lead yet: every line below is a worker's claim until its change and its run are read.
+
+| Lot | Branch (repository) | State at the pause | First thing on resume |
+|---|---|---|---|
+| P1 | `claude/film-p1` 2796954 (iw7-studio, worktree `studio-film-p1`) | `B.material`, far-room collision sections of 1,024, marker `area`: unit tests 818/0 (805 before). No game frame, no trace. Not done: Pack-a-Punch offsets (the code is SDK `blender/blend_core.py:1249-1250`; the patch is in the worker's report) and the SDK one-liner for marker `area`. Found, not fixed: an island room added by a layer gets no navigation on a Studio-emit base (`based._nav_polygons` seeds from the base's starts only): it blocks the Terminus | read the diff; `live start` + two shots on `C:\studio-data\sz\film\p1\doc`; the hull trace plan `p1\p1_far_floor.json`; the in-game A/B on `p1\doc_based` (`IWZ_MAX_SECTION=0` against the fix); then merge |
+| B1 | `claude/sz-film-b1` (iw7-creator-sdk, worktree `sdk-film-b1`); note `B1-BASE.md` | generator without the alcove, shutter, sign, relays and relay quest; lit-first switch; `modules/terminus.gsc` with its unit test; prompt override with placeholder strings. Built once (`live start b1\doc`, 164 s); **no plan ran in the game** | `cd C:\studio-data\sz\film\b1\plans && python -B C:\forge\forge.py batch batch_b1.json` (rebuild with `live start b1\doc` if the usermap was swept); read the regeneration equality table and the diff in `B1-BASE.md` |
+| A1 | `claude/sz-film-art` (worktree `sdk-film-art`): prompts, PIL scripts, `manifest.json` (65 entries) | 32 Arcade pictures and 17 Terminus pictures in `C:\studio-data\sz\film\art`; the worker was stopped before its final report; no contact sheet seen by the lead | look at every picture (logos first), reject what is not one hand per brand; the manifest says what was left out |
+| A2 | `claude/sz-film-shell` 6183c42 (worktree `sdk-film-shell`); note `A2-ARCADE-SHELL.md` | the whole shell is written (architecture, four fronts, 34 baked lights, 23 picture slots on A1's real files); **never run in the game, no frame**; `studio check` still answers `ok: false` (cause not read), reach 61/61, records 494 of 501 | `python -m studio check C:\studio-data\sz\film\arcade\shell\doc`, read why it is not ok, widen the two `WALKABLE_OFF_NAV` passages, then the first live frames against `concept\arcade.png` |
+
+Copy: Gemini 4 Neon is refused for this account through the Aside CLI (`antigravity/gemini-4-neon`: "not available");
+the Arcade's sign copy (`C:\studio-data\sz\film\copy\arcade_copy.json`) is Gemini 4 Hydrogen's, canon-checked, to be
+rewritten by Neon when a route exists. Not started: A3 (interiors), R1 (stock reference frames), T1 (the Terminus
+section), the blind review.
+
 Then, in the bible's order and one slice at a time: Fare Hall (the board), Escalator Hall, Platform A and the six-car
 train, Converter Hall (rectifiers), Lodestar Exchange, Signal Cabin, the Cordon, and the rest of `02-WORLD.md`.
