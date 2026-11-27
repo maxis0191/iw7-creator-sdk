@@ -51,6 +51,29 @@ middle of the entrance view -> eye at y 3880; (3) shutter curtains read as rows 
 (4) the pegboard read cyan -> our brown pegboard `w/sz_arcade_pegboard`; (5) the ceiling still sparse and white against the target's
 greenish grid (kept: the brief's half-dead ceiling).
 
+## Pass 3 and pass 4 (round 2 and round 3)
+- Pass 3: `pass3\sheet_lit_{0,1,2}.jpg` (lit-vision variant) and `pass3\sheet_off_{0,1,2}.jpg` (the document, dark vision). The entrance
+  view takes the target's composition: ad boxes on the tiled wall with its orange band, the colonnade, the polisher in its circle in the
+  foreground, the banner, the fronts on the right with readable lit fascias, the mottled quarry floor. Dark: near black with the fascias,
+  light boxes and shop glows readable.
+- Round 3: lit panels `w/emissive_light_panel_white` and greenish soft spots; floor gloss 205..235. Pass 4: `pass4\sheet_lit_*`,
+  `pass4\sheet_off_*`, side by side with the target `pass4\compare_east_long.jpg`. The panels read brighter; the floor's sheen did not
+  visibly change (the session's lightmap is a draft bake).
+
+### What still differs from the target (pass 4, honest)
+1. The shops are empty: the goods are the A3 workers' (anchors.json). The target's fronts are full and lit by their goods.
+2. The floor is matte: the target's is wet, mirroring the fronts' colours. Ours is glossy in its gloss map, but the reflection probes of
+   this base do not show it; not solved.
+3. Proportion: the target is a corridor about half as deep as PLAN's 800-unit hall, so its fronts fill the right half. Ours keeps PLAN's
+   box; the hall reads larger and emptier.
+4. Light: the target's colour spill from the fronts onto the floor is strong. Ours is darker and lower in contrast (draft bake, auto exposure
+   of the lit vision).
+5. Ceiling: the target has many greenish panels. Ours keeps the brief's half-dead grid (12 live of 27 lit-capable), white, on a busy stock
+   tile texture.
+6. Bunting: the target's strings swag across the hall. Ours are flat picture strips seen as loose triangles from below.
+7. The polisher is smaller and plainer than the target's, and its cable is not seen from the entrance eye.
+8. The directory and phones stand beside the entrance (behind the entrance eye); the target shows them in the same frame as the fronts.
+
 ## Decisions the brief did not dictate
 - **Tile kit** (one table `MAT` at the top of the builder, the swap to `B.material` is one edit there): wall `w/dt_tile_ceramic_white` with its
   true twin `w/dt_tile_ceramic_white_dmg` (the cp_disco station's pair; the base tint `w/iwz_tile_cream` has no damaged twin), band
