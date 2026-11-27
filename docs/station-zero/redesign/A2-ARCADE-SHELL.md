@@ -41,10 +41,21 @@ Rule 25 fails by the slot list of the brief: the hall carries five sign families
   x -1790..-1688, beside the entrance; polisher and its circle at (-1590, 3850), socket at x -1650; Heel & Key's front gets two tungsten
   bulkheads; `arc_east_long` eye at (-1262, 3700), yaw 172; the Needle Drop oblique camera (it stood outside the hall) mirrored.
 
+## Pass 2 (live, lit-vision variant): `C:\studio-data\sz\film\arcade\shell\pass2\sheet_lit_{0,1,2}.jpg`
+The first readable set: fascias read as lit boxes from the entrance, the four shop hues are distinct (Needle Drop amber, Copy Stop cold
+white, Hole Number Nine pink, Heel & Key tungsten), the white tile with its orange band and the colonnade read, the directory is the first
+thing on the left. Its dark frames failed (the document was rebuilt under the session; my error, reshot in pass 3).
+Differences left from the target, largest first, and round 2: (1) floor large plain orange squares -> our own quarry tile
+(`film/tiles.py`, 12-unit mottled brown and burnt-orange tiles, glossy, through `B.material`: `w/sz_arcade_quarry`); (2) a column in the
+middle of the entrance view -> eye at y 3880; (3) shutter curtains read as rows of white plates -> `w/cp_disco_metal_door_rollup_01`;
+(4) the pegboard read cyan -> our brown pegboard `w/sz_arcade_pegboard`; (5) the ceiling still sparse and white against the target's
+greenish grid (kept: the brief's half-dead ceiling).
+
 ## Decisions the brief did not dictate
 - **Tile kit** (one table `MAT` at the top of the builder, the swap to `B.material` is one edit there): wall `w/dt_tile_ceramic_white` with its
   true twin `w/dt_tile_ceramic_white_dmg` (the cp_disco station's pair; the base tint `w/iwz_tile_cream` has no damaged twin), band
-  `w/ceramic_tile_01_orange` (from mp_depot), dark `w/fac_tile_black_01`, floor `w/linoleum_floor_tiles_orange_01` (mp_codphish).
+  `w/ceramic_tile_01_orange` (from mp_depot), dark `w/fac_tile_black_01`, floor our own `w/sz_arcade_quarry` since round 2 (`film/tiles.py`; the stock
+  `w/linoleum_floor_tiles_orange_01` before). Heel & Key's pegboard is our own `w/sz_arcade_pegboard`.
   Dado: skirting 0..10, band 58..74 and 220..228, 14 damaged patches (seeded).
 - **Columns**: 40 x 40 boxes at y 3760, x -2860 + 288 k (six), dark base to 16, bands 58..74 and 196..212, two with damaged patches.
 - **Ceiling**: a panel plane at z 244 (hall clear height 244 under the slab at 256), T-bars every 48, 7 lit panels

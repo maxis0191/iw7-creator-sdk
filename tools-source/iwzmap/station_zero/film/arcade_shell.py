@@ -37,7 +37,7 @@ MAT = {
     'slab': 'w/plaster_wall_04_grey_dark_02',     # the structural soffit above the suspended ceiling
     'ceil': 'w/ceiling_tile_01',                  # ceiling panels
     'ceil_stain': 'w/ceiling_waterstains1',       # stained panels
-    'panel_on': 'w/plastic_wall_panel_light_02_on',    # lit panel (emissive)
+    'panel_on': 'w/emissive_light_panel_white',   # lit panel (emissive; pass 3: plastic_wall_panel_light_02_on read dim grey)
     'panel_off': 'w/plastic_wall_panel_light_02_off',  # dead panel
     'hole': 'w/metal_painted_01_black',           # a missing panel: the black plenum
     'tbar': 'w/metal_aluminum_trim_03',           # the ceiling grid
@@ -273,7 +273,7 @@ def ceiling(m):
             rbox(m, 'panel_%s_%d_%d' % (tag, i, j), [x0 + 0.8, y0 + 0.8, GRID_Z - 0.4, x1 - 0.8, y1 - 0.8, GRID_Z - 0.05], mat)
     for k, (i, j) in enumerate(LIVE):
         x0, y0, x1, y1 = module(i, j)
-        lamp(m, 'light_panel_%d' % k, ((x0 + x1) / 2, (y0 + y1) / 2, GRID_Z - 6.0), 'hall', color=(0.9, 0.97, 1.0), radius=250.0,
+        lamp(m, 'light_panel_%d' % k, ((x0 + x1) / 2, (y0 + y1) / 2, GRID_Z - 6.0), 'hall', color=(0.88, 1.0, 0.9), radius=250.0,      # the target's greenish fluorescent
              intensity=1.0, type='spot', dir=(0.0, 0.0, -1.0), inner=50.0, outer=85.0)
     # tubes over the colonnade, between the columns, hung from the grid: three live, two dead; two dead over the north lane
     for k, x in enumerate([(a + b) / 2 for a, b in zip(COLS, COLS[1:])]):
