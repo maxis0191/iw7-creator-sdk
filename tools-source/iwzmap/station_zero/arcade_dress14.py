@@ -1613,7 +1613,7 @@ def canon8(A, m, report):
         k = seen[text] = seen.get(text, 0) + 1
         cx, cy, z = og[0], og[1], og[2] + 20.0
         for sgn in (-1, 1):
-            B.sign(m, text=text, at=(cx, cy + sgn * 1.0, z), normal=(0.0, float(sgn), 0.0), size=(76.0, 40.0), emissive=1.2, color=(1.0, 0.82, 0.4), id='cn_%s_%d_%d' % (text[:4].strip(), k, sgn > 0))
+            B.sign(m, text=text, at=(cx, cy + sgn * 1.0, z), normal=(0.0, float(sgn), 0.0), size=(76.0, 40.0), lamp=True, color=(1.0, 0.82, 0.4), id='cn_%s_%d_%d' % (text[:4].strip(), k, sgn > 0))
             n += 1
     for o in [o for layer in m.layers.values() for o in layer if o['kind'] == 'prop' and o['model'] == 'flower_shop_planter_02']:     # no material in the game: a white block
         m.remove(o['id'])
