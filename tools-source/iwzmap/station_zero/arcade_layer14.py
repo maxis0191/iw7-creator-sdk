@@ -50,6 +50,7 @@ WARM = (1.0, 0.86, 0.66)
 BAYS = ['photo', 'heel', 'hole9', 'copy', 'needle']
 KE = float(os.environ.get('ARC9_KE', '1.0'))
 UP = float(os.environ.get('ARC13_UP', '0.4'))
+BEACON_I = float(os.environ.get('ARC19_BEACON_I', '1.0'))
 LITEV = float(os.environ.get('ARC14_LITEV', '-3.0'))           # the fixed exposure of the lit vision (the dark vision's is -3)
 SCALE = float(os.environ.get('ARC14_SCALE', '0'))             # 0 = the base's darkness.lights.scale (840)
 AUTO = os.environ.get('ARC14_AUTO', '1') != '0'
@@ -190,6 +191,7 @@ def build(name='sz_arcade_r13'):
     vision14(m, rep)
     platform14(m, rep)
     bench17(m, rep)
+    fill19(m, rep)
     m.settings.setdefault('build', {}).setdefault('darkness', {})['power'] = {'flag': 'power_on', 'interaction': 'generator'}      # the regenerated base's recipe lacks it (base_r10 had it)
     rep['power_recipe'] = 'power_on/generator'
     m.report9 = rep
@@ -502,7 +504,7 @@ def emergency9(m, report):
                 continue
             fx('emergency_beacon', (x + (60.0 if j else -60.0), y, 0.0), 0.0, intensity=2.2 * KE, radius=1.8)
     for i in range(5):                                        # an amber lamp inside each shop, on its east wall
-        fx('beacon_wall', (BAY_X[i] + BAY_W - WT - 0.5, 4390.0, 165.0), 180.0, intensity=4.0 * KE, radius=1.9)
+        fx('beacon_wall', (BAY_X[i] + BAY_W - WT - 0.5, 4390.0, 165.0), 180.0, intensity=BEACON_I * KE, radius=1.9)      # r19: 4.0 lit the east wall of every shop saturated amber with the power OFF (chk_bay5 yellow, chk_bay4 green)
     # r18: the three orange floor beacons on the hall side of D4 are gone: their omni lights (z 8, radius 157, group emergency = on in both power states) were the amber pools of arc_cutwall_close and hall_far that did not follow the power
     report['emergency9'] = {'ids': len(ids)}
 
@@ -642,6 +644,53 @@ def cutwall12(m, report):
         B.box(m, (-1212.0, ya, 0.0, -1188.0, yb, 214.0), 'w/dt_tile_ceramic_white', id='cutwall_jamb_' + nm)
     layer12_light(m, (-1090.0, 3900.0, 300.0), 'light_hallwash_door', color=(1.0, 0.9, 0.74), radius=170.0, intensity=HALL_I, type='spot', dir=(0.8944, 0.0, -0.4472), inner=30.0, outer=80.0, group='power')       # the hall behind the opening was near black (arc_cutwall): replaces the 3 floor beacons' light rows
     report['cutwall12'] = {'lintel': 'cutwall_lintel', 'jambs': 2, 'light': 'light_hallwash_door'}
+
+
+def fill19(m, report):
+    """r19 (3 reviewers of r18: black pillars, column tops, wall slabs; hall_far's black band; the doorway). `studio pick` + `studio light --at` on the frames: every black region is a surface that NO light
+    reaches (total 0.0, `out of radius` / `faces away`): the dojo columns above z 105 on their south face (the uplights stand on the north side of the shaft), the north piers (y 4274, 220 from the
+    lane spots), the kiosk's I-beam posts, the D7 west wall, the base's charcoal / white tile faces at the hall (y 3976, the jambs) which no lamp of the hall reaches. One soft fill each; power group."""
+    n = 0
+    col = (1.0, 0.9, 0.74)
+
+    def L(at, nm, d, r, i, inner=40.0, outer=90.0, typ='spot'):
+        nonlocal n
+        ln = math.sqrt(sum(v * v for v in d))
+        layer12_light(m, at, nm, color=col, radius=r, intensity=i, type=typ, dir=tuple(round(v / ln, 4) for v in d), inner=inner, outer=outer, group='power')
+        n += 1
+    for k, x in enumerate(COLS):                      # the shaft's south face above the cage lamp
+        L((x, 3862.0, 100.0), 'light_ups_%d' % k, (0.0, 0.0, 1.0), 120.0, round(0.9 * UP, 3), 30.0, 85.0)
+    for k, (a, b) in enumerate(PIER_X):               # the north piers, from the lane
+        L(((a + b) / 2.0, 4170.0, 150.0), 'light_pier_%d' % k, (0.0, 1.0, -0.12), PIER_R, PIER_I)
+    kx, ky = GAPS[0], SPINE_Y + 105.0                 # the kiosk awning's four posts
+    L((kx, ky - 70.0, 80.0), 'light_kpost_a', (0.0, 1.0, 0.0), 110.0, KPOST_I, 60.0, 120.0)
+    L((kx, ky + 70.0, 80.0), 'light_kpost_b', (0.0, -1.0, 0.0), 110.0, KPOST_I, 60.0, 120.0)
+    L((X0 + 110.0, 3900.0, 200.0), 'light_d7w', (-1.0, 0.0, -0.3), 200.0, 0.6)       # the west wall and the D7 posts (arc_d7)
+    L((-760.0, 3830.0, 190.0), 'light_hall_wall', (0.0, 1.0, -0.3), 240.0, HW_I, 40.0, 95.0)       # hall_far: the wall at y 3976 east of the vestibule
+    L((60.0, 3830.0, 190.0), 'light_hall_wall2', (0.0, 1.0, -0.3), 240.0, HW_I, 40.0, 95.0)         # conv_turnstile: the same wall at x 10
+    L((-1080.0, 3880.0, 215.0), 'light_vest_w', (-1.0, 0.0, -0.3), 220.0, HW_I, 35.0, 90.0)          # hall_near: the jambs and the arcade's east wall from the hall side
+    L((-1300.0, 3900.0, 195.0), 'light_door_a', (1.0, 0.0, -0.15), 150.0, 0.5, 40.0, 100.0)          # arc_cutwall: the jambs' west faces
+    L((-1060.0, 3900.0, 225.0), 'light_vest_e', (1.0, 0.0, -0.45), 280.0, 0.8, 30.0, 85.0)           # arc_cutwall: the room behind the doorway
+    # the lintel: the beam at z 214 stands above the top of arc_cutwall's frame (the door's top is out of the 49 degree view); a head at z 164 reads as one (render only: the door and the nav keep 224)
+    B.box(m, (-1210.0, 3792.0, 164.0, -1190.0, 4008.0, 214.0), 'w/dt_tile_ceramic_white', mode='render', id='cutwall_head')
+    # conv_bench (1 of 3 reviewers: still empty and flat): the north wall's foot gets what a ticket hall collects, and two lights of another colour
+    m.use('dressing')
+    from arcade_dress14 import M as MM
+    for j, (mod, x, y, yaw, z) in enumerate((('bin1', -1150.0, 4382.0, 270.0, 0.0), ('news', -806.0, 4380.0, 270.0, 0.0), ('gum', -860.0, 4382.0, 270.0, 0.0), ('plant_big', -1196.0, 4372.0, 0.0, 0.0),
+                                             ('warn', -990.0, 4300.0, 20.0, 0.0), ('bag', -1104.0, 4352.0, 40.0, 0.0), ('fchair', -884.0, 4322.0, 200.0, 0.0), ('cone', -1050.0, 4260.0, 0.0, 0.0),
+                                             ('debris', -960.0, 4250.0, 70.0, 0.0), ('debris', -1040.0, 4330.0, 10.0, 0.0), ('can', -930.0, 4372.0, 0.0, 0.0))):
+        B.prop(m, MM[mod], (x, y, z), yaw=yaw, zone='arcade', id='bench19_%d' % j)
+    m.use('lights')
+    layer12_light(m, (-830.0, 4330.0, 150.0), 'light_bench_cool', color=(0.55, 0.72, 1.0), radius=150.0, intensity=0.5, type='spot', dir=(0.0, 0.9806, -0.1961), inner=40.0, outer=90.0, group='power')
+    layer12_light(m, (-1150.0, 4330.0, 130.0), 'light_bench_warm', color=(1.0, 0.68, 0.38), radius=150.0, intensity=0.5, type='spot', dir=(0.0, 0.9806, -0.1961), inner=40.0, outer=90.0, group='power')
+    report['fill19'] = {'lights': n + 2, 'bench_props': 11}
+
+
+PIER_X = [(-2970.0, -2930.0), (-2655.0, -2615.0), (-2325.0, -2285.0), (-1995.0, -1955.0), (-1665.0, -1625.0), (-1310.0, -1270.0)]
+PIER_R = float(os.environ.get('ARC19_PIER_R', '140'))
+PIER_I = float(os.environ.get('ARC19_PIER_I', '0.6'))
+KPOST_I = float(os.environ.get('ARC19_KPOST_I', '0.3'))
+HW_I = float(os.environ.get('ARC19_HW_I', '0.8'))
 
 
 def cameras12(m, report):

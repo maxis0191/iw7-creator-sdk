@@ -1141,8 +1141,7 @@ def column7(A, m, D, k, x):
         elif f in ('poster', 'poster2'):
             for j, zz in enumerate((90.0, 134.0)):
                 box(m, [x - 8.9, y0, zz, x + 8.9, y1, zz + 38.0], DARK, id='col_pframe_%d_%d_%d' % (k, sgn, j))
-                y2 = (y1, y1 + 0.8) if sgn > 0 else (y0 - 0.8, y0)
-                box(m, [x - 8.0, y2[0], zz + 1.5, x + 8.0, y2[1], zz + 36.5], POSTERS[(k * 3 + j + (0 if sgn > 0 else 2)) % len(POSTERS)], id='col_poster_%d_%d_%d' % (k, sgn, j))
+                B.decal(m, POSTERS[(k * 3 + j + (0 if sgn > 0 else 2)) % len(POSTERS)], (x, y1 if sgn > 0 else y0, zz + 19.0), (0.0, float(sgn), 0.0), (16.0, 35.0), id='col_poster_%d_%d_%d' % (k, sgn, j))      # r19: a poster BOX seen along the column's axis (arc_cutwall) showed its side faces as purple / teal strips: a decal has none
         elif f == 'extinguisher':
             D.put(M['extg'], x, SPINE_Y + sgn * (half + 4.0), 90.0 + 90.0 * sgn, z=84.0, ignore_keep=True, margin=0.0, clip=False)
     D.put(M['cage'], x + 12.0, SPINE_Y - COL_HALF - 4.0, 270.0, z=150.0, ignore_keep=True, margin=0.0, clip=False)          # a caged lamp on the shaft: its fixture, and the reason the column is lit
@@ -1810,7 +1809,7 @@ def shop_pictures(folder):
     finish(im, 'transit_map.png', (166, 500))
 
 
-TEXT_FILE = os.environ.get('ARC18_TEXT', 'C:/studio-data/sz/arcade/r18/TEXT.json')
+TEXT_FILE = os.environ.get('ARC18_TEXT', 'C:/studio-data/sz/arcade/r19/TEXT.json')
 
 
 def _texts():
