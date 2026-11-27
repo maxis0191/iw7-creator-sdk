@@ -14,6 +14,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import goods_kit_a as K  # noqa: E402
+from studio import build as B  # noqa: E402
 import shellgeo as G  # noqa: E402
 
 KEY = 'cp_disco_subway_locker_key'
@@ -28,6 +29,7 @@ def add(m, anchors):
     bench(s, anchors)
     pegboard(s, anchors)
     lasts_shelf(s, anchors)
+    B.camera(m, 'heel_key_counter_close', (-1480.0, 4235.0, 62.0), 90.0, pitch=7.0, layer=s.layer, id='heel_key_P__cam_counter_close__1')
 
 
 def tag(s, n, at):

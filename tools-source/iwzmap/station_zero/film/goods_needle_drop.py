@@ -12,6 +12,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import goods_kit_a as K  # noqa: E402
+from studio import build as B  # noqa: E402
 
 ART = K.ART
 
@@ -26,6 +27,7 @@ def add(m, anchors):
     cassettes(s)
     counter(s, anchors)
     corners(s)
+    B.camera(m, 'needle_drop_window_close', (-2751.0, 4225.0, 60.0), 90.0, pitch=6.0, layer=s.layer, id='needle_drop_P__cam_window_close__1')
 
 
 def sleeve(s, k, centre, facing, cls='S'):
