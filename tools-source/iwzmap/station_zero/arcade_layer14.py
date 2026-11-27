@@ -1,4 +1,4 @@
-r"""arcade_layer14: the Underpass Arcade (round 14), ONE self-contained builder (rounds 1 to 13 folded in; the old arcade*.py chain is deleted).
+r"""arcade_layer14: the Underpass Arcade (round 15: lamped picture boards, bench spot lights, upper wall washers), ONE self-contained builder (rounds 1 to 13 folded in; the old arcade*.py chain is deleted).
 
     STUDIO_ROOT=C:\\studio python arcade_layer14.py [folder]     writes the document (default C:\\studio-data\\sz\\arcade\\r14\\doc)
 
@@ -55,7 +55,14 @@ SCALE = float(os.environ.get('ARC14_SCALE', '0'))             # 0 = the base's d
 AUTO = os.environ.get('ARC14_AUTO', '1') != '0'
 LITKEYS = os.environ.get('ARC14_LITKEYS', '')
 PLAT_I = float(os.environ.get('ARC14_PLAT_I', '1.2'))
-BENCH_I = float(os.environ.get('ARC14_BENCH_I', '2.6'))      # r13: three downward spots at z 120: the wall was lit only below z 120, a hard horizontal edge
+FILL_I = float(os.environ.get('ARC15_FILL_I', '0.09'))
+FILL_R = float(os.environ.get('ARC15_FILL_R', '170'))
+FILL_AIM = float(os.environ.get('ARC15_FILL_AIM', '150'))
+BENCH_I = float(os.environ.get('ARC15_BENCH_I', '1.1'))
+BENCH_Z = float(os.environ.get('ARC15_BENCH_Z', '110'))
+BENCH_R = float(os.environ.get('ARC15_BENCH_R', '190'))
+BENCH_IN = float(os.environ.get('ARC15_BENCH_IN', '55'))
+BENCH_OUT = float(os.environ.get('ARC15_BENCH_OUT', '90'))      # r13: three downward spots at z 120: the wall was lit only below z 120, a hard horizontal edge
 SIGN_K = float(os.environ.get('ARC13_SIGN_K', '3.5'))
 FLOOR_SKIN = 'w/building_ship_hallway_floor_06_tile_gray_glossy'
 PANEL_DEAD = 'w/concrete_wall_panel_05'
@@ -126,6 +133,7 @@ def build(name='sz_arcade_r13'):
     rep['placer'] = {'placed': d.n, 'totals': d.ledger.totals(), 'lines': d.lines(), 'clip_boxes': len(d.clip_boxes)}
     rep['dress_refusals'] = dict(REPORT)
     uplights13(m, rep)
+    upperfill15(m, rep)
     signs13(m, rep)
     cutwall12(m, rep)
     cameras12(m, rep)
@@ -475,9 +483,24 @@ def uplights13(m, report):
         layer12_light(m, (-1290.0, y, 120.0), 'light_upw_%d' % k, color=(1.0, 0.9, 0.74), radius=135.0, intensity=round(UP, 3), type='spot', dir=(1.0, 0.0, 0.5), inner=30.0, outer=85.0)
         n += 1
     for k, (x, y) in enumerate(((-1010.0, 4060.0), (-900.0, 4180.0), (-1080.0, 4200.0))):
-        layer12_light(m, (x, y, 110.0), 'light_bench_%d' % k, color=(1.0, 0.9, 0.72), radius=170.0, intensity=BENCH_I, type='omni')
+        layer12_light(m, (x, y, BENCH_Z), 'light_bench_%d' % k, color=(1.0, 0.9, 0.72), radius=BENCH_R, intensity=BENCH_I, type='spot', dir=(0.0, 0.0, -1.0), inner=BENCH_IN, outer=BENCH_OUT)      # r15: downward spots with a wide soft cone (r13: 40/80 hard edge on the wall; r14 omni lit the wall and the exposure fell)
         n += 1
     report['uplights13'] = {'added': n, 'up': UP}
+
+
+def upperfill15(m, report):
+    """r15: the upper walls were black with the power on (`studio light --at` on the north pillar at z 168: ON 0.03 against 1.07 on the floor; the wall at z 120: 0.04, at z 60: 0.27). A wall washer
+    per north pillar and per gap between two (spot at z 195, 80 units off the wall, aimed at the wall at z 150) and one per south pillar. Group power: dark with the power off."""
+    n = 0
+    xs_n = [-2950.0, -2635.0, -2305.0, -1975.0, -1645.0, -1290.0]
+    pts = [(x, 4274.0, 1.0) for x in xs_n] + [((a + b) / 2.0, 4274.0, 1.0) for a, b in zip(xs_n, xs_n[1:])] + [(x, 3526.0, -1.0) for x in (-2530.0, -2176.0, -1900.0)]
+    for x, yw, sgn in pts:
+        org = (x, yw - sgn * 80.0, 195.0)
+        d = (0.0, sgn * 80.0, -(195.0 - FILL_AIM))
+        ln = math.sqrt(sum(v * v for v in d))
+        layer12_light(m, org, 'light_wash_%d_%d' % (int(x), int(sgn)), color=(1.0, 0.88, 0.7), radius=FILL_R, intensity=FILL_I, type='spot', dir=tuple(round(v / ln, 4) for v in d), inner=25.0, outer=75.0)
+        n += 1
+    report['upperfill15'] = {'added': n, 'intensity': FILL_I}
 
 
 def layer12_light(m, origin, id, **k):

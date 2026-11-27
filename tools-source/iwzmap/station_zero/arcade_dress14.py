@@ -617,6 +617,8 @@ def stock(D, shelf, items, step, yaw=0.0, jitter=0.0, skip=0.0, scale=1.0):
 
 
 HUNG_Y = 76.0           # r13: 44 (34 units from the chk cameras, 41 % of their frame); the boards now hang 76 into the shop
+HUNG_LAMP = True          # r15: one power spot per hung picture (FE62)
+ARROW_LAMP = {'intensity': 1.0, 'color': [0.75, 0.85, 1.0]}
 HUNG_Z = 76.0           # r13: 52 (the player's eye line, and 41 % of the chk cameras' frame); now above a standing player's head and inside the chk cameras' frame (z 70, +-31 at 66 units)
 
 
@@ -625,7 +627,7 @@ def hung_pic(m, id, x, y, z, w, h, picture, ceil=200.0):
     box(m, [x - w / 2.0, y - 0.4, z, x + w / 2.0, y + 0.4, z + h], BLACK, id=id)
     rod(m, id + '_ra', x - w / 2.0 + 1.0, y, z + h, ceil)
     rod(m, id + '_rb', x + w / 2.0 - 1.0, y, z + h, ceil)
-    B.sign(m, image=picture, at=(x, y - 0.4, z + h / 2.0), normal=(0.0, -1.0, 0.0), size=(w - 1.6, h - 1.6), emissive={'color': [1.0, 0.95, 0.85], 'strength': 0.6}, id=id + '_pic')
+    B.sign(m, image=picture, at=(x, y - 0.4, z + h / 2.0), normal=(0.0, -1.0, 0.0), size=(w - 1.6, h - 1.6), lamp=HUNG_LAMP, id=id + '_pic')      # r15: lit and lamped (FE62), not emissive: an emissive picture went black with the power on
 
 
 def hung(m, id, x, y, z, w, h, mat, ceil=200.0):
@@ -986,7 +988,7 @@ def ceiling4(A, m, D, report):
         for sgn in (-1, 1):
             box(m, [x + sgn * 48.0 - 0.8, y - 0.8, 218.0, x + sgn * 48.0 + 0.8, y + 0.8, 256.0], BLACK, id='srod_%d_%d' % (k, sgn))
         for sgn in (-1, 1):
-            B.sign(m, image=img, at=(x, y + sgn * 1.5, 198.0), normal=(0.0, float(sgn), 0.0), size=(96.0, 30.0), emissive={'color': [0.55, 0.7, 1.0], 'strength': 0.9}, id='sign_arrow_%d_%d' % (k, sgn))
+            B.sign(m, image=img, at=(x, y + sgn * 1.5, 198.0), normal=(0.0, float(sgn), 0.0), size=(96.0, 30.0), lamp=ARROW_LAMP, id='sign_arrow_%d_%d' % (k, sgn))      # r15: lit and lamped (FE62)
 
 
 def ceiling(A, m, D, report):
