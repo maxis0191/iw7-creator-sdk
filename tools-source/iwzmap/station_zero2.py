@@ -3557,7 +3557,12 @@ for it_ in layout['interactions']:
             'intensity': 0.25 if it_['kind'] != 'generator' else 0.6, 'fixture': 'hint_glow', 'group': 'emergency',
             'cue': it_['kind']}
     LIGHTS.append(cue_)
-layout['light_groups'] = {g_: sum(1 for l_ in LIGHTS if l_.get('group') == g_) for g_ in ('emergency', 'power', 'flicker')}
+# IWZ_LIT_FIRST=1 (lit-first lighting, redesign PLAN decision 3, 27 Nov 2026): every lamp is baked with bounce, so every
+# light is in the baked group 'emergency'; the pre-power state is the dark vision. Default off: the emit is unchanged.
+if os.environ.get('IWZ_LIT_FIRST') == '1':
+    for l_ in LIGHTS:
+        l_['group'] = 'emergency'
+layout['light_groups'] ={g_: sum(1 for l_ in LIGHTS if l_.get('group') == g_) for g_ in ('emergency', 'power', 'flicker')}
 if 'iwz_g2_genset' in PORTED:
     layout['genset'] = {'model': 'iwz_g2_genset', 'origin': list(G2['origin']), 'yaw': G2['yaw'],
                         'footprint': [[G2['origin'][0] + G2_CLIP[0][0], G2['origin'][1] + G2_CLIP[0][1]],
