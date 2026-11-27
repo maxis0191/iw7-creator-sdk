@@ -22,12 +22,9 @@ main()
     scripts\cp\zombies\interaction_magicwheel::set_magic_wheel_starting_location( //@WHEEL@ );
     // the stock Spaceland DJ booth system starts on every map; without its booth it loops on an undefined level.dj
     // (782 runtime errors in run g5-gameplay-a): give it a parked stand-in entity
-    // relay state models swapped by the quest (the map ents reference only the starting state: run g8-gameplay-a
-    // setmodel errors on beacon_light_plasticcase_red_off)
-    precachemodel( "icbm_electricpanel9_on" );
+    // flicker lamp models swapped at run time (the map ents reference only one state)
     precachemodel( "mp_dart_lightfluo" );
     precachemodel( "mp_dart_lightfluo_on" );
-    precachemodel( "beacon_light_plasticcase_red_off" );
     level.dj = spawn( "script_model", ( 0, 0, -3000 ) );
     level.dj setmodel( "tag_origin" );
 //@FXLOAD@
@@ -41,8 +38,6 @@ main()
     level.no_pap_camos = [ "axe", "iw7_axe_zm", "forgefreeze" ];
     // the stock magic wheel plays this when a wheel moves; Spaceland loads it in its own fx script (QA g13: playfx undefined)
     level._effect["vfx_magicwheel_fire"] = loadfx( "vfx/iw7/_requests/coop/vfx_magicwheel_fire.vfx" );
-    level._effect["iwz_relay_red"] = loadfx( "vfx/iw7/core/zombie/weapon/shredder/zmb_part_glow_red.vfx" );
-    level._effect["iwz_relay_green"] = loadfx( "vfx/iw7/core/zombie/weapon/dischord/zmb_part_glow_green.vfx" );
     level._effect["iwz_rail_arc"] = loadfx( "vfx/iw7/_requests/coop/vfx_mini_grey_shock_arc.vfx" );
     level._effect["iwz_rail_spark"] = loadfx( "vfx/iw7/core/zombie/vfx_zmb_console_sparks.vfx" );
     // voice state flags vo_is_playing reads (QA g18: ~1,150 vo_is_playing errors per run from player_pain_vo /
@@ -62,7 +57,6 @@ main()
     level thread iwz_door_purchases();
     level thread iwz_zone_links();
     level thread iwz_wheel_cleanup();
-    level thread iwz_pap_quest();
     level thread iwz_third_rail();
     level thread iwz_ambient_fx();
     //@DARK@
@@ -192,8 +186,6 @@ iwz_report()
         interactions = 0;
         if ( isdefined( level.all_interaction_structs ) )
             interactions = level.all_interaction_structs.size;
-        if ( isdefined( level.iwz_relays_on ) )
-            state += " relays=" + level.iwz_relays_on;
         state += " zombies=" + zombies + " active_volumes=" + volumes + " wave=" + wave + " interactions=" + interactions;
         if ( zombies > 0 && isdefined( level.spawned_enemies[0] ) )
             state += " first_zombie=" + level.spawned_enemies[0].origin;
@@ -226,124 +218,6 @@ iwz_wheel_cleanup()
         removed++;
     }
     print( "[IWZ level] WHEELS kept=" + kept + " parked_spinners_removed=" + removed );
-}
-
-// Pack-a-Punch quest: after power, three signal relays (hold Use 2 s) turn from red to green; all three green
-// open the PaP shutter in the control room (script_brushmodel collision + rolling gate models). Level state:
-// survives player death and joins.
-iwz_pap_quest()
-{
-    level endon( "game_ended" );
-    level.iwz_relays_on = 0;
-    relays = [];
-    for ( i = 1; i <= 3; i++ )
-    {
-        s = scripts\engine\utility::getstruct( "iwz_relay_" + i, "targetname" );
-        if ( isdefined( s ) )
-            relays[relays.size] = s;
-    }
-    wait 1;
-    iwz_pap_gate( 1 );
-    foreach ( s in relays )
-    {
-        s.lamp = spawnfx( level._effect["iwz_relay_red"], s.origin + anglestoforward( s.angles ) * 6 + ( 0, 0, 30 ) );
-        triggerfx( s.lamp );
-        s.use = spawn( "script_model", s.origin + ( 0, 0, 24 ) );
-        s.use setmodel( "tag_origin" );
-        s.use makeusable();
-        s.use sethintstring( &"COOP_INTERACTIONS_REQUIRES_POWER" );
-    }
-    print( "[IWZ level] RELAYS " + relays.size );
-    while ( !scripts\engine\utility::flag_exist( "power_on" ) )
-        wait 0.5;
-    scripts\engine\utility::flag_wait( "power_on" );
-    foreach ( s in relays )
-    {
-        s.use sethintstring( &"COOP_INTERACTIONS_GENERATOR_ON" );
-        s thread iwz_relay_wait();
-    }
-    while ( level.iwz_relays_on < relays.size )
-        level waittill( "iwz_relay_on" );
-    iwz_open_pap_shutter();
-}
-
-// The Pack-a-Punch machine is not usable until the relay quest has opened the shutter: its interaction is disabled here, the stock way
-// (can_use_interaction refuses a struct with .disabled), so it cannot be reached through the shutter, and enabled again when the shutter opens.
-iwz_pap_gate( off )
-{
-    n = 0;
-    foreach ( s in level.all_interaction_structs )
-    {
-        if ( !isdefined( s.script_noteworthy ) || !issubstr( s.script_noteworthy, "weapon_upgrade" ) )
-            continue;
-        s.disabled = off;
-        n++;
-    }
-    print( "[IWZ level] PAP_GATE disabled=" + off + " structs=" + n );
-}
-
-iwz_open_pap_shutter()
-{
-    if ( isdefined( level.iwz_pap_open ) )
-        return;
-    level.iwz_pap_open = 1;
-    iwz_pap_gate( 0 );
-    shutter = getentarray( "iwz_pap_shutter", "targetname" );
-    if ( shutter.size )
-        playsoundatpos( shutter[0].origin, "zmb_sliding_door_open" );
-    foreach ( e in shutter )
-    {
-        if ( e.classname == "script_brushmodel" )
-        {
-            e connectpaths();
-            e notsolid();
-        }
-        else
-            e movez( 180, 3 );
-    }
-    print( "[IWZ level] PAP_OPEN relays=" + level.iwz_relays_on + " shutter_ents=" + shutter.size );
-}
-
-iwz_relay_wait()
-{
-    level endon( "game_ended" );
-    for ( ;; )
-    {
-        self.use waittill( "trigger", p );
-        held = 0;
-        if ( getdvarint( "paris_iwz_autouse" ) )      // private test fixture only: the Use hold is simulated
-            held = 2;
-        while ( isdefined( p ) && isalive( p ) && p usebuttonpressed() && distance( p.origin, self.use.origin ) < 128 && held < 2 )
-        {
-            wait 0.1;
-            held += 0.1;
-        }
-        if ( held >= 1.95 )
-            break;
-    }
-    iwz_relay_on( self );
-}
-
-iwz_relay_on( s )
-{
-    if ( isdefined( s.on ) )
-        return;
-    s.on = 1;
-    s.use makeunusable();
-    panel = getent( s.targetname + "_panel", "targetname" );
-    if ( isdefined( panel ) )
-        panel setmodel( "icbm_electricpanel9_on" );
-    beacon = getent( s.targetname + "_beacon", "targetname" );
-    if ( isdefined( beacon ) )
-        beacon setmodel( "beacon_light_plasticcase_red_off" );
-    if ( isdefined( s.lamp ) )
-        s.lamp delete();
-    s.lamp = spawnfx( level._effect["iwz_relay_green"], s.origin + anglestoforward( s.angles ) * 6 + ( 0, 0, 30 ) );
-    triggerfx( s.lamp );
-    playsoundatpos( s.origin, "purchase_generic" );
-    level.iwz_relays_on++;
-    print( "[IWZ level] RELAY_ON " + s.targetname + " count=" + level.iwz_relays_on );
-    level notify( "iwz_relay_on" );
 }
 
 // Third Rail trap: fuse box on the platform (750, needs power): arcs along the rails for 25 s kill zombies in the

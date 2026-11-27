@@ -112,8 +112,8 @@ OPENINGS = [
      'scriptable': 'pf7_auto243', 'sign': 'sign_to_old_station'},
     {'name': 'o_hall_street', 'kind': 'open', 'axis': 'x', 'walls': {'hall': 4400, 'street': 4400},
      'a': -304, 'b': 112, 'z0': 0, 'z1': 320},
-    {'name': 'a_control_pap', 'kind': 'arch', 'axis': 'x', 'walls': {'control': 4000, 'pap_alcove': 4016},
-     'a': 2976, 'b': 3232, 'z0': -320, 'z1': -136},
+    # (B1, 27 Nov 2026) the Pack-a-Punch alcove arch 'a_control_pap' is gone with the alcove: the control room's north
+    # wall is closed; Pack-a-Punch is declared in the Terminus section (redesign PLAN decision 4)
     # (g27) the service tunnel's track continues west past the buffer stop into a dead tunnel closed by a collapse
     # (visual only: an invisible clip closes the mouth); 'open' cuts the wall, the lintel above z1 is drawn by hand
     {'name': 'o_tunnel_west', 'kind': 'open', 'axis': 'y', 'walls': {'tunnel_a': -3600, 'throat_w': -3600},
@@ -314,7 +314,7 @@ def portal(o):
 # space -> zone
 SPACE_ZONE = {'hall': 'ticket_hall', 'street': 'ticket_hall', 'stair_a': 'stair_a', 'platform_deck': 'platform_a',
               'pit': 'platform_a', 'car': 'platform_a', 'corridor_a': 'maint_corridor', 'corridor_b': 'maint_corridor',
-              'generator': 'generator_room', 'control': 'control_room', 'pap_alcove': 'control_room',
+              'generator': 'generator_room', 'control': 'control_room',
               'tunnel_a': 'service_tunnel', 'tunnel_b': 'service_tunnel', 'platform_b': 'platform_b', 'stair_b': 'stair_b',
               'well_w': 'platform_a', 'well_e': 'platform_a', 'recess': 'platform_a', 'throat_w': 'service_tunnel'}
 
@@ -1423,15 +1423,9 @@ floor_grid(Z, 2600, 2400, 3800, 3184, -320, 'beam_yellow', step=400, w=10, borde
 drains(Z, [(2800, 2800), (3600, 2600)], -320)
 region('generator', Z, (2600, 2400, 3800, 3184), -320)
 
-# ---------------------------------------------------------------- 6 control room (2600,3200)-(3600,4000), -320..-32 + PaP alcove
+# ---------------------------------------------------------------- 6 control room (2600,3200)-(3600,4000), -320..-32
 Z = 'control_room'
 room(Z, 'control', (2600, 3200, 3600, 4000), -320, -32, 'control_neutral', 'conc_floor', 'deck_black')     # art pass 5: floor / wainscot / ceiling values apart
-room(Z, 'pap_alcove', (2976, 4016, 3232, 4160), -320, -112, 'control', 'diamond', 'conc_dark', skip=('south',))
-# reveal of the alcove opening through the 16-unit control-room wall: lintel underside and side reveals (sz2_seams:
-# the void showed between the wall face and the alcove ceiling)
-ceiling(Z, 'conc_dark', 2976, 4000, 3232, 4016, -112)
-B.wall_plane(Z, 'y', 2976, +1, 4000, 4016, -320, -112, 'conc_dark')
-B.wall_plane(Z, 'y', 3232, -1, 4000, 4016, -320, -112, 'conc_dark')
 DESKS = [(2640, 3520), (3260, 3520), (3300, 3760)]     # (x0, y0) of 240 x 80 signal desks; lane x 2880..3260 kept clear
 for x0_, y0_ in DESKS:                # cool fluorescents over the signal desks (desk light)
     strip_light(Z, x0_ + 56, y0_ + 32, x0_ + 184, y0_ + 48, -32, mat='lamp_cool')
@@ -1448,22 +1442,11 @@ for x0_, y0_ in DESKS:      # (g25) stock lab desks (decor block) instead of box
     B.collision_box((x0_ + 12, y0_ + 24, -320), (x0_ + 228, y0_ + 56, -285))
 decal_wall(Z, ART_HOOKS.key('evac_signal_diagram') or 'map_board', 'y', 3600 - 3.2, -1, 3600, -140, 320, 160)   # above the desk monitors, proud of the trim   # Station Zero evacuation / signal diagram when delivered
 sign(Z, 'sign_network_map', 'x', 4000, -1, 2800, -170, 256, 128)
-B.wall_plane(Z, 'x', 4150, -1, 2976, 3232, -320, -112, 'conc_dark', collide=False)     # (RC2 item 3) was 'rollup': the tan backing seen through the closed shutter
 ceiling_grid(Z, 2600, 3200, 3600, 4000, -32, step_y=250, depth=16, mat='steel_trim')
 for x_ in (2980, 3300):
     B.box((x_ - 7, 3200, -48), (x_ + 7, 4000, -32), 'steel_trim', Z, collide=False, nav=False)
 floor_grid(Z, 2600, 3200, 3600, 4000, -320, 'steel_trim', step=333, w=10, border=20, skip=tuple((x0_, y0_, x0_ + 240, y0_ + 80) for x0_, y0_ in DESKS))
 region('control', Z, (2600, 3200, 3600, 4000), -320)
-region('pap_alcove', Z, (2976, 4016, 3232, 4160), -320)
-# (RC4, review: the Pack-a-Punch alcove read empty) a bay plate over the opening on the control-room side, a hazard stripe at
-# the threshold, cable and conduit runs along the side walls under the ceiling; all non-colliding, no new light; the strip
-# y 4016..4060 in front of the machine and its footprint (x 3060..3148, y 4060..4150) stay clear
-sign(Z, 'sign_pap', 'x', 4000, -1, 3104, -88, 200, 50)
-floor(Z, 'yellow_grip', 2976, 4016, 3232, 4028, -320 + 0.3, tone='dark', collide=False)
-for x0_, x1_ in ((2976, 2982), (3226, 3232)):
-    B.box((x0_, 4020, -134), (x1_, 4156, -128), 'steel_trim', Z, collide=False, nav=False)          # cable tray
-    B.box((x0_, 4020, -124), (x1_, 4156, -119), 'metal_black', Z, collide=False, nav=False)         # conduit above it
-    B.box((x0_, 4150, -320), (x1_, 4156, -124), 'metal_black', Z, collide=False, nav=False)         # drop to the floor in the back corner
 
 # ---------------------------------------------------------------- 7 service tunnel (L) z -384..-96
 Z = 'service_tunnel'
@@ -2408,11 +2391,6 @@ if os.environ.get('IWZ_NO_DECOR') != '1':
     decor(Zh, BENCH, 52, 3262, 0, 264, BENCH_CLIP[0])
     decor(Zh, 'trashbin_01_iw6', 250, 3236, 0, 0, (11, 13, 22))
     decor(Zh, 'trashbin_01_iw6', -460, 4380, 0, 0, (11, 13, 22))
-    # (RC4, review: PaP alcove empty) switchgear on both side walls, clear of the machine (x 3060..3148) and the front strip
-    decor(Zc, 'emergency_shutoff_sm_panel_01', 2978, 4090, -260, 0)         # west wall (x 2976), faces +x
-    decor(Zc, 'emergency_shutoff_sm_panel_01', 3230, 4090, -260, 180)       # east wall (x 3232), faces -x
-    decor(Zc, 'electrical_control_panel_01', 2978, 4128, -320, 0)
-    decor(Zc, 'electrical_control_panel_01', 3230, 4128, -320, 180)
 
 # ---------------------------------------------------------------- reveals and portals of every opening
 for o in OPENINGS:
@@ -2808,14 +2786,9 @@ WHEELS = [   # (template scriptable, origin, yaw, zone): first = start location
     ('pf162_auto1', (-2100, 3000, -384), 180, 'platform_b'),
 ]
 POWER = {'origin': (3500, 2420, -270), 'yaw': 90, 'zones': list(ZONES), 'switch_model': 'icbm_electricpanel_switch_02'}
-PAP = {'origin': (3104, 4100, -320), 'yaw': 270, 'zone': 'control_room'}
-QUEST = {   # Pack-a-Punch relays (gameplay agent: logic), trap and EE spots (data only)
-    'relay_1': {'zone': 'platform_a', 'origin': (768, 2027, -300), 'yaw': 90, 'model_yaw': 0},          # column north face
-    'relay_2': ({'zone': 'platform_b', 'origin': (PB_BOOTH[0], PB_BOOTH[1] - 64, -340), 'yaw': 270, 'model_yaw': 180}   # front of the BO3 booth
-                if 'iwz_zm_zod_ticket_booth' in PORTED else
-                {'zone': 'platform_b', 'origin': (-3390, 3211, -340), 'yaw': 90, 'model_yaw': 0}),        # old booth wall
-    'relay_3': {'zone': 'generator_room', 'origin': (3660, 3180, -260), 'yaw': 270, 'model_yaw': 180},  # wall between the stock control panels
-    'pap_shutter': {'zone': 'control_room', 'origin': (3104, 4010, -320), 'yaw': 270, 'size': (256, 208)},
+# (B1, 27 Nov 2026) no Pack-a-Punch in the generated base: the machine (weapon_upgrade struct, relocated pap_machine), its
+# alcove, shutter and the three-relay quest left the generator; the Terminus section declares the machine (PLAN decision 4)
+QUEST = {   # trap and EE spots (data only)
     'trap_third_rail_fusebox': {'zone': 'platform_a', 'origin': (-768, 1975, -300), 'yaw': 270, 'model_yaw': 180},
     'trap_third_rail_volume': {'zone': 'platform_a', 'box': (-2400, 1200, -384, 2600, 1600, -350)},
     'teddy_bear': {'zone': 'platform_a', 'origin': TEDDY_SPOT, 'yaw': 90, 'note': 'hero car floor, far track-side anchor, behind a duffel bag' if TRAIN else 'platform floor by the luggage'},
@@ -3080,8 +3053,6 @@ for o in OPENINGS:
         continue
     p_ = sorted(o['walls'].values())
     door_blockers(o['scriptable'], o['axis'], (p_[0] + p_[1]) / 2, o['a'], o['b'], o['z0'], o['z1'])
-_pa = OP['a_control_pap']
-door_blockers('iwz_pap_shutter', 'x', 4008, _pa['a'], _pa['b'], _pa['z0'], _pa['z1'])
 layout['blockers'] = BLOCKERS
 DOOR_DRESS = []
 if KIT and os.environ.get('IWZ_DOOR_DRESS', '1') == '1':
@@ -3141,10 +3112,6 @@ for kind, donor, body, origin, yaw, zone, pid in PERKS_P1:
     else:
         ents.append(ent(classname='script_model', targetname='iwz_perk_body', noteworthy=kind, model=body, origin=fmt(origin), angles='0 %g 0' % yaw))
         layout['interactions'][-1]['body'] = body
-istruct('weapon_upgrade', PAP['origin'], PAP['yaw'], parameters='requires_power', target='iwz_pap_spot')
-relocations.append('pap_machine 0 %g %g %g %g' % (PAP['origin'][0], PAP['origin'][1] + 10, PAP['origin'][2], PAP['yaw']))
-ents.append(ent(classname='script_struct', targetname='iwz_pap_spot', origin=fmt((PAP['origin'][0], PAP['origin'][1] + 20, PAP['origin'][2] + 14)),
-                angles='0 %g 0' % PAP['yaw'], model='weapon_e_ak47_rare_wm'))
 for scriptable, origin, yaw, zone in WHEELS:
     relocations.append('%s 0 %g %g %g %g' % (scriptable, origin[0], origin[1], origin[2], yaw))
     # spinner struct (stock offset: 55.6 above the base, 8 units in front) and an out_of_order stand-in
@@ -3161,17 +3128,9 @@ for scriptable, origin, yaw, zone in WHEELS:
 for name, q in QUEST.items():
     if 'origin' in q:
         ents.append(ent(classname='script_struct', targetname='iwz_' + name, origin=fmt(q['origin']), angles='0 %g 0' % q['yaw']))
-    if 'model_yaw' in q and not name.startswith('relay_'):
+    if 'model_yaw' in q:
         ents.append(ent(classname='script_model', targetname='iwz_' + name + '_model', model='fac_sort_machine_fuse_box_set_01',
                         origin=fmt(q['origin']), angles='0 %g 0' % q['model_yaw']))
-    if name.startswith('relay_'):
-        # kit relay: wall panel icbm_electricpanel9_off (red state) / _on (green state) with a red beacon on top;
-        # the panel's front is its local +x, the wall face is the quest origin
-        o_ = q['origin']
-        ents.append(ent(classname='script_model', targetname='iwz_' + name + '_panel', model='icbm_electricpanel9_off',
-                        origin=fmt((o_[0], o_[1], o_[2] + 40)), angles='0 %g 0' % q['yaw']))
-        ents.append(ent(classname='script_model', targetname='iwz_' + name + '_beacon', model='beacon_light_plasticcase_red_on',
-                        origin=fmt((o_[0], o_[1], o_[2] + 54)), angles='0 %g 0' % q['yaw']))
 if POST:    # Capsule Post: the markers and the spawn volumes post.gsc reads (sz_modules.py fills its tables), the model it spawns kept loaded
     layout['markers'] = [{'kind': 'hatch', 'id': i_, 'zone': z_, 'origin': list(o_), 'yaw': y_} for i_, z_, o_, y_ in POST_HATCHES] + \
                         [{'kind': 'post_lever', 'id': POST_LEVER[0], 'zone': POST_LEVER[1], 'origin': list(POST_LEVER[2]), 'yaw': POST_LEVER[3]}]
@@ -3195,15 +3154,9 @@ for f_ in FLICKER:    # flickering fluorescent: the lit model, swapped with the 
 for f_ in POWER_FIXTURES:    # IWZ_DARK: power fittings, unlit until their bank comes on (cp_iwz_darkness.gsc)
     ents.append(ent(classname='script_model', targetname='iwz_power_fixture', model=f_['off'], origin=fmt(f_['origin']),
                     angles='0 %g 0' % f_['yaw'], noteworthy='%s|%s|%s' % (f_['zone'], f_['off'], f_['on'])))
-for m_ in (('icbm_electricpanel9_on', 'beacon_light_plasticcase_red_off', 'mp_dart_lightfluo') +
+for m_ in (('mp_dart_lightfluo',) +
            (('mp_dart_lightfluo_on', 'clk_wall_light_01', 'clk_wall_light_01_on') if DARK else ())):      # swapped models: keep them loaded
     ents.append(ent(classname='script_model', model=m_, origin='0 0 -3000', angles='0 0 0'))
-# PaP shutter: two rolling steel gates (stock gate_warehouse_refinery_01, 156 x 12 x 186, origin at its corner) in the
-# arch between the control room and the PaP alcove, raised by the relay quest; collision from door blockers below
-PAP_ARCH = OP['a_control_pap']
-for gx in (PAP_ARCH['a'] - 28, PAP_ARCH['a'] - 28 + 156):
-    ents.append(ent(classname='script_model', targetname='iwz_pap_shutter', model='gate_warehouse_refinery_01',
-                    origin=fmt((gx, 4002, PAP_ARCH['z0'])), angles='0 0 0'))
 # IWZ_SMODELS=1: template-zone decor becomes compiled static models (smodels.txt, x64-zt codex/iwzmap-static-models
 # a99270f merged in door-brushmodels bd5e7fb): drawn and bullet-blocking without entity cost; player / zombie blocking
 # stays with the decor clip boxes (world collision + nav cut). Foreign-zone kit models are static too (see KIT_SCRIPT_MODELS below).
@@ -3497,8 +3450,6 @@ for r in REGIONS:
     probe_lines.append(ROWS.fixture_probe_row(r['zone'], cx, cy, cz + 40))
 NL = chr(10)
 fdoor_lines = [ROWS.fixture_door_row(d) for d in DOORS]
-fdoor_lines.append(ROWS.fixture_door_row({'name': 'pap_shutter', 'axis': 1, 'plane': 4008, 'lo': OP['a_control_pap']['a'], 'hi': OP['a_control_pap']['b'],
-                                          'z0': OP['a_control_pap']['z0'], 'z1': OP['a_control_pap']['z1']}))
 fx = fx.replace('//@DOORS@', NL.join(fdoor_lines))
 fx = fx.replace('//@VIEWS@', NL.join(view_lines)).replace('//@FXVIEWS@', NL.join(fxv_lines)).replace('//@WALK@', NL.join(walk_lines)).replace('//@WALKCAP@', NL.join(wc_lines)).replace('//@PROBES@', NL.join(probe_lines))
 open(os.path.join(out, 'iwzmap_sz2_local.gsc'), 'w', newline=NL).write(fx)
