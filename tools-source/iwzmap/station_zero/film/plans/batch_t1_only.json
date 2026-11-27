@@ -1,0 +1,17 @@
+{
+  "schema": "iw7.gamelab-batch/1",
+  "runs": [
+    {
+      "name": "t1_buy",
+      "plan": "t1_buy.json",
+      "usermap": "C:/studio-data/sz/film/terminus/um/cp_iwz",
+      "library_dir": "C:/Users/ezvalo/Documents/IW7-Products/worktrees/sdk-film-terminus/tools-source/iwzmap/station_zero/film/plans/lib"
+    },
+    {
+      "name": "t1_trip",
+      "plan": "t1_trip.json",
+      "usermap": "C:/studio-data/sz/film/terminus/um/cp_iwz",
+      "library_dir": "C:/Users/ezvalo/Documents/IW7-Products/worktrees/sdk-film-terminus/tools-source/iwzmap/station_zero/film/plans/lib"
+    }
+  ]
+}

@@ -30,6 +30,12 @@ init()
     t.pause_seconds = 0;
     t.refused = 0;
     t.events = 0;
+    // the Terminus's own vision (T1, 27 Nov 2026): the station's lit vision (auto exposure -2.5 EV) keeps a bright paper room at a mean luma of 0.13.
+    // The map document writes a darkness variant under this spare stock vision name (settings.build.darkness.args --variants/--alias; custom names do
+    // not apply: darkness NOTES dk4/dk6). A map whose document does not alias it sets level.iwz_terminus_vision = "" before init: no vision change.
+    t.vision = "cp_frontend";
+    if ( isdefined( level.iwz_terminus_vision ) )
+        t.vision = level.iwz_terminus_vision;
     t.markers = terminus_markers();
     level thread terminus_main();
 }
@@ -101,7 +107,15 @@ terminus_main()
         wait 0.5;
     t.state = "idle";
     t.cab sethintstring( "Press ^3[{+activate}]^7 to depart for the Terminus" );     // PLACEHOLDER COPY
-    terminus_log( "ARMED" );
+    // the projector runs once the trip is armed: reels turning, door open (as cp_final does at init, cp_final_weapon_upgrade.gsc:37-38; cp_zmb only after
+    // its alien fuses, cp_zmb_ufo.gsc:1185-1196). The stock purchase sequence drives the door itself and ends at open_idle.
+    mach = getent( "pap_machine", "targetname" );
+    if ( isdefined( mach ) )
+    {
+        mach setscriptablepartstate( "reels", "on" );
+        mach setscriptablepartstate( "door", "open_idle" );
+    }
+    terminus_log( "ARMED machine=" + isdefined( mach ) );
 }
 
 terminus_sound( ent, alias )
@@ -272,6 +286,11 @@ terminus_cross( dest, angles, seconds, outward )
     self setorigin( g );
     self setplayerangles( angles );
     self thread scripts\cp\zombies\zombie_afterlife_arcade::remove_white_screen( 0.4 );
+    if ( outward && level.iwz_terminus.vision != "" )
+    {
+        self.iwz_terminus_vision = 1;
+        self visionsetnakedforplayer( level.iwz_terminus.vision, 0.4 );
+    }
     if ( !outward )
         terminus_release( self );
     terminus_log( "CROSS player=" + self.name + " out=" + outward + " at=" + self.origin + " downed=" + terminus_downed( self ) );
@@ -285,6 +304,20 @@ terminus_release( p )
     p.iwz_busy = undefined;
     p.is_off_grid = undefined;
     p scripts\cp\utility::removedamagemodifier( "iwz_terminus", 0 );
+    terminus_vision_restore( p );
+}
+
+// back to the station's own vision: the dark one while the darkness module holds it (level.vision_set_override), else the lit one it released to
+// (the map's own vision, or the private test dvar paris_iwz_lit_vision, as cp_iwz_darkness.gsc iwz_dark_vision_release)
+terminus_vision_restore( p )
+{
+    if ( !isdefined( p.iwz_terminus_vision ) )
+        return;
+    p.iwz_terminus_vision = undefined;
+    v = getdvar( "paris_iwz_lit_vision" );
+    if ( isdefined( level.vision_set_override ) )
+        v = level.vision_set_override;
+    p visionsetnakedforplayer( v, 0.5 );
 }
 
 // while every player on his feet is at the Terminus the round's spawning pauses (stock level.zombies_paused); it resumes
@@ -320,6 +353,8 @@ terminus_pause_watch()
         }
         else if ( !want && t.paused )
             terminus_unpause( t0 );
+        if ( t.paused )
+            terminus_hold_zombies();
         wait 0.5;
     }
     if ( t.paused )
@@ -333,6 +368,21 @@ terminus_unpause( t0 )
     t.paused = 0;
     t.pause_seconds += int( ( gettime() - t0 ) / 1000 );
     terminus_log( "PAUSE off alive=" + terminus_alive_zombies() + " paused_s=" + t.pause_seconds );
+}
+
+// while our pause holds, the zombies alive wait instead of being recycled: the stock far-zombie cleanup (zombies_spawning.gsc, the loop that kills
+// agents far from every player) skips one whose delay_cleanup_until is in the future (:3560). Measured 27 Nov 2026 (t1_trip, compressed time): without
+// this the four zombies alive at arrival were gone 20 to 35 s into the stay. A rolling 2 s hold, renewed each tick: it lapses by itself after the pause.
+terminus_hold_zombies()
+{
+    if ( !isdefined( level.spawned_enemies ) )
+        return;
+    until = gettime() + 2000;
+    foreach ( z in level.spawned_enemies )
+    {
+        if ( isdefined( z ) && isalive( z ) && ( !isdefined( z.delay_cleanup_until ) || z.delay_cleanup_until < until ) )
+            z.delay_cleanup_until = until;
+    }
 }
 
 terminus_alive_zombies()

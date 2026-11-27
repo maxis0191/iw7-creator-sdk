@@ -1,0 +1,36 @@
+{
+ "schema": "iw7.gamelab-batch/1",
+ "runs": [
+  {
+   "name": "t1_buy",
+   "plan": "t1_buy.json",
+   "usermap": "C:/studio-data/sz/film/terminus/um/cp_iwz",
+   "library_dir": "C:/Users/ezvalo/Documents/IW7-Products/worktrees/sdk-film-terminus/tools-source/iwzmap/station_zero/film/plans/lib"
+  },
+  {
+   "name": "t1_trip",
+   "plan": "t1_trip.json",
+   "usermap": "C:/studio-data/sz/film/terminus/um/cp_iwz",
+   "library_dir": "C:/Users/ezvalo/Documents/IW7-Products/worktrees/sdk-film-terminus/tools-source/iwzmap/station_zero/film/plans/lib"
+  },
+  {
+   "name": "sz8_doors",
+   "plan": "C:/studio-data/sz/film/b1/plans/sz8_doors.json",
+   "usermap": "C:/studio-data/sz/film/terminus/um/cp_iwz",
+   "library_dir": "C:/studio-data/sz/film/b1/plans/lib"
+  },
+  {
+   "name": "sz8_power_perks",
+   "plan": "C:/studio-data/sz/film/b1/plans/sz8_power_perks.json",
+   "usermap": "C:/studio-data/sz/film/terminus/um/cp_iwz",
+   "library_dir": "C:/studio-data/sz/film/b1/plans/lib"
+  },
+  {
+   "name": "sz8_rounds",
+   "plan": "C:/studio-data/sz/film/b1/plans/sz8_rounds.json",
+   "usermap": "C:/studio-data/sz/film/terminus/um/cp_iwz",
+   "library_dir": "C:/studio-data/sz/film/b1/plans/lib"
+  }
+ ]
+}
+

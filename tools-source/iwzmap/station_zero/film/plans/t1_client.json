@@ -1,0 +1,115 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "t1_client",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "libraries": [
+  "szt1",
+  "szaccept"
+ ],
+ "about": "T1 real time, a joined client: the trip from the cab, a frame of the player arriving (the Terminus vision applied by the module), then the player at the machine with a weapon and points: the UI dump and a frame of the use prompt (the map placeholder string, no Pack-a-Punch).",
+ "steps": [
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "call",
+   "fn": "sz_power_direct",
+   "args": [
+    "power",
+    20
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 6
+  },
+  {
+   "do": "tp",
+   "at": [
+    265.5,
+    1488,
+    -320
+   ],
+   "yaw": 180,
+   "snap": true
+  },
+  {
+   "do": "use",
+   "name": "cab",
+   "ent": "iwz_terminus_cab",
+   "near": [
+    265.5,
+    1488,
+    -320
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 9
+  },
+  {
+   "do": "call",
+   "fn": "t1_term",
+   "args": [
+    "arr"
+   ],
+   "s": 1
+  },
+  {
+   "do": "client_frame",
+   "name": "t1_arrive",
+   "pause": 2
+  },
+  {
+   "do": "take",
+   "give": "iw7_fhr_zm"
+  },
+  {
+   "do": "money",
+   "value": 20000
+  },
+  {
+   "do": "tp",
+   "at": [
+    -10244.0,
+    -4640.0,
+    0.0
+   ],
+   "yaw": 0
+  },
+  {
+   "do": "look",
+   "yaw": 0,
+   "pitch": 12
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "ui",
+   "name": "t1_prompt"
+  },
+  {
+   "do": "client_frame",
+   "name": "t1_prompt",
+   "pause": 2
+  },
+  {
+   "do": "expect",
+   "that": "probe:arr.inside",
+   "eq": 1,
+   "why": "the joined player is in the Terminus after the trip"
+  },
+  {
+   "do": "expect",
+   "that": "probe:arr.state",
+   "eq": "away",
+   "why": "the stay has begun"
+  }
+ ]
+}
