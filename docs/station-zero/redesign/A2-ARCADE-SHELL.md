@@ -58,7 +58,7 @@ greenish grid (kept: the brief's half-dead ceiling).
   light boxes and shop glows readable.
 - Round 3: lit panels `w/emissive_light_panel_white` and greenish soft spots; floor gloss 205..235. Pass 4: `pass4\sheet_lit_*`,
   `pass4\sheet_off_*`, side by side with the target `pass4\compare_east_long.jpg`. The panels read brighter; the floor's sheen did not
-  visibly change (the session's lightmap is a draft bake).
+  visibly change (the session's lightmap is a draft bake). Pass 4's dark half was not shot: my start waited for a client slot held by another worker's session and I cancelled it; the latest dark frames are pass 3's (the document then differed by the round 3 panel material and floor gloss only).
 
 ### What still differs from the target (pass 4, honest)
 1. The shops are empty: the goods are the A3 workers' (anchors.json). The target's fronts are full and lit by their goods.
