@@ -23,18 +23,9 @@ KIT = {'wall': 'w/dt_tile_ceramic_white', 'damaged twin': 'w/dt_tile_ceramic_whi
 
 
 def load(folder):
-    mj = json.load(open(os.path.join(folder, 'map.json'), encoding='utf-8'))
-    objs = []
-    for layer in mj['layers']:
-        p = os.path.join(folder, 'layers', layer + '.json')
-        if not os.path.isfile(p):
-            continue
-        txt = open(p, encoding='utf-8').read().strip()
-        if txt.startswith('['):
-            objs += json.loads(txt)
-        else:
-            objs += [json.loads(line) for line in txt.splitlines() if line.strip()]
-    return objs
+    sys.path.insert(0, os.environ.get('STUDIO_ROOT', r'C:\studio'))
+    from studio import Map
+    return [dict(o) for o in Map.load(folder).objects()]
 
 
 def hue(c):

@@ -1,4 +1,14 @@
-# A2: the Underpass Arcade shell (worker A2, 27 Nov 2026) - PAUSED
+# A2: the Underpass Arcade shell (worker A2, 27 Nov 2026)
+
+## Resumed (27 Nov, after the pause)
+- `ok: false` had one cause: three back-room spawners 18 units from a side wall stood on no navigation cell (`emit.problems`). They now stand
+  34 from it, facing along the room (the emergence carries a zombie 62.5 forward; the rooms are 92 deep). `check`: ok, reach 61 of 61.
+- `WALKABLE_OFF_NAV` (players can stand there, zombies cannot reach them): bisected by dropping clip boxes one at a time. Copy Stop: the
+  service counter and the pigeonholes on the partition left a 56-unit corridor without nav cells; the pigeonholes moved to the east wall.
+  Needle Drop: the record bins' clip island.
+
+---
+(state at the pause, kept for the record)
 
 **State: pass 1 (grey architecture and gameplay) written and checked offline; no live session was run, no frame exists yet.**
 Passes 2 to 4 (materials, joinery, light, pictures) are already in the builder as code, but nothing is proven in the game.

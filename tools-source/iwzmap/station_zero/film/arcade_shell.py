@@ -93,6 +93,7 @@ UNITS = {   # name: (x0, x1, title)
 }
 SHUTTER_STOP = {'needle_drop': 0.25, 'copy_stop': 0.0, 'hole_nine': 0.0, 'heel_key': 0.5}    # share of the opening the curtain covers
 LIGHT_K = float(os.environ.get('A2_LIGHT_K', '1.0'))
+RADIUS_K = float(os.environ.get('A2_RADIUS_K', '1.6'))
 
 REPORT = {'standins': [], 'art': [], 'fallbacks': [], 'refused': []}
 ANCHORS = []
@@ -137,6 +138,7 @@ def fix(m, kind, at, facing=0.0, role='hall', **kw):
     """a stock fixture with its light, always baked and in the emergency group (PLAN decision 3: no runtime light)"""
     if 'intensity' in kw:
         kw['intensity'] = kw['intensity'] * LIGHT_K
+    kw['radius'] = kw.get('radius', 1.0) * RADIUS_K      # pass 1 score: the fixture radii as given gave a median of 128 (rule 10: 175 or more)
     ids = B.fixture(m, kind, at, facing, group='emergency', bake='baked', layer='lights', **kw)
     for lid in ids[1:]:
         LIGHTS.append((lid, role))
@@ -349,7 +351,7 @@ def partition(m, name, x0, x1, door_x, y=PART_Y, mat=None, door=True):
 def back_spawners(m, name, x0, x1, n, y=4538.0):
     """spawners of a back room face along its length (x): the emergence carries a zombie 62.5 forward and the room is only 92 deep
     (round 1 check: SPAWN_CARRY_BLOCKED for every spawner facing the partition)"""
-    xs = [(x0 + 34.0, 0.0), (x1 - 34.0, 180.0), ((x0 + x1) / 2 - 20.0, 0.0)][:n]
+    xs = [(x0 + 50.0, 0.0), (x1 - 50.0, 180.0), ((x0 + x1) / 2 - 20.0, 0.0)][:n]      # 34 from the side wall in each case (round 2 check: at 18 the spawner stood on no nav cell)
     for k, (sx, yaw) in enumerate(xs):
         B.spawner(m, (sx, y, 0.0), yaw, layer='gameplay', id='spawn_%s_%d' % (name, k + 1))
 
@@ -417,19 +419,19 @@ def needle_drop(m):
     rbox(m, 'nd_riser', [door_x1 + 2.0, gy - 3.0, 0.0, a1, gy + 3.0, 20.0], MAT['dark'])
     glazing(m, 'nd_win', door_x1 + 2.0, a1, gy, 20.0, 138.0, fr, mull=[door_x1 + 2.0 + (a1 - door_x1 - 2.0) / 2])
     rbox(m, 'nd_transom', [a0, gy - 2.0, 138.0, a1, gy + 2.0, OPEN_Z], fr)
-    rbox(m, 'nd_plinth', [door_x1 + 8.0, gy + 4.0, 0.0, a1 - 6.0, gy + 40.0, 22.0], MAT['alu_black'])
-    solid(m, 'nd_plinth', [door_x1 + 8.0, gy + 4.0, 0.0, a1 - 6.0, gy + 40.0, 22.0])
+    rbox(m, 'nd_plinth', [door_x1 + 8.0, gy + 4.0, 0.0, a1 - 6.0, gy + 30.0, 22.0], MAT['alu_black'])
+    solid(m, 'nd_plinth', [door_x1 + 8.0, gy + 4.0, 0.0, a1 - 6.0, gy + 30.0, 22.0])
     rbox(m, 'nd_plinth_lip', [door_x1 + 8.0, gy + 3.4, 18.0, a1 - 6.0, gy + 4.0, 22.0], SHOP_MAT[nm]['accent'])
-    anchor('needle_drop.window_plinth', [door_x1 + 8.0, gy + 4.0, 22.0, a1 - 6.0, gy + 40.0, 110.0], 's', 'sleeves on stands, a Roll-In poster: the window display (goods)')
-    anchor('needle_drop.window_rack_1', [door_x1 + 8.0, gy + 40.0, 0.0, a1 - 6.0, gy + 52.0, 96.0], 's', 'a rack of sleeves behind the plinth, faces out')
+    anchor('needle_drop.window_plinth', [door_x1 + 8.0, gy + 4.0, 22.0, a1 - 6.0, gy + 30.0, 110.0], 's', 'sleeves on stands, a Roll-In poster: the window display (goods)')
+    anchor('needle_drop.window_rack_1', [door_x1 + 8.0, gy + 22.0, 22.0, a1 - 6.0, gy + 30.0, 96.0], 's', 'a rack of sleeves behind the plinth, faces out')
     # sleeve wall: a built-in carcass the length of the west wall
     zs = shelving(m, 'nd_sleeve_wall', [x0 + 16.0, Y1 + 110.0, 0.0, x0 + 34.0, PART_Y - 8.0, 120.0], 3, SHOP_MAT[nm]['join'], 'e')
     for k, z in enumerate(zs):
         anchor('needle_drop.sleeve_wall_%d' % (k + 1), [x0 + 18.0, Y1 + 110.0, z, x0 + 34.0, PART_Y - 8.0, z + 26.0], 'e', 'record sleeves face out, one row a board')
     rbox(m, 'nd_wall_band', [x0 + 16.0, Y1 + 16.0, 124.0, x0 + 16.6, PART_Y, 132.0], SHOP_MAT[nm]['accent'])
     # browser bins: two empty troughs on legs down the middle
-    for k, bxc in enumerate((cx - 40.0, cx + 40.0)):
-        b = [bxc - 20.0, Y1 + 70.0, 0.0, bxc + 20.0, Y1 + 150.0, 30.0]
+    for k, bxc in enumerate((cx - 40.0, cx)):                   # one browser island of two troughs side by side, 54 clear north and south (round 3 bisect: plinth + island cut the east half off the nav)
+        b = [bxc - 20.0, Y1 + 94.0, 0.0, bxc + 20.0, Y1 + 126.0, 30.0]
         rbox(m, 'nd_bin_%d' % k, [b[0], b[1], 0.0, b[3], b[4], 18.0], SHOP_MAT[nm]['join'])
         solid(m, 'nd_bin_%d' % k, b)
         for s, (ya, yb) in enumerate(((b[1], b[1] + 1.5), (b[4] - 1.5, b[4]))):
@@ -443,7 +445,7 @@ def needle_drop(m):
     anchor('needle_drop.counter_top', [x1 - 46.0, Y1 + 80.0, 40.0, x1 - 20.0, Y1 + 170.0, 70.0], 'w', 'till, the cassette carousel, rental tapes, the empty tape case of the party tape')
     # the jukebox closing the long view, against the partition, glowing
     jy = PART_Y - 0.5
-    B.prop(m, 'cp_town_jukebox', (cx + 20.0, jy, 0.0), yaw=270.0, layer='fronts', id='nd_jukebox',
+    B.prop(m, 'cp_town_jukebox', (cx + 80.0, jy, 0.0), yaw=270.0, layer='fronts', id='nd_jukebox',
            emissive={'color': [1.0, 0.55, 0.2], 'strength': 1.4})
     REPORT['fallbacks'].append('nd_jukebox: stock cp_town_jukebox, static and silent (canon jukebox not usable from a layer)')
     partition(m, nm, x0, x1, x0 + 40.0)
@@ -452,7 +454,7 @@ def needle_drop(m):
     fix(m, 'pendant_warm', (cx - 40.0, Y1 + 110.0, UNIT_H), role=nm, intensity=1.15, radius=0.75)
     fix(m, 'pendant_warm', (cx + 50.0, Y1 + 110.0, UNIT_H), role=nm, intensity=1.15, radius=0.75)
     fix(m, 'spot_can', ((door_x1 + a1) / 2, gy + 24.0, UNIT_H), role=nm, color=(1.0, 0.5, 0.16), intensity=1.4, radius=0.7)
-    lamp(m, 'light_nd_jukebox', (cx + 20.0, jy - 30.0, 40.0), nm, color=(1.0, 0.52, 0.18), radius=190.0, intensity=0.9)
+    lamp(m, 'light_nd_jukebox', (cx + 80.0, jy - 30.0, 40.0), nm, color=(1.0, 0.52, 0.18), radius=190.0, intensity=0.9)
     # the fascia's marquee: two bulb strips under the fascia
     for k, dx in enumerate((-75.0, 75.0)):
         fix(m, 'bulb_strip', (cx + dx, Y1 - 6.0, (HOUSING[0] + HOUSING[1]) / 2), 270.0, role=nm, kelvin=2000, intensity=0.75, radius=1.0)
@@ -502,15 +504,16 @@ def copy_stop(m):
         rbox(m, 'cs_copier_%d_bar' % k, [ccx - 16.0, cy - 15.3, 37.0, ccx + 16.0, cy - 13.0, 38.2], 'w/emissive_light_panel_green')
         rbox(m, 'cs_copier_%d_lid' % k, [ccx - 18.0, cy - 12.0, 38.4, ccx + 18.0, cy + 13.0, 40.0], 'w/metal_painted_wall_panel_04')
         rbox(m, 'cs_copier_%d_tray' % k, [ccx + 22.0, cy - 9.0, 20.0, ccx + 32.0, cy + 9.0, 21.5], MAT['alu_white'])
-        lamp(m, 'light_cs_copier_%d' % k, (ccx, cy - 24.0, 40.0), nm, color=(0.72, 1.0, 0.8), radius=180.0, intensity=0.7)
+        lamp(m, 'light_cs_copier_%d' % k, (ccx, cy - 24.0, 40.0), nm, color=(0.72, 1.0, 0.8), radius=180.0, intensity=0.35)      # an accent: the blue-white tubes lead (pass 1 score: green led)
         anchor('copy_stop.copier_%d_top' % (k + 1), [ccx - 18.0, cy - 12.0, 40.0, ccx + 18.0, cy + 13.0, 60.0], 's', 'an original left on the glass, paper on the tray')
     REPORT['fallbacks'].append('cs_copier_*: authored static copier bodies; the green-white bar is a fixed emissive strip and a baked light (no moving scan)')
     # the service counter and the pigeonholes of uncollected jobs on the back wall
-    counter(m, 'cs_counter', [cx + 40.0, Y1 + 96.0, 0.0, cx + 220.0, Y1 + 122.0, 40.0], MAT['alu_white'], 'w/zmb_brushed_metal_01_blue', kick=MAT['dark'])
-    anchor('copy_stop.counter_top', [cx + 40.0, Y1 + 96.0, 40.0, cx + 220.0, Y1 + 122.0, 64.0], 's', 'the tray of uncollected jobs, the forty-copy job (Strand memo), programmes of the gala')
-    zs = shelving(m, 'cs_pigeonholes', [cx + 60.0, PART_Y - 22.0, 0.0, cx + 220.0, PART_Y, 96.0], 3, MAT['alu_white'], 's')
+    counter(m, 'cs_counter', [cx + 40.0, Y1 + 76.0, 0.0, cx + 220.0, Y1 + 102.0, 40.0], MAT['alu_white'], 'w/zmb_brushed_metal_01_blue', kick=MAT['dark'])
+    anchor('copy_stop.counter_top', [cx + 40.0, Y1 + 76.0, 40.0, cx + 220.0, Y1 + 102.0, 64.0], 's', 'the tray of uncollected jobs, the forty-copy job (Strand memo), programmes of the gala')
+    pg = [x1 - 38.0, Y1 + 100.0, 0.0, x1 - 16.0, PART_Y - 8.0, 96.0]          # on the east wall north of the booth (round 3: on the partition it left a 56 corridor with no nav)
+    zs = shelving(m, 'cs_pigeonholes', pg, 3, MAT['alu_white'], 'w')
     for k, z in enumerate(zs):
-        anchor('copy_stop.pigeonholes_%d' % (k + 1), [cx + 62.0, PART_Y - 22.0, z, cx + 218.0, PART_Y, z + 20.0], 's', 'job envelopes, one per hole')
+        anchor('copy_stop.pigeonholes_%d' % (k + 1), [pg[0], pg[1] + 2.0, z, pg[3] - 2.0, pg[4] - 2.0, z + 20.0], 'w', 'job envelopes, one per hole')
     # the photo booth in the east corner (authored 1970s booth: blue body, chrome trim, a curtain opening on its west side, a strip slot)
     photo_booth(m, a1 - 2.0, gy + 22.0)
     partition(m, nm, x0, x1, cx - 32.0)
