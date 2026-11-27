@@ -1,0 +1,8 @@
+Use case: stylized-concept
+Asset type: a floor decal for a dream-like subway platform whose floor is made of computer printer paper; laid as a transparent decal, 24 x 24 inches.
+Primary request: one single pair of adult shoe prints (sole and separate heel, left and right foot side by side, toes pointing to the top), printed by a dot-matrix printer: made of round black ink dots on a regular grid, but this pair is fresh and wet: the dots are denser, blacker and glossy, some dots run into each other, a few small ink drips and smears at the toe edges.
+Style/medium: flat black wet ink, straight top-down view.
+Color palette: black ink only.
+Composition/framing: square 1:1, the pair centred, filling about 80 % of the height, nothing cropped.
+Background: transparent background (between the dots too).
+Avoid: paper, background colour, shadows, perspective, shoes themselves, text.

@@ -1,0 +1,8 @@
+Use case: photorealistic-natural
+Asset type: the hand-written card a shopkeeper taped to the inside of his shop's glass door on 31 December 1984; it will be a texture on a flat 10 x 7 inch quad.
+Primary request: a close, flat, straight-on scan of the card alone filling the whole frame edge to edge: an old cobbler: carefully printed capitals in soft pencil on a stiff buff manila shipping tag card with a reinforced punched hole at the left end, a few letters gone over twice. Two short strips of clear yellowed sticky tape across the top corners.
+Text (verbatim, three lines, exactly this line breaking): "GONE TO WATCH" / "THE 23:47 PULL OUT." / "SHOP OPENS 00:05".
+Spelling: G-O-N-E T-O W-A-T-C-H / T-H-E 2-3-:-4-7 P-U-L-L O-U-T-. / S-H-O-P O-P-E-N-S 0-0-:-0-5.
+Composition/framing: landscape 10:7, the card fills the canvas full-bleed, text large and legible, centred.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: glass, door, reflections, hands, any other words, signatures, dates beyond the given text.

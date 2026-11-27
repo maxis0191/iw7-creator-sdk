@@ -1,0 +1,10 @@
+Use case: ads-marketing
+Asset type: a back-lit advertising light box panel (a translucent printed duratrans sheet lit evenly from behind) on the wall of a city subway underpass, late 1984. It will be a fully glowing (emissive) texture on a flat 64 x 96 inch quad.
+Composition/framing: portrait 2:3, the printed sheet itself only, full-bleed to all four edges, flat and straight on.
+Lighting/mood: back-lit transparency: colours even, saturated and luminous, a little brighter in the middle; no reflections, no room lighting, no vignette from a camera.
+Constraints: no frame, no light-box housing, no wall, no perspective, no mock-up scene, no photo of a sign: only the flat artwork. Text exactly as given, spelled letter by letter, no other words, no small print, no logos of real companies.
+Primary request: an advertisement for a roller rink's New Year's Eve roller-disco party, in the graphic style of roller disco in its last year of fashion (1984): a mirror ball throwing star glints, a pair of white roller skates with orange wheels in mid-stride, satin ribbons of hot pink, violet and chrome-gold airbrushed speed stripes, a deep violet night ground.
+Text (verbatim): headline "ORBIT RINK ROLL-IN" in big chrome-and-pink airbrushed italic display letters with a star-glint, across the top third; below the image the line "SKATE INTO 1985  DEC 31 AT 8:00 PM" in clean white condensed capitals on one line.
+Spelling: O-R-B-I-T R-I-N-K R-O-L-L-hyphen-I-N. S-K-A-T-E I-N-T-O 1-9-8-5, D-E-C 3-1 A-T 8-colon-0-0 P-M.
+Color palette: deep violet, hot pink, chrome gold, white.
+Avoid: any text other than the two lines, people's faces, real brands.

@@ -1,0 +1,10 @@
+Use case: logo-brand
+Asset type: the trademark of a small copy and print shop opened in 1978 in a city subway underpass, run by a former draughtswoman; it will be printed on its sign, its receipts and its window. Mark only, no name.
+Primary request: a logo mark about duplication: a sheet of paper (a portrait page with a folded top-right corner and three or four thick horizontal lines standing for typed text) printed in solid process blue, and its copy printed again in the same shape but out of register, shifted up and to the right by about one eighth of the page width, drawn as a white page with a blue outline, so the two impressions overlap the way a misregistered two-colour print does. Where they overlap, the white copy sits on top.
+Change from the first version: it must not look like a computer "document" or "file" icon. It must look like a misprint: the page is printed twice with the press out of register, so every element appears doubled and offset diagonally: the page outline, the folded corner AND each of the text lines appear twice, once as the solid blue impression and once as the white impression shifted up-right, like the ghost of a bad photocopy. The offset is the idea of the mark and must be obvious.
+Style/medium: flat graphic design of 1978 to 1982, Swiss-influenced corporate mark of a small business, geometric, crisp, offset-printing logic, solid shapes.
+Color palette: exactly two flat colours: process blue #0085CA and paper white #FFFFFF. No other colour, no gradients, no shading, no texture.
+Composition/framing: square 1:1, the mark centred, filling about 75 % of the canvas, small even margin, nothing cropped.
+Background: transparent background.
+Constraints: must read when reduced to 64 pixels wide: big simple shapes, outlines at least 1/40 of the mark's width. Flat, straight on, no perspective, no frame, no mock-up.
+Avoid: any text, letters, numerals, words; background, ground shadow, drop shadow, 3D, gradients, extra colours.

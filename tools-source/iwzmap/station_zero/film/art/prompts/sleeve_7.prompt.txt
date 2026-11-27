@@ -1,0 +1,7 @@
+Use case: illustration-story
+Asset type: the front of a record sleeve (8-TRACK 1979) in the sleeve wall of a 1984 record shop; texture for a flat 12 x 12 inch quad.
+Primary request: an original record cover for the band "RAYMOND DEAN", album "TRUCK STOP RAIN", in this style: 1979 country: a photograph of a lonely truck stop diner at night in the rain with neon reflections, western slab lettering in cream.
+Text (verbatim): the artist "RAYMOND DEAN" and the title "TRUCK STOP RAIN", nothing else. Spelling: R-A-Y-M-O-N-D D-E-A-N / T-R-U-C-K S-T-O-P R-A-I-N.
+Composition/framing: square 1:1, the cover art full-bleed to all four edges, flat and straight on.
+Constraints: only those words; the cover alone: no vinyl disc showing, no shop, no wall, no shrink-wrap glare, no perspective, no frame drawn. Big bold shapes that still read when the cover is shown at 96 pixels.
+Avoid: real band names or logos, real record labels, barcodes, any other text.

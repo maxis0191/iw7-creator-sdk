@@ -1,0 +1,5 @@
+Use case: precise-object-edit
+Input images: Image 1: edit target, the painted one-sheet poster of the film STATION ZERO.
+Primary request: change only the hands of the square station clock hanging at the upper right, so the clock reads exactly 11:47: the long minute hand points at the 47-minute mark (two small minute ticks past the 9, slightly above the horizontal line through the 9); the short hour hand points almost at the 12, just before it (between the 11 and the 12, much closer to the 12). Keep the clock face, numerals, case and its painted style.
+Constraints: change only the two clock hands. Keep everything else exactly unchanged: the four painted figures and their faces, the train and its headlamps, the hands holding tickets, the colours, the paper wear and folds, the credit block, and the three texts exactly as they are: "A WILLARD WYLER PICTURE", "STATION ZERO", "NEXT STOP: NOWHERE.". Same framing, same aspect ratio 2:3 portrait.
+Avoid: any new object, any change of text, any change of the people.

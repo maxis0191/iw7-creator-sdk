@@ -1,0 +1,9 @@
+Use case: photorealistic-natural
+Asset type: hand-lettered price cards taped inside a 1984 shop window; one sheet holding four separate cards, a texture with transparent background on a flat 40 x 28 inch quad.
+Primary request: four pink and cream scalloped-edge cards hand-lettered in red and brown marker, round friendly capitals. The four cards laid out in a loose 2 x 2 grid, each slightly rotated a few degrees, not overlapping, each card two lines of large hand lettering:
+Text (verbatim): card 1: "PLAIN OR GLAZED" / "45 CENTS EACH" ; card 2: "COFFEE & CRULLER" / "$1.10 UNTIL NOON" ; card 3: "BOX OF ONE DOZEN" / "$4.80 ASSORTED" ; card 4: "FRESH POT ON NOW" / "REFILLS 25 CENTS".
+Spelling: P-L-A-I-N O-R G-L-A-Z-E-D / 4-5 C-E-N-T-S E-A-C-H ; C-O-F-F-E-E & C-R-U-L-L-E-R / $-1-.-1-0 U-N-T-I-L N-O-O-N ; B-O-X O-F O-N-E D-O-Z-E-N / $-4-.-8-0 A-S-S-O-R-T-E-D ; F-R-E-S-H P-O-T O-N N-O-W / R-E-F-I-L-L-S 2-5 C-E-N-T-S.
+Composition/framing: landscape 40:28, the four cards fill the canvas with small gaps between them.
+Background: transparent background around and between the cards.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: any other words, glass, a window frame, shadows outside the cards.

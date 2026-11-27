@@ -1,0 +1,10 @@
+Use case: ads-marketing
+Asset type: a back-lit advertising light box panel (a translucent printed duratrans sheet lit evenly from behind) on the wall of a city subway underpass, late 1984. It will be a fully glowing (emissive) texture on a flat 64 x 96 inch quad.
+Composition/framing: portrait 2:3, the printed sheet itself only, full-bleed to all four edges, flat and straight on.
+Lighting/mood: back-lit transparency: colours even, saturated and luminous, a little brighter in the middle; no reflections, no room lighting, no vignette from a camera.
+Constraints: no frame, no light-box housing, no wall, no perspective, no mock-up scene, no photo of a sign: only the flat artwork. Text exactly as given, spelled letter by letter, no other words, no small print, no logos of real companies.
+Primary request: a transit authority poster of December 1984 announcing the inauguration of a new automatic subway line, in a clean Swiss transit-authority style: a signal amber field; a very large round roundel, a black bold geometric numeral "0" on signal amber inside a black ring, centred in the upper half; beneath it a bold black horizontal band; a simple black silhouette of a modern subway train nose seen straight from the front, small, sitting on the band.
+Text (verbatim): headline "RIDE THE ZERO LINE" in a heavy clean transit grotesque, black capitals, two lines if needed, under the roundel; bottom line "HALCYON TRANSIT  DEC 31 AT 23:47" in smaller black grotesque capitals on one line.
+Spelling: R-I-D-E T-H-E Z-E-R-O L-I-N-E. H-A-L-C-Y-O-N T-R-A-N-S-I-T, D-E-C 3-1 A-T 2-3-colon-4-7.
+Color palette: signal amber #FFB300, black #111111, a little white only for the train headlamps.
+Avoid: any other words, people, real transit logos.

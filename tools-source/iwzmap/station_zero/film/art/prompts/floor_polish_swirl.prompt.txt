@@ -1,0 +1,6 @@
+Use case: photorealistic-natural
+Asset type: a mask texture, white marks on pure black, that will be turned into the alpha of a floor decal.
+Primary request: seen exactly from straight above: the circular swirl marks a rotary floor polisher leaves on a dusty floor where it has turned in place for a long time: a round area about 85 % of the image wide, made of many fine concentric and overlapping circular buffing arcs, brightest and densest in a ring two thirds out from the centre, softer at the centre where the pad sat, fading out irregularly at the outer edge into scattered faint arcs, with a few uneven streaks where the pad dragged.
+Style/medium: photographic texture, high detail, grayscale only: white and light grey marks on pure black #000000.
+Composition/framing: square 1:1, the circle centred, nothing cropped, black margins.
+Avoid: tiles, the machine, floor colour, shadows, perspective, text, any colour.

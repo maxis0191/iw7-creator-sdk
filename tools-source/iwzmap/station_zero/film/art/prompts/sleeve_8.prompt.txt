@@ -1,0 +1,7 @@
+Use case: illustration-story
+Asset type: the front of a record sleeve (45 RPM 1984) in the sleeve wall of a 1984 record shop; texture for a flat 12 x 12 inch quad.
+Primary request: an original record cover for the band "TONE WHEEL", album "TWO STEP TEST", in this style: 1984 electro: a black sleeve with a neon grid floor going to the horizon, a chrome turntable, a bold italic computer-style title.
+Text (verbatim): the artist "TONE WHEEL" and the title "TWO STEP TEST", nothing else. Spelling: T-O-N-E W-H-E-E-L / T-W-O S-T-E-P T-E-S-T.
+Composition/framing: square 1:1, the cover art full-bleed to all four edges, flat and straight on.
+Constraints: only those words; the cover alone: no vinyl disc showing, no shop, no wall, no shrink-wrap glare, no perspective, no frame drawn. Big bold shapes that still read when the cover is shown at 96 pixels.
+Avoid: real band names or logos, real record labels, barcodes, any other text.

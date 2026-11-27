@@ -1,0 +1,7 @@
+Use case: illustration-story
+Asset type: the front of a record sleeve (CASSETTE 1983) in the sleeve wall of a 1984 record shop; texture for a flat 12 x 12 inch quad.
+Primary request: an original record cover for the band "SILO NINE", album "COLD CORRIDOR", in this style: 1983 post-punk: a stark grainy black-and-white photocopied photo of an empty concrete corridor, tiny typewriter-style type, lots of black.
+Text (verbatim): the artist "SILO NINE" and the title "COLD CORRIDOR", nothing else. Spelling: S-I-L-O N-I-N-E / C-O-L-D C-O-R-R-I-D-O-R.
+Composition/framing: square 1:1, the cover art full-bleed to all four edges, flat and straight on.
+Constraints: only those words; the cover alone: no vinyl disc showing, no shop, no wall, no shrink-wrap glare, no perspective, no frame drawn. Big bold shapes that still read when the cover is shown at 96 pixels.
+Avoid: real band names or logos, real record labels, barcodes, any other text.

@@ -1,0 +1,10 @@
+Use case: logo-brand
+Asset type: the lettering lockup of a small shop sign of 1978 in a subway underpass; it will be composited onto the candy pink fascia it will sit on.
+Primary request: a wordmark lockup on two lines: the shop name "Hole Number Nine" large, and under it, centred and much smaller, the tagline "FRESH DOUGHNUTS & HOT COFFEE".
+Style/medium: the name in a confident sign-painter's brush script, connected, slightly upward slanting, with thick and thin brush strokes, as a 1978 neighbourhood doughnut shop sign; mixed case exactly as written; the tagline in simple letter-spaced capitals of the same period, the same colour.
+Color palette: one flat colour only, chocolate brown #4E2A1E. No outline, no shadow, no gradient, no texture.
+Composition/framing: wide landscape 3:1 inside the canvas, lettering centred with a small margin, nothing cropped.
+Background: transparent background.
+Text (verbatim): "Hole Number Nine" and "FRESH DOUGHNUTS & HOT COFFEE". Spelling: H-o-l-e N-u-m-b-e-r N-i-n-e / F-R-E-S-H D-O-U-G-H-N-U-T-S & H-O-T C-O-F-F-E-E.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: any symbol, logo, picture, border, background, other words.

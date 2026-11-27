@@ -1,0 +1,10 @@
+Use case: logo-brand
+Asset type: the lettering lockup of a small shop sign of 1978 in a subway underpass; it will be composited onto the black shop fascia it will sit on.
+Primary request: a wordmark lockup on two lines: the shop name "NEEDLE DROP" large, and under it, centred and much smaller, the tagline "RECORDS TAPES VIDEO RENTALS".
+Style/medium: the name in fat, rounded, heavy 1970s display lettering (the soft bulbous serifless or soft-serif faces of record shops and roller rinks of 1975 to 1980), tight letter spacing, all capitals; the tagline in simple letter-spaced capitals of the same period, the same colour.
+Color palette: one flat colour only, hot orange #FF5A14. No outline, no shadow, no gradient, no texture.
+Composition/framing: wide landscape 3:1 inside the canvas, lettering centred with a small margin, nothing cropped.
+Background: transparent background.
+Text (verbatim): "NEEDLE DROP" and "RECORDS TAPES VIDEO RENTALS". Spelling: N-E-E-D-L-E D-R-O-P / R-E-C-O-R-D-S T-A-P-E-S V-I-D-E-O R-E-N-T-A-L-S.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: any symbol, logo, picture, border, background, other words.

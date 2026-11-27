@@ -1,0 +1,8 @@
+Use case: photorealistic-natural
+Asset type: the hand-written card a shopkeeper taped to the inside of his shop's glass door on 31 December 1984; it will be a texture on a flat 10 x 7 inch quad.
+Primary request: a close, flat, straight-on scan of the card alone filling the whole frame edge to edge: a cheerful bakery owner: round loopy capitals in thick red marker on a pink-tinted bakery order slip, a little coffee ring stain in one corner. Two short strips of clear yellowed sticky tape across the top corners.
+Text (verbatim, three lines, exactly this line breaking): "AT THE GALA TABLE." / "OPEN AGAIN AT 12:10" / "FOR HOT COFFEE.".
+Spelling: A-T T-H-E G-A-L-A T-A-B-L-E-. / O-P-E-N A-G-A-I-N A-T 1-2-:-1-0 / F-O-R H-O-T C-O-F-F-E-E-..
+Composition/framing: landscape 10:7, the card fills the canvas full-bleed, text large and legible, centred.
+Constraints: flat artwork seen exactly straight on, full-bleed, no perspective, no frame drawn around it, no mock-up scene, no lighting gradient across it (the game lights it). Text exactly as given, spelled letter by letter, no other words, no extra letters.
+Avoid: glass, door, reflections, hands, any other words, signatures, dates beyond the given text.

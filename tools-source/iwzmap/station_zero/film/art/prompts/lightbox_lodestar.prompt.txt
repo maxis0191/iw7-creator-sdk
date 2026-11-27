@@ -1,0 +1,10 @@
+Use case: ads-marketing
+Asset type: a back-lit advertising light box panel (a translucent printed duratrans sheet lit evenly from behind) on the wall of a city subway underpass, late 1984. It will be a fully glowing (emissive) texture on a flat 64 x 96 inch quad.
+Composition/framing: portrait 2:3, the printed sheet itself only, full-bleed to all four edges, flat and straight on.
+Lighting/mood: back-lit transparency: colours even, saturated and luminous, a little brighter in the middle; no reflections, no room lighting, no vignette from a camera.
+Constraints: no frame, no light-box housing, no wall, no perspective, no mock-up scene, no photo of a sign: only the flat artwork. Text exactly as given, spelled letter by letter, no other words, no small print, no logos of real companies.
+Primary request: a corporate advertisement of 1984 for a signalling and telephone contractor, calm, confident and slightly too friendly: a deep navy blue field; in the upper half its logo, an eight-point compass star set inside the finger wheel of a rotary telephone dial (ten finger holes in a ring around the star), drawn in warm brass gold, large and centred, with a soft glow; a thin gold rule below.
+Text (verbatim): headline "The Future Runs Itself" in a warm, elegant high-contrast corporate serif with gentle smiling curves (mixed case, exactly as written), cream white, centred under the logo; at the bottom the line "LODESTAR SIGNAL & TELEPHONE CO." in small letter-spaced serif capitals, brass gold.
+Spelling: T-h-e F-u-t-u-r-e R-u-n-s I-t-s-e-l-f. L-O-D-E-S-T-A-R S-I-G-N-A-L ampersand T-E-L-E-P-H-O-N-E C-O-period.
+Color palette: deep navy #14213D, brass gold #C9A24B, cream #F4EBD0.
+Avoid: any other words, numbers on the dial, people, real brands.
