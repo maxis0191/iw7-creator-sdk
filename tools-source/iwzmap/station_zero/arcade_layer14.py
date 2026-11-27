@@ -1,4 +1,4 @@
-r"""arcade_layer14: the Underpass Arcade (round 15: lamped picture boards, bench spot lights, upper wall washers), ONE self-contained builder (rounds 1 to 13 folded in; the old arcade*.py chain is deleted).
+r"""arcade_layer14: the Underpass Arcade (round 16: 167 rows of lights.txt for FE66 (group lamps for the picture boards, fewer washers, merged panels and tubes), ticket hall wall washers; round 15: lamped picture boards, bench spot lights, upper wall washers), ONE self-contained builder (rounds 1 to 13 folded in; the old arcade*.py chain is deleted).
 
     STUDIO_ROOT=C:\\studio python arcade_layer14.py [folder]     writes the document (default C:\\studio-data\\sz\\arcade\\r14\\doc)
 
