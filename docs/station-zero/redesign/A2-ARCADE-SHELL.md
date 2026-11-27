@@ -7,6 +7,46 @@
   service counter and the pigeonholes on the partition left a 56-unit corridor without nav cells; the pigeonholes moved to the east wall.
   Needle Drop: the record bins' clip island.
 
+## Score against QUALITY-BAR part C (`film/arcade_score.py`, document counts)
+
+| # | Rule | Number | Pass |
+|---|---|---|---|
+| 1 | every shop told by a hero sign of its own | 6 hero signs, 6 distinct pictures, every shop has one | pass |
+| 2 | hero sign face 19,600 or more | {"needle_drop": 20400, "copy_stop": 21080, "hole_nine": 20400, "heel_key": 20400} | pass |
+| 9 | at most 0.049 lights per 1,000 | {"hall": "21 lights, 0.0146 per 1,000", "needle_drop": "4 lights, 0.0417 per 1,000", "copy_stop": "4 lights, 0.0205 per 1,000", "hole_nine": "4 lights, 0.0417 per 1,000", "heel_key": "1 lights, 0.0104 per 1,000"} | pass |
+| 10 | median light radius 175 or more | 187.4 | pass |
+| 11 | no two shops share a light row (strength, radius, height) | 0 shared | pass |
+| 12 | neighbouring shops differ in dominant hue; four hue classes at most a room | {"needle_drop": "warm", "copy_stop": "cool", "hole_nine": "magenta", "heel_key": "warm"} | pass |
+| 13 | 65 % of lights within 96 of a fixture model; 40 % of tube fixtures off or damaged | 25 of 34 lights (74 %); 5 of 10 tubes off (50 %) | pass |
+| 16 | no two perk machines within 404 | 0 perks in the section | pass |
+| 17 | three of five pockets host a gameplay object (3 of 4 here) | 3 of 4 | pass |
+| 23 | one column pitch, columns in the hall tile, none from another theme | pitch [288.0], 6 columns, material ['w/dt_tile_ceramic_white'] | pass |
+| 24 | tile kit of five: wall, its damaged twin, band, dark, floor | {"wall": true, "damaged twin": true, "band": true, "dark": true, "floor": true} | pass |
+| 25 | four sign families at most a hall (doc part; the landmark is a blind question) | 5 families | **fail** |
+
+Rule 25 fails by the slot list of the brief: the hall carries five sign families (fascias, 64 x 96 panels, the directory, the notices, the hanging banner and bunting). Merging the notices into the directory's case would make four; not done without the lead's word.
+
+## Decisions the brief did not dictate
+- **Tile kit** (one table `MAT` at the top of the builder, the swap to `B.material` is one edit there): wall `w/dt_tile_ceramic_white` with its
+  true twin `w/dt_tile_ceramic_white_dmg` (the cp_disco station's pair; the base tint `w/iwz_tile_cream` has no damaged twin), band
+  `w/ceramic_tile_01_orange` (from mp_depot), dark `w/fac_tile_black_01`, floor `w/linoleum_floor_tiles_orange_01` (mp_codphish).
+  Dado: skirting 0..10, band 58..74 and 220..228, 14 damaged patches (seeded).
+- **Columns**: 40 x 40 boxes at y 3760, x -2860 + 288 k (six), dark base to 16, bands 58..74 and 196..212, two with damaged patches.
+- **Ceiling**: a panel plane at z 244 (hall clear height 244 under the slab at 256), T-bars every 48, 7 lit panels
+  (`plastic_wall_panel_light_02_on`) each with one soft spot, 9 dead, 6 missing (black plenum), 8 water-stained; five tubes over the colonnade
+  (three live, two dead) and two dead tubes over the north lane. Bulkhead y 4232..4300 down to z 240: the fascias (z 172..240) sit under it.
+- **Shop line**: piers 16 wide at each unit edge in the hall tile; openings z 0..150; shutter housings z 150..172; curtain stops: Needle Drop
+  z 112.5, Copy Stop and Hole Number Nine up, Heel & Key z 75 (with a clip over the counter so the stall is not entered).
+- **Doors**: Needle Drop door at its west edge (100 wide), Copy Stop central pair (132), Hole Number Nine side door at its east edge (100);
+  back-room doors 64 wide in partitions at y 4480; Heel & Key's back room opens east into a service passage (x -1320..-1200) with a staff
+  door to the hall.
+- **Authored, not stock**: floor polisher (`cp_disco_floor_buffer` is the bladed trap), Shelter 7 hand wheel, photo booth, copier bodies,
+  stool bases, the polisher cable.
+- **Light colour per brand**: Needle Drop warm orange (pendants 2300 K, an orange window spot, the jukebox glow, a marquee of bulbs under the
+  fascia); Copy Stop blue-white tubes (8500 K) with the copier bars as an accent and cold LED bars over its fascia; Hole Number Nine an OPEN
+  neon and pink-shaded pendants, a warm downlight over the case, warm wall lamps on its piers; Heel & Key one tungsten desk lamp.
+  Fixture radii x 1.6 (`RADIUS_K`) after the first score (median 128 -> 187).
+
 ---
 (state at the pause, kept for the record)
 
