@@ -1,0 +1,6 @@
+Use case: stylized-concept
+Asset type: the front cover artwork of a 12-inch vinyl LP record sleeve, used as a texture on a record-shop wall in a video game set on 31 December 1984
+Composition/framing: square 1:1, full bleed artwork filling the entire square edge to edge, no border, no record, no sleeve mockup, flat front-on scan of printed cover art
+Constraints: absolutely NO text, NO letters, NO numbers, NO logos, NO words anywhere in the image; leave a calm area in the TOP QUARTER of the square for a title that will be added later; printed-matter look (offset print, slight paper grain, faint ring wear), authentic to its year
+Avoid: text, typography, watermark, real artists, real album covers, modern digital look
+Primary request: reggae / dub album cover, 1982. Style/medium: rough linocut / woodcut print look: a wooden pier at night with a towering stack of sound-system speaker boxes, concentric echo rings rolling over the water, bold carved lines. Color palette: red, gold, green on black, off-white paper.
