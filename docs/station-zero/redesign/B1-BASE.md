@@ -157,7 +157,17 @@ pause when all stand in the Terminus, released when one stands outside again, re
 protections off, cooldown refusal, idle after 150 s); a pause of another system never released and taken only once
 it is free; game end mid-visit; nobody aboard. The hint function on the template: the five branches.
 
-In the game: see the run table below.
+In the game: **not proven yet (paused 27 Nov by the owner).** Built: `studio live start b1\doc` (rc 0, 164 s,
+draft bake 67 s), usermap `C:\studio-data\live\doc-85084890\cp_iwz`; the zone carries both modules
+(`rawfile,scripts/cp/maps/cp_iwz/cp_iwz_terminus.gsc`) and the two `IWZ_INTERACTIONS_VALIDATE_*` strings
+(`zonetool\cp_iwz\localizedstrings\cp_iwz.json`). The session was stopped. The batch
+`C:\studio-data\sz\film\b1\plans\batch_b1.json` (b1_terminus, sz8_doors, sz8_power_perks, sz8_rounds on that usermap,
+library dir `b1\plans\lib` with `szterm.gsc`) was stopped before any run reported. `sz8_power_perks` needed no
+change: it has no Pack-a-Punch expectation.
+
+**Resume:** `cd C:\studio-data\sz\film\b1\plans && python -B C:\forge\forge.py batch batch_b1.json` (background).
+If the usermap folder has been swept, first rebuild it with `studio live start b1\doc` (env: `STUDIO_CONFIG`,
+`IWZ_SDK`, `IWZ_ZONETOOL_EXE`, section 3), then `live stop` again once the plans have run.
 
 ## Not done here (for the next packages)
 
