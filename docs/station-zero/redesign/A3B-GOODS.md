@@ -124,5 +124,8 @@ from the front, the blue print, the lit light table, the line of papers and the 
   (150), `copy_stop_window_close`, `copy_stop_interior`, `hole_nine_interior`, `hole_nine_back_wall`.
 
 ## The passport photographs
-Pass 1 to 5 carry painted faces (PIL, four invented, cartoon-simple): the image generator was out of quota until 28 Nov 01:00.
-`make_pictures_b.py` takes the generator's 2 x 2 grid (`goods_b\gen\booth_faces.png`, prompt in `art_goods_b/prompts`) when it exists.
+Passes 1 to 5 carry painted faces (PIL): the image generator was out of quota until 28 Nov 01:00. At 01:02 it made the 2 x 2 grid
+`C:\studio-data\sz\film\art\arcade\goods_b\gen\booth_faces.png` (prompt `art_goods_b/prompts/booth_faces.prompt.txt`: four invented,
+unremarkable adults, flat booth flash, grey-blue curtain, no text; looked at: no likeness intended or recognised). `make_pictures_b.py`
+cuts it into the strip `cs_booth_strip.png`. Pass 6 (`goods_b\pass6`, the same document with the new strip, live start 75 s):
+`copy_stop_booth_close` shows the four photographs in the frame under the lit AUTO PASSPORT PHOTOS band; ON 74.2 / OFF 13.7.
