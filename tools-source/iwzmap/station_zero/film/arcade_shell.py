@@ -669,7 +669,20 @@ def heel_key(m):
     shelving(m, 'hk_lasts', [x1 - 70.0, Y1 + 50.0, 0.0, x1 - 20.0, peg_y - 2.0, 96.0], 3, sm['join'], 'w')
     m.remove('hk_lasts_end_a')                                     # A3a request 3: its south end hid the lasts from the hall
     anchor('heel_key.lasts_shelf', [x1 - 70.0, Y1 + 50.0, 6.0, x1 - 22.0, peg_y - 2.0, 96.0], 'w', 'shoe lasts, polish tins, boxes of heels')
-    B.wallbuy(m, (cx + 60.0, peg_y - 6.0, 0.0), 'marksman', 1500, 270.0, layer='gameplay', id='buy_marksman_heel_key')
+    # the marksman buy (I1, 29 Nov): on the back pegboard (y 4404) it was out of reach from the hall: a client at the counter front got no prompt
+    # (the stock monitor moves the player's use trigger to the struct's floor + 56, cp_interaction.gsc get_interaction_origin, and skips a struct
+    # within 75 of the player's origin, :232). Now a pegboard display board stands right behind the counter's back edge, between the front rail's
+    # tagged pairs (x -1535, -1445): the rifle hangs on it facing the hall, a player at the counter front (origin y about 4285) is 81 from the
+    # struct and about 51 from his eye to the use point
+    bd = [-1522.0, 4338.0, 44.0, -1442.0, 4341.0, 118.0]
+    rbox(m, 'hk_buy_board', bd, MAT['pegboard'])
+    rbox(m, 'hk_buy_board_frame_t', [bd[0] - 2.0, bd[1] - 0.6, bd[5], bd[3] + 2.0, bd[4], bd[5] + 3.0], sm['join'])
+    rbox(m, 'hk_buy_board_frame_w', [bd[0] - 2.0, bd[1] - 0.6, 42.0, bd[0], bd[4], bd[5]], sm['join'])
+    rbox(m, 'hk_buy_board_frame_e', [bd[3], bd[1] - 0.6, 42.0, bd[3] + 2.0, bd[4], bd[5]], sm['join'])
+    for k, hx in enumerate((-1455.0, -1462.0)):                    # key blanks on two hooks beside the rifle: the stall's other trade
+        B.prop(m, 'cp_rave_tiki_key_hook_01', (hx, bd[1] - 0.5, 104.0 - 14.0 * k), yaw=270.0, layer='fronts', id='hk_buy_board_hook_%d' % k)
+        B.prop(m, 'cp_disco_subway_locker_key', (hx, bd[1] - 1.5, 99.0 - 14.0 * k), yaw=270.0, layer='fronts', id='hk_buy_board_key_%d' % k)
+    B.wallbuy(m, (-1490.0, 4336.0, 0.0), 'marksman', 1500, 270.0, layer='gameplay', id='buy_marksman_heel_key')
     rbox(m, 'backroom_heel_key_floor', [x0 + 16.0, peg_y + 12.0, 0.0, x1 - 16.0, YB - 16.0, 0.3], MAT['back_floor'])
     B.spawner(m, (x0 + 50.0, 4538.0, 0.0), 0.0, layer='gameplay', id='spawn_heel_key_1')
     # light: one tungsten work lamp on the bench

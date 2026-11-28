@@ -48,6 +48,99 @@ i1_reach( name, kind, x, y0, y1 )
         + " sz=" + o[2] );
 }
 
+// i1_buy: a purchase from where player 0 STANDS (the plan puts him there with `tp`; this never moves him). The lab's `use` step teleports the
+// player in front of the struct along the struct's yaw: for D4's hall struct (yaw 180, facing the door) that is 4 units past the door plane and
+// 36 from the struct, and inside the Heel & Key stall for the marksman buy. On a client the stock monitor (cp_interaction.gsc
+// move_to_closest_interaction) clears the player's interaction point when his origin is within 75 of the struct (:232), so that purchase
+// charged nothing; a headless bot runs no monitor and bought anyway.
+// Here: the struct of `kind` nearest (nx, ny, nz); wait up to 4 s for the stock monitor to pick it (a client: hint=1, the prompt shows);
+// without a monitor (headless) the monitor's own rule is applied at the player's real position: refused when his origin is within 75 of the
+// struct or when another struct is the nearest one the monitor would offer; else the interaction point is set as the monitor sets it. Then
+// the player's interaction trigger fires (the Use button's effect). Prints found, hint, route, d (origin to struct), eye_d (eye to the use
+// trigger the monitor placed), use_radius, money0, money1, spent, has (wall weapons: the stock variant test), weapons0, weapons1, x, y.
+i1_buy( name, kind, nx, ny, nz, seconds )
+{
+    p = level.players[0];
+    o = p.origin;
+    near = ( nx, ny, nz );
+    s = undefined;
+    foreach ( st in level.current_interaction_structs )
+    {
+        if ( isdefined( st ) && isdefined( st.script_noteworthy ) && st.script_noteworthy == kind )
+        {
+            if ( !isdefined( s ) || distance( st.origin, near ) < distance( s.origin, near ) )
+                s = st;
+        }
+    }
+    found = 0;
+    hint = 0;
+    route = "none";
+    d = -1;
+    eye_d = -1;
+    m0 = p scripts\cp\cp_persistence::get_player_currency();
+    w0 = p getweaponslistprimaries().size;
+    if ( isdefined( s ) )
+    {
+        found = 1;
+        d = int( distance( o, s.origin ) );
+        t0 = gettime();
+        while ( gettime() - t0 < 4000 )
+        {
+            if ( isdefined( p.last_interaction_point ) && p.last_interaction_point == s )
+            {
+                hint = 1;
+                break;
+            }
+            wait 0.05;
+        }
+        route = "monitor";
+        if ( !hint )
+        {
+            route = "direct";
+            if ( d <= 75 )
+                route = "refused_within_75";
+            else
+            {
+                closest = scripts\engine\utility::get_array_of_closest( o, level.current_interaction_structs, undefined, 10, 750, 1 );
+                first = undefined;
+                foreach ( c in closest )
+                {
+                    if ( isdefined( c ) && distance( o, c.origin ) > 75 )
+                    {
+                        first = c;
+                        break;
+                    }
+                }
+                if ( !isdefined( first ) || first != s )
+                    route = "refused_not_nearest";
+            }
+            if ( route == "direct" )
+            {
+                if ( !isdefined( p.interaction_trigger ) )
+                    p.interaction_trigger = scripts\cp\cp_interaction::get_player_interaction_trigger();
+                p.last_interaction_point = undefined;
+                p scripts\cp\cp_interaction::set_interaction_point( s );
+                wait 0.3;
+            }
+        }
+        if ( route == "monitor" || route == "direct" )
+        {
+            if ( isdefined( p.interaction_trigger ) )
+                eye_d = int( distance( p geteye(), p.interaction_trigger.origin ) );
+            wait 0.15;
+            p.interaction_trigger notify( "trigger", p );
+            wait seconds;
+        }
+    }
+    m1 = p scripts\cp\cp_persistence::get_player_currency();
+    has = -1;
+    if ( isdefined( s ) && scripts\cp\cp_interaction::interaction_is_weapon_buy( s ) )
+        has = p scripts\cp\cp_weapon::has_weapon_variation( s.script_noteworthy );
+    print( "[IWZ local] GL PROBE name=" + name + " found=" + found + " hint=" + hint + " route=" + route + " d=" + d + " eye_d=" + eye_d
+        + " use_radius=" + getdvarfloat( "player_useRadius" ) + " money0=" + m0 + " money1=" + m1 + " spent=" + ( m0 - m1 ) + " has=" + has
+        + " weapons0=" + w0 + " weapons1=" + p getweaponslistprimaries().size + " x=" + p.origin[0] + " y=" + p.origin[1] );
+}
+
 // i1_wheel_to: the stock magic wheel moved to `area` as the stock code moves it after its rolls (interaction_magicwheel.gsc _id_BC3E: the wheel of that
 // area made usable, every other one out of order), then: active (area_name of level.current_active_wheel), x, y (its origin), wheels (every magic_wheel
 // entity), areas (their area names). The base starts the wheel on platform_a (cp_iwz.gsc set_magic_wheel_starting_location), so the Arcade's position is
