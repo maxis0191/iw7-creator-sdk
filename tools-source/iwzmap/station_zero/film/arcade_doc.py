@@ -22,8 +22,9 @@ from studio import fixtures as FX  # noqa: E402
 SHOPS = ('needle_drop', 'copy_stop', 'hole_nine', 'heel_key')
 
 
-def build(only=None, name='sz_arcade'):
-    m = SHELL.build(name)
+def build(only=None, name='sz_arcade', base=None, settings=None):
+    """base, settings: passed to the shell (default: its own base emit and recipe)"""
+    m = SHELL.build(name, base=base, settings=settings)
     anchors = {a['name']: a for a in SHELL.ANCHORS}
     done, missing = [], []
     for shop in SHOPS:

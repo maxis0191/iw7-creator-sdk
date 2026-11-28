@@ -1,0 +1,222 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "i1_walk",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "real_time": true,
+ "libraries": [
+  "szaccept"
+ ],
+ "resolution": [
+  1280,
+  720
+ ],
+ "about": "I1 real time, a client: power on, D4 bought, a walk with player physics (move: no forward key exists in the input channel) from the ticket hall through D4 to the Arcade west end and back; perf windows and client frames at arc_east_long and at the middle of the hall (1280 x 720).",
+ "steps": [
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "call",
+   "fn": "sz_power_direct",
+   "args": [
+    "power",
+    20
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 6
+  },
+  {
+   "do": "money",
+   "value": 20000
+  },
+  {
+   "do": "tp",
+   "at": [
+    -1000,
+    3900,
+    1
+   ],
+   "yaw": 180,
+   "snap": true
+  },
+  {
+   "do": "use",
+   "name": "door",
+   "kind": "debris_1000",
+   "near": [
+    -1160.0,
+    3900.0,
+    24.0
+   ]
+  },
+  {
+   "do": "wait",
+   "s": 1
+  },
+  {
+   "do": "move",
+   "name": "walk_in",
+   "path": [
+    [
+     -1000,
+     3900,
+     1
+    ],
+    [
+     -1150,
+     3900,
+     1
+    ],
+    [
+     -1300,
+     3900,
+     1
+    ],
+    [
+     -1700,
+     3960,
+     1
+    ],
+    [
+     -2200,
+     3960,
+     1
+    ],
+    [
+     -2700,
+     3960,
+     1
+    ],
+    [
+     -2900,
+     4000,
+     1
+    ]
+   ],
+   "speed": 190,
+   "leg_s": 15
+  },
+  {
+   "do": "move",
+   "name": "walk_out",
+   "path": [
+    [
+     -2900,
+     4000,
+     1
+    ],
+    [
+     -2700,
+     3960,
+     1
+    ],
+    [
+     -2200,
+     3960,
+     1
+    ],
+    [
+     -1700,
+     3960,
+     1
+    ],
+    [
+     -1300,
+     3900,
+     1
+    ],
+    [
+     -1150,
+     3900,
+     1
+    ],
+    [
+     -1000,
+     3900,
+     1
+    ]
+   ],
+   "speed": 190,
+   "leg_s": 15
+  },
+  {
+   "do": "tp",
+   "at": [
+    -1296,
+    3880,
+    1
+   ],
+   "yaw": 172
+  },
+  {
+   "do": "look",
+   "yaw": 172,
+   "pitch": 0
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "perf",
+   "name": "east_long",
+   "s": 10
+  },
+  {
+   "do": "capture",
+   "name": "i1_east_long",
+   "pause": 2
+  },
+  {
+   "do": "tp",
+   "at": [
+    -2100,
+    3900,
+    1
+   ],
+   "yaw": 180
+  },
+  {
+   "do": "look",
+   "yaw": 180,
+   "pitch": 0
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "perf",
+   "name": "mid_hall",
+   "s": 10
+  },
+  {
+   "do": "capture",
+   "name": "i1_mid_hall",
+   "pause": 2
+  },
+  {
+   "do": "expect",
+   "that": "use:door.spent",
+   "eq": 1000,
+   "why": "D4 bought"
+  },
+  {
+   "do": "expect",
+   "that": "move:walk_in.result",
+   "eq": "reached",
+   "why": "the walk down the Arcade from the ticket hall through D4 reached the west end"
+  },
+  {
+   "do": "expect",
+   "that": "move:walk_out.result",
+   "eq": "reached",
+   "why": "and back to the ticket hall"
+  }
+ ]
+}

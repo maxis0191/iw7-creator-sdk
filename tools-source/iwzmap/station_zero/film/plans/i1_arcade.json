@@ -1,0 +1,628 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "i1_arcade",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "libraries": [
+  "g1probe",
+  "szi1"
+ ],
+ "about": "I1: the Arcade on the one document. D4 bought, a player standing on the navigation inside Needle Drop, Copy Stop and Hole Number Nine; the SMG wall buy (Hole Number Nine) and the marksman wall buy (Heel & Key, used from the hall) bought; the stock wheel moved to Copy Stop and rolled once, its weapon taken; two zombies from each shop back room chase the player in the hall.",
+ "steps": [
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "money",
+   "value": 30000
+  },
+  {
+   "do": "tp",
+   "at": [
+    -1000,
+    3900,
+    1
+   ],
+   "yaw": 180,
+   "snap": true
+  },
+  {
+   "do": "use",
+   "name": "door",
+   "kind": "debris_1000",
+   "near": [
+    -1160.0,
+    3900.0,
+    24.0
+   ]
+  },
+  {
+   "do": "wait",
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "g1_zone",
+   "args": [
+    "arc_open",
+    "arcade"
+   ],
+   "s": 1
+  },
+  {
+   "do": "tp",
+   "at": [
+    -2910,
+    4400,
+    1
+   ],
+   "yaw": 90,
+   "snap": true,
+   "max_snap": 48
+  },
+  {
+   "do": "wait",
+   "s": 1
+  },
+  {
+   "do": "mark",
+   "name": "in_needle_drop_m"
+  },
+  {
+   "do": "call",
+   "fn": "i1_stand",
+   "args": [
+    "in_needle_drop"
+   ],
+   "s": 1
+  },
+  {
+   "do": "tp",
+   "at": [
+    -2300,
+    4400,
+    1
+   ],
+   "yaw": 90,
+   "snap": true,
+   "max_snap": 48
+  },
+  {
+   "do": "wait",
+   "s": 1
+  },
+  {
+   "do": "mark",
+   "name": "in_copy_stop_m"
+  },
+  {
+   "do": "call",
+   "fn": "i1_stand",
+   "args": [
+    "in_copy_stop"
+   ],
+   "s": 1
+  },
+  {
+   "do": "tp",
+   "at": [
+    -1700,
+    4390,
+    1
+   ],
+   "yaw": 90,
+   "snap": true,
+   "max_snap": 48
+  },
+  {
+   "do": "wait",
+   "s": 1
+  },
+  {
+   "do": "mark",
+   "name": "in_hole_nine_m"
+  },
+  {
+   "do": "call",
+   "fn": "i1_stand",
+   "args": [
+    "in_hole_nine"
+   ],
+   "s": 1
+  },
+  {
+   "do": "take",
+   "give": "iw7_fhr_zm"
+  },
+  {
+   "do": "tp",
+   "at": [
+    -1880,
+    4420,
+    1
+   ],
+   "yaw": 180,
+   "snap": true
+  },
+  {
+   "do": "use",
+   "name": "buy_smg",
+   "kind": "iw7_ump45_zml",
+   "near": [
+    -1948.0,
+    4440.0,
+    64.0
+   ]
+  },
+  {
+   "do": "mark",
+   "name": "buy_smg_m"
+  },
+  {
+   "do": "tp",
+   "at": [
+    -1420,
+    4270,
+    1
+   ],
+   "yaw": 90,
+   "snap": true
+  },
+  {
+   "do": "call",
+   "fn": "i1_stand",
+   "args": [
+    "hk_hall"
+   ],
+   "s": 1
+  },
+  {
+   "do": "use",
+   "name": "buy_mk",
+   "kind": "iw7_m1c_zm",
+   "near": [
+    -1420.0,
+    4404.0,
+    64.0
+   ]
+  },
+  {
+   "do": "mark",
+   "name": "buy_mk_m"
+  },
+  {
+   "do": "call",
+   "fn": "i1_wheel_to",
+   "args": [
+    "wheel_to",
+    "arcade"
+   ],
+   "s": 5
+  },
+  {
+   "do": "take",
+   "give": "iw7_fhr_zm"
+  },
+  {
+   "do": "money",
+   "value": 30000
+  },
+  {
+   "do": "use",
+   "name": "wheel",
+   "kind": "magic_wheel",
+   "near": [
+    -2554.0,
+    4460.0,
+    40.0
+   ],
+   "s": 9,
+   "again": 1
+  },
+  {
+   "do": "mark",
+   "name": "wheel_m"
+  },
+  {
+   "do": "tp",
+   "at": [
+    -2100,
+    3900,
+    1
+   ],
+   "yaw": 90,
+   "snap": true
+  },
+  {
+   "do": "call",
+   "fn": "i1_stand",
+   "args": [
+    "hall"
+   ],
+   "s": 1
+  },
+  {
+   "do": "spawn",
+   "tag": "z_needle_drop",
+   "at": [
+    -2910,
+    4538,
+    1
+   ],
+   "count": 2,
+   "place": false
+  },
+  {
+   "do": "chase",
+   "tag": "z_needle_drop",
+   "s": 40,
+   "reach": 96,
+   "allow_partial": true
+  },
+  {
+   "do": "kill",
+   "tag": "z_needle_drop"
+  },
+  {
+   "do": "spawn",
+   "tag": "z_copy_stop",
+   "at": [
+    -2325,
+    4538,
+    1
+   ],
+   "count": 2,
+   "place": false
+  },
+  {
+   "do": "chase",
+   "tag": "z_copy_stop",
+   "s": 40,
+   "reach": 96,
+   "allow_partial": true
+  },
+  {
+   "do": "kill",
+   "tag": "z_copy_stop"
+  },
+  {
+   "do": "spawn",
+   "tag": "z_hole_nine",
+   "at": [
+    -1920,
+    4538,
+    1
+   ],
+   "count": 2,
+   "place": false
+  },
+  {
+   "do": "chase",
+   "tag": "z_hole_nine",
+   "s": 40,
+   "reach": 96,
+   "allow_partial": true
+  },
+  {
+   "do": "kill",
+   "tag": "z_hole_nine"
+  },
+  {
+   "do": "spawn",
+   "tag": "z_heel_key",
+   "at": [
+    -1590,
+    4538,
+    1
+   ],
+   "count": 2,
+   "place": false
+  },
+  {
+   "do": "chase",
+   "tag": "z_heel_key",
+   "s": 40,
+   "reach": 96,
+   "allow_partial": true
+  },
+  {
+   "do": "kill",
+   "tag": "z_heel_key"
+  },
+  {
+   "do": "state",
+   "name": "end"
+  },
+  {
+   "do": "expect",
+   "that": "use:door.found",
+   "why": "D4's purchase struct is a stock interaction",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "use:door.spent",
+   "why": "D4 costs 1000 (the document)",
+   "eq": 1000
+  },
+  {
+   "do": "expect",
+   "that": "probe:arc_open.active",
+   "why": "buying D4 activates the arcade zone",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "in_needle_drop_m.ground",
+   "why": "standing (needle_drop)",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_needle_drop.ground",
+   "why": "on the ground inside needle_drop",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_needle_drop.nav_d",
+   "why": "on the navigation mesh inside needle_drop (upper bound)",
+   "le": 16
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_needle_drop.nav_d",
+   "why": "on the navigation mesh inside needle_drop (lower bound)",
+   "ge": 0
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_needle_drop.zone",
+   "why": "in the arcade volume",
+   "eq": "arcade"
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_needle_drop.x",
+   "why": "x inside needle_drop (upper bound)",
+   "le": -2640
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_needle_drop.x",
+   "why": "x inside needle_drop (lower bound)",
+   "ge": -2960
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_needle_drop.y",
+   "why": "past the shop line (y 4300) into needle_drop (upper bound)",
+   "le": 4600
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_needle_drop.y",
+   "why": "past the shop line (y 4300) into needle_drop (lower bound)",
+   "ge": 4300
+  },
+  {
+   "do": "expect",
+   "that": "in_copy_stop_m.ground",
+   "why": "standing (copy_stop)",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_copy_stop.ground",
+   "why": "on the ground inside copy_stop",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_copy_stop.nav_d",
+   "why": "on the navigation mesh inside copy_stop (upper bound)",
+   "le": 16
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_copy_stop.nav_d",
+   "why": "on the navigation mesh inside copy_stop (lower bound)",
+   "ge": 0
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_copy_stop.zone",
+   "why": "in the arcade volume",
+   "eq": "arcade"
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_copy_stop.x",
+   "why": "x inside copy_stop (upper bound)",
+   "le": -1980
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_copy_stop.x",
+   "why": "x inside copy_stop (lower bound)",
+   "ge": -2630
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_copy_stop.y",
+   "why": "past the shop line (y 4300) into copy_stop (upper bound)",
+   "le": 4600
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_copy_stop.y",
+   "why": "past the shop line (y 4300) into copy_stop (lower bound)",
+   "ge": 4300
+  },
+  {
+   "do": "expect",
+   "that": "in_hole_nine_m.ground",
+   "why": "standing (hole_nine)",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_hole_nine.ground",
+   "why": "on the ground inside hole_nine",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_hole_nine.nav_d",
+   "why": "on the navigation mesh inside hole_nine (upper bound)",
+   "le": 16
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_hole_nine.nav_d",
+   "why": "on the navigation mesh inside hole_nine (lower bound)",
+   "ge": 0
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_hole_nine.zone",
+   "why": "in the arcade volume",
+   "eq": "arcade"
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_hole_nine.x",
+   "why": "x inside hole_nine (upper bound)",
+   "le": -1650
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_hole_nine.x",
+   "why": "x inside hole_nine (lower bound)",
+   "ge": -1970
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_hole_nine.y",
+   "why": "past the shop line (y 4300) into hole_nine (upper bound)",
+   "le": 4600
+  },
+  {
+   "do": "expect",
+   "that": "probe:in_hole_nine.y",
+   "why": "past the shop line (y 4300) into hole_nine (lower bound)",
+   "ge": 4300
+  },
+  {
+   "do": "expect",
+   "that": "use:buy_smg.found",
+   "why": "the SMG on Hole Number Nine side wall is a stock interaction",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "use:buy_smg.picked",
+   "why": "the stock monitor picks it",
+   "eq": "iw7_ump45_zml"
+  },
+  {
+   "do": "expect",
+   "that": "use:buy_smg.has",
+   "why": "the player holds the SMG",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "use:buy_smg.spent",
+   "why": "the price of the document (1000)",
+   "eq": 1000
+  },
+  {
+   "do": "expect",
+   "that": "use:buy_mk.found",
+   "why": "the marksman rifle on Heel & Key pegboard is a stock interaction",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "use:buy_mk.picked",
+   "why": "the stock monitor picks it",
+   "eq": "iw7_m1c_zm"
+  },
+  {
+   "do": "expect",
+   "that": "use:buy_mk.has",
+   "why": "the player holds the marksman rifle",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "use:buy_mk.spent",
+   "why": "the price of the document (1500)",
+   "eq": 1500
+  },
+  {
+   "do": "expect",
+   "that": "probe:wheel_to.active",
+   "why": "the stock wheel now stands in the arcade",
+   "eq": "arcade"
+  },
+  {
+   "do": "expect",
+   "that": "probe:wheel_to.x",
+   "why": "at the Copy Stop position (x -2554)",
+   "near": -2554,
+   "tol": 40
+  },
+  {
+   "do": "expect",
+   "that": "probe:wheel_to.y",
+   "why": "at the Copy Stop position (y 4460)",
+   "near": 4460,
+   "tol": 40
+  },
+  {
+   "do": "expect",
+   "that": "use:wheel.found",
+   "why": "the wheel entity is found at Copy Stop",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "use:wheel.spent",
+   "why": "the stock price of a roll (950)",
+   "eq": 950
+  },
+  {
+   "do": "expect",
+   "that": "use:wheel.weapon1",
+   "why": "the wheel gave a weapon (the hand changed)",
+   "ne": "@use:wheel.weapon0"
+  },
+  {
+   "do": "expect",
+   "that": "chase:z_needle_drop.reached",
+   "why": "zombies from the back room of needle_drop reach the player in the hall",
+   "eq": 2
+  },
+  {
+   "do": "expect",
+   "that": "chase:z_copy_stop.reached",
+   "why": "zombies from the back room of copy_stop reach the player in the hall",
+   "eq": 2
+  },
+  {
+   "do": "expect",
+   "that": "chase:z_hole_nine.reached",
+   "why": "zombies from the back room of hole_nine reach the player in the hall",
+   "eq": 2
+  },
+  {
+   "do": "expect",
+   "that": "chase:z_heel_key.reached",
+   "why": "zombies from the back room of heel_key reach the player in the hall",
+   "eq": 2
+  }
+ ]
+}

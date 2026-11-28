@@ -64,7 +64,22 @@ WALL_TILE = 128.0                    # 16 bars of 64 px in a 1024 px picture: on
 PAPER_GLOSS = 0.12                   # matte paper
 
 LIGHT_GROUP = 'emergency'            # lit-first base: every lamp baked (PLAN decision 3)
-MACHINE_KEY = 3.0                    # baked + runtime (pass 4: 6.0 baked only, body 0.14 of the paper)
+# the machine's key (I1, 28 Nov): T1's key (3.0, baked + a runtime row at x1,000) left the body at 0.13 of the paper: the scriptable takes baked light only
+# through the light grid, and a plain runtime row is about 1/27 of the baker's light (L1's calibration). Now a stock track spot hung on a rod, ABOVE-FRONT on
+# the side the player arrives from and term_machine looks from (east-south), 111 units from the body's centre (the stock projection room's key), aimed
+# at the body, `bake='bounce'`: the engine draws its direct light at intensity x 27,000 (studio BOUNCE_ROW_PER_UNIT), the lightmap keeps its bounce.
+KEY_TOP = (MACH[0] + 51.0, MACH[1] - 40.0, 182.0)       # the head's top (where its rod meets it)
+KEY_AIM = (MACH[0], MACH[1] - 6.0, POST_H + 48.0)       # the body's centre
+KEY_INTENSITY = float(os.environ.get('SZ_TERMINUS_KEY', '3.0'))
+KEY_RADIUS = 230.0                                      # the body at about 0.5 of the radius: where L1 calibrated the engine row
+KEY_CONE = (20.0, 38.0)
+KEY_KELVIN = 2900
+# the ink (I1, 28 Nov): the film's device for something darker than the machine behind and under it. A solid dot-matrix printed block on the back wall
+# where term_machine's line of sight through the machine meets it, and a printed validator bay on the deck under the post; black ink, alpha = the dots'
+# coverage, so the wall's own green-bar paper shows between the dots and around the ragged ends of the lines
+INK = os.environ.get('SZ_TERMINUS_INK', '1') != '0'
+INK_WALL = (-10640.0, 156.0, 440.0, 216.0)              # centre x, centre z, w, h on the back wall (y Y1); bench backs (z 44) and strips (z 24, 296) clear
+INK_BAY = (-10280.0, -4740.0, -10120.0, -4540.0)        # x0, y0, x1, y1 on the deck around the post (foot 60 x 60)
 BEAM = 14.0                          # pass 3: 4.0 gave no visible warm rectangle around the picture
 TUBE_INTENSITY, TUBE_RADIUS = 3.0, 2.2  # pass 1 (1.0, 1.6) read as a dim room; the bible's light is flat office fluorescent
 
@@ -242,6 +257,8 @@ def printed(m):
                 continue
             if abs(y - COL_Y) < 60.0 and min(abs(x - c) for c in COLS_X) < 72.0:
                 continue
+            if INK and x + 48.0 > INK_BAY[0] and x - 48.0 < INK_BAY[2] and y + 48.0 > INK_BAY[1] and y - 48.0 < INK_BAY[3]:
+                continue                                  # the printed validator bay takes this field
             n += 1
             B.decal(m, image=_p('footprints_printed.png'), at=(x, y, ZD), normal=(0, 0, 1), size=(96.0, 96.0), rot=180.0,
                     id='terminus_steps_%d' % n)
@@ -318,18 +335,83 @@ def light(m, mat):
     half = math.degrees(math.atan2(SCREEN[3] / 2, ln))
     B.light(m, LENS, color=(1.0, 0.74, 0.42), radius=ln * 1.5, intensity=BEAM, group=LIGHT_GROUP, type='spot',
             dir=[round(v / ln, 4) for v in d], inner=round(half * 0.85, 1), outer=round(half * 1.3, 1), id='terminus_beam')
-    # the machine's own light (lead, pass 1: a black silhouette): one soft warm spot from above the user's side, so that its red and brass read
-    # pass 4 measured the body at 0.14 of the paper behind it: a scriptable model takes baked light only through the light grid, so the key is ALSO a runtime
-    # emergency light (a lights.txt row: per-pixel on models; no networked record), about 110 units above-front on the user's side as the stock key is (QUALITY-BAR A2)
-    mk = (MACH[0] - 70.0, MACH[1] - 20.0, POST_H + 130.0)
-    dm = (MACH[0] - mk[0], MACH[1] - mk[1], POST_H + 50.0 - mk[2])
-    lm = math.sqrt(sum(v * v for v in dm))
-    B.light(m, mk, color=(1.0, 0.86, 0.66), radius=lm * 2.2, intensity=MACHINE_KEY, group=LIGHT_GROUP, type='spot',
-            dir=[round(v / lm, 4) for v in dm], inner=22.0, outer=48.0, runtime=True, id='terminus_machine_key')
+    machine_key(m, mat)
     # the next reel on the paper: the second platform, emissive, inside the lit rectangle
     # pass 3: the emissive route ignores the picture's alpha (its feathered border drew black), so the reel is a printed-light decal on the paper: alpha
     # blended (the paper's bars show through its dark parts and its feathered edge) and lit by the beam, as light thrown on paper is
     B.decal(m, image=screen_picture(), at=(tx, ty, tz), normal=(0, 1, 0), size=(SCREEN[3], SCREEN[4]), id='terminus_screen_picture')
+
+
+def machine_key(m, mat):
+    """the key: a stock track spot on an iron rod from the ceiling, its head tilted toward the body and its light aimed there (bake='bounce')"""
+    d = [KEY_AIM[i] - KEY_TOP[i] for i in range(3)]
+    ln = math.sqrt(sum(v * v for v in d))
+    yaw = math.degrees(math.atan2(d[1], d[0]))
+    tilt = math.degrees(math.atan2(math.hypot(d[0], d[1]), -d[2]))      # from straight down toward the body
+    ids = B.fixture(m, 'track_spot', KEY_TOP, facing=yaw, kelvin=KEY_KELVIN, intensity=1.0, group=LIGHT_GROUP, bake='bounce',
+                    id='terminus_machine_key')
+    m.update(ids[0], angles=[-round(tilt, 1), round(yaw, 1), 0.0])        # nose (+x) toward the body: the head's down axis turns toward it
+    m.update(ids[1], dir=[round(v / ln, 4) for v in d], intensity=KEY_INTENSITY, radius=KEY_RADIUS, inner=KEY_CONE[0], outer=KEY_CONE[1])
+    B.box(m, [KEY_TOP[0] - 0.75, KEY_TOP[1] - 0.75, KEY_TOP[2], KEY_TOP[0] + 0.75, KEY_TOP[1] + 0.75, ZC], mat['iron'], mode='render',
+          id='terminus_machine_key_rod')
+    return ids
+
+
+def ink_pictures():
+    """the two ink pictures in the paper set's hand (dotmatrix.py: round ink dots): lines of overstruck dots, as a line printer prints a black bar, that
+    merge into solid black bars; ragged line ends, an occasional skipped line and dropped dots let the paper through. RGB ink, alpha = coverage. 4 px a
+    unit. -> {'wall': png, 'bay': png}"""
+    import random
+    from PIL import Image, ImageDraw
+    os.makedirs(DERIVED, exist_ok=True)
+    out = {'wall': os.path.join(DERIVED, 'ink_block_wall.png'), 'bay': os.path.join(DERIVED, 'ink_validator_bay.png')}
+    if all(os.path.isfile(p) and os.path.getmtime(p) >= os.path.getmtime(__file__) for p in out.values()):
+        return out
+    PX, SS = 4, 3                                   # px a unit, supersampling
+    LINE = 8.0 / 3.0                                # three print lines a green bar (a bar is 8 units)
+    PITCH, R = 1.1, 1.45                            # dot pitch along a line and dot radius, in units: overstruck, the dots of neighbouring lines overlap
+    #                                                 (radius 0.78 left a hair of paper between all lines: coverage 0.47, a grey hatching, not a black block)
+
+    def block(w, h, vertical, seed):
+        rnd = random.Random(seed)
+        W, H = int(w * PX * SS), int(h * PX * SS)
+        im = Image.new('L', (W, H), 0)
+        dr = ImageDraw.Draw(im)
+        along, across = (h, w) if vertical else (w, h)
+        n = int(across // LINE)
+        for k in range(n):
+            if rnd.random() < 0.08:                 # a skipped line: a hair of paper through the bar
+                continue
+            a0 = rnd.uniform(0.0, 3.0) if rnd.random() < 0.3 else 0.0
+            a1 = along - (rnd.uniform(0.0, along * 0.12) if rnd.random() < 0.55 else rnd.uniform(0.0, 2.0))
+            c = (k + 0.5) * LINE + rnd.uniform(-0.12, 0.12)
+            t = a0 + R
+            while t < a1 - R:
+                if rnd.random() > 0.025:            # dropped dots
+                    x, y = (c, t) if vertical else (t, c)
+                    x, y, r = x * PX * SS, y * PX * SS, R * PX * SS * rnd.uniform(0.9, 1.08)
+                    dr.ellipse([x - r, y - r, x + r, y + r], fill=255)
+                t += PITCH
+        a = im.resize((int(w * PX), int(h * PX)), Image.LANCZOS)
+        ink = Image.new('RGB', a.size, (10, 10, 12))
+        ink.putalpha(a.point(lambda v: int(v * 0.96)))
+        return ink
+
+    block(INK_WALL[2], INK_WALL[3], False, 4701).save(out['wall'])
+    block(INK_BAY[2] - INK_BAY[0], INK_BAY[3] - INK_BAY[1], True, 4702).save(out['bay'])  # floor: lines of constant x, as the floor's bars run
+    return out
+
+
+def ink(m):
+    """the printed block on the back wall behind the machine (as term_machine sees it) and the validator bay under the post"""
+    if not INK:
+        return
+    m.use('terminus_print')
+    p = ink_pictures()
+    cx, cz, w, h = INK_WALL
+    B.decal(m, image=p['wall'], at=(cx, Y1, cz), normal=(0, -1, 0), size=(w, h), id='terminus_ink_wall')
+    x0, y0, x1, y1 = INK_BAY
+    B.decal(m, image=p['bay'], at=((x0 + x1) / 2, (y0 + y1) / 2, ZD), normal=(0, 0, 1), size=(x1 - x0, y1 - y0), id='terminus_ink_bay')
 
 
 def gameplay(m):
@@ -390,6 +472,7 @@ def build(m):
     folds(m, mat)
     furniture(m, mat)
     printed(m)
+    ink(m)
     signs_and_clock(m, mat)
     machine(m, mat)
     light(m, mat)

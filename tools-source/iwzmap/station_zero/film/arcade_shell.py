@@ -852,11 +852,13 @@ def recipe():
     return st
 
 
-def build(name='sz_arcade_shell'):
+def build(name='sz_arcade_shell', base=None, settings=None):
+    """base: the emit folder the shell goes on (default BASE_EMIT); settings: the document's settings block (default recipe())"""
     REPORT.update({'standins': [], 'art': [], 'fallbacks': [], 'refused': []})
     ANCHORS.clear()
     LIGHTS.clear()
-    m = Map(name, 'Station Zero: the Underpass Arcade (shell, A2)', base={'kind': 'emit', 'path': BASE_EMIT}, settings=recipe())
+    m = Map(name, 'Station Zero: the Underpass Arcade (shell, A2)', base={'kind': 'emit', 'path': base or BASE_EMIT},
+            settings=settings if settings is not None else recipe())
     for layer in ('arcade_door', 'shell', 'ceiling', 'fronts', 'south', 'hall', 'lights', 'gameplay', 'cameras'):
         m.add_layer(layer)
     hall(m)
