@@ -261,7 +261,7 @@ Distance baseline: 5.80 (mean, poses 1, 2, 5).
 | draft against final bake | 0.00 to +0.01 (5.82 draft, 5.83 final) | measured; final is not closer |
 | prop shadows / kit dump roots | +0.02 (C1 5.80 without, 5.82 to 5.83 with); bench feet ratio 0.895 -> 0.442 | measured: real in the bake, invisible in this metric |
 | SSAO (`r_ssao` MDAO) | 0.00 | measured, not engaged: the occlusion target stays 255 on stock too |
-| blend layers (32.7 % of the lifted surface) | about 0.00 on the mean (2.61 for `keep` and `base` alike; frames differ by a mean 2.7 grey levels, 4.6 % of pixels above 8 at pose 5) | measured, section 12: the layers draw but the metric does not see them at this size |
+| blend layers (32.7 % of the lifted surface) | `keep` with the layer stream really present (section 13): +0.22 (2.61 -> 2.83) on the mean, the content gap closed (graffiti, dirt; registration match 0.73 / 0.83 / 0.84 -> 0.79 / 0.88 / 0.92); the first `keep` run (section 12) was a silent base: 0.00 | measured: the layers draw (RenderDoc: 552 world draws bind slot 1); the metric now shows the light level and colour cast (floor 0.061 against 0.113, b/r 1.12 against 0.74) |
 | decals, glass, caulk shadow casters | not measured | needs the draw-class patches (HOLD) |
 | probes cube (the room's own cp_disco cube) | not measured | needs the compiler mode of section 6 (HOLD) |
 
@@ -485,3 +485,58 @@ Plan written before any code. Everything marked [m] was measured by reading the 
 6. Baker: decals, glass and fences are lifted to the baker as ordinary world triangles and occlude light as solids. The baker gets the class list and skips non-opaque classes as occluders (they
    stay lit receivers). `caulk_shadow` triangles become a baker-only `shadow_occluders` triangle list (not in `world.bin`, not in collision or navigation).
 7. Not done by this change: the engine pass order inside a range (by `sortedSurfIndex` and the draw key), distortion, a class for sort keys 1..6 other than opaque, culling by class.
+
+## 13. Why `blend: "keep"` drew no layered surface in the lifted room, and the room with its layers (worker R2b, 28 Nov 2026)
+
+### The step where they dropped (files)
+Section 12's keep build: `v2_keep.compile.log` printed `layer: 0 surfaces, 0 bytes, strides {}`, `world_materials.json` lists 72 `w/` materials and 0 `*` names, and RenderDoc found no world draw with slot 1.
+The cause is upstream of the emit, in the lift: the prefab `ctl_subway_east` (folder `C:\studio-data\rooms\prefabs\ctl_subway_east`, lifted 28 Nov 05:22, before the layer-aware lift)
+holds 495 `*` surfaces and **none carries a layer stream** (`Prefab.surfaces()`: `s['layer']` is None for all 495, `surfaces_extra.bin` has colour only). In `studio/prefab.py` `_expand`
+(`:571-573`) a `*` surface with `s.get('layer') is None` falls back to its base material and writes `rep['blend_unavailable'][mat]`; nothing printed it, so `keep` silently equalled
+`base` (section 12: identical metric). The emit, the SDK writer and the compiler were not at fault: with no layer in the records there is nothing to write (v2 world.bin has no layer bytes, `layer: 0`).
+Not at fault either: `zone_layer_blob('cp_disco')` (the transient zone in the store cache is there, 2,194,900 bytes) and the layout table (4 entries).
+
+### The fix
+1. **Data**: lift the room again with the current code: `prefab.lift('cp_disco', [-150, 1950, 230, 1260, 3400, 760], name='ctl_subway_east_lay')` (5.3 s): 1,450 surfaces, 495 `*`, **491 with a layer
+   stream** (4 without: no entry in the table or unsupported technique). `control_room.PREFAB` now names `ctl_subway_east_lay` and the control prefab object asks `blend='keep'` (SDK branch).
+   Side finding: the restored grammar db `cp_disco.sqlite` points at `tmp_cp_disco.sqlite.mesh` (its meta `mesh_file`); copying `cp_disco.sqlite.mesh` to that name made the lift run (data repair, a restore
+   issue: the restored db files were renamed without their meta).
+2. **Studio (`claude/film-blend` 862979d, pushed)**: `expand_object` (`studio/prefab.py` after `reps.append`) adds a warning to the flat when `blend_unavailable` is not empty: `object <id>: blend "keep" but N stock layered
+   material(s) are drawn as their base material, the prefab '<name>' holds no layer stream for them (lifted before layer support: lift it again ...)`, naming the first five. Test: `tests/test_blendlayer.py`
+   `test_keep_without_a_layer_stream_falls_back_and_says_so` now also asserts the warning. Gate: 873 tests, 0 failures, 0 errors, 18 skipped, 21.4 s.
+
+### The keep cell rebuilt (`v3_keep`, `r2\batch7.json`, final bake, probe room, poses 1, 2, 5, `STUDIO_EMITCACHE=0`, studio-blend + sdk-blend + x64-zt-layers)
+- Compiler log: **`layer: 491 surfaces, 461372 bytes, strides {8, 12, 16, 20, 24, 28, 32, 36}`** (before 0). The emit's world.bin and `world_materials.json` are copied in `r2\v2\v3_keep.*`.
+- Black share 0.0 % at every pose (shots.json ok, none stale).
+
+| pose | cell | ceiling | wall | floor | floor b/r | floor contrast | black % | distance | match |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | stock | 0.0363 | 0.0917 | 0.1021 | 0.73 | 0.207 | 0.0 | - | - |
+| 1 | v2 base / v2 keep (no layers) | 0.0396 | 0.0713 | 0.0400 | 1.09 | 0.161 | 0.0 | 2.99 | 0.73 |
+| 1 | **v3 keep (491 layered surfaces)** | 0.0373 | 0.0659 | 0.0320 | 0.99 | 0.181 | 0.0 | 3.16 | 0.79 |
+| 2 | stock | 0.0329 | 0.0654 | 0.0433 | 0.48 | 0.151 | 0.0 | - | - |
+| 2 | v2 base / v2 keep | 0.0405 | 0.0783 | 0.0749 | 0.39 | 0.224 | 0.0 | 2.30 | 0.83 |
+| 2 | v3 keep | 0.0398 | 0.0789 | 0.0787 | 0.35 | 0.235 | 0.0 | 2.48 | 0.88 |
+| 5 | stock | 0.0248 | 0.0537 | 0.1134 | 0.74 | 0.195 | 0.0 | - | - |
+| 5 | v2 base / v2 keep | 0.0498 | 0.0512 | 0.0966 | 1.17 | 0.168 | 0.0 | 2.55 | 0.84 |
+| 5 | v3 keep | 0.0470 | 0.0496 | 0.0612 | 1.12 | 0.206 | 0.0 | 2.84 | 0.92 |
+
+Mean distance: v2 (no layers) 2.61, **v3 keep 2.83**. The frames differ from v2 by a mean 8.0 grey levels, 33 % of pixels above 8 at pose 5 (against 2.7 / 4.6 % for v2 keep against base): the layers
+now change a third of the frame. The metric did not reward it: the floor got darker (0.061 against stock 0.113 at pose 5, 0.032 against 0.102 at pose 1), the floor contrast and b/r moved toward stock
+(0.206 against 0.195; 1.12 against 0.74 at pose 5, 0.99 against 0.73 at pose 1) and the registration match rose (0.79 / 0.88 / 0.92 against 0.73 / 0.83 / 0.84). Looked at (pose 5, stock left, ours right,
+`r2\metric\v3_pair_5.png`, files `r2\pairs_v2\ours_N_v3keep.png`): with the layers the car carries the graffiti tags (the white and pink tag on the right panel, the large black tag on the left), the
+floor carries dirt and wet patches in the stock's places, the pillar has its grime; before, all of these were absent. Still apart from stock: the colour balance is colder and bluer, the floor is darker than
+stock's, the lit rooms through the doors are dimmer. So the picture is closer in content and the numbers are not: the layers are right, the lighting level now shows as the remaining gap
+(the floor luminance and the blue cast were hidden by the missing dirt before).
+
+### RenderDoc, pixel on a `*` surface (`rdoc_vslots.py` then `rdoc_pixel.py`; capture `r2\cap\v3_keep_p5`, logs `r2\ao\v3`, `r2\ao\v3p`)
+- World surface draws with a second vertex buffer: **552** (before the fix: 0), slot 1 strides 8, 12, 16, 20, 28 (the layer record sizes).
+- Pixel (729, 409), covered by event 5383 (72 indices, pixel shader 217611, output `83148`): vertex buffers slot 0 (stride 44) and **slot 1 (stride 28)**; vertex inputs TEXCOORD3, TEXCOORD4, TEXCOORD5 read from slot 1.
+  Bound images: five 256 x 256 BC7, BC1 512 x 512 / 1024 x 1024 / 256 x 256 (the layer and detail images), the three lightmap images (4096 x 2048 BC4, 4096 x 4096 BC6, 4096 x 2048 R8G8), the shadow depth,
+  the occlusion target, the light grid volumes: 28 resources, none all-zero.
+- So the lifted `*` surfaces draw with slot 1 bound and their layer images bound; the plain floor draws (section 12) bind slot 0 only, as expected.
+
+### Ranking (section 9)
+Closing "blend layers" for real (a prefab with its layer stream): the mean distance moved +0.22 (2.61 to 2.83) while the content gap closed (graffiti, dirt, the registration match 0.73 / 0.83 / 0.84 to 0.79 / 0.88 / 0.92).
+The metric is dominated by the floor luminance and the colour cast now (floor 0.061 against 0.113, b/r 1.12 against 0.74): the next gaps to measure are the light level of the room (stock's baked light and probes) and
+the colour balance, not geometry or materials.

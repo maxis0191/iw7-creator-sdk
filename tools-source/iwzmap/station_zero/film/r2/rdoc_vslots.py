@@ -13,7 +13,7 @@ try:
             acts.append(x); walk(x.children)
     walk(ctl.GetRootActions())
     for a in acts:
-        if not (a.flags & rd.ActionFlags.Drawcall) or int(req["Target"]) not in [int(o) for o in a.outputs]:
+        if not (a.flags & rd.ActionFlags.Drawcall) or (int(req["Target"]) and int(req["Target"]) not in [int(o) for o in a.outputs]):
             continue
         ctl.SetFrameEvent(int(a.eventId), True)
         s = ctl.GetPipelineState()
@@ -21,7 +21,27 @@ try:
         log["n"] += 1
         if len(vb) > 1:
             ps = s.GetShaderReflection(rd.ShaderStage.Pixel)
-            log["multi"].append({"event": int(a.eventId), "indices": a.numIndices, "vb": vb, "inputs": [(x.name, int(x.vertexBuffer)) for x in s.GetVertexInputs()],
+            px = None
+            try:
+                import struct
+                mesh = ctl.GetPostVSData(0, 0, rd.MeshDataStage.VSOut)
+                vbd = ctl.GetBufferData(mesh.vertexResourceId, mesh.vertexByteOffset, 0)
+                ibd = ctl.GetBufferData(mesh.indexResourceId, mesh.indexByteOffset, 0)
+                fmt = "<%dH" % (len(ibd) // 2) if mesh.indexByteStride == 2 else "<%dI" % (len(ibd) // 4)
+                idx = [i + mesh.baseVertex for i in struct.unpack(fmt, ibd)[: mesh.numIndices]]
+                W, H = req.get("W", 1280), req.get("H", 720)
+                for t in range(0, len(idx) - 2, 3):
+                    ps3 = [struct.unpack_from("<4f", vbd, idx[t + k] * mesh.vertexByteStride) for k in range(3)]
+                    if all(p[3] > 1e-3 for p in ps3):
+                        sx = [(p[0] / p[3] * 0.5 + 0.5) * W for p in ps3]
+                        sy = [(1 - (p[1] / p[3] * 0.5 + 0.5)) * H for p in ps3]
+                        cx, cy = sum(sx) / 3, sum(sy) / 3
+                        if 0 <= cx < W and 0 <= cy < H:
+                            px = [round(cx), round(cy)]
+                            break
+            except Exception:
+                px = None
+            log["multi"].append({"px": px, "event": int(a.eventId), "indices": a.numIndices, "vb": vb, "inputs": [(x.name, int(x.vertexBuffer)) for x in s.GetVertexInputs()],
                                  "ps_ro": len(ps.readOnlyResources) if ps else None})
     ctl.Shutdown(); cap.Shutdown(); rd.ShutdownReplay()
 except Exception:

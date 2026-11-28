@@ -32,7 +32,7 @@ from studio import build as B  # noqa: E402
 from studio import prefab as P  # noqa: E402
 
 ZONE = 'cp_disco'
-PREFAB = 'ctl_subway_east'
+PREFAB = 'ctl_subway_east_lay'     # lifted with the layer stream (the first lift, `ctl_subway_east`, predates it: R2b, R2-PARITY section 13)
 STOCK_BOX = [-150.0, 1950.0, 230.0, 1260.0, 3400.0, 760.0]     # both platforms, the track, the stairs' feet, the mezzanine edge
 OFFSET = (-7850.0, -6750.0, -400.0)                          # stock -> document: a pure translation, inside the station's own bounds (the empty x gap between the Terminus and the base; z in the base's range): placed outside them (-13000, -7000, 0) the build's walk gate turned the base's own drop region (shallowest drop 40) from a warning into an error
 BOUNCE_ROW_PER_UNIT = 27000.0
@@ -105,7 +105,7 @@ def build(m, mode='bounce', probe_room=True):
     ensure_lift()
     m.use(LAYER)
     at = to_doc(prefab_origin())
-    B.prefab(m, PREFAB, at=at, yaw=0.0, openings='keep', props=True, lights=False, id='ctl_prefab')
+    B.prefab(m, PREFAB, at=at, yaw=0.0, openings='keep', props=True, lights=False, blend='keep', id='ctl_prefab')
     # No zone: the room is a photograph set, not a play space. A lifted prefab makes no navigation cells on a lattice base (studio/based.py
     # _nav_lattice takes floor, room, stair and mesh objects as regions); with an island zone `check` refuses it (ISLAND_NO_NAV), and a
     # collision-only floor strip as a seed gave 141 navigation areas whose 925 cells were all dropped as unreachable. Nothing a frame shows
