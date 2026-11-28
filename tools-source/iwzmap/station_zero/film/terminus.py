@@ -70,7 +70,8 @@ LIGHT_GROUP = 'emergency'            # lit-first base: every lamp baked (PLAN de
 # at the body, `bake='bounce'`: the engine draws its direct light at intensity x 27,000 (studio BOUNCE_ROW_PER_UNIT), the lightmap keeps its bounce.
 KEY_TOP = (MACH[0] + 51.0, MACH[1] - 40.0, 182.0)       # the head's top (where its rod meets it)
 KEY_AIM = (MACH[0], MACH[1] - 6.0, POST_H + 48.0)       # the body's centre
-KEY_INTENSITY = float(os.environ.get('SZ_TERMINUS_KEY', '3.0'))
+KEY_INTENSITY = float(os.environ.get('SZ_TERMINUS_KEY', '7.0'))   # measured (station\mach, term_machine, display luma): body / paper 0.126 before,
+#                                                                     0.311 at 3.0, 0.306 at 3.0 + ink, 0.456 at 7.0 + ink (no clipped pixel)
 KEY_RADIUS = 230.0                                      # the body at about 0.5 of the radius: where L1 calibrated the engine row
 KEY_CONE = (20.0, 38.0)
 KEY_KELVIN = 2900
