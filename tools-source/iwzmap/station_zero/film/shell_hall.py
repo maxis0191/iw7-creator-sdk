@@ -63,7 +63,8 @@ def hall_life(A, m):
     # 1. bench islands on the centre line: one worn subway bench of the donor kit, a planter with dead stems at each end, a bin beside
     import hall_dress as HD
     for k, x in enumerate(ISLANDS):
-        HD.free(A, m, 'cp_disco_worn_subway_bench', x, ISLAND_Y, 90.0, 'island_%d_bench' % k, layer='hall')
+        import shop_fronts                                                    # AC2: the stock bus bench of the donor kit, two of them end to end (REVIEW-3: the worn subway bench read as a huge dark slab)
+        shop_fronts.island_bench(A, m, x, ISLAND_Y, 'island_%d_bench' % k)
         for j, dx in enumerate((-124.0, 124.0)):
             B.prop(m, 'p7_planters_taperedbox_small', (x + dx, ISLAND_Y, 0.0), yaw=90.0, layer='hall', id='island_%d_planter_%d' % (k, j), clip=[-13.0, -16.0, 0.0, 13.0, 16.0, 32.0])
             B.prop(m, 'p7_foliage_flower_bouquet_glass_dead', (x + dx + (3.0 if j else -2.0), ISLAND_Y + 2.0, 26.0), yaw=40.0 + 70.0 * j, layer='hall', id='island_%d_stems_%d' % (k, j))

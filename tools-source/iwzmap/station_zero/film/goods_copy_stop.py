@@ -124,7 +124,7 @@ def window_east(K):
     # a board of samples hung on chains from the transom (laminated cards, a programme, copies): no floor footprint
     it = K.item('sample_board')
     bx, by = -2196.0, 4314.0
-    K.box(it, 'board', [bx - 22.0, by - 0.5, 96.0, bx + 22.0, by + 0.5, 126.0], M['blue'])
+    K.box(it, 'board', [bx - 22.0, by - 0.5, 96.0, bx + 22.0, by + 0.5, 126.0], 'w/wood_antique_panel_trim_01')      # AC2: a pinboard of wood (its back, seen from inside, was the blue metal in shadow: a black cutout)
     for k, dx in enumerate((-18.0, 18.0)):
         K.box(it, 'chain%d' % k, [bx + dx - 0.2, by - 0.2, 126.0, bx + dx + 0.2, by + 0.2, 132.0], M['chrome'])
     for k, (dx, pic, w, h) in enumerate(((-13.0, 'cs_copy_page.png', 12.0, 15.5), (0.5, 'cs_card_3.png', 12.0, 7.5), (14.0, 'cs_copy_page.png', 12.0, 15.5))):

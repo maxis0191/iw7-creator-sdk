@@ -1600,5 +1600,2599 @@
 "materials": [
 "mcopw/mtl_cp_town_store_shelves"
 ]
+},
+"cp_town_store_shelves_96_01": {
+"size": [
+52.416,
+96.981,
+74.685
+],
+"mins": [
+-26.208,
+-0.249,
+0.036
+],
+"maxs": [
+26.208,
+96.732,
+74.721
+],
+"tris": 4974,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"cp_town"
+],
+"materials": [
+"mcopw/mtl_cp_town_store_shelves"
+]
+},
+"cp_town_store_shelves_endcap_02": {
+"size": [
+48.462,
+31.022,
+74.734
+],
+"mins": [
+-24.231,
+-30.836,
+-0.013
+],
+"maxs": [
+24.231,
+0.186,
+74.721
+],
+"tris": 4326,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"cp_town"
+],
+"materials": [
+"mcopw/mtl_cp_town_store_shelves"
+]
+},
+"cp_town_wooden_wall_rack": {
+"size": [
+19.397,
+74.433,
+11.813
+],
+"mins": [
+-10.986,
+-31.712,
+-0.912
+],
+"maxs": [
+8.411,
+42.721,
+10.901
+],
+"tris": 268,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"cp_town"
+],
+"materials": [
+"mopw/lambert1"
+]
+},
+"cup_paper_open_iw6": {
+"size": [
+3.866,
+3.808,
+5.451
+],
+"mins": [
+-1.933,
+-1.904,
+-0.005
+],
+"maxs": [
+1.933,
+1.904,
+5.446
+],
+"tris": 416,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_junk",
+"mp_hawkwar",
+"mp_fallen",
+"mp_quarry",
+"mp_pixel",
+"mp_proto",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/mtl_cup_paper_iw6"
+]
+},
+"decor_wall_clock_02": {
+"size": [
+6.095,
+17.128,
+17.128
+],
+"mins": [
+0.0,
+-8.564,
+-8.564
+],
+"maxs": [
+6.095,
+8.564,
+8.564
+],
+"tris": 2290,
+"back": "-x",
+"front": "+x",
+"against_wall": {
+"wall facing +x": 0.0,
+"wall facing -x": 180.0,
+"wall facing +y": 90.0,
+"wall facing -y": 270.0
+},
+"kind": "flat back",
+"zones": [
+"mp_dome_iw",
+"mp_hawkwar",
+"mp_fallen",
+"mp_parkour",
+"mp_codphish",
+"mp_frontier",
+"mp_proto",
+"cp_final"
+],
+"materials": [
+"mo/decor_wall_clock_02_base",
+"mo/decor_wall_clock_02_glass"
+]
+},
+"desk_light_fn_01": {
+"size": [
+13.04,
+15.694,
+19.683
+],
+"mins": [
+-4.255,
+-7.847,
+0.027
+],
+"maxs": [
+8.785,
+7.847,
+19.71
+],
+"tris": 3230,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"mp_fallen",
+"cp_town",
+"cp_disco"
+],
+"materials": [
+"mo/mtl_desk_light_fn_01"
+]
+},
+"equipment_industrial_toolbox_01": {
+"size": [
+10.079,
+25.983,
+11.943
+],
+"mins": [
+-5.014,
+-12.998,
+-0.003
+],
+"maxs": [
+5.065,
+12.985,
+11.94
+],
+"tris": 856,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_flip",
+"mp_junk",
+"mp_desert",
+"mp_permafrost2",
+"mp_overflow",
+"mp_riot",
+"mp_fallen",
+"mp_breakneck",
+"mp_parkour",
+"mp_rivet",
+"mp_divide",
+"mp_skyway",
+"mp_depot",
+"mp_nova",
+"mp_afghan",
+"mp_proto",
+"cp_rave",
+"cp_zmb"
+],
+"materials": [
+"mo/equipment_industrial_toolbox_01",
+"mo/nequin_logo_decal"
+]
+},
+"equipment_wall_mounted_phone_01_yellow": {
+"size": [
+4.91,
+10.629,
+17.032
+],
+"mins": [
+0.0,
+-6.685,
+0.0
+],
+"maxs": [
+4.91,
+3.944,
+17.032
+],
+"tris": 3406,
+"back": "+y",
+"front": "-y",
+"against_wall": {
+"wall facing +x": 90.0,
+"wall facing -x": 270.0,
+"wall facing +y": 180.0,
+"wall facing -y": 0.0
+},
+"kind": "flat back",
+"zones": [
+"mp_desert",
+"mp_breakneck",
+"mp_parkour",
+"mp_rivet",
+"mp_divide",
+"mp_skyway",
+"mp_quarry",
+"mp_frontier",
+"mp_depot",
+"cp_final"
+],
+"materials": [
+"mo/equipment_wall_mounted_phone_01_yellow"
+]
+},
+"fixture_greece_wood_shelf_01": {
+"size": [
+47.312,
+13.964,
+6.051
+],
+"mins": [
+-23.656,
+-13.852,
+-5.069
+],
+"maxs": [
+23.656,
+0.112,
+0.982
+],
+"tris": 314,
+"back": "+y",
+"front": "-y",
+"against_wall": {
+"wall facing +x": 90.0,
+"wall facing -x": 270.0,
+"wall facing +y": 180.0,
+"wall facing -y": 0.0
+},
+"kind": "flat back",
+"zones": [
+"mp_geneva",
+"mp_renaissance2",
+"mp_riot",
+"mp_fallen",
+"mp_nova",
+"mp_pixel",
+"cp_town",
+"cp_disco",
+"cp_rave"
+],
+"materials": [
+"mo/fixture_greece_wood_shelf_01"
+]
+},
+"fixture_minature_fridge_01": {
+"size": [
+25.899,
+32.264,
+33.112
+],
+"mins": [
+-3.253,
+-30.367,
+0.0
+],
+"maxs": [
+22.646,
+1.897,
+33.112
+],
+"tris": 1126,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_geneva",
+"mp_renaissance2",
+"mp_prime",
+"mp_riot",
+"mp_frontier",
+"mp_pixel",
+"cp_town",
+"cp_zmb"
+],
+"materials": [
+"mo/fixture_minature_fridge_01"
+]
+},
+"folding_wall_table_01": {
+"size": [
+33.198,
+112.008,
+112.0
+],
+"mins": [
+0.0,
+-112.008,
+0.0
+],
+"maxs": [
+33.198,
+0.0,
+112.0
+],
+"tris": 2390,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"cp_final"
+],
+"materials": [
+"mopw/folding_wall_table",
+"mopw/folding_wall_table_decals"
+]
+},
+"furniture_bench_wood_01": {
+"size": [
+82.0,
+108.0,
+34.0
+],
+"mins": [
+-41.5,
+-54.5,
+0.0
+],
+"maxs": [
+40.5,
+53.5,
+34.0
+],
+"tris": 340,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"cp_rave"
+],
+"materials": [
+"mopw/furniture_bench_wood"
+]
+},
+"furniture_book_store_shelf_02": {
+"size": [
+12.865,
+16.233,
+52.019
+],
+"mins": [
+-0.0,
+-0.24,
+-0.0
+],
+"maxs": [
+12.865,
+15.993,
+52.019
+],
+"tris": 576,
+"back": "-x",
+"front": "+x",
+"against_wall": {
+"wall facing +x": 0.0,
+"wall facing -x": 180.0,
+"wall facing +y": 90.0,
+"wall facing -y": 270.0
+},
+"kind": "flat back",
+"zones": [
+"mp_geneva",
+"mp_renaissance2",
+"mp_hawkwar",
+"mp_permafrost2",
+"mp_overflow",
+"mp_riot",
+"mp_fallen",
+"mp_skyway",
+"cp_town"
+],
+"materials": [
+"mo/furniture_book_store_shelf_02"
+]
+},
+"furniture_filing_cabinet": {
+"size": [
+33.352,
+14.996,
+33.041
+],
+"mins": [
+-16.581,
+-7.498,
+-0.0
+],
+"maxs": [
+16.771,
+7.498,
+33.041
+],
+"tris": 1510,
+"back": "-x",
+"front": "+x",
+"against_wall": {
+"wall facing +x": 0.0,
+"wall facing -x": 180.0,
+"wall facing +y": 90.0,
+"wall facing -y": 270.0
+},
+"kind": "flat back",
+"zones": [
+"cp_frontend",
+"mp_mansion",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/furniture_filing_cabinet_material"
+]
+},
+"furniture_park_bench_01": {
+"size": [
+38.517,
+95.765,
+42.622
+],
+"mins": [
+-18.302,
+-47.857,
+0.0
+],
+"maxs": [
+20.215,
+47.908,
+42.622
+],
+"tris": 1176,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"cp_town"
+],
+"materials": [
+"mopw/furniture_park_bench",
+"mopw/furniture_park_bench_alpha"
+]
+},
+"furniture_rack_forms_iw6": {
+"size": [
+14.057,
+5.043,
+26.449
+],
+"mins": [
+-7.028,
+-2.567,
+-0.0
+],
+"maxs": [
+7.029,
+2.476,
+26.449
+],
+"tris": 1024,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_pixel",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/mtl_furniture_rack_forms_iw6"
+]
+},
+"furniture_table_office_01": {
+"size": [
+106.658,
+154.803,
+36.019
+],
+"mins": [
+-74.339,
+-122.485,
+-0.019
+],
+"maxs": [
+32.319,
+32.318,
+36.0
+],
+"tris": 4898,
+"back": "+y",
+"front": "-y",
+"against_wall": {
+"wall facing +x": 90.0,
+"wall facing -x": 270.0,
+"wall facing +y": 180.0,
+"wall facing -y": 0.0
+},
+"kind": "flat back",
+"zones": [
+"cp_town"
+],
+"materials": [
+"mopw/furniture_table_office_01"
+]
+},
+"greece_display_cases_07_open": {
+"size": [
+18.07,
+49.864,
+37.829
+],
+"mins": [
+-0.0,
+-24.932,
+-0.0
+],
+"maxs": [
+18.07,
+24.932,
+37.829
+],
+"tris": 932,
+"back": "+y",
+"front": "-y",
+"against_wall": {
+"wall facing +x": 90.0,
+"wall facing -x": 270.0,
+"wall facing +y": 180.0,
+"wall facing -y": 0.0
+},
+"kind": "flat back",
+"zones": [
+"cp_zmb"
+],
+"materials": [
+"mo/mtl_greece_display_cases_02"
+]
+},
+"greece_display_cases_08": {
+"size": [
+18.066,
+88.124,
+37.829
+],
+"mins": [
+-0.0,
+-44.062,
+-0.0
+],
+"maxs": [
+18.066,
+44.062,
+37.829
+],
+"tris": 936,
+"back": "-x",
+"front": "+x",
+"against_wall": {
+"wall facing +x": 0.0,
+"wall facing -x": 180.0,
+"wall facing +y": 90.0,
+"wall facing -y": 270.0
+},
+"kind": "flat back",
+"zones": [
+"mp_pixel",
+"cp_zmb"
+],
+"materials": [
+"mopw/mtl_greece_display_cases_02"
+]
+},
+"greece_display_cases_11": {
+"size": [
+14.526,
+72.506,
+79.5
+],
+"mins": [
+0.0,
+-36.253,
+0.0
+],
+"maxs": [
+14.526,
+36.253,
+79.5
+],
+"tris": 1730,
+"back": "-x",
+"front": "+x",
+"against_wall": {
+"wall facing +x": 0.0,
+"wall facing -x": 180.0,
+"wall facing +y": 90.0,
+"wall facing -y": 270.0
+},
+"kind": "flat back",
+"zones": [
+"mp_pixel",
+"cp_zmb"
+],
+"materials": [
+"mopw/mtl_greece_display_cases_02"
+]
+},
+"ice_cream_cooler_01": {
+"size": [
+32.668,
+60.103,
+41.841
+],
+"mins": [
+-15.058,
+-29.922,
+-0.219
+],
+"maxs": [
+17.61,
+30.181,
+41.622
+],
+"tris": 4484,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_fallen",
+"cp_town",
+"cp_rave",
+"cp_zmb"
+],
+"materials": [
+"mo/mtl_ice_cream_cooler_01"
+]
+},
+"lab_desk_02": {
+"size": [
+32.01,
+95.617,
+35.017
+],
+"mins": [
+-16.0,
+-47.821,
+-0.017
+],
+"maxs": [
+16.01,
+47.796,
+35.0
+],
+"tris": 628,
+"back": "-x",
+"front": "+x",
+"against_wall": {
+"wall facing +x": 0.0,
+"wall facing -x": 180.0,
+"wall facing +y": 90.0,
+"wall facing -y": 270.0
+},
+"kind": "flat back",
+"zones": [
+"mp_parkour",
+"mp_proto",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mopw/mtl_p7_lab_desk_02"
+]
+},
+"lag_portable_radio": {
+"size": [
+9.555,
+15.43,
+18.33
+],
+"mins": [
+-7.925,
+-7.421,
+0.074
+],
+"maxs": [
+1.63,
+8.009,
+18.404
+],
+"tris": 1482,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"mp_hawkwar",
+"mp_proto",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/mtl_lag_portable_radio"
+]
+},
+"lounge_coffee_machine_01": {
+"size": [
+18.965,
+51.116,
+24.026
+],
+"mins": [
+0.0,
+-25.555,
+-0.004
+],
+"maxs": [
+18.965,
+25.561,
+24.022
+],
+"tris": 3674,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_breakneck",
+"cp_final"
+],
+"materials": [
+"mo/lounge_coffee_machine_01"
+]
+},
+"ma_cup_stack": {
+"size": [
+3.823,
+3.754,
+10.603
+],
+"mins": [
+-1.914,
+-1.867,
+-0.001
+],
+"maxs": [
+1.909,
+1.887,
+10.602
+],
+"tris": 288,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"cp_frontend",
+"mp_geneva",
+"mp_renaissance2",
+"mp_permafrost2",
+"mp_overflow",
+"mp_fallen",
+"mp_codphish",
+"mp_depot",
+"mp_pixel",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/mtl_cups",
+"mo/mtl_cups_noshadow"
+]
+},
+"misc_coffee_machine": {
+"size": [
+21.737,
+12.368,
+22.973
+],
+"mins": [
+-10.21,
+-6.184,
+-0.998
+],
+"maxs": [
+11.527,
+6.184,
+21.975
+],
+"tris": 406,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"patch_mp_desert",
+"patch_mp_frontier",
+"patch_mp_parkour",
+"patch_mp_fallen",
+"mp_geneva",
+"mp_renaissance2",
+"mp_neon",
+"mp_desert",
+"mp_permafrost2",
+"mp_overflow",
+"mp_fallen",
+"mp_parkour",
+"mp_codphish",
+"mp_frontier",
+"mp_mansion",
+"mp_pixel",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/misc_coffee_machine"
+]
+},
+"misc_coffee_machine_pot": {
+"size": [
+9.002,
+9.113,
+9.168
+],
+"mins": [
+-4.501,
+-4.501,
+0.0
+],
+"maxs": [
+4.501,
+4.612,
+9.168
+],
+"tris": 1260,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"mp_geneva",
+"mp_renaissance2",
+"mp_neon",
+"mp_desert",
+"mp_permafrost2",
+"mp_overflow",
+"mp_fallen",
+"mp_codphish",
+"mp_frontier",
+"mp_mansion",
+"mp_pixel",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/misc_coffee_machine"
+]
+},
+"misc_magazine_rack_01": {
+"size": [
+3.695,
+14.534,
+34.914
+],
+"mins": [
+-0.661,
+-7.267,
+0.0
+],
+"maxs": [
+3.034,
+7.267,
+34.914
+],
+"tris": 420,
+"back": "-x",
+"front": "+x",
+"against_wall": {
+"wall facing +x": 0.0,
+"wall facing -x": 180.0,
+"wall facing +y": 90.0,
+"wall facing -y": 270.0
+},
+"kind": "flat back",
+"zones": [
+"mp_parkour",
+"mp_divide",
+"mp_frontier",
+"cp_rave",
+"cp_final"
+],
+"materials": [
+"mo/misc_magazine_rack_01"
+]
+},
+"misc_paint_brush_01": {
+"size": [
+14.958,
+4.636,
+1.27
+],
+"mins": [
+-7.5,
+-2.318,
+0.017
+],
+"maxs": [
+7.458,
+2.318,
+1.287
+],
+"tris": 196,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"mp_carnage2",
+"mp_rally",
+"cp_rave",
+"cp_zmb"
+],
+"materials": [
+"mo/misc_paint_brushes"
+]
+},
+"neon_open_sign_on_02": {
+"size": [
+2.633,
+42.824,
+17.952
+],
+"mins": [
+-2.621,
+-21.412,
+-0.0
+],
+"maxs": [
+0.012,
+21.412,
+17.952
+],
+"tris": 1340,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "plate",
+"zones": [
+"mp_prime",
+"mp_carnage2",
+"mp_rally",
+"mp_depot",
+"cp_disco"
+],
+"materials": [
+"mo/korean_neon_blue",
+"mo/korean_neon_pink",
+"mo/mtl_neon_open_sign_alpha",
+"mo/mtl_neon_open_sign_alpha_ebox"
+]
+},
+"office_book_set_iw6": {
+"size": [
+11.78,
+12.072,
+14.016
+],
+"mins": [
+-5.859,
+-6.036,
+0.0
+],
+"maxs": [
+5.921,
+6.036,
+14.016
+],
+"tris": 1114,
+"back": "+x",
+"front": "-x",
+"against_wall": {
+"wall facing +x": 180.0,
+"wall facing -x": 0.0,
+"wall facing +y": 270.0,
+"wall facing -y": 90.0
+},
+"kind": "flat back",
+"zones": [
+"mp_riot",
+"mp_parkour",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mco/mtl_office_books_set_iw6"
+]
+},
+"office_paper_stack01_iw6": {
+"size": [
+15.744,
+19.439,
+13.192
+],
+"mins": [
+-7.968,
+-10.153,
+0.0
+],
+"maxs": [
+7.776,
+9.286,
+13.192
+],
+"tris": 272,
+"back": "-y",
+"front": "+y",
+"against_wall": {
+"wall facing +x": 270.0,
+"wall facing -x": 90.0,
+"wall facing +y": 0.0,
+"wall facing -y": 180.0
+},
+"kind": "flat back",
+"zones": [
+"mp_permafrost2",
+"mp_overflow",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/mtl_office_books_set_iw6"
+]
+},
+"p7_54i_gear_shoes": {
+"size": [
+11.91,
+15.894,
+4.966
+],
+"mins": [
+-5.955,
+-7.947,
+-0.014
+],
+"maxs": [
+5.955,
+7.947,
+4.952
+],
+"tris": 1280,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"cp_disco"
+],
+"materials": [
+"mo/mtl_c_54i_snip_shoe"
+]
+},
+"p7_cafe_wall_menu_05": {
+"size": [
+1.338,
+30.078,
+55.738
+],
+"mins": [
+-0.669,
+-15.11,
+-27.859
+],
+"maxs": [
+0.669,
+14.968,
+27.879
+],
+"tris": 542,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "plate",
+"zones": [
+"patch_cp_disco",
+"mp_fallen",
+"cp_disco"
+],
+"materials": [
+"mo/mtl_p7_cafe_wall_menu_05_french",
+"mo/t7_wood_worn_dark_brown"
+]
+},
+"p7_cafe_wall_menu_08": {
+"size": [
+1.338,
+30.078,
+55.738
+],
+"mins": [
+-0.669,
+-15.11,
+-27.859
+],
+"maxs": [
+0.669,
+14.968,
+27.879
+],
+"tris": 542,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "plate",
+"zones": [
+"mp_fallen",
+"cp_disco"
+],
+"materials": [
+"mo/mtl_p7_cafe_wall_menu_08_french",
+"mo/t7_wood_worn_dark_brown"
+]
+},
+"p7_cai_table_vendor_wood": {
+"size": [
+33.922,
+65.578,
+42.626
+],
+"mins": [
+-17.095,
+-32.786,
+-0.027
+],
+"maxs": [
+16.827,
+32.792,
+42.599
+],
+"tris": 1682,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_paris",
+"mp_nova",
+"cp_rave"
+],
+"materials": [
+"mopw/mtl_p7_cai_table_vendor_wood_baremetal_main",
+"mopw/mtl_p7_cai_table_vendor_wood_cornermetal_main",
+"mopw/mtl_p7_cai_table_vendor_wood_dirt",
+"mopw/mtl_p7_cai_table_vendor_wood_paintedwood_main"
+]
+},
+"p7_cai_work_table_metal_01_white": {
+"size": [
+41.736,
+81.112,
+36.282
+],
+"mins": [
+-20.795,
+-40.584,
+0.01
+],
+"maxs": [
+20.941,
+40.528,
+36.292
+],
+"tris": 6714,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"mp_depot",
+"mp_nova",
+"mp_afghan",
+"cp_town"
+],
+"materials": [
+"mopw/mtl_p7_cai_work_table_metal_01_white_bend"
+]
+},
+"p7_cai_work_table_wood_01_bare": {
+"size": [
+41.752,
+81.967,
+36.181
+],
+"mins": [
+-20.872,
+-41.038,
+-0.021
+],
+"maxs": [
+20.88,
+40.929,
+36.16
+],
+"tris": 2270,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_nova",
+"cp_rave"
+],
+"materials": [
+"mopw/mtl_p7_cai_work_table_wood_01_bare_bend",
+"mopw/mtl_p7_cai_work_table_wood_dirty",
+"mopw/mtl_p7_cai_work_table_wood_face"
+]
+},
+"p7_cai_work_table_wood_03_bare": {
+"size": [
+42.065,
+40.917,
+36.327
+],
+"mins": [
+-20.993,
+-20.371,
+-0.035
+],
+"maxs": [
+21.072,
+20.546,
+36.292
+],
+"tris": 2222,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"cp_town"
+],
+"materials": [
+"mo/mtl_p7_cai_work_table_wood_03_bare_bend",
+"mo/mtl_p7_cai_work_table_wood_dirty",
+"mo/mtl_p7_cai_work_table_wood_face"
+]
+},
+"p7_cup_glass": {
+"size": [
+4.014,
+4.014,
+8.01
+],
+"mins": [
+-2.007,
+-2.007,
+-0.003
+],
+"maxs": [
+2.007,
+2.007,
+8.007
+],
+"tris": 512,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_riot",
+"cp_disco"
+],
+"materials": [
+"mo/glass_clear_model_no_imp",
+"mo/glass_clear_rough_model_no_imp"
+]
+},
+"p7_diner_table_holder": {
+"size": [
+7.155,
+8.572,
+13.079
+],
+"mins": [
+-1.479,
+-4.286,
+-0.006
+],
+"maxs": [
+5.676,
+4.286,
+13.073
+],
+"tris": 7220,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"patch_cp_frontend",
+"patch_mp_fallen",
+"patch_cp_rave",
+"cp_frontend",
+"mp_fallen",
+"mp_pixel",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/mtl_p7_diner_table_set"
+]
+},
+"p7_diner_table_ketchup": {
+"size": [
+2.698,
+2.698,
+10.019
+],
+"mins": [
+-1.349,
+-1.349,
+0.012
+],
+"maxs": [
+1.349,
+1.349,
+10.031
+],
+"tris": 452,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"patch_cp_disco",
+"mp_permafrost2",
+"mp_overflow",
+"mp_fallen",
+"mp_frontier",
+"mp_depot",
+"mp_pixel",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/mtl_p7_diner_table_set"
+]
+},
+"p7_diner_table_napkin_clean": {
+"size": [
+7.095,
+5.942,
+11.673
+],
+"mins": [
+-3.546,
+-2.971,
+-0.0
+],
+"maxs": [
+3.549,
+2.971,
+11.673
+],
+"tris": 578,
+"back": "+x",
+"front": "-x",
+"against_wall": {
+"wall facing +x": 180.0,
+"wall facing -x": 0.0,
+"wall facing +y": 270.0,
+"wall facing -y": 90.0
+},
+"kind": "flat back",
+"zones": [
+"patch_mp_mansion",
+"cp_frontend",
+"patch_cp_disco",
+"mp_geneva",
+"mp_renaissance2",
+"mp_prime",
+"mp_fallen",
+"mp_mansion",
+"mp_pixel",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/mtl_p7_diner_table_set_clean"
+]
+},
+"p7_machine_welding_small": {
+"size": [
+10.084,
+23.415,
+16.483
+],
+"mins": [
+-5.077,
+-11.563,
+0.023
+],
+"maxs": [
+5.007,
+11.852,
+16.506
+],
+"tris": 2762,
+"back": "+y",
+"front": "-y",
+"against_wall": {
+"wall facing +x": 90.0,
+"wall facing -x": 270.0,
+"wall facing +y": 180.0,
+"wall facing -y": 0.0
+},
+"kind": "flat back",
+"zones": [
+"mp_breakneck",
+"cp_town"
+],
+"materials": [
+"mo/p7_machine_welding_set"
+]
+},
+"p7_shelf_industrial_gray_48": {
+"size": [
+33.982,
+49.544,
+85.713
+],
+"mins": [
+-17.061,
+-24.772,
+-0.015
+],
+"maxs": [
+16.921,
+24.772,
+85.698
+],
+"tris": 8458,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_permafrost2",
+"mp_overflow",
+"cp_town"
+],
+"materials": [
+"mopw/mtl_p7_shelf_industrial_vintage_wood",
+"mopw/p7_shelf_industrial_gray"
+]
+},
+"p7_shelf_metal_single_small_01": {
+"size": [
+12.127,
+56.384,
+5.136
+],
+"mins": [
+0.024,
+-28.192,
+-0.353
+],
+"maxs": [
+12.151,
+28.192,
+4.783
+],
+"tris": 450,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_carnage2",
+"mp_rally",
+"mp_permafrost2",
+"mp_overflow",
+"cp_town",
+"cp_rave"
+],
+"materials": [
+"mo/mtl_p7_shelf_metal_single_small_01"
+]
+},
+"p7_sink_kitchen_stainless_modern_01_clean": {
+"size": [
+26.171,
+44.642,
+10.971
+],
+"mins": [
+-0.771,
+-22.321,
+-11.746
+],
+"maxs": [
+25.4,
+22.321,
+-0.775
+],
+"tris": 256,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_fallen",
+"cp_town"
+],
+"materials": [
+"mo/mtl_p7_sink_kitchen_stainless_modern_01_clean"
+]
+},
+"p7_tools_jar_glass_bolts": {
+"size": [
+4.512,
+4.512,
+7.212
+],
+"mins": [
+-2.256,
+-2.256,
+0.0
+],
+"maxs": [
+2.256,
+2.256,
+7.212
+],
+"tris": 2718,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_hawkwar",
+"cp_town",
+"cp_rave"
+],
+"materials": [
+"mo/mtl_p7_jars_glass",
+"mo/mtl_p7_jars_glass_contents",
+"mo/mtl_p7_jars_glass_inside"
+]
+},
+"p7_tools_jar_glass_med": {
+"size": [
+4.494,
+4.494,
+6.923
+],
+"mins": [
+-2.247,
+-2.247,
+0.01
+],
+"maxs": [
+2.247,
+2.247,
+6.933
+],
+"tris": 1932,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"cp_final"
+],
+"materials": [
+"mo/mtl_p7_jars_glass",
+"mo/mtl_p7_jars_glass_inside"
+]
+},
+"p7_tools_jar_glass_nails_screws": {
+"size": [
+4.494,
+4.494,
+6.923
+],
+"mins": [
+-2.247,
+-2.247,
+0.01
+],
+"maxs": [
+2.247,
+2.247,
+6.933
+],
+"tris": 3000,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_hawkwar",
+"cp_rave"
+],
+"materials": [
+"mo/mtl_p7_jars_glass",
+"mo/mtl_p7_jars_glass_contents",
+"mo/mtl_p7_jars_glass_inside"
+]
+},
+"padlock_latch_iw6": {
+"size": [
+1.335,
+2.126,
+0.318
+],
+"mins": [
+-0.001,
+-1.063,
+-0.159
+],
+"maxs": [
+1.334,
+1.063,
+0.159
+],
+"tris": 30,
+"back": "-x",
+"front": "+x",
+"against_wall": {
+"wall facing +x": 0.0,
+"wall facing -x": 180.0,
+"wall facing +y": 90.0,
+"wall facing -y": 270.0
+},
+"kind": "flat back",
+"zones": [
+"mp_junk",
+"mp_neon",
+"mp_fallen",
+"mp_breakneck",
+"mp_divide",
+"mp_depot",
+"mp_proto",
+"cp_town"
+],
+"materials": [
+"mo/mtl_padlock"
+]
+},
+"park_cash_register": {
+"size": [
+20.0,
+16.0,
+14.0
+],
+"mins": [
+-10.0,
+-8.0,
+0.0
+],
+"maxs": [
+10.0,
+8.0,
+14.0
+],
+"tris": 526,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"cp_frontend",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/park_cash_register"
+]
+},
+"park_concessions_cart_food_display_glass": {
+"size": [
+23.663,
+80.476,
+11.491
+],
+"mins": [
+-5.619,
+-42.035,
+0.0
+],
+"maxs": [
+18.044,
+38.441,
+11.491
+],
+"tris": 164,
+"back": "+x",
+"front": "-x",
+"against_wall": {
+"wall facing +x": 180.0,
+"wall facing -x": 0.0,
+"wall facing +y": 270.0,
+"wall facing -y": 90.0
+},
+"kind": "flat back",
+"zones": [
+"cp_zmb"
+],
+"materials": [
+"mopw/park_concessions_cart",
+"mopw/park_concessions_cart_food_display_glass"
+]
+},
+"roll_up_door_top_02": {
+"size": [
+46.256,
+262.003,
+33.043
+],
+"mins": [
+-46.246,
+-131.713,
+-5.022
+],
+"maxs": [
+0.01,
+130.29,
+28.021
+],
+"tris": 534,
+"back": "+x",
+"front": "-x",
+"against_wall": {
+"wall facing +x": 180.0,
+"wall facing -x": 0.0,
+"wall facing +y": 270.0,
+"wall facing -y": 90.0
+},
+"kind": "flat back",
+"zones": [
+"mp_prime",
+"mp_carnage2",
+"mp_rally",
+"mp_quarry",
+"mp_depot",
+"mp_proto",
+"cp_disco",
+"cp_final"
+],
+"materials": [
+"mopw/mtl_roll_up_door_frame"
+]
+},
+"sdf_bench_folding_01_32": {
+"size": [
+22.886,
+34.0,
+14.881
+],
+"mins": [
+0.0,
+-17.0,
+-2.044
+],
+"maxs": [
+22.886,
+17.0,
+12.837
+],
+"tris": 886,
+"back": "-x",
+"front": "+x",
+"against_wall": {
+"wall facing +x": 0.0,
+"wall facing -x": 180.0,
+"wall facing +y": 90.0,
+"wall facing -y": 270.0
+},
+"kind": "flat back",
+"zones": [
+"cp_final"
+],
+"materials": [
+"mco/sdf_gray_epoxy_floor_01",
+"mo/metal_bare_wall_01",
+"mo/metal_tech_details_01",
+"mo/metal_tech_details_02"
+]
+},
+"shop_display_rack_01": {
+"size": [
+36.0,
+96.5,
+64.0
+],
+"mins": [
+-18.0,
+-48.25,
+0.0
+],
+"maxs": [
+18.0,
+48.25,
+64.0
+],
+"tris": 460,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"cp_zmb"
+],
+"materials": [
+"mopw/fac_rubber_trim_black",
+"mopw/glass_clear_breakable_01",
+"mopw/metal_aluminum_trim_03",
+"mopw/plastic_fiberglass_white_01",
+"mopw/signage_zmb_space_mural_01",
+"mopw/wood_trim_wall_01"
+]
+},
+"shop_display_rack_02": {
+"size": [
+22.0,
+22.0,
+68.399
+],
+"mins": [
+-11.004,
+-11.0,
+3.972
+],
+"maxs": [
+10.996,
+11.0,
+72.371
+],
+"tris": 694,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"cp_rave",
+"cp_zmb"
+],
+"materials": [
+"mopw/clk_stainless_steel_trim",
+"mopw/fac_rubber_trim_black",
+"mopw/metal_aluminum_trim_03",
+"mopw/metal_bare_steel_trim_sheet_01_editor",
+"mopw/plastic_fiberglass_white_01",
+"mopw/wood_antique_flat_trim_01",
+"mopw/wood_antique_panel_trim_01"
+]
+},
+"shop_display_rack_03": {
+"size": [
+48.0,
+48.0,
+40.776
+],
+"mins": [
+-24.0,
+-24.0,
+4.5
+],
+"maxs": [
+24.0,
+24.0,
+45.276
+],
+"tris": 972,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"mp_geneva",
+"mp_renaissance2",
+"cp_zmb"
+],
+"materials": [
+"mo/clk_stainless_steel_trim",
+"mo/metal_aluminum_trim_03",
+"mo/plastic_fiberglass_white_01"
+]
+},
+"sign_city_neon_diner_02": {
+"size": [
+4.792,
+74.25,
+202.532
+],
+"mins": [
+-2.396,
+-37.125,
+-101.266
+],
+"maxs": [
+2.396,
+37.125,
+101.266
+],
+"tris": 18238,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "plate",
+"zones": [
+"mp_prime",
+"cp_disco"
+],
+"materials": [
+"mopw/glass_clear_generic_01",
+"mopw/metal_bare_aluminum_01",
+"mopw/prime_neon_blue"
+]
+},
+"sign_ice_cream_01": {
+"size": [
+114.652,
+8.341,
+15.866
+],
+"mins": [
+-57.326,
+-5.585,
+-7.933
+],
+"maxs": [
+57.326,
+2.756,
+7.933
+],
+"tris": 3080,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "plate",
+"zones": [
+"mp_hawkwar",
+"mp_fallen",
+"cp_town"
+],
+"materials": [
+"mopw/fac_brushedmetal_02",
+"mopw/fac_brushedmetal_panels_blue"
+]
+},
+"snack_stand_half_iw6": {
+"size": [
+97.052,
+17.6,
+55.138
+],
+"mins": [
+-48.526,
+-17.593,
+0.003
+],
+"maxs": [
+48.526,
+0.007,
+55.141
+],
+"tris": 1654,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"cp_rave"
+],
+"materials": [
+"mopw/mtl_snack_stand_iw6",
+"mopw/mtl_snack_stand_wire"
+]
+},
+"stool_bar_padded_01_red": {
+"size": [
+22.644,
+21.293,
+48.064
+],
+"mins": [
+-11.322,
+-10.818,
+0.07
+],
+"maxs": [
+11.322,
+10.475,
+48.134
+],
+"tris": 1664,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"mp_metropolis",
+"mp_fallen",
+"cp_disco"
+],
+"materials": [
+"mo/mtl_stool_bar_padded_01_alt_red"
+]
+},
+"street_bench_long_old_iw6": {
+"size": [
+99.03,
+38.19,
+42.53
+],
+"mins": [
+-49.515,
+-19.095,
+-0.0
+],
+"maxs": [
+49.515,
+19.095,
+42.53
+],
+"tris": 4136,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"mp_riot",
+"mp_turista2",
+"mp_marsoasis",
+"cp_rave"
+],
+"materials": [
+"mopw/mtl_street_bench_iw6",
+"mopw/mtl_street_bench_iw6_metal"
+]
+},
+"street_bench_short_iw6": {
+"size": [
+40.07,
+38.19,
+42.53
+],
+"mins": [
+-20.035,
+-19.095,
+-0.0
+],
+"maxs": [
+20.035,
+19.095,
+42.53
+],
+"tris": 3956,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"cp_disco"
+],
+"materials": [
+"mo/mtl_street_bench_iw6"
+]
+},
+"sz_kiosk_display_hook": {
+"size": [
+3.412,
+8.622,
+4.999
+],
+"mins": [
+-1.706,
+-8.257,
+-1.808
+],
+"maxs": [
+1.706,
+0.365,
+3.191
+],
+"tris": 108,
+"back": "+y",
+"front": "-y",
+"against_wall": {
+"wall facing +x": 90.0,
+"wall facing -x": 270.0,
+"wall facing +y": 180.0,
+"wall facing -y": 0.0
+},
+"kind": "flat back",
+"zones": [
+"mp_prime",
+"mp_fallen",
+"cp_rave",
+"cp_zmb"
+],
+"materials": [
+"mo/mtl_sz_kiosk_display_hook"
+]
+},
+"tool_cabinet_02_iw6": {
+"size": [
+60.025,
+30.388,
+41.876
+],
+"mins": [
+-30.051,
+-30.378,
+-0.004
+],
+"maxs": [
+29.974,
+0.01,
+41.872
+],
+"tris": 4902,
+"back": "+y",
+"front": "-y",
+"against_wall": {
+"wall facing +x": 90.0,
+"wall facing -x": 270.0,
+"wall facing +y": 180.0,
+"wall facing -y": 0.0
+},
+"kind": "flat back",
+"zones": [
+"mp_carnage2",
+"mp_rally",
+"cp_disco"
+],
+"materials": [
+"mo/mtl_tool_cabinet_02_iw6"
+]
+},
+"toolbox_small01_iw6": {
+"size": [
+10.005,
+25.59,
+10.945
+],
+"mins": [
+-4.835,
+-12.795,
+-0.0
+],
+"maxs": [
+5.17,
+12.795,
+10.945
+],
+"tris": 908,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_quarry",
+"mp_nova",
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/mtl_toolbox_small01_iw6"
+]
+},
+"veh_parts_large_toolbox": {
+"size": [
+11.371,
+12.268,
+13.839
+],
+"mins": [
+-5.899,
+-6.134,
+0.0
+],
+"maxs": [
+5.472,
+6.134,
+13.839
+],
+"tris": 844,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"mp_proto",
+"cp_rave"
+],
+"materials": [
+"mo/veh_parts_large_toolbox"
+]
+},
+"vehicle_pickup_keys": {
+"size": [
+4.574,
+1.531,
+4.255
+],
+"mins": [
+-0.858,
+-0.724,
+-3.24
+],
+"maxs": [
+3.716,
+0.807,
+1.015
+],
+"tris": 234,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"mp_prime",
+"cp_rave"
+],
+"materials": [
+"mo/mtl_vehicle_pickup_interior_extinction"
+]
+},
+"vertical_hook_stand": {
+"size": [
+14.86,
+2.0,
+96.0
+],
+"mins": [
+0.0,
+-1.0,
+0.0
+],
+"maxs": [
+14.86,
+1.0,
+96.0
+],
+"tris": 258,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "plate",
+"zones": [
+"mp_geneva",
+"mp_renaissance2",
+"mp_riot",
+"cp_rave",
+"cp_zmb"
+],
+"materials": [
+"mopw/equipment_commercial_hooks__01"
+]
+},
+"zmb_taxidermy_tools": {
+"size": [
+16.466,
+12.565,
+1.857
+],
+"mins": [
+-8.459,
+-6.98,
+-0.018
+],
+"maxs": [
+8.007,
+5.585,
+1.839
+],
+"tris": 1202,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"cp_rave"
+],
+"materials": [
+"mo/zmb_taxidermy_tools_01"
+]
+},
+"zmb_tool_hammer_01": {
+"size": [
+8.394,
+22.4,
+2.138
+],
+"mins": [
+-4.197,
+-11.2,
+-1.069
+],
+"maxs": [
+4.197,
+11.2,
+1.069
+],
+"tris": 372,
+"back": "+y",
+"front": "-y",
+"against_wall": {
+"wall facing +x": 90.0,
+"wall facing -x": 270.0,
+"wall facing +y": 180.0,
+"wall facing -y": 0.0
+},
+"kind": "flat back",
+"zones": [
+"mp_paris",
+"cp_rave"
+],
+"materials": [
+"mo/zmb_old_tools",
+"mo/zmb_old_tools_wood"
+]
+},
+"zmb_tool_pliers_01": {
+"size": [
+4.952,
+12.552,
+1.318
+],
+"mins": [
+-2.476,
+-6.276,
+-0.659
+],
+"maxs": [
+2.476,
+6.276,
+0.659
+],
+"tris": 364,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"mp_paris",
+"cp_town",
+"cp_rave"
+],
+"materials": [
+"mo/zmb_old_tools"
+]
+},
+"zmb_triton_store_display_01": {
+"size": [
+46.8,
+46.8,
+1.0
+],
+"mins": [
+-23.4,
+-23.4,
+0.0
+],
+"maxs": [
+23.4,
+23.4,
+1.0
+],
+"tris": 384,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"cp_zmb"
+],
+"materials": [
+"mo/metal_bare_copper_ribbed_01"
+]
+},
+"zmb_triton_store_display_03": {
+"size": [
+86.0,
+86.0,
+6.0
+],
+"mins": [
+-43.0,
+-43.0,
+0.0
+],
+"maxs": [
+43.0,
+43.0,
+6.0
+],
+"tris": 1024,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"cp_zmb"
+],
+"materials": [
+"mopw/metal_bare_steel_trim_01",
+"mopw/wood_rustic_floor_02"
+]
+},
+"zmb_tv_crt_01": {
+"size": [
+28.5,
+23.827,
+21.435
+],
+"mins": [
+-13.5,
+-10.652,
+0.0
+],
+"maxs": [
+15.0,
+13.175,
+21.435
+],
+"tris": 3528,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "symmetric",
+"zones": [
+"cp_town",
+"cp_disco",
+"cp_rave",
+"cp_final",
+"cp_zmb"
+],
+"materials": [
+"mo/zmb_tv_crt_01_body",
+"mo/zmb_tv_crt_01_decals",
+"mo/zmb_tv_crt_01_screen"
+]
+},
+"zmb_window_display_01": {
+"size": [
+28.472,
+176.0,
+66.0
+],
+"mins": [
+-17.931,
+-88.0,
+-11.0
+],
+"maxs": [
+10.541,
+88.0,
+55.0
+],
+"tris": 2012,
+"back": null,
+"front": null,
+"against_wall": null,
+"kind": "round",
+"zones": [
+"cp_zmb"
+],
+"materials": [
+"mopw/zmb_window_display_01"
+]
 }
 }

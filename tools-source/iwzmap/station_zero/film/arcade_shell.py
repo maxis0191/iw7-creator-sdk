@@ -51,7 +51,7 @@ MAT = {
     'glass': 'w/glass_clear_generic_01',
     'shutter': 'w/cp_disco_metal_door_rollup_01',   # pass 2: door_metal_rollup_grey_large_01 read as rows of white plates
     'housing': 'w/metal_painted_wall_panel_04',
-    'steel': 'w/beacon_brushedmetal_panels_green',  # Shelter 7 blast door leaf
+    'steel': 'w/metal_painted_grey_03',             # Shelter 7 blast door leaf (AC2: the green brushed metal read as a black slab at the end of the hall)
     'steel_frame': 'w/metal_painted_04',
     'wheel': 'w/zmb_brushed_metal_01_red',
     'chrome': 'w/metal_chrome_trim_03',
@@ -255,7 +255,7 @@ def unit_room(m, name, extra_openings=()):
         rbox(m, 'pier_%s_%s_band' % (name, side), [px - 0.6, Y1 - 8.6, 58.0, px + 16.6, Y1 + 18.0, 74.0], MAT['band'])
     # the roll-shutter housing and its curtain, stopped at the shop's own height
     a0, a1 = x0 + 16.0, x1 - 16.0
-    rbox(m, 'housing_%s' % name, [a0, Y1 - 6.0, HOUSING[0], a1, Y1 + 12.0, HOUSING[1]], MAT['housing'])
+    # AC2: the roll-shutter housing is the stock model (shop_fronts.housing), placed by shop_ac2
     share = SHUTTER_STOP[name]
     zb = OPEN_Z - share * OPEN_Z
     if share > 0:
@@ -302,7 +302,8 @@ def door_leaf(m, tag, hinge, length, y0, frame, swing='y', card=None, card_face=
     rbox(m, '%s_rail_t' % tag, [x - 1.5, y0, 132.0, x + 1.5, y0 + length, 138.0], frame)
     rbox(m, '%s_rail_b' % tag, [x - 1.5, y0, 2.0, x + 1.5, y0 + length, 14.0], frame)
     rbox(m, '%s_glass' % tag, [x - 0.3, y0 + 3.0, 14.0, x + 0.3, y0 + length - 3.0, 132.0], MAT['glass'])
-    rbox(m, '%s_bar' % tag, [x - 2.5, y0 + 10.0, 60.0, x + 2.5, y0 + length - 10.0, 63.0], MAT['chrome'])
+    import shop_fronts                                                # AC2: the pull is the stock door handle (K1 4.2), one on each face
+    shop_fronts.pull(m, tag, x, y0 + length - 16.0)
     if card:
         s = 1.0 if card_face == 'e' else -1.0
         picture(m, '%s_card' % tag, card, (x + s * 0.4, y0 + length * 0.5, 96.0), (s, 0.0, 0.0), (10.0, 7.0))
@@ -550,9 +551,8 @@ def hole_nine(m):
     # the inside counter with fixed stool bases (ledge on the partition side, west of the kitchen door)
     counter(m, 'h9_ledge', [x0 + 40.0, PART_Y - 22.0, 0.0, x0 + 130.0, PART_Y - 2.0, 40.0], 'w/metal_chrome_trim_03', sm['join'])
     for k, sx in enumerate((x0 + 70.0, x0 + 110.0)):
-        mesh(m, 'h9_stool_post_%d' % k, MAT['chrome'], G.merge(G.cylinder((sx, PART_Y - 40.0, 0.0), (sx, PART_Y - 40.0, 2.0), 8.0, 16),
-                                                              G.cylinder((sx, PART_Y - 40.0, 2.0), (sx, PART_Y - 40.0, 22.0), 1.6, 12)))
-        mesh(m, 'h9_stool_seat_%d' % k, 'w/plastic_wall_plain_red_01', G.cylinder((sx, PART_Y - 40.0, 22.0), (sx, PART_Y - 40.0, 26.0), 7.5, 16))
+        import shop_dress                                                 # AC2: the stock padded bar stool, not two authored cylinders
+        shop_dress.put(m, 'stool_bar_padded_01_red', sx, PART_Y - 40.0, 0.0, yaw=37.0 * k, id='h9_stool_%d' % k, layer='fronts')
         B.clip(m, [sx - 7.0, PART_Y - 47.0, 0.0, sx + 7.0, PART_Y - 33.0, 26.0], layer='fronts', id='h9_stool_clip_%d' % k)
     anchor('hole_nine.inside_counter', [x0 + 40.0, PART_Y - 22.0, 40.0, x0 + 130.0, PART_Y - 2.0, 60.0], 's', 'cups, the sugar, a plate left half eaten')
     anchor('hole_nine.tv_shelf', [x1 - 70.0, PART_Y - 24.0, 120.0, x1 - 18.0, PART_Y - 2.0, 160.0], 's', 'the television on Channel 9 (bracket shelf high on the back wall)')
@@ -609,10 +609,6 @@ def heel_key(m):
     # clip's south face, between the front rail's tagged pairs (x -1535, -1445); the rifle hangs on its hall face, a player at the counter front
     # (origin y about 4285) is about 65 from the struct with nothing between his eye and the use trigger. 56 high: the stall reads above it.
     bd = [-1530.0, 4298.0, 44.0, -1450.0, 4301.0, 100.0]               # the rifle is about 70 long (client frame): stock -1525, muzzle -1455
-    rbox(m, 'hk_buy_board', bd, MAT['pegboard'])
-    rbox(m, 'hk_buy_board_frame_t', [bd[0] - 2.0, bd[1] - 0.6, bd[5], bd[3] + 2.0, bd[4], bd[5] + 3.0], sm['join'])
-    rbox(m, 'hk_buy_board_frame_w', [bd[0] - 2.0, bd[1] - 0.6, 42.0, bd[0], bd[4], bd[5]], sm['join'])
-    rbox(m, 'hk_buy_board_frame_e', [bd[3], bd[1] - 0.6, 42.0, bd[3] + 2.0, bd[4], bd[5]], sm['join'])
     # yaw 0: the spawned rifle hangs broadside to the hall, stock west (client frames turned by 90 degrees, final_checks\mk_turn_sheet.jpg); at 270 it
     # was seen edge-on, a thin vertical silhouette
     B.wallbuy(m, (-1490.0, 4296.0, 0.0), 'marksman', 1500, 0.0, layer='gameplay', id='buy_marksman_heel_key')
@@ -675,7 +671,8 @@ def south_wall(m):
     # benches and one bin
     import hall_dress as HD
     for k, x in enumerate((-2750.0, -2400.0)):           # AC1: the worn subway bench of the donor kit (192 long: clear of the lockers at -2650..-2518)
-        HD.on_wall(sys.modules[__name__], m, 'cp_disco_worn_subway_bench', 's', x, 0.0, 'bench_%d' % k, clip='auto')
+        import shop_fronts                                                # AC2: two stock bus benches back to the wall, not the 192-long worn slab
+        shop_fronts.wall_bench(sys.modules[__name__], m, x, 'bench_%d' % k)
     B.prop(m, 'cp_disco_street_trashcan_01', (-2210.0, y + 16.0, 0.0), yaw=0.0, layer='south', id='bin_0', clip=[-12.0, -12.0, 0.0, 12.0, 12.0, 30.0])
     fix(m, 'emergency_wall', (-1460.0, y + 0.5, 200.0), 90.0, role='hall', intensity=0.9, radius=1.4)
     anchor('hall.south_wall_litter', [XW, YS, 0.0, XE, YS + 80.0, 4.0], 'n', 'commuter litter at the benches and the phones (studio props.scatter commuter)')

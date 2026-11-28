@@ -19,6 +19,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.environ.get('STUDIO_ROOT', r'C:\studio'))
 from studio import build as B  # noqa: E402
 import shellgeo as G  # noqa: E402
+import shellparts as P  # noqa: E402
 
 PIC = r'C:\studio-data\sz\film\art\arcade\goods_a'
 ART = r'C:\studio-data\sz\film\art\arcade'
@@ -58,7 +59,14 @@ class Shop:
 
     # -------------------------------------------------------------------------------------------- geometry of an item (pass the item id)
     def box(self, iid, part, b, mat, mode='render'):
-        return B.box(self.m, [round(v, 3) for v in b], MAT.get(mat, mat), mode=mode, layer=self.layer, id='%s__%s' % (iid, part))
+        """AC2: a render-only solid is an authored bevelled mesh (edges cut at 45 degrees, a third of its thinnest side at most 0.6), a hairline (under 2.4) a plain solid;
+        the id is the box's, so the goods score still counts the item"""
+        b = [round(v, 3) for v in b]
+        if mode != 'render':
+            return B.box(self.m, b, MAT.get(mat, mat), mode=mode, layer=self.layer, id='%s__%s' % (iid, part))
+        t = min(b[3] - b[0], b[4] - b[1], b[5] - b[2])
+        tris = P.box(*b) if t < 2.4 else P.bevel_box(*b, c=min(0.6, t / 3.0), top=min(0.6, t / 3.0))
+        return B.mesh(self.m, MAT.get(mat, mat), tris=tris, mode='render', layer=self.layer, id='%s__%s' % (iid, part))
 
     def clip(self, iid, b):
         return B.clip(self.m, [round(v, 3) for v in b], layer=self.layer, id='%s__clip' % iid)

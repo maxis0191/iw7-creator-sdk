@@ -19,4 +19,11 @@ REPORT = {}
 def build(A, m):
     import shop_surfaces
     REPORT['surfaces'] = shop_surfaces.build(A, m)
+    import shop_dress
+    import shop_fronts
+    m.use(shop_dress.LAYER)
+    REPORT['housings'] = shop_fronts.housing(A, m)
+    shop_fronts.neon(A, m)
+    shop_fronts.buy_boards(A, m)
+    REPORT['dress'] = shop_dress.build(A, m)
     return REPORT

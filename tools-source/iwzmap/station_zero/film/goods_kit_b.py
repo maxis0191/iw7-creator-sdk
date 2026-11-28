@@ -130,7 +130,13 @@ class Kit:
 
     # parts of an item
     def box(self, iid, part, box, mat, uv=None):
-        return B.box(self.m, box, mat, mode='render', layer=self.layer, id='%s__%s' % (iid, part), uv=uv)
+        if uv is not None:
+            return B.box(self.m, box, mat, mode='render', layer=self.layer, id='%s__%s' % (iid, part), uv=uv)
+        import shellparts as SP                      # AC2: a bevelled authored solid (edges cut, a third of the thinnest side at most 0.6); a hairline (under 2.4) a plain one
+        b = [round(v, 3) for v in box]
+        t = min(b[3] - b[0], b[4] - b[1], b[5] - b[2])
+        tris = SP.box(*b) if t < 2.4 else SP.bevel_box(*b, c=min(0.6, t / 3.0), top=min(0.6, t / 3.0))
+        return B.mesh(self.m, mat, tris=tris, mode='render', layer=self.layer, id='%s__%s' % (iid, part))
 
     def clip(self, iid, box, part='clip'):
         return B.clip(self.m, box, layer=self.layer, id='%s__%s' % (iid, part))
