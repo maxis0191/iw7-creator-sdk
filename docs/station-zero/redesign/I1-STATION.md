@@ -63,8 +63,8 @@ Clipped pixels at all three Terminus cameras: 0.0 % in every variant.
 ## Final bake and frames [m]
 `studio bake doc --final` and `studio bake doc_look --final` (about 5.4 min each: a bake is remembered per document, TOOL-FAULTS I1-1;
 texel 8, 256 rays, 3 bounces); both sessions `reused: the remembered final bake`; real `live power on` (settle 15 s) + 10 s. Second pass
-(after the price script and the key move; the first pass is kept in `final_v1`, `final_term_v1`; a Terminus set shot on a draft bake is
-`final_term_draft`, not used). Sheets (all opened):
+(after the price script and the key move; the first pass is kept in `final_v1`, `final_term_v1`; a Terminus set shot on a draft bake was
+discarded). Sheets (all opened):
 - Arcade and every camera of the document, station vision: `station\final\sheet_on_{0..3}.jpg`, `sheet_off_{0..3}.jpg` (34 cameras each)
 - the Terminus under its own vision (look copy, T1's way: the camera of `live shot` is no rider): `station\final_term\sheet_on_0.jpg`, `sheet_off_0.jpg`
 
