@@ -138,6 +138,10 @@ def build(A, m):
     # ---- benches (the worn subway benches of the donor kit) and news boxes at the south wall
     on_wall(A, m, 'cp_disco_street_news_vending_01', 's', -2900.0, 0.0, 'dr_news_0', clip=[-15.0, -15.0, 0.0, 15.0, 15.0, 54.0])
     on_wall(A, m, 'cp_disco_street_news_vending_01', 's', -2020.0, 0.0, 'dr_news_1', clip=[-15.0, -15.0, 0.0, 15.0, 15.0, 54.0])
+    # ---- the shops' sidewalk: seven stools in front of Hole Number Nine's serving counter, the coir mat at Needle Drop's door
+    for q in range(7):
+        free(A, m, 'cp_disco_bar_stool_01' if q % 2 == 0 else 'cp_disco_bar_stool_02', -1938.0 + 29.0 * q, A.Y1 - 15.0, 37.0 * q, 'dr_stool_%d' % q, clip=[-7.5, -7.5, 0.0, 7.5, 7.5, 28.0])
+    free(A, m, 'door_mat_coir_01', -2894.0, A.Y1 - 22.0, 90.0, 'dr_mat_nd', scale=1.7, clip=None)
     # ---- litter with a cause
     avoid = [[x - 20.0, CY - 20.0, 0.0, x + 20.0, CY + 20.0, 20.0] for x in COLS]
     sp = Spots(A, m, avoid)

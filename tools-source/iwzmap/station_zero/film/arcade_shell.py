@@ -248,17 +248,23 @@ def unit_room(m, name, extra_openings=()):
     B.room(m, [x0, Y1, 0.0, x1, YB, UNIT_H], sm['wall'], sm['floor'], sm['ceil'], openings=ops, thick=16.0, id='room_%s' % name)
     # piers at the unit edges: hall tile on a dark base, standing proud of the shop line
     for side, px in (('w', x0), ('e', x1 - 16.0)):
-        bx(m, 'pier_%s_%s' % (name, side), [px, Y1 - 8.0, 0.0, px + 16.0, Y1 + 18.0, BULK_Z], MAT['tile'])
+        rbox(m, 'pier_%s_%s' % (name, side), [px, Y1 - 8.0, 0.0, px + 16.0, Y1 + 18.0, BULK_Z], MAT['tile'])     # AC1: a bevelled tile solid, collision by its clip
+        B.clip(m, [px, Y1 - 8.0, 0.0, px + 16.0, Y1 + 18.0, BULK_Z], id='pier_%s_%s_clip' % (name, side))
         rbox(m, 'pier_%s_%s_base' % (name, side), [px - 0.8, Y1 - 8.8, 0.0, px + 16.8, Y1 + 18.0, 16.0], MAT['dark'])
         rbox(m, 'pier_%s_%s_band' % (name, side), [px - 0.6, Y1 - 8.6, 58.0, px + 16.6, Y1 + 18.0, 74.0], MAT['band'])
     # the roll-shutter housing and its curtain, stopped at the shop's own height
     a0, a1 = x0 + 16.0, x1 - 16.0
-    bx(m, 'housing_%s' % name, [a0, Y1 - 6.0, HOUSING[0], a1, Y1 + 12.0, HOUSING[1]], MAT['housing'])
+    rbox(m, 'housing_%s' % name, [a0, Y1 - 6.0, HOUSING[0], a1, Y1 + 12.0, HOUSING[1]], MAT['housing'])
     share = SHUTTER_STOP[name]
     zb = OPEN_Z - share * OPEN_Z
     if share > 0:
         bx(m, 'shutter_%s' % name, [a0, Y1 - 3.0, zb, a1, Y1 - 1.0, HOUSING[0]], MAT['shutter'])
     rbox(m, 'shutter_bar_%s' % name, [a0, Y1 - 4.5, zb - 3.0, a1, Y1 + 0.5, zb], MAT['alu'])
+    if share > 0:                                         # the curtain's slats: a 2.4 pitch, 0.6 proud (hairline solids: a plain box each)
+        z = zb + 1.2
+        while z < HOUSING[0] - 2.0:
+            rbox(m, 'slat_%s_%d' % (name, int(z * 10)), [a0 + 1.0, Y1 - 3.6, z, a1 - 1.0, Y1 - 3.0, z + 1.5], MAT['shutter'])
+            z += 2.4
     REPORT.setdefault('shutters', {})[name] = {'curtain_bottom_z': round(zb, 1), 'covers': share}
     return a0, a1
 
@@ -268,7 +274,7 @@ def fascia(m, name, parts):
     z0, z1, fy = FASCIA
     sm = SHOP_MAT[name]
     for k, (fname, cx, w) in enumerate(parts):
-        bx(m, 'fascia_%s_%d' % (name, k), [cx - w / 2 - 2.0, fy, z0, cx + w / 2 + 2.0, Y1 - 8.0, z1], sm['fascia'])
+        rbox(m, 'fascia_%s_%d' % (name, k), [cx - w / 2 - 2.0, fy, z0, cx + w / 2 + 2.0, Y1 - 8.0, z1], sm['fascia'])     # above head height: no collision
         picture(m, 'sign_fascia_%s_%d' % (name, k), fname, (cx, fy, (z0 + z1) / 2), (0.0, -1.0, 0.0), (w, z1 - z0), emissive=1.4)     # illuminated fascia boxes (pass 1: unlit plates did not read)
 
 
@@ -639,12 +645,12 @@ def south_wall(m):
     fix(m, 'wall_lantern', (-1739.0, y + 0.5, 128.0), 90.0, role='hall', intensity=0.8, radius=1.0)
     # four advertising light boxes in modelled frames (emissive pictures)
     for k, (x, nm) in enumerate(((-2360.0, 'lightbox_orbit.png'), (-2270.0, 'lightbox_lodestar.png'), (-2020.0, 'lightbox_channel9.png'), (-1930.0, 'lightbox_zero_line.png'))):
-        bx(m, 'lightbox_%d' % k, [x - 36.0, y, 60.0, x + 36.0, y + 8.0, 164.0], MAT['alu'])
+        rbox(m, 'lightbox_%d' % k, [x - 36.0, y, 60.0, x + 36.0, y + 8.0, 164.0], MAT['alu'])
         rbox(m, 'lightbox_%d_lip' % k, [x - 36.0, y + 8.0, 60.0, x + 36.0, y + 9.0, 64.0], MAT['alu_black'])
         picture(m, 'lightbox_%d_face' % k, nm, (x, y + 8.0, 112.0), (0.0, 1.0, 0.0), (64.0, 96.0), emissive=1.6)
     # the directory board, the landmark of the entrance, lit by a sign lamp bar above it
     dx = -1560.0          # pass 1: near the entrance, in the entrance view, seen through D4 from the ticket hall
-    bx(m, 'directory_frame', [dx - 66.0, y, 68.0, dx + 66.0, y + 6.0, 236.0], 'w/wood_antique_panel_trim_01')
+    rbox(m, 'directory_frame', [dx - 66.0, y, 68.0, dx + 66.0, y + 6.0, 236.0], 'w/wood_antique_panel_trim_01')
     rbox(m, 'directory_cap', [dx - 70.0, y, 236.0, dx + 70.0, y + 10.0, 240.0], MAT['alu'])
     picture(m, 'directory_face', 'directory_board.png', (dx, y + 6.0, 152.0), (0.0, 1.0, 0.0), (120.0, 160.0))
     ids = fix(m, 'wall_led', (dx, y + 0.5, 239.0), 90.0, role='hall', kelvin=4800, intensity=1.3, radius=0.7)
@@ -656,14 +662,14 @@ def south_wall(m):
         m.update(lid, origin=org, dir=[round(c / n, 4) for c in d])
     # a notice frame with four notices
     nx = -2880.0
-    bx(m, 'notice_frame', [nx - 44.0, y, 70.0, nx + 44.0, y + 3.0, 126.0], MAT['cork'])
+    rbox(m, 'notice_frame', [nx - 44.0, y, 70.0, nx + 44.0, y + 3.0, 126.0], MAT['cork'])
     rbox(m, 'notice_glass', [nx - 42.0, y + 3.0, 72.0, nx + 42.0, y + 3.4, 124.0], MAT['glass'])
     for k in range(4):
         picture(m, 'notice_%d' % (k + 1), 'notice_%d.png' % (k + 1), (nx - 30.0 + 20.0 * k, y + 3.0, 98.0 + (k % 2) * 4.0), (0.0, 1.0, 0.0), (16.0, 22.0),
                 rot=(-2.0, 3.0, -1.0, 2.0)[k])
     # the poster of the film, once, in a poster frame
     px = -2140.0
-    bx(m, 'poster_frame', [px - 36.0, y, 60.0, px + 36.0, y + 2.5, 164.0], MAT['alu_black'])
+    rbox(m, 'poster_frame', [px - 36.0, y, 60.0, px + 36.0, y + 2.5, 164.0], MAT['alu_black'])
     picture(m, 'poster_station_zero', 'poster_station_zero.png', (px, y + 2.5, 112.0), (0.0, 1.0, 0.0), (64.0, 96.0))
     # benches and one bin
     import hall_dress as HD
