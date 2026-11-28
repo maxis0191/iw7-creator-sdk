@@ -37,6 +37,9 @@ def build(mode, station_doc=os.path.join(STATION, 'doc'), base=os.path.join(STAT
         src = json.load(open(os.path.join(station_doc, 'map.json'), encoding='utf-8'))
         m = Map('sz_control_' + mode, title='Control: cp_disco east subway station lifted onto the station base (%s lights)' % mode,
                 base={'kind': 'emit', 'path': base}, settings=copy.deepcopy(src['settings']))
+        # the station's kit model list names the Arcade's and the Terminus's models, which this document does not place: dropped, so that
+        # use_kit below writes only the room's (the build's assemble_key passes the list on one command line: TOOL-FAULTS C1-4)
+        m.settings['build']['kit'].pop('models', None)
     rep = control_room.build(m, mode)
     rep['models_no_dump_holds'] = FX.use_kit(m)
     fl = m.flat()
