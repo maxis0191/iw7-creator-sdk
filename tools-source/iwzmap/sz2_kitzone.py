@@ -46,10 +46,11 @@ for n in names:
         if f.startswith(n) or f.startswith(n.replace('_bsp2xmodel', '')):
             link(os.path.join(mr, 'xsurface', f), os.path.join(dst, 'xsurface', f))
     for mat in m.get('materials', []):
-        mj = os.path.join(mats_root, z, 'materials', mat + '.json')
+        fname = mat.replace('*', '_')                # ZoneTool clean_name: a `*` material's file is named with `_`
+        mj = os.path.join(mats_root, z, 'materials', fname + '.json')
         if not os.path.isfile(mj):
             missing.append('material:' + mat); continue
-        link(mj, os.path.join(dst, 'materials', mat + '.json'))
+        link(mj, os.path.join(dst, 'materials', fname + '.json'))
         try:
             md = json.load(open(mj))
         except Exception:

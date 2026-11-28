@@ -66,6 +66,21 @@ class BringMaterialsTest(unittest.TestCase):
         self.assertLess(csv.index('material,w/tile_a'), csv.index('com_map,m'))
         self.assertFalse(self.exists('techsets/ts_base.techset'))
 
+    def test_star_material_files_are_named_with_underscore(self):
+        # ZoneTool clean_name: the asset is `*387n_86n`, every file of it is `_387n_86n.*`
+        put(self.dump, 'materials/_387n_86n.json', json.dumps({'techniqueSet->name': 'ts_base', 'textureTable': []}).encode())
+        for sub, exts in (('state', ('.stateinfo', '.statebits', '.statebitsmap')), ('constantbuffer', ('.cbi', '.cbt'))):
+            for e in exts:
+                put(self.dump, 'techsets/%s/ts_base/_387n_86n%s' % (sub, e))
+        code, rep, csv = self.run_kit('wm:*387n_86n')
+        self.assertEqual(code, 0)
+        self.assertEqual(rep['materials']['new'], ['*387n_86n'])
+        self.assertEqual(rep['missing'] if 'missing' in rep else [], [])
+        for rel in ('materials/_387n_86n.json', 'techsets/state/ts_base/_387n_86n.statebits', 'techsets/state/ts_base/_387n_86n.statebitsmap',
+                    'techsets/state/ts_base/_387n_86n.stateinfo', 'techsets/constantbuffer/ts_base/_387n_86n.cbi', 'techsets/constantbuffer/ts_base/_387n_86n.cbt'):
+            self.assertTrue(self.exists(rel), rel)
+        self.assertIn('material,*387n_86n', csv.splitlines())                  # the reference keeps the `*`
+
     def test_material_with_new_techset_embeds_it_with_shader(self):
         code, rep, csv = self.run_kit('wm:w/tile_b')
         self.assertEqual(code, 0)
