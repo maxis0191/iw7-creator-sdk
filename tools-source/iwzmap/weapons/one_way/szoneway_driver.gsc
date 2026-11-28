@@ -37,9 +37,11 @@ owt_sync( name, ms )
 
 // `per` tickets a zombie, the first `limit` zombies of the tag (0 = all). A tag with ONE zombie, or head=1: one real
 // bullet of the held weapon per ticket, fired from 48 units in front of the zombie at its chest (head=1: its head).
-// A tag with several zombies and head=0: one script hit with a bullet's means of death per ticket
-// (dodamage, the same stock callback and hook, no hit location), because a real bullet into zombies standing
-// together reaches the nearest one, not the aimed one (measured 28 Nov). Hits are one server frame apart.
+// A tag with several zombies that owt_spread has NOT set apart, and head=0: one script hit with a bullet's means of
+// death per ticket (dodamage, the same stock callback and hook), because a real bullet into zombies standing
+// together reaches the nearest one, not the aimed one. Measured 28 Nov: such a script hit reaches the callback with
+// a HEAD hit location, so it is a first-class ticket; second-class tickets on several zombies need owt_spread and
+// real bullets. Hits are one server frame apart.
 owt_issue( name, tag, per, head, limit )
 {
     w = self getcurrentweapon();
@@ -62,12 +64,12 @@ owt_issue( name, tag, per, head, limit )
             if ( !isalive( z ) )
                 break;
             end = z gettagorigin( bone );
-            if ( zs.size > 1 && !head )
+            if ( zs.size > 1 && !head && !isdefined( z.owt_apart ) )
                 z dodamage( 1, end, self, self, "MOD_RIFLE_BULLET", w );
             else
             {
                 dir = vectornormalize( self geteye() - end );
-                magicbullet( w, end + dir * 48, end - dir * 8, self );
+                magicbullet( w, end + dir * 30, end - dir * 8, self );
             }
             shots++;
             wait 0.05;
@@ -193,4 +195,42 @@ owt_mode( name, tag, mode )
     foreach ( z in zs )
         z scripts\asm\asm_bb::bb_requestmovetype( mode );
     print( "[IWZ local] GL PROBE name=" + name + " n=" + zs.size + " mode=" + mode );
+}
+
+// the tag's zombies are set apart on a grid in front of the player (`cols` across, `gap` units between them) and held
+// there (the stock boombox's way: scripted mode, a goal at their feet), so that a real bullet fired from 30 units in
+// front of one reaches that one first
+owt_spread( name, tag, cols, gap )
+{
+    zs = self owt_tagged( tag );
+    fwd = anglestoforward( ( 0, self.angles[1], 0 ) );
+    right = anglestoright( ( 0, self.angles[1], 0 ) );
+    placed = 0;
+    foreach ( i, z in zs )
+    {
+        col = i % cols;
+        row = int( i / cols );
+        spot = self.origin + fwd * ( 260 + row * gap ) + right * ( ( col - ( cols - 1 ) / 2 ) * gap );
+        q = getclosestpointonnavmesh( spot );
+        if ( isdefined( q ) )
+            spot = q;
+        z.scripted_mode = 1;
+        z.goalradius = 16;
+        z setorigin( spot );
+        z setgoalpos( spot );
+        z.owt_apart = 1;
+        placed++;
+    }
+    wait 0.5;
+    near = 100000;
+    for ( i = 0; i < zs.size; i++ )
+    {
+        for ( j = i + 1; j < zs.size; j++ )
+        {
+            d = distance2d( zs[i].origin, zs[j].origin );
+            if ( d < near )
+                near = d;
+        }
+    }
+    print( "[IWZ local] GL PROBE name=" + name + " placed=" + placed + " nearest=" + int( near ) );
 }
