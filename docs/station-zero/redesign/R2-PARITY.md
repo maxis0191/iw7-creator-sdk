@@ -73,7 +73,10 @@ What is measured about where the black is:
   outside every probe volume gets no valid probe; on floors and vaults (reflection vector up or down) the term breaks and the pixel goes black;
   on walls it does not. The diag build is the open contradiction: same probe rooms, floor drawn. It differs from the black build in two things at
   once (draft bake, extra geometry: world hash 5edf... against 37c0...), and its draft bake was cleaned with its live folder, so it cannot be
-  compared offline.
+  compared offline. Picked against the diag's own world.bin (`r2\pick\diag_1d.csv`): in the old black region the diag frame mostly shows C1's
+  re-added floor mesh (z -113, 1,543 px) and slabs (z -110), but the lifted floor itself (z -114) is on screen in 424 px of the frame (250 of them
+  inside the old black region), 0 % black. The diag build draws the same lifted floor the final builds draw black: E3 decides between bake and
+  document. The diag's probe rooms are the same 9 as the black builds' (in no room either), which also argues against the probe hypothesis.
 
 Ready to run when the dumps and a compiler are back (one session, four documents, `forge sense` first; numbers by `control_compare metric`):
 - E1 (single variable, first): `control_doc --mode bounce --base-only` (now with the probe room row
