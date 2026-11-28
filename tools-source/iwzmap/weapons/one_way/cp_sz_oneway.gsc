@@ -10,7 +10,8 @@
 //            a ticket of the last 0.5 s is valid for the departure after
 //   bell     every booked zombie takes the sum of its tickets, flat (rated by round, not scaled by anything)
 //   taken    health covered: a kill credited to the owner
-//   carried  health not covered: at most 6 a bell per owner, oldest ticket first, hidden and held, put back at the
+//   carried  health not covered: at most 6 a bell per owner, oldest ticket first, hidden, held and out of the way
+//            (no-clip, 400 units under its place: nothing stops a bullet or a player where it stood), put back at the
 //            next bell, down 1.5 s; for 12 s after that it is neither calmed nor carried
 //   full     6 or more taken on one bell by one owner: 1 ticket back for 2 taken (upgraded: 2 for 3)
 //   insta    while the Insta-Kill pickup runs, any ticket covers an ordinary zombie at the bell
@@ -40,6 +41,7 @@ ow_init()
     level.ow_flinch_ms = 600;
     level.ow_immune_ms = 12000;
     level.ow_down_ms = 1500;
+    level.ow_depth = 400;               // how far under its place a carried zombie waits
     level.ow_carried = [];
     level.ow_arrivals = [];
     level.ow_bells = 0;
@@ -494,6 +496,11 @@ ow_carry_away( back )
     self.goalradius = 16;
     self setgoalpos( self.origin );
     self hide();
+    // Measured 28 Nov with a client joined: a hidden agent, hidden + notsolid, and hidden + contents 0 all still stop
+    // a bullet where they stand. So a carried zombie really leaves: no-clip physics (the stock spawn animations' own
+    // mode) and 400 units under its place.
+    self scragentsetphysicsmode( "noclip" );
+    self setorigin( self.ow_place - ( 0, 0, level.ow_depth ) );
     level.ow_carried[level.ow_carried.size] = self;
 }
 
@@ -530,6 +537,7 @@ ow_put_back()
     spot = ow_place_for( self.ow_place );
     moved = distance( spot, self.ow_place );
     self setorigin( spot );
+    self scragentsetphysicsmode( "gravity" );
     self setgoalpos( spot );
     self show();
     self.ow_carry = undefined;

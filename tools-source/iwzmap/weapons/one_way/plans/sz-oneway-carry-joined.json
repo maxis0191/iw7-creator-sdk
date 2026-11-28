@@ -1,0 +1,183 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "sz_oneway_carry_joined",
+ "map": "cp_zmb",
+ "conditions": "quiet",
+ "libraries": [
+  "cp_sz_oneway",
+  "szoneway_driver"
+ ],
+ "about": "ONE WAY, carried over, with a real player joined (forge run --joined): eight round-25 zombies set apart in front of the player, one second-class ticket each; at the bell six are carried and two stay. Frames of the joined client before the tickets, while six are carried and after they are put back; the player's collision hull and a bullet trace through a carried zombie's place and through one that stayed. Stand-in weapon iw7_fhr_zm; stock spawning off; zombies ignore the player.",
+ "steps": [
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "ignore",
+   "on": true
+  },
+  {
+   "do": "tp",
+   "at": [
+    1467.65,
+    4134.45,
+    0.2
+   ],
+   "yaw": 0
+  },
+  {
+   "do": "give",
+   "weapon": "iw7_fhr_zm"
+  },
+  {
+   "do": "ammo",
+   "clip": 30,
+   "stock": 10
+  },
+  {
+   "do": "call",
+   "fn": "owt_start",
+   "args": [
+    "start",
+    "iw7_fhr",
+    0
+   ],
+   "s": 1
+  },
+  {
+   "do": "spawn",
+   "tag": "b",
+   "at": [
+    1767,
+    4134,
+    0
+   ],
+   "count": 8,
+   "round": 25
+  },
+  {
+   "do": "until",
+   "what": "alive",
+   "n": 8,
+   "s": 20
+  },
+  {
+   "do": "call",
+   "fn": "owt_spread",
+   "args": [
+    "b_spread",
+    "b",
+    4,
+    110
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 1
+  },
+  {
+   "do": "client_frame",
+   "name": "ow_before",
+   "pause": 1
+  },
+  {
+   "do": "call",
+   "fn": "owt_case",
+   "args": [
+    "b",
+    "b",
+    1,
+    0,
+    0,
+    5000
+   ],
+   "s": 14
+  },
+  {
+   "do": "client_frame",
+   "name": "ow_carried",
+   "pause": 1
+  },
+  {
+   "do": "call",
+   "fn": "owt_pass",
+   "args": [
+    "pass",
+    "b"
+   ],
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "owt_after",
+   "args": [
+    "b2",
+    "b"
+   ],
+   "s": 8
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "client_frame",
+   "name": "ow_back",
+   "pause": 1
+  },
+  {
+   "do": "kill",
+   "tag": "b"
+  },
+  {
+   "do": "expect",
+   "that": "probe:b_stat.carried",
+   "eq": 6,
+   "why": "six carried on the bell"
+  },
+  {
+   "do": "expect",
+   "that": "probe:b_z.alive",
+   "eq": 8,
+   "why": "all eight alive"
+  },
+  {
+   "do": "expect",
+   "that": "probe:pass.carried_found",
+   "eq": 1,
+   "why": "a carried zombie to test"
+  },
+  {
+   "do": "expect",
+   "that": "probe:pass.other_found",
+   "eq": 1,
+   "why": "and one that stayed, as the control"
+  },
+  {
+   "do": "expect",
+   "that": "probe:pass.other_bullet",
+   "lt": 90,
+   "why": "the control: and stops a bullet"
+  },
+  {
+   "do": "expect",
+   "that": "probe:pass.carried_hull",
+   "ge": 99,
+   "why": "a carried zombie does not stand in a player's way"
+  },
+  {
+   "do": "expect",
+   "that": "probe:pass.carried_bullet",
+   "ge": 99,
+   "why": "and does not stop a bullet"
+  },
+  {
+   "do": "expect",
+   "that": "probe:b2_z.carried",
+   "eq": 0,
+   "why": "put back at the next bell"
+  }
+ ]
+}

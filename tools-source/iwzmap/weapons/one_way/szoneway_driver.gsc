@@ -237,3 +237,44 @@ owt_spread( name, tag, cols, gap )
     }
     print( "[IWZ local] GL PROBE name=" + name + " placed=" + placed + " nearest=" + int( near ) );
 }
+
+// Is a carried zombie off the platform for a player and for a bullet? For the PLACE of the first carried zombie of
+// the tag and for the first one that is not carried (the control): the player's own collision hull pushed through it
+// (playerphysicstrace, 60 units each side), and a bullet trace through its chest. frac 1 = nothing in the way.
+owt_pass( name, tag )
+{
+    zs = self owt_tagged( tag );
+    c = undefined;
+    o = undefined;
+    foreach ( z in zs )
+    {
+        if ( isdefined( z.ow_carry ) && !isdefined( c ) )
+            c = z;
+        if ( !isdefined( z.ow_carry ) && !isdefined( o ) )
+            o = z;
+    }
+    line = "[IWZ local] GL PROBE name=" + name + " carried_found=" + isdefined( c ) + " other_found=" + isdefined( o );
+    if ( isdefined( c ) )
+        line = line + " carried_hull=" + self owt_hull( c.ow_place ) + " carried_bullet=" + self owt_ray( c.ow_place ) + " carried_under=" + int( c.ow_place[2] - c.origin[2] );
+    if ( isdefined( o ) )
+        line = line + " other_hull=" + self owt_hull( o.origin ) + " other_bullet=" + self owt_ray( o.origin );
+    print( line );
+}
+
+owt_hull( at )
+{
+    side = anglestoright( ( 0, self.angles[1], 0 ) );
+    a = at + side * 60 + ( 0, 0, 4 );
+    b = at - side * 60 + ( 0, 0, 4 );
+    end = playerphysicstrace( a, b );
+    return int( 100 * distance( a, end ) / distance( a, b ) );
+}
+
+owt_ray( at )
+{
+    side = anglestoright( ( 0, self.angles[1], 0 ) );
+    a = at + side * 60 + ( 0, 0, 44 );
+    b = at - side * 60 + ( 0, 0, 44 );
+    tr = bullettrace( a, b, 1, self );
+    return int( 100 * tr["fraction"] );
+}

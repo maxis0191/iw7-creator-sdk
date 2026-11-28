@@ -97,9 +97,12 @@ class OneWay(unittest.TestCase):
         def b_nav(vm, obj, p):
             return p
 
+        def b_phys(vm, obj, mode):
+            obj.f.setdefault("t_phys", []).append(mode)
+
         vm.builtins.update({"dodamage": b_dodamage, "getweaponslistprimaries": b_prim,
                             "getweaponammostock": b_getstock, "setweaponammostock": b_setstock,
-                            "getclosestpointonnavmesh": b_nav, "t_alive": b_alive, "t_mode": b_mode})
+                            "getclosestpointonnavmesh": b_nav, "scragentsetphysicsmode": b_phys, "t_alive": b_alive, "t_mode": b_mode})
         vm.load_source("getaliveagentsofteam( team ) { return t_alive(); }", r"scripts\cp\cp_agent_utils")
         vm.load_source("bb_requestmovetype( mode ) { self t_mode( mode ); }", r"scripts\asm\asm_bb")
         vm.load_source(open(os.path.join(HERE, "cp_sz_oneway.gsc"), encoding="utf-8").read(), "ow")
@@ -198,11 +201,16 @@ class OneWay(unittest.TestCase):
         self.assertEqual(carried, zs[:6], "oldest tickets first")
         hidden = [c[1] for c in self.vm.calls if c[0] == "hide"]
         self.assertEqual(hidden, zs[:6])
+        self.assertEqual([z.f["origin"] for z in zs[:6]], [(300, 0, -400)] * 6, "out of the way: 400 under its place")
+        self.assertEqual([z.f["t_phys"] for z in zs[:6]], [["noclip"]] * 6)
+        self.assertEqual(zs[7].f["origin"], (300, 0, 0), "one that stayed has not moved")
         # a carried zombie is off the platform: a bullet does nothing to it and books nothing
         self.shoot(zs[0])
         self.assertEqual((zs[0].f["health"], self.tickets(zs[0])), (395, 0))
         self.bell()
         shown = [c[1] for c in self.vm.calls if c[0] == "show"]
+        self.assertEqual([z.f["origin"] for z in zs[:6]], [(300, 0, 0)] * 6, "put back where it stood")
+        self.assertEqual([z.f["t_phys"] for z in zs[:6]], [["noclip", "gravity"]] * 6)
         self.assertEqual(sorted(shown, key=id), sorted(zs[:6], key=id))
         self.assertTrue(all(z.f.get("ow_carry", Undefined) is Undefined for z in zs))
         # the 12 s rule: ticketed and hurt, neither calmed nor carried
