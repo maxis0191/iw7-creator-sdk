@@ -173,7 +173,7 @@ def validate(scene, materials=None, steps=True):
                     resolve_blend(m)
                 except ValueError as e:
                     E('mesh %s: %s' % (m['name'], e))
-        elif not mat.startswith('w/'):
+        elif not mat.startswith(('w/', 'wc/')):
             E('mesh %s: material %r is not an IW7 world material (w/...)' % (m['name'], m.get('material')))
     try:
         for r in stair_ramps(scene.get('meshes', []))[1]:
