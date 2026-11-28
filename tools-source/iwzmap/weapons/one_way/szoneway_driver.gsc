@@ -18,6 +18,14 @@ owt_held( name )
     print( "[IWZ local] GL PROBE name=" + name + " weapon=" + getweaponbasename( w ) + " oneway=" + issubstr( getweaponbasename( w ), "szoneway" ) + " clip=" + self getweaponammoclip( w ) + " stock=" + self getweaponammostock( w ) + " x=" + int( self.origin[0] ) + " y=" + int( self.origin[1] ) + " z=" + int( self.origin[2] ) + " yaw=" + int( self.angles[1] ) );
 }
 
+// a key of the JOINED client (forge run --joined): "keydown:attack", "keyup:usereload"... The runner relays the CLIREQ line to the
+// client, whose binding dispatch presses the key (docs/NETLAB.md "Client requests"; ops/gamelab/lib/capacity.gsc cap_client_key)
+owt_key( name, action )
+{
+    print( "[IWZ local] CLIREQ " + action + " t=" + gettime() );
+    print( "[IWZ local] GL PROBE name=" + name + " key=" + action );
+}
+
 owt_tagged( tag )
 {
     out = [];

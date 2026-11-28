@@ -93,6 +93,20 @@ floats above and ahead of the right hand. Measured cause candidates: the stock p
 measure the stock grip in `j_gun` space (its mesh) and place ours on it, then our own first-person animations
 (the stand-in pose is not the feature).
 
+## Its own view model, animations and sounds in the game (28 Nov 2026, the owner's ask: new view model, animations, life, sounds)
+
+| Piece | Where | Measured |
+|---|---|---|
+| Animation composer (new tool) | x64-zt-extensions `claude/vm-compose`: `tools-source/iw7-anim/vm_compose.py`, `vm_preview.py`, `docs/VM-COMPOSE.md`; spec `authored/one_way.vm_clips.json` | 13 clips on the IW7 hands + the weapon's own bones, two-bone IK both arms, finger poses, springs and noise; offline: layout, preflight and round trip pass, reach error 0, right palm 0.154 inch from the grip mesh |
+| Foley synthesizer (new tool) | x64-zt-extensions `claude/oneway-foley`: `tools-source/asset-bridge/iw7-audio/foley/`; recipes `tools-source/iwzmap/weapons/one_way/sounds/one_way_sounds.json` | 31 aliases, all synthesized (no sample, no ElevenLabs); fire levelled on the stock Atomizer's file and row; bell partials 140 cents or more from the reserved notes; 10 tests. Heard by nobody in game yet |
+| Model: glowing lamps, wear, badge | x64-zt-extensions `claude/sz-oneway-model` fb9fb0c, `C:\studio-data\sz\weapons\one-way\model\r15` | emissive lamp atlas (`m2o_l_sm_replace_i0c0s0o0n0e0p0_vm`), 39,232 triangles, skeleton byte-identical |
+| Zone z3 | `make_zone.py --sounds --anims`, `C:\studio-data\sz\weapons\one-way\zone\z3`, built `mod.ff` 5,691,852 B + `mod.sabl/.sabs` | preflight 0 errors; ZoneTool 15 ms, no error |
+| In the game | `plans/sz-oneway-anim.json` (pause 1) and `sz-oneway-anim-nopause.json`, `--joined`, keys through CLIREQ | 3/3 both runs: a press issues one ticket (12 to 11), a reload from empty refills (12, reserve 48). Frames `runs\frames\anim3_*.png`: right hand on the grip, the lamps glow, the fire kick and the reload's left hand show. With `pause: 1` every frame showed the hold pose (ledger `forge-client-frame-pause-freezes-viewmodel`); a client cell with a mod never reached its match (ledger `forge-client-cell-mod-no-first-match`) |
+
+**Wrong in the frames, round 2 under way:** the gun is seen from behind (the rear plate fills the view), the left hand is
+out of sight at idle, the strap passes through the right hand. Not measured: the sounds in game (needs the network lab's
+audio capture), the first raise's bell, ADS, melee.
+
 ## The exact next steps
 
 1. Next proofs of the mechanic: a player walking through a carried zombie's place; 24 and about 55 alive; the stock specials; real time. (Old note, kept for the command) When `--library-dir` fails for a missing tool cache: `python -B make_gamelab.py --server <iw7-paris-server checkout> --out C:\studio-data\sz\weapons\one-way\gamelab`,
