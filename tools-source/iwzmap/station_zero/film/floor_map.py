@@ -27,17 +27,24 @@ from studio import Map  # noqa: E402
 
 
 def measure(folder, region, n=60000, emit=None, seed=7):
+    import time
+    t0 = time.time()
+    log = lambda *a: print('[%5.1fs]' % (time.time() - t0), *a, file=sys.stderr, flush=True)     # noqa: E731
     m = Map.load(folder)
+    log('loaded')
     emit_dir, _ = LW.emit_for(m, emit)
+    log('emit', emit_dir)
     lt = LW.build_lights(emit_dir, m)
+    log('lights', len(lt['baked']), len(lt['runtime']))
     from studio import bake as BK
     dump = BK.template_dump()
     sc = LW.Scene(emit_dir, m, [dump] if dump else [])
-    P, N, cls, _ = sc.sample(n, seed)
-    cls = np.array(cls)
     x0, y0, x1, y1 = region
-    ins = (P[:, 0] >= x0) & (P[:, 0] <= x1) & (P[:, 1] >= y0) & (P[:, 1] <= y1)
-    P, N, cls = P[ins], N[ins], cls[ins]
+    sc.zones['_region'] = [x0, y0, -2000.0, x1, y1, 2000.0]      # sample only the region: the world's other 500,000 triangles would each cost a cover ray
+    log('scene', sc.world_n, 'tris')
+    P, N, cls, _ = sc.sample(n, seed, '_region')
+    log('sampled', len(P))
+    cls = np.array(cls)
     E = np.zeros(len(P))
     per = []
     for L in lt['baked'] + lt['runtime']:
@@ -72,7 +79,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('folder')
     ap.add_argument('--region', required=True)
-    ap.add_argument('--n', type=int, default=60000)
+    ap.add_argument('--n', type=int, default=9000)
     ap.add_argument('--out')
     ap.add_argument('--emit')
     a = ap.parse_args(argv)

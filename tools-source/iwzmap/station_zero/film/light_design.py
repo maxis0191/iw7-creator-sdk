@@ -38,6 +38,13 @@ def _local_contrast(y):
     return np.abs(ly - box)
 
 
+def _box_blur(y, k):
+    pad = np.pad(y, k // 2, mode='edge')
+    c = np.pad(np.cumsum(np.cumsum(pad, 0), 1), ((1, 0), (1, 0)))
+    h, w = y.shape
+    return (c[k:k + h, k:k + w] - c[:h, k:k + w] - c[k:k + h, :w] + c[:h, :w]) / (k * k)
+
+
 def frame_numbers(path):
     a = np.asarray(Image.open(path).convert('RGB'), dtype=np.float64) / 255.0
     y = _lin(a) @ Y709
@@ -45,10 +52,12 @@ def frame_numbers(path):
     fl = y[int(.70 * h):int(.97 * h)]
     lc = _local_contrast(y)
     tiles = np.log2(np.maximum(y[:h // 9 * 9, :w // 16 * 16].reshape(9, h // 9, 16, w // 16).mean((1, 3)), 1e-4))
+    flp = _box_blur(y, 41)[int(.70 * h):int(.97 * h)]        # the floor band with texture, litter and joints blurred away: light only
     p = lambda v, q: float(np.percentile(v, q))     # noqa: E731
     return {'lum': float(y.mean()), 'ceil_lum': float(y[:int(.30 * h)].mean()), 'wall_lum': float(y[int(.30 * h):int(.70 * h)].mean()), 'floor_lum': float(fl.mean()),
             'floor_hi_share': float((fl > 4 * np.median(fl)).mean()), 'clip': float((a.max(2) >= 0.98).mean()),
-            'floor_ps': p(fl, 90) / max(p(fl, 10), 1e-4), 'all_ps': p(y, 95) / max(p(y, 5), 1e-4),
+            'floor_ps': p(fl, 90) / max(p(fl, 10), 1e-4), 'floor_lp_ps': p(flp, 90) / max(p(flp, 10), 1e-4),
+            'ceil_over_floor': float(y[:int(.30 * h)].mean() / max(fl.mean(), 1e-6)), 'all_ps': p(y, 95) / max(p(y, 5), 1e-4),
             'floor_contrast': float(lc[int(.70 * h):int(.97 * h)].mean()), 'contrast': float(lc.mean()),
             'tile_sd': float(tiles.std()), 'dark': float((a @ Y709 < 0.03).mean())}
 
