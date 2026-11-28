@@ -105,6 +105,18 @@ Merged on `claude/sz-film` (SDK) and on Studio `main`, each lot read by the lead
 | One document (I1) | 9 of 10 plans on the final bake | the tenth is the rifle |
 | Blind review 1 | ours 4.61, stock 7.55; "could ship" 0 of 42 against 41 of 42 ([REVIEW-1](REVIEW-1.md)) | control experiment C1 decides assets against pipeline before any rebuild |
 
+**PAUSED again by the owner (28 Nov 2026):** no worker of this package is running, no `studio live` session is recorded,
+every branch is pushed. The wall-buy and door follow-up of I1 is merged (rifle bought from the hall for 1500, D4 for 1000,
+both on a client). The control C1 was stopped by the owner before its final pairs: its branch `claude/sz-film-control`
+(eea8873, not merged) holds the builder, the draft pairs (`C:\studio-data\sz\film\control\pairs_draft`: the lifted stock
+subway shows black floors and wrong tile) and the draft note `C1-CONTROL.md` with what was measured: lifting loses the
+blend materials (187 of them, 32.7 % of the lifted surface area, the platform floor among them), stock decals and the 87
+captured probes; SSAO is not running on the client cells, for stock or for us; props of zones other than the template
+throw no baked shadow because Studio gives the baker one dump root (`studio/bake.py:116-117`: 607 of 894 static models
+unknown; with the kit roots a bench's foot ratio goes 0.994 -> 0.571); a finer texel changes almost nothing. Resume: the
+last diagnostic (are the black surfaces lost by the final bake?), the final pairs to three reviewers, then the method
+decision of [REVIEW-1](REVIEW-1.md). First fix in any case: the baker's dump roots (Studio, a few lines).
+
 Not done: real reflection probes, the copy by Gemini 4 Neon (every sign text is Gemini 4 Hydrogen's or a marked
 placeholder), the seventeen other zones.
 
