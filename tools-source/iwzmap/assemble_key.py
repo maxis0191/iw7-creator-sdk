@@ -1,6 +1,7 @@
 """The key of an incremental assembly: one SHA-256 over every input that can change what the kept tree holds.
 
-usage: assemble_key.py [--file F]... [--tree D]... [--manifest D]... [--stamp D]... [--text T]...
+usage: assemble_key.py [--file F]... [--tree D]... [--manifest D]... [--stamp D]... [--text T]... [--argfile J]...
+       --argfile J   the arguments in a JSON list of strings in file J (a long document's list does not fit the 32 KB command line)
        prints the key (hex) on stdout, the timing on stderr
 
 assemble.py --incremental keeps zonetool/<map>/ from the previous build: the 135,676 stock hard links and what the module
@@ -131,7 +132,28 @@ def make_key(parts):
     return hashlib.sha256('\n'.join(lines).encode()).hexdigest(), files
 
 
+
+def expand_argfiles(argv):
+    """`--argfile F` -> the arguments held by F (a JSON list of strings), in place. The command line of a process is 32,767 characters on
+    Windows (WinError 206): a list that grows with the document (kit models, materials, key inputs) goes in a file. Plain arguments still work."""
+    out, i = [], 0
+    while i < len(argv):
+        if argv[i] == '--argfile' and i + 1 < len(argv):
+            import json
+            with open(argv[i + 1], encoding='utf-8') as f:
+                got = json.load(f)
+            if not isinstance(got, list) or not all(isinstance(x, str) for x in got):
+                raise SystemExit('--argfile %s: a JSON list of strings is needed' % argv[i + 1])
+            out += expand_argfiles(got)
+            i += 2
+        else:
+            out.append(argv[i])
+            i += 1
+    return out
+
+
 def main(argv):
+    argv = expand_argfiles(argv)
     parts = []
     i = 0
     while i < len(argv):

@@ -153,6 +153,17 @@ class AssembleKeyTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(r.stdout.strip(), self.key())
 
+    def test_argfile_gives_the_same_key_as_the_command_line(self):
+        long_text = 'kit=' + ','.join('model_%d' % i for i in range(5000))        # 50k characters: over the Windows command line
+        args = ['--text', 'map=cp_blend_a', '--text', long_text, '--file', self.exe, '--file', self.asm]
+        af = os.path.join(self.tmp, 'args.json')
+        with open(af, 'w', encoding='utf-8') as f:
+            json.dump(args, f)
+        r = subprocess.run([sys.executable, '-I', '-B', os.path.join(HERE, 'assemble_key.py'), '--argfile', af], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout.strip(), ak.make_key([('text', 'map=cp_blend_a'), ('text', long_text), ('file', self.exe), ('file', self.asm)])[0])
+        self.assertEqual(ak.expand_argfiles(['--text', 'a', '--argfile', af, '--text', 'z'])[-2:], ['--text', 'z'])
+
 
 class AssembleTreeTest(unittest.TestCase):
     """Incremental assembly leaves the same tree and the same zone csv as a full one: the property the key protects."""

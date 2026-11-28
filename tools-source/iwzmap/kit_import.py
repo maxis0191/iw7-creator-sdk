@@ -115,6 +115,26 @@ def stage_xmodels(src, names, dumps, find):
     return 1 if missing else 0
 
 
+
+def expand_argfiles(argv):
+    """`--argfile F` -> the arguments held by F (a JSON list of strings), in place. The command line of a process is 32,767 characters on
+    Windows (WinError 206): a list that grows with the document (kit models, materials, key inputs) goes in a file. Plain arguments still work."""
+    out, i = [], 0
+    while i < len(argv):
+        if argv[i] == '--argfile' and i + 1 < len(argv):
+            import json
+            with open(argv[i + 1], encoding='utf-8') as f:
+                got = json.load(f)
+            if not isinstance(got, list) or not all(isinstance(x, str) for x in got):
+                raise SystemExit('--argfile %s: a JSON list of strings is needed' % argv[i + 1])
+            out += expand_argfiles(got)
+            i += 2
+        else:
+            out.append(argv[i])
+            i += 1
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('work'); ap.add_argument('map')
@@ -140,11 +160,12 @@ def main(argv=None):
     ap.add_argument('--material-map', action='append', default=[],
                     help='old=new: rename a material of the kit models (the subway train window glass to a translucent '
                          'glass of the same zone dump); also read from IWZ_KIT_MATERIAL_MAP (old=new;old=new)')
+    ap.add_argument('--argfile', action='append', default=[], help='JSON list of strings: more arguments, in place (the command line limit of Windows)')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--stage-xmodels', default='', metavar='SRC',
                     help='only link the --models .xmb (+ _lod*.hkx) files into SRC/xmodel, for the map compiler to read '
                          'kit models placed as static models (smodels.txt); work and map are not used')
-    a = ap.parse_args(argv)
+    a = ap.parse_args(expand_argfiles(sys.argv[1:] if argv is None else argv))
 
     dumps = {}                                  # zone -> [dump roots], searched in order
     for d in a.dump:
