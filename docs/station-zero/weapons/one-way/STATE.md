@@ -33,7 +33,7 @@ who restores it; this session does not touch the stock.
 cannot be counted (`model\r11\fp_straight.png`, `fp_cant10.png`); they read only with the weapon turned toward the
 player (`model\r10\fp.png`, 22 degrees). The lamps are the weapon's readout. The owner was asked (28 Nov): a hold turned
 toward the player in every animation, or the six lamps moved to an inclined panel at the rear of the top, in a row
-across. Also left on the model: the grip is chipped almost bare (`model\r11ear.png`); no world model yet.
+across. Also left on the model: the grip is chipped almost bare (`model\r11\rear.png`); no world model yet.
 
 Not started: the world model, sounds (ElevenLabs has 191 credits left of 40,000 until the reset of 9 Dec 2026), effects (they are cloned from
 stock emitters), animations (they need the hands' skeleton from a stock dump), the upgraded form at the machine, the quest hooks.
