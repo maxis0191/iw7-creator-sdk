@@ -103,7 +103,7 @@ def build(A, m):
     x0, y0, x1, y1 = A.module(*A.HOLES[1])
     B.prop(m, 'ceiling_mob_wire_bundle_01', ((x0 + x1) / 2.0 + 14.0, (y0 + y1) / 2.0 + 8.0, G - 100.0), yaw=200.0, scale=0.9, layer=LAYER, id='dr_bundle_6')   # one hole with two
     # ---- the south wall's furniture of pipes and conduit
-    zc = 214.0
+    zc = 231.0
     skip = [(-1634.0, -1486.0)]                                                   # the directory board's cap
     k = 0
     for q in range(18):
@@ -120,8 +120,8 @@ def build(A, m):
     on_wall(A, m, 'clk_emergency_light', 's', -2985.0 + 130.0, 176.0, 'dr_emerg_0')
     on_wall(A, m, 'clk_emergency_light', 's', -1330.0, 176.0, 'dr_emerg_1')
     on_wall(A, m, 'com_standpipe_double', 's', -1345.0, 22.0, 'dr_standpipe')
-    on_wall(A, m, 'greece_elec_wire_01', 's', -2450.0, 228.0, 'dr_cable_0')
-    on_wall(A, m, 'greece_elec_wire_01', 's', -1900.0, 228.0, 'dr_cable_1')
+    on_wall(A, m, 'greece_elec_wire_01', 's', -2450.0, 238.0, 'dr_cable_0')
+    on_wall(A, m, 'greece_elec_wire_01', 's', -1900.0, 238.0, 'dr_cable_1')
     for q, (wall, along) in enumerate((('w', YS + 20.0), ('e', YS + 22.0))):         # the risers in the south corners (scaled to the 195 under the grid)
         p = PARTS['greece_pipes_02']
         if wall == 'w':
@@ -131,8 +131,8 @@ def build(A, m):
     # exit signs: over D4 and the blast door (lit), and two framed ones over the shops' ends; poster cases on the end walls
     on_wall(A, m, 'signage_exit_sign_emergency_only_on', 'e', 3900.0, 233.0, 'dr_exit_0')
     on_wall(A, m, 'signage_exit_sign_emergency_only_on', 'w', 3900.0, 130.0, 'dr_exit_1')
-    on_wall(A, m, 'signage_exit_sign_emergency', 's', -2600.0, 214.0, 'dr_exit_2')
-    on_wall(A, m, 'signage_exit_sign_emergency', 's', -1470.0, 214.0, 'dr_exit_3')
+    on_wall(A, m, 'signage_exit_sign_emergency', 's', -2600.0, 200.0, 'dr_exit_2')
+    on_wall(A, m, 'signage_exit_sign_emergency', 's', -1470.0, 200.0, 'dr_exit_3')
     for q, (wall, along) in enumerate((('w', 3800.0), ('w', 4180.0), ('e', 4110.0), ('e', 4190.0))):
         on_wall(A, m, 'zmb_poster_now_playing_07', wall, along, 62.0, 'dr_case_%d' % q)
     # ---- benches (the worn subway benches of the donor kit) and news boxes at the south wall

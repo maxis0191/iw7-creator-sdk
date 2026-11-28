@@ -119,6 +119,7 @@ def bx(m, id, box, mat, mode=None, uv=None):
 
 
 SOUP = None                 # AC1: render-only boxes are collected here as bevelled solids (shellparts.bevel_box), one mesh object a material, flushed by build()
+PIERS = []                  # the shop piers' triangles (one layered mesh, flushed by build())
 NO_SOUP = {'hk_lasts_end_a'}        # ids a later step removes by name stay boxes
 
 
@@ -248,7 +249,7 @@ def unit_room(m, name, extra_openings=()):
     B.room(m, [x0, Y1, 0.0, x1, YB, UNIT_H], sm['wall'], sm['floor'], sm['ceil'], openings=ops, thick=16.0, id='room_%s' % name)
     # piers at the unit edges: hall tile on a dark base, standing proud of the shop line
     for side, px in (('w', x0), ('e', x1 - 16.0)):
-        rbox(m, 'pier_%s_%s' % (name, side), [px, Y1 - 8.0, 0.0, px + 16.0, Y1 + 18.0, BULK_Z], MAT['tile'])     # AC1: a bevelled tile solid, collision by its clip
+        PIERS.extend(P.bevel_box(px, Y1 - 8.0, 0.0, px + 16.0, Y1 + 18.0, BULK_Z, c=0.8, top=0.8))     # AC1: a bevelled tile solid (a layered tile with grime at its foot, hall_body), collision by its clip
         B.clip(m, [px, Y1 - 8.0, 0.0, px + 16.0, Y1 + 18.0, BULK_Z], id='pier_%s_%s_clip' % (name, side))
         rbox(m, 'pier_%s_%s_base' % (name, side), [px - 0.8, Y1 - 8.8, 0.0, px + 16.8, Y1 + 18.0, 16.0], MAT['dark'])
         rbox(m, 'pier_%s_%s_band' % (name, side), [px - 0.6, Y1 - 8.6, 58.0, px + 16.6, Y1 + 18.0, 74.0], MAT['band'])
@@ -795,6 +796,11 @@ def recipe():
     st['map'] = 'cp_iwz'
     import light_rules                        # L1 (W2, 28 Nov): the proposed lit vision
     light_rules.apply_lit(st)
+    # AC1 (28 Nov): allbaked2's kit list names 128 models of the round-19 Arcade that no object of this document uses; every model of ours is added by
+    # fixtures.use_kit from the objects. The build's key arguments name the list twice (recipe and args) and sat at the Windows command-line limit
+    # (31.4k of 32.7k: a document with 100 distinct models, 28 more, failed with WinError 206 in assemble_key); without the leftovers the arguments are 7k shorter
+    kit = st.setdefault('build', {}).setdefault('kit', {})
+    kit['models'] = []
     return st
 
 
@@ -802,6 +808,7 @@ def build(name='sz_arcade_shell', base=None, settings=None):
     """base: the emit folder the shell goes on (default BASE_EMIT); settings: the document's settings block (default recipe())"""
     global SOUP
     SOUP = P.Soup()
+    PIERS.clear()
     REPORT.update({'standins': [], 'art': [], 'fallbacks': [], 'refused': []})
     ANCHORS.clear()
     LIGHTS.clear()
@@ -824,6 +831,7 @@ def build(name='sz_arcade_shell', base=None, settings=None):
     import hall_body
     REPORT.setdefault('body', {})['trim_meshes'] = hall_body.put_soup(m, SOUP, 'trim', layer='shell')
     REPORT['body']['trim_tris'] = SOUP.count()
+    hall_body.put(m, hall_body.WALL_FIELD, PIERS, 'piers', blend={'paint': [{'type': 'foot', 'height': 10.0, 'falloff': 50.0, 'layer': 1}], 'z0': 0.0})
     for nm, spec in OWN.items():                                   # our own tiling materials (B.material)
         B.material(m, nm, **spec, layer='shell')
     FX.use_kit(m)

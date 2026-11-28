@@ -20,6 +20,7 @@ import shellparts as P
 ART = r'C:\studio-data\sz\film\station\construct1\art'
 WALL_FIELD = '*824n_4'                  # dt_tile_ceramic_white + stain_leak_rust_01_dec_mult (cp_disco, stride 8)
 FLOOR = '*861n_280n_91'                 # stone_spanish_tile_01 + metal_painted_yellow_01_rvl + asphalt_flooring_stain_01 (cp_disco, stride 20)
+GIRDER = '*1040_4'                      # metal_painted_02_dark + stain_leak_rust_01_dec_mult (cp_disco, stride 8)
 MSIZE = {'w/dt_tile_ceramic_white': 64.0, 'w/dt_tile_ceramic_white_dmg': 64.0, 'w/fac_tile_black_01': 32.0, 'w/ceiling_tile_01': 96.0, '*824n_4': 64.0,
          'w/ceramic_tile_01_orange': 64.0, FLOOR: 64.0}
 
@@ -213,7 +214,9 @@ def build(A, m):
         p = P.ibeam((x, YS + 0.6), (x, A.COL_Y - 16.0), gz0, gz1)
         gs.add(A.MAT['girder'], p['flange'])
         gs.add(A.MAT['girder'], p['web'])
-    n_mesh += put_soup(m, gs, 'girder')
+    girder_tris = gs.t.pop(A.MAT['girder'])
+    put(m, GIRDER, girder_tris, 'girder_blend', blend={'paint': [{'type': 'foot', 'height': 14.0, 'falloff': 46.0, 'layer': 1}], 'z0': gz0})   # rust at the underside
+    n_mesh += 1 + put_soup(m, gs, 'girder')
     rep['girders'] = len(A.COLS) - 1 + 3
     # ---- the suspended ceiling
     n_mesh += ceiling(A, m)
