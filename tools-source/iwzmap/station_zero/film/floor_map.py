@@ -26,7 +26,7 @@ from studio import lightwhy as LW  # noqa: E402
 from studio import Map  # noqa: E402
 
 
-def measure(folder, region, n=9000, emit=None, seed=7):
+def measure(folder, region, n=9000, emit=None, seed=7, floor_z=None):
     import time
     t0 = time.time()
     log = lambda *a: print('[%5.1fs]' % (time.time() - t0), *a, file=sys.stderr, flush=True)     # noqa: E731
@@ -47,7 +47,7 @@ def measure(folder, region, n=9000, emit=None, seed=7):
     up = N[:, 2] > 0.9
     zs = np.round(P[up, 2] / 8.0) * 8.0
     vals, cnt = np.unique(zs, return_counts=True)
-    zf = float(vals[cnt.argmax()])           # the floor level: the commonest 8-unit height of up-facing points in the region (a document with no zone has no floor class)
+    zf = float(vals[cnt.argmax()]) if floor_z is None else float(floor_z)           # the floor level: the commonest 8-unit height of up-facing points in the region (a document with no zone has no floor class)
     log('floor level', zf)
     sc.zones['_floor'] = [x0, y0, zf - 12.0, x1, y1, zf + 12.0]
     P2, N2, _, _ = sc.sample(n, seed + 1, '_floor')
@@ -93,8 +93,9 @@ def main(argv=None):
     ap.add_argument('--n', type=int, default=9000)
     ap.add_argument('--out')
     ap.add_argument('--emit')
+    ap.add_argument('--floor-z', type=float, default=None, help='the floor height (default: the commonest up-facing height, which is a ceiling top in a closed hall)')
     a = ap.parse_args(argv)
-    r = measure(a.folder, [float(v) for v in a.region.split(',')], a.n, a.emit)
+    r = measure(a.folder, [float(v) for v in a.region.split(',')], a.n, a.emit, floor_z=a.floor_z)
     if a.out:
         json.dump(r, open(a.out, 'w'), indent=1)
     print(json.dumps(r, indent=1))

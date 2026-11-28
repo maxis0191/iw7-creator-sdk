@@ -38,3 +38,20 @@ Read: the DENSITY is the same (14 against 25 a million squares, a dozen lit pane
 and engine lights, so each makes a pool with an edge, the columns and rails throw shadows, and the ceiling above them is left dark. Ours were twelve 85-degree baked fills of one strength: every wall and the
 ceiling got as much light as the floor (the model's ceiling-to-floor irradiance below), and the four shop pools were the only structure, at 5 to 7 times stock's hottest light (the "blown-out floor patch").
 The "fewer, stronger" of the brief is not what the numbers say: stock is not hotter than our fills (0.42 against 0.71 median), it is narrower, shadowed and mostly engine lights.
+
+## 2. The redesign (`l2_lights.py`, a post-pass over light records; `light_rules.LIT_VISION`)
+What changed, by record (the document's light records: counts in section 4):
+- **12 ceiling troffers** (`light_panel_0..11`, the live panels of `arcade_shell.LIVE`, positions kept): from an 85-degree baked fill to a narrow cone straight down (inner 18, outer 46: stock's
+  median 20 / 40), radius 380 (1.6 x the drop of 238, stock's 1.5), an engine light with its bounce baked (`bake: bounce`, strength x 27,000 = the engine row). Seven of them shadow casting
+  (`shadows: true`: the columns, the benches, the floor machine throw shadows), five not; strengths 0.27 to 0.9 (a bright one 0.9, a middle 0.72 to 0.81, a failing tube 0.27 = 0.3 of a bright one): stock's
+  median 0.42, 90th percentile 1.04. The dead panels stay dead (geometry of `hall_body`, untouched).
+- **The four shop pools** (`light_pool_*`): strength x 0.35 (5.5 to 7.0 down to 1.9 to 2.5, still above stock's 1.04: they are the shops' signs thrown on the floor), cone 22 / 58 instead of 25 / 45.
+- **Shop spill** (`l2_spill_<shop>`, four new engine lights): inside each shop, 70 units behind the shutter line at 96 high, aimed out at the hall (pitch 7 degrees down), cone 30 / 70, radius 380,
+  strength 0.8, in the shop's own colour, no shadow flag (they must reach through the glass and shutter: the baker treats glass as an occluder, so the baked interior lights never reached the hall).
+- **Shops' own fills**: spots of 80 degrees or more inside a unit narrowed to 28 / 62 and x 0.85, selected by position (not by id).
+- **Hall fills**: colonnade tubes, wall lanterns and emergency lamps x 0.5 (baked).
+- **Vision** (map-wide, `light_rules.LIT_VISION`, exposure untouched at -1.25): fog colour = stock's `0.749 0.651 0.522`, sky terms = stock's (`fogSkyIntensity 1`, `fogSkyMin 0`, `fogSkyMax 80`,
+  `r_hdrSkyIntensity 0.15`); the fog colour's intensity is 0.27, NOT stock's 0.1, so that the fog keeps the luminance L1 tuned the black lift for (0.147 x 1.25 = 0.67 x 0.27). Sun-fog keys are not set
+  (no sun in an interior).
+Not done: flickering panels (the `flicker` group is a runtime row with no bounce and one network record each; the dim panels are static, 0.3 of a bright one); glow and smoke cards (LIGHTING-GAP C6).
+The darkness logic is untouched: every light stays in group `emergency` (on in both states of the lit-first base), no `power` or `flicker` light is added.
