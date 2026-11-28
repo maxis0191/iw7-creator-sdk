@@ -140,7 +140,124 @@ def pairs(out, stock, ours_dirs, names, patches):
     return res
 
 
+# ------------------------------------------------------------------ metric (worker R2): one table, stock against ours, per region
+BANDS = {'ceiling': (0.00, 0.30), 'wall': (0.30, 0.70), 'floor': (0.70, 0.97)}   # rows of the frame; floor = LIGHTING-GAP's floor band
+Y709 = np.array([0.2126, 0.7152, 0.0722])
+
+
+def _local_contrast(y):
+    """mean absolute difference of log luminance between a pixel and its 9 x 9 box mean (texture, grime, shading detail)"""
+    ly = np.log2(np.maximum(y, 1e-4))
+    k = 9
+    pad = np.pad(ly, k // 2, mode='edge')
+    c = np.cumsum(np.cumsum(pad, 0), 1)
+    c = np.pad(c, ((1, 0), (1, 0)))
+    h, w = ly.shape
+    box = (c[k:k + h, k:k + w] - c[:h, k:k + w] - c[k:k + h, :w] + c[:h, :w]) / (k * k)
+    return np.abs(ly - box)
+
+
+def region_numbers(a):
+    """per band of a frame (display-encoded 0..1 RGB): mean linear luminance, mean linear chromaticity (r, g, b sum to 1),
+    local contrast (mean |log2 lum - log2 box mean|), share of pixels under 1/255 display (black); plus a 16 x 9 tile grid of log2 luminance"""
+    lin = LM._lin(a)
+    y = lin @ Y709
+    lc = _local_contrast(y)
+    h, w = y.shape
+    out = {}
+    for k, (r0, r1) in BANDS.items():
+        sl = slice(int(r0 * h), int(r1 * h))
+        m = lin[sl].reshape(-1, 3).mean(0)
+        out[k] = {'lum': float(y[sl].mean()), 'chroma': [float(v) for v in m / max(m.sum(), 1e-9)],
+                  'contrast': float(lc[sl].mean()), 'black': float((a[sl].max(2) <= 1.5 / 255).mean())}
+    tiles = np.log2(np.maximum(y[:h // 9 * 9, :w // 16 * 16].reshape(9, h // 9, 16, w // 16).mean((1, 3)), 1e-4))
+    return out, tiles
+
+
+def distance(s, o, ts, to):
+    """one number, 0 = the same frame statistics. Per band: |log2 luminance ratio| + 10 x chromaticity distance + |log2 contrast ratio| +
+    2 x |black share difference|; averaged over the three bands; plus the mean |log2| difference of the 16 x 9 tile grid after removing the
+    frames' mean level (where light falls, independent of exposure). Each term is about 1 for a clearly visible difference."""
+    terms = {}
+    for k in BANDS:
+        a, b = s[k], o[k]
+        terms[k] = (abs(np.log2(max(b['lum'], 1e-5) / max(a['lum'], 1e-5))) + 10 * float(np.linalg.norm(np.subtract(a['chroma'], b['chroma'])))
+                    + abs(np.log2(max(b['contrast'], 1e-5) / max(a['contrast'], 1e-5))) + 2 * abs(b['black'] - a['black']))
+    tile = float(np.abs((to - to.mean()) - (ts - ts.mean())).mean())
+    d = float(np.mean(list(terms.values()))) + tile
+    return d, {**{k: round(v, 3) for k, v in terms.items()}, 'tiles': round(tile, 3)}
+
+
+def metric(stock, variants, names, out=None):
+    """variants: [(label, dir)]. Registration is reported (shift and edge match) and flagged when the shift exceeds 8 px or the edge match is
+    under 0.25: the bands assume the same eye, and a frame a quarter black registers poorly."""
+    res = {}
+    for name in names:
+        sp = find(stock, name)
+        if not sp:
+            res[name] = {'missing': 'stock'}
+            continue
+        s = load(sp)
+        sn, st = region_numbers(s)
+        row = {'stock': {'file': sp, 'regions': sn}}
+        for label, d in variants:
+            op = find(d, name)
+            if not op:
+                row[label] = {'missing': d}
+                continue
+            o = load(op)
+            if o.shape != s.shape:
+                o = np.asarray(Image.open(op).convert('RGB').resize((s.shape[1], s.shape[0])), dtype=np.float64) / 255.0
+            on, ot = region_numbers(o)
+            dist, terms = distance(sn, on, st, ot)
+            reg = register(s, o)
+            reg['flag'] = bool(abs(reg['dx']) > 8 or abs(reg['dy']) > 8 or reg['stock_edges_matched_2px'] < 0.25)
+            row[label] = {'file': op, 'regions': on, 'distance': round(dist, 3), 'terms': terms, 'register': reg}
+        res[name] = row
+    if out:
+        os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+        json.dump(res, open(out, 'w', encoding='utf-8'), indent=1)
+    return res
+
+
+def table(res):
+    """markdown table: one row per pose and frame source"""
+    L = ['| pose | frame | ceiling lum | wall lum | floor lum | floor b/r | floor contrast | black % | distance | reg dx,dy / match |',
+         '|---|---|---|---|---|---|---|---|---|---|']
+    for name, row in res.items():
+        for label, v in row.items():
+            if not isinstance(v, dict) or 'regions' not in v:
+                continue
+            r = v['regions']
+            bl = np.mean([r[k]['black'] for k in BANDS]) * 100
+            fl = r['floor']
+            reg = v.get('register')
+            L.append('| %s | %s | %.4f | %.4f | %.4f | %.2f | %.3f | %.1f | %s | %s |' % (
+                name, label, r['ceiling']['lum'], r['wall']['lum'], fl['lum'], fl['chroma'][2] / max(fl['chroma'][0], 1e-9), fl['contrast'], bl,
+                '%.2f' % v['distance'] if 'distance' in v else '-',
+                '%d,%d / %.2f%s' % (reg['dx'], reg['dy'], reg['stock_edges_matched_2px'], ' FLAG' if reg['flag'] else '') if reg else '-'))
+    summ = {}
+    for row in res.values():
+        for label, v in row.items():
+            if isinstance(v, dict) and 'distance' in v:
+                summ.setdefault(label, []).append(v['distance'])
+    L.append('')
+    L.append('mean distance over the poses: ' + ', '.join('%s %.2f' % (k, np.mean(v)) for k, v in summ.items()))
+    return '\n'.join(L)
+
+
 def main(argv):
+    if argv[0] == 'metric':
+        # metric <out.json> <stock dir> label=dir[,label=dir...] [--names a,b,c]
+        out, stock = argv[1], argv[2]
+        variants = [tuple(x.split('=', 1)) for x in argv[3].split(',')]
+        opt = dict(zip(argv[4::2], argv[5::2]))
+        names = opt.get('--names', 'subway_east_1,subway_east_2,subway_east_5').split(',')
+        res = metric(stock, variants, names, out)
+        t = table(res)
+        open(os.path.splitext(out)[0] + '.md', 'w', encoding='utf-8').write(t + '\n')
+        print(t)
+        return
     if argv[0] == 'pairs':
         out, stock, ours = argv[1], argv[2], argv[3].split(',')
         opt = dict(zip(argv[4::2], argv[5::2]))
