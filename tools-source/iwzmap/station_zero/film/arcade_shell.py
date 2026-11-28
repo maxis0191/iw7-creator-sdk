@@ -41,12 +41,12 @@ MAT = {
     'ceil_stain': 'w/ceiling_waterstains1',       # stained panels
     'panel_on': 'w/emissive_light_panel_white',   # lit panel (emissive; pass 3: plastic_wall_panel_light_02_on read dim grey)
     'panel_off': 'w/plastic_wall_panel_light_02_off',  # dead panel
-    'hole': 'w/metal_painted_01_black',           # a missing panel: the black plenum
+    'hole': 'w/plaster_wall_04_grey_dark_02',     # a missing panel: the concrete soffit above the plenum (AC2: not flat black)
     'tbar': 'w/metal_aluminum_trim_03',           # the ceiling grid
     'girder': 'w/metal_painted_02_dark',          # AC1: the girders of the colonnade (stock girder, K1 2.4)
     'girder_trim': 'w/frag_metal_trim_gray',
     'alu': 'w/metal_aluminum_brushed_clearcoat',  # shopfront frames
-    'alu_black': 'w/metal_painted_01_black',
+    'alu_black': 'w/metal_painted_02_dark',       # AC2: the stock dark painted metal (the girders'), not the flat black of review 3
     'alu_white': 'w/metal_panel_painted_01_white',
     'glass': 'w/glass_clear_generic_01',
     'shutter': 'w/cp_disco_metal_door_rollup_01',   # pass 2: door_metal_rollup_grey_large_01 read as rows of white plates
@@ -72,7 +72,7 @@ SHOP_MAT = {   # per shop: walls, floor, ceiling, frame, fascia box, accent, joi
                         frame=MAT['alu_black'], fascia=MAT['alu_black'], accent=MAT['band'], join=MAT['alu_black']),
     'copy_stop': dict(wall='w/plaster_wall_04_white', floor='w/linoleum_floor_tiles_02', ceil='w/ceiling_tile_01',
                       frame=MAT['alu_white'], fascia='w/zmb_brushed_metal_01_blue', accent='w/plastic_wall_plain_blue_01', join=MAT['alu_white']),
-    'hole_nine': dict(wall='w/paint_pink_wall_semigloss', floor='w/stone_marble_tile_checker_01_brown', ceil='w/plaster_wall_04_beige',
+    'hole_nine': dict(wall='w/plaster_wall_04_beige', floor='w/stone_marble_tile_checker_01_brown', ceil='w/plaster_wall_04_beige',
                       frame=MAT['alu'], fascia='w/wood_antique_panel_trim_01', accent='w/wood_antique_panel_trim_01', join='w/wood_antique_panel_trim_01'),
     'heel_key': dict(wall='w/plaster_wall_01_beige', floor='w/wood_tile_herringbone_glossy_01', ceil='w/plaster_wall_04_beige',
                      frame=MAT['alu'], fascia='w/plastic_wall_plain_red_01', accent='w/plastic_wall_plain_red_01', join='w/wood_antique_panel_trim_01'),
@@ -533,7 +533,7 @@ def hole_nine(m):
     sm = SHOP_MAT[nm]
     door_x0 = a1 - 100.0
     counter(m, 'h9_serving', [a0, Y1 + 2.0, 0.0, door_x0 - 2.0, Y1 + 30.0, 42.0], 'w/metal_chrome_trim_03', sm['join'], kick=MAT['dark'])
-    rbox(m, 'h9_serving_band', [a0 + 1.0, Y1 + 1.4, 22.0, door_x0 - 3.0, Y1 + 2.0, 28.0], sm['wall'])
+    rbox(m, 'h9_serving_band', [a0 + 1.0, Y1 + 1.4, 22.0, door_x0 - 3.0, Y1 + 2.0, 28.0], 'w/paint_pink_wall_semigloss')
     anchor('hole_nine.serving_counter', [a0, Y1 + 2.0, 42.0, door_x0 - 2.0, Y1 + 30.0, 70.0], 's', 'the gala order bagged and waiting (Strand), napkins, the bell')
     rbox(m, 'h9_hatch_head', [a0, Y1 + 8.0, 138.0, door_x0, Y1 + 12.0, OPEN_Z], fr)
     frame_v(m, 'h9_door_jamb', door_x0, Y1 + 10.0, 0.0, 138.0, fr, w=4.0)

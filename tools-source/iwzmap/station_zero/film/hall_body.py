@@ -17,7 +17,7 @@ from studio import build as B
 
 import shellparts as P
 
-ART = r'C:\studio-data\sz\film\station\construct1\art'
+ART = r'C:\studio-data\sz\film\station\ac2\art'
 WALL_FIELD = '*824n_4'                  # dt_tile_ceramic_white + stain_leak_rust_01_dec_mult (cp_disco, stride 8)
 FLOOR = '*861n_280n_91'                 # stone_spanish_tile_01 + metal_painted_yellow_01_rvl + asphalt_flooring_stain_01 (cp_disco, stride 20)
 GIRDER = '*1040_4'                      # metal_painted_02_dark + stain_leak_rust_01_dec_mult (cp_disco, stride 8)
@@ -143,6 +143,16 @@ def build(A, m):
     fl = P.quad((XW, YS, 0.0), (XE, YS, 0.0), (XE, Y1, 0.0), (XW, Y1, 0.0))
     put(m, FLOOR, fl, 'hall_floor_render', blend={'paint': [{'type': 'mask', 'image': mask, 'rect': [XW, YS, XE, Y1], 'axis': 'z', 'grid': 24.0, 'layer': 2}], 'z0': 0.0})
     n_mesh += 1
+    # AC2: the floor does not read as one repeat: a second stock layered tile (slate) laid as the doors' inlays and the patches where the floor was relaid, over the quarry-type field
+    inlay = []
+    for x0_, x1_ in A.UNITS.values():
+        cx_ = (x0_ + x1_) / 2.0
+        inlay += P.quad((cx_ - 64.0, 4176.0, 0.25), (cx_ + 64.0, 4176.0, 0.25), (cx_ + 64.0, 4236.0, 0.25), (cx_ - 64.0, 4236.0, 0.25))
+    for x_, y_, w_, d_ in ((-2400.0, 4090.0, 96.0, 64.0), (-1900.0, 4010.0, 128.0, 48.0), (-2650.0, 3930.0, 64.0, 96.0), (-1500.0, 3900.0, 96.0, 96.0), (-2150.0, 3820.0, 80.0, 48.0),
+                           (-2860.0, 4100.0, 72.0, 56.0), (-1760.0, 4110.0, 64.0, 64.0)):
+        inlay += P.quad((x_, y_, 0.25), (x_ + w_, y_, 0.25), (x_ + w_, y_ + d_, 0.25), (x_, y_ + d_, 0.25))
+    put(m, '*763n_4', inlay, 'hall_floor_inlay', blend={'paint': [], 'z0': 0.0}, size=64.0)
+    n_mesh += 1
     # ---- the walls: layered tile face with the foot's grime, 0.5 proud
     south = P.wall_face('x', YS + 0.5, XW, XE, 0.0, G, +1)
     west = P.wall_face('y', XW + 0.5, YS, A.BULK_Y, 0.0, G, +1, openings=[(3852.0, 3948.0, 0.0, 112.0)])
@@ -224,6 +234,44 @@ def build(A, m):
     rep['floor_mask'] = mask
 
 
+def _flip(tris):
+    return [[t[0], t[2], t[1]] for t in tris]
+
+
+def _cavity(x0, y0, x1, y1, z0, z1, part):
+    """the inside of a box open below, normals into the hole: its four reveals ('sides') or its top ('top')"""
+    b = P.box(x0, y0, z0, x1, y1, z1)
+    top = [t for t in b if all(abs(q[2] - z1) < 1e-6 for q in t)]
+    bot = [t for t in b if all(abs(q[2] - z0) < 1e-6 for q in t)]
+    sides = [t for t in b if t not in top and t not in bot]
+    return _flip(top if part == 'top' else sides)
+
+
+def _hanging_tile(x0, y0, x1, y1, z, deg, edge):
+    """the missing panel's tile hanging from one edge of its hole (a 1.2 thick slab turned `deg` degrees about that edge)"""
+    t = P.bevel_box(x0 + 0.4, y0 + 0.4, z - 1.2, x1 - 0.4, y1 - 0.4, z, c=0.5, top=0.3)
+    a = math.radians(deg)
+    ca, sa = math.cos(a), math.sin(a)
+    out = []
+    for tri in t:
+        q = []
+        for (x, y, zz) in tri:
+            if edge == 0:                    # hinged on the west edge: swings about the y axis
+                dx, dz = x - x0, zz - z
+                q.append((x0 + dx * ca + dz * sa, y, z - dx * sa + dz * ca))
+            elif edge == 1:                  # east edge
+                dx, dz = x1 - x, zz - z
+                q.append((x1 - (dx * ca + dz * sa), y, z - dx * sa + dz * ca))
+            elif edge == 2:                  # south edge
+                dy, dz = y - y0, zz - z
+                q.append((x, y0 + dy * ca + dz * sa, z - dy * sa + dz * ca))
+            else:                            # north edge
+                dy, dz = y1 - y, zz - z
+                q.append((x, y1 - (dy * ca + dz * sa), z - dy * sa + dz * ca))
+        out.append(q)
+    return out
+
+
 def ceiling(A, m):
     m.use('ceiling')
     G = A.GRID_Z
@@ -251,6 +299,11 @@ def ceiling(A, m):
             t += [[inner[0], inner[1], inner[2]], [inner[0], inner[2], inner[3]]]
             t = P._outward(t, ((ix0 + ix1) / 2.0, (iy0 + iy1) / 2.0, G + 40.0))           # the solid lies above: normals face down
             key = (i, j)
+            if key in holes:                    # AC2: a missing panel is a hole into the plenum (concrete soffit 11 above the grid, dark reveals) with the tile hanging from one edge, not a black cutout
+                soup.add(A.MAT['girder'], _cavity(ix0, iy0, ix1, iy1, G - 0.3, G + 11.0, 'sides'))
+                soup.add(A.MAT['hole'], _cavity(ix0, iy0, ix1, iy1, G - 0.3, G + 11.0, 'top'))
+                soup.add(A.MAT['ceil'], _hanging_tile(ix0, iy0, ix1, iy1, G - 0.3, 38.0 + 9.0 * ((i + j) % 3), (i + 2 * j) % 4))
+                continue
             mat = A.MAT['panel_on'] if key in live else A.MAT['panel_off'] if key in dead else A.MAT['hole'] if key in holes else A.MAT['ceil_stain'] if key in stains else A.MAT['ceil']
             soup.add(mat, t)
     # T-bars: an inverted T, a 3-wide flange 0.5 below the panels

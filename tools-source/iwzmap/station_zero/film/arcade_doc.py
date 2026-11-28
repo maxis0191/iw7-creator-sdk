@@ -37,6 +37,9 @@ def build(only=None, name='sz_arcade', base=None, settings=None):
         m.add_layer('goods_%s' % shop)
         mod.add(m, anchors)
         done.append(shop)
+    if not only:
+        import shop_ac2
+        shop_ac2.build(SHELL, m)                                   # AC2: surfaces, fronts, stock-model dressing, the foreground
     FX.use_kit(m)                                                  # the kit list again: the goods' models
     return m, done, missing
 

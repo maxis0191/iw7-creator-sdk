@@ -31,7 +31,7 @@ SIZE = {
 }
 
 MAT = {
-    'black': 'w/metal_painted_01_black', 'white': 'w/metal_panel_painted_01_white', 'alu': 'w/metal_aluminum_brushed_clearcoat',
+    'black': 'w/metal_painted_02_dark', 'white': 'w/metal_panel_painted_01_white', 'alu': 'w/metal_aluminum_brushed_clearcoat',
     'chrome': 'w/metal_chrome_trim_03', 'wood': 'w/wood_antique_panel_trim_01', 'orange': 'w/ceramic_tile_01_orange',
     'glass': 'w/glass_clear_generic_01', 'rubber': 'w/rubber_trim_black', 'plaster': 'w/plaster_wall_04_white',
     'grey': 'w/metal_painted_wall_panel_04', 'beige': 'w/plastic_wall_frp_01_beige', 'red': 'w/plastic_wall_plain_red_01',

@@ -26,7 +26,7 @@ M = {
     'white': 'w/metal_panel_painted_01_white',
     'chrome': 'w/metal_chrome_trim_03',
     'alu': 'w/metal_aluminum_brushed_clearcoat',
-    'black': 'w/metal_painted_01_black',
+    'black': 'w/metal_painted_02_dark',
     'rubber': 'w/rubber_trim_black',
     'glass': 'w/glass_clear_generic_01',
     'wood': 'w/wood_antique_panel_trim_01',
