@@ -68,7 +68,8 @@ LIGHT_GROUP = 'emergency'            # lit-first base: every lamp baked (PLAN de
 # through the light grid, and a plain runtime row is about 1/27 of the baker's light (L1's calibration). Now a stock track spot hung on a rod, ABOVE-FRONT on
 # the side the player arrives from and term_machine looks from (east-south), 111 units from the body's centre (the stock projection room's key), aimed
 # at the body, `bake='bounce'`: the engine draws its direct light at intensity x 27,000 (studio BOUNCE_ROW_PER_UNIT), the lightmap keeps its bounce.
-KEY_TOP = (MACH[0] + 51.0, MACH[1] - 40.0, 182.0)       # the head's top (where its rod meets it)
+KEY_TOP = (MACH[0] + 30.0, MACH[1] - 80.0, 182.0)       # the head's top (where its rod meets it); at (+51, -40) it hung in front of the FARE VALIDATION
+#                                                         board (y -4692..-4588) in the arrival view and hid FARE: now south of the board's edge from there
 KEY_AIM = (MACH[0], MACH[1] - 6.0, POST_H + 48.0)       # the body's centre
 KEY_INTENSITY = float(os.environ.get('SZ_TERMINUS_KEY', '7.0'))   # measured (station\mach, term_machine, display luma): body / paper 0.126 before,
 #                                                                     0.311 at 3.0, 0.306 at 3.0 + ink, 0.456 at 7.0 + ink (no clipped pixel)
