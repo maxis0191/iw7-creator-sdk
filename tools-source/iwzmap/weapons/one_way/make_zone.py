@@ -1,6 +1,6 @@
 """Assemble the ZoneTool mod-zone source of the original wonder weapon ONE WAY (offline, stdlib only).
 
-    python -B make_zone.py --fragment <r14>/zonetool --dump <IW7-Runtime>/iwz-map-ref-a/dump --out <dir>
+    python -B make_zone.py --fragment <r14>/zonetool --dump <IW7-Runtime>/iwz-map-ref-a/dump --out <dir> [--sounds <dir>]
 
 Writes
     <out>/zonetool/mod/...             the view-model fragment as built, plus weapons/<weapon>.json and
@@ -9,6 +9,10 @@ Writes
     <out>/zone_source/<stock>.csv      copies of the stock zone lists the `ignore` rows read (preflight needs them
                                        beside mod.csv; ZoneTool reads them from its own zone_source)
     <out>/make_zone_report.json        every field set, every stand-in, the reload timers, the rows
+
+--sounds <dir> (made by x64-zt-extensions tools-source/asset-bridge/iw7-audio/foley/foley_bank.py bank) adds the weapon's own
+sounds: sound/, soundbank/, sound_assets/ and sfxpkg/ go under zonetool/mod, the weapon's sfxPackage and notetrack sound map are
+set, and `soundbank,<bank>` and `sfxpkg,<name>` rows join mod.csv.
 
 Everything the weapon points at that is not ours (world model, hand and anim packages, effect and sound packages,
 tracer, icons) stays the template's and is a reference to the stock zones, not an embedded asset.
@@ -113,6 +117,33 @@ def reload_timers(old, total, empty):
     return new
 
 
+SOUND_DIRS = ("sound", "soundbank", "sound_assets", "sfxpkg")
+
+
+def read_sounds(path):
+    """The sounds report of foley_bank.py: bank, sfx package name, csv rows, notetrack map."""
+    report_path = os.path.join(path, "sounds_report.json")
+    if not os.path.isfile(report_path):
+        sys.exit("no sounds_report.json in %s (run foley_bank.py bank first)" % path)
+    rep = load(report_path)
+    for d in SOUND_DIRS:
+        if not os.path.isdir(os.path.join(path, d)):
+            sys.exit("%s holds no %s/ folder" % (path, d))
+    return rep
+
+
+def apply_sounds(weapon, rep, changes):
+    """The weapon's own sound package and its notetrack-to-alias map (the counted key/value arrays of the weapon)."""
+    d = weapon["weapDef"]
+    changes.append(("sfxPackage", d.get("sfxPackage"), rep["sfxpackage"]))
+    d["sfxPackage"] = rep["sfxpackage"]
+    keys, values = rep["notetrack_keys"], rep["notetrack_values"]
+    changes.append(("notetrackSoundMapKeys", weapon.get("notetrackSoundMapKeys"), keys))
+    changes.append(("notetrackSoundMapValues", weapon.get("notetrackSoundMapValues"), values))
+    weapon["notetrackSoundMapKeys"] = list(keys)
+    weapon["notetrackSoundMapValues"] = list(values)
+
+
 def author(template, pkg_template, view_model):
     """(weapon json, package json, [(field, before, after)])."""
     w = json.loads(json.dumps(template))
@@ -155,12 +186,12 @@ def author(template, pkg_template, view_model):
     return w, pkg, changes
 
 
-def stand_ins(template_name, weapon):
+def stand_ins(template_name, weapon, sounds_own=False):
     d = weapon["weapDef"]
     fields = ("worldModel", "defaultWorldModel", "szXAnimsRightHanded", "szXAnimsLeftHanded", "handXModel",
               "vfxPackage", "sfxPackage", "tracerType", "hudIcon", "pickupIcon", "ammoCounterIcon", "fireRumble",
               "meleeImpactRumble", "stowTag", "stowOffsetModel", "szLUICrosshairWidget", "killIcon")
-    out = {f: d.get(f) for f in fields if d.get(f)}
+    out = {f: d.get(f) for f in fields if d.get(f) and not (f == "sfxPackage" and sounds_own)}
     out["szDisplayName"] = weapon.get("szDisplayName")
     out["package animations (every slot of %s)" % PACKAGE] = "stock FTL pistol animations, the template's own package"
     out["feel (spread, kick, sway, ADS, melee, aim assist, accuracy graph, damage values)"] = \
@@ -186,8 +217,10 @@ def main(argv=None):
     ap.add_argument("--out", required=True, help="output folder (zonetool/mod, zone_source/mod.csv)")
     ap.add_argument("--template", default=DEFAULT_TEMPLATE, help="stock weapon the definition is cloned from")
     ap.add_argument("--template-zone", default=DEFAULT_TEMPLATE_ZONE, help="stock zone holding the template")
+    ap.add_argument("--sounds", help="folder written by foley_bank.py bank: the weapon's own sound bank, sfx package and notetrack map")
     args = ap.parse_args(argv)
 
+    sounds = read_sounds(args.sounds) if args.sounds else None
     rows = read_rows(args.fragment)
     check_rows(args.fragment, rows)
     models = [name for kind, name in rows if kind == "xmodel"]
@@ -199,6 +232,8 @@ def main(argv=None):
     pkg_name = template["weapDef"]["szXAnims"]
     pkg_template = load(find_stock(args.dump, args.template_zone, "animpkg", pkg_name))
     weapon, pkg, changes = author(template, pkg_template, view_model)
+    if sounds:
+        apply_sounds(weapon, sounds, changes)
 
     mod = os.path.join(args.out, "zonetool", ZONE)
     if os.path.exists(mod):
@@ -206,6 +241,9 @@ def main(argv=None):
     shutil.copytree(args.fragment, mod, ignore=shutil.ignore_patterns(*FRAGMENT_SKIP))
     save(os.path.join(mod, "weapons", WEAPON + ".json"), weapon)
     save(os.path.join(mod, "animpkg", PACKAGE + ".json"), pkg)
+    if sounds:
+        for folder in SOUND_DIRS:
+            shutil.copytree(os.path.join(args.sounds, folder), os.path.join(mod, folder), dirs_exist_ok=True)
 
     # stock lists beside the csv (what `ignore,<zone>` reads)
     zone_source = os.path.join(args.out, "zone_source")
@@ -222,14 +260,19 @@ def main(argv=None):
         sys.exit("the stock list of %s is missing under %s: the weapon's stock references cannot be ignored" %
                  (args.template_zone, args.dump))
 
-    embedded = rows + [("animpkg", PACKAGE), ("weapon", WEAPON)]
+    sound_rows = [tuple(r.split(",", 1)) for r in sounds["csv_rows"]] if sounds else []
+    embedded = rows + sound_rows + [("animpkg", PACKAGE), ("weapon", WEAPON)]
     lines = write_csv(os.path.join(zone_source, ZONE + ".csv"), embedded, present)
 
     report = {
         "weapon": WEAPON, "zone": ZONE, "template": args.template, "template_zone": args.template_zone,
         "view_model": view_model, "csv": lines, "stock_lists_ignored": present, "stock_lists_absent": absent,
         "changed_fields": [{"field": f, "template": b, "now": a} for f, b, a in changes],
-        "stand_ins": stand_ins(args.template, weapon),
+        "stand_ins": stand_ins(args.template, weapon, bool(sounds)),
+        "sounds": None if not sounds else {"bank": sounds["bank"], "zone": sounds["zone"], "sfxpackage": sounds["sfxpackage"],
+                                           "aliases": sounds["aliases"], "alias_rows": len(sounds["rows"]),
+                                           "sfx_fields_changed": sounds["sfx_fields_changed"],
+                                           "notetrack_map": dict(zip(sounds["notetrack_keys"], sounds["notetrack_values"]))},
         "reload_ms": {"full": RELOAD_MS, "empty": RELOAD_EMPTY_MS,
                       "package_timers": {k: pkg["timers"][k] for k in pkg["timers"] if "eload" in k and pkg["timers"][k]}},
         "ammo": {"clip": CLIP, "iMaxAmmo": RESERVE, "iStartAmmo": RESERVE,

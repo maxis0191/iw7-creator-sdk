@@ -8,6 +8,17 @@ Run on 28 Nov 2026 with the r14 fragment to `C:\studio-data\sz\weapons\one-way\z
 `zonetool\mod` + `zone_source\mod.csv` (the stock lists beside the csv are copies for the preflight) and loads it with
 `--fs-game mods/szoneway --mod-ff <mod.ff>`.
 
+## Sounds (`--sounds`, 28 Nov 2026)
+
+    python foley_synth.py render sounds/one_way_sounds.json --out <sound>/flac          (x64-zt-extensions iw7-audio/foley, branch claude/oneway-foley)
+    python foley_bank.py bank sounds/one_way_sounds.json --flac <sound>/flac --template <dump>/cp_zmb/sound/cp_zmb.all.aliases.csv --sfx-template <dump>/cp_zmb/sfxpkg/iw7_atomizer_mp_sfxpackage.json --out <sound>/bank
+    python -B make_zone.py ... --out <dir> --sounds <sound>/bank
+
+Adds bank `mod.all` (zone `mod`: 33 alias rows, 31 aliases, all `ow_*`), the sfx package `iw7_szoneway_zm_sfxpackage` (the Atomizer's, with our fire,
+dry, raise and putaway aliases and the npc raise/reload fields emptied), and the notetrack sound map (27 keys, each key is the alias name: an animation
+note called `ow_band_tear` plays `ow_band_tear`). Rows: `soundbank,mod.all` and `sfxpkg,iw7_szoneway_zm_sfxpackage` in `mod.csv`. Recipes and wiring:
+`sounds/one_way_sounds.json`; measured levels: `sounds/levels.json`.
+
 ## What the zone holds
 
 - Embedded: 3 materials (`mo/weapon_iwz_oneway_acc`, `_glass`, `_body`), the view model `weapon_iwz_oneway_vm`
