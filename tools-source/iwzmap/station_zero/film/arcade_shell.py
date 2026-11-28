@@ -203,7 +203,7 @@ GX0, GY0, MOD = XW, YS, 48.0
 NI, NJ = int(math.ceil((XE - XW) / MOD - 1e-6)), int(math.ceil((BULK_Y - YS) / MOD - 1e-6))
 LIVE = [(2, 1), (10, 1), (18, 1), (26, 1), (34, 1), (6, 8), (22, 8), (34, 8), (14, 4), (30, 4), (6, 5), (22, 5)]      # 12 pools (pass 1: 7 read as a black lid); AC1: ten rows of 48, the hall is 480 deep
 DEAD = [(6, 1), (14, 1), (30, 1), (2, 8), (14, 8), (18, 8), (30, 8), (10, 5), (26, 5)]
-HOLES = [(14, 3), (22, 2), (31, 6), (5, 6), (35, 3), (19, 7)]                   # missing panels: the black plenum
+HOLES = [(14, 3), (22, 3), (31, 6), (5, 6), (35, 3), (19, 7)]      # none over the colonnade girder (y 3846..3874: row 2)                   # missing panels: the black plenum
 STAINS = [(3, 3), (8, 6), (12, 2), (17, 7), (21, 3), (27, 6), (29, 2), (33, 7)]
 
 
@@ -674,7 +674,7 @@ def south_wall(m):
     picture(m, 'poster_station_zero', 'poster_station_zero.png', (px, y + 2.5, 112.0), (0.0, 1.0, 0.0), (64.0, 96.0))
     # benches and one bin
     import hall_dress as HD
-    for k, x in enumerate((-2730.0, -2470.0)):           # the second bench moved east of the lockers (round of 28 Nov); AC1: the worn subway bench of the donor kit
+    for k, x in enumerate((-2750.0, -2400.0)):           # AC1: the worn subway bench of the donor kit (192 long: clear of the lockers at -2650..-2518)
         HD.on_wall(sys.modules[__name__], m, 'cp_disco_worn_subway_bench', 's', x, 0.0, 'bench_%d' % k, clip='auto')
     B.prop(m, 'cp_disco_street_trashcan_01', (-2210.0, y + 16.0, 0.0), yaw=0.0, layer='south', id='bin_0', clip=[-12.0, -12.0, 0.0, 12.0, 12.0, 30.0])
     fix(m, 'emergency_wall', (-1460.0, y + 0.5, 200.0), 90.0, role='hall', intensity=0.9, radius=1.4)
@@ -789,18 +789,31 @@ def cameras(m):
 
 
 # ================================================================================================ the document
-def recipe():
-    """the build settings of allbaked2 (same kit dumps, darkness arguments with the -5.5 dark exposure), its kit list kept"""
+def recipe(base=None):
+    """the build settings of allbaked2 (same kit dumps, darkness arguments with the -5.5 dark exposure), its kit list cut to what the base itself uses"""
     src = json.load(open(RECIPE_FROM, encoding='utf-8'))
     st = copy.deepcopy(src['settings'])
     st['map'] = 'cp_iwz'
     import light_rules                        # L1 (W2, 28 Nov): the proposed lit vision
     light_rules.apply_lit(st)
-    # AC1 (28 Nov): allbaked2's kit list names 128 models of the round-19 Arcade that no object of this document uses; every model of ours is added by
+    # AC1 (28 Nov): allbaked2's kit list names 154 models, 128 of them of the round-19 Arcade that no object of this document uses; every model of ours is added by
     # fixtures.use_kit from the objects. The build's key arguments name the list twice (recipe and args) and sat at the Windows command-line limit
-    # (31.4k of 32.7k: a document with 100 distinct models, 28 more, failed with WinError 206 in assemble_key); without the leftovers the arguments are 7k shorter
+    # (31.4k of 32.7k: a document with 100 distinct models, 28 more, failed with WinError 206 in assemble_key). Kept: the models the BASE places (its layout.json
+    # kit_models and the names of its smodels.txt): the generator's barrels, turnstile and benches stay drawn
     kit = st.setdefault('build', {}).setdefault('kit', {})
-    kit['models'] = []
+    root = base or BASE_EMIT
+    keep = set()
+    try:
+        keep |= set(json.load(open(os.path.join(root, 'layout.json'), encoding='utf-8')).get('kit_models') or [])
+    except (OSError, ValueError):
+        pass
+    try:
+        keep |= {ln.split()[0] for ln in open(os.path.join(root, 'smodels.txt'), encoding='utf-8') if ln.strip()}
+    except OSError:
+        pass
+    before = len(kit.get('models') or [])
+    kit['models'] = [x for x in (kit.get('models') or []) if x.split(':')[-1] in keep] if keep else list(kit.get('models') or [])
+    REPORT['kit_prune'] = {'recipe_models': before, 'kept_for_the_base': len(kit['models'])}
     return st
 
 
@@ -813,7 +826,7 @@ def build(name='sz_arcade_shell', base=None, settings=None):
     ANCHORS.clear()
     LIGHTS.clear()
     m = Map(name, 'Station Zero: the Underpass Arcade (shell, A2)', base={'kind': 'emit', 'path': base or BASE_EMIT},
-            settings=settings if settings is not None else recipe())
+            settings=settings if settings is not None else recipe(base))
     for layer in ('arcade_door', 'shell', 'ceiling', 'fronts', 'south', 'hall', 'hall_dress', 'lights', 'gameplay', 'cameras'):
         m.add_layer(layer)
     hall(m)

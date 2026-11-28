@@ -17,6 +17,20 @@ from studio import build as B
 HERE = os.path.dirname(os.path.abspath(__file__))
 PARTS = json.load(open(os.path.join(HERE, 'parts_final.json'), encoding='utf-8'))
 LAYER = 'hall_dress'
+BACK = {'signage_exit_sign_emergency_only_on': '-x', 'signage_exit_sign_emergency': '-x', 'zmb_poster_now_playing_07': '-x', 'cp_disco_worn_subway_bench': '-x'}    # from the sheets
+FACING = {'s': (0, 1), 'w': (1, 0), 'e': (-1, 0)}           # the direction a wall's face looks into the hall
+AXIS = {'+x': (1, 0), '-x': (-1, 0), '+y': (0, 1), '-y': (0, -1)}
+
+
+def _yaw_for_back(back, wall):
+    """the yaw (0, 90, 180, 270) that turns the model's back axis to the wall (against the direction the wall faces)"""
+    bx, by = AXIS[back]
+    fx, fy = FACING[wall]
+    for yaw in (0, 90, 180, 270):
+        c, s = round(math.cos(math.radians(yaw))), round(math.sin(math.radians(yaw)))
+        if (bx * c - by * s, bx * s + by * c) == (-fx, -fy):
+            return float(yaw)
+    raise ValueError('no yaw for %s on %s' % (back, wall))
 
 
 def _rot(mins, maxs, yaw):
@@ -29,7 +43,7 @@ def on_wall(A, m, model, wall, along, z, id, scale=1.0, gap=0.4, clip=None):
     """a model against a wall of the hall with its back flush (the yaw store show gave for that wall), centred on `along`; wall 's' (y = YS, faces +y), 'w' (x = XW, faces +x),
     'e' (x = XE, faces -x). Returns the id"""
     p = PARTS[model]
-    yaw = (p.get('against_wall') or {}).get({'s': 'wall facing +y', 'w': 'wall facing +x', 'e': 'wall facing -x'}[wall], 0.0)
+    yaw = _yaw_for_back(BACK[model], wall) if model in BACK else (p.get('against_wall') or {}).get({'s': 'wall facing +y', 'w': 'wall facing +x', 'e': 'wall facing -x'}[wall], 0.0)
     mins, maxs = [v * scale for v in p['mins']], [v * scale for v in p['maxs']]
     dx0, dx1, dy0, dy1 = _rot(mins, maxs, yaw)
     if wall == 's':
@@ -93,33 +107,23 @@ def build(A, m):
                    'me_lightfluohang_onebulb', 'me_lightfluohang_damaged', 'me_lightfluohang_on', 'me_lightfluohang_onebulb', 'me_lightfluohang_damaged', 'me_lightfluohang']
     for k, mdl in enumerate(tube_models):
         x = -2870.0 + 135.0 * k
-        B.prop(m, mdl, (x, 4132.0, G - 0.4), yaw=90.0, layer=LAYER, id='dr_tube_%d' % k)
+        B.prop(m, mdl, (x, 4190.0, G - 0.4), yaw=90.0, layer=LAYER, id='dr_tube_%d' % k)
     for k, (i, j) in enumerate(A.HOLES):
         x0, y0, x1, y1 = A.module(i, j)
         cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
         B.prop(m, 'ceiling_mob_wire_bundle_01', (cx, cy, G - 100.0), yaw=37.0 * k, scale=0.9, layer=LAYER, id='dr_bundle_%d' % k)
-        if k < 3:
+        if True:
             B.prop(m, 'hanging_wires_01_multicolored', (cx + 10.0, cy - 6.0, G - 0.5), yaw=90.0 * k + 20.0, layer=LAYER, id='dr_wires_%d' % k)
     x0, y0, x1, y1 = A.module(*A.HOLES[1])
     B.prop(m, 'ceiling_mob_wire_bundle_01', ((x0 + x1) / 2.0 + 14.0, (y0 + y1) / 2.0 + 8.0, G - 100.0), yaw=200.0, scale=0.9, layer=LAYER, id='dr_bundle_6')   # one hole with two
     # ---- the south wall's furniture of pipes and conduit
-    zc = 231.0
-    skip = [(-1634.0, -1486.0)]                                                   # the directory board's cap
-    k = 0
-    for q in range(18):
-        x = -2880.0 + 76.0 * q + 38.0
-        if any(a <= x <= b for a, b in skip):
-            continue
-        on_wall(A, m, 'com_electrical_pipe', 's', x, zc, 'dr_conduit_%d' % q)
-        if q % 2 == 0:
-            on_wall(A, m, 'conduit_metal_outlet_box', 's', x + 38.0, zc - 1.0, 'dr_outlet_%d' % q)
-            k += 1
+    # (the conduit run and its outlet boxes of K1 4.2 are not placed: com_electrical_pipe lies flat, 4.8 x 76 x 1.7 with its back on -z, and the tool puts a model to a wall
+    # only by yaw; a pitch or roll that stands it up is not proven here)
     for q, x in enumerate((-2780.0, -2440.0, -2140.0, -1850.0, -1380.0)):
         on_wall(A, m, 'misc_wall_mounted_loudspeaker_01', 's', x, 190.0, 'dr_speaker_%d' % q)
     on_wall(A, m, 'sign_clock_04', 's', -2205.0, 188.0, 'dr_clock')
-    on_wall(A, m, 'clk_emergency_light', 's', -2985.0 + 130.0, 176.0, 'dr_emerg_0')
+    on_wall(A, m, 'clk_emergency_light', 's', -2700.0, 176.0, 'dr_emerg_0')
     on_wall(A, m, 'clk_emergency_light', 's', -1330.0, 176.0, 'dr_emerg_1')
-    on_wall(A, m, 'com_standpipe_double', 's', -1345.0, 22.0, 'dr_standpipe')
     on_wall(A, m, 'greece_elec_wire_01', 's', -2450.0, 238.0, 'dr_cable_0')
     on_wall(A, m, 'greece_elec_wire_01', 's', -1900.0, 238.0, 'dr_cable_1')
     for q, (wall, along) in enumerate((('w', YS + 20.0), ('e', YS + 22.0))):         # the risers in the south corners (scaled to the 195 under the grid)
@@ -129,10 +133,10 @@ def build(A, m):
         else:
             B.prop(m, 'greece_pipes_02', (XE - 9.0, YS + 10.0, 0.0), yaw=0.0, scale=0.82, layer=LAYER, id='dr_riser_%d' % q)
     # exit signs: over D4 and the blast door (lit), and two framed ones over the shops' ends; poster cases on the end walls
-    on_wall(A, m, 'signage_exit_sign_emergency_only_on', 'e', 3900.0, 233.0, 'dr_exit_0')
-    on_wall(A, m, 'signage_exit_sign_emergency_only_on', 'w', 3900.0, 130.0, 'dr_exit_1')
+    on_wall(A, m, 'signage_exit_sign_emergency_only_on', 'e', 3940.0, 232.0, 'dr_exit_0')         # beside the D4 fixture (3900), over the door's head (224)
+    on_wall(A, m, 'signage_exit_sign_emergency_only_on', 'w', 3900.0, 176.0, 'dr_exit_1')         # over the blast door's hazard strip (z 128..134) and its lamp (152)
     on_wall(A, m, 'signage_exit_sign_emergency', 's', -2600.0, 200.0, 'dr_exit_2')
-    on_wall(A, m, 'signage_exit_sign_emergency', 's', -1470.0, 200.0, 'dr_exit_3')
+    on_wall(A, m, 'signage_exit_sign_emergency', 's', -1400.0, 214.0, 'dr_exit_3')
     for q, (wall, along) in enumerate((('w', 3800.0), ('w', 4180.0), ('e', 4110.0), ('e', 4190.0))):
         on_wall(A, m, 'zmb_poster_now_playing_07', wall, along, 62.0, 'dr_case_%d' % q)
     # ---- benches (the worn subway benches of the donor kit) and news boxes at the south wall
@@ -148,9 +152,9 @@ def build(A, m):
     lane = [-2930.0, 4064.0, -1250.0, 4204.0]            # the lane in front of the shops: the walking path of the last crowd
     sp.put(['newspaper_single_fn_01'], lane, 14, 11, 'dr_news_sheet', min_dist=34.0, yaw=(0, 360))
     sp.put(['com_debris_paper_iw6_01', 'com_debris_paper_iw6_02'], lane, 12, 12, 'dr_papers', min_dist=40.0, scale=(0.8, 1.0))
-    sp.put(['office_paper_piece01_iw6'], [lane, [-2930.0, 3770.0, -1250.0, 3840.0]], 22, 13, 'dr_loose', min_dist=22.0)
+    sp.put(['office_paper_piece01_iw6'], [lane, [-2930.0, 3770.0, -1250.0, 3840.0]], 32, 13, 'dr_loose', min_dist=22.0)
     south = [-2930.0, 3760.0, -1250.0, 3838.0]           # under the benches, phones and bins: the commuters' litter
-    sp.put(['food_trash_cigarettes'], south, 14, 14, 'dr_butts', min_dist=16.0, pad=4.0)
+    sp.put(['food_trash_cigarettes'], south, 20, 14, 'dr_butts', min_dist=16.0, pad=4.0)
     sp.put(['com_magazine_english_single_01_dyn'], [south, [-2930.0, 3880.0, -1250.0, 4020.0]], 10, 15, 'dr_mag', min_dist=30.0)
     sp.put(['newspaper_single_fn_01'], south, 10, 16, 'dr_news_sheet_s', min_dist=30.0)
     sp.put(['newspaper_stack_fn_01'], [[-2900.0, 3770.0, -2800.0, 3840.0], [-2060.0, 3770.0, -1980.0, 3840.0], [-1900.0, 4180.0, -1800.0, 4226.0], [-2700.0, 4180.0, -2620.0, 4226.0]],

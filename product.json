@@ -747,6 +747,7 @@
     "tools-source/iwzmap/tests/synth_world.py",
     "tools-source/iwzmap/tests/test_char_pack.py",
     "tools-source/iwzmap/tests/test_ff_compare.py",
+    "tools-source/iwzmap/tests/test_film_shellparts.py",
     "tools-source/iwzmap/tests/test_iwz_emitcheck.py",
     "tools-source/iwzmap/tests/test_iwz_ledger.py",
     "tools-source/iwzmap/tests/test_iwz_probe_forensics.py",
