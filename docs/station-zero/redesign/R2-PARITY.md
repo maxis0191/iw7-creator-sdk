@@ -264,3 +264,60 @@ Distance baseline: 5.80 (mean, poses 1, 2, 5).
 | blend layers (32.7 % of the lifted surface) | not measured | needs patches 1 to 5 (HOLD) |
 | decals, glass, caulk shadow casters | not measured | needs the draw-class patches (HOLD) |
 | probes cube (the room's own cp_disco cube) | not measured | needs the compiler mode of section 6 (HOLD) |
+
+## 10. "Not drawn" tested (worker R2b, 28 Nov 2026): the black surfaces ARE drawn; the fault is in how the stock cp_disco materials draw in our map
+
+Four cells, all `--no-bake` (UNLIT: no lightmap) on the control document with the probe room, poses 1 and 5, one batch each (`r2\batch3.json`, `batch4.json`,
+scripts `run_batch3.py`, `run_batch4.py`, `shots_nobake.py`; sheets `r2\metric\sheet3_pose5.png`, `sheet4_pose5.png`; frames `r2\s_u_*`).
+
+### Measured
+- **The unlit build shows the same black as the baked ones**: black share 38.5 % (pose 1) and 49.7 % (pose 5), the same frames as the 2 x 2 to the eye. With
+  section 8 (draft = final, probe room on = off) the black does not come from the bake, its range or its encoding, nor from the probe room.
+- **Not Umbra culling.** `IWZ_TOME=conservative` (scene sized boxes, no distance cull; compile log "generated conservative Umbra tome") gives a frame
+  identical to the culling tome's, pixel for pixel in the black share (38.5 / 49.7 %).
+- **The black surfaces are drawn.** One document-only change: every surface of the lifted room drawn with one plain material (`w/iwz_tile_cream`, a
+  temporary hook in `studio/prefab.py render_material`, reverted, not committed; the emit memo had to be bypassed with `STUDIO_EMITCACHE=0`, otherwise it
+  returned the previous cell's expansion: the first flat attempt, `u_flat`, was this stale memo and showed nothing). Result: black share 0.1 % / 0.0 %, mean
+  grey 58 / 71 against 34 / 24: the floor, the vault, the car's door and end panels, the tunnel mouths are all there, lit, in the same geometry, same
+  tome, same vertices (`r2\pairs\flatmat_1.png`, `flatmat_5.png`, read: pose 5 shows a tiled floor with the light pool, the car with its doors open onto
+  the far lit rooms, the vault and girders overhead). So the "missing vault, panels, floor" of `ours_5.png` are drawn surfaces whose stock materials come out black.
+  Geometry, visibility data, the tome, the lightmap and the probe room are all ruled out as the cause; the lifted surfaces draw correctly with another material.
+- **Black share by material** (pixel picks of C1's b_baked at poses 1 and 5, 14,335 + same px, `r2\pick\baked_*d.csv`): the materials the template world
+  uses (`dt_tile_ceramic_white`, `metal_corrugated_01`, `fac_tile_black_01`, `metal_painted_01_black`) are 0 % black; the stock cp_disco materials the
+  template does not use ("not used by the template world; using template surface defaults", 124 in the compile log) are 12 to 97 % black
+  (`concrete_bare_patches_clean_03` 83 %, `concrete_wall_grunge_01` 53 %, `linoleum_floor_tiles_noline_01` 97 %, `frag_metal_door_rusty` 96 %,
+  `frag_metal_trim_gray` 52 %), with exceptions that are dark or flat anyway (`plastic_dark_matte` 1 %, `cp_disco_subway_sign_01` 0 %). The cream material is also
+  "not used by the template" and draws fine, so "foreign" alone is not the cause; the cause is something of the cp_disco materials.
+- Vertex data is not it: floor surface 268 (66 % black) and 1596 (0 % black) carry the same packed normal 0xfff80200, tangent 0xe00803ff, binormal
+  sign and colour; surface bounds in world.bin equal their triangles' (0 of 1,676 differ by more than 1 unit); black share does not follow
+  the index buffer (base_index / 65,536 bins 0.27, 0.10, 0.18, 0.27) or the first vertex.
+- **Console variants proved nothing about the clear colour**: `set r_clear 2` / `3`, `r_clearColor 1 0 1 1`, `r_drawWorld 0 / 1`, `r_umbraMinObjectContribution 0`
+  were accepted by the live link (`hud studio_cmd`, ok) but changed no pixel, `r_drawWorld 0` included: those names are not dvars of this client, or are not
+  honoured. No dvar dump or table was found on this PC (docs, SDK, Forge searched). Not needed now: the flat-material cell answers the same question.
+  (A command with `"` is refused by the link: `an op holds only printable ASCII and none of | ; " \`.)
+
+### Read (compiler, `x64-zt-serve`, `iwzmap.cpp`, read only)
+- Culling is not the route: `build_tome` (`:112-246`) writes one tile, one cell, every object with its own bounds; world surfaces user id k (class 0),
+  distance never; the tile scale is the scene extent / 65,536. Surface bounds come from the triangles (`:2204-2205`). `node.surfaceCount = own` and the single
+  aabb leaf (`:2437-2452`) cover every surface. All consistent with the measured: drawn.
+- A surface of a material the template does not use is built from a template surface "of the same material, else `fallback`"
+  (`:2160-2186`: `surfaces[i] = w->dpvs.surfaces[tpl]; draw_surfs[i] = w->dpvs.surfaceMaterials[tpl]`), only the material pointer, first vertex, vertex /
+  triangle counts, base index and max edge are replaced; its flags, lightmap index, sort and `objectId` bits are the template surface's.
+- Zeroed by the compiler and NOT in the tome path, so candidates for what cp_disco materials need and cream does not: `w->heightfieldCount = 0`
+  (`:2334-2335`, "no heightfields", also under `IWZ_KEEP_UMBRA`), the vertex layer stream `tz->vld` 16 zero bytes a vertex and every
+  `tris.vertexLayerData = 0` (`:2188`, `:2427`; the layered / blend techniques read it), decal volumes and volumetrics (`:2328-2333`), the per-surface lighting
+  data. None is proven.
+
+### Hypothesis, not tested
+The black comes from the cp_disco material techniques (techset, state bits, images, or the inputs their shaders read: heightfield, layer stream, a
+second lightmap channel, per-material draw data) running in a map that does not give them those inputs. Why it is spatial inside one surface is not explained
+by this (a shader input that varies in world space, such as a heightfield lookup, would explain it; an image or tangent problem would not).
+
+### What to do next (lead decides; no compiler edit made)
+1. Bisect by material: swap the room's materials in groups (cream already proven) with a template-used material (`w/dt_tile_ceramic_white`) and with single
+   cp_disco materials (`concrete_bare_patches_clean_03` alone, `linoleum_floor_tiles_noline_01`, a 97 % black one), to see which materials turn black and whether
+   any of them is black everywhere or only in regions.
+2. `forge capture` at pose 5 of the baseline and a pixel history on a black floor pixel: the draw's technique, its bound textures and constants (which one is
+   black or zero) decides between heightfield / layer stream / image. This is the E4 of section 1, now with a defined target.
+3. If a heightfield or the layer stream is the input: the compiler change is in `iwzmap.cpp` `build_gfx`, `:2334-2335` (keep or build `heightfields`) or
+   `:2427-2428` and `:2188` (a real layer stream); the exact data to write has to be read from cp_disco's own world first.
