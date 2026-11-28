@@ -386,7 +386,7 @@ the game; prompts and manifest in `concept/`):
 | C | **The Lodestar terminal** | short and deep, a paddle lever, a smoked lid over the stack, a telephone gong on the side | beige and putty ABS, chocolate rockers, coiled cord: the contractor that built ZERO, 1984 | on the left side under the lid: read at a glance |
 | D | **The dating press** | a heavy pistol: a nickel press handle over a brass ticket tube, a brass counter bell at the back | black crackle cast iron and brass from 1931, a grey 1980s grip and a label strip "No. 0" | on a brass strip along the top: read at a glance |
 
-The choice is the owner's (28 Nov: asked, not yet answered). Whatever is chosen: real topology with bevels on
+**The owner's choice (28 Nov 2026): the mechanic is kept, and the look is direction A, the conductor's machine.** Whatever is chosen: real topology with bevels on
 every edge the light catches; three texture sets on the view model (body, mechanism, tickets and glass: colour,
 normal, gloss) at about 40 texels a centimetre on every face seen in first person; one set for the world model;
 the lamps and the ticket edge are the only emissive parts.
