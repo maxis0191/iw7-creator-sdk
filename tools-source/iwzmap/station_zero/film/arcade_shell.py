@@ -25,6 +25,7 @@ from studio import fixtures as FX  # noqa: E402
 import shellgeo as G  # noqa: E402
 import standins as S  # noqa: E402
 import shell_hall as SH  # noqa: E402
+import shellparts as P  # noqa: E402
 
 # ------------------------------------------------------------------------------------------------ materials: ONE table (the swap to our own
 # tile pictures, when B.material lands, is an edit here)
@@ -117,9 +118,19 @@ def bx(m, id, box, mat, mode=None, uv=None):
     return B.box(m, box, mat, mode=mode or 'both', id=id, uv=uv)
 
 
+SOUP = None                 # AC1: render-only boxes are collected here as bevelled solids (shellparts.bevel_box), one mesh object a material, flushed by build()
+NO_SOUP = {'hk_lasts_end_a'}        # ids a later step removes by name stay boxes
+
+
 def rbox(m, id, box, mat, uv=None):
-    """a render-only skin (a tile course on a wall, a trim)"""
-    return B.box(m, box, mat, mode='render', id=id, uv=uv)
+    """a render-only skin (a tile course on a wall, a trim): a solid with its edges cut at 45 degrees (0.8 at most, a third of its thinnest side), a hairline
+    (under 2.4 thick) a plain box; merged by material into authored meshes"""
+    if SOUP is None or uv is not None or id in NO_SOUP:
+        return B.box(m, box, mat, mode='render', id=id, uv=uv)
+    x0, y0, z0, x1, y1, z1 = box
+    t = min(x1 - x0, y1 - y0, z1 - z0)
+    SOUP.add(mat, P.box(*box) if t < 2.4 else P.bevel_box(x0, y0, z0, x1, y1, z1, c=min(0.8, t / 3.0), top=min(0.8, t / 3.0)))
+    return None
 
 
 def mesh(m, id, mat, parts, mode='render'):
@@ -655,8 +666,9 @@ def south_wall(m):
     bx(m, 'poster_frame', [px - 36.0, y, 60.0, px + 36.0, y + 2.5, 164.0], MAT['alu_black'])
     picture(m, 'poster_station_zero', 'poster_station_zero.png', (px, y + 2.5, 112.0), (0.0, 1.0, 0.0), (64.0, 96.0))
     # benches and one bin
-    for k, x in enumerate((-2730.0, -2470.0)):           # the second bench moved east of the lockers (round of 28 Nov)
-        B.prop(m, 'street_bench_long_iw6', (x, y + 20.0, 0.0), yaw=180.0, layer='south', id='bench_%d' % k, clip=[-49.0, -19.0, 0.0, 49.0, 19.0, 20.0])
+    import hall_dress as HD
+    for k, x in enumerate((-2730.0, -2470.0)):           # the second bench moved east of the lockers (round of 28 Nov); AC1: the worn subway bench of the donor kit
+        HD.on_wall(sys.modules[__name__], m, 'cp_disco_worn_subway_bench', 's', x, 0.0, 'bench_%d' % k, clip='auto')
     B.prop(m, 'cp_disco_street_trashcan_01', (-2210.0, y + 16.0, 0.0), yaw=0.0, layer='south', id='bin_0', clip=[-12.0, -12.0, 0.0, 12.0, 12.0, 30.0])
     fix(m, 'emergency_wall', (-1460.0, y + 0.5, 200.0), 90.0, role='hall', intensity=0.9, radius=1.4)
     anchor('hall.south_wall_litter', [XW, YS, 0.0, XE, YS + 80.0, 4.0], 'n', 'commuter litter at the benches and the phones (studio props.scatter commuter)')
@@ -782,12 +794,14 @@ def recipe():
 
 def build(name='sz_arcade_shell', base=None, settings=None):
     """base: the emit folder the shell goes on (default BASE_EMIT); settings: the document's settings block (default recipe())"""
+    global SOUP
+    SOUP = P.Soup()
     REPORT.update({'standins': [], 'art': [], 'fallbacks': [], 'refused': []})
     ANCHORS.clear()
     LIGHTS.clear()
     m = Map(name, 'Station Zero: the Underpass Arcade (shell, A2)', base={'kind': 'emit', 'path': base or BASE_EMIT},
             settings=settings if settings is not None else recipe())
-    for layer in ('arcade_door', 'shell', 'ceiling', 'fronts', 'south', 'hall', 'lights', 'gameplay', 'cameras'):
+    for layer in ('arcade_door', 'shell', 'ceiling', 'fronts', 'south', 'hall', 'hall_dress', 'lights', 'gameplay', 'cameras'):
         m.add_layer(layer)
     hall(m)
     shops(m)
@@ -796,9 +810,14 @@ def build(name='sz_arcade_shell', base=None, settings=None):
     polisher(m)
     hangings(m)
     SH.hall_life(sys.modules[__name__], m)
+    import hall_dress
+    hall_dress.build(sys.modules[__name__], m)
     SH.fronts_by_models(sys.modules[__name__], m)
     gameplay(m)
     cameras(m)
+    import hall_body
+    REPORT.setdefault('body', {})['trim_meshes'] = hall_body.put_soup(m, SOUP, 'trim', layer='shell')
+    REPORT['body']['trim_tris'] = SOUP.count()
     for nm, spec in OWN.items():                                   # our own tiling materials (B.material)
         B.material(m, nm, **spec, layer='shell')
     FX.use_kit(m)

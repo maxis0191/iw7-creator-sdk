@@ -60,14 +60,14 @@ def pictograms():
 def hall_life(A, m):
     m.use('hall')
     rep = A.REPORT.setdefault('hall', {})
-    # 1. bench islands on the centre line: two benches back to back, a planter with dead stems at each end, a bin beside
+    # 1. bench islands on the centre line: one worn subway bench of the donor kit, a planter with dead stems at each end, a bin beside
+    import hall_dress as HD
     for k, x in enumerate(ISLANDS):
-        B.prop(m, 'street_bench_long_iw6', (x, ISLAND_Y - 20.0, 0.0), yaw=0.0, layer='hall', id='island_%d_bench_s' % k, clip=[-49.0, -19.0, 0.0, 49.0, 19.0, 20.0])
-        B.prop(m, 'street_bench_long_iw6', (x, ISLAND_Y + 20.0, 0.0), yaw=180.0, layer='hall', id='island_%d_bench_n' % k, clip=[-49.0, -19.0, 0.0, 49.0, 19.0, 20.0])
-        for j, dx in enumerate((-66.0, 66.0)):
+        HD.free(A, m, 'cp_disco_worn_subway_bench', x, ISLAND_Y, 90.0, 'island_%d_bench' % k, layer='hall')
+        for j, dx in enumerate((-124.0, 124.0)):
             B.prop(m, 'p7_planters_taperedbox_small', (x + dx, ISLAND_Y, 0.0), yaw=90.0, layer='hall', id='island_%d_planter_%d' % (k, j), clip=[-13.0, -16.0, 0.0, 13.0, 16.0, 32.0])
             B.prop(m, 'p7_foliage_flower_bouquet_glass_dead', (x + dx + (3.0 if j else -2.0), ISLAND_Y + 2.0, 26.0), yaw=40.0 + 70.0 * j, layer='hall', id='island_%d_stems_%d' % (k, j))
-        B.prop(m, 'cp_disco_street_trashcan_01', (x + 100.0, ISLAND_Y + 30.0, 0.0), yaw=20.0, layer='hall', id='island_%d_bin' % k, clip=[-12.0, -12.0, 0.0, 12.0, 12.0, 30.0])
+        B.prop(m, 'cp_disco_street_trashcan_01', (x + 150.0, ISLAND_Y + 30.0, 0.0), yaw=20.0, layer='hall', id='island_%d_bin' % k, clip=[-12.0, -12.0, 0.0, 12.0, 12.0, 30.0])
     rep['islands'] = len(ISLANDS)
     # 2. the shuttered newsstand kiosk in the colonnade (a closed front: rule 4's rhythm)
     kiosk(A, m)

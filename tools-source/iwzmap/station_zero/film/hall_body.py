@@ -42,11 +42,10 @@ def put(m, mat, tris, id, layer='shell', blend=None, size=None, mode='render'):
     """one mesh object of a material (a `*` material takes the blend spec), with planar coordinates"""
     if not tris:
         return
-    uvs = planar_uvs(tris, size or MSIZE.get(mat, 128.0))
-    if blend:
-        B.mesh(m, None, tris=tris, uvs=uvs, mode=mode, layer=layer, id=id, blend=dict(blend, material=mat))
-    else:
-        B.mesh(m, mat, tris=tris, uvs=uvs, mode=mode, layer=layer, id=id)
+    if blend:                       # a layered surface carries its own coordinates (the exporter's table has no size for a `*` material)
+        B.mesh(m, None, tris=tris, uvs=planar_uvs(tris, size or MSIZE.get(mat, 128.0)), mode=mode, layer=layer, id=id, blend=dict(blend, material=mat))
+    else:                           # a plain material: the exporter projects by its own table of sizes
+        B.mesh(m, mat, tris=tris, mode=mode, layer=layer, id=id)
 
 
 def put_soup(m, soup, prefix, layer='shell', cap=30000):

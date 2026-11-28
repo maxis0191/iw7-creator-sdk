@@ -94,13 +94,13 @@ def bevel_box(x0, y0, z0, x1, y1, z1, c=1.0, top=None, bottom=0.0):
     c = min(c, w / 2.0 - 0.01, d / 2.0 - 0.01)
     rings = []
     if bottom > 0:
-        rings.append((z0, rect_poly(cx, cy, w - 2 * bottom, d - 2 * bottom, max(0.0, c - bottom))))
+        rings.append((z0, rect_poly(cx, cy, w - 2 * bottom, d - 2 * bottom, max(0.001, c - bottom))))
         rings.append((z0 + bottom, rect_poly(cx, cy, w, d, c)))
     else:
         rings.append((z0, rect_poly(cx, cy, w, d, c)))
     if t > 0:
         rings.append((z1 - t, rect_poly(cx, cy, w, d, c)))
-        rings.append((z1, rect_poly(cx, cy, w - 2 * t, d - 2 * t, max(0.0, c - t))))
+        rings.append((z1, rect_poly(cx, cy, w - 2 * t, d - 2 * t, max(0.001, c - t))))
     else:
         rings.append((z1, rect_poly(cx, cy, w, d, c)))
     return loft(rings)

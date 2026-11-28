@@ -1,0 +1,1542 @@
+{
+ "me_lightfluohang_damaged": {
+  "verdict": "fits",
+  "size": [
+   12.9,
+   55.39,
+   4.618
+  ],
+  "mins": [
+   -6.45,
+   -27.695,
+   -4.619
+  ],
+  "maxs": [
+   6.45,
+   27.695,
+   -0.001
+  ],
+  "tris": 746,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "me_lightfluohang_onebulb": {
+  "verdict": "fits",
+  "size": [
+   12.9,
+   55.39,
+   4.345
+  ],
+  "mins": [
+   -6.45,
+   -27.695,
+   -4.346
+  ],
+  "maxs": [
+   6.45,
+   27.695,
+   -0.001
+  ],
+  "tris": 300,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "me_lightfluohang": {
+  "verdict": "fits",
+  "size": [
+   12.9,
+   55.39,
+   4.344
+  ],
+  "mins": [
+   -6.45,
+   -27.695,
+   8.875
+  ],
+  "maxs": [
+   6.45,
+   27.695,
+   13.219
+  ],
+  "tris": 396,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "me_lightfluohang_on": {
+  "verdict": "fits",
+  "size": [
+   12.9,
+   55.39,
+   4.344
+  ],
+  "mins": [
+   -6.45,
+   -27.695,
+   5.478
+  ],
+  "maxs": [
+   6.45,
+   27.695,
+   9.822
+  ],
+  "tris": 396,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "clk_emergency_light": {
+  "verdict": "fits",
+  "size": [
+   26.518,
+   8.518,
+   7.604
+  ],
+  "mins": [
+   -13.259,
+   -8.518,
+   -3.802
+  ],
+  "maxs": [
+   13.259,
+   0.0,
+   3.802
+  ],
+  "tris": 636,
+  "back": "+y",
+  "against_wall": {
+   "wall facing +x": 90.0,
+   "wall facing -x": 270.0,
+   "wall facing +y": 180.0,
+   "wall facing -y": 0.0
+  },
+  "zones": [
+   "mp_metropolis",
+   "mp_prime",
+   "mp_permafrost2",
+   "mp_overflow"
+  ]
+ },
+ "misc_wall_mounted_loudspeaker_01": {
+  "verdict": "fits",
+  "size": [
+   3.784,
+   14.19,
+   26.218
+  ],
+  "mins": [
+   -0.563,
+   -7.095,
+   -13.109
+  ],
+  "maxs": [
+   3.221,
+   7.095,
+   13.109
+  ],
+  "tris": 732,
+  "back": "+x",
+  "against_wall": {
+   "wall facing +x": 180.0,
+   "wall facing -x": 0.0,
+   "wall facing +y": 270.0,
+   "wall facing -y": 90.0
+  },
+  "zones": [
+   "mp_permafrost2",
+   "mp_overflow",
+   "mp_fallen",
+   "mp_breakneck"
+  ]
+ },
+ "signage_exit_sign_emergency_only_on": {
+  "verdict": "fits",
+  "size": [
+   1.5,
+   12.708,
+   8.215
+  ],
+  "mins": [
+   0.003,
+   -6.321,
+   -8.269
+  ],
+  "maxs": [
+   1.503,
+   6.387,
+   -0.054
+  ],
+  "tris": 230,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "signage_exit_sign_emergency": {
+  "verdict": "fits",
+  "size": [
+   3.022,
+   20.786,
+   12.547
+  ],
+  "mins": [
+   0.003,
+   -10.384,
+   -8.269
+  ],
+  "maxs": [
+   3.025,
+   10.402,
+   4.278
+  ],
+  "tris": 2242,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_frontend",
+   "mp_permafrost2",
+   "mp_overflow",
+   "cp_town"
+  ]
+ },
+ "sign_clock_04": {
+  "verdict": "fits",
+  "size": [
+   18.48,
+   3.024,
+   18.48
+  ],
+  "mins": [
+   -9.24,
+   -3.024,
+   -9.24
+  ],
+  "maxs": [
+   9.24,
+   0.0,
+   9.24
+  ],
+  "tris": 480,
+  "back": "+y",
+  "against_wall": {
+   "wall facing +x": 90.0,
+   "wall facing -x": 270.0,
+   "wall facing +y": 180.0,
+   "wall facing -y": 0.0
+  },
+  "zones": [
+   "mp_geneva",
+   "mp_renaissance2",
+   "mp_neon",
+   "mp_hawkwar"
+  ]
+ },
+ "ceiling_mob_wire_bundle_01": {
+  "verdict": "fits",
+  "size": [
+   9.026,
+   7.077,
+   113.726
+  ],
+  "mins": [
+   -4.698,
+   -7.077,
+   -0.983
+  ],
+  "maxs": [
+   4.328,
+   0.0,
+   112.743
+  ],
+  "tris": 1748,
+  "back": "+x",
+  "against_wall": {
+   "wall facing +x": 180.0,
+   "wall facing -x": 0.0,
+   "wall facing +y": 270.0,
+   "wall facing -y": 90.0
+  },
+  "zones": [
+   "mp_desert",
+   "mp_parkour",
+   "mp_rivet",
+   "mp_divide"
+  ]
+ },
+ "hanging_wires_01_multicolored": {
+  "verdict": "fits",
+  "size": [
+   9.722,
+   24.106,
+   58.366
+  ],
+  "mins": [
+   -6.19,
+   -5.915,
+   -58.362
+  ],
+  "maxs": [
+   3.532,
+   18.191,
+   0.004
+  ],
+  "tris": 1562,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_flip",
+   "mp_junk",
+   "mp_metropolis",
+   "mp_prime"
+  ]
+ },
+ "greece_elec_wire_01": {
+  "verdict": "fits",
+  "size": [
+   177.0,
+   3.084,
+   7.915
+  ],
+  "mins": [
+   -88.5,
+   -2.144,
+   2.472
+  ],
+  "maxs": [
+   88.5,
+   0.94,
+   10.387
+  ],
+  "tris": 1580,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_metropolis",
+   "mp_prime",
+   "mp_carnage2",
+   "mp_rally"
+  ]
+ },
+ "greece_pipes_02": {
+  "verdict": "fits",
+  "size": [
+   13.328,
+   17.557,
+   289.503
+  ],
+  "mins": [
+   -10.811,
+   -10.689,
+   0.0
+  ],
+  "maxs": [
+   2.517,
+   6.868,
+   289.503
+  ],
+  "tris": 7198,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_metropolis",
+   "mp_prime",
+   "mp_riot",
+   "mp_rivet"
+  ]
+ },
+ "com_standpipe_double": {
+  "verdict": "fits",
+  "size": [
+   9.198,
+   10.544,
+   10.535
+  ],
+  "mins": [
+   -0.0,
+   -5.269,
+   -5.451
+  ],
+  "maxs": [
+   9.198,
+   5.275,
+   5.084
+  ],
+  "tris": 750,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "patch_cp_frontend",
+   "patch_mp_fallen",
+   "cp_frontend",
+   "mp_hawkwar"
+  ]
+ },
+ "com_electrical_pipe": {
+  "verdict": "fits",
+  "size": [
+   4.83,
+   76.0,
+   1.672
+  ],
+  "mins": [
+   -2.415,
+   -0.0,
+   0.002
+  ],
+  "maxs": [
+   2.415,
+   76.0,
+   1.674
+  ],
+  "tris": 104,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_junk",
+   "mp_metropolis",
+   "mp_hawkwar",
+   "mp_breakneck"
+  ]
+ },
+ "conduit_metal_outlet_box": {
+  "verdict": "fits",
+  "size": [
+   8.0,
+   3.0,
+   8.0
+  ],
+  "mins": [
+   -4.0,
+   -1.5,
+   -4.0
+  ],
+  "maxs": [
+   4.0,
+   1.5,
+   4.0
+  ],
+  "tris": 132,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_metropolis",
+   "mp_carnage2",
+   "mp_rally",
+   "mp_permafrost2"
+  ]
+ },
+ "cp_disco_worn_subway_bench": {
+  "verdict": "fits",
+  "size": [
+   40.0,
+   192.0,
+   40.0
+  ],
+  "mins": [
+   0.0,
+   -96.0,
+   0.0
+  ],
+  "maxs": [
+   40.0,
+   96.0,
+   40.0
+  ],
+  "tris": 466,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "cp_disco_subway_lockers_02": {
+  "verdict": "fits",
+  "size": [
+   18.753,
+   29.23,
+   72.997
+  ],
+  "mins": [
+   -0.249,
+   -14.615,
+   0.0
+  ],
+  "maxs": [
+   18.504,
+   14.615,
+   72.997
+  ],
+  "tris": 1838,
+  "back": "-x",
+  "against_wall": {
+   "wall facing +x": 0.0,
+   "wall facing -x": 180.0,
+   "wall facing +y": 90.0,
+   "wall facing -y": 270.0
+  },
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "street_telephone_booth_old_iw6": {
+  "verdict": "fits",
+  "size": [
+   27.744,
+   24.799,
+   84.864
+  ],
+  "mins": [
+   -13.872,
+   -15.344,
+   -0.197
+  ],
+  "maxs": [
+   13.872,
+   9.455,
+   84.667
+  ],
+  "tris": 2516,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_carnage2",
+   "mp_rally",
+   "cp_town",
+   "cp_disco"
+  ]
+ },
+ "cp_disco_street_news_vending_01": {
+  "verdict": "fits",
+  "size": [
+   29.155,
+   28.102,
+   54.336
+  ],
+  "mins": [
+   -14.477,
+   -14.051,
+   0.0
+  ],
+  "maxs": [
+   14.678,
+   14.051,
+   54.336
+  ],
+  "tris": 994,
+  "back": "-x",
+  "against_wall": {
+   "wall facing +x": 0.0,
+   "wall facing -x": 180.0,
+   "wall facing +y": 90.0,
+   "wall facing -y": 270.0
+  },
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "street_trashcan_metal_old_iw6_havok": {
+  "verdict": "fits",
+  "size": [
+   25.548,
+   24.65,
+   46.646
+  ],
+  "mins": [
+   -13.112,
+   -12.32,
+   0.125
+  ],
+  "maxs": [
+   12.436,
+   12.33,
+   46.771
+  ],
+  "tris": 4276,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_town",
+   "cp_disco"
+  ]
+ },
+ "zmb_poster_now_playing_07": {
+  "verdict": "fits",
+  "size": [
+   7.0,
+   48.0,
+   72.498
+  ],
+  "mins": [
+   -1.5,
+   -24.0,
+   0.0
+  ],
+  "maxs": [
+   5.5,
+   24.0,
+   72.498
+  ],
+  "tris": 388,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "p7_picture_frame_large_01": {
+  "verdict": "reject",
+  "why": "a painting, not a notice (tool error on the first show run, re-run; same family as modern_02)"
+ },
+ "p7_picture_frame_modern_02": {
+  "verdict": "reject",
+  "size": [
+   1.036,
+   43.997,
+   60.303
+  ],
+  "mins": [
+   0.337,
+   -43.997,
+   0.0
+  ],
+  "maxs": [
+   1.373,
+   0.0,
+   60.303
+  ],
+  "tris": 70,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco",
+   "cp_final"
+  ],
+  "why": "a modern painting in the frame: a gallery piece in a 1978 underpass; poster cases carry the notices"
+ },
+ "newspaper_single_fn_01": {
+  "verdict": "fits",
+  "size": [
+   13.298,
+   16.697,
+   0.988
+  ],
+  "mins": [
+   -6.786,
+   -8.332,
+   -0.144
+  ],
+  "maxs": [
+   6.512,
+   8.365,
+   0.844
+  ],
+  "tris": 436,
+  "back": "-x",
+  "against_wall": {
+   "wall facing +x": 0.0,
+   "wall facing -x": 180.0,
+   "wall facing +y": 90.0,
+   "wall facing -y": 270.0
+  },
+  "zones": [
+   "mp_geneva",
+   "mp_renaissance2",
+   "mp_fallen",
+   "cp_town"
+  ]
+ },
+ "newspaper_stack_fn_01": {
+  "verdict": "fits",
+  "size": [
+   13.716,
+   16.933,
+   5.632
+  ],
+  "mins": [
+   -6.976,
+   -8.607,
+   -0.149
+  ],
+  "maxs": [
+   6.74,
+   8.326,
+   5.483
+  ],
+  "tris": 2822,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_geneva",
+   "mp_renaissance2",
+   "mp_carnage2",
+   "mp_rally"
+  ]
+ },
+ "com_debris_paper_iw6_01": {
+  "verdict": "fits",
+  "size": [
+   59.78,
+   46.653,
+   4.409
+  ],
+  "mins": [
+   -29.81,
+   -22.642,
+   0.136
+  ],
+  "maxs": [
+   29.97,
+   24.011,
+   4.545
+  ],
+  "tris": 190,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_frontend",
+   "mp_geneva",
+   "mp_renaissance2",
+   "mp_metropolis"
+  ]
+ },
+ "com_debris_paper_iw6_02": {
+  "verdict": "fits",
+  "size": [
+   59.62,
+   48.022,
+   4.217
+  ],
+  "mins": [
+   -29.81,
+   -24.011,
+   0.136
+  ],
+  "maxs": [
+   29.81,
+   24.011,
+   4.353
+  ],
+  "tris": 26,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_geneva",
+   "mp_renaissance2",
+   "mp_metropolis",
+   "mp_carnage2"
+  ]
+ },
+ "office_paper_piece01_iw6": {
+  "verdict": "fits",
+  "size": [
+   10.002,
+   15.816,
+   1.605
+  ],
+  "mins": [
+   -4.952,
+   -7.861,
+   -0.282
+  ],
+  "maxs": [
+   5.05,
+   7.955,
+   1.323
+  ],
+  "tris": 34,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_permafrost2",
+   "mp_overflow",
+   "cp_town",
+   "cp_disco"
+  ]
+ },
+ "com_magazine_english_single_01_dyn": {
+  "verdict": "fits",
+  "size": [
+   8.99,
+   11.984,
+   0.868
+  ],
+  "mins": [
+   0.007,
+   0.009,
+   0.024
+  ],
+  "maxs": [
+   8.997,
+   11.993,
+   0.892
+  ],
+  "tris": 110,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_geneva",
+   "mp_renaissance2",
+   "cp_disco"
+  ]
+ },
+ "food_trash_cigarettes": {
+  "verdict": "fits",
+  "size": [
+   4.86,
+   2.888,
+   0.805
+  ],
+  "mins": [
+   -2.43,
+   -1.444,
+   -0.005
+  ],
+  "maxs": [
+   2.43,
+   1.444,
+   0.8
+  ],
+  "tris": 60,
+  "back": "-y",
+  "against_wall": {
+   "wall facing +x": 270.0,
+   "wall facing -x": 90.0,
+   "wall facing +y": 0.0,
+   "wall facing -y": 180.0
+  },
+  "zones": [
+   "cp_frontend",
+   "mp_dome_iw",
+   "mp_metropolis",
+   "mp_prime"
+  ]
+ },
+ "misc_luxury_bag_01": {
+  "verdict": "fits",
+  "size": [
+   8.142,
+   19.835,
+   19.854
+  ],
+  "mins": [
+   -3.461,
+   -9.795,
+   -0.121
+  ],
+  "maxs": [
+   4.681,
+   10.04,
+   19.733
+  ],
+  "tris": 1200,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_geneva",
+   "mp_renaissance2",
+   "mp_skyway",
+   "mp_mansion"
+  ]
+ },
+ "misc_luxury_bag_02": {
+  "verdict": "fits",
+  "size": [
+   9.931,
+   17.05,
+   11.241
+  ],
+  "mins": [
+   -2.466,
+   -8.525,
+   -0.131
+  ],
+  "maxs": [
+   7.465,
+   8.525,
+   11.11
+  ],
+  "tris": 1380,
+  "back": "-x",
+  "against_wall": {
+   "wall facing +x": 0.0,
+   "wall facing -x": 180.0,
+   "wall facing +y": 90.0,
+   "wall facing -y": 270.0
+  },
+  "zones": [
+   "mp_geneva",
+   "mp_renaissance2",
+   "mp_prime",
+   "mp_skyway"
+  ]
+ },
+ "misc_luxury_bag_03": {
+  "verdict": "fits",
+  "size": [
+   22.192,
+   17.334,
+   4.522
+  ],
+  "mins": [
+   -13.301,
+   -8.639,
+   -0.13
+  ],
+  "maxs": [
+   8.891,
+   8.695,
+   4.392
+  ],
+  "tris": 1278,
+  "back": "+x",
+  "against_wall": {
+   "wall facing +x": 180.0,
+   "wall facing -x": 0.0,
+   "wall facing +y": 270.0,
+   "wall facing -y": 90.0
+  },
+  "zones": [
+   "mp_skyway",
+   "cp_disco"
+  ]
+ },
+ "cp_disco_equipment_duffle_bag_01": {
+  "verdict": "reject",
+  "size": [
+   29.698,
+   12.207,
+   10.927
+  ],
+  "mins": [
+   -14.257,
+   -6.245,
+   -5.211
+  ],
+  "maxs": [
+   15.441,
+   5.962,
+   5.716
+  ],
+  "tris": 14496,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco"
+  ],
+  "why": "14,496 triangles each; misc_duffelbag_01 instead (K1 section 4.2)"
+ },
+ "misc_duffelbag_01": {
+  "verdict": "fits",
+  "size": [
+   19.743,
+   21.932,
+   37.486
+  ],
+  "mins": [
+   -9.701,
+   -9.928,
+   -0.139
+  ],
+  "maxs": [
+   10.042,
+   12.004,
+   37.347
+  ],
+  "tris": 3642,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_fallen",
+   "mp_frontier",
+   "mp_nova",
+   "cp_town"
+  ]
+ },
+ "trash_can_garbagebin_trashbundle_static_no_logo": {
+  "verdict": "fits",
+  "size": [
+   29.187,
+   29.225,
+   13.155
+  ],
+  "mins": [
+   -14.916,
+   -15.305,
+   1.759
+  ],
+  "maxs": [
+   14.271,
+   13.92,
+   14.914
+  ],
+  "tris": 1296,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_permafrost2",
+   "mp_overflow",
+   "cp_disco",
+   "cp_final"
+  ]
+ },
+ "food_trash_container_02_open": {
+  "verdict": "fits",
+  "size": [
+   8.367,
+   12.47,
+   8.085
+  ],
+  "mins": [
+   -4.416,
+   -6.235,
+   0.007
+  ],
+  "maxs": [
+   3.951,
+   6.235,
+   8.092
+  ],
+  "tris": 420,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_metropolis",
+   "mp_carnage2",
+   "mp_rally",
+   "mp_permafrost2"
+  ]
+ },
+ "food_trash_burger_box_01_open": {
+  "verdict": "fits",
+  "size": [
+   5.006,
+   8.286,
+   5.421
+  ],
+  "mins": [
+   -2.503,
+   -5.941,
+   0.0
+  ],
+  "maxs": [
+   2.503,
+   2.345,
+   5.421
+  ],
+  "tris": 72,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_prime",
+   "mp_permafrost2",
+   "mp_overflow",
+   "mp_riot"
+  ]
+ },
+ "cp_disco_storefront_doors_left": {
+  "verdict": "fits",
+  "size": [
+   9.369,
+   48.408,
+   104.0
+  ],
+  "mins": [
+   -6.484,
+   -48.0,
+   0.0
+  ],
+  "maxs": [
+   2.885,
+   0.408,
+   104.0
+  ],
+  "tris": 704,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_permafrost2",
+   "mp_overflow",
+   "cp_town",
+   "cp_disco"
+  ]
+ },
+ "cp_disco_storefront_doors_right": {
+  "verdict": "fits",
+  "size": [
+   9.369,
+   48.408,
+   104.0
+  ],
+  "mins": [
+   -2.885,
+   -0.408,
+   0.0
+  ],
+  "maxs": [
+   6.484,
+   48.0,
+   104.0
+  ],
+  "tris": 632,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "patch_cp_disco",
+   "mp_permafrost2",
+   "mp_overflow",
+   "cp_town"
+  ]
+ },
+ "cnd_handle_door_u": {
+  "verdict": "fits",
+  "size": [
+   15.67,
+   4.204,
+   17.122
+  ],
+  "mins": [
+   -2.885,
+   -4.204,
+   -8.557
+  ],
+  "maxs": [
+   12.785,
+   0.0,
+   8.565
+  ],
+  "tris": 920,
+  "back": "+y",
+  "against_wall": {
+   "wall facing +x": 90.0,
+   "wall facing -x": 270.0,
+   "wall facing +y": 180.0,
+   "wall facing -y": 0.0
+  },
+  "zones": [
+   "mp_geneva",
+   "mp_renaissance2",
+   "mp_metropolis",
+   "mp_fallen"
+  ]
+ },
+ "door_mat_coir_01": {
+  "verdict": "fits",
+  "size": [
+   24.0,
+   36.0,
+   0.697
+  ],
+  "mins": [
+   -12.0,
+   -18.0,
+   0.0
+  ],
+  "maxs": [
+   12.0,
+   18.0,
+   0.697
+  ],
+  "tris": 1276,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_geneva",
+   "mp_renaissance2",
+   "mp_carnage2",
+   "mp_rally"
+  ]
+ },
+ "cp_disco_marquee_frame": {
+  "verdict": "fits",
+  "size": [
+   4.365,
+   40.0,
+   70.0
+  ],
+  "mins": [
+   0.0,
+   0.0,
+   -0.0
+  ],
+  "maxs": [
+   4.365,
+   40.0,
+   70.0
+  ],
+  "tris": 2732,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_permafrost2",
+   "mp_overflow",
+   "cp_disco"
+  ]
+ },
+ "neon_open_sign_on_02": {
+  "verdict": "fits",
+  "size": [
+   2.633,
+   42.824,
+   17.952
+  ],
+  "mins": [
+   -2.621,
+   -21.412,
+   -0.0
+  ],
+  "maxs": [
+   0.012,
+   21.412,
+   17.952
+  ],
+  "tris": 1340,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_prime",
+   "mp_carnage2",
+   "mp_rally",
+   "mp_depot"
+  ]
+ },
+ "cp_disco_bulb_strip_01": {
+  "verdict": "fits",
+  "size": [
+   3.706,
+   104.461,
+   3.145
+  ],
+  "mins": [
+   0.0,
+   -51.888,
+   -1.575
+  ],
+  "maxs": [
+   3.706,
+   52.573,
+   1.57
+  ],
+  "tris": 8160,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_town",
+   "cp_disco"
+  ],
+  "note": "8,160 triangles each (R3): one per 104.5 of fascia, not two rows"
+ },
+ "roll_up_door_top_02": {
+  "verdict": "fits",
+  "size": [
+   46.256,
+   262.003,
+   33.043
+  ],
+  "mins": [
+   -46.246,
+   -131.713,
+   -5.022
+  ],
+  "maxs": [
+   0.01,
+   130.29,
+   28.021
+  ],
+  "tris": 534,
+  "back": "+x",
+  "against_wall": {
+   "wall facing +x": 180.0,
+   "wall facing -x": 0.0,
+   "wall facing +y": 270.0,
+   "wall facing -y": 90.0
+  },
+  "zones": [
+   "mp_prime",
+   "mp_carnage2",
+   "mp_rally",
+   "mp_quarry"
+  ]
+ },
+ "arch_rollup_door_bottom_dmg": {
+  "verdict": "fits",
+  "size": [
+   14.3,
+   256.422,
+   29.898
+  ],
+  "mins": [
+   -7.15,
+   -128.211,
+   -1.506
+  ],
+  "maxs": [
+   7.15,
+   128.211,
+   28.392
+  ],
+  "tris": 1448,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "cp_disco_bsp_window_01": {
+  "verdict": "fits",
+  "size": [
+   80.0,
+   8.0,
+   88.0
+  ],
+  "mins": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "maxs": [
+   80.0,
+   8.0,
+   88.0
+  ],
+  "tris": 300,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "cp_disco_curtain_left": {
+  "verdict": "fits",
+  "size": [
+   3.487,
+   39.752,
+   122.007
+  ],
+  "mins": [
+   -1.222,
+   0.0,
+   -122.007
+  ],
+  "maxs": [
+   2.265,
+   39.752,
+   0.0
+  ],
+  "tris": 1666,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "cp_disco_disco_bar_03": {
+  "verdict": "reject",
+  "size": [
+   224.084,
+   96.616,
+   38.0
+  ],
+  "mins": [
+   -112.042,
+   -48.616,
+   0.0
+  ],
+  "maxs": [
+   112.042,
+   48.0,
+   38.0
+  ],
+  "tris": 1304,
+  "back": "-x",
+  "against_wall": {
+   "wall facing +x": 0.0,
+   "wall facing -x": 180.0,
+   "wall facing +y": 90.0,
+   "wall facing -y": 270.0
+  },
+  "zones": [
+   "cp_disco"
+  ],
+  "why": "footprint 224 x 97 x 38 against a 28-deep serving counter; kept out (the counter is authored)"
+ },
+ "cp_disco_modular_awning_left": {
+  "verdict": "reject",
+  "size": [
+   66.397,
+   64.048,
+   46.896
+  ],
+  "mins": [
+   -0.68,
+   -32.106,
+   -42.886
+  ],
+  "maxs": [
+   65.717,
+   31.942,
+   4.01
+  ],
+  "tris": 1578,
+  "back": "-y",
+  "against_wall": {
+   "wall facing +x": 270.0,
+   "wall facing -x": 90.0,
+   "wall facing +y": 0.0,
+   "wall facing -y": 180.0
+  },
+  "zones": [
+   "cp_disco",
+   "cp_final"
+  ],
+  "why": "navy blue, off the pink and brown of Hole Number Nine"
+ },
+ "cp_disco_modular_awning_middle": {
+  "verdict": "reject",
+  "size": [
+   65.272,
+   59.036,
+   45.919
+  ],
+  "mins": [
+   -0.532,
+   -30.944,
+   -42.886
+  ],
+  "maxs": [
+   64.74,
+   28.092,
+   3.033
+  ],
+  "tris": 282,
+  "back": "+y",
+  "against_wall": {
+   "wall facing +x": 90.0,
+   "wall facing -x": 270.0,
+   "wall facing +y": 180.0,
+   "wall facing -y": 0.0
+  },
+  "zones": [
+   "cp_disco",
+   "cp_final"
+  ],
+  "why": "navy blue, off the pink and brown of Hole Number Nine"
+ },
+ "cp_disco_modular_awning_right": {
+  "verdict": "reject",
+  "size": [
+   66.397,
+   64.048,
+   46.896
+  ],
+  "mins": [
+   -0.68,
+   -32.106,
+   -42.886
+  ],
+  "maxs": [
+   65.717,
+   31.942,
+   4.01
+  ],
+  "tris": 1578,
+  "back": "+y",
+  "against_wall": {
+   "wall facing +x": 90.0,
+   "wall facing -x": 270.0,
+   "wall facing +y": 180.0,
+   "wall facing -y": 0.0
+  },
+  "zones": [
+   "cp_disco",
+   "cp_final"
+  ],
+  "why": "navy blue, off the pink and brown of Hole Number Nine"
+ },
+ "cp_disco_bar_stool_01": {
+  "verdict": "fits",
+  "size": [
+   14.956,
+   14.972,
+   28.681
+  ],
+  "mins": [
+   -7.475,
+   -7.477,
+   0.069
+  ],
+  "maxs": [
+   7.481,
+   7.495,
+   28.75
+  ],
+  "tris": 2910,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "cp_disco"
+  ]
+ },
+ "cp_disco_bar_stool_02": {
+  "verdict": "fits",
+  "size": [
+   14.956,
+   14.972,
+   28.681
+  ],
+  "mins": [
+   -7.475,
+   -7.477,
+   0.069
+  ],
+  "maxs": [
+   7.481,
+   7.495,
+   28.75
+  ],
+  "tris": 2910,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_codphish",
+   "cp_disco"
+  ]
+ },
+ "cp_disco_storefront_security_gate": {
+  "verdict": "fits",
+  "size": [
+   13.652,
+   220.332,
+   108.394
+  ],
+  "mins": [
+   0.174,
+   -0.332,
+   0.0
+  ],
+  "maxs": [
+   13.826,
+   220.0,
+   108.394
+  ],
+  "tris": 6144,
+  "back": null,
+  "against_wall": null,
+  "zones": [
+   "mp_permafrost2",
+   "mp_overflow",
+   "mp_codphish",
+   "cp_town"
+  ]
+ }
+}
