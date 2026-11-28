@@ -321,3 +321,65 @@ by this (a shader input that varies in world space, such as a heightfield lookup
    black or zero) decides between heightfield / layer stream / image. This is the E4 of section 1, now with a defined target.
 3. If a heightfield or the layer stream is the input: the compiler change is in `iwzmap.cpp` `build_gfx`, `:2334-2335` (keep or build `heightfields`) or
    `:2427-2428` and `:2188` (a real layer stream); the exact data to write has to be read from cp_disco's own world first.
+
+## 11. RenderDoc and the material file check (worker R2b, 28 Nov 2026): the cp_disco world materials are name stubs, nothing is brought into the zone
+
+Cell: control document, probe room, `--no-bake` (UNLIT; the black is identical to the baked builds, section 10), `STUDIO_EMITCACHE=0`, forge capture at pose 5
+(`r2\cap\ours_p5\cam1.rdc`, D3D11, 879 draws / dispatches / clears, `r2\ao\enum\enum.json`). The capture is darker than the live shot (no studio vision: 64 %
+black) and shows no lit floor pool, so no "lit pixel of the same surface" exists in it; the lit comparisons below are other surfaces. Tools (saved in
+`r2\tools` and in this branch under `tools-source\iwzmap\station_zero\film\r2\`): `rdoc_pixel.py` (qrenderdoc offline: for chosen pixels, the draws whose
+post-vertex-shader triangles cover them, and for chosen events the pixel shader, bound shader resources with size, format and content statistics, and the
+constant buffers), `rdoc_enum.py` (every draw: event, indices, outputs).
+
+### Measured
+- **Material file check** (the control build's own live folder, `next\cp_iwz.kit_import.json` and `cp_iwz.emit\custom_materials.json`; the build's work
+  folder is cleaned by Studio, so this is the live folder of a fresh unlit build of the same document): the kit import brought 314 new and 25 shared
+  materials, every one a model material (`mo/...`, `mopw/...`); **0 of them is a `w/` world material**, 3 images and 3 techsets in all. The
+  `w/concrete_bare_patches_clean_03`, `w/linoleum_floor_tiles_noline_01`, `w/concrete_wall_grunge_01`, `w/frag_metal_door_rusty` the room's surfaces use are in
+  neither (the names appear only in the world surface list). `custom_materials.json` (65 SDK-built materials: `art_*`, `tile_cream` = `w/iwz_tile_cream`, ...) is where
+  the cream that draws fine comes from: it is built into the zone with its own techset and images. The compile log says it for 124 materials: "is not used by the
+  template world; using template surface defaults". The compiler gives such a surface only a **name stub** of the material (`iwzmap.cpp:2160`
+  `materials[i] = name_stub<Material>(mem, src.materials[i])`), so the engine must find `w/concrete_bare_patches_clean_03` in a zone that is loaded with the map.
+  The template's own materials (`dt_tile_ceramic_white`, `metal_corrugated_01`: 0 % black) are in the template zone; cp_disco's are in no loaded zone.
+  This agrees with the blend-proof worker's finding for the `*` layered materials, and with the black share by material of section 10 (template-used 0 %,
+  cp_disco 12 to 97 %, built-in custom cream 0 %).
+- **RenderDoc: the floor is not rasterised in the opaque pass.** The black floor pixel (640, 650) is covered by no draw of the opaque scene pass into the
+  G-buffer `83153` (events 1450 to 3226, 294 draws) except 3170 to 3226 (8 draws of 640 indices covering every pixel with 3 to 5 triangles: not surfaces),
+  and by no earlier draw of the HDR target `83146`; the lit car panel (800, 430) is covered by its own small draws (events 1720 and 1732, 12 indices) and the
+  vent (560, 565) by event 1706. The same holds for pixel (84, 532) of surface 268's region. The only draws that cover the floor pixel with a render target are
+  the 8 light passes 6312 to 6368 (pixel shader 12438, 19 bound resources, one a 1 x 1 default (`texture5`), the occlusion target `83212` is
+  uniform 255, the shadow depth `17136`...), which light what the G-buffer holds: nothing at those pixels (the HDR pixel before the pass is 0,0,0).
+  So the floor's pixels are black because **no surface of the floor reaches the G-buffer pass**, not because it is lit black; with a plain built-in material
+  (section 10, cream) the same triangles reach it.
+- Caveat: coverage is tested on post-vertex-shader positions of each draw (works for the panel and the vent, so the method is sound); `PixelHistory` of
+  this RenderDoc build returned only the last event (not used); the G-buffer pass draws report no pixel shader through the state interface of this script
+  (`ps None`), so which shader and which images the car and the missing floor use in that pass is NOT read. The partial / spatial black inside one surface
+  (surface 268: 66 % black at pose 1) is NOT explained by this: a missing material would hide a surface wholly. Open: the engine may draw a missing material
+  with a default technique only in some passes or for some of the surface's draw batches; this needs a capture of the baked live cell (the capture here lacks the lit
+  floor pool).
+
+### Hypothesis (kept apart)
+A surface whose material asset is unresolved (a name stub that no loaded zone defines) is skipped or drawn with the engine's default material in the G-buffer
+pass, which leaves clear colour (black) behind it; the lit pass then lights nothing. Which one of the two, and why part of a surface survives, is not shown.
+
+### The change (read, no edit; for the lead)
+1. **Not the layer stream, not the heightfield, not the tome**: none of 2188 / 2427 (`vertexLayerData`, `vld`, branch `claude/zt-layers`), 2334-2335 (heightfields),
+   2328-2333 (decal volumes) or 2353-2395 (tome) is involved: the same lifted triangles draw with a material that is in the zone.
+2. **Studio / SDK side, bring the world materials**: `tools-source/iwzmap/kit_import.py:283-296` (`add_material`: `find(zone, 'materials/<mat>.json')`) links
+   `mo/` model materials of the kit's models only. The world materials a document's surfaces use (`foreign_materials.json` written beside every emit by
+   `studio/prefab.py:1175-1199`, "kit_import.py links models only; a --world-materials mode ... needed") need the same treatment: for every `w/...` in
+   `foreign_materials.json` (and the lift's blend `*` materials, whose base `sub` is what `render_material` draws): copy the material json from its zone dump
+   (`json_zone: cp_disco`), its techset (`techniqueSet->name`), the `.stateinfo/.statebits/.statebitsmap`, and every image it references, into the zone's
+   source as the model materials are (`rep['materials']['new']`), so the compiler's name stub resolves inside the zone. Note `kit_import.py:290` looks for
+   `materials/<name>.json` with the `*` of a blend name in the file name, which cannot exist on Windows (use `_file_key`).
+3. **Compiler side (`iwzmap.cpp:2160`, and `:3074` for the second stub site)**: when the material asset is in the zone's source, the stub is enough (the linker
+   resolves by name); nothing to change there if step 2 lands. If it must not be a stub, `name_stub<Material>` is where the real asset would be loaded.
+4. A surface of a material the template does not use also copies a template surface's flags / sort / lightmap index (`:2160-2186`): not the cause of this black
+   (cream has the same treatment) but worth keeping in mind for decal and translucent materials.
+
+### How a frame proves it
+Build the control with the room's `w/` materials brought into the zone (steps 2 above), `--no-bake`, same poses: the black share at poses 1 / 5 must fall
+from 38.5 / 49.7 % to under 5 % (the cream cell gave 0.1 / 0.0 %) with the stock materials drawing; then `rdoc_pixel.py` on the same pixel must show the floor's draw in
+the G-buffer pass (events 1450 to 3226) covering (640, 650); and the compile log must no longer print "is not used by the template world" for those names
+without the material being in `cp_iwz.kit_import.json`'s `materials.new`. If the black stays with the materials in the zone, the hypothesis above is wrong and the
+next suspects are the techset state (sort / flags copied from the fallback surface) and the images' streaming.
