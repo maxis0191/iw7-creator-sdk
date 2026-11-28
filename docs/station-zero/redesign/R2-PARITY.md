@@ -263,6 +263,7 @@ Distance baseline: 5.80 (mean, poses 1, 2, 5).
 | SSAO (`r_ssao` MDAO) | 0.00 | measured, not engaged: the occlusion target stays 255 on stock too |
 | blend layers (32.7 % of the lifted surface) | `keep` with the layer stream really present (section 13): +0.22 (2.61 -> 2.83) on the mean, the content gap closed (graffiti, dirt; registration match 0.73 / 0.83 / 0.84 -> 0.79 / 0.88 / 0.92); the first `keep` run (section 12) was a silent base: 0.00 | measured: the layers draw (RenderDoc: 552 world draws bind slot 1); the metric now shows the light level and colour cast (floor 0.061 against 0.113, b/r 1.12 against 0.74) |
 | decals, glass, caulk shadow casters | not measured | needs the draw-class patches (HOLD) |
+| vision: colour cast / light level (section 15) | the stock vision as a whole: floor b/r distance at pose 5 0.38 -> 0.04, pose 1 0.26 -> 0.21, pose 2 0.13 -> 0.24; mean frame distance +0.37 (2.83 -> 3.20), i.e. not closer on the metric | measured: the cast is the fog colour / sky terms; the exposure key is inert here; the light level error changes sign with the pose (x0.36 / x2.6 / x0.80), so it is the baked light distribution, not a level |
 | probes cube (the room's own cp_disco cube) | not measured | needs the compiler mode of section 6 (HOLD) |
 
 ## 10. "Not drawn" tested (worker R2b, 28 Nov 2026): the black surfaces ARE drawn; the fault is in how the stock cp_disco materials draw in our map
@@ -540,3 +541,56 @@ stock's, the lit rooms through the doors are dimmer. So the picture is closer in
 Closing "blend layers" for real (a prefab with its layer stream): the mean distance moved +0.22 (2.61 to 2.83) while the content gap closed (graffiti, dirt, the registration match 0.73 / 0.83 / 0.84 to 0.79 / 0.88 / 0.92).
 The metric is dominated by the floor luminance and the colour cast now (floor 0.061 against 0.113, b/r 1.12 against 0.74): the next gaps to measure are the light level of the room (stock's baked light and probes) and
 the colour balance, not geometry or materials.
+
+## 15. Light level and colour cast: stock's own vision on the control room (worker R2b, 28 Nov 2026)
+
+One document (`v4` = the keep cell `v3_keep`, prefab `ctl_subway_east_lay`, blend keep, final bake once, probe room), one live session, three visions through `live sync`
+(the bake is remembered, the zone is rebuilt with the new vision), `STUDIO_EMITCACHE=0`, Studio `claude/film-blend` b3d879d (= Studio main), SDK sz-blend, compiler x64-zt-layers
+(`r2\batch8.json`, `run_batch8.py`; frames `r2\s_v4\{a_stock,b1_ours_exp0,b2_stock_exp125}`, metric `r2\metric\m5_v4.md`, pairs `r2\pairs_v4`: `ours_N_v4.png` = cell (a), `ours_N_v4_b1.png` = b1, beside `stock_N.png`).
+
+### How our vision is chosen (read)
+The build's lit vision is the template's `cp_zmb.vision` (dump `iwz-map-ref-a\dump\cp_zmb\vision`) with the keys of the recipe's `--lit` argument written over it
+(`darkness\add_darkness.py`, regex per existing key; `settings.build.darkness.args`, the document's `--lit "k=v;..."`, `light_rules.LIT_VISION` for the station). There is no setting that names
+another vision file, but the `--lit` string can carry any key: for the cell I wrote EVERY key of the stock file `store\cache\cp_disco\assets\vision\cp_disco.vision` (98 keys, image keys such as `clut0Image` skipped)
+into the document's `--lit` argument, for this document only. Keys that are not in cp_zmb's file are not written (`r_mdao*`, `r_EVComp*`, `sunshadowSampleSizeNear`, `r_primaryLightTweak*`, `r_charLightAmbient`: 8 keys).
+
+### (b) what differs between stock's vision and ours (read, 42 of 98 keys; biggest first by the frame they plausibly move)
+| key | stock cp_disco | ours (cp_zmb base + lit keys) |
+|---|---|---|
+| fogColor / fogColorIntensity | 0.749 0.651 0.522 (warm) x 0.1 | 0.114 0.153 0.180 (blue-green) x 1.25 |
+| fogMaxOpacity / fogDensity / fogStartDist | 0.25 / 12000 / 250 | 0.95 / 30 / 0.001 |
+| fogSunColor / fogSunDensity / fogSunColorIntensity | 0.867 0.945 0.992 / 1500 / 0.25 | 0.682 0.761 0.827 / 60000 / 0 |
+| fogSkyIntensity / fogSkyMin / fogSkyMax | 1 / 0 / 80 | 0 / 33 / 179.55 |
+| r_hdrSkyIntensity | 0.15 | 0.5 |
+| tonemapAutoExposureAdjust / tonemapAdaptSpeed | 0 / 0.02 | -1.25 / 0.3 |
+| volumetricAirDensity / SpotBrightness / AmbientBrightness / Albedo | 0.3 / 0.05 / 0 / 0.855 0.882 0.918 | 0.02 / 0.15 / 0.2 / 0.541 grey |
+| r_glare_normalStart, r_rimLightScale / Fill, r_ssaoStrength | 0.125, 20 / 5, 1 | 1.125, 10 / 2, 2 |
+| tonemapGrainStrength | 0 | 0.08 |
+
+### Measured (poses 1 / 2 / 5; stock floor lum 0.102 / 0.043 / 0.113, b/r 0.73 / 0.48 / 0.74)
+| cell | floor lum | floor b/r | wall lum | ceiling lum | floor contrast | distance | mean |
+|---|---|---|---|---|---|---|---|
+| v3 keep (our vision) | 0.032 / 0.079 / 0.061 | 0.99 / 0.35 / 1.12 | 0.066 / 0.079 / 0.050 | 0.037 / 0.040 / 0.047 | 0.181 / 0.235 / 0.206 | 3.16 / 2.48 / 2.84 | 2.83 |
+| (a) stock vision, all keys | 0.037 / 0.113 / 0.090 | **0.52 / 0.24 / 0.78** | 0.086 / 0.105 / 0.063 | 0.041 / 0.048 / 0.062 | 0.282 / 0.291 / 0.292 | 3.13 / 3.46 / 3.00 | 3.20 |
+| (b1) our vision, exposure key 0 | 0.032 / 0.078 / 0.060 | 0.96 / 0.35 / 1.08 | 0.065 / 0.078 / 0.049 | 0.037 / 0.039 / 0.046 | 0.183 / 0.236 / 0.208 | 3.11 / 2.46 / 2.79 | 2.79 |
+| (b2) stock vision, exposure key -1.25 | 0.038 / 0.113 / 0.090 | 0.52 / 0.24 / 0.77 | 0.086 / 0.105 / 0.063 | 0.040 / 0.048 / 0.062 | 0.283 / 0.294 / 0.293 | 3.11 / 3.46 / 3.00 | 3.19 |
+
+- **The exposure key does nothing here**: b1 against v3 (exposure 0 against -1.25) moves floor luminance by under 0.001 and the distance by 0.04; b2 against (a) the same. The reason is not established (probably the auto exposure adapts to the scene level, so an adjust of this size is absorbed; not tested). `tonemapAdaptSpeed` was not isolated: it differs between our vision (0.3) and stock's (0.02) only across the (a)/(b2) against v3/(b1) split, not within a pair.
+- **The colour cast is the fog and sky terms**: with the stock vision the floor b/r at pose 5 goes from 1.12 to 0.78 (stock 0.74), at pose 1 from 0.99 to 0.52 (stock 0.73, now too warm), at pose 2 from 0.35 to 0.24 (stock 0.48, too warm). Our blue-green
+  fog colour at intensity 1.25 against stock's warm one at 0.1 is the largest named difference; r_hdrSkyIntensity 0.5 against 0.15 and the fog sky terms are the other members of that group (not split into single keys).
+- **The light level is not closed**: floor luminance with the stock vision is 0.037 / 0.113 / 0.090 against stock 0.102 / 0.043 / 0.113: pose 1 is still 2.8 times too dark, pose 2 is 2.6 times too bright, pose 5 within 20 %. A global exposure or vision
+  cannot do both: the error changes sign with the place, so what is left is the distribution of the baked light (which pool of light falls where), not a level. Floor contrast went up to 0.28-0.29 against stock 0.15-0.21 with the stock vision.
+- Mean distance 2.83 (v3) -> 3.20 (a): (a) is not better on the metric: pose 2 got worse (2.48 -> 3.46) as the floor there overshoots. Pose 5, the cast, improves in b/r and floor luminance (0.061 -> 0.090) while its distance moves 2.84 -> 3.00.
+- Looked at (pose 1 pair, `r2\metric\v4_pair_1.png`, stock left, ours (a) right): the content matches (pillar, graffiti, bench, wet floor, the car with its tag); stock has warm orange light in the right-hand window and a lit warm pool on the floor, ours (a)
+  is cooler in the shadows (blue on the pillar's stripe and the shadowed floor) and its floor pool is darker.
+- (c): (a) closes the cast at pose 5 and part of it at the others, not most of the level; no probe-cube cell was run.
+
+### Biggest difference, with numbers
+1. Colour: fog colour and intensity (ours blue-green 0.114 / 0.153 / 0.180 x 1.25, stock warm 0.749 / 0.651 / 0.522 x 0.1) with the sky terms: floor b/r 1.12 -> 0.78 at pose 5 by the vision alone.
+2. Light distribution of the baked light, not the vision: after the vision the floor luminance error is x0.36 at pose 1, x2.6 at pose 2, x0.80 at pose 5 against stock. The bake's mean light is 0.229 / 0.204 / 0.189 (rgb); the 29 stock spots are carried
+   with row = peak / 27,000 (C1-CONTROL), without `isVolumetric` (259 of the map's spots), shadow softness, bias, falloff or bulb size; no stock probes (neutral cube, section 6, HOLD).
+   Which of those moves the pool at pose 1 was not measured.
+
+### Ranking (section 9)
+Closing the colour cast by the stock vision: floor b/r distance to stock at pose 5 0.38 -> 0.04, pose 1 0.26 -> 0.21 (flips warm), pose 2 0.13 -> 0.24 (worse); mean frame distance +0.37 (2.83 -> 3.20). Net: the vision explains the cast, and the
+level / distribution of the baked light is the next gap (not measured per light).
