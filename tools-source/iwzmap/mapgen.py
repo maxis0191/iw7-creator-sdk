@@ -81,9 +81,24 @@ def box_faces(mesh, mn, mx, mats, lm, inward=False, skip=()):
         mesh.quad(m, *pts, normal=n, tangent=t, lm=lm)
 
 
+WORLD_MAGIC = 0x575A5749
+OPAQUE_WHITE = (255, 255, 255, 255)
+
+
+def vertex_extras(vert):
+    """a mesh vertex is (p, u, v, lm, n, t) or (p, u, v, lm, n, t, col, layer): col = (R, G, B, A) bytes, default opaque white (what version 1 files always
+    held); layer = the vertex's layer-stream record (bytes of the material's technique stride) or None. Layered materials: docs/station-zero/redesign/BLEND-LAYERS.md"""
+    col = vert[6] if len(vert) > 6 and vert[6] is not None else OPAQUE_WHITE
+    layer = vert[7] if len(vert) > 7 else None
+    return tuple(int(c) for c in col), layer
+
+
 def write_world(mesh, path):
+    """world.bin: version 1, or version 2 when any vertex carries a layer record (surface records + layer_offset, layer_stride; then u32 size and the layer blob).
+    A world without layer records is written exactly as before (version 1, colour from the vertex or opaque white)."""
     surfaces = []; verts = []; indices = []
     allp = []
+    layer_blob = bytearray(); layered = False
     for mi, m in enumerate(mesh.materials):
         v, idx = mesh.by_mat[m]
         # split into surfaces of <= 65535 vertices (u16 indices are relative to firstVertex)
@@ -101,24 +116,42 @@ def write_world(mesh, path):
             pts = [v[i][0] for i in range(lo, hi + 1)]
             allp += pts
             mn = [min(p[a] for p in pts) for a in range(3)]; mx = [max(p[a] for p in pts) for a in range(3)]
-            surfaces.append((mi, first, hi - lo + 1, base, len(sub) // 3, mn, mx))
+            recs = [vertex_extras(v[i])[1] for i in range(lo, hi + 1)]
+            layer_off = layer_stride = 0
+            if any(r is not None for r in recs):
+                strides = {len(r) if r is not None else -1 for r in recs}
+                if len(strides) != 1 or -1 in strides:
+                    raise ValueError('surface of %s: layer records missing or of different sizes %s' % (m, sorted(strides)))
+                layer_stride = strides.pop()
+                if layer_stride == 0 or layer_stride % 4:
+                    raise ValueError('surface of %s: layer stride %d is not a positive multiple of 4' % (m, layer_stride))
+                layered = True
+                layer_off = len(layer_blob)            # the blob is 4 aligned: every stride is a multiple of 4
+                for r in recs:
+                    layer_blob += bytes(r)
+            surfaces.append((mi, first, hi - lo + 1, base, len(sub) // 3, mn, mx, layer_off, layer_stride))
             start = end
     names = []
     for m in mesh.materials:
         base = m.split('|')[0]
         if base not in names: names.append(base)
     surfaces = [(names.index(mesh.materials[mi].split('|')[0]),) + tuple(rest) for (mi, *rest) in surfaces]
-    out = bytearray(struct.pack('<II', 0x575A5749, 1))
+    out = bytearray(struct.pack('<II', WORLD_MAGIC, 2 if layered else 1))
     out += struct.pack('<I', len(names))
     for m in names:
         e = m.encode(); out += struct.pack('<H', len(e)) + e
     out += struct.pack('<I', len(verts))
-    for (p, u, vv, lm, n, t) in verts:
-        out += struct.pack('<3ff4B2f2fII', *p, 0.0078125, 255, 255, 255, 255, u, vv, lm[0], lm[1], n, t)
+    for vert in verts:
+        (p, u, vv, lm, n, t), col = vert[:6], vertex_extras(vert)[0]
+        out += struct.pack('<3ff4B2f2fII', *p, 0.0078125, *col, u, vv, lm[0], lm[1], n, t)
     out += struct.pack('<I', len(indices)) + struct.pack('<%dH' % len(indices), *indices)
     out += struct.pack('<I', len(surfaces))
-    for (mi, first, vc, base, tc, mn, mx) in surfaces:
+    for (mi, first, vc, base, tc, mn, mx, layer_off, layer_stride) in surfaces:
         out += struct.pack('<5I6f', mi, first, vc, base, tc, *mn, *mx)
+        if layered:
+            out += struct.pack('<II', layer_off, layer_stride)
+    if layered:
+        out += struct.pack('<I', len(layer_blob)) + bytes(layer_blob)
     wmn = [min(p[a] for p in allp) for a in range(3)]; wmx = [max(p[a] for p in allp) for a in range(3)]
     out += struct.pack('<6f', *wmn, *wmx)
     open(path, 'wb').write(out)

@@ -751,6 +751,7 @@
     "tools-source/iwzmap/tests/test_lmbake_light.py",
     "tools-source/iwzmap/tests/test_lmbake_split.py",
     "tools-source/iwzmap/tests/test_map_build_loop.py",
+    "tools-source/iwzmap/tests/test_mapgen_world.py",
     "tools-source/iwzmap/tests/test_prefab_place.py",
     "tools-source/iwzmap/tests/test_scenegen.py",
     "tools-source/iwzmap/tests/test_scheduler_core.py",
