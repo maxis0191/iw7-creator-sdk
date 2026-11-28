@@ -23,7 +23,7 @@ who restores it; this session does not touch the stock.
 | Item | Where | Proven how |
 |---|---|---|
 | The mechanic's rules | `tools-source/iwzmap/weapons/one_way/test_oneway_logic.py` | 13 tests in 0.1 s in Forge's script interpreter (gscvm), no script error: tickets, the beat, flat sums, taken / carried / stayed, six cars, the 12 s rule, refund, arrivals, two owners. Not the game: the stock damage callback is a stand-in |
-| Blender generator of direction A | x64-zt-extensions branch `claude/sz-oneway-model` (7aa3358): `tools-source/asset-bridge/t7-weapons/authored/one_way_gun.py`, `one_way.params.json` | 37,386 triangles, 148 parts, each tagged with its bone key; five preview renders per round in `C:\studio-data\sz\weapons\one-way\model10` read by the lead (product, left, fp). The helper's unwrap and bake ran to the end on Blender 5.2 with no game data (an earlier round, 540 s). Left: chips too heavy on the grip, the strap hidden behind the body; never exported, never in the game |
+| Blender generator of direction A | x64-zt-extensions branch `claude/sz-oneway-model` (7aa3358): `tools-source/asset-bridge/t7-weapons/authored/one_way_gun.py`, `one_way.params.json` | 37,386 triangles, 148 parts, each tagged with its bone key; five preview renders per round in `C:\studio-data\sz\weapons\one-way\model\r10` read by the lead (product, left, fp). The helper's unwrap and bake ran to the end on Blender 5.2 with no game data (an earlier round, 540 s). Left: chips too heavy on the grip, the strap hidden behind the body; never exported, never in the game |
 | Own-skeleton mode of the model writer | x64-zt-extensions branch `claude/own-skeleton-writer` (776320f): `tools-source/iw7-skinned-writer/skeleton.py`, `build_model.py --skeleton <spec.json>` | 34 tests of the folder pass (16 new), the old path's bytes unchanged, `skeleton.json` of this weapon loads. Unverified against stock data: the quaternion scale (32767 or 32768), the per-bone bounds, three records copied from the base |
 
 Not started: sounds (ElevenLabs has 191 credits left of 40,000 until the reset of 9 Dec 2026), effects (they are cloned from
@@ -34,7 +34,7 @@ stock emitters), animations (they need the hands' skeleton from a stock dump), t
 1. When a stock root exists again: `python -B make_gamelab.py --server <iw7-paris-server checkout> --out C:\studio-data\sz\weapons\one-way\gamelab`,
    then `python -B C:\forge\forge.py run plans\sz-oneway-core.json --gamelab C:\studio-data\sz\weapons\one-way\gamelab\ops\gamelab --json`
    in the background, then the upgraded plan. Read the probes against the expectations; fix the script.
-2. Read the helpers' work: the five renders of the model against the two reference images; the writer's diff and tests.
+2. The model: lighter chips on the grip, the strap where it can be seen; then its export on its own skeleton (needs a stock view model as the header template).
 3. When stock dumps exist again: the root name and tags of a stock view model into `skeleton.json`; the hands' skeleton
    for the animation rig; then, in the order of `DESIGN.md` section 11, the moving-bone measure on a Black Ops 3 port,
    the model on its own skeleton in the game, the first authored first-person clip.
