@@ -36,7 +36,15 @@ Baseline (C1's last builds; `r2\metric\m0_baseline.md`):
 Mean distance over poses 1, 2, 5: b_bounce 5.80, b_baked 5.79, b_bounce_occ 5.83. The diag build (draft bake, probes in view, poses 1 and 2 only,
 not a baseline): 3.09 against b_bounce's 4.92 on the same two poses; its floor band 0.036 (b_bounce 0.016) with 0 % black.
 
-## 1. The black floors and vaults (diagnosis advanced, cause not closed)
+## 1. The black floors and vaults (cause NOT found; three separate statements)
+
+- PROVEN: the lightmap reaches the build correctly and the black does not follow it (below).
+- MEASURED: the lifted room is in no probe room: a flaw of the control document, fixed for the next build (`control_room.build(probe_room=True)`,
+  Studio `settings.build.probe_rooms`).
+- HYPOTHESIS, not supported strongly by the data: that the missing probe room makes the black. Against it: in the same room, a third of surface
+  268 is lit and the floor surfaces 1596 and 1129 are 0 % black; floor black share RISES with the light the lightmap predicts (40 % where it is
+  under 0.06, 84 % between 0.06 and 0.15). What the black follows is a region of the world: 20 floor cells (48 units) seen black from both
+  pose 1 and pose 5, none lit from both, 3 that differ; not the view.
 
 What is ruled out, each by measurement on C1's builds:
 - **Not a material or technique set.** The compile logs of the black build and the drawn diag build are identical line for line (numbers and work
@@ -53,9 +61,9 @@ What is ruled out, each by measurement on C1's builds:
 - **Not distance fog.** Floor black share by distance at pose 1: 42 % (0-150), 68 % (150-300), 79 % (300-450), 8 % (600-800): no threshold.
 - **Not the bounds, the index ranges or the normals** of the world surfaces (checked on the floor surfaces against their vertices).
 
-What separates black from drawn: orientation and the probe rooms.
-- By height at pose 5: floor (z -120..-100) 88 % black, walls (z -100..0) 2 %, upper walls 18 %, vault (z 200..300) 70 %. Horizontal surfaces are
-  black, vertical ones drawn.
+What is measured about where the black is:
+- By height at pose 5: floor (z -120..-100) 88 % black, walls (z -100..0) 2 %, upper walls 18 %, vault (z 200..300) 70 %: mostly floor and vault,
+  but not every floor surface (above).
 - **The lifted room is in no probe room.** The build's 9 probe / lighting rooms (`probes.txt`, compile log "probes: room 0..8") all lie in the base;
   the 156 template instances are parked at 1e6 (`iwzmap.cpp` neutralize_reflection_probes, read at 785ba75). 10.8 % of the control build's drawn
   area (the whole lifted room) is in no room; the Arcade build 0.9 %. A room gets a probe and an ambient room only from a zone
@@ -68,10 +76,15 @@ What separates black from drawn: orientation and the probe rooms.
   compared offline.
 
 Ready to run when the dumps and a compiler are back (one session, four documents, `forge sense` first; numbers by `control_compare metric`):
-- E1: the black build's document with a zone over the lifted room (or a probe row for the control box, see 6): floor drawn = cause found.
+- E1 (single variable, first): `control_doc --mode bounce --base-only` (now with the probe room row
+  `room -8000 -4800 -170 -6590 -3350 360 0.7 0.65 0.55 0.6` in probes.txt only: the compiler reads probes.txt apart from lighting.txt,
+  `iwzmap.cpp:3109`, row format `:633-636`) against the same with `--no-probe-room`, both on one draft bake. A zone is not the route: an island zone
+  over the room is refused (C1-2).
 - E2: the same document with `settings.build {"compiler": {"env": {"IWZ_PROBES": "template"}}}` (L1's route d).
 - E3: the 2 x 2: document {b_bounce, diag} x bake {draft, final}, to close the diag contradiction.
 - E4 if E1 to E3 do not decide: `forge capture` at pose 5 of b_baked, pixel history of a black floor pixel (the probe index and the SH term).
+- Offline, next: correlate the black floor cells with the world-space fields the build writes (the light grid's kept and dropped cells,
+  `bake.npz grid`, `lighting.txt`; the Umbra tome's cells).
 New in Studio meanwhile: the bake's answer carries `probe_coverage` and warns above 2 % of the drawn area in no room (`studio/bake.py`, unit test).
 
 ## 2. Blend materials (found where the data is lost; carrying it needs the dumps and a compiler patch)
@@ -79,8 +92,12 @@ New in Studio meanwhile: the bake's answer carries `probe_coverage` and warns ab
 - A stock blend material (`*622n_274n`, map-local) is a layered material: a base plus decal layers. The lift records them: `*387n_86n_354n_362n` =
   `w/concrete_wall_brown_02_wet_less` + `w/concrete_stain_01_dec_wet` + `w/ls_conc_cracks_01_dec_nodsp` + `w/t7_decal_grunge_garbage_spread_01`
   (prefab.json `materials`); 187 such materials, 19,694 of the room's 119,365 vertices.
-- **The layer weights exist in the lifted prefab and are dropped after it.** `surfaces_extra.bin` holds a colour per vertex: on blend surfaces
-  R 255 and G / B / A graded (means 157 / 78 / 7, 0 % plain white), on plain surfaces 99.9 % white. Studio drops them at three places:
+- **Vertex colours that vary only on blend surfaces exist in the lifted prefab and are dropped after it** (that they are the layer weights is
+  not established). `surfaces_extra.bin` holds a colour per vertex: on blend surfaces R 255 and G / B / A graded (means 157 / 78 / 7, 0 % plain
+  white), on plain surfaces 99.9 % white. Studio's renderer notes say the engine binds a second vertex buffer (slot 1, the layer stream) at the
+  surface's `vertexLayerData` offset when the technique's input layout reads it (`C:\studio\view\renderer.md` line 159): the layered techniques read
+  the layer stream; whether also the colour, not read. The store cache keeps cp_disco's transient zone (`store\cache\cp_disco\assets\
+  transient_zones\cp_disco.gfxmap_tr`), where the stock layer bytes per vertex can be read without the dumps (not done). Studio drops them at three places:
   `Prefab.surfaces()` never reads the colour (`studio/prefab.py:288-291`); `expand_object` builds records without it and swaps the blend for its base
   (`render_material`, `:392-398`, used at `:531`); the SDK's world writer writes 255,255,255,255 for every vertex (`mapgen.py:117`).
   The lift itself copies a cut triangle's colour from its first vertex instead of interpolating it (`prefab.py:1335`).
@@ -146,8 +163,12 @@ for that array) and a compiler mode that writes a given cube into a room's slot 
 
 ## 7. Verdict: not done
 
-No new frame exists. The table above is the baseline only. What still differs between stock and ours, with its owner:
-black floors and vaults (cause narrowed to the room being in no probe room, inferred; E1 to E4 decide: R2); blend layers (data found in the
+No new frame exists. The table above is the baseline only. Note for the lead: `C:\studio-data\store\cache\cp_disco\assets\vision\cp_disco.vision`
+exists (LIGHTING-GAP C3 says no cp_disco vision is on this PC). Studio gate: before 790 tests 0 failures 21 errors, after 796 / 0 / 21 (the same 21:
+the deleted template dump and bake Python; `r2\gate\gate_{before,after}.log`); the classes behind those errors ran neither time, so the gate must
+run again on this head before merge. Decision: bake key v4 makes every remembered bake be made again, and none can be until the bake Python is back.
+What still differs between stock and ours, with its owner:
+black floors and vaults (cause not found; the lightmap is ruled out; E1 to E4 decide: R2); blend layers (data found in the
 prefab; Studio patches 1-2 R2, mapgen 3 lead, kit import 4 R2/lead, compiler 5 compiler owner); decals / caulk (3: Studio and compiler);
 baked shadow of props (built; frame measure pending); SSAO (plumbing built; frame pending); probes (6); content the lift cannot carry
 (far geometry outside the box, effects, the sky, the 115 entities).
