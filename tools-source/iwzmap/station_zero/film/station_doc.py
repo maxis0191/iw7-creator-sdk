@@ -25,6 +25,7 @@ DATA = r'C:\studio-data\sz\film\station'
 os.environ.setdefault('SZ_TERMINUS_DERIVED', os.path.join(DATA, 'art'))      # the Terminus's derived pictures (floor paper, reel, ink) of this document
 sys.path.insert(0, os.environ.get('STUDIO_ROOT', r'C:\studio'))
 import arcade_doc  # noqa: E402
+import l2_lights  # noqa: E402
 import light_rules  # noqa: E402
 import terminus  # noqa: E402
 from studio import fixtures as FX  # noqa: E402
@@ -61,9 +62,10 @@ def build(base=BASE, name=NAME):
     if missing:
         raise SystemExit('station_doc: goods modules missing: %s' % ', '.join(missing))
     layers = terminus.build(m)                                      # its layers and its vision variant
+    l2 = l2_lights.apply(m, arcade_doc.SHELL)                           # L2: the Arcade's light design, a post-pass over light records only
     FX.use_kit(m)                                                   # one kit list: the models of both sections
     m.name, m.title = name, 'Station Zero: the base without Pack-a-Punch + the Underpass Arcade + the Terminus (I1)'
-    return m, {'goods': done, 'terminus_layers': layers}
+    return m, {'goods': done, 'terminus_layers': layers, 'l2_lights': l2}
 
 
 def main(argv=None):

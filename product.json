@@ -676,6 +676,7 @@
     "tools-source/iwzmap/station_zero/film/goods_score_b.py",
     "tools-source/iwzmap/station_zero/film/hall_body.py",
     "tools-source/iwzmap/station_zero/film/hall_dress.py",
+    "tools-source/iwzmap/station_zero/film/light_design.py",
     "tools-source/iwzmap/station_zero/film/light_measure.py",
     "tools-source/iwzmap/station_zero/film/light_rules.py",
     "tools-source/iwzmap/station_zero/film/light_variants.py",
