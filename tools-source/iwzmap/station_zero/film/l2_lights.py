@@ -22,16 +22,18 @@ def _f(name, default):
     return float(os.environ.get(name, default))
 
 
-TROF_ROW = _f('L2_TROF', 0.9)            # strength of a bright troffer, document units (x 27,000 = the engine row; stock median 0.41, 90th percentile 1.04)
-TROF_RADIUS = _f('L2_TROF_R', 380.0)
-TROF_CONE = (_f('L2_TROF_IN', 18.0), _f('L2_TROF_OUT', 46.0))
+TROF_ROW = _f('L2_TROF', 1.5)            # strength of a bright troffer, document units (x 27,000 = the engine row; stock median 0.41, 90th percentile 1.04)
+TROF_RADIUS = _f('L2_TROF_R', 360.0)
+TROF_CONE = (_f('L2_TROF_IN', 12.0), _f('L2_TROF_OUT', 40.0))
 POOL_K = _f('L2_POOL_K', 0.35)           # the four pools' strength against what they were
 POOL_CONE = (22.0, 58.0)
-SPILL_I = _f('L2_SPILL', 0.8)
+SPILL_I = _f('L2_SPILL', 0.65)
 SPILL_RADIUS = _f('L2_SPILL_R', 380.0)
-TUBE_K = _f('L2_TUBE_K', 0.5)
-INT_K = _f('L2_INT_K', 0.85)
+TUBE_K = _f('L2_TUBE_K', 0.3)
+INT_K = _f('L2_INT_K', 0.75)
 INT_CONE = (28.0, 62.0)
+FRONT_K = _f('L2_FRONT_K', 0.45)      # the wide spots under the bulkhead that throw each shop's front fixtures onto the hall floor evenly
+FRONT_CONE = (22.0, 52.0)
 
 # the live panels, in arcade_shell.LIVE order: (strength factor, shadows)   dim = a failing tube, 0.3
 PANEL_PLAN = [(1.0, True), (0.3, False), (1.0, True), (0.8, False), (1.0, True), (0.3, False),
@@ -90,7 +92,7 @@ def fills(m):
 def interiors(m, A):
     """the shops' own fills: their wide (80 to 85 degree) spots made flat, evenly lit rooms; the cone is narrowed and a little weaker so a shop has a lit counter
     and shade at its sides. Selected by position (inside a unit, y past the shop line), not by id: a goods module's numbering is not ours"""
-    n = 0
+    n = nf = 0
     for o in _lights(m):
         if o.get('runtime') or o.get('type') != 'spot' or o.get('origin') is None:
             continue
@@ -98,7 +100,11 @@ def interiors(m, A):
         if y > A.Y1 + 4.0 and any(x0 <= x <= x1 for x0, x1 in A.UNITS.values()) and o.get('outer', 0) >= 80.0:
             m.update(o['id'], outer=INT_CONE[1], inner=min(o.get('inner', 30.0), INT_CONE[0]), intensity=round(o['intensity'] * INT_K, 3))
             n += 1
+        elif A.Y1 - 40.0 < y <= A.Y1 + 4.0 and o.get('outer', 0) >= 80.0 and o.get('group') == 'emergency':
+            m.update(o['id'], outer=FRONT_CONE[1], inner=min(o.get('inner', 30.0), FRONT_CONE[0]), intensity=round(o['intensity'] * FRONT_K, 3))
+            nf += 1
     REPORT['interiors'] = n
+    REPORT['fronts'] = nf
 
 
 def spills(m, A):
