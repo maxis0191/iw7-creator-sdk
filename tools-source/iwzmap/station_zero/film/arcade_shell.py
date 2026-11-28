@@ -61,7 +61,7 @@ MAT = {
 }
 TILES = r'C:\studio-data\sz\film\art\arcade\tiles'        # drawn by film/tiles.py
 OWN = {   # B.material: name -> its pictures; the table above names them as w/<name>
-    'sz_arcade_quarry': dict(color=TILES + r'\floor_quarry_c.png', gloss=TILES + r'\floor_quarry_g.png', tile=384.0),
+    'sz_arcade_quarry': dict(color=TILES + r'\floor_quarry2_c.png', gloss=TILES + r'\floor_quarry2_g.png', tile=384.0),   # L1 (C4): muted, see tiles.floor2
     'sz_arcade_pegboard': dict(color=TILES + r'\pegboard_c.png', gloss=0.25, tile=32.0),
 }
 SHOP_MAT = {   # per shop: walls, floor, ceiling, frame, fascia box, accent, joinery

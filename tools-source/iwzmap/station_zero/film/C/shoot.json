@@ -1,0 +1,21 @@
+{
+ "doc": ":",
+ "variants": [],
+ "t0": 1795827818.7144017,
+ "start": {
+  "ok": false,
+  "exit": 2,
+  "stdout": "",
+  "stderr": "usage: studio [-h]\n              {new,info,check,budget,density,clearances,nav,free,empty,emit,bake,light,sweep,live}\n              ...\nstudio: error: :: not a Studio document: the folder does not exist\n"
+ },
+ "start_s": 0.1,
+ "session": "studio-_-c26e2218",
+ "aborted_0": "start failed",
+ "stop": {
+  "command": "live stop",
+  "ok": false,
+  "error": "no live session recorded for this document: run `studio live start` first",
+  "ms": 21.1
+ },
+ "t1": 1795827818.966262
+}

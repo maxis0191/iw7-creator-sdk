@@ -90,6 +90,27 @@ def _keep_compile_log(sub):
         shutil.copyfile(max(logs, key=os.path.getmtime), os.path.join(sub, 'compile.log'))
 
 
+def clean_doc(doc):
+    """after `live stop`: this document's own build server, live folder and work folder (exactly its key, `live.doc_key`), so a run of many
+    one-document sessions does not fill the drive (TOOL-FAULTS L1-1). Nothing of another document is matched."""
+    import shutil
+    from studio import live as LV
+    key = LV.doc_key(doc)
+    data = os.environ.get('STUDIO_DATA', r'C:\studio-data')
+    out = []
+    work = os.path.join(data, 'work', key)
+    p = subprocess.run(['powershell', '-NoProfile', '-Command',
+                        "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | Where-Object { $_.CommandLine -like '*compile.serverd*--work %s *' } "
+                        "| ForEach-Object { Stop-Process -Id $_.ProcessId -Force; $_.ProcessId }" % work.replace("'", "''")], capture_output=True, text=True)
+    out += ['server %s' % x for x in p.stdout.split()]
+    time.sleep(1)
+    for f in (os.path.join(data, 'live', key), work):
+        if os.path.basename(f) == key and os.path.isdir(f):
+            shutil.rmtree(f, ignore_errors=True)
+            out.append(f)
+    return out
+
+
 def shoot(folder, doc, cams, states, variants, start=True):
     """One session of `doc`; for each document (doc, then each variant synced into the session) and each state, the cameras."""
     os.makedirs(folder, exist_ok=True)
@@ -131,6 +152,8 @@ def shoot(folder, doc, cams, states, variants, start=True):
     finally:
         if start:
             log['stop'] = studio('live', 'stop', doc)
+            if os.environ.get('L1_CLEAN_AFTER'):
+                log['cleaned'] = clean_doc(doc)
         log['t1'] = time.time()
         json.dump(log, open(os.path.join(folder, 'shoot.json'), 'w', encoding='utf-8'), indent=1, default=str)
     bad = [k for k, v in log.items() if k.startswith('shot_') and (not v.get('ok') or v.get('stale'))]
