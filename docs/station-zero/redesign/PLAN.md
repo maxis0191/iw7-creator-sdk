@@ -184,3 +184,15 @@ section), the blind review.
 
 Then, in the bible's order and one slice at a time: Fare Hall (the board), Escalator Hall, Platform A and the six-car
 train, Converter Hall (rectifiers), Lodestar Exchange, Signal Cabin, the Cordon, and the rest of `02-WORLD.md`.
+
+**PAUSED by the owner (28 Nov 2026, night).** State at the pause, every branch pushed:
+- On main: SDK (blend layers, decals baker, world-db mesh resolver, `--argfile`), Studio (foreign world materials, blend
+  layers, decals, emit memo keyed on the environment, mesh resolver), serve compiler `claude/zt-serve` 845c90e (world.bin v2
+  layer stream, draw classes). Control room at stock blind ([REVIEW-2](REVIEW-2.md)).
+- Arcade construction round AC1 on `claude/sz-film` 5d3dec8: [REVIEW-3](REVIEW-3.md) 6.26 vs stock 7.55 (lighting, interiors).
+- Stopped mid-work, not reviewed: L2 light design (`claude/sz-l2` WIP head, frames `station\light2\on` exist for its first
+  version), AC2 shop interiors (`claude/sz-ac2` adebf6f, its final bake was stopped: rebuild before any frame).
+- Not merged on purpose: Studio `claude/argfile` 6d67e80 (gate 891/0): merge only when every SDK branch in use contains SDK
+  main e227c56 (`--argfile`), else Studio builds fail.
+- Resume: rebuild AC2 and L2, merge both onto `claude/sz-film` (they touch different files), one build, blind review 4 with
+  the review-3 brief; then merge Studio `claude/argfile`.
