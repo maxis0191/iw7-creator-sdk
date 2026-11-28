@@ -155,6 +155,12 @@ of cp_disco's layered triangles). Implementation in work: steps 1-5 SDK and comp
 x64-zt `claude/zt-layers`), steps 6-8 Studio (`claude/film-blend`); the lead builds the compiler and runs the one
 in-game proof (a wall of 3 x 3 weights against an all-zero frame).
 
+**Decided 28 Nov 2026, evening ([REVIEW-2](REVIEW-2.md)):** the control room (stock's room through our whole pipeline,
+after three fixes found by the control: foreign world materials brought into the zone, blend layers carried, the world
+database's mesh file) scores 7.13 to 7.29 against stock's 7.13 on the same poses, blind. By the rule above, the pipeline is
+good enough: the next round of the Arcade and the Terminus is construction (K1). Our Arcade, in the same review, is 1.6 to
+1.8 under stock. Pipeline work continues beside it: the grade and baked light distribution, decals / glass / fences.
+
 Not done: real reflection probes, the copy by Gemini 4 Neon (every sign text is Gemini 4 Hydrogen's or a marked
 placeholder), the seventeen other zones.
 
