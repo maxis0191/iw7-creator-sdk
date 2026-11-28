@@ -674,15 +674,17 @@ def heel_key(m):
     # within 75 of the player's origin, :232). Now a pegboard display board stands right behind the counter's back edge, between the front rail's
     # tagged pairs (x -1535, -1445): the rifle hangs on it facing the hall, a player at the counter front (origin y about 4285) is 81 from the
     # struct and about 51 from his eye to the use point
-    bd = [-1522.0, 4338.0, 44.0, -1442.0, 4341.0, 118.0]
+    bd = [-1534.0, 4338.0, 44.0, -1426.0, 4341.0, 118.0]                # the rifle is about 70 long (client frame): stock -1525, muzzle -1455
     rbox(m, 'hk_buy_board', bd, MAT['pegboard'])
     rbox(m, 'hk_buy_board_frame_t', [bd[0] - 2.0, bd[1] - 0.6, bd[5], bd[3] + 2.0, bd[4], bd[5] + 3.0], sm['join'])
     rbox(m, 'hk_buy_board_frame_w', [bd[0] - 2.0, bd[1] - 0.6, 42.0, bd[0], bd[4], bd[5]], sm['join'])
     rbox(m, 'hk_buy_board_frame_e', [bd[3], bd[1] - 0.6, 42.0, bd[3] + 2.0, bd[4], bd[5]], sm['join'])
-    for k, hx in enumerate((-1455.0, -1462.0)):                    # key blanks on two hooks beside the rifle: the stall's other trade
+    for k, hx in enumerate((-1436.0, -1444.0)):                    # key blanks on two hooks beside the rifle's muzzle: the stall's other trade
         B.prop(m, 'cp_rave_tiki_key_hook_01', (hx, bd[1] - 0.5, 104.0 - 14.0 * k), yaw=270.0, layer='fronts', id='hk_buy_board_hook_%d' % k)
         B.prop(m, 'cp_disco_subway_locker_key', (hx, bd[1] - 1.5, 99.0 - 14.0 * k), yaw=270.0, layer='fronts', id='hk_buy_board_key_%d' % k)
-    B.wallbuy(m, (-1490.0, 4336.0, 0.0), 'marksman', 1500, 270.0, layer='gameplay', id='buy_marksman_heel_key')
+    # yaw 0: the spawned rifle hangs broadside to the hall, stock west (client frames turned by 90 degrees, final_checks\mk_turn_sheet.jpg); at 270 it
+    # was seen edge-on, a thin vertical silhouette
+    B.wallbuy(m, (-1490.0, 4336.0, 0.0), 'marksman', 1500, 0.0, layer='gameplay', id='buy_marksman_heel_key')
     rbox(m, 'backroom_heel_key_floor', [x0 + 16.0, peg_y + 12.0, 0.0, x1 - 16.0, YB - 16.0, 0.3], MAT['back_floor'])
     B.spawner(m, (x0 + 50.0, 4538.0, 0.0), 0.0, layer='gameplay', id='spawn_heel_key_1')
     # light: one tungsten work lamp on the bench

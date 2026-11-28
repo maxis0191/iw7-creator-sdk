@@ -7,7 +7,7 @@
   "szaccept",
   "szi1"
  ],
- "about": "I1 (29 Nov), real time, a client: the D4 prompt from the ticket hall, D4 bought from there (no teleport), the hall and the Arcade read after the purchase; the marksman prompt from the hall at the Heel & Key counter front, the rifle bought from there.",
+ "about": "I1 (29 Nov), real time, a client: the D4 prompt from the ticket hall, D4 bought from there through its door_buy trigger (no teleport), the hall and the Arcade read after the purchase; the marksman prompt from the hall at the Heel & Key counter front, the rifle bought from there.",
  "steps": [
   {
    "do": "waves",
@@ -59,16 +59,13 @@
   },
   {
    "do": "call",
-   "fn": "i1_buy",
+   "fn": "i1_door_buy",
    "args": [
     "d4",
-    "debris_1000",
-    -1160.0,
-    3900.0,
-    24.0,
+    "iwz_door_d_hall_arcade",
     2
    ],
-   "s": 6
+   "s": 4
   },
   {
    "do": "wait",
@@ -129,6 +126,17 @@
    "s": 2
   },
   {
+   "do": "call",
+   "fn": "i1_hint",
+   "args": [
+    "mk_hint",
+    "iw7_m1c_zm",
+    -1490,
+    4336
+   ],
+   "s": 1
+  },
+  {
    "do": "ui",
    "name": "mk_before"
   },
@@ -160,69 +168,108 @@
    "pause": 2
   },
   {
-   "do": "expect",
-   "that": "probe:d4.found",
-   "why": "D4 on a client: the stock interaction is there",
-   "eq": 1
+   "do": "tp",
+   "at": [
+    -1880,
+    4420,
+    1
+   ],
+   "yaw": 180,
+   "snap": true
   },
   {
-   "do": "expect",
-   "that": "probe:d4.d",
-   "why": "D4 on a client: bought from where a player stands, outside the monitor 75",
-   "gt": 75
+   "do": "look",
+   "yaw": 180,
+   "pitch": 10
   },
   {
-   "do": "expect",
-   "that": "probe:d4.route",
-   "why": "D4 on a client: the stock monitor offers it from there (not refused)",
-   "ne": "refused_within_75"
+   "do": "wait",
+   "s": 2
   },
   {
-   "do": "expect",
-   "that": "probe:d4.spent",
-   "why": "D4 on a client: the price",
-   "eq": 1000
+   "do": "call",
+   "fn": "i1_hint",
+   "args": [
+    "smg_hint",
+    "iw7_ump45_zml",
+    -1948,
+    4440
+   ],
+   "s": 1
   },
   {
-   "do": "expect",
-   "that": "probe:mk.found",
-   "why": "the marksman rifle on a client: the stock interaction is there",
-   "eq": 1
+   "do": "ui",
+   "name": "smg_prompt"
   },
   {
-   "do": "expect",
-   "that": "probe:mk.d",
-   "why": "the marksman rifle on a client: bought from where a player stands, outside the monitor 75",
-   "gt": 75
-  },
-  {
-   "do": "expect",
-   "that": "probe:mk.route",
-   "why": "the marksman rifle on a client: the stock monitor offers it from there (not refused)",
-   "ne": "refused_within_75"
-  },
-  {
-   "do": "expect",
-   "that": "probe:mk.spent",
-   "why": "the marksman rifle on a client: the price",
-   "eq": 1500
-  },
-  {
-   "do": "expect",
-   "that": "probe:d4.hint",
-   "why": "the stock monitor itself offered D4 (the prompt showed)",
-   "eq": 1
-  },
-  {
-   "do": "expect",
-   "that": "probe:mk.hint",
-   "why": "the stock monitor itself offered the rifle (the prompt showed)",
-   "eq": 1
+   "do": "capture",
+   "name": "i1_smg_prompt",
+   "pause": 2
   },
   {
    "do": "expect",
    "that": "probe:mk.has",
    "why": "the client holds the marksman rifle",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:d4.found",
+   "why": "D4 from the ticket hall: D4's door_buy trigger is there",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:d4.spent",
+   "why": "D4 from the ticket hall: 1000 paid",
+   "eq": 1000
+  },
+  {
+   "do": "expect",
+   "that": "probe:d4.open",
+   "why": "D4 from the ticket hall: the door is open (the map script saw the purchase)",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:d4.left",
+   "why": "D4 from the ticket hall: no door_buy trigger of D4 is left (the prompt has no source)",
+   "eq": 0
+  },
+  {
+   "do": "expect",
+   "that": "probe:mk.found",
+   "why": "the marksman rifle from the hall at the Heel & Key counter front: the stock interaction is there",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:mk.d",
+   "why": "the marksman rifle from the hall at the Heel & Key counter front: within the 72 of the cp_zmb monitor from where a player stands",
+   "le": 72
+  },
+  {
+   "do": "expect",
+   "that": "probe:mk.route",
+   "why": "the marksman rifle from the hall at the Heel & Key counter front: offered (not beyond 72)",
+   "ne": "refused_beyond_72"
+  },
+  {
+   "do": "expect",
+   "that": "probe:mk.route",
+   "why": "the marksman rifle from the hall at the Heel & Key counter front: offered (the nearest struct)",
+   "ne": "refused_not_nearest"
+  },
+  {
+   "do": "expect",
+   "that": "probe:mk.spent",
+   "why": "the marksman rifle from the hall at the Heel & Key counter front: the price",
+   "eq": 1500
+  },
+  {
+   "do": "expect",
+   "that": "probe:mk.hint",
+   "why": "on the client the stock monitor itself offered the rifle (the prompt showed)",
    "eq": 1
   }
  ]

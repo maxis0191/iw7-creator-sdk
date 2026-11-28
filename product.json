@@ -671,6 +671,7 @@
     "tools-source/iwzmap/station_zero/film/plans/batch_t1_only.json",
     "tools-source/iwzmap/station_zero/film/plans/i1_arcade.json",
     "tools-source/iwzmap/station_zero/film/plans/i1_door_power.json",
+    "tools-source/iwzmap/station_zero/film/plans/i1_prompts.json",
     "tools-source/iwzmap/station_zero/film/plans/i1_reach_client.json",
     "tools-source/iwzmap/station_zero/film/plans/i1_walk.json",
     "tools-source/iwzmap/station_zero/film/plans/lib/szi1.gsc",

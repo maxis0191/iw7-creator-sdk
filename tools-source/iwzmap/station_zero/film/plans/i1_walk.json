@@ -56,16 +56,13 @@
   },
   {
    "do": "call",
-   "fn": "i1_buy",
+   "fn": "i1_door_buy",
    "args": [
     "door",
-    "debris_1000",
-    -1160.0,
-    3900.0,
-    24.0,
+    "iwz_door_d_hall_arcade",
     2
    ],
-   "s": 6
+   "s": 4
   },
   {
    "do": "wait",
@@ -217,9 +214,27 @@
   },
   {
    "do": "expect",
+   "that": "probe:door.found",
+   "why": "D4 from the ticket hall: D4's door_buy trigger is there",
+   "eq": 1
+  },
+  {
+   "do": "expect",
    "that": "probe:door.spent",
-   "why": "D4 bought from the ticket hall",
+   "why": "D4 from the ticket hall: 1000 paid",
    "eq": 1000
+  },
+  {
+   "do": "expect",
+   "that": "probe:door.open",
+   "why": "D4 from the ticket hall: the door is open (the map script saw the purchase)",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:door.left",
+   "why": "D4 from the ticket hall: no door_buy trigger of D4 is left (the prompt has no source)",
+   "eq": 0
   }
  ]
 }
