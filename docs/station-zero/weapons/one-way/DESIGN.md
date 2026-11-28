@@ -6,8 +6,8 @@ state of the engine and of our tools checked on 28 Nov (section 10). Canon: `../
 
 ## 1. The fantasy, in one sentence
 
-**You do not shoot the dead: you sell each of them a ticket, and on the guard's bell the train that is not there
-comes through and collects every ticket holder at once.**
+**You do not shoot the dead: you sell each of them a ticket, and on the guard's bell the doors of the 23:47 open
+beside every ticket holder, wherever in the station he stands, and take them all at once.**
 
 It is a token clerk's ticket-issuing machine, rebuilt as a gun by someone who worked the Fare Hall window on the
 night of the Midnight Service. Card tickets, a date press, a guard's bell, six small lamps. The dead of this
@@ -18,7 +18,8 @@ Why this one, and not one of the bible's four (`../../05-WONDER-WEAPONS.md`): th
 dead" and "ALL STAND" as the things that are this map's own, and scored the weapon chapter lowest (5.5 of 10).
 ONE WAY takes the map's central joke (the dead wait for a train that is already there, `00-PITCH.md`) and its
 central line of canon (the 23:47 "does not move and takes them anyway") and makes them the whole weapon instead
-of one paint can out of three. Section 9 says what it does that the four do not.
+of one paint can out of three. The train never moves and never passes: its doors open where the ticket holders
+are. Section 9 says what it shares with the bible's four and what it does that they do not.
 
 ## 2. The mechanic
 
@@ -28,11 +29,11 @@ The verb is **issue**. The station does the rest, on time.
 |---|---|---|
 | **Issue** | each pull prints one card ticket and fires it (instant hit, a pale spinning card as tracer, reach 1,500 units). The dead it hits is **booked** on the next departure: the ticket is seen stuck to its chest | no damage on the hit. A body hit is a second-class ticket, a head hit a **first-class** ticket. A zombie holds at most 3 tickets |
 | **Calm** | a booked dead flinches for 0.6 s (it looks down at the ticket), then **walks** until the departure, whatever the round's speed | it still comes at the player and still hits; it has stopped running. A zombie that was carried over (below) cannot be calmed for 12 s |
-| **The headway** | six lamps on the machine go out one a second. The departure is every **6.0 s**, on one beat shared by the whole station (server time, not the weapon): it does not wait, cannot be rung early, and is the same for every ONE WAY in the match | the lamps and their ticks run only while this player has a ticket out. A ticket issued in the last 0.5 s ("doors closing") is valid for the departure after |
-| **The bell** | the guard's bell rings twice. Bars of warm window light sweep through the room with the sound of a train that is not there. Every booked dead takes the sum of its tickets | flat rated damage, section 3. Kills and points go to the ticket's owner |
-| **Taken** | a booked dead whose health is covered is pulled sideways off its feet into the light and is gone; its tickets flutter down where it stood | a kill, with the stock kill reward |
-| **Carried over** | a booked dead with more health than its tickets takes the damage and is **carried one stop**: it leaves with the train and is put back where it stood at the next departure, down for 1.5 s | it stays alive for the round count; at most 8 carried at once per weapon (12 upgraded); a returned zombie takes ticket damage but is not carried again for 12 s |
-| **Full train** | 6 or more taken for good on one bell (six cars) | 4 tickets go back to the reserve; the bell rings a third time |
+| **The re-issue** | ZERO re-issues the departure every **6.0 s** (canon: it cannot log the run, so it issues it again, for ever). Six lamps on the machine go out one a second and all come back on at each re-issue. The beat is fixed to the match's own time: no ticket starts it, nothing rings it early, and it is the same for every ONE WAY in the match, solo or four | the lamps count for as long as the weapon is in the hands. The bell rings only when somebody holds a ticket. A ticket issued in the last 0.5 s (the doors are closing) is valid for the departure after |
+| **The bell** | the guard's bell rings twice, heard by the whole team. Beside every booked dead a door of warm carriage light opens, the height of a car door, as if the 23:47 stood alongside. Every booked dead takes the sum of its tickets | flat rated damage, section 3. Kills and points go to the ticket's owner |
+| **Taken** | a booked dead whose health is covered is pulled sideways through its door and is gone; the door shuts; its tickets flutter down where it stood | a kill, with the stock kill reward |
+| **Carried over** | a booked dead with more health than its tickets takes the damage and is **carried one stop**: it goes through the door like the others, and at the next re-issue a door opens in the same place and puts it back, down for 1.5 s | six cars: at most **6** are carried on one bell per weapon, the oldest tickets first; the others take the damage, flinch and stay. A carried zombie keeps its place in the count of the living (the round waits for it, the spawner does not replace it). For 12 s after it is put back it can be ticketed and hurt, not calmed and not carried |
+| **Full train** | 6 or more taken for good on one bell by one weapon (six cars) | one ticket goes back to the reserve for every two taken (6 give 3, 12 give 6); the bell rings a third time. It never pays for itself |
 
 **What the player does every five seconds.** Reads the lamps. Puts three to six tickets on the front rank, heads
 when he can. Walks back through dead that now walk. Bell. The rank is gone; the unbooked ones behind it arrive
@@ -43,17 +44,21 @@ at a run. Again.
   same shot is a kill or a hold, and the lamps decide which.
 - *Doors closing.* A ticket in the last half second books the departure after: 6.5 s of a walking zombie, bought
   on purpose, to carry a team mate's revive or to hold the last zombie of a round.
-- *Exact fare.* One second-class, one first-class, two, three: issuing what a zombie needs and not one more
-  (twelve tickets a stack).
-- *Full trains.* Six on one bell pays four tickets back: a player who batches plays almost for free up to the
-  rating; a player who issues one at a time runs dry.
+- *No ticket wasted.* One second-class, one first-class, two, three: issuing what a zombie needs and not one
+  more (twelve tickets a stack; a fourth ticket on a zombie that holds three is spent for nothing).
+- *Full trains.* Six on one bell pays three tickets back: a player who batches gets half as many kills again out
+  of a reserve; a player who issues one at a time gets none of it.
 - *Reading the carry.* Past the rating a bell clears the platform for six seconds instead of killing: the
   skilled player uses the empty six seconds to move, and stands off the spot where the carried will be put back.
 
 **Why four players want it differently.** The runner wants the front of his train walking. The one who holds a
 window wants full trains on a choke, for the refund. The one who revives wants a single ticket on each of the
-three dead standing over a team mate: 0.6 s of flinch, then they walk. The marksman wants first-class tickets,
-which are the only ones that still kill past round 33.
+three dead standing over a team mate: 0.6 s of flinch, then they walk. The marksman wants first-class tickets:
+past round 35 no zombie is taken without at least one.
+
+**What it is bad at, on purpose.** It has no panic button: a ticket on a zombie already swinging buys 0.6 s, and
+the bell will not come sooner. In the first rounds a pistol kills faster and pays more (a ticket pays no hit
+points). A team mate who shoots a booked zombie wastes the ticket. It is a planner's weapon and says so.
 
 ## 3. Numbers
 
@@ -69,8 +74,8 @@ round 1, +100 a round to round 9, then 950 x 1.1^(round - 9)). Nothing here kill
 | Reload | 2.4 s (2.8 s from empty) | same |
 | Headway | 6.0 s, shared; "doors closing" 0.5 s | same |
 | Calm | 0.6 s flinch, then walk until the bell | same |
-| Carried at once | 8 | 12 |
-| Full train | 6 or more taken: 4 tickets back | 6 or more: 6 back |
+| Carried on one bell | 6 | 6 |
+| Full train | 6 or more taken: 1 ticket back for 2 taken | 6 or more: 2 back for 3 taken |
 | Points | a ticket pays no hit points; a kill pays the stock reward (first-class as a head kill) | same |
 | Max Ammo | refills the reserve. Wall ammo: none | same |
 
@@ -78,36 +83,49 @@ By round (ordinary zombie; one bell):
 
 | Round (health) | What one stack of 12 does |
 |---|---|
-| 10 (1,045) | twelve dead taken on one or two bells; two full trains pay 8 tickets back |
-| 25 (4,365) | second class no longer kills alone: two a zombie, or one first-class. Six to twelve taken a stack |
-| 35 (11,320) | two first-class or three second-class a zombie: four to six taken a stack; refunds become rare |
-| 45 (29,350) | three first-class a zombie: four taken a stack by a perfect shot; everything else is carried over |
-| 50 (47,300) | nothing is taken by the base weapon. It calms, and each bell empties the platform for six seconds |
+| 10 (1,045) | twelve dead taken, one ticket each; taken as full trains they pay 6 tickets back |
+| 25 (4,365) | second class no longer kills alone (to round 24): two a zombie (to round 31), or one first-class (to round 33). Six to twelve taken a stack |
+| 35 (11,320) | three second-class (11,910), or one of each (13,890, to round 37), or two first-class (19,840, to round 40): four to six taken a stack; a full train needs the whole stack |
+| 45 (29,370) | three first-class a zombie (29,760): four taken a stack by a perfect shot; everything else is carried over |
+| 50 (47,300) | nothing is taken by the base weapon. It calms, and each bell carries six away for six seconds |
+
+The refund, checked: a stack of 12 spent on 12 one-ticket kills returns 6, so a full reserve of 72 gives at most
+144 kills, and only up to round 24 with body tickets or round 33 with heads; at round 25 with two tickets a
+zombie it returns 3 for 12; from round 35 almost nothing. Upgraded: 2 back for 3 taken, at most 324 kills from
+108 tickets, up to round 32 (bodies) or 41 (heads). No case returns as many tickets as it costs.
 
 **Against the specials** (the bible's common rule: never killed outright, at most 2,000 a hit on the mini boss).
-Any agent that is not an ordinary zombie: no calm, no carry, 2,000 at most per bell. *Rollers*: a booked Roller
-brakes, falls and slides (alive). *The Night Inspector*: a ticket shown to him is a ticket to check. He stops for
-2 s to punch it and his lamp is open for 3 s, once every 15 s. It is the only weapon he answers to as an
-inspector. Until those two enemies exist the rule is tested on the stock stand-ins.
+Any agent that is not an ordinary zombie: no calm, no carry, 2,000 at most per bell, with two written
+exceptions. *Rollers*: a booked Roller brakes, falls and slides (alive). *The Night Inspector*: a ticket shown to
+him is a ticket to check: he stops for 2 s to punch it and his lamp is open for 3 s, once every 15 s (it is the
+only weapon he answers to as an inspector; it is not the calm, and further tickets inside the 15 s do nothing
+but their capped damage). Until those two enemies exist the general rule is tested on the stock stand-ins.
 
 **Edge cases that are rules.** Tickets pass through players and do nothing to them. A booked zombie killed by
 anyone before the bell is an ordinary kill; its tickets are lost. Two ONE WAYs in a match share the beat; a
-zombie holds 3 tickets in all, each credited to its owner, the kill to whoever issued most. A carried zombie
-whose place is no longer walkable is put back at the nearest walkable point within 64 units, or at a spawner of
-its zone. If the last zombie of a round is carried, the round waits for it. A player who goes down keeps his
-tickets out; a player who leaves cancels his.
+zombie holds 3 tickets in all, each credited to its owner, the kill to whoever issued most (the first to issue,
+if equal); each weapon counts its own full train and its own six carried. A fourth ticket is spent for nothing.
+Damage is applied at the bell, never at the return. A carried zombie is put back where it stood; if a player is
+within 96 units of that place or it is no longer walkable, at the nearest walkable point at least 96 units from
+every player within 256, or else at a spawner of its zone. If the last zombie of a round is carried, the round
+waits for it: with the 12 s rule a round can be held open by one ticket every 18 s or so, which is the series'
+usual last-zombie hold and costs tickets. A refund beyond a full reserve is lost. A player who goes down keeps
+his tickets out; a player who leaves cancels his, and his carried are put back at the next re-issue.
 
 **Why it is not overpowered.** It never kills at once: every kill waits for the bell, three seconds on average.
-Twelve tickets a stack; past round 24 a zombie costs two; past 33 only heads count; past 45 it kills nothing.
-The calm is a walk, not a stop. The carried come back. Each brake is a different kind, and each bites at a
-different round, so the weapon stops being a solution and stays a tool, as the bible asks of all four.
+Twelve tickets a stack; past round 24 a zombie costs two; past 35 it needs a head; past 45 the base weapon takes
+nothing. The calm is a walk, not a stop, and costs a ticket a zombie every six seconds: twelve sprinters held at
+a walk empty a full reserve in 36 s. Six are carried, not the horde, and they come back. Each brake is a
+different kind, and each bites at a different round, so the weapon stops being a solution and stays a tool, as
+the bible asks of all four.
 
 ## 4. Upgraded: the return half
 
 In kind, not only in number: **every dead that is taken for good comes back one bell later as an arrival.** At
-the place it was taken, the doors that are not there open: a burst of pale carriage light and a spill of
-tickets. Every unbooked ordinary zombie within 120 units takes **R24** (3,970) and flinches. An arrival makes no
-arrival; a zombie takes at most two arrivals a bell.
+the place it was taken its door opens once more and nobody steps out: a slab of pale carriage light and a spill
+of tickets. Every unbooked ordinary zombie within 120 units takes **R24** (3,970) and flinches; booked and
+carried ones are not touched. An arrival makes no arrival; a zombie takes at most two arrivals a bell; arrival
+kills are the owner's and do not count toward a full train.
 
 So the upgraded weapon has two beats a bell: who leaves, and who comes back where the last ones left. The player
 now leads the next rank over the place he emptied six seconds ago. Pack-a-Punch camos: the map's two
@@ -167,11 +185,11 @@ animations are not in this package's scope, and that is said in the report.
 | Ticket on a zombie | the card stuck to the chest, its edge catching light; second class buff, first class with a red band, return stock (upgraded) pale green |
 | Ticket on the world | the card stands in the surface for a second, then falls |
 | Lamp out (first person) | one lamp of six dies with a relay's blue pinpoint |
-| The passing train | bars of warm carriage-window light sweeping across walls, floor and bodies for 1.2 s, with dust pulled along the same way: the light of a train with no train in it. It is the weapon's signature and the only large effect |
-| Taken | the body snatched sideways into a streak; two or three tickets left turning in the air |
-| Carried over, put back | the same streak run backwards; the body arrives on its knees |
-| Full train | the light is whiter and the bars closer together |
-| Arrival (upgraded) | a tall pale door-shaped burst, a spill of tickets on the floor |
+| The doors | beside each booked dead, a door of warm carriage light, 80 by 76 units, opening in two leaves for 1.0 s and shutting: the light of a lit car with no car around it, thrown on the floor and on the bodies near it. A rank of six booked dead is six doors in a row, and reads as a train standing where there is none. Nothing moves along the room: the 23:47 does not pass. It is the weapon's signature |
+| Taken | the body pulled sideways through its door as the leaves close; two or three tickets left turning in the air |
+| Carried over, put back | the door opens in the same place and the body is put out on its knees |
+| Full train | the six doors open in one stroke and the light is whiter |
+| Arrival (upgraded) | the door opens once more on nobody: pale light, a spill of tickets on the floor |
 
 ## 8. Sounds (all made for it; no voice, by the owner's freeze of 26 Nov)
 
@@ -182,8 +200,8 @@ animations are not in this package's scope, and that is said in the report.
 | Reload set (door, tube out, stack in, band torn, door, lever) | sheet steel and card; the torn band is the loudest thing in it |
 | Raise, drop, strap | a leather strap and a kilogram of cast metal |
 | Lamp tick, six pitches falling | a relay; the last second is a double tick. Heard by the owner only |
-| The bell | a guard's dome bell struck twice, 0.35 s apart, pitched on E5: the first note of the Three-Tone, twice. ZERO owns the three notes; the weapon only ever starts them |
-| The passing train | 1.2 s: a pressure wave, wheel beats, the hum of lit cars, gone. No horn, no brakes |
+| The bell | a guard's dome bell struck twice, 0.35 s apart, heard by the whole team at the holder's place. Its pitch is kept off the three notes of the Three-Tone and off the Departure Note (`../../11-AUDIO-DIRECTION.md`): the round chime stays ZERO's alone |
+| The doors | a door engine's hiss, two leaves parting, the hum of a lit car for one second, the leaves meeting. No wheels, no motion, no horn |
 | Taken | a rip of paper and an intake of air |
 | Carried over put back, arrival (upgraded) | a door engine's hiss; for the arrival the car-door chime of the map (`../../11-AUDIO-DIRECTION.md`, PE2) |
 | Full train | the third bell stroke over a cash drawer |
@@ -193,21 +211,28 @@ Levels are measured against the stock weapons with the weapon audio witness befo
 
 ## 9. What it does that the bible's four do not
 
-"Mark now, resolve later" exists twice in the bible: THE DISPATCHER (stamp, then send where the player points) and
-TOP TO BOTTOM's magenta can (tag, wait 6 s, rated damage). The difference in kind:
+Said first: ONE WAY is of the same family as two things in the bible. "Mark now, resolve later" is THE DISPATCHER
+(stamp, then send where the player points) and TOP TO BOTTOM's magenta can (tag, wait 6 s, rated damage), and its
+seed is that can. If ONE WAY is built, the magenta can must get another job: two "wait, then rated damage"
+effects in one map are one too many. That is a change to chapter 05, recommended here, not made. It also shares
+the ticket window with EXACT CHANGE's fare box: EXACT CHANGE is about money and ONE WAY never touches points; if
+both are built they must not share a look.
 
-- **The player never decides when.** The Dispatcher resolves on the player's button, magenta on each zombie's own
-  timer. ONE WAY resolves on a beat that belongs to the station and that the whole team can hear and plan on.
-  The decision is who is on the list when it falls.
+What ONE WAY does that neither does:
+
+- **The player never decides when, and no ticket starts the clock.** The Dispatcher resolves on the player's
+  button, magenta on each zombie's own timer. ONE WAY resolves on ZERO's re-issue, fixed to the match's time,
+  solo or four. The same ticket is a kill in one second or a hold for six, and only the lamps say which.
 - **It moves the dead in time, not in space.** Past its rating the Dispatcher throws four zombies somewhere else;
-  ONE WAY takes them out of the next six seconds and puts them back in the same place.
+  ONE WAY takes six out of the next six seconds and puts them back in the same place.
 - **The calm is not a hold.** Magenta parks a zombie at a waiting place; a booked zombie keeps coming, at a walk.
 
-If ONE WAY is built, the magenta can of TOP TO BOTTOM should get another job: two "wait, then rated damage"
-effects in one map are one too many. That is a change to chapter 05, recommended here, not made.
-
-Checked against other games: no cone of force, no chain between targets, no pull to a point, no decoy, no
-changed size, no dance. One fresh adversarial read was asked of an independent reviewer (section 13).
+Against other games, said plainly: the family exists. Marking several enemies and resolving them together is
+known (needles that burst together, a curse that falls after a delay, mark-and-execute), and taking enemies out
+of the fight for a few seconds is known as a hero's power. No cone of force, no chain between targets, no pull
+to a point, no decoy, no changed size, no dance. What is ours is the fixed beat that belongs to the station,
+the doors, and the fiction; whether that is enough is the owner's judgement, and the reviewer's verdict is in
+section 13.
 
 ## 10. What each part needs from the engine (checked 28 Nov 2026)
 
@@ -264,7 +289,9 @@ as "not done" and the donor's animation is never presented as the weapon's. (b) 
 probe. (c) Proven outside the map: the map base is being rebuilt, so the weapon lives in a mod zone on a stock map
 until a section hosts it. (d) Builds belong to the Coordinator and the disk is under the build floor (33 GB free
 on 28 Nov): who builds, and where, is a question for the session that started this one. (e) The canon holds one
-running clock, in the Terminus: ONE WAY carries no clock, no dial and no hour; it counts six lamps.
+running clock, in the Terminus. ONE WAY carries no clock, no dial and no hour: its beat is ZERO issuing the same
+departure again, and that is shown, not only said: the ticket face reads DEP 23:47 on every ticket of the match,
+and the six lamps come back on full at every bell. Time does not advance on this weapon; it repeats.
 
 ## 12. Copy (fallback)
 
@@ -297,8 +324,38 @@ Lead's reading: canon holds (HRT, ZERO LINE, 23:47; no real brand or slogan). Th
 fit. The five names describe the object instead of naming it; a second brief for names only was sent (below).
 The working title ONE WAY (French: ALLER SIMPLE; upgraded: RETURN, ALLER-RETOUR) is the lead's and is not copy.
 
-(names, second brief: inserted below)
+Names, second brief (names only; best first by its own order). Its first pair is the same as the lead's working
+title, reached without being shown it; it is kept as the name until Neon rewrites.
+
+| Base / upgraded (English) | French | Spanish |
+|---|---|---|
+| ONE WAY / ROUND TRIP | ALLER SIMPLE / ALLER-RETOUR | SOLO IDA / IDA Y VUELTA |
+| CANCELLED / REINSTATED | SUPPRIMÉ / RÉTABLI | SUPRIMIDO / RESTABLECIDO |
+| DOES NOT STOP / TERMINATES HERE | SANS ARRÊT / TERMINUS | SIN PARADA / FIN DE TRAYECTO |
+| NO REFUNDS / FULL REFUND | NON REMBOURSABLE / REMBOURSEMENT INTÉGRAL | NO REEMBOLSABLE / REEMBOLSO TOTAL |
+| TWO BELLS / THIRD BELL | DEUX COUPS / TROISIÈME COUP | DOS TOQUES / TERCER TOQUE |
+| RUNNING LATE / BACK ON TIME | EN RETARD / À L'HEURE | CON RETRASO / EN HORA |
+| ALL ABOARD / ALL CHANGE | EN VOITURE / FIN DE PARCOURS | VIAJEROS AL TREN / ÚLTIMA PARADA |
+| NOT IN SERVICE / BACK IN SERVICE | HORS SERVICE / REPRISE DU SERVICE | FUERA DE SERVICIO / SERVICIO REANUDADO |
 
 ## 13. Review
 
-(one independent adversarial read of sections 2 to 4 and 9; inserted below)
+One independent adversarial read (a fresh Sonnet 5.5 reviewer, 28 Nov, told to find echoes, exploits, wrong
+arithmetic and canon faults; it read the first version of this page).
+
+| Finding | Lead's decision |
+|---|---|
+| The core is the magenta can with another clock; the three differences were overstated | accepted as stated: section 9 now says the family first, and asks for the can's change |
+| Known relatives in other games: needles that burst together, a delayed curse, mark-and-execute; removal for a few seconds as a hero's power | written in section 9; the owner judges |
+| "Shared beat" was a private timer if a ticket started it, and nobody else heard it | the beat is fixed to the match's time, the lamps always count, the bell is heard by the team |
+| Upgraded refund was free (6 back for 6) | refund is now 1 for 2 taken (2 for 3 upgraded); the sums are in section 3 |
+| "Past 33 only heads count" was wrong; round 45 health; the round-10 refund | corrected from the formula (three second-class take to round 35; 29,370) |
+| The passing light and wheel beats contradict "the train never moves" | replaced by the doors of the 23:47 opening where the ticket holders stand; no motion, no wheels |
+| The bell on the Three-Tone's first note cheapens the round chime | the bell is kept off the Three-Tone's notes |
+| A fixed beat is a running clock in effect | reconciled as ZERO's re-issue of the same departure, shown on the ticket face and the lamps (section 11 e) |
+| Carried zombies: cap, spawner, which ones, put-back on a player, when the 12 s start | six a bell, oldest first, they count as alive, put back 96 units from players, 12 s from the return |
+| Missing rules: fourth ticket, two weapons, arrival credit, refund overflow | written in section 3 and 4 |
+| Calm is too strong and cheap; no panic button; weak in rounds 1 to 5; team fire wastes tickets | kept, and said: the calm costs a ticket a zombie every six seconds (36 s for a reserve on twelve sprinters); "what it is bad at" is in section 2. To be judged in play |
+| Its first proposal: drop the calm and apply the damage on return | not taken: the walk is the film's joke in behaviour, and damage at the bell keeps the kill where the player sees it. Open to the first playtest |
+
+Not re-reviewed after these changes.
