@@ -12,9 +12,9 @@ from studio import build as B
 import shellgeo as G
 
 PICS = r'C:\studio-data\sz\film\arcade\shell\pictures'
-ISLAND_Y = 3950.0                       # the centre line of the hall (the north lane, y 4100..4300, stays clear)
+ISLAND_Y = 3985.0                       # the centre line of the hall (the north lane, y 4032..4232, stays clear; AC1: 3950 -> 3985 for the colonnade line at 3860)
 ISLANDS = (-2800.0, -2140.0)            # the first 89 clear of the Copy Stop oblique eye (check: it stood 21 from it at -2716)
-KIOSK = (-2428.0, 3760.0)               # in the colonnade, between the columns at x -2572 and -2284
+KIOSK = (-2428.0, 3860.0)               # in the colonnade, between the columns at x -2572 and -2284
 STREAMER_MATS = ('w/plastic_wall_plain_red_01', 'w/plastic_wall_plain_blue_01', 'w/plastic_wall_plain_yellow_01', 'w/plastic_wall_plain_green_01')
 POOL = {   # the colour each shop throws on the tile outside its front: (rgb, intensity, radius, z) - four different rows (rule 11)
     'needle_drop': ((1.0, 0.55, 0.2), 2.6, 400.0, 158.0),        # pass 6: radius 250..280 put the pool at the falloff's edge (throw ~240);
@@ -164,23 +164,9 @@ def night_it_stopped(A, m):
 
 
 def abandonment(A, m):
-    """a year of dust and damp, sparse and each with a cause: water from two dead ceiling panels, the damp foot of the south wall, damaged tiles
-    where the lockers and a bench stood against the wall"""
-    n = 0
-    for k, (i, j) in enumerate(((6, 2), (14, 12))):                     # under two dead panels: a water mark on the floor
-        x0, y0, x1, y1 = A.module(i, j)
-        B.decal(m, 'w/dirt_stain_water_drips_01', ((x0 + x1) / 2, (y0 + y1) / 2, 0.0), (0.0, 0.0, 1.0), (140.0, 110.0), rot=25.0 * k, layer='hall', id='damp_floor_%d' % k)
-        B.decal(m, 'w/ceiling_waterstains1', ((x0 + x1) / 2, (y0 + y1) / 2, A.GRID_Z - 0.5), (0.0, 0.0, -1.0), (60.0, 60.0), layer='hall', id='damp_ceiling_%d' % k)
-        n += 2
-    for k, (x, w) in enumerate(((-2900.0, 260.0), (-2050.0, 200.0), (-1420.0, 160.0))):   # the damp foot of the south wall
-        B.decal(m, 'w/asphalt_flooring_stain_01', (x, A.YS + 40.0, 0.0), (0.0, 0.0, 1.0), (w, 70.0), rot=0.0, layer='hall', id='damp_foot_%d' % k)
-        B.decal(m, 'w/dirt_stain_water_drips_01', (x, A.YS, 30.0), (0.0, 1.0, 0.0), (w * 0.8, 50.0), layer='hall', id='damp_wall_%d' % k)
-        n += 2
-    for k, (x0, x1, z0, z1) in enumerate(((-2640.0, -2600.0, 74.0, 98.0), (-2760.0, -2716.0, 40.0, 58.0))):      # where a bench and the lockers rub the wall
-        A.rbox(m, 'worn_tile_%d' % k, [x0, A.YS, z0, x1, A.YS + 0.9, z1], A.MAT['tile_dmg'])
-        n += 1
-    B.decal(m, 'w/asphalt_flooring_stain_01', (-2000.0, 4180.0, 0.0), (0.0, 0.0, 1.0), (300.0, 120.0), rot=8.0, layer='hall', id='dust_lane_0')   # tracked dust in the shop lane
-    A.REPORT['hall']['stains'] = n + 1
+    """a year of dust and damp is painted into the surfaces now (AC1): the floor's wear mask and the walls' foot are layers of stock blend materials
+    (hall_body), the damaged tile courses are hall_body's patches; no decal quad is placed here any more"""
+    A.REPORT.setdefault('hall', {})['stains'] = 0
 
 
 def fronts_by_models(A, m):

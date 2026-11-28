@@ -42,6 +42,8 @@ MAT = {
     'panel_off': 'w/plastic_wall_panel_light_02_off',  # dead panel
     'hole': 'w/metal_painted_01_black',           # a missing panel: the black plenum
     'tbar': 'w/metal_aluminum_trim_03',           # the ceiling grid
+    'girder': 'w/metal_painted_02_dark',          # AC1: the girders of the colonnade (stock girder, K1 2.4)
+    'girder_trim': 'w/frag_metal_trim_gray',
     'alu': 'w/metal_aluminum_brushed_clearcoat',  # shopfront frames
     'alu_black': 'w/metal_painted_01_black',
     'alu_white': 'w/metal_panel_painted_01_white',
@@ -80,7 +82,7 @@ RECIPE_FROM = r'C:\studio-data\sz\film\allbaked2\doc\map.json'
 OUT = r'C:\studio-data\sz\film\arcade\shell\doc'
 
 # ------------------------------------------------------------------------------------------------ the plan (PLAN section 3)
-X0, X1, Y0, Y1, YB, H = -3000.0, -1200.0, 3500.0, 4300.0, 4600.0, 256.0
+X0, X1, Y0, Y1, YB, H = -3000.0, -1200.0, 3736.0, 4300.0, 4600.0, 256.0     # AC1 (28 Nov): Y0 3500 -> 3736, the hall narrows to 480 clear (K1 section 5)
 WT = 16.0
 XW, XE, YS = X0 + WT, X1 - WT, Y0 + WT          # inner faces: west, east, south
 DOOR_Y0, DOOR_Y1, DOOR_Z = 3804.0, 3996.0, 224.0
@@ -91,7 +93,7 @@ HOUSING = (150.0, 172.0)                         # roll-shutter housing z
 OPEN_Z = 150.0                                   # top of the shop openings
 UNIT_H = 232.0
 PART_Y = 4480.0                                  # partition of the back rooms
-COL_Y, COL_PITCH, COL_W = 3760.0, 288.0, 40.0
+COL_Y, COL_PITCH, COL_W = 3860.0, 288.0, 34.0
 COLS = [-2860.0 + COL_PITCH * k for k in range(6)]
 UNITS = {   # name: (x0, x1, title)
     'needle_drop': (-2960.0, -2640.0),
@@ -179,92 +181,18 @@ def lamp(m, id, origin, role, key=False, **kw):
 
 # ================================================================================================ the hall
 def hall(m):
-    m.use('arcade_door')
-    B.doorway(m, [X1 - 4.0, DOOR_Y0, 0.0, X1 + 4.0, DOOR_Y1, DOOR_Z], MAT['tile'], id='arcade_doorway')
-    B.replace(m, box=[-1170, 3900, -1, -1106, 4100, 100], what=['props'], id='clear_bench_props')           # FE24: the base bench in D4
-    B.replace(m, box=[-1170, 3900, 2, -1106, 4100, 100], what=['collision'], clip=True, id='clear_bench_clip')
-    m.use('shell')
-    B.floor(m, [X0, Y0, X1, Y1], 0.0, MAT['floor'], id='hall_floor')
-    B.ceiling(m, [X0, Y0, X1, Y1], H, MAT['slab'], id='hall_slab')
-    B.wall(m, [X0, Y0, 0.0, X1, YS, H], MAT['tile'], axis='x', id='wall_south')
-    B.wall(m, [X0, YS, 0.0, XW, Y1, H], MAT['tile'], axis='y', openings=[(3852.0, 3948.0, 0.0, 112.0)], id='wall_west')
-    B.wall(m, [XE, YS, 0.0, X1, Y1, H], MAT['tile'], axis='y', openings=[(DOOR_Y0, DOOR_Y1, 0.0, DOOR_Z)], id='wall_east')
-    bx(m, 'fill_west_end', [X0, Y1, 0.0, UNITS['needle_drop'][0], YB, H], MAT['tile'])
-    for a, b in (('needle_drop', 'copy_stop'), ('copy_stop', 'hole_nine'), ('hole_nine', 'heel_key')):
-        bx(m, 'fill_%s_%s' % (a, b), [UNITS[a][1], Y1, 0.0, UNITS[b][0], YB, H], MAT['tile'])
-    bx(m, 'bulkhead', [XW, BULK_Y, BULK_Z, XE, Y1, H], MAT['dark'])
-    rbox(m, 'bulkhead_band', [XW, BULK_Y - 0.6, BULK_Z + 4.0, XE, BULK_Y, BULK_Z + 10.0], MAT['band'])
-    # the floor: a dark border along the walls and a band where the hall meets the shop line
-    rbox(m, 'floor_border_s', [XW, YS, 0.0, XE, YS + 18.0, 0.25], MAT['dark'])
-    rbox(m, 'floor_border_w', [XW, YS + 18.0, 0.0, XW + 18.0, Y1, 0.25], MAT['dark'])
-    rbox(m, 'floor_border_e', [XE - 18.0, YS + 18.0, 0.0, XE, DOOR_Y0 - 10.0, 0.25], MAT['dark'])
-    rbox(m, 'floor_border_e2', [XE - 18.0, DOOR_Y1 + 10.0, 0.0, XE, Y1, 0.25], MAT['dark'])
-    rbox(m, 'floor_border_n', [XW + 18.0, Y1 - 24.0, 0.0, XE - 18.0, Y1, 0.25], MAT['dark'])
-    tile_courses(m)
-    columns(m)
+    import hall_body
+    hall_body.build(sys.modules[__name__], m)
     ceiling(m)
-
-
-def tile_courses(m):
-    """the dado of the five-tile kit on the three hall walls: dark skirting, white field, an orange band course, damaged patches"""
-    def courses(tag, face_box, axis, skip=()):
-        a0, a1 = (face_box[0], face_box[3]) if axis == 'x' else (face_box[1], face_box[4])
-        spans = [(a0, a1)]
-        for s0, s1 in skip:
-            spans = [p for q in spans for p in ((q[0], min(q[1], s0)), (max(q[0], s1), q[1])) if p[1] - p[0] > 1.0]
-        for k, (s0, s1) in enumerate(spans):
-            for nm, z0, z1, mat in (('skirt', 0.0, 10.0, MAT['dark']), ('band', 58.0, 74.0, MAT['band']), ('band2', 220.0, 228.0, MAT['band'])):
-                b = list(face_box)
-                if axis == 'x':
-                    b[0], b[3] = s0, s1
-                else:
-                    b[1], b[4] = s0, s1
-                b[2], b[5] = z0, z1
-                rbox(m, 'course_%s_%s_%d' % (tag, nm, k), b, mat)
-    courses('s', [XW, YS, 0, XE, YS + 0.6, 0], 'x')
-    courses('w', [XW, YS, 0, XW + 0.6, BULK_Y, 0], 'y', skip=[(3836.0, 3964.0)])
-    courses('e', [XE - 0.6, YS, 0, XE, BULK_Y, 0], 'y', skip=[(DOOR_Y0 - 14.0, DOOR_Y1 + 14.0)])
-    rng = random.Random(1978)
-    n = 0
-    for wall, (a0, a1) in (('s', (XW + 40, XE - 40)), ('w', (YS + 40, BULK_Y - 40)), ('e', (YS + 40, BULK_Y - 40))):
-        for k in range({'s': 9, 'w': 3, 'e': 2}[wall]):
-            w, h = rng.uniform(30, 96), rng.uniform(24, 70)
-            c = rng.uniform(a0 + w, a1 - w)
-            z = rng.choice((rng.uniform(12, 50), rng.uniform(80, 200)))
-            if wall == 'e' and DOOR_Y0 - 40 < c < DOOR_Y1 + 40:
-                continue
-            if wall == 'w' and 3820 < c < 3980:
-                continue
-            if wall == 's':
-                b = [c - w / 2, YS, z, c + w / 2, YS + 0.8, z + h]
-            elif wall == 'w':
-                b = [XW, c - w / 2, z, XW + 0.8, c + w / 2, z + h]
-            else:
-                b = [XE - 0.8, c - w / 2, z, XE, c + w / 2, z + h]
-            rbox(m, 'tile_patch_%s_%d' % (wall, k), b, MAT['tile_dmg'])
-            n += 1
-    REPORT['tile_patches'] = n
-
-
-def columns(m):
-    """one row of square columns at pitch 288 on the south third, clad in the hall's own tile: dark base, white shaft, two orange bands"""
-    h = COL_W / 2.0
-    for k, x in enumerate(COLS):
-        bx(m, 'col_%d' % k, [x - h, COL_Y - h, 0.0, x + h, COL_Y + h, H], MAT['tile'])
-        rbox(m, 'col_%d_base' % k, [x - h - 1.5, COL_Y - h - 1.5, 0.0, x + h + 1.5, COL_Y + h + 1.5, 16.0], MAT['dark'])
-        rbox(m, 'col_%d_band' % k, [x - h - 0.6, COL_Y - h - 0.6, 58.0, x + h + 0.6, COL_Y + h + 0.6, 74.0], MAT['band'])
-        rbox(m, 'col_%d_band2' % k, [x - h - 0.6, COL_Y - h - 0.6, 196.0, x + h + 0.6, COL_Y + h + 0.6, 212.0], MAT['band'])
-        if k in (1, 4):
-            rbox(m, 'col_%d_dmg' % k, [x - h - 0.8, COL_Y + h, 90.0, x + 6.0, COL_Y + h + 0.8, 150.0], MAT['tile_dmg'])
 
 
 # ceiling modules (48 x 48) from the south-west inner corner
 GX0, GY0, MOD = XW, YS, 48.0
-NI, NJ = int((XE - XW) // MOD) + 1, int((BULK_Y - YS) // MOD) + 1
-LIVE = [(2, 2), (10, 2), (18, 2), (26, 2), (34, 2), (6, 12), (22, 12), (14, 6), (30, 6), (6, 9), (22, 9), (34, 12)]   # 12 pools (pass 1: 7 read as a black lid)
-DEAD = [(6, 2), (14, 2), (30, 2), (2, 12), (14, 12), (18, 12), (30, 12), (10, 8), (26, 8)]
-HOLES = [(14, 7), (22, 4), (31, 9), (5, 10), (35, 5), (19, 13)]                   # missing panels: the black plenum
-STAINS = [(3, 5), (8, 9), (12, 3), (17, 10), (21, 6), (27, 11), (29, 3), (33, 13)]
+NI, NJ = int(math.ceil((XE - XW) / MOD - 1e-6)), int(math.ceil((BULK_Y - YS) / MOD - 1e-6))
+LIVE = [(2, 1), (10, 1), (18, 1), (26, 1), (34, 1), (6, 8), (22, 8), (34, 8), (14, 4), (30, 4), (6, 5), (22, 5)]      # 12 pools (pass 1: 7 read as a black lid); AC1: ten rows of 48, the hall is 480 deep
+DEAD = [(6, 1), (14, 1), (30, 1), (2, 8), (14, 8), (18, 8), (30, 8), (10, 5), (26, 5)]
+HOLES = [(14, 3), (22, 2), (31, 6), (5, 6), (35, 3), (19, 7)]                   # missing panels: the black plenum
+STAINS = [(3, 3), (8, 6), (12, 2), (17, 7), (21, 3), (27, 6), (29, 2), (33, 7)]
 
 
 FILL_LANE, FILL_MID, FILL_SOUTH, FILL_TUBE = (float(v) for v in os.environ.get('L1_FILL', '0.15,0.2,0.3,0.6').split(','))
@@ -275,7 +203,7 @@ def fill_k(k, j):
     """the ceiling fill of live panel k in row j (L1, LIGHTING-GAP C5, 28 Nov): 1.0 everywhere gave 1.8 to 1 between a shop's pool and mid hall
     (`studio light`); the rows over the shop lane (j >= 12) and the middle (j 9) are dimmest so that the fronts' pools read, the south rows a little
     more; each panel varied by FILL_VARY"""
-    base = FILL_LANE if j >= 12 else FILL_MID if j >= 9 else FILL_SOUTH
+    base = FILL_LANE if j >= 8 else FILL_MID if j >= 4 else FILL_SOUTH
     return round(base * FILL_VARY[k % len(FILL_VARY)], 3)
 
 
@@ -285,22 +213,8 @@ def module(i, j):
 
 
 def ceiling(m):
-    """the suspended ceiling: one panel plane with a 48 grid of T-bars, lit panels (emissive), dead ones, missing ones, stained ones"""
+    """the suspended ceiling's lights (the geometry is hall_body.ceiling): the lit panels' soft spots, the tubes of the colonnade"""
     m.use('ceiling')
-    rbox(m, 'grid_plane', [XW, YS, GRID_Z, XE, BULK_Y, GRID_Z + 1.0], MAT['ceil'],
-         uv={'bottom': {'tile': [MOD, MOD], 'offset': [0.0, 0.0]}})
-    for i in range(1, NI):
-        x = GX0 + i * MOD
-        if x < XE - 1:
-            rbox(m, 'tbar_x_%d' % i, [x - 0.7, YS, GRID_Z - 1.0, x + 0.7, BULK_Y, GRID_Z], MAT['tbar'])
-    for j in range(1, NJ):
-        y = GY0 + j * MOD
-        if y < BULK_Y - 1:
-            rbox(m, 'tbar_y_%d' % j, [XW, y - 0.7, GRID_Z - 1.0, XE, y + 0.7, GRID_Z], MAT['tbar'])
-    for tag, lst, mat in (('live', LIVE, MAT['panel_on']), ('dead', DEAD, MAT['panel_off']), ('hole', HOLES, MAT['hole']), ('stain', STAINS, MAT['ceil_stain'])):
-        for i, j in lst:
-            x0, y0, x1, y1 = module(i, j)
-            rbox(m, 'panel_%s_%d_%d' % (tag, i, j), [x0 + 0.8, y0 + 0.8, GRID_Z - 0.4, x1 - 0.8, y1 - 0.8, GRID_Z - 0.05], mat)
     for k, (i, j) in enumerate(LIVE):
         x0, y0, x1, y1 = module(i, j)
         lamp(m, 'light_panel_%d' % k, ((x0 + x1) / 2, (y0 + y1) / 2, GRID_Z - 6.0), 'hall', color=(0.88, 1.0, 0.9), radius=250.0,      # the target's greenish fluorescent
@@ -308,9 +222,9 @@ def ceiling(m):
     # tubes over the colonnade, between the columns, hung from the grid: three live, two dead; two dead over the north lane
     for k, x in enumerate([(a + b) / 2 for a, b in zip(COLS, COLS[1:])]):
         if k % 2 == 0:
-            fix(m, 'ceiling_tube', (x, COL_Y, GRID_Z - 1.0), 0.0, role='hall', intensity=FILL_TUBE, radius=0.85)      # fill (C5)
+            fix(m, 'ceiling_tube', (x, COL_Y + 100.0, GRID_Z - 1.0), 0.0, role='hall', intensity=FILL_TUBE, radius=0.85)      # fill (C5)
         else:
-            B.prop(m, 'cp_disco_fluorescent_light_off', (x, COL_Y, GRID_Z - 1.0), yaw=0.0, layer='ceiling', id='tube_dead_%d' % k)
+            B.prop(m, 'cp_disco_fluorescent_light_off', (x, COL_Y + 100.0, GRID_Z - 1.0), yaw=0.0, layer='ceiling', id='tube_dead_%d' % k)
     for k, x in enumerate((-2620.0, -1810.0)):
         B.prop(m, 'cp_disco_fluorescent_light_off', (x, 4120.0, GRID_Z - 1.0), yaw=0.0, layer='ceiling', id='tube_dead_n_%d' % k)
 
@@ -779,7 +693,7 @@ def polisher(m):
     """the floor polisher in its polished circle (authored: no stock 1978 polisher exists; cp_disco_floor_buffer is the bladed trap),
     its cable run to a wall socket. Static."""
     m.use('south')
-    cx, cy = -1590.0, 3850.0          # pass 1: the foreground of the entrance view, as in the target
+    cx, cy = -1590.0, 3940.0          # pass 1: the foreground of the entrance view, as in the target (AC1: y 3850 -> 3940, clear of the colonnade line)
     picture_decal(m, 'polish_circle', 'floor_polish_circle.png', (cx - 30.0, cy, 0.0), (220.0, 220.0))
     px, py, yaw = cx, cy, 160.0
     loc = G.merge(G.cylinder((0, 0, 0.0), (0, 0, 3.0), 10.0, 20), G.cylinder((0, 0, 3.0), (0, 0, 8.0), 9.4, 20))
@@ -799,7 +713,7 @@ def polisher(m):
     c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
     hx, hy = px + (-12.0) * c, py + (-12.0) * s
     sx = -1650.0
-    pts = [(hx, hy), (hx - 10.0, hy - 40.0), (-1615.0, 3700.0), (-1640.0, 3600.0), (sx, YS + 2.0)]
+    pts = [(hx, hy), (hx - 10.0, hy - 40.0), (-1615.0, 3840.0), (-1640.0, 3790.0), (sx, YS + 2.0)]
     mesh(m, 'polisher_cable', MAT['rubber'], G.ribbon(pts, 0.9))
     mesh(m, 'polisher_cable_rise', MAT['rubber'], G.cylinder((sx, YS + 1.5, 0.3), (sx, YS + 1.5, 16.0), 0.45, 6, caps=False))
     B.prop(m, 'fac_outlet', (sx, YS, 18.0), yaw=180.0, layer='south', id='polisher_socket')
@@ -816,10 +730,10 @@ def hangings(m):
     """the New Year banner and two bunting strips across the hall, hung from the grid on wires"""
     m.use('south')
     bxp = -2200.0
-    picture2(m, 'banner_new_year', 'banner_new_year.png', (bxp, 3900.0, 206.0), 'x', (320.0, 48.0))
-    for k, yy in enumerate((3745.0, 4055.0)):
+    picture2(m, 'banner_new_year', 'banner_new_year.png', (bxp, 3900.0, 206.0), 'x', (280.0, 42.0))
+    for k, yy in enumerate((3770.0, 4030.0)):
         rbox(m, 'banner_wire_%d' % k, [bxp - 0.2, yy - 0.2, 230.0, bxp + 0.2, yy + 0.2, GRID_Z], MAT['tbar'])
-    for k, (xx, yc) in enumerate(((-2620.0, 3960.0), (-1650.0, 3880.0))):
+    for k, (xx, yc) in enumerate(((-2620.0, 3980.0), (-1650.0, 3900.0))):
         picture2(m, 'bunting_%d' % k, 'bunting_strip.png', (xx, yc, 222.0), 'x', (256.0, 24.0))
         for j, yy in enumerate((yc - 128.0, yc + 128.0)):
             rbox(m, 'bunting_%d_wire_%d' % (k, j), [xx - 0.2, yy - 0.2, 234.0, xx + 0.2, yy + 0.2, GRID_Z], MAT['tbar'])
@@ -830,7 +744,7 @@ def gameplay(m):
     m.use('gameplay')
     B.zone(m, 'arcade', [X0, Y0, -16.0, X1, YB, H + 14.0])
     B.door(m, 'd_hall_arcade', [X1 - 8.0, DOOR_Y0, 0.0, X1 + 8.0, DOOR_Y1, DOOR_Z], 1000, zones=['arcade', 'ticket_hall'], id='door_D4')
-    for k, (x, y) in enumerate(((-2716.0, 3640.0), (-1564.0, 3640.0))):          # two floor drains in the south lane
+    for k, (x, y) in enumerate(((-2330.0, 3800.0), (-1560.0, 3800.0))):          # two floor drains in the south lane (AC1: y 3640 -> 3800, the lane is 91 wide)
         B.prop(m, 'grate_industrial_64_64_02', (x + 16.0, y - 16.0, 0.3), yaw=0.0, scale=0.5, layer='south', id='drain_%d' % k)
         B.spawner(m, (x, y, 0.0), 90.0, layer='gameplay', id='spawn_drain_%d' % (k + 1))
 

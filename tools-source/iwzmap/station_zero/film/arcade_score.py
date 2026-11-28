@@ -14,7 +14,7 @@ import statistics
 import sys
 
 DOC = r'C:\studio-data\sz\film\arcade\shell\doc'
-HALL = (-3000.0, 3500.0, -1200.0, 4300.0)
+HALL = (-3000.0, 3736.0, -1200.0, 4300.0)
 UNITS = {'needle_drop': (-2960.0, -2640.0), 'copy_stop': (-2630.0, -1980.0), 'hole_nine': (-1970.0, -1650.0), 'heel_key': (-1640.0, -1320.0)}
 ROW_Y = (4200.0, 4600.0)          # a shop's own lights: inside the unit, or at its front (fascia lamps) north of y 4200
 FIXTURE_WORDS = ('light', 'lamp', 'fluo', 'sconce', 'bulb', 'lantern', 'neon')
