@@ -58,6 +58,7 @@ main()
     level thread iwz_zone_links();
     level thread iwz_wheel_cleanup();
     level thread iwz_third_rail();
+    level thread iwz_wall_prices();
     level thread iwz_ambient_fx();
     //@DARK@
     level thread iwz_flicker();
@@ -66,6 +67,64 @@ main()
     //@AUDIO@
     level.iwz_post_hatch_model = "emergency_shutoff_sm_panel_01";     // (RC3) the Capsule Post hatch: a stock wall panel, not the 19-zone pipe stand-in
     //@POST@
+}
+
+// Wall weapons: one price per place (cp_iwz3.gsc's table; the generator writes no row, so its own wall buys sell at the stock price; Studio's merge
+// of a layer adds a row per wall buy of a document: studio/basegame.py, iwz_rows.price_row). The stock purchase and its hint read
+// level.interactions[weapon].cost when they run, so every server frame the cost is set to the price of the place a player stands at (the stock
+// monitor's self.last_interaction_point). Unlike cp_iwz3.gsc (I1, 28 Nov 2026), a place WITHOUT a price gets the weapon's stock cost back: this
+// base sells the same weapons as the Arcade's buys (iw7_ump45_zml, iw7_m1c_zm), and the cost a priced place set would otherwise stay for the
+// base's own place of that weapon. Two players at two places of the same weapon in the same 50 ms would share one price.
+iwz_wall_prices()
+{
+    level endon( "game_ended" );
+    table = [];
+    //@PRICES@
+    for ( i = 0; i < 600 && !( isdefined( level.all_interaction_structs ) && isdefined( level.interactions ) ); i++ )
+        wait 0.1;
+    wait 1;
+    n = 0;
+    stock = [];
+    foreach ( s in level.all_interaction_structs )
+    {
+        if ( !isdefined( s ) || !isdefined( s.script_noteworthy ) || !scripts\cp\cp_interaction::interaction_is_weapon_buy( s ) )
+            continue;
+        w = s.script_noteworthy;
+        if ( !isdefined( stock[w] ) && isdefined( level.interactions[w] ) && isdefined( level.interactions[w].cost ) )
+            stock[w] = level.interactions[w].cost;
+        foreach ( p in table )
+        {
+            if ( p.weapon == w && distance( p.origin, s.origin ) < 16 )
+            {
+                s.iwz_price = p.price;
+                n++;
+            }
+        }
+    }
+    print( "[IWZ level] WALL_PRICES places=" + n + " of=" + table.size + " stock_weapons=" + stock.size );
+    for ( ;; )
+    {
+        foreach ( pl in level.players )
+        {
+            s = pl.last_interaction_point;
+            if ( !isdefined( s ) || !isdefined( s.script_noteworthy ) || !isdefined( level.interactions[s.script_noteworthy] ) )
+                continue;
+            if ( isdefined( s.iwz_price ) )
+                level.interactions[s.script_noteworthy].cost = s.iwz_price;
+            else if ( isdefined( stock[s.script_noteworthy] ) )
+                level.interactions[s.script_noteworthy].cost = stock[s.script_noteworthy];
+        }
+        wait 0.05;
+    }
+}
+
+iwz_price( origin, weapon, price )
+{
+    p = spawnstruct();
+    p.origin = origin;
+    p.weapon = weapon;
+    p.price = price;
+    return p;
 }
 
 // door purchases: wrap the stock debris activation so the barrier knows which door was bought

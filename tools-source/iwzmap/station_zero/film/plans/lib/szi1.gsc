@@ -22,6 +22,32 @@ i1_stand( name )
     print( "[IWZ local] GL PROBE name=" + name + " ground=" + gr + " nav_d=" + nd + " zone=" + zn + " x=" + o[0] + " y=" + o[1] + " z=" + o[2] );
 }
 
+// i1_reach: can a player in the hall use a wall buy behind a counter? The player's hull is traced from (x, y0) toward (x, y1) at z 1 (playerphysicstrace:
+// clips count) to where it stops; reach = distance from the eye there (stop + 60) to the interaction struct of `kind` nearest (x, y1); use_radius = the
+// dvar player_useRadius (the use range of the player_use_trigger the stock interactions move to the struct). stop_y, reach, use_radius, sx, sy, sz.
+i1_reach( name, kind, x, y0, y1 )
+{
+    stop = playerphysicstrace( ( x, y0, 1 ), ( x, y1, 1 ) );
+    best = undefined;
+    foreach ( s in level.current_interaction_structs )
+    {
+        if ( isdefined( s ) && isdefined( s.script_noteworthy ) && s.script_noteworthy == kind )
+        {
+            if ( !isdefined( best ) || distance( s.origin, ( x, y1, 0 ) ) < distance( best.origin, ( x, y1, 0 ) ) )
+                best = s;
+        }
+    }
+    r = -1;
+    o = ( 0, 0, 0 );
+    if ( isdefined( best ) )
+    {
+        o = best.origin;
+        r = int( distance( stop + ( 0, 0, 60 ), o ) );
+    }
+    print( "[IWZ local] GL PROBE name=" + name + " stop_y=" + stop[1] + " reach=" + r + " use_radius=" + getdvarfloat( "player_useRadius" ) + " sx=" + o[0] + " sy=" + o[1]
+        + " sz=" + o[2] );
+}
+
 // i1_wheel_to: the stock magic wheel moved to `area` as the stock code moves it after its rolls (interaction_magicwheel.gsc _id_BC3E: the wheel of that
 // area made usable, every other one out of order), then: active (area_name of level.current_active_wheel), x, y (its origin), wheels (every magic_wheel
 // entity), areas (their area names). The base starts the wheel on platform_a (cp_iwz.gsc set_magic_wheel_starting_location), so the Arcade's position is

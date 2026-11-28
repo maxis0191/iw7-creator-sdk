@@ -3273,6 +3273,7 @@ door_lines = [ROWS.door_row(d) for d in DOORS]
 link_lines = [ROWS.link_row(l) for l in ZONE_LINKS]
 gsc = gsc.replace('//@DOORS@', ROWS.table(door_lines)).replace('//@LINKS@', ROWS.table(link_lines))
 gsc = gsc.replace('//@INITIAL@', ROWS.initial_row(INITIAL_ZONES))
+gsc = gsc.replace('//@PRICES@', ROWS.table([], strip=True))     # no generator price: its wall buys sell at the stock price; a Studio layer adds rows here
 import sz_modules
 if layout.get('modules'):     # the modules are written below; the level script starts them (Capsule Post, Terminus trip)
     gsc = gsc.replace('//@POST@', '\n'.join(sz_modules.calls(layout['modules'], 'cp_iwz')).lstrip())

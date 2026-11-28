@@ -7,7 +7,7 @@
   "g1probe",
   "szi1"
  ],
- "about": "I1: the Arcade on the one document. D4 bought, a player standing on the navigation inside Needle Drop, Copy Stop and Hole Number Nine; the SMG wall buy (Hole Number Nine) and the marksman wall buy (Heel & Key, used from the hall) bought; the stock wheel moved to Copy Stop and rolled once, its weapon taken; two zombies from each shop back room chase the player in the hall.",
+ "about": "I1: the Arcade on the one document. D4 bought, a player standing on the navigation inside Needle Drop, Copy Stop and Hole Number Nine; the SMG wall buy (Hole Number Nine) and the marksman wall buy (Heel & Key, used from the hall) bought; the stock wheel moved to Copy Stop and rolled once, its weapon taken; two zombies from each shop back room chase the player in the hall. The marksman buy: how close the hall gets (hull trace to the counter) against the use radius. Chases 70 s (the Heel & Key path runs through the service passage). Control: the base own UMP wall buy keeps its stock price (1250) right after the Arcade SMG sold at 1000.",
  "steps": [
   {
    "do": "waves",
@@ -160,6 +160,24 @@
    "name": "buy_smg_m"
   },
   {
+   "do": "take",
+   "give": "iw7_fhr_zm"
+  },
+  {
+   "do": "use",
+   "name": "buy_ctrl",
+   "kind": "iw7_ump45_zml",
+   "near": [
+    -784.0,
+    2600.0,
+    -180.0
+   ]
+  },
+  {
+   "do": "take",
+   "give": "iw7_fhr_zm"
+  },
+  {
    "do": "tp",
    "at": [
     -1420,
@@ -174,6 +192,18 @@
    "fn": "i1_stand",
    "args": [
     "hk_hall"
+   ],
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "i1_reach",
+   "args": [
+    "hk_reach",
+    "iw7_m1c_zm",
+    -1420,
+    4200,
+    4420
    ],
    "s": 1
   },
@@ -256,7 +286,7 @@
   {
    "do": "chase",
    "tag": "z_needle_drop",
-   "s": 40,
+   "s": 70,
    "reach": 96,
    "allow_partial": true
   },
@@ -278,7 +308,7 @@
   {
    "do": "chase",
    "tag": "z_copy_stop",
-   "s": 40,
+   "s": 70,
    "reach": 96,
    "allow_partial": true
   },
@@ -300,7 +330,7 @@
   {
    "do": "chase",
    "tag": "z_hole_nine",
-   "s": 40,
+   "s": 70,
    "reach": 96,
    "allow_partial": true
   },
@@ -322,7 +352,7 @@
   {
    "do": "chase",
    "tag": "z_heel_key",
-   "s": 40,
+   "s": 70,
    "reach": 96,
    "allow_partial": true
   },
@@ -596,9 +626,9 @@
   },
   {
    "do": "expect",
-   "that": "use:wheel.weapon1",
-   "why": "the wheel gave a weapon (the hand changed)",
-   "ne": "@use:wheel.weapon0"
+   "that": "use:wheel.weapons1",
+   "gt": "@use:wheel.weapons0",
+   "why": "the wheel gave a weapon (one weapon more after the take)"
   },
   {
    "do": "expect",
@@ -623,6 +653,30 @@
    "that": "chase:z_heel_key.reached",
    "why": "zombies from the back room of heel_key reach the player in the hall",
    "eq": 2
+  },
+  {
+   "do": "expect",
+   "that": "probe:hk_reach.reach",
+   "le": "@probe:hk_reach.use_radius",
+   "why": "the marksman buy on Heel & Key pegboard is within use range of a player stopped at the stall counter in the hall"
+  },
+  {
+   "do": "expect",
+   "that": "use:buy_ctrl.found",
+   "eq": 1,
+   "why": "control: the base own SMG wall buy (stair_a, no price row)"
+  },
+  {
+   "do": "expect",
+   "that": "use:buy_ctrl.has",
+   "eq": 1,
+   "why": "control: bought"
+  },
+  {
+   "do": "expect",
+   "that": "use:buy_ctrl.spent",
+   "eq": 1250,
+   "why": "control: the base place keeps the stock price right after the Arcade place of the same weapon sold at 1000"
   }
  ]
 }
