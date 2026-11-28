@@ -43,14 +43,18 @@ near stock (6.19 against 7.00). The signage is called "the best element", "crisp
 
 ## What it means for the method
 
-The fault is no longer the idea of the place; it is how surfaces and objects are made. Authoring rooms from boxes with
-tiling materials cannot reach the stock bar however well it is lit or signed. The stock maps' surfaces are modelled and
-textured assets (trims, bevels, damage twins, blend materials, decals), and the one thing of ours that ever passed a blind
-review against stock was built from lifted stock pieces (a kiosk on Spaceland, 23 Nov: 9 against 9). The next round of
-both sections therefore changes the construction, not the design:
+The fault is no longer the idea of the place. Two explanations compete and are NOT yet separated: (A) how surfaces and
+objects are made (boxes with tiling materials against stock's modelled and textured assets), (B) the pipeline every
+surface of ours goes through (neutral reflection probes, a lightmap texel of 8 units, our vision, perhaps no ambient
+occlusion and no baked shadow under render-only goods). The kiosk that passed a blind review on 23 Nov (9 against 9) stood
+inside Spaceland, under stock light and probes: it proves nothing about lifted pieces in our own map, and round 19 already
+used seven lifted prefabs. A control decides it before anything is rebuilt (package C1, `C1-CONTROL.md`): one stock room
+put unchanged through our build, bake and vision, shot from the eye of an existing stock frame of that room. If (A) wins,
+the next round of both sections changes the construction, not the design:
 
-- **Arcade:** architecture and interiors from lifted stock rooms and stock modular pieces (the catalogue has 168 rooms of
-  the five maps: `python -m rooms.find`), re-planned to the Arcade's spec and carrying our brands, goods and film objects;
+- **Arcade:** architecture and interiors from stock construction pieces and stock materials of ONE donor kit (not themed
+  rooms lifted whole: that would rebuild the "assembly of found assets" the owner rejected, and break QUALITY-BAR rule
+  23), re-planned to the Arcade's spec and carrying our brands, goods and film objects;
   our own boxes only where no stock piece exists, and then with trims, bevels and wear. Stock blend materials and stock
   decals for dirt, damage and wet; contact shadow (a finer lightmap texel at wall feet and under props, the engine's
   ambient occlusion if the vision allows it).

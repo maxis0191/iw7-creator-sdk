@@ -669,7 +669,21 @@ def heel_key(m):
     shelving(m, 'hk_lasts', [x1 - 70.0, Y1 + 50.0, 0.0, x1 - 20.0, peg_y - 2.0, 96.0], 3, sm['join'], 'w')
     m.remove('hk_lasts_end_a')                                     # A3a request 3: its south end hid the lasts from the hall
     anchor('heel_key.lasts_shelf', [x1 - 70.0, Y1 + 50.0, 6.0, x1 - 22.0, peg_y - 2.0, 96.0], 'w', 'shoe lasts, polish tins, boxes of heels')
-    B.wallbuy(m, (cx + 60.0, peg_y - 6.0, 0.0), 'marksman', 1500, 270.0, layer='gameplay', id='buy_marksman_heel_key')
+    # the marksman buy (I1, 29 Nov), measured on a client: the stock monitor of this map (cp_zmb_interactions.gsc zmb_player_interaction_monitor)
+    # offers the nearest struct within 72 of the player's origin and puts the player's use trigger at the struct's x, y at eye height; the engine
+    # draws no prompt for a use trigger that stands behind player clip (the same trigger moved 42 forward, in front of hk_stall_clip, showed
+    # "Hold F to purchase the M1 ($1500)": i1_mk_trig). On the back pegboard (y 4404) the buy was out of the monitor's reach; on a board behind the
+    # counter (y 4336) it was picked but behind the clip. Now a pegboard display board stands on the counter's front edge, in the plane of the
+    # clip's south face, between the front rail's tagged pairs (x -1535, -1445); the rifle hangs on its hall face, a player at the counter front
+    # (origin y about 4285) is about 65 from the struct with nothing between his eye and the use trigger. 56 high: the stall reads above it.
+    bd = [-1530.0, 4298.0, 44.0, -1450.0, 4301.0, 100.0]               # the rifle is about 70 long (client frame): stock -1525, muzzle -1455
+    rbox(m, 'hk_buy_board', bd, MAT['pegboard'])
+    rbox(m, 'hk_buy_board_frame_t', [bd[0] - 2.0, bd[1] - 0.6, bd[5], bd[3] + 2.0, bd[4], bd[5] + 3.0], sm['join'])
+    rbox(m, 'hk_buy_board_frame_w', [bd[0] - 2.0, bd[1] - 0.6, 42.0, bd[0], bd[4], bd[5]], sm['join'])
+    rbox(m, 'hk_buy_board_frame_e', [bd[3], bd[1] - 0.6, 42.0, bd[3] + 2.0, bd[4], bd[5]], sm['join'])
+    # yaw 0: the spawned rifle hangs broadside to the hall, stock west (client frames turned by 90 degrees, final_checks\mk_turn_sheet.jpg); at 270 it
+    # was seen edge-on, a thin vertical silhouette
+    B.wallbuy(m, (-1490.0, 4296.0, 0.0), 'marksman', 1500, 0.0, layer='gameplay', id='buy_marksman_heel_key')
     rbox(m, 'backroom_heel_key_floor', [x0 + 16.0, peg_y + 12.0, 0.0, x1 - 16.0, YB - 16.0, 0.3], MAT['back_floor'])
     B.spawner(m, (x0 + 50.0, 4538.0, 0.0), 0.0, layer='gameplay', id='spawn_heel_key_1')
     # light: one tungsten work lamp on the bench

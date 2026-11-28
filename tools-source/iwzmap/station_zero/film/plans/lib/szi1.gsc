@@ -48,6 +48,249 @@ i1_reach( name, kind, x, y0, y1 )
         + " sz=" + o[2] );
 }
 
+// i1_buy: a purchase of an INTERACTION (wall buy, perk...) from where player 0 STANDS (the plan puts him there with `tp`; this never moves him;
+// the lab's `use` step teleports the player in front of the struct, which put him inside the Heel & Key stall). The monitor that runs on this map is
+// cp_zmb's (cp_zmb_interactions.gsc zmb_player_interaction_monitor): it offers only the struct nearest the player, within 72 units (a door
+// buy never: doors are bought through their own trigger, i1_door_buy).
+// Here: the struct of `kind` nearest (nx, ny, nz); wait up to 4 s for the stock monitor to pick it (a client: hint=1, the prompt shows);
+// without a monitor (headless) its rule is applied at the player's real position: refused unless that struct is the nearest of all and within
+// 72; else the interaction point is set as the monitor sets it. Then the player's interaction trigger fires (the Use button's effect). Prints
+// found, hint, route, d (origin to struct), eye_d (eye to the use trigger), use_radius, money0, money1, spent, has (wall weapons: the stock
+// variant test), weapons0, weapons1, x, y.
+i1_buy( name, kind, nx, ny, nz, seconds )
+{
+    p = level.players[0];
+    o = p.origin;
+    near = ( nx, ny, nz );
+    s = undefined;
+    foreach ( st in level.current_interaction_structs )
+    {
+        if ( isdefined( st ) && isdefined( st.script_noteworthy ) && st.script_noteworthy == kind )
+        {
+            if ( !isdefined( s ) || distance( st.origin, near ) < distance( s.origin, near ) )
+                s = st;
+        }
+    }
+    found = 0;
+    hint = 0;
+    route = "none";
+    d = -1;
+    eye_d = -1;
+    m0 = p scripts\cp\cp_persistence::get_player_currency();
+    w0 = p getweaponslistprimaries().size;
+    if ( isdefined( s ) )
+    {
+        found = 1;
+        d = int( distance( o, s.origin ) );
+        t0 = gettime();
+        while ( gettime() - t0 < 4000 )
+        {
+            if ( isdefined( p.last_interaction_point ) && p.last_interaction_point == s )
+            {
+                hint = 1;
+                break;
+            }
+            wait 0.05;
+        }
+        route = "monitor";
+        if ( !hint )
+        {
+            route = "direct";
+            all = sortbydistance( scripts\engine\utility::array_removeundefined( level.current_interaction_structs ), o );
+            if ( d > 72 )
+                route = "refused_beyond_72";
+            else if ( all.size == 0 || all[0] != s )
+                route = "refused_not_nearest";
+            if ( route == "direct" )
+            {
+                if ( !isdefined( p.interaction_trigger ) )
+                    p.interaction_trigger = scripts\cp\cp_interaction::get_player_interaction_trigger();
+                p.last_interaction_point = undefined;
+                p scripts\cp\cp_interaction::set_interaction_point( s );
+                wait 0.3;
+            }
+        }
+        if ( route == "monitor" || route == "direct" )
+        {
+            if ( isdefined( p.interaction_trigger ) )
+                eye_d = int( distance( p geteye(), p.interaction_trigger.origin ) );
+            wait 0.15;
+            p.interaction_trigger notify( "trigger", p );
+            wait seconds;
+        }
+    }
+    m1 = p scripts\cp\cp_persistence::get_player_currency();
+    has = -1;
+    if ( isdefined( s ) && scripts\cp\cp_interaction::interaction_is_weapon_buy( s ) )
+        has = p scripts\cp\cp_weapon::has_weapon_variation( s.script_noteworthy );
+    print( "[IWZ local] GL PROBE name=" + name + " found=" + found + " hint=" + hint + " route=" + route + " d=" + d + " eye_d=" + eye_d
+        + " use_radius=" + getdvarfloat( "player_useRadius" ) + " money0=" + m0 + " money1=" + m1 + " spent=" + ( m0 - m1 ) + " has=" + has
+        + " weapons0=" + w0 + " weapons1=" + p getweaponslistprimaries().size + " x=" + p.origin[0] + " y=" + p.origin[1] );
+}
+
+// i1_door_buy: a door bought as a player buys it on this map: the door's `door_buy` trigger_use (targetname door_buy, target = the door's
+// target; zombie_doors.gsc init_door_buys / _id_95B5: the engine shows its hint, "Enter this area", to a player in its range, and its "trigger"
+// takes the money and opens the door) fired with player 0 where he stands. Prints found, touching (the player inside the trigger's volume),
+// d (player origin to the trigger), money0, money1, spent, open (level.iwz_door_open of the door), left (door_buy triggers of that door still
+// there after the purchase: the prompt's source), x, y.
+i1_door_buy( name, target, seconds )
+{
+    p = level.players[0];
+    t = undefined;
+    foreach ( e in getentarray( "door_buy", "targetname" ) )
+    {
+        if ( isdefined( e ) && isdefined( e.target ) && e.target == target )
+            t = e;
+    }
+    found = 0;
+    touching = -1;
+    d = -1;
+    m0 = p scripts\cp\cp_persistence::get_player_currency();
+    if ( isdefined( t ) )
+    {
+        found = 1;
+        touching = p istouching( t );
+        d = int( distance( p.origin, t.origin ) );
+        t notify( "trigger", p );
+        wait seconds;
+    }
+    m1 = p scripts\cp\cp_persistence::get_player_currency();
+    open = 0;
+    if ( isdefined( level.iwz_door_open ) && isdefined( level.iwz_door_open[target] ) )
+        open = 1;
+    left = 0;
+    foreach ( e in getentarray( "door_buy", "targetname" ) )
+    {
+        if ( isdefined( e ) && isdefined( e.target ) && e.target == target )
+            left++;
+    }
+    print( "[IWZ local] GL PROBE name=" + name + " found=" + found + " touching=" + touching + " d=" + d + " money0=" + m0 + " money1=" + m1
+        + " spent=" + ( m0 - m1 ) + " open=" + open + " left=" + left + " x=" + p.origin[0] + " y=" + p.origin[1] );
+}
+
+// i1_ww: the wall weapon the stock code hung nearest (x, y) (coop_wall_buys.gsc assign_weapons_to_structs: level.wall_weapon_list, a script_model or
+// script_weapon at the struct): its model, origin and angles; with turn != 0 its yaw is turned by `turn` degrees (an experiment for frames, the map
+// is not changed). Prints model, x, y, z, pitch, yaw, roll.
+i1_ww( name, x, y, turn )
+{
+    best = undefined;
+    foreach ( w in level.wall_weapon_list )
+    {
+        if ( isdefined( w ) && ( !isdefined( best ) || distance2d( w.origin, ( x, y, 0 ) ) < distance2d( best.origin, ( x, y, 0 ) ) ) )
+            best = w;
+    }
+    if ( !isdefined( best ) )
+    {
+        print( "[IWZ local] GL PROBE name=" + name + " found=0" );
+        return;
+    }
+    if ( turn != 0 )
+        best.angles = ( best.angles[0], best.angles[1] + turn, best.angles[2] );
+    md = "none";
+    if ( isdefined( best.model ) )
+        md = best.model;
+    print( "[IWZ local] GL PROBE name=" + name + " found=1 model=" + md + " x=" + best.origin[0] + " y=" + best.origin[1] + " z=" + best.origin[2]
+        + " pitch=" + best.angles[0] + " yaw=" + best.angles[1] + " roll=" + best.angles[2] );
+}
+
+// i1_hint: what the stock code would put in the prompt of the wall buy of `kind` nearest (x, y) for player 0: hint (the string of
+// coop_wall_buys.gsc get_wall_buy_hint_func is defined: 1/0), table (level.interaction_hintstrings of its base weapon defined), weaponfunc (level.weapon_hint_func defined), can_give (can_give_weapon), cost (level.interactions cost), picked (the
+// stock monitor's current point is that struct)
+i1_hint( name, kind, x, y )
+{
+    p = level.players[0];
+    s = undefined;
+    foreach ( st in level.current_interaction_structs )
+    {
+        if ( isdefined( st ) && isdefined( st.script_noteworthy ) && st.script_noteworthy == kind )
+        {
+            if ( !isdefined( s ) || distance2d( st.origin, ( x, y, 0 ) ) < distance2d( s.origin, ( x, y, 0 ) ) )
+                s = st;
+        }
+    }
+    if ( !isdefined( s ) )
+    {
+        print( "[IWZ local] GL PROBE name=" + name + " found=0" );
+        return;
+    }
+    h = scripts\cp\zombies\coop_wall_buys::get_wall_buy_hint_func( s, p );
+    hint = 0;
+    if ( isdefined( h ) )
+        hint = 1;
+    table = 0;
+    if ( isdefined( level.interaction_hintstrings[getweaponbasename( kind )] ) )
+        table = 1;
+    wf = 0;
+    if ( isdefined( level.weapon_hint_func ) )
+        wf = 1;
+    cg = p scripts\cp\zombies\coop_wall_buys::can_give_weapon( s );
+    cost = -1;
+    if ( isdefined( level.interactions[kind] ) && isdefined( level.interactions[kind].cost ) )
+        cost = level.interactions[kind].cost;
+    picked = 0;
+    if ( isdefined( p.last_interaction_point ) && p.last_interaction_point == s )
+        picked = 1;
+    print( "[IWZ local] GL PROBE name=" + name + " found=1 hint=" + hint + " table=" + table + " weaponfunc=" + wf + " can_give=" + cg
+        + " cost=" + cost + " picked=" + picked + " base=" + getweaponbasename( kind ) );
+}
+
+// i1_trig_hold: an experiment: for `secs` seconds hold player 0's interaction trigger (the use trigger the stock monitor puts at the picked
+// struct's x, y at eye height, and puts back every 50 ms for a wall buy) at (x, y, eye height), then let the monitor have it again. Prints where
+// it was and where it is held.
+i1_trig_hold( name, x, y, secs )
+{
+    p = level.players[0];
+    if ( !isdefined( p.interaction_trigger ) )
+    {
+        print( "[IWZ local] GL PROBE name=" + name + " trigger=0" );
+        return;
+    }
+    o = p.interaction_trigger.origin;
+    print( "[IWZ local] GL PROBE name=" + name + " trigger=1 was_x=" + o[0] + " was_y=" + o[1] + " was_z=" + o[2] + " hold_x=" + x + " hold_y=" + y );
+    level thread i1_trig_hold_loop( p, x, y, secs );
+}
+
+i1_trig_hold_loop( p, x, y, secs )
+{
+    t0 = gettime();
+    while ( gettime() - t0 < secs * 1000 )
+    {
+        if ( isdefined( p.interaction_trigger ) )
+            p.interaction_trigger.origin = ( x, y, p geteye()[2] );
+        wait 0.05;
+    }
+}
+
+// i1_trig_set: an experiment without the race of i1_trig_hold: the stock monitor of player 0 stopped (it ends on its own notify
+// "player_interaction_monitor"), the stock set_interaction_point run once for the wall buy of `kind` nearest (x, y) (hint, cost, usable), then
+// the trigger moved to (x, ty, eye height) when ty != 0. Prints the trigger's origin.
+i1_trig_set( name, kind, x, y, ty )
+{
+    p = level.players[0];
+    p notify( "player_interaction_monitor" );
+    s = undefined;
+    foreach ( st in level.current_interaction_structs )
+    {
+        if ( isdefined( st ) && isdefined( st.script_noteworthy ) && st.script_noteworthy == kind )
+        {
+            if ( !isdefined( s ) || distance2d( st.origin, ( x, y, 0 ) ) < distance2d( s.origin, ( x, y, 0 ) ) )
+                s = st;
+        }
+    }
+    if ( !isdefined( s ) )
+    {
+        print( "[IWZ local] GL PROBE name=" + name + " found=0" );
+        return;
+    }
+    p.last_interaction_point = undefined;
+    p scripts\cp\cp_interaction::set_interaction_point( s );
+    wait 0.2;
+    if ( ty != 0 )
+        p.interaction_trigger.origin = ( x, ty, p geteye()[2] );
+    o = p.interaction_trigger.origin;
+    print( "[IWZ local] GL PROBE name=" + name + " found=1 tx=" + o[0] + " ty=" + o[1] + " tz=" + o[2] );
+}
+
 // i1_wheel_to: the stock magic wheel moved to `area` as the stock code moves it after its rolls (interaction_magicwheel.gsc _id_BC3E: the wheel of that
 // area made usable, every other one out of order), then: active (area_name of level.current_active_wheel), x, y (its origin), wheels (every magic_wheel
 // entity), areas (their area names). The base starts the wheel on platform_a (cp_iwz.gsc set_magic_wheel_starting_location), so the Arcade's position is

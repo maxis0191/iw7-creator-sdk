@@ -5,13 +5,14 @@
  "conditions": "quiet",
  "real_time": true,
  "libraries": [
-  "szaccept"
+  "szaccept",
+  "szi1"
  ],
  "resolution": [
   1280,
   720
  ],
- "about": "I1 real time, a client: power on, every debris door opened (the D4 purchase is proven headless in i1_arcade; on this client cell the use step fired and charged nothing), a walk with player physics (move: no forward key exists in the input channel) from the ticket hall through D4 along the north shop lane (y 4150, clear of the bench islands) to the west end and back; perf windows and client frames at arc_east_long and at the middle of the hall (1280 x 720).",
+ "about": "I1 real time, a client: power on, D4 bought from the ticket hall (szi1 i1_buy, no teleport), a walk with player physics (move: no forward key exists in the input channel) from the ticket hall through D4 along the north shop lane (y 4150, clear of the bench islands) to the west end and back; perf windows and client frames at arc_east_long and at the middle of the hall (1280 x 720).",
  "steps": [
   {
    "do": "waves",
@@ -45,7 +46,23 @@
    "snap": true
   },
   {
-   "do": "doors"
+   "do": "tp",
+   "at": [
+    -1080,
+    3900,
+    1
+   ],
+   "yaw": 180
+  },
+  {
+   "do": "call",
+   "fn": "i1_door_buy",
+   "args": [
+    "door",
+    "iwz_door_d_hall_arcade",
+    2
+   ],
+   "s": 4
   },
   {
    "do": "wait",
@@ -194,6 +211,30 @@
    "that": "move:walk_out.result",
    "eq": "reached",
    "why": "and back to the ticket hall"
+  },
+  {
+   "do": "expect",
+   "that": "probe:door.found",
+   "why": "D4 from the ticket hall: D4's door_buy trigger is there",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:door.spent",
+   "why": "D4 from the ticket hall: 1000 paid",
+   "eq": 1000
+  },
+  {
+   "do": "expect",
+   "that": "probe:door.open",
+   "why": "D4 from the ticket hall: the door is open (the map script saw the purchase)",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:door.left",
+   "why": "D4 from the ticket hall: no door_buy trigger of D4 is left (the prompt has no source)",
+   "eq": 0
   }
  ]
 }

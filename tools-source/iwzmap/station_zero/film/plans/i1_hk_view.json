@@ -1,0 +1,81 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "i1_hk_view",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "libraries": [
+  "szaccept"
+ ],
+ "about": "I1 (29 Nov), a client: the Heel & Key stall from the hall, the rifle board in the front of the stall, power on.",
+ "steps": [
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "call",
+   "fn": "sz_power_direct",
+   "args": [
+    "power",
+    20
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 8
+  },
+  {
+   "do": "tp",
+   "at": [
+    -1480,
+    4130,
+    1
+   ],
+   "yaw": 90
+  },
+  {
+   "do": "look",
+   "yaw": 90,
+   "pitch": 2
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "capture",
+   "name": "i1_hk_hall_front",
+   "pause": 1
+  },
+  {
+   "do": "tp",
+   "at": [
+    -1700,
+    4150,
+    1
+   ],
+   "yaw": 35
+  },
+  {
+   "do": "look",
+   "yaw": 35,
+   "pitch": 2
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "capture",
+   "name": "i1_hk_hall_oblique",
+   "pause": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:power.power",
+   "eq": 1,
+   "why": "lit"
+  }
+ ]
+}
