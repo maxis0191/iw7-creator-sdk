@@ -256,12 +256,12 @@ Distance baseline: 5.80 (mean, poses 1, 2, 5).
 
 | gap | removed | basis |
 |---|---|---|
-| black floors and vaults | not measured (cause not found) | the metric is dominated by them: black share 22 / 13 / 41 %, floor luminance 0.016 / 0.058 / 0.009 against stock 0.102 / 0.043 / 0.113 |
+| black floors and vaults = the foreign world materials missing from the zone | **-3.22** (5.83 -> 2.61 mean; per pose 5.77 -> 2.99, 4.16 -> 2.30, 7.56 -> 2.55; black share 22 / 13 / 41 % -> 0 / 0 / 0 %) | measured, section 12: `claude/film-blend` d1a3911 brings the room's w/ materials into the zone |
 | probe room | 0.00 (5.82 on, 5.82 off, draft; 5.83 / 5.83 final) | measured |
 | draft against final bake | 0.00 to +0.01 (5.82 draft, 5.83 final) | measured; final is not closer |
 | prop shadows / kit dump roots | +0.02 (C1 5.80 without, 5.82 to 5.83 with); bench feet ratio 0.895 -> 0.442 | measured: real in the bake, invisible in this metric |
 | SSAO (`r_ssao` MDAO) | 0.00 | measured, not engaged: the occlusion target stays 255 on stock too |
-| blend layers (32.7 % of the lifted surface) | not measured | needs patches 1 to 5 (HOLD) |
+| blend layers (32.7 % of the lifted surface) | about 0.00 on the mean (2.61 for `keep` and `base` alike; frames differ by a mean 2.7 grey levels, 4.6 % of pixels above 8 at pose 5) | measured, section 12: the layers draw but the metric does not see them at this size |
 | decals, glass, caulk shadow casters | not measured | needs the draw-class patches (HOLD) |
 | probes cube (the room's own cp_disco cube) | not measured | needs the compiler mode of section 6 (HOLD) |
 
@@ -383,3 +383,63 @@ from 38.5 / 49.7 % to under 5 % (the cream cell gave 0.1 / 0.0 %) with the stock
 the G-buffer pass (events 1450 to 3226) covering (640, 650); and the compile log must no longer print "is not used by the template world" for those names
 without the material being in `cp_iwz.kit_import.json`'s `materials.new`. If the black stays with the materials in the zone, the hypothesis above is wrong and the
 next suspects are the techset state (sort / flags copied from the fallback surface) and the images' streaming.
+
+## 12. The control room on the fix (worker R2b, 28 Nov 2026): the black is gone, mean distance 5.83 to 2.61
+
+Build: Studio `claude/film-blend` d1a3911 with origin/main merged (718ea33, pushed: it already had d51d97b, lacked 8c6900e), SDK `sz-blend` a368a54, compiler
+`x64-zt-layers` `zonetool.exe`, `STUDIO_EMITCACHE=0`, control room with probe room, final bake (texel 8, 256 rays, 3 bounces), kit dump roots on, poses 1, 2, 5
+(`r2\batch6.json`, `run_batch6.py`). Cells: (a) `v2_base` prefab `blend: "base"`, (b) `v2_keep` prefab `blend: "keep"`. Frames in `r2\s_v2_base`, `r2\s_v2_keep`;
+pairs in `r2\pairs_v2` (`stock_N.png`, `ours_N_base.png`, `ours_N_keep.png`, N = 1, 2, 5, full resolution, no HUD; contact sheets `r2\metric\v2_pair_N.png`).
+Metric: `r2\metric\m3_v2.md`.
+
+### Before the run (file check on the builds)
+`iwz_src\world_materials.json` of both builds (28,775 bytes, copies in `r2\v2\`) lists `w/concrete_bare_patches_clean_03`, `linoleum_floor_tiles_noline_01`,
+`concrete_wall_grunge_01`, `frag_metal_door_rusty` and `dt_tile_ceramic_white`: all present. The compile log still prints "is not used by the template world; using
+template surface defaults" 124 times (the same count as before: that line is about the template's surface defaults for flags and sort, not about the asset), and
+`kit_import.json` still lists 0 `w/` materials among its 314 new model materials (the world materials travel by `world_materials.json`, not by the kit import).
+Whether the zone itself now holds the material assets was not read from the zone (only the list and the frames).
+
+### Measured: frames
+| pose | cell | ceiling lum | wall lum | floor lum | floor b/r | floor contrast | black % | distance |
+|---|---|---|---|---|---|---|---|---|
+| 1 | stock | 0.0363 | 0.0917 | 0.1021 | 0.73 | 0.207 | 0.0 | - |
+| 1 | before (p1_final, section 8) | 0.0681 | 0.0798 | 0.0157 | 0.76 | 0.153 | 22.2 | 5.77 |
+| 1 | v2 base | 0.0396 | 0.0713 | 0.0400 | 1.09 | 0.161 | 0.0 | 2.99 |
+| 1 | v2 keep | 0.0396 | 0.0712 | 0.0400 | 1.09 | 0.161 | 0.0 | 2.99 |
+| 2 | stock | 0.0329 | 0.0654 | 0.0433 | 0.48 | 0.151 | 0.0 | - |
+| 2 | before | 0.0405 | 0.0899 | 0.0576 | 0.28 | 0.222 | 12.6 | 4.16 |
+| 2 | v2 base | 0.0405 | 0.0783 | 0.0749 | 0.39 | 0.224 | 0.0 | 2.30 |
+| 2 | v2 keep | 0.0405 | 0.0783 | 0.0749 | 0.39 | 0.223 | 0.0 | 2.30 |
+| 5 | stock | 0.0248 | 0.0537 | 0.1134 | 0.74 | 0.195 | 0.0 | - |
+| 5 | before | 0.0392 | 0.0631 | 0.0087 | 1.09 | 0.108 | 40.8 | 7.56 |
+| 5 | v2 base | 0.0498 | 0.0512 | 0.0966 | 1.17 | 0.168 | 0.0 | 2.55 |
+| 5 | v2 keep | 0.0498 | 0.0512 | 0.0966 | 1.17 | 0.169 | 0.0 | 2.55 |
+
+Mean distance over poses 1, 2, 5: C1 5.80, before 5.83, **v2 base 2.61, v2 keep 2.61**. Black share 0.0 % at every pose in both cells (expected under 5 %).
+Registration match 0.73 / 0.83 / 0.84 (before 0.44 / 0.54 / 0.33): the structure now lines up with stock. Looked at (pose 5 pair, `r2\metric\v2_pair_5.png`, stock left,
+ours right): the platform floor with the light pool and its tile joints, the girders and the vault, the car with its door openings and the lit rooms beyond, the end pillar
+tiles are all drawn. Stock has what ours lacks: the graffiti and decals on the car, the floor dirt and wet patches (ours is a clean tiled floor); ours is colder and the far lit
+room flatter.
+
+Still apart from stock (bands): floor b/r 1.09 / 0.39 / 1.17 against 0.73 / 0.48 / 0.74 (ours bluer on the floor at poses 1 and 5), wall luminance 0.071 / 0.078 / 0.051
+against 0.092 / 0.065 / 0.054, pose 5 ceiling 0.050 against 0.025 (twice as bright), floor contrast 0.161 / 0.224 / 0.168 against 0.207 / 0.151 / 0.195.
+
+### Measured: `keep` against `base`
+Same to the metric (2.99 / 2.30 / 2.55 in both); the frames differ by a mean 2.74 grey levels at pose 5, 4.6 % of the pixels by more than 8. So the stock layered
+materials draw with their layers, and the visible effect on the control frames is small at this size and exposure (the eye may see more than the metric; not judged here).
+
+### RenderDoc on (b), pose 5, floor pixel (640, 650) (`rdoc_pixel.py`, `rdoc_vslots.py`; capture `r2\cap\v2_keep_p5`, logs `r2\ao\kp*`)
+- **The floor is in the G-buffer now**: the pixel is covered by two small opaque-pass draws, events 3314 (66 indices) and 3400 (51 indices) into `83096`, and by the lit
+  pass draws 6905 (66) and 7016 (51) into the HDR target `83090`. Before the fix no draw covered it (section 11).
+- The lit pass's pixel shader (133486, 23 bound resources) has three 256 x 256 BC7 material images bound, the lightmap images (primary BC4 4096 x 2048, secondary BC6
+  4096 x 4096, secondunorm R8G8 4096 x 2048), the shadow depth, the occlusion target and the light grid volumes; none of the bound images is all-zero (statistics of
+  the first mebibyte).
+- **Slot 1 is NOT bound on the floor draws**: one vertex buffer (slot 0, stride 44: SV_POSITION, TEXCOORD0, NORMAL, TEXCOORD2). That floor material is plain, not layered,
+  so no layer stream is expected. Over the capture's 912 opaque draws, 6 world-vertex draws (stride 44) bind a second buffer (slot 2, stride 8, 9 indices: not slot 1), and the 16
+  draws with a slot 1 (stride 12) are a prop model (6,108 indices). **No world surface of this capture binds slot 1 or layer images**: "slot 1 bound, layer images bound" is
+  NOT shown for a lifted world surface; it needs a view with a layered `*` surface and a pixel on it. The capture is also darker than the live shot (no studio vision).
+
+### Ranking (section 9 updated in place)
+Closing the foreign materials removed **3.22** of the mean distance (5.83 to 2.61) and all of the black. Closing the blend layers (`keep`) removed about 0.00 on this metric.
+What remains of the 2.61 is named in the bands: the clean floor against stock's dirt, the missing graffiti and decals (decal draw classes: HOLD), the blue floor balance (probe
+cube: HOLD), the ceiling and wall levels.

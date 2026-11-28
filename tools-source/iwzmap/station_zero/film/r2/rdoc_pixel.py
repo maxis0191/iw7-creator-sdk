@@ -156,6 +156,8 @@ try:
                 info["ps"]["ro_names"] = [r.name for r in refl.readOnlyResources]
                 info["ps"]["cb_names"] = [c.name for c in refl.constantBlocks]
             info["vs"] = {"name": names.get(int(state.GetShader(rd.ShaderStage.Vertex)))}
+            info["vbuffers"] = guard("vb", lambda: [{"slot": i, "id": int(v.resourceId), "stride": int(v.byteStride), "offset": int(v.byteOffset)} for i, v in enumerate(state.GetVBuffers()) if int(v.resourceId)], [])
+            info["vertex_inputs"] = guard("vi", lambda: [{"name": a.name, "vb": int(a.vertexBuffer), "fmt": a.format.Name(), "off": int(a.byteOffset)} for a in state.GetVertexInputs()], [])
             info["srvs"] = []
             ro = guard("ro", lambda: state.GetReadOnlyResources(rd.ShaderStage.Pixel), [])
             for i, u in enumerate(ro):
