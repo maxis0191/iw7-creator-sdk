@@ -5,8 +5,9 @@ Branch `claude/sz-wonder-1`. The mechanic is measured in the game on a stand-in 
 ## Measured in the running game (28 Nov 2026, Forge, headless server, one engine bot, compressed time, cp_zmb)
 
 The mechanic on a stock stand-in weapon (`iw7_fhr_zm`), by the two plans of `tools-source/iwzmap/weapons/one_way/plans`
-(`forge run <plan> --library-dir tools-source/iwzmap/weapons/one_way`). Both pass: core 37 of 37 expectations
-(`C:\studio-data\sz\weapons\one-way\runs\core-6.json`), upgraded 13 of 13 (`upgraded-5.json`).
+(`forge run <plan> --library-dir tools-source/iwzmap/weapons/one_way`). Both pass on the final script: core 37 of 37
+expectations (`C:\studio-data\sz\weapons\one-way\runs\core-7.json`), upgraded 13 of 13 (`upgraded-7.json`). A third plan,
+`sz-oneway-carry-joined.json`, passes 8 of 8 with a real client joined (`forge run --joined`, `carry-joined-4.json`).
 
 | Rule | Measured |
 |---|---|
@@ -19,6 +20,7 @@ The mechanic on a stock stand-in weapon (`iw7_fhr_zm`), by the two plans of `too
 | First class | one bullet in the head: taken at round 33 (9,357), carried at round 34 |
 | Three tickets a zombie | four bullets on one round-35 zombie: three tickets, one wasted, taken |
 | Doors closing | a ticket issued with 250 ms left is not taken at that bell and is taken at the next |
+| Carried over, with a real client joined | hidden alone, hidden + `notsolid`, and hidden + contents 0 each still stopped a bullet where the zombie stood (41 % of the trace, the same as a zombie on the platform; three runs). So a carried zombie leaves: no-clip physics and 400 units under its place. Then a bullet passes its place (100 %; 41 % on one that stayed), it is 399 units under, and all eight are alive and back at the next bell with 395 health. Frames of the client: `C:\studio-data\sz\weapons\one-way\runs\frames\joined4_*.png` (dark; the proof is the probes) |
 | The calm | four zombies asked to sprint: 186 units a second; ticketed: 70 units a second, move mode walk |
 | Arrival (upgraded) | 12 and 3 arrivals one bell after 12 and 3 taken; unbooked round-30 zombies fall from 7,030 to 3,060 (one arrival) or die (two) |
 
@@ -26,8 +28,8 @@ Learned in these runs: a stock bullet goes on through zombies standing together 
 (62 hits for 12 bullets), so the script books only the first zombie of a shot; a script `dodamage` reaches the stock
 callback as a HEAD hit; round 30 health is 7,030 and round 34 is 10,292 in the game.
 
-**Not measured yet:** with a real player joined (the carried zombie really unseen and unhittable on a client, the
-calm seen), at real time, with 24 and with about 55 zombies alive, four players and two weapons in the game (the
+**Not measured yet:** that a PLAYER walks through a carried zombie's place (`playerphysicstrace` does not see agents
+at all, so it proves nothing here), the calm seen on a client, real time, with 24 and with about 55 zombies alive, four players and two weapons in the game (the
 logic tests cover them outside it), the specials, frame time. Nothing of the weapon itself (model, animations,
 effects, sounds, its own definition) has been in the game.
 
@@ -70,7 +72,7 @@ stock emitters), animations (they need the hands' skeleton from a stock dump), t
 
 ## The exact next steps
 
-1. Next proofs of the mechanic: a joined client (`--joined`) with frames of a carried zombie and of the calm; 24 and about 55 alive; the stock specials. (Old note, kept for the command) When `--library-dir` fails for a missing tool cache: `python -B make_gamelab.py --server <iw7-paris-server checkout> --out C:\studio-data\sz\weapons\one-way\gamelab`,
+1. Next proofs of the mechanic: a player walking through a carried zombie's place; 24 and about 55 alive; the stock specials; real time. (Old note, kept for the command) When `--library-dir` fails for a missing tool cache: `python -B make_gamelab.py --server <iw7-paris-server checkout> --out C:\studio-data\sz\weapons\one-way\gamelab`,
    then `python -B C:\forge\forge.py run plans\sz-oneway-core.json --gamelab C:\studio-data\sz\weapons\one-way\gamelab\ops\gamelab --json`
    in the background, then the upgraded plan. Read the probes against the expectations; fix the script.
 2. The model: lighter chips on the grip, the strap where it can be seen; then its export on its own skeleton (needs a stock view model as the header template).
