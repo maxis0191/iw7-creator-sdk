@@ -19,7 +19,7 @@ DRAFT: written while the bakes and sessions run; the answer and the pairs are fi
 - **Texel [r].** One global texel; the atlas is capped at 4096 x 4096 (`lmbake.py:262`). Station: 1,585,343 texels at 8 on 4096 x 2048
   (bake 357 s). Texel 4 is about 6.3 M (fits); texel 2 about 25 M does not fit for the whole document, and no region option exists.
 - **What the lift carries and loses [m].** Box stock x -150..1260, y 1950..3400, z 230..760 (both platforms, the track, the stair feet,
-  the mezzanine edge), placed by a pure translation (-13000, -7000, 0). 79,838 render triangles with shipped materials and UVs, 19,690
+  the mezzanine edge), placed by a pure translation (-7850, -6750, -400) (corrected by R2: the first placement was moved, see `control_room.OFFSET`). 79,838 render triangles with shipped materials and UVs, 19,690
   collision triangles, 537 static props (the subway car bodies included), 29 stock spots transcribed (below). Lost by the route:
   blend materials (187 of them, **32.7 % of the lifted surface area**, the platform floor among them: `*622n_89_91_282n` drawn as its base
   `concrete_bare_patches_clean_03`): their layer mix of dirt, wet and damage is gone; `wc/` decal and glass materials (blood smears,
