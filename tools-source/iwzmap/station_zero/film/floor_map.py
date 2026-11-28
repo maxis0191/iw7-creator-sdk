@@ -82,7 +82,7 @@ def measure(folder, region, n=9000, emit=None, seed=7, floor_z=None):
            'ceiling_to_floor': round(float(ce.mean() / max(fl.mean(), 1e-6)), 3) if len(ce) else None,
            'wall_to_floor': round(float(wa.mean() / max(fl.mean(), 1e-6)), 3) if len(wa) else None,
            'lights_in_region': len(per), 'lights_total': len(lt['baked']) + len(lt['runtime']),
-           'top': sorted(per, key=lambda r: -r['floor'])[:6]}
+           'top': sorted(per, key=lambda r: -r['floor'])[:60]}
     return out
 
 
