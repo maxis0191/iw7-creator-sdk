@@ -5,13 +5,14 @@ zones are their owners'). Chosen from a sweep of one-document sessions at five f
   exposure -2.5 (as before)  p5 0.005, up to 18.7 % of pixels under 0.03, p99 0.56
   -1.5                        p5 0.031, up to 6.9 %, p99 0.72
   -1.0                        p5 0.040, up to 3.2 %, p99 0.78, clipping 0.15 % (the fronts start to read bright: a showroom risk)
-  -1.25 is taken between them. Veil 0.04 is stock cp_disco's measured bloom (LIGHTING-GAP C3). Fog 0.5 at density 150 and the volumetric keys
+  -1.25 is taken between them. Fog at -1.25: 0.5 / density 150 moved nothing; 0.95 / 30 lifts the blacks (p5 0.037 to 0.066, 0 to 2.1 %
+  under 0.03, p99 0.70 to 0.87, clipping 0.11 %); 0.95 / 3000 lowers them (a lower density is a denser fog). Taken: 0.95 / 30. Veil 0.04 is stock cp_disco's measured bloom (LIGHTING-GAP C3). Fog 0.5 at density 150 and the volumetric keys
   changed the frames by less than the sweep's noise with these lights (no haze seen with the key lights at 27,000 a unit); they are kept low.
 """
 LIT_VISION = {
     'veilStrength': '0.04',
-    'fogMaxOpacity': '0.5',
-    'fogDensity': '150',
+    'fogMaxOpacity': '0.95',
+    'fogDensity': '30',
     'tonemapAutoExposureAdjust': '-1.25',
     'volumetricAmbientBrightness': '0.2',
     'volumetricAirDensity': '0.02',

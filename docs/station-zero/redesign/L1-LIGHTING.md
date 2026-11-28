@@ -84,9 +84,11 @@ The response is close to linear (x10 to x20: 1.86 to 1.89 times). The engine row
 1,000 a unit for the oblique pools (199 units), x25 to x34 straight down (238 units: the engine's falloff is a little steeper than the
 baker's). Chosen: **27,000 a document unit for a bounce light** (`studio/baselights.py BOUNCE_ROW_PER_UNIT`, the same constant in the SDK's
 `blender/blend_core.py`). Consequences for the lead: (1) a plain runtime row of a document (x1,000) is about 1/27 of the baker's light for
-the same number; (2) the darkness build's power lights are written at x840 (`sz2_recipe.DARK_LIGHTS`), about 1/32 of the baked light of the
-same layout intensity: the lit-first pass compared baked lamps with power lamps 30 times dimmer; (3) the `_sref0` floor adds 6 to 7 % to the
-same pool against the same floor without it (route a is worth little here; no mirrored front is visible in any of its frames).
+the same number; (2) INFERRED, not measured: the darkness build's power lights are written at x840 (`sz2_recipe.DARK_LIGHTS`), which by this scale is
+about 1/32 of the baked light of the same layout intensity; (3) the `_sref0` floor measured +6 to 7 % against the same floor without it,
+but its technique set is NOT verified in the zone (the compile log names the material, not `..._sref0`): route a is unproven, not
+shown worthless. The scale depends on distance over radius (the row's radius is 1x the document's, the baker's 2.5x): calibrated at
+about 0.5 to 0.6 of the radius; the ream spot sits near 0.8.
 
 ## Steps 2 to 6
 - **W1 in the Arcade** (`film/arcade_shell.py`, `film/shell_hall.py`, lights only): key mode (`KEY_BAKE`, default `bounce`) on the four shop
@@ -107,9 +109,10 @@ same pool against the same floor without it (route a is worth little here; no mi
   saturation at most 0.351, smallest channel 0.087 after squaring, a quarter of the tiles wet (gloss 245 to 252, the rest 205 to 225); 3 x 3
   tile test `art\arcade\tiles\floor_quarry2_tiletest.jpg`. Not done: wet patches with a higher F0 (alpha 15 to 25): Studio's material route
   writes F0 0.04 everywhere (`materials.py _pixels`, alpha = F0): a gloss-dependent alpha is a Studio change.
-- **W2 lit vision** (one session per variant): veil and fog moved the blacks by 0.01 at most; exposure is the lever. Chosen
-  `film/light_rules.py LIT_VISION`: veil 0.04, fog 0.5 / density 150, exposure -1.25, volumetric ambient 0.2, air 0.02, spot 0.15, set over
-  the Arcade's recipe and proposed for the map. No haze seen.
+- **W2 lit vision** (one session per variant): veil 0.04 and fog 0.5 / density 150 moved the blacks by 0.01 at most; exposure moves them
+  (-1.5, -1.0 in the table). At -1.25: fog 0.95 / density 30 lifts them (p5 0.037 to 0.066, 0 to 2.1 % under 0.03), 0.95 / 3000 lowers
+  them (`w2b\shots`). Chosen `film/light_rules.py LIT_VISION`: veil 0.04, fog 0.95 / density 30, exposure -1.25, volumetric ambient 0.2,
+  air 0.02, spot 0.15, set over the Arcade's recipe and proposed for the map. No haze seen around the key lights.
 - **W4 route d**: `settings.build {"compiler": {"env": {"IWZ_PROBES": "template"}}}` (no compiler change; the build log has no probe fill
   line). The floor is neither black nor blown (pink ground 0.0541 against 0.0555 with the flat cubes) and no mirrored picture is visible at
   `arc_east_long`: the `t33` rule is not shown to be a blocker; the reflection term is too weak to read at these glosses either way.
@@ -131,14 +134,15 @@ same pool against the same floor without it (route a is worth little here; no mi
 | stock shopfronts_2 | 0.069..0.069 | 0.0..0.0 % | 0.86..0.86 | 0.00 % | 0.253 | 0.0943 / 1.41 / 2.38 | - |
 | stock shopfronts_13 | 0.057..0.057 | 0.4..0.4 % | 0.83..0.83 | 0.00 % | 0.250 | 0.0574 / 3.48 / 2.58 | - |
 
-Targets of W2 at the final document: p5 at least 0.04 is met at `arc_east_long` (0.060) and missed by 0.002 to 0.007 at the other four;
-under 2 % below 0.03 is met at two of five (1.2 and 1.5 %), 3.0 to 3.6 % at the other three; p99 at least 0.7 and clipping under 1 % are
-met at all five. At -1.0 EV p5 is 0.036 to 0.067 and 1.0 to 3.2 % fall under 0.03 (still short on both at some cameras) while the
-fronts start to read bright: exposure alone does not reach stock's blacks; the dark corners need light (or fog that lifts them), not gain.
+Targets of W2 at the final document (`light\final\m_final.json`): p5 at least 0.04 at four of five cameras (Needle Drop 0.037); under
+2 % below 0.03 at four of five (Copy Stop 2.2 %); p99 at least 0.7 and clipping under 1 % at all five. Over all 29 cameras: clipping at
+most 0.41 %, the darkest frame a Copy Stop interior with 6.6 % under 0.03. The frames still read as a dim interior: dark ceiling between
+the live panels, shadowed corners, pools in front of the shops (sheets below; the lead and reviewers judge).
 
-Frame time (`perf_east_long.json`, Forge client cell, uncapped, dark state, the `arc_east_long` eye, one 15 s window each): baseline
-document median 5.14 ms (p99 12.8, 2,715 frames), final document median 2.79 ms (p99 5.5, 4,921 frames). The final is not slower; the
-baseline window ran on a colder cell and is not a fair comparison (one window each): the cost of the 6 key lights is not separable here.
+Frame time (`perf_east_long.json`, Forge client cell, uncapped, dark state, the `arc_east_long` eye, 15 s windows): NOT measured as a
+before / after. Two pairs, order swapped: base 5.14 ms / final 2.79 ms (base second), then base 3.01 / final 5.38 (final second): the
+second run of a pair (the colder, re-booted cell) is the slow one whatever the map; Forge served the repeats from its cache. The cost of
+the 6 key lights is below the run-to-run spread (about 2.5 ms median) and needs interleaved runs on one warm cell.
 
 Final sheets ON and OFF, all 29 cameras: `C:\studio-data\sz\film\light\final\shots\sheet_{on,off}_{0..4}.jpg`; side by side with the target
 and stock `shopfronts_8`: `final\compare_east_long_target_stock.jpg`.
@@ -152,6 +156,21 @@ and stock `shopfronts_8`: `final\compare_east_long_target_stock.jpg`.
 4. Light count and haze: stock has 10 to 29 engine spots in view, 259 of them volumetric; ours 6 key lights, none volumetric (the compiler
    writes `isVolumetric = 0`: the `vol` token of LIGHTING-GAP C3 is not built, and the sweep showed no need yet).
 5. Glow and smoke cards (C6): none placed; out of this lot.
+
+## Not done of the brief, and the order of merging
+- Sign lights, the directory board's light and the jukebox glow are not in key mode (at 27,000 a unit a light 0.2 to 8 units off a wall
+  would clip it: E1's x3 row already saturated a housing 20 units away); they stay baked. The change needed: wall fixtures whose light sits
+  far enough off the wall (or a smaller cone toward the floor) before they can be key lights.
+- Heel & Key from `arc_heel_key_front`: the stall reads lit and warm, the tagged shoes are small dark shapes; at `heel_key_counter_close`
+  they read. Not met from the hall.
+- `copy_stop_far`: the newsstand kiosk covers the ream window from that eye: the camera fails that check, not the light
+  (`arc_copy_stop_front`, `copy_stop_window_close` show the coloured reams).
+- `studio check` on a hand-written wrong `bake` value: `B.light` refuses it (ValueError, tested); a value written into a document by hand is
+  not validated by `check` (only a bounce light of group power on a dark base is refused, at emit).
+- Merge order: the SDK branch first. Studio's bounce mode on an SDK without this baker change would bake the light fully AND write the
+  27,000 row (double light). `tests/test_bounce_bake.py` skips on such an SDK.
+- Studio `gate.py` on the final head: 825 tests, 0 failures, 3 errors, all `MemoryError` in `test_review` / `test_stock_convex` while the
+  machine had 2.9 GB free; those modules pass alone (TOOL-FAULTS L1-2).
 
 ## Decisions the brief did not dictate
 - E1 A used the stock SSR floor with its own pictures (our pictures on that base need Studio `materials.py`; the patch is above); the
