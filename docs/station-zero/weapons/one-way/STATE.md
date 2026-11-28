@@ -67,6 +67,10 @@ player (`model\r10\fp.png`, 22 degrees). The lamps are the weapon's readout. The
 toward the player in every animation, or the six lamps moved to an inclined panel at the rear of the top, in a row
 across. Also left on the model: the grip is chipped almost bare (`model\r11\rear.png`); no world model yet.
 
+| The model on a STOCK view model header, its own 20 bones | `C:\studio-data\sz\weapons\one-way\model\r12\dump` (`build_model.py --skeleton`, `--base-xmodel weapon_ftlpistol_vm_fallback.xmb` of the restored cp_zmb dump; x64-zt-extensions `claude/sz-oneway-model` 3fd0e59) | read back by the lead: root `j_gun`, 20 bones, 20 surfaces, 37,386 triangles, no problem reported, the three unknown counts 0. Stock conventions checked on real view models the same day (notes of the writer): quaternion scale 32767, transWeight 2.0, part class 0, the weapon joins the hands at the bone `j_gun`, and a stock wonder weapon has bones of its own (`j_dischord_wire_*`). Still a file, not in the game: it has no materials, images, definition or animations yet |
+
+To add to the skeleton before the first build: the stock hand locators `tag_ik_loc_le` and `tag_ik_loc_ri` (every stock weapon view model has them). To reduce later: 20 surfaces (one a bone and atlas) against 5 or 6 on a stock weapon.
+
 Not started: the world model, sounds (ElevenLabs has 191 credits left of 40,000 until the reset of 9 Dec 2026), effects (they are cloned from
 stock emitters), animations (they need the hands' skeleton from a stock dump), the upgraded form at the machine, the quest hooks.
 
@@ -76,7 +80,7 @@ stock emitters), animations (they need the hands' skeleton from a stock dump), t
    then `python -B C:\forge\forge.py run plans\sz-oneway-core.json --gamelab C:\studio-data\sz\weapons\one-way\gamelab\ops\gamelab --json`
    in the background, then the upgraded plan. Read the probes against the expectations; fix the script.
 2. The model: lighter chips on the grip, the strap where it can be seen; then its export on its own skeleton (needs a stock view model as the header template).
-3. When stock dumps exist again: the root name and tags of a stock view model into `skeleton.json`; the hands' skeleton
+3. Dumps and compilers are back (28 Nov, the lead session's `C:\studio-data\sz\film\restore\RESTORE.md`). After the owner's answer on the lamps: the authored chain (`build_authored_weapon.py`) with `--skeleton` for materials and images, a weapon definition and a donor animation package as a marked stand-in, a mod zone under the Build lease, the weapon in the hands at fixed camera frames. Then the hands' skeleton
    for the animation rig; then, in the order of `DESIGN.md` section 11, the moving-bone measure on a Black Ops 3 port,
    the model on its own skeleton in the game, the first authored first-person clip.
 
