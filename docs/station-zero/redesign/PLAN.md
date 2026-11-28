@@ -92,7 +92,23 @@ Rules of the build (numbers are QUALITY-BAR rules):
 | R1 | Stock reference frames (Shaolin Shuffle's shop row and station, the projection room, Spaceland) | Forge client plans | frames in `C:\studio-data\sz\film\stockref` |
 | T1 | The Terminus section | `film/terminus.py` | after P1 and B1: the trip in the game, frames against `concept\terminus.png` |
 
-## 5. PAUSED by the owner (27 Nov 2026, about 22:30)
+## 5. State on 28 Nov 2026 (the pause of 27 Nov ended the same night; the table below it is history)
+
+Merged on `claude/sz-film` (SDK) and on Studio `main`, each lot read by the lead with its run data:
+
+| Lot | Proven in the game | Open |
+|---|---|---|
+| Base without Pack-a-Punch, trip module (B1, I1) | doors, power and perks, rounds pass; wall-buy prices from the document (1000, 1500; the base's own 1250 kept) | the default SDK checkout (`main`) has none of this: Studio builds with it stay in the dark vision after power-on, and Studio main's `bake='bounce'` rows have no matching baker there. Landing `claude/sz-film` on SDK main (local checks) removes Pack-a-Punch from the generated base for everyone |
+| Studio: own materials, island rooms, far collision, marker area, `bake='bounce'` | materials on wall, floor and mesh; a player standing in an island room; unnamed engine lights cost no record | far-collision A/B did not reproduce the old fall; gate flaky once (TOOL-FAULTS) |
+| Arcade: shell, goods of four shops, lighting (A2, A3a, A3b, L1) | reach 61/61, records 480, three reviewers name every shop's trade blind | Heel & Key's rifle not buyable from the hall, D4 purchase charged nothing on a client (I1, in work); no floor reflection; hall wide |
+| Terminus (T1, I1) | the trip, the purchase in the island room (5,000), the prompt without "Pack-a-Punch", the machine at 0.46 of the paper | clock static, no beam dust, reels unverified, vision of a downed rider |
+| One document (I1) | 9 of 10 plans on the final bake | the tenth is the rifle |
+| Blind review 1 | ours 4.61, stock 7.55; "could ship" 0 of 42 against 41 of 42 ([REVIEW-1](REVIEW-1.md)) | control experiment C1 decides assets against pipeline before any rebuild |
+
+Not done: real reflection probes, the copy by Gemini 4 Neon (every sign text is Gemini 4 Hydrogen's or a marked
+placeholder), the seventeen other zones.
+
+### History: PAUSED by the owner (27 Nov 2026, about 22:30)
 
 Every worker is stopped; no `studio live` session is recorded for any document of this package; every branch below is
 pushed (0 unpushed, clean worktrees). One idle Forge cell on `cp_iwz` is the daemon's own. Nothing was reviewed by the
