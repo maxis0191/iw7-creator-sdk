@@ -18,15 +18,16 @@ The disk clean of 28 Nov removed the retained test stock (`IW7-Runtime\private-t
 and the stock weapon dumps. Ledger: `test-stock-root-gone`, `forge-library-dir-gsc-tool`. The lead session was asked
 who restores it; this session does not touch the stock.
 
-## In work (helpers, no game needed)
+## Built since the resume, without the game
 
-| Item | Where |
-|---|---|
-| Blender generator of direction A, with preview renders | x64-zt-extensions branch `claude/sz-oneway-model` (worktree `worktrees\xzte-oneway`); renders in `C:\studio-data\sz\weapons\one-way\model` |
-| Own-skeleton mode of the model writer (`build_model.py --skeleton`), offline tests only | x64-zt-extensions branch `claude/own-skeleton-writer` (worktree `worktrees\xzte-ownskel`) |
+| Item | Where | Proven how |
+|---|---|---|
+| The mechanic's rules | `tools-source/iwzmap/weapons/one_way/test_oneway_logic.py` | 13 tests in 0.1 s in Forge's script interpreter (gscvm), no script error: tickets, the beat, flat sums, taken / carried / stayed, six cars, the 12 s rule, refund, arrivals, two owners. Not the game: the stock damage callback is a stand-in |
+| Blender generator of direction A | x64-zt-extensions branch `claude/sz-oneway-model` (7aa3358): `tools-source/asset-bridge/t7-weapons/authored/one_way_gun.py`, `one_way.params.json` | 37,386 triangles, 148 parts, each tagged with its bone key; five preview renders per round in `C:\studio-data\sz\weapons\one-way\model10` read by the lead (product, left, fp). The helper's unwrap and bake ran to the end on Blender 5.2 with no game data (an earlier round, 540 s). Left: chips too heavy on the grip, the strap hidden behind the body; never exported, never in the game |
+| Own-skeleton mode of the model writer | x64-zt-extensions branch `claude/own-skeleton-writer` (776320f): `tools-source/iw7-skinned-writer/skeleton.py`, `build_model.py --skeleton <spec.json>` | 34 tests of the folder pass (16 new), the old path's bytes unchanged, `skeleton.json` of this weapon loads. Unverified against stock data: the quaternion scale (32767 or 32768), the per-bone bounds, three records copied from the base |
 
-Not started: sounds (ElevenLabs has 191 credits left of 40,000 until the reset of 9 Dec 2026), effects, animations
-(they need the hands' skeleton from a stock dump), the upgraded form at the machine, the quest hooks.
+Not started: sounds (ElevenLabs has 191 credits left of 40,000 until the reset of 9 Dec 2026), effects (they are cloned from
+stock emitters), animations (they need the hands' skeleton from a stock dump), the upgraded form at the machine, the quest hooks.
 
 ## The exact next steps
 
