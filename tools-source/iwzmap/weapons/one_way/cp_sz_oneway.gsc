@@ -12,6 +12,8 @@
 //   carried  health not covered: at most 6 a bell per owner, oldest ticket first, hidden and held, put back at the
 //            next bell, down 1.5 s; for 12 s after that it is neither calmed nor carried
 //   full     6 or more taken on one bell by one owner: 1 ticket back for 2 taken (upgraded: 2 for 3)
+//   insta    while the Insta-Kill pickup runs, any ticket covers an ordinary zombie at the bell
+//   leaves   a player who leaves cancels his tickets
 //   upgraded every zombie taken for good comes back one bell later as an arrival: 3,970 to unbooked ordinary
 //            zombies within 120 units, at most two arrivals a zombie a bell
 // Hooks are chained (the previous function runs first). Lines "[SZ oneway] ..." are the trace the plans read.
@@ -40,6 +42,8 @@ ow_init()
     level.ow_carried = [];
     level.ow_arrivals = [];
     level.ow_bells = 0;
+    level.ow_keys = 0;
+    level.ow_gone = [];
     level.ow_prev_damage = level.onzombiedamage_func;
     level.onzombiedamage_func = ::ow_damage;
     level.ow_prev_reward = level.eligable_for_reward_func;
@@ -144,8 +148,15 @@ ow_issue( owner, weapon, head )
         if ( up )
             value = level.ow_u1;
     }
+    if ( !isdefined( owner.ow_key ) )
+    {
+        level.ow_keys++;
+        owner.ow_key = level.ow_keys;
+        level thread ow_owner_watch( owner, owner.ow_key );
+    }
     tix = spawnstruct();
     tix.owner = owner;
+    tix.key = owner.ow_key;
     tix.value = value;
     tix.head = head;
     tix.up = up;
@@ -208,6 +219,15 @@ ow_clock()
     }
 }
 
+// A player who leaves cancels his tickets (his carried are put back at the next bell like any other).
+ow_owner_watch( owner, key )
+{
+    level endon( "game_ended" );
+    owner waittill( "disconnect" );
+    level.ow_gone[key] = 1;
+    print( "[SZ oneway] LEFT key=" + key );
+}
+
 ow_owner_of( tix )
 {
     // whoever issued most; the first to issue if equal
@@ -265,7 +285,7 @@ ow_bell( dep )
         later = [];
         foreach ( x in z.ow_tix )
         {
-            if ( !isdefined( x.owner ) )
+            if ( !isdefined( x.owner ) || isdefined( level.ow_gone[x.key] ) )
                 continue;               // its owner left: the ticket is cancelled
             if ( x.dep <= dep )
                 now[now.size] = x;
@@ -300,6 +320,8 @@ ow_bell( dep )
         ordinary = z ow_ordinary();
         if ( !ordinary )
             sum = int( min( sum, level.ow_special_cap ) );
+        else if ( isdefined( level.insta_kill ) && level.insta_kill )
+            sum = int( max( sum, z.health ) );      // Insta-Kill: any ticket is enough
         if ( z.ow_tix.size == 0 )
             z ow_uncalm();
         health = z.health;
@@ -317,16 +339,15 @@ ow_bell( dep )
                 a = spawnstruct();
                 a.origin = origin;
                 a.owner = owner;
+                a.key = owner.ow_key;
                 a.weapon = now[0].weapon;
                 level.ow_arrivals[level.ow_arrivals.size] = a;
             }
             print( "[SZ oneway] TAKEN victim=" + id + " owner=" + key + " sum=" + sum + " health=" + health + " tickets=" + now.size + " dep=" + dep );
-            z.ow_due = sum;
-            z dodamage( sum, origin, owner, owner, "MOD_UNKNOWN", now[0].weapon );
+            z ow_rated( sum, origin, owner, now[0].weapon );
             continue;
         }
-        z.ow_due = sum;
-        z dodamage( sum, origin, owner, owner, "MOD_UNKNOWN", now[0].weapon );
+        z ow_rated( sum, origin, owner, now[0].weapon );
         if ( !isalive( z ) )
             continue;
         immune = isdefined( z.ow_immune ) && t < z.ow_immune;
@@ -345,7 +366,8 @@ ow_bell( dep )
         {
             stayed++;
             ow_stat( owner, "stayed", 1 );
-            z thread ow_flinch();
+            if ( ordinary )
+                z thread ow_flinch();
             print( "[SZ oneway] STAYED victim=" + id + " owner=" + key + " sum=" + sum + " left=" + z.health + " ordinary=" + ordinary + " immune=" + immune + " dep=" + dep );
         }
     }
@@ -408,6 +430,17 @@ ow_bell( dep )
         print( "[SZ oneway] BELL dep=" + dep + " t=" + t + " booked=" + booked.size + " taken=" + ntaken + " carried=" + ncarried + " stayed=" + stayed + " back=" + back + " arrivals=" + arrivals.size + " arrival_kills=" + nkilled );
     }
     level notify( "ow_bell", dep );
+}
+
+// Exactly `amount` to this zombie, credited to `owner`. The stock callback can return before it reaches the hook
+// (retail gametype_zombie.gsc: explosive touch on a special, a frozen zombie, a meteor hit), so the amount asked
+// is never left on the zombie for the next hit of another weapon.
+ow_rated( amount, origin, owner, weapon )
+{
+    self.ow_due = amount;
+    self dodamage( amount, origin, owner, owner, "MOD_UNKNOWN", weapon );
+    if ( isdefined( self ) )
+        self.ow_due = undefined;
 }
 
 ow_flinch()
@@ -515,7 +548,7 @@ ow_arrive( arrivals, dep )
         z.ow_arr = 0;
     foreach ( a in arrivals )
     {
-        if ( !isdefined( a.owner ) )
+        if ( !isdefined( a.owner ) || isdefined( level.ow_gone[a.key] ) )
             continue;
         hit = 0;
         foreach ( z in zombies )
@@ -531,8 +564,7 @@ ow_arrive( arrivals, dep )
             z.ow_arr++;
             hit++;
             health = z.health;
-            z.ow_due = level.ow_arrival;
-            z dodamage( level.ow_arrival, a.origin, a.owner, a.owner, "MOD_UNKNOWN", a.weapon );
+            z ow_rated( level.ow_arrival, a.origin, a.owner, a.weapon );
             if ( isalive( z ) )
                 z thread ow_flinch();
             else

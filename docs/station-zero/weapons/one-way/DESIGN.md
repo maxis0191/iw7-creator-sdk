@@ -111,7 +111,8 @@ within 96 units of that place or it is no longer walkable, at the nearest walkab
 every player within 256, or else at a spawner of its zone. If the last zombie of a round is carried, the round
 waits for it: with the 12 s rule a round can be held open by one ticket every 18 s or so, which is the series'
 usual last-zombie hold and costs tickets. A refund beyond a full reserve is lost. A player who goes down keeps
-his tickets out; a player who leaves cancels his, and his carried are put back at the next re-issue.
+his tickets out; a player who leaves cancels his, and his carried are put back at the next re-issue. While the
+Insta-Kill pickup runs, any ticket is enough for an ordinary zombie at the bell (the specials keep their cap).
 
 **Why it is not overpowered.** It never kills at once: every kill waits for the bell, three seconds on average.
 Twelve tickets a stack; past round 24 a zombie costs two; past 35 it needs a head; past 45 the base weapon takes

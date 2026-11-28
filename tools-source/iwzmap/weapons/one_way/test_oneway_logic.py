@@ -30,6 +30,8 @@ t_callback( inflictor, attacker, damage, flags, mod, weapon, point, dir, hitloc 
 {
     if ( self.health <= 0 )
         return;
+    if ( isdefined( self.t_early ) && mod == "MOD_UNKNOWN" )
+        return;                         // retail returns before the hook in some cases (explosive touch on a special...)
     damage = self [[ level.onzombiedamage_func ]]( inflictor, attacker, damage, flags, mod, weapon, point, dir, hitloc, 0, 0, "" );
     damage = int( min( damage, self.maxhealth ) );
     self.t_hits[self.t_hits.size] = damage;
@@ -335,6 +337,79 @@ class OneWay(unittest.TestCase):
         self.assertEqual(self.stat("arrival_kills", up), 2)
         self.bell()
         self.assertEqual(self.stat("arrivals", up), 12, "an arrival makes no arrival")
+
+
+    def test_rated_damage_is_never_left_for_the_next_hit(self):
+        z = self.zombie(50000, kind="zombie_brute")
+        z.f["t_early"] = 1               # the stock callback returns before the hook for this bell
+        q = self.player("Bob", weapon="iw7_fhr_zm")
+        self.sync(3000)
+        self.shoot(z, head=1)
+        self.bell()
+        self.assertEqual(z.f["health"], 50000, "the bell's damage did not reach the hook")
+        self.shoot(z, who=q)
+        self.assertEqual(z.f["health"], 49900, "another weapon's hit is its own 100, not the stale 2,000")
+
+    def test_special_that_stays_is_not_stunned(self):
+        z = self.zombie(50000, kind="zombie_brute")
+        self.sync(3000)
+        self.shoot(z)
+        self.bell()
+        self.assertIs(z.f.get("stunned", Undefined), Undefined)
+        self.assertEqual(self.stat("stayed"), 1)
+
+    def test_a_player_who_leaves_cancels_his_tickets(self):
+        q = self.player("Bob")
+        a, b = self.zombie(1045), self.zombie(1045)
+        self.sync(5000)
+        self.shoot(a, who=q)
+        self.shoot(b)
+        self.vm.notify(q, "disconnect", [])
+        self.vm.run_for(0.05)
+        self.bell()
+        self.assertEqual((a.f["health"], b.f["health"]), (1045, 0))
+        self.assertEqual((self.stat("taken"), q.f["t_kills"]), (1, 0))
+
+    def test_four_owners(self):
+        ps = [self.p] + [self.player(n) for n in ("Bob", "Cy", "Di")]
+        z = self.zombie(11000)
+        mine = [[self.zombie(1045) for _ in range(6)] for _ in ps]
+        self.sync(5000)
+        for who in ps[1:]:
+            self.shoot(z, who=who)       # Bob, Cy, Di: one ticket each on the shared zombie; Ann's is the fourth
+        self.shoot(z)
+        for who, zs in zip(ps, mine):
+            for y in zs:
+                self.shoot(y, who=who)
+        self.bell()
+        self.assertEqual(z.f["health"], 0, "three owners' tickets add on one zombie")
+        self.assertEqual([self.stat("taken", w) for w in ps], [6, 7, 6, 6], "equal tickets: the first to issue has the kill")
+        self.assertEqual(self.stat("wasted"), 1)
+        self.assertEqual([self.stat("full", w) for w in ps], [1, 1, 1, 1], "each weapon counts its own full train")
+        self.assertEqual([w.f["t_stock"] for w in ps], [13, 13, 13, 13])
+
+    def test_six_carried_per_owner(self):
+        q = self.player("Bob")
+        za = [self.zombie(4365) for _ in range(7)]
+        zb = [self.zombie(4365) for _ in range(7)]
+        self.sync(5000)
+        for y in za:
+            self.shoot(y)
+        for y in zb:
+            self.shoot(y, who=q)
+        self.bell()
+        self.assertEqual((self.stat("carried"), self.stat("stayed")), (6, 1))
+        self.assertEqual((self.stat("carried", q), self.stat("stayed", q)), (6, 1))
+
+    def test_insta_kill_makes_any_ticket_enough(self):
+        z, boss = self.zombie(47300), self.zombie(47300, kind="zombie_brute")
+        self.vm.level.f["insta_kill"] = 1
+        self.sync(3000)
+        self.shoot(z)
+        self.shoot(boss)
+        self.bell()
+        self.assertEqual((z.f["health"], boss.f["health"]), (0, 45300))
+        self.assertEqual(self.stat("taken"), 1)
 
 
 if __name__ == "__main__":
