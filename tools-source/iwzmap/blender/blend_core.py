@@ -34,6 +34,7 @@ import mapgen  # noqa: E402
 import scenegen  # noqa: E402
 
 CELL = 32
+BOUNCE_ROW_PER_UNIT = 27000.0      # measured in the game, see Studio baselights.py; lights.txt intensity per document unit of a `bake: 'bounce'` light (the same constant as Studio's baselights.py; L1, 28 Nov 2026)
 NAV_LIFT = scenegen.NAV_LIFT
 MAX_TRIS_PER_SURFACE = 20000       # 3 unshared vertices a triangle stay far under the u16 limit of 65,535
 DEG_AREA = 1e-3                    # square inches: below this a triangle is degenerate
@@ -1302,7 +1303,8 @@ class BlendEmitter(scenegen.Emitter):
             if L.get('runtime'):
                 nrun[rec['type']] = nrun.get(rec['type'], 0) + 1
                 nshadow += 1 if rec.get('shadows') else 0
-                row = '%s %g %g %g %g %g %g %g %g' % (rec['type'], x, y, z, *rec['color'], rec['intensity'] * 1000.0, rec['radius'])
+                per_unit = BOUNCE_ROW_PER_UNIT if L.get('bake') == 'bounce' else 1000.0
+                row = '%s %g %g %g %g %g %g %g %g' % (rec['type'], x, y, z, *rec['color'], rec['intensity'] * per_unit, rec['radius'])
                 if rec['type'] == 'spot':
                     d = rec['dir']
                     pitch = -math.degrees(math.asin(max(-1, min(1, d[2]))))

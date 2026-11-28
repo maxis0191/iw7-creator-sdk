@@ -200,8 +200,10 @@ def fronts_by_models(A, m):
                 n += 1
         rgb, inten, rad, z = POOL[name]
         cx = (x0 + x1) / 2
-        org = (cx, A.Y1 - 14.0, z)
+        # L1 (28 Nov): a key light (engine direct, baked bounce). 32 in front of the fascia's face and just under it, a 45-degree cone: at 14 off the
+        # front with a 60-degree cone the engine light hit the shutter housing 20 units away and clipped (E1 x3)
+        org = (cx, A.FASCIA[2] - 32.0, z)
         d = (0.0, 4170.0 - org[1], -org[2])
         ln = math.sqrt(sum(c * c for c in d))
-        A.lamp(m, 'light_pool_%s' % name, org, name, key=True, color=rgb, radius=rad, intensity=inten, type='spot', dir=[round(c / ln, 4) for c in d], inner=30.0, outer=60.0)
+        A.lamp(m, 'light_pool_%s' % name, org, name, key=True, color=rgb, radius=rad, intensity=inten, type='spot', dir=[round(c / ln, 4) for c in d], inner=25.0, outer=45.0)
     A.REPORT.setdefault('hall', {})['bulb_strips'] = n

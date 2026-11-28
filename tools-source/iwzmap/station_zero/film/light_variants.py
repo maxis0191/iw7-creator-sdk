@@ -40,7 +40,7 @@ def main(argv):
     if '--floor' in opt:
         SHELL.MAT['floor'] = opt['--floor']
     pools = opt.get('--pools', 'baked')
-    if pools != 'baked':
+    if pools != 'baked' or '--pool-geom' in opt or '--pool-k' in opt:
         lamp0 = SHELL.lamp
 
         pk = float(opt.get('--pool-k', '1'))
@@ -57,7 +57,11 @@ def main(argv):
                     for k in ('dir', 'inner', 'outer'):
                         kw.pop(k, None)
                     kw['type'] = 'omni'
-                kw.update(runtime=True, bake=False) if pools == 'runtime' else kw.update(runtime=True, bake='bounce')
+                kw['key'] = False              # the pools' mode is this option's, not the shell's KEY_BAKE
+                if pools == 'runtime':
+                    kw.update(runtime=True, bake=False)
+                elif pools == 'bounce':
+                    kw.update(runtime=True, bake='bounce')
             return lamp0(m, id, origin, role, **kw)
         SHELL.lamp = lamp
     m, done, missing = arcade_doc.build()

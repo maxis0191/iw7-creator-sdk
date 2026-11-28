@@ -491,10 +491,10 @@ def needle_drop(m):
     fix(m, 'pendant_warm', (cx - 40.0, Y1 + 110.0, UNIT_H), role=nm, intensity=1.15, radius=0.75)
     fix(m, 'pendant_warm', (cx + 50.0, Y1 + 110.0, UNIT_H), role=nm, intensity=1.15, radius=0.75)
     fix(m, 'spot_can', ((door_x1 + a1) / 2, gy + 24.0, UNIT_H), role=nm, color=(1.0, 0.5, 0.16), intensity=1.4, radius=0.7)
-    lamp(m, 'light_nd_jukebox', (cx + 80.0, jy - 30.0, 40.0), nm, key=True, color=(1.0, 0.52, 0.18), radius=190.0, intensity=0.9)
+    lamp(m, 'light_nd_jukebox', (cx + 80.0, jy - 30.0, 40.0), nm, color=(1.0, 0.52, 0.18), radius=190.0, intensity=0.9)
     # the fascia's marquee: two bulb strips under the fascia
     for k, dx in enumerate((-75.0, 75.0)):
-        fix(m, 'bulb_strip', (cx + dx, Y1 - 6.0, (HOUSING[0] + HOUSING[1]) / 2), 270.0, role=nm, key=True, kelvin=2000, intensity=0.75, radius=1.0)
+        fix(m, 'bulb_strip', (cx + dx, Y1 - 6.0, (HOUSING[0] + HOUSING[1]) / 2), 270.0, role=nm, kelvin=2000, intensity=0.75, radius=1.0)
 
 
 def copy_stop(m):
@@ -561,10 +561,12 @@ def copy_stop(m):
     fix(m, 'ceiling_tube_blue', (cx + 110.0, Y1 + 90.0, UNIT_H), 0.0, role=nm, intensity=1.0, radius=0.8)
     B.prop(m, 'cp_disco_fluorescent_light_off', (bay[0] + 70.0, Y1 + 100.0, UNIT_H), yaw=90.0, layer='fronts', id='cs_tube_dead')
     for k, dx in enumerate((-110.0, 110.0)):
-        fix(m, 'wall_led', (cx + dx, Y1 - 6.0, (HOUSING[0] + HOUSING[1]) / 2), 270.0, role=nm, key=True, kelvin=6800, intensity=1.1, radius=0.8)
+        fix(m, 'wall_led', (cx + dx, Y1 - 6.0, (HOUSING[0] + HOUSING[1]) / 2), 270.0, role=nm, kelvin=6800, intensity=1.1, radius=0.8)
     # L1, goods worker's request (28 Nov): the ream wall in the west window (x -2604..-2500, y 4312..4334, boards z 16..104) read dark grey from
     # 800 (the north lane's tubes are dead). A cold spot from the hall's grid in front of the shop, aimed at the wall's face: the reams are the lit thing
-    aim(m, fix(m, 'spot_can', (-2552.0, 4180.0, GRID_Z), role=nm, key=True, color=(0.88, 0.93, 1.0), intensity=1.6, radius=0.9), (-2552.0, 4323.0, 58.0))   # the pool's blue-white: rule 12 keeps the hall at four hue classes (8500 K read 'cool', a fifth)
+    # (from y 4180 the beam crossed the fascia box: base frame of 28 Nov; from y 4000 it passes under the fascia, z 89 at its face, and through the
+    # opening, z 71 at y 4300. The window glass shadows a BAKED light: only the engine light reaches the reams)
+    aim(m, fix(m, 'spot_can', (-2552.0, 4000.0, GRID_Z), role=nm, key=True, color=(0.88, 0.93, 1.0), intensity=1.6, radius=1.7), (-2552.0, 4323.0, 58.0))   # the pool's blue-white: rule 12 keeps the hall at four hue classes (8500 K read 'cool', a fifth)
 
 
 def photo_booth(m, xe, y0):
@@ -630,7 +632,7 @@ def hole_nine(m):
     partition(m, nm, x0, x1, cx - 10.0)
     back_spawners(m, nm, x0, x1, 2)
     # light: pink neon and pink shades, one warm downlight over the till; the kitchen stays dark
-    fix(m, 'neon_open', (cx - 40.0, PART_Y - 0.2, 118.0), 270.0, role=nm, key=True, intensity=1.3, radius=1.1)
+    fix(m, 'neon_open', (cx - 40.0, PART_Y - 0.2, 118.0), 270.0, role=nm, intensity=1.3, radius=1.1)
     fix(m, 'pendant', (cx - 70.0, Y1 + 50.0, UNIT_H), role=nm, color=(1.0, 0.48, 0.72), intensity=0.9, radius=0.65)
     fix(m, 'pendant', (cx + 10.0, Y1 + 50.0, UNIT_H), role=nm, color=(1.0, 0.48, 0.72), intensity=0.9, radius=0.65)
     ids = fix(m, 'downlight', (cx - 20.0, Y1 + 60.0, UNIT_H), role=nm, kelvin=2700, intensity=1.2, radius=0.85)   # A3b request 4: a spot on the rack front, not a new light
@@ -640,7 +642,7 @@ def hole_nine(m):
         ln = math.sqrt(sum(c * c for c in d))
         m.update(lid, dir=[round(c / ln, 4) for c in d])
     for k, px in enumerate((x0 + 8.0, x1 - 8.0)):
-        fix(m, 'outdoor_wall', (px, Y1 - 8.0, 120.0), 270.0, role=nm, key=True, intensity=0.8, radius=0.8)
+        fix(m, 'outdoor_wall', (px, Y1 - 8.0, 120.0), 270.0, role=nm, intensity=0.8, radius=0.8)
 
 
 def heel_key(m):
@@ -674,7 +676,7 @@ def heel_key(m):
     fix(m, 'desk_lamp', (cx - 50.0, Y1 + 90.0, 36.0), 0.0, role=nm, kelvin=2400, intensity=1.3, radius=1.0)
     fix(m, 'downlight', (cx, Y1 + 65.0, UNIT_H), role=nm, kelvin=2600, intensity=1.0, radius=0.9)          # A3a request 2: the stall's goods read from the hall
     for k, px in enumerate((x0 + 8.0, x1 - 8.0)):             # two caged bulkheads on the piers: the stall's front in tungsten (pass 1: its fascia was black)
-        fix(m, 'bulkhead', (px, Y1 - 8.0, 140.0), 270.0, role=nm, key=True, kelvin=2500, intensity=0.9, radius=0.9)
+        fix(m, 'bulkhead', (px, Y1 - 8.0, 140.0), 270.0, role=nm, kelvin=2500, intensity=0.9, radius=0.9)
     # L1, goods worker's request (28 Nov): the stall read "repair counter"; the tagged shoes on the pegboard (y 4410, z 40..150) must be the lit
     # thing: a tungsten spot under the stall's ceiling just behind the counter, aimed at the pegboard's middle, seen under the shutter (z 42..120)
     aim(m, fix(m, 'spot_can', (cx + 30.0, Y1 + 34.0, UNIT_H), role=nm, key=True, kelvin=2700, intensity=1.3, radius=0.8), (cx + 10.0, peg_y - 1.0, 92.0))
@@ -706,7 +708,7 @@ def south_wall(m):
     bx(m, 'directory_frame', [dx - 66.0, y, 68.0, dx + 66.0, y + 6.0, 236.0], 'w/wood_antique_panel_trim_01')
     rbox(m, 'directory_cap', [dx - 70.0, y, 236.0, dx + 70.0, y + 10.0, 240.0], MAT['alu'])
     picture(m, 'directory_face', 'directory_board.png', (dx, y + 6.0, 152.0), (0.0, 1.0, 0.0), (120.0, 160.0))
-    ids = fix(m, 'wall_led', (dx, y + 0.5, 239.0), 90.0, role='hall', key=True, kelvin=4800, intensity=1.3, radius=0.7)
+    ids = fix(m, 'wall_led', (dx, y + 0.5, 239.0), 90.0, role='hall', kelvin=4800, intensity=1.3, radius=0.7)
     for lid in ids[1:]:
         o = m.get(lid)
         org = [dx, y + 26.0, 236.0]
