@@ -117,6 +117,26 @@ unknown; with the kit roots a bench's foot ratio goes 0.994 -> 0.571); a finer t
 last diagnostic (are the black surfaces lost by the final bake?), the final pairs to three reviewers, then the method
 decision of [REVIEW-1](REVIEW-1.md). First fix in any case: the baker's dump roots (Studio, a few lines).
 
+**Resumed 28 Nov 2026, late morning.** `claude/sz-film` is on SDK `main` (8790cb4, 25 local checks). A disk clean (not
+this package's) deleted the machine's working data; it was rebuilt and proven by a full build of the one document (check
+ok, 39 frames at noise level against the frames of the morning, 6 of 6 plans): the kit and the list of what is lost for
+good are `ops/restore` and `docs/RESTORE-RUNTIME.md` in iw7-paris-server. R2 ([R2-PARITY](R2-PARITY.md), branch
+`claude/sz-film-control`) runs the control again with a narrowed scope.
+
+**The decision rule, written before the control's frames exist.** The control does not answer "assets or pipeline": the
+reviewers' own words already establish the asset fault for our boxes (REVIEW-1, causes 1, 2, 4). What it gives:
+
+1. A ranking of the pipeline gaps (black floors, probe room, draft against final bake, prop shadows, SSAO, blend
+   layers, decals) by the metric distance to stock that closing each removes on the lifted room. Gaps are fixed in that
+   order; the layer-stream compiler patch is started only if blend loss ranks in the first two.
+2. The lifted room's best cell against stock in front of three blind reviewers (same form as review 1):
+   - lifted room within 1.0 of stock overall: the pipeline is good enough; the next round of both sections is
+     construction only (stock construction pieces and materials of one donor kit, REVIEW-1's method paragraph).
+   - between 1.0 and 2.0 under: construction starts on the Arcade's hall in parallel with the first two ranked gaps.
+   - more than 2.0 under: no section is rebuilt until the first ranked gap is closed and the control is run again; a
+     rebuild through a pipeline that loses two points on stock's own room cannot reach the bar.
+3. In every case the section's bar stays REVIEW-1's last paragraph (two of three "could ship", within one point of stock).
+
 Not done: real reflection probes, the copy by Gemini 4 Neon (every sign text is Gemini 4 Hydrogen's or a marked
 placeholder), the seventeen other zones.
 
