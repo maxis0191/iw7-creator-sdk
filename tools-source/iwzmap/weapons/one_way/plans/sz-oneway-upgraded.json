@@ -1,0 +1,56 @@
+{
+  "schema": "iw7.gamelab-plan/1",
+  "name": "sz_oneway_upgraded",
+  "map": "cp_zmb",
+  "conditions": "quiet",
+  "libraries": ["cp_sz_oneway", "szoneway_driver"],
+  "about": "ONE WAY upgraded, on a stock stand-in weapon counted as upgraded: second class 8,510, the refund of two tickets for three taken, and the arrival: every zombie taken for good comes back one bell later where it was taken, 3,970 to unbooked ordinary zombies within 120 units, at most two arrivals a zombie. Then the calm, measured: zombies asked to sprint by the stock call run at the bot, are ticketed, and walk. Headless on cp_zmb, stock spawning off.",
+  "steps": [
+    {"do": "waves", "on": false},
+    {"do": "ignore", "on": true},
+    {"do": "tp", "at": [1467.65, 4134.45, 0.2], "yaw": 0},
+    {"do": "give", "weapon": "iw7_fhr_zm"},
+    {"do": "ammo", "clip": 30, "stock": 10},
+    {"do": "call", "fn": "owt_start", "args": ["start", "iw7_fhr", 1], "s": 1},
+
+    {"do": "spawn", "tag": "a", "at": [1767, 4134, 0], "count": 12, "round": 32},
+    {"do": "until", "what": "alive", "n": 12, "s": 20},
+    {"do": "call", "fn": "owt_case", "args": ["a", "a", 1, 0, 0, 5000], "s": 14},
+    {"do": "call", "fn": "owt_after", "args": ["a2", "a"], "s": 8},
+    {"do": "kill", "tag": "a"},
+
+    {"do": "spawn", "tag": "g", "at": [1767, 4134, 0], "count": 6, "round": 30},
+    {"do": "until", "what": "alive", "n": 6, "s": 20},
+    {"do": "call", "fn": "owt_case", "args": ["g", "g", 1, 0, 3, 5000], "s": 14},
+    {"do": "call", "fn": "owt_after", "args": ["g2", "g"], "s": 8},
+    {"do": "kill", "tag": "g"},
+
+    {"do": "ignore", "on": false},
+    {"do": "spawn", "tag": "r", "at": [2367, 4134, 0], "count": 4, "round": 50},
+    {"do": "until", "what": "alive", "n": 4, "s": 20},
+    {"do": "call", "fn": "owt_mode", "args": ["r_mode", "r", "sprint"], "s": 1},
+    {"do": "wait", "s": 1},
+    {"do": "call", "fn": "owt_speed", "args": ["r_run", "r", 1.5], "s": 2},
+    {"do": "call", "fn": "owt_issue", "args": ["r_issue", "r", 1, 0, 0], "s": 1},
+    {"do": "wait", "s": 1},
+    {"do": "call", "fn": "owt_speed", "args": ["r_calm", "r", 1.5], "s": 2},
+    {"do": "call", "fn": "owt_z", "args": ["r_z", "r"], "s": 1},
+    {"do": "ignore", "on": true},
+    {"do": "kill", "tag": "r"},
+
+    {"do": "expect", "that": "probe:start.up", "eq": 1, "why": "the stand-in counts as upgraded"},
+    {"do": "expect", "that": "probe:a_stat.taken", "eq": 12, "why": "an upgraded second-class ticket (8,510) covers round 32 (8,507)"},
+    {"do": "expect", "that": "probe:a_stat.refund", "eq": 8, "why": "two tickets back for three taken: twelve give eight"},
+    {"do": "expect", "that": "probe:a2_stat.arrivals", "eq": 12, "why": "every zombie taken for good comes back one bell later as an arrival"},
+
+    {"do": "expect", "that": "probe:g_stat.taken", "eq": 15, "why": "three of the six were ticketed and taken (round 30: 7,020)"},
+    {"do": "expect", "that": "probe:g_z.alive", "eq": 3, "why": "the three unbooked are untouched by the bell"},
+    {"do": "expect", "that": "probe:g_z.hmin", "near": 7020, "tol": 3, "why": "and keep their health until the arrival"},
+    {"do": "expect", "that": "probe:g2_stat.arrivals", "eq": 15, "why": "three arrivals one bell later"},
+    {"do": "expect", "that": "probe:g2_stat.arrival_kills", "ge": 1, "why": "an unbooked zombie within 120 units of two arrivals takes 7,940 and dies (how many stand that close is read in the trace)"},
+
+    {"do": "expect", "that": "probe:r_issue.issued", "eq": 4, "why": "four tickets on four runners"},
+    {"do": "expect", "that": "probe:r_run.speed", "gt": "@probe:r_calm.speed", "why": "a booked zombie moves slower than it ran"},
+    {"do": "expect", "that": "probe:r_z.walk", "eq": 4, "why": "all four were put to a walk by the ticket"}
+  ]
+}

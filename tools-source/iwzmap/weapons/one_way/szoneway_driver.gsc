@@ -157,3 +157,33 @@ owt_speed( name, tag, seconds )
         mean = sum / n;
     print( "[IWZ local] GL PROBE name=" + name + " n=" + n + " speed=" + int( mean ) + " modes=" + modes );
 }
+
+// One case, self-contained whatever the plan's pace: wait until `ms` are left before the bell, issue `per` tickets to
+// the first `limit` zombies of the tag (0 = all), print <name>_issue and <name>_booked, wait for the next bell, print
+// <name>_stat and <name>_z.
+owt_case( name, tag, per, head, limit, ms )
+{
+    self owt_sync( name + "_sync", ms );
+    self owt_issue( name + "_issue", tag, per, head, limit );
+    self owt_z( name + "_booked", tag );
+    self owt_bell( name + "_bell" );
+    self owt_stat( name + "_stat" );
+    self owt_z( name + "_z", tag );
+}
+
+// the bell after: <name>_stat and <name>_z once it has rung
+owt_after( name, tag )
+{
+    self owt_bell( name + "_bell" );
+    self owt_stat( name + "_stat" );
+    self owt_z( name + "_z", tag );
+}
+
+// the tag's zombies are asked to move in a mode by the stock call (a test's way to have runners at wave 1)
+owt_mode( name, tag, mode )
+{
+    zs = self owt_tagged( tag );
+    foreach ( z in zs )
+        z scripts\asm\asm_bb::bb_requestmovetype( mode );
+    print( "[IWZ local] GL PROBE name=" + name + " n=" + zs.size + " mode=" + mode );
+}
