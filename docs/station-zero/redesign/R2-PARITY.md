@@ -167,7 +167,7 @@ for that array) and a compiler mode that writes a given cube into a room's slot 
 ## 7. Verdict: not done
 
 No new frame exists. The table above is the baseline only. Note for the lead: `C:\studio-data\store\cache\cp_disco\assets\vision\cp_disco.vision`
-exists (LIGHTING-GAP C3 says no cp_disco vision is on this PC). Studio gate: before 790 tests 0 failures 21 errors, after 796 / 0 / 21 (the same 21:
+exists (LIGHTING-GAP C3 says no cp_disco vision is on this PC). Studio gate: before 790 tests 0 failures 21 errors, after 796 / 0 / 21, on the final head d2261c6 797 / 0 / 22 (the same causes, Variants.setUpClass counted twice:
 the deleted template dump and bake Python; `r2\gate\gate_{before,after}.log`); the classes behind those errors ran neither time, so the gate must
 run again on this head before merge. Decision: bake key v4 makes every remembered bake be made again, and none can be until the bake Python is back.
 What still differs between stock and ours, with its owner:
