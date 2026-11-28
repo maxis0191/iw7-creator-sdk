@@ -752,6 +752,7 @@
     "tools-source/iwzmap/tests/test_lmbake_grid_units.py",
     "tools-source/iwzmap/tests/test_lmbake_light.py",
     "tools-source/iwzmap/tests/test_lmbake_split.py",
+    "tools-source/iwzmap/tests/test_lmbake_v2.py",
     "tools-source/iwzmap/tests/test_map_build_loop.py",
     "tools-source/iwzmap/tests/test_mapgen_world.py",
     "tools-source/iwzmap/tests/test_prefab_place.py",

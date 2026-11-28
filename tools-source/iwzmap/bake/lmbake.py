@@ -45,7 +45,7 @@ assert VD.itemsize == 44 and SD.itemsize == 44
 def read_world(path):
     b = open(path, 'rb').read()
     magic, ver = struct.unpack_from('<II', b, 0)
-    if magic != 0x575A5749 or ver != 1:
+    if magic != 0x575A5749 or ver not in (1, 2):
         raise SystemExit('world.bin: bad magic/version')
     off = 8
     nm, = struct.unpack_from('<I', b, off); off += 4
@@ -58,19 +58,35 @@ def read_world(path):
     ni, = struct.unpack_from('<I', b, off); off += 4
     idx = np.frombuffer(b, '<u2', ni, off).copy(); off += ni * 2
     ns, = struct.unpack_from('<I', b, off); off += 4
-    surfs = np.frombuffer(b, SD, ns, off).copy(); off += ns * SD.itemsize
+    # version 2: the surface record is the 44 byte one + layer_offset, layer_stride; then u32 size and the layer blob (docs/station-zero/redesign/BLEND-LAYERS.md 4.1)
+    lay_off = np.zeros(ns, '<u4'); lay_stride = np.zeros(ns, '<u4'); blob = b''
+    if ver == 2:
+        rec = np.frombuffer(b, np.dtype([('s', SD), ('lo', '<u4'), ('ls', '<u4')]), ns, off); off += ns * rec.itemsize
+        surfs = rec['s'].copy(); lay_off = rec['lo'].copy(); lay_stride = rec['ls'].copy()
+        bl, = struct.unpack_from('<I', b, off); off += 4
+        blob = bytes(b[off:off + bl]); off += bl
+    else:
+        surfs = np.frombuffer(b, SD, ns, off).copy(); off += ns * SD.itemsize
     bounds = struct.unpack_from('<6f', b, off)
-    return {'materials': mats, 'verts': verts, 'indices': idx, 'surfaces': surfs, 'bounds': bounds}
+    return {'materials': mats, 'verts': verts, 'indices': idx, 'surfaces': surfs, 'bounds': bounds,
+            'ver': ver, 'layer': blob, 'layer_off': lay_off, 'layer_stride': lay_stride}
 
 
 def write_world(w, path):
-    out = bytearray(struct.pack('<II', 0x575A5749, 1))
+    v2 = w.get('ver', 1) == 2
+    out = bytearray(struct.pack('<II', 0x575A5749, 2 if v2 else 1))
     out += struct.pack('<I', len(w['materials']))
     for m in w['materials']:
         e = m.encode(); out += struct.pack('<H', len(e)) + e
     out += struct.pack('<I', len(w['verts'])) + w['verts'].tobytes()
     out += struct.pack('<I', len(w['indices'])) + w['indices'].astype('<u2').tobytes()
-    out += struct.pack('<I', len(w['surfaces'])) + w['surfaces'].tobytes()
+    out += struct.pack('<I', len(w['surfaces']))
+    if v2:
+        for k in range(len(w['surfaces'])):
+            out += w['surfaces'][k:k + 1].tobytes() + struct.pack('<II', int(w['layer_off'][k]), int(w['layer_stride'][k]))
+        out += struct.pack('<I', len(w['layer'])) + bytes(w['layer'])
+    else:
+        out += w['surfaces'].tobytes()
     out += struct.pack('<6f', *w['bounds'])
     open(path, 'wb').write(out)
 
@@ -199,6 +215,11 @@ def split_shared_vertices(w, charts):
     for ci, c in enumerate(charts):
         by_surface.setdefault(c['surface'], []).append(ci)
     pieces, new_idx, new_surfs = [], idx.copy(), surfs.copy()
+    # world.bin v2: a copied vertex is an exact copy of an existing one in the same surface (nothing is created on an edge, so nothing is interpolated):
+    # its colour is in the 44 byte vertex and its layer record (whatever the technique's stride and fields: planar uv floats, packed rotation bytes, per
+    # the layout table of layerstream) is copied byte for byte. The blob is re-laid out per surface, 4 aligned.
+    lstride = w.get('layer_stride'); lblob = np.frombuffer(w.get('layer', b''), np.uint8)
+    lpieces, new_loff, lpos = [], np.zeros(len(surfs), '<u4'), 0
     total = added = split = 0
     for si, s in enumerate(surfs):
         f, vc, base, tc = int(s['first']), int(s['vc']), int(s['base']), int(s['tc'])
@@ -219,6 +240,11 @@ def split_shared_vertices(w, charts):
         if extra_src:
             pieces.append(verts[np.array(extra_src, np.int64)])
             split += 1; added += len(extra_src)
+        if lstride is not None and int(lstride[si]):
+            st, o = int(lstride[si]), int(w['layer_off'][si])
+            rec = lblob[o:o + vc * st].reshape(vc, st)
+            new = np.concatenate([rec, rec[np.array(extra_src, np.int64) - f]]) if extra_src else rec
+            new_loff[si] = lpos; lpos += new.size; lpieces.append(new.reshape(-1))
 
         def loc(ci, v):                           # local index (new range) of old global vertex v as seen by chart ci
             return extra.get((ci, v), v - f)
@@ -238,6 +264,9 @@ def split_shared_vertices(w, charts):
         total += vc + len(extra_src)
     w['verts'] = np.concatenate(pieces) if pieces else verts
     w['indices'], w['surfaces'] = new_idx, new_surfs
+    if lstride is not None:
+        w['layer'] = np.concatenate(lpieces).tobytes() if lpieces else b''
+        w['layer_off'] = new_loff
     return {'added': added, 'surfaces_split': split}
 
 
