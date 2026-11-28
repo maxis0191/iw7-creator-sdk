@@ -17,10 +17,10 @@ ISLANDS = (-2800.0, -2140.0)            # the first 89 clear of the Copy Stop ob
 KIOSK = (-2428.0, 3760.0)               # in the colonnade, between the columns at x -2572 and -2284
 STREAMER_MATS = ('w/plastic_wall_plain_red_01', 'w/plastic_wall_plain_blue_01', 'w/plastic_wall_plain_yellow_01', 'w/plastic_wall_plain_green_01')
 POOL = {   # the colour each shop throws on the tile outside its front: (rgb, intensity, radius, z) - four different rows (rule 11)
-    'needle_drop': ((1.0, 0.55, 0.2), 2.0, 400.0, 158.0),        # pass 6: radius 250..280 put the pool at the falloff's edge (throw ~240);
-    'copy_stop': ((0.88, 0.93, 1.0), 1.8, 420.0, 160.0),         # pass 7: at 0.8..1.1 the hall's white panels washed the colour out: doubled
-    'hole_nine': ((1.0, 0.45, 0.75), 2.2, 390.0, 162.0),
-    'heel_key': ((1.0, 0.72, 0.45), 1.6, 380.0, 164.0),
+    'needle_drop': ((1.0, 0.55, 0.2), 2.6, 400.0, 158.0),        # pass 6: radius 250..280 put the pool at the falloff's edge (throw ~240);
+    'copy_stop': ((0.88, 0.93, 1.0), 2.3, 420.0, 160.0),         # pass 7: at 0.8..1.1 the hall's white panels washed the colour out: doubled
+    'hole_nine': ((1.0, 0.45, 0.75), 2.8, 390.0, 162.0),         # L1 (C5, 28 Nov): x1.3 with the fill lowered: pool to mid hall at least 4 to 1
+    'heel_key': ((1.0, 0.72, 0.45), 2.2, 380.0, 164.0),
 }
 
 
@@ -203,5 +203,5 @@ def fronts_by_models(A, m):
         org = (cx, A.Y1 - 14.0, z)
         d = (0.0, 4170.0 - org[1], -org[2])
         ln = math.sqrt(sum(c * c for c in d))
-        A.lamp(m, 'light_pool_%s' % name, org, name, color=rgb, radius=rad, intensity=inten, type='spot', dir=[round(c / ln, 4) for c in d], inner=30.0, outer=60.0)
+        A.lamp(m, 'light_pool_%s' % name, org, name, key=True, color=rgb, radius=rad, intensity=inten, type='spot', dir=[round(c / ln, 4) for c in d], inner=30.0, outer=60.0)
     A.REPORT.setdefault('hall', {})['bulb_strips'] = n

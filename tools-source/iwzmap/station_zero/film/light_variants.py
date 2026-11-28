@@ -48,6 +48,15 @@ def main(argv):
         def lamp(m, id, origin, role, **kw):
             if id.startswith('light_pool_'):
                 kw['intensity'] = kw.get('intensity', 1.0) * pk
+                geom = opt.get('--pool-geom')
+                if geom == 'down':           # FL1 verified only vertical beams: straight down over the pool's centre
+                    origin = (origin[0], 4170.0, SHELL.GRID_Z - 6.0)
+                    kw['dir'] = [0.0, 0.0, -1.0]
+                elif geom == 'omni':         # no direction at all
+                    origin = (origin[0], 4170.0, 150.0)
+                    for k in ('dir', 'inner', 'outer'):
+                        kw.pop(k, None)
+                    kw['type'] = 'omni'
                 kw.update(runtime=True, bake=False) if pools == 'runtime' else kw.update(runtime=True, bake='bounce')
             return lamp0(m, id, origin, role, **kw)
         SHELL.lamp = lamp
