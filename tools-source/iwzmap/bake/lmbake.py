@@ -128,6 +128,29 @@ def room_bounds(w):
     return tuple(float(x) for x in (*lo, *hi)) if np.isfinite(lo).all() else tuple(w['bounds'])
 
 
+def drop_non_occluders(tri_v, tri_lm, tri_mat, materials, names):
+    """the scene of the rays without the triangles of the materials in `names` (decals, glass, fences: lit like any surface, but they stop no light).
+    The three arrays stay aligned with each other, so every ray hit still finds its own lightmap coordinates and material. -> (tri_v, tri_lm, tri_mat, dropped)"""
+    names = set(names or ())
+    if not names or not len(tri_mat):
+        return tri_v, tri_lm, tri_mat, 0
+    skip = np.array([m in names for m in materials], bool)
+    keep = ~skip[tri_mat]
+    n = int((~keep).sum())
+    if not n:
+        return tri_v, tri_lm, tri_mat, 0
+    return [v[keep] for v in tri_v], [v[keep] for v in tri_lm], tri_mat[keep], n
+
+
+def occluder_triangles(cfg):
+    """cfg['occluder_tris'] ([[[x, y, z] x 3] ...]: shadow casters that draw nothing, stock caulk_shadow) as three (n, 3) arrays, or None"""
+    tris = cfg.get('occluder_tris') or []
+    if not tris:
+        return None
+    a = np.array(tris, float).reshape(-1, 3, 3)
+    return [a[:, 0], a[:, 1], a[:, 2]]
+
+
 def build_charts(w, texel):
     """Planar triangle groups per surface. Double-sided duplicates (same corners, reversed) are baked once."""
     verts = w['verts']
@@ -400,6 +423,9 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
     lm = w['verts']['lm'].astype(np.float64)
     tri_lm = [lm[F[:, 0]], lm[F[:, 1]], lm[F[:, 2]]]
     tri_mat = np.array([int(w['surfaces'][si]['mat']) for *_, si in front])
+    tri_v, tri_lm, tri_mat, n_nonocc = drop_non_occluders(tri_v, tri_lm, tri_mat, w['materials'], cfg.get('non_occluding'))
+    if n_nonocc:
+        print('%d triangles of %d materials are baked but stop no light (decals, glass, fences)' % (n_nonocc, len(cfg.get('non_occluding') or [])))
     occ = cfg.get('occluders', [])
     occ_v = [[], [], []]; occ_e = []                 # occ_e: emitter index of every occluder triangle (-1: none)
     emitters = []                                    # radiance (r, g, b) of the emissive boxes (a prop declared emissive)
@@ -418,6 +444,12 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
             for t in ((q[0], q[1], q[2]), (q[0], q[2], q[3])):
                 for k in range(3): occ_v[k].append(c[t[k]])
                 occ_e.append(ei)
+    shadow_tris = occluder_triangles(cfg)            # shadow casters that draw nothing (caulk_shadow): triangles, not boxes
+    if shadow_tris is not None:
+        for k in range(3):
+            occ_v[k].extend(list(shadow_tris[k]))
+        occ_e.extend([-1] * len(shadow_tris[0]))
+        print('%d shadow caster triangles' % len(shadow_tris[0]))
     grid_world = [tri_v[k] for k in range(3)], [tri_lm[k] for k in range(3)], tri_mat      # the light grid sees the world only (below)
     if occ_v[0]:                                    # one concatenation, not one per triangle
         n_occ = len(occ_v[0])

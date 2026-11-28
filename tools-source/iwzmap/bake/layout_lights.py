@@ -52,6 +52,31 @@ def _rgb(v, default=None):
     return [float(c) for c in v[:3]]
 
 
+NON_OCCLUDING_SORT = (7, 34)      # the template world's decal and translucent sort key bands (cp_zmb header: decal 7..17, trans 18..34), R2-PARITY section 14
+
+
+def draw_class_inputs(src):
+    """what the emit says about surfaces that draw but must not block light, and about shadow casters that draw nothing:
+    -> (non_occluding material names, shadow caster triangles, report). `draw_classes.txt` (`<material>`, a tab, `<sortKey>`, written by Studio) lists the materials of
+    the decal and translucent bands; `shadow_occluders.json` ({'triangles': [[[x, y, z] x 3] ...]}) holds the triangles of stock caulk_shadow (not in world.bin)."""
+    names, tris, rep = [], [], {}
+    p = os.path.join(src, 'draw_classes.txt')
+    if os.path.isfile(p):
+        for ln in open(p, encoding='utf-8'):
+            ln = ln.split('#')[0].strip()
+            if not ln:
+                continue
+            m, _, k = ln.partition('	')
+            if k.strip().isdigit() and NON_OCCLUDING_SORT[0] <= int(k) <= NON_OCCLUDING_SORT[1]:
+                names.append(m)
+        rep['non_occluding_materials'] = len(names)
+    p = os.path.join(src, 'shadow_occluders.json')
+    if os.path.isfile(p):
+        tris = json.load(open(p, encoding='utf-8')).get('triangles') or []
+        rep['shadow_occluder_triangles'] = len(tris)
+    return sorted(set(names)), tris, rep
+
+
 def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emissive=1.5, dump_roots=(), extra=None, prop_shadows=None, bounces_default=None):
     """-> (lights.json dict, report) of an emit folder (layout.json lights and `lighting` block, world.bin, smodels.txt).
 
@@ -149,6 +174,13 @@ def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emis
         rep['emissive_props'] = {'declared': len(eprops), 'baked': n_ok, 'unknown_models': unk}
     if boxes:
         cfg['occluders'] = boxes
+    nonocc, shadow_tris, drep = draw_class_inputs(src)
+    nonocc = [m for m in nonocc if m in albedo]
+    if nonocc:
+        cfg['non_occluding'] = nonocc
+    if shadow_tris:
+        cfg['occluder_tris'] = shadow_tris
+    rep['draw_classes'] = drep
     if extra:
         ex = json.load(open(extra)) if isinstance(extra, str) else extra
         for k, v in ex.items():
