@@ -28,7 +28,7 @@ pictures from `C:\studio-data\sz\film\art`. The whole chain of this lot: `statio
 - `cp_iwz2.gsc`, `station_zero2.py`: wall prices per place (below).
 - Plans `film/plans/i1_arcade.json`, `i1_walk.json`, library `film/plans/lib/szi1.gsc`. Data copies of every plan run: `station\plans\`.
 
-## `studio check` (station\check_prices.json, the final document) [m]
+## `studio check` (station\\check_final.json, the final document) [m]
 ok; reach 61 sources, 0 failures; `ISLAND: zone terminus: reached only by script (a teleport): its own navigation island of 778 cells`;
 arcade 1,403 cells, no island, no unreachable zone; `build.networked_entities.total` **480** (Arcade on the old base 494, Terminus document
 487: 494 - 17 Pack-a-Punch records + 3 of the Terminus's `weapon_upgrade`); light rows 12 of 256 (lights.txt +7: the Arcade's six key lights
@@ -45,13 +45,15 @@ display luma (the metric that reproduces T1's 0.13: 0.129 on T1's pass-5 frame),
 | (a) key K 3.0, `bake='bounce'` (row 81,000) | 0.311 | 0.349 | `mach\shots\m2_key\on\` |
 | (a)+(b) K 3.0 + ink | 0.306 | 0.390 | `mach\shots\m3_key_ink\on\` |
 | (a)+(b) K 7.0 + ink (kept) | 0.456 | 0.578 | `mach\shots\m4_key7_ink\on\` |
-| the same on the final bake | 0.457 | 0.578 | `station\final_term\on\term_machine.png` |
+| the same on the final bake, key head moved (below) | 0.460 | 0.580 | `station\final_term\on\term_machine.png` |
+| key alone at K 7.0, final position (direction check: draft bake, auto exposure of a dark room, no ratio) | - | - | `station\mach_final\shots\on\` |
 
 Clipped pixels at all three Terminus cameras: 0.0 % in every variant.
-- (a) a stock `track_spot` on an iron rod, head top (-10149, -4680, 182), 111 units above-front of the body on the side the player arrives from
+- (a) a stock `track_spot` on an iron rod, head top (-10170, -4720, 182) (first at (-10149, -4680): from the arrival it hung in front of the FARE
+  VALIDATION board and hid FARE; moved, the board reads whole), about 123 units above-front of the body on the side the player arrives from
   and `term_machine` looks from, head pitched toward the body, light aimed at (-10200, -4646, 88), cone 20/38, radius 230, 2,900 K, `bake='bounce'`,
-  group `emergency`. Direction checked on a key-alone frame (`mach\shots\m1_keyonly\on\term_machine.png`: tubes and beam at 0.001): the body,
-  reels and top lit, the pool on the post and the deck around its foot, no paper wall in the cone.
+  group `emergency`. Direction checked on key-alone frames in both positions (`mach\shots\m1_keyonly\on\`, `mach_final\shots\on\`: tubes and beam at
+  0.001): the body, reels and top lit, the pool on the post and the deck around its foot, no paper wall in the cone.
 - (b) ink, PIL in the paper set's hand (round dots, three print lines a green bar, overstruck so neighbouring lines merge into black bars; ragged
   line ends, skipped lines and dropped dots let the paper through; alpha = coverage, so the wall's own green-bar paper shows): a block 440 x 216
   on the back wall where `term_machine`'s line of sight through the machine lands (centre x -10640, z 156), and a validator bay 160 x 200 on the
@@ -59,8 +61,10 @@ Clipped pixels at all three Terminus cameras: 0.0 % in every variant.
   (coverage 0.845, 0.857; previews on paper `preview_*.jpg`). A first draw at dot radius 0.78 was a grey hatching (coverage 0.47): rejected.
 
 ## Final bake and frames [m]
-`studio bake doc --final` 5 min 24 s (texel 8, 256 rays, 3 bounces, 165 lights); both sessions `reused: the remembered final bake`; real
-`live power on` (settle 15 s) + 10 s. Sheets (all opened):
+`studio bake doc --final` and `studio bake doc_look --final` (about 5.4 min each: a bake is remembered per document, TOOL-FAULTS I1-1;
+texel 8, 256 rays, 3 bounces); both sessions `reused: the remembered final bake`; real `live power on` (settle 15 s) + 10 s. Second pass
+(after the price script and the key move; the first pass is kept in `final_v1`, `final_term_v1`; a Terminus set shot on a draft bake is
+`final_term_draft`, not used). Sheets (all opened):
 - Arcade and every camera of the document, station vision: `station\final\sheet_on_{0..3}.jpg`, `sheet_off_{0..3}.jpg` (34 cameras each)
 - the Terminus under its own vision (look copy, T1's way: the camera of `live shot` is no rider): `station\final_term\sheet_on_0.jpg`, `sheet_off_0.jpg`
 
@@ -75,7 +79,8 @@ Light, final bake against L1's draft bake (`station\light_final_vs_draft.txt`; L
 | arc_west_long | 0.043 / 0.042 | 0.58 / 0.66 | 0.693 / 0.697 | 0.01 / 0.01 | |
 
 The final bake moves every number by about 2 % or less. Terminus means (own vision): `term_arrival` 0.575, `term_long` 0.581 (target 0.45
-to 0.60), `term_edge` 0.585, `term_machine` 0.564, `term_screen` 0.568; no clipping.
+to 0.60), `term_edge` 0.585, `term_machine` 0.566, `term_screen` 0.568; no clipping. The Arcade numbers of the second pass equal the
+first to the third decimal.
 
 ## Wall-buy prices (coordinator's order) [m]
 The document's prices were never applied on this base: `cp_iwz2.gsc` (the Station Zero generator's template) never had the price table; it
@@ -87,7 +92,7 @@ Regeneration against the base before the change (`station\base_before_prices`): 
 the function, the empty table). SDK tests `test_terminus`, `test_scenegen`: 37 OK. Measured in `i1_arcade`: `WALL_PRICES places=2 of=2
 stock_weapons=5`; Hole Number Nine SMG spent **1000**, then the base's own UMP (stair_a, control) **1250** (stock), Heel & Key marksman **1500**.
 
-## Acceptance on the one build (usermap `station\um\cp_iwz`, compressed time) [m]
+## Acceptance on the one build (usermap `station\um\cp_iwz`, the final build: prices and key moved; compressed time unless said) [m]
 ```
 sz8_doors        PASS    steps 30/30   expects 21/21
 sz8_power_perks  PASS    steps 17/17   expects 19/19
@@ -95,6 +100,10 @@ sz8_rounds       PASS    steps 9/9     expects 14/14
 t1_buy           PASS    steps 13/13   expects 34/34
 t1_trip          PASS    steps 27/27   expects 31/31
 i1_arcade        PRODUCT steps 50/50   expects 51/52   (the one failure: the marksman reach, below)
+i1_door_power    PASS    steps 8/8     expects 3/3     (D4 bought for 1000 headless with the power on)
+i1_reach_client  PASS    steps 16/16   expects 1/1     (real time, a client: its evidence is the UI dumps and frames, below)
+t1_client        PASS    steps 15/15   expects 2/2     (real time, a client: the trip ridden, the Terminus vision on the rider)
+i1_walk          PASS    steps 25/25   expects 2/2     (real time, a client)
 ```
 `i1_arcade` (new): D4 bought (1000), arcade zone active; a player standing on the navigation (nav_d 1) in the arcade volume inside Needle
 Drop (-2910, 4400), Copy Stop (-2300, 4400) and Hole Number Nine (-1700, 4390); the two wall buys and the control at the prices above; the
@@ -103,19 +112,26 @@ stock wheel moved to Copy Stop by the stock mover (`_id_BC3E("arcade")`: active 
 Nine 2/2, Heel & Key 2/2 in 39 s (the path runs through the service passage: at a 40 s budget one run gave 1/2).
 Note: sz8_doors passes its two wall buys because the `use` step stands the player at the nearest buy of that weapon anywhere (TOOL-FAULTS I1-2).
 
-Real time, a client cell (listen client), `i1_walk`: PASS 25/25, 2/2. Every debris door opened by the lab's `doors` step, then a walk with
-player physics (`move`; no forward key exists in the input channel) from the ticket hall through D4 along the north shop lane to the west end
-and back, all ten legs reached. Frame time, 1280 x 720, uncapped, 10 s windows: `arc_east_long` median **2.74 ms** (95th 4.50, 99th 5.13,
-max 6.20); middle of the hall median **2.77 ms** (4.54, 5.14, max 8.49). Client frames `station\final\client_east_long.png`,
-`client_mid_hall.png` (evidence `C:\forge-run\runs\20261128-042428-0075-i1_walk`).
+Client UI dumps (`station\final_checks\`): inside Hole Number Nine the prompt `Hold F to purchase the HVR ($1000)` (the document's price);
+at the Terminus machine `Hold F to validate your FHR40 [Cost: 5000]`, no "Pack-a-Punch" in any dump; at the Heel & Key counter NO purchase
+prompt (frames `iwz_i1_hk_prompt.png`, `iwz_i1_smg_prompt.png`, `iwz_t1_arrive.png`, `iwz_t1_prompt.png`). The rider's arrival frame shows the
+Terminus vision and FARE VALIDATION whole; from the rider's slot the key's spot head sits over the left end of the larger 047 . TERMINUS
+board behind it.
+
+`i1_walk`: every debris door opened by the lab's `doors` step, then a walk with player physics (`move`; no forward key exists in the input
+channel) from the ticket hall through D4 along the north shop lane to the west end and back, all ten legs reached. Frame time, 1280 x 720,
+uncapped, 10 s windows. Alone on the machine (build before the key move): `arc_east_long` median **2.74 ms** (95th 4.50, 99th 5.13), middle
+of the hall **2.77 ms** (4.54, 5.14). Final build, while another client cell booted beside it: `arc_east_long` 2.99 ms (6.20, 7.59, max
+17.4), middle 2.67 ms (5.52, 6.77). Client frames `station\final_checks\client_east_long.png`, `client_mid_hall.png`.
 
 ## Not done, not proven
-- **The Heel & Key marksman buy is probably out of reach from the hall.** A player's hull stops at the stall counter at y 4284.9; from the eye
-  there to the buy struct (-1420, 4404, 1) is 133 units against `player_useRadius` 128. The model (eye to struct against the dvar) is not
-  the engine's use test reverse engineered, and no Use press exists in the input channel to try it. The change needed (shell, A2's design):
-  the buy's struct about 10 units toward the hall, or the stall counter clip moved in.
-- **D4 bought on the client cell**: the `use` step fired the trigger and charged nothing (headless it charges 1000 in every run); the walk
-  used the `doors` step. After it the D4 prompt still shows at `arc_east_long` (client frame). Not diagnosed.
+- **The Heel & Key marksman buy cannot be used from the hall.** A real client standing where the hull stops at the stall counter (y 4284.9),
+  facing the pegboard, gets no purchase prompt (UI dump). The `i1_arcade` reach probe (133 against `player_useRadius` 128) is a model, not
+  the engine's test; the client is the evidence. The headless purchase passes only because the lab stands the player inside the stall.
+  The change needed (shell, A2's file): the buy toward the counter front, or the stall made enterable; then `i1_reach_client` shows the prompt.
+- **D4 bought on the client cell**: the `use` step fired the trigger and charged nothing; headless it charges 1000 with the power off and
+  on (`i1_door_power`), so the lit state is not the cause. The walk used the `doors` step; after it the D4 prompt still shows at
+  `arc_east_long` (client frame). Not diagnosed.
 - The Terminus OFF frames show the room at the dark exposure; the room is reachable only after power, so they are a record, not a state a
   player sees.
 - From T1, still: the clock does not run, no dust in the beam, the line printer's sound, the bench numbers, WAY OUT, Strand's tape.
@@ -134,4 +150,5 @@ Documents of earlier workers under `C:\studio-data\sz\film\` that this document 
 `b1\base_lit_nopap`, `terminus\doc`, `terminus\doc_look`, `terminus\base_lit_nopap`, `terminus\um`, `terminus\look`, `arcade\shell\doc`,
 `arcade\shell\docall`, `arcade\shell\litview`, `arcade\goods_a\doc`, `arcade\goods_b\doc`, `light\doc` and its variant documents
 (`light\e1`, `e1b`, `w1`, `w2`, `w2b`, `w4`, `w5`). Still read, not superseded: `allbaked2\doc\map.json` (the recipe), `base_lit` (the shell's
-default base), `art`. Mine, removable when this lands: `station\base_before_prices`, `station\mach` (the machine study).
+default base), `art`. Mine, removable when this lands: `station\base_before_prices`, `station\mach`, `station\mach_final` (the machine
+study), `station\final_v1`, `station\final_term_v1`, `station\final_term_draft`.

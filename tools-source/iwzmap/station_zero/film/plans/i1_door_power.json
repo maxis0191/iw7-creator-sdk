@@ -1,0 +1,85 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "i1_door_power",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "libraries": [
+  "szaccept",
+  "g1probe"
+ ],
+ "about": "I1: D4 bought headless AFTER the power is on (the client walk charged nothing after power-on).",
+ "steps": [
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "call",
+   "fn": "sz_power_direct",
+   "args": [
+    "power",
+    20
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 6
+  },
+  {
+   "do": "money",
+   "value": 20000
+  },
+  {
+   "do": "tp",
+   "at": [
+    -1000,
+    3900,
+    1
+   ],
+   "yaw": 180,
+   "snap": true
+  },
+  {
+   "do": "use",
+   "name": "door",
+   "kind": "debris_1000",
+   "near": [
+    -1160.0,
+    3900.0,
+    24.0
+   ]
+  },
+  {
+   "do": "wait",
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "g1_zone",
+   "args": [
+    "arc",
+    "arcade"
+   ],
+   "s": 1
+  },
+  {
+   "do": "expect",
+   "that": "use:door.power",
+   "eq": 1,
+   "why": "the power is on"
+  },
+  {
+   "do": "expect",
+   "that": "use:door.spent",
+   "eq": 1000,
+   "why": "D4 bought in the lit state"
+  },
+  {
+   "do": "expect",
+   "that": "probe:arc.active",
+   "eq": 1,
+   "why": "the arcade zone active"
+  }
+ ]
+}
