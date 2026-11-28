@@ -98,7 +98,10 @@ def stock_pose(name):
     return to_doc([f[0], f[1], f[2] + EYE_HEIGHT]), float(d['yaw']), float(d['pitch'])
 
 
-def build(m, mode='bounce'):
+PROBE_RGB_UP = (0.70, 0.65, 0.55, 0.60)                         # a room row's ambient colour and up factor, near the base's rooms (probes.txt)
+
+
+def build(m, mode='bounce', probe_room=True):
     ensure_lift()
     m.use(LAYER)
     at = to_doc(prefab_origin())
@@ -108,6 +111,12 @@ def build(m, mode='bounce'):
     # collision-only floor strip as a seed gave 141 navigation areas whose 925 cells were all dropped as unreachable. Nothing a frame shows
     # depends on navigation or zones; the bake and the lights do not read them.
     zb = None
+    # ... and so the room was in no probe room: no reflection probe volume (R2, 28 Nov 2026: 10.8 % of the control build's drawn area, the whole room;
+    # its floors and vaults drew black). A probe room of the box, no zone (Studio settings.build.probe_rooms; a Studio without it ignores the key)
+    if probe_room:
+        b = STOCK_BOX
+        lo, hi = to_doc(b[:3]), to_doc(b[3:])
+        m.settings.setdefault('build', {}).setdefault('probe_rooms', []).append(lo + hi + list(PROBE_RGB_UP))
     rows = []
     for k, L in enumerate(stock_lights()):
         kw = light_args(L, mode)

@@ -26,7 +26,7 @@ STATION = r'C:\studio-data\sz\film\station'
 DATA = r'C:\studio-data\sz\film\control'
 
 
-def build(mode, station_doc=os.path.join(STATION, 'doc'), base=os.path.join(STATION, 'base'), whole=True):
+def build(mode, station_doc=os.path.join(STATION, 'doc'), base=os.path.join(STATION, 'base'), whole=True, probe_room=True):
     if whole:
         # the whole station document + the room: the base alone fails the build's own walk gate (its Arcade region is a drop-only floor that
         # the Arcade layers replace), so `live start` refuses base + room (first session, 28 Nov: "gate check failed")
@@ -40,7 +40,7 @@ def build(mode, station_doc=os.path.join(STATION, 'doc'), base=os.path.join(STAT
         # the station's kit model list names the Arcade's and the Terminus's models, which this document does not place: dropped, so that
         # use_kit below writes only the room's (the build's assemble_key passes the list on one command line: TOOL-FAULTS C1-4)
         m.settings['build']['kit'].pop('models', None)
-    rep = control_room.build(m, mode)
+    rep = control_room.build(m, mode, probe_room=probe_room)
     rep['models_no_dump_holds'] = FX.use_kit(m)
     fl = m.flat()
     rep['prefab_report'] = [r for r in (getattr(fl, 'prefabs', None) or [])]
@@ -52,9 +52,10 @@ def main(argv=None):
     ap.add_argument('--mode', choices=('bounce', 'baked'), required=True)
     ap.add_argument('--out')
     ap.add_argument('--base-only', action='store_true', help='the station base + the room (no Arcade, no Terminus)')
+    ap.add_argument('--no-probe-room', action='store_true', help='C1's documents: the room in no probe room (R2 E1 control)')
     a = ap.parse_args(argv)
     out = a.out or os.path.join(DATA, 'doc_' + a.mode)
-    m, rep = build(a.mode, whole=not a.base_only)
+    m, rep = build(a.mode, whole=not a.base_only, probe_room=not a.no_probe_room)
     os.makedirs(out, exist_ok=True)
     m.save(out)
     json.dump(rep, open(os.path.join(out, 'control.json'), 'w', encoding='utf-8'), indent=1, default=str)
