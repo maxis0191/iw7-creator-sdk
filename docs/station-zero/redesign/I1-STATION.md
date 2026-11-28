@@ -188,4 +188,4 @@ Documents of earlier workers under `C:\studio-data\sz\film\` that this document 
 `arcade\shell\docall`, `arcade\shell\litview`, `arcade\goods_a\doc`, `arcade\goods_b\doc`, `light\doc` and its variant documents
 (`light\e1`, `e1b`, `w1`, `w2`, `w2b`, `w4`, `w5`). Still read, not superseded: `allbaked2\doc\map.json` (the recipe), `base_lit` (the shell's
 default base), `art`. Mine, removable when this lands: `station\base_before_prices`, `station\mach`, `station\mach_final` (the machine
-study), `station\final_v1`, `station\final_term_v1`, `station\final_term_draft`.
+study), `station\final_v1`, `station\final_term_v1`.
