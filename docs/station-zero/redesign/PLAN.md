@@ -137,6 +137,16 @@ reviewers' own words already establish the asset fault for our boxes (REVIEW-1, 
      rebuild through a pipeline that loses two points on stock's own room cannot reach the bar.
 3. In every case the section's bar stays REVIEW-1's last paragraph (two of three "could ship", within one point of stock).
 
+**Amended the same day by K1 ([K1-CONSTRUCTION](K1-CONSTRUCTION.md)):** a stock station hall is not built from models:
+62 % of its pixels are world surfaces in blend materials, models 17 % (a shopfront: blend 34 %, models 41 %). Our own
+authored hall can therefore only reach stock if our surfaces can carry blend layers too, whatever the control's ranking
+says about the lifted room. Carrying blend layers (R2-PARITY section 2, patches 1 to 5: Studio, mapgen, kit import, the
+compiler's vertex layer stream) is promoted from "only if it ranks in the first two" to a job started now, beginning
+with the open question it hangs on: what IW7's layered techniques read (vertex colour, layer stream, or both) and what
+the stock layer bytes are per vertex (cp_disco's transient zone in the store cache). The control still ranks the other
+gaps. K1's parts list (cp_disco donor kit, hall 480 clear, about 244 props, authored column and girder meshes in stock
+plain materials) is the construction plan for the Arcade's next round.
+
 Not done: real reflection probes, the copy by Gemini 4 Neon (every sign text is Gemini 4 Hydrogen's or a marked
 placeholder), the seventeen other zones.
 
