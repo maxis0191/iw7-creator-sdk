@@ -466,8 +466,8 @@ Plan written before any code. Everything marked [m] was measured by reading the 
 - [r] The compiler today (`iwzmap.cpp build_gfx`): every generated surface is `litOpaque` (`0..count`, decal / trans / emissive ranges empty), flags / sort key / unknown bytes / draw key are
   copied from a template surface of the same material (`by_material`), else from the first opaque template surface (`fallback`, the "using template surface defaults" line).
   The material is a name stub; the compiler never sees the material file (the zone assembly brings it after the compile).
-- [m] `GfxSurface.sortKey` is NOT the material's sort key (template surface 0: sort 0, flags 0x26, material sort 2). The compiler must not invent it: per class it takes the surface values of
-  the template's own surfaces of that range.
+- [r, one surface] `GfxSurface.sortKey` of template surface 0 is 0 with flags 0x26 (its material was not read, so it is not shown to differ from the material's sort key). The compiler does not invent it:
+  per class it takes the values of the template's own most common surface of that range. The decal range of the template shows `sort 0` on all its top tuples (compile log), so the surface field is not the material sort key.
 
 ### The change
 1. Studio writes `draw_classes.txt` beside `world.bin`: `<material>\t<sortKey>` for every drawn material whose sort key is outside the opaque band (read from the material file); no
@@ -594,3 +594,21 @@ into the document's `--lit` argument, for this document only. Keys that are not 
 ### Ranking (section 9)
 Closing the colour cast by the stock vision: floor b/r distance to stock at pose 5 0.38 -> 0.04, pose 1 0.26 -> 0.21 (flips warm), pose 2 0.13 -> 0.24 (worse); mean frame distance +0.37 (2.83 -> 3.20). Net: the vision explains the cast, and the
 level / distribution of the baked light is the next gap (not measured per light).
+
+### 14 results (28 Nov 2026; compiler `claude/zt-decals` 845c90e built by the lead, Studio `claude/film-decals`, SDK `claude/sz-decals`)
+- **Identity [m]**: the same control-room emit with `draw_classes.txt` and `shadow_occluders.json` removed, built `--oneshot` by the serve exe (d3567483) and by the decals exe:
+  `compile.zone_equal` says `same_content` (975,150,243 bytes, 0 content bytes differ, 73,962 residue bytes). No file, no change.
+- **Compile log [m]** (`r2\dc1.compile.log`): bands 1..6 / 7..17 / 18..34 / 35..40 read from the template; 16 materials listed; **1649 opaque, 25 decal, 11 trans, 0 emissive surfaces**; ranges opaque 0..1649,
+  decal 1649..1674, trans 1674..1685, emissive empty. Template ranges: decal 10015..10629 (614 surfaces), trans 10629..10693 (64). "4 materials the template also uses: 4 in the range their sort key says,
+  **0 not**": the band mapping agrees with the stock surfaces. Template surfaces of the decal range have `sort 0`, flags 0x01 or 0x39 and varying unknown bytes: the donor is the most common tuple.
+- **Sidecar [m]**: 16 materials: decals 10 `w/` (graffiti_01, _04, fah_graffiti_02, wall and dirt stains, blood spray, crosswalk paint...) and `wc/` `concrete_wall_rustic_01_rvl`, `ls_trash_pile_01_rev_no_dis`,
+  `t7_decal_blood_smear_02_rvl` (the `v0` ones, now brought: `vertex_ok`); trans `w/glass_clear_solid_01` (30), `wc/glass_cracked_01` (25). The chain fence (`wc/mtl_zeb_fence_chainlink`, sort 2) is opaque class and is not listed.
+  `shadow_occluders.json` holds the 1,044 caulk_shadow triangles; the bake log shows them as baker-only.
+- **In game [m]**: the client loaded the zone, 3 shots at poses 1, 2, 5, no crash, no stale frame (`s_dc1`, frames `pairs_v2\ours_N_decals.png`).
+- **Numbers [m]** (`metric\m6_dc.md`): mean distance to stock v3keep 2.83, decals 2.84 (pose 1 3.16 / 3.17, pose 2 2.48 / 2.48, pose 5 2.84 / 2.86); black share 0 % in both. The metric does not see this change at this size.
+  Pixels that change by more than 40 grey levels against v3keep: 5 / 178 / 76 (poses 1 / 2 / 5; the rest is bake noise, `diff_N_decals.png`).
+- **What draws now**: pose 2, the lower iron gate on the left (`crop_fence_2.png`, stock | v3keep | decals): stock shows dark speckle and dirt on the glass behind the bars; v3keep has none; decals shows it, in the same
+  places. That is the first wc/ / glass-class surface seen in a frame. The cardboard on the floor (`crop_floor_2.png`) is the same in both. NOT shown by a frame: the car graffiti (it was blend layers, section 13), blood smears,
+  the fence as its own mesh, the cracked glass: no pixel pick was made; whether those triangles are in view at poses 1, 2, 5 is not established. Z-fighting: none seen at the gate; not checked elsewhere.
+- **Not done / open**: fence and other alpha-tested sort-2 materials still bake as solid sheets (baker non-occluding list covers sort 7..34 only); emissive class never exercised (0 surfaces); base-defined `v0` decals
+  keep the "no" verdict; the per-surface `sortKey` of a donated surface is the donor's, not the material's.
