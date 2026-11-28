@@ -160,11 +160,20 @@ def validate(scene, materials=None, steps=True):
     if len(scene.get('power', [])) > 1:
         E('more than one power switch')
     if materials is not None:
-        for m in sorted({m['material'] for m in scene.get('meshes', []) if m.get('mode', 'both') != 'collision'}):
+        for m in sorted({m['material'] for m in scene.get('meshes', []) if m.get('mode', 'both') != 'collision' and not m['material'].startswith('*')}):
             if m not in materials:
                 W('material %s is not in the stock table or the dumps: the zone build may fail on it' % m)
     for m in scene.get('meshes', []):
-        if m.get('mode', 'both') != 'collision' and not (m.get('material') or '').startswith('w/'):
+        if m.get('mode', 'both') == 'collision':
+            continue
+        mat = m.get('material') or ''
+        if mat.startswith('*') and (m.get('blend') or m.get('layers')):
+            if m.get('blend'):
+                try:
+                    resolve_blend(m)
+                except ValueError as e:
+                    E('mesh %s: %s' % (m['name'], e))
+        elif not mat.startswith('w/'):
             E('mesh %s: material %r is not an IW7 world material (w/...)' % (m['name'], m.get('material')))
     try:
         for r in stair_ramps(scene.get('meshes', []))[1]:
@@ -235,6 +244,73 @@ def door_zones(d, zones):
     return [z for z in found] if len(found) == 2 and found[0] != found[1] else []
 
 
+# ------------------------------------------------------------------------------------------------ layered (`*`) surfaces
+LAYER_UNIT = 128.0                 # world units of one texture repeat at scale 1: the planar projection the stock layered floors use (BLEND-LAYERS.md 1.4)
+
+
+def resolve_blend(rec):
+    """the layer layout (layerstream table) a `blend` record needs: ValueError when its material is unknown or its technique reads elements that are not decoded"""
+    import layerstream.extract_layouts as LS
+    b = rec['blend']
+    mat = b.get('material') or rec.get('material')
+    lay = LS.material_layout(mat, b.get('zone'))
+    if lay is None:
+        raise ValueError('layered material %s is not in the layer layout table (data/layer_layouts.json; the name is map-local: pass blend.zone)' % mat)
+    if not lay['supported']:
+        raise ValueError('layered material %s: its lit technique reads layer elements that are not decoded yet (%s), refused' % (
+            mat, ', '.join('%s%d' % (e['sem'], e['idx']) for e in lay['elements'] if e['sem'] != 'TEXCOORD' or e['idx'] not in LS.SUPPORTED_TEXCOORDS)))
+    if b.get('mapping', 'planar') not in ('planar', 'tangent'):
+        raise ValueError("blend.mapping must be 'planar' or 'tangent'")
+    return lay
+
+
+def layer_record(layout, p, n, scales=None, mapping='planar', offsets=None):
+    """the layer-stream record of one vertex of a layered surface (layout from the layerstream table).
+    Float elements hold the per-layer uv pairs in order (TEXCOORD3 xy, zw, TEXCOORD4 xy, ...), unorm8x4 elements the 2 x 2 uv rotation: one per layer, all equal because
+    every layer here shares the surface's mapping. uv_k = (p . U) * s_k / 128 + offset_k, v likewise.
+    'planar' (stock floors, BLEND-LAYERS.md 1.4): U = -b, V = -t of the face frame (t = face tangent, b = n x t), rotation [[0,-1],[1,0]] (bytes 127 0 254 127; stock writes 126 or 127).
+    'tangent': the base texture's own mapping (u = p . t, v = -p . b), identity rotation (bytes 254 127 127 254; stock writes FE 7F 7E FE for this case). [a] until the in-game proof"""
+    import layerstream.extract_layouts as LS
+    import struct
+    t = face_tangent(n)
+    b = _cross(n, t)
+    if mapping == 'tangent':
+        U, V = t, tuple(-c for c in b)
+    else:
+        U, V = tuple(-c for c in b), tuple(-c for c in t)
+    nuv = sum(e['bytes'] // 4 for e in layout['elements'] if e['fmt'] == 'f32') // 2
+    sc = list(scales) if scales else [1.0] * nuv
+    if len(sc) < nuv:
+        raise ValueError('layer scales: %d given, the technique has %d layers' % (len(sc), nuv))
+    off = list(offsets) if offsets else [(0.0, 0.0)] * nuv
+    if len(off) < nuv:
+        raise ValueError('layer offsets: %d given, the technique has %d layers' % (len(off), nuv))
+    flat = []
+    for k in range(nuv):
+        flat += [_dot(p, U) * float(sc[k]) / LAYER_UNIT + float(off[k][0]), _dot(p, V) * float(sc[k]) / LAYER_UNIT + float(off[k][1])]
+    rot = LS.encode_rotation(_dot(U, t), _dot(U, b), -_dot(V, t), -_dot(V, b))
+    out = bytearray()
+    for e in layout['elements']:
+        if e['fmt'] == 'f32':
+            c = e['bytes'] // 4
+            vals = (flat[:c] + [0.0] * c)[:c]
+            del flat[:c]
+            out += struct.pack('<%df' % c, *vals)
+        else:
+            out += rot
+    return bytes(out)
+
+
+def _weight_byte(w, p, n, ti, qi):
+    """one weight channel at a corner: a number 0..1, a callable (p, n) -> 0..1, or a table [triangle][corner]; byte 0..255"""
+    v = w(p, n) if callable(w) else (w[ti][qi] if isinstance(w, (list, tuple)) else w)
+    return max(0, min(255, int(round(float(v) * 255.0))))
+
+
+def _as_bytes(x):
+    return bytes.fromhex(x) if isinstance(x, str) else bytes(x)
+
+
 # ------------------------------------------------------------------------------------------------ world mesh
 class WorldBuilder:
     """Adds free-form triangles to a mapgen.Mesh: welded vertices, flat shading frame, surfaces of at most 20,000 triangles"""
@@ -247,6 +323,7 @@ class WorldBuilder:
         self.col_tris = 0
         self.degenerate = 0
         self.charts_estimate = 0
+        self.layer_tris = 0                      # triangles written with a layer record (world.bin version 2)
 
     def _key(self, base, obj):
         k = 0
@@ -261,6 +338,12 @@ class WorldBuilder:
         mat = rec.get('material')
         tag = rec.get('tag')
         su, sv = self.mats.get(mat, (128.0, 128.0))
+        # layered (`*`) surfaces: per corner vertex colour (R, G, B, A) and layer-stream record. `cols` [triangle][corner] = (R, G, B, A) and `layers` [triangle][corner] =
+        # bytes (or hex) are written as given; `blend` {material?, zone?, weights [g, b, a], scales [s1, s2, s3], offsets, mapping} builds them: colour (255, w1, w2, w3), layer record
+        # from the layer layout table (step 1). Explicit `cols` / `layers` win over what `blend` would make. Without any of the three the vertices are the plain ones.
+        blend = rec.get('blend') if mode in ('both', 'render') and mat else None
+        lay = resolve_blend(rec) if blend else None
+        cols_in, layers_in = rec.get('cols'), rec.get('layers')
         for ti, tri in enumerate(rec['tris']):
             p = [tuple(float(c) for c in q) for q in tri]
             if is_degenerate(*p):
@@ -279,18 +362,35 @@ class WorldBuilder:
                 verts, idx = self.mesh.mat(key)
                 ids = []
                 lms = rec.get('lms')
+                layered_tri = False
                 for qi, (q, (u, v)) in enumerate(zip(p, uv)):
                     lm = tuple(float(c) for c in lms[ti][qi]) if lms else self.lm
-                    wk = (key, tuple(round(c, 3) for c in q), round(u, 5), round(v, 5), tuple(round(c, 4) for c in n), lm)
+                    col = layer = None
+                    if blend:
+                        ws = list(blend.get('weights') or [])[:3]
+                        col = (255,) + tuple(_weight_byte(ws[k], q, n, ti, qi) if k < len(ws) else 0 for k in range(3))
+                        layer = layer_record(lay, q, n, blend.get('scales'), blend.get('mapping', 'planar'), blend.get('offsets'))
+                    if cols_in:
+                        col = tuple(int(c) for c in cols_in[ti][qi])
+                        if len(col) != 4 or not all(0 <= c <= 255 for c in col):
+                            raise ValueError('mesh %s: cols must be (R, G, B, A) bytes' % rec.get('name'))
+                    if layers_in:
+                        layer = _as_bytes(layers_in[ti][qi])
+                        if not layer or len(layer) % 4:
+                            raise ValueError('mesh %s: a layer record must be a positive multiple of 4 bytes' % rec.get('name'))
+                    wk = (key, tuple(round(c, 3) for c in q), round(u, 5), round(v, 5), tuple(round(c, 4) for c in n), lm, col, layer)
                     vi = self.weld.get(wk)
                     if vi is None:
                         vi = len(verts)
-                        verts.append((tuple(round(c, 3) for c in q), u, v, lm, mapgen.pack_unit(n), mapgen.pack_unit(t)))
+                        pv = (tuple(round(c, 3) for c in q), u, v, lm, mapgen.pack_unit(n), mapgen.pack_unit(t))
+                        verts.append(pv if col is None and layer is None else pv + (col, layer))
                         self.weld[wk] = vi
+                    layered_tri = layered_tri or layer is not None
                     ids.append(vi)
                 idx += ids
                 self.counts[key] += 1
                 self.render_tris += 1
+                self.layer_tris += 1 if layered_tri else 0
             if mode in ('both', 'collision'):
                 if tag is not None and int(tag) != scenegen.TAG_SOLID:
                     self.mesh.col_tag[len(self.mesh.col)] = int(tag)
