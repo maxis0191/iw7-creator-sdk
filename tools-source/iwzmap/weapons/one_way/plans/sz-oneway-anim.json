@@ -1,0 +1,42 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "sz_oneway_anim",
+ "map": "cp_zmb",
+ "conditions": "quiet",
+ "libraries": [
+  "cp_sz_oneway",
+  "szoneway_driver"
+ ],
+ "about": "ONE WAY's own first-person animations and sounds on a client (forge run --fs-game mods/szoneway --mod-ff <mod.ff>): first raise, idle, an issue (fire), the last ticket, a reload from empty; frames of the client at each. Stock spawning off.",
+ "steps": [
+  {"do": "waves", "on": false},
+  {"do": "ignore", "on": true},
+  {"do": "give", "weapon": "iw7_szoneway_zm"},
+  {"do": "wait", "s": 1.1},
+  {"do": "client_frame", "name": "ow_first_raise", "pause": 1},
+  {"do": "wait", "s": 3},
+  {"do": "call", "fn": "owt_held", "args": ["held"], "s": 1},
+  {"do": "client_frame", "name": "ow_idle", "pause": 1},
+  {"do": "press", "button": "fire", "ms": 100},
+  {"do": "client_frame", "name": "ow_fire", "pause": 1},
+  {"do": "wait", "s": 1},
+  {"do": "call", "fn": "owt_held", "args": ["after_fire"], "s": 1},
+  {"do": "ammo", "clip": 1, "stock": 60},
+  {"do": "wait", "s": 0.5},
+  {"do": "press", "button": "fire", "ms": 100},
+  {"do": "wait", "s": 0.4},
+  {"do": "client_frame", "name": "ow_last", "pause": 1},
+  {"do": "wait", "s": 1},
+  {"do": "press", "button": "reload", "ms": 100},
+  {"do": "wait", "s": 0.4},
+  {"do": "client_frame", "name": "ow_reload_a", "pause": 1},
+  {"do": "wait", "s": 0.7},
+  {"do": "client_frame", "name": "ow_reload_b", "pause": 1},
+  {"do": "wait", "s": 2.5},
+  {"do": "call", "fn": "owt_held", "args": ["after_reload"], "s": 1},
+  {"do": "client_frame", "name": "ow_after_reload", "pause": 1},
+  {"do": "expect", "that": "probe:held.oneway", "eq": 1, "why": "the player holds ONE WAY"},
+  {"do": "expect", "that": "probe:after_fire.clip", "eq": 11, "why": "a press issues one ticket"},
+  {"do": "expect", "that": "probe:after_reload.clip", "eq": 12, "why": "the reload from empty refills the stack"}
+ ]
+}

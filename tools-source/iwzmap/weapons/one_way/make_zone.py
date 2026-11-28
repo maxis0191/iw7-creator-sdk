@@ -33,6 +33,8 @@ RESERVE = 60                                # "60 in reserve"
 FIRE_TIME_MS = 400                          # one shot every 0.4 s
 RELOAD_MS = 2400                            # 2.4 s
 RELOAD_EMPTY_MS = 2800                      # 2.8 s from empty
+ANIM_TIMERS = {"iFirstRaiseTime": 2200, "iRaiseTime": 500, "quickRaiseTime": 500, "iEmptyRaiseTime": 500,
+               "iDropTime": 500, "quickDropTime": 500, "iEmptyDropTime": 500, "iMeleeTime": 700}   # with --anims only
 REACH_UNITS = 1500.0                        # instant hit reaches 1,500 units
 
 # ---- defaults of this machine and of the stock template (overridable) ---------------------------------------
@@ -218,6 +220,8 @@ def main(argv=None):
     ap.add_argument("--template", default=DEFAULT_TEMPLATE, help="stock weapon the definition is cloned from")
     ap.add_argument("--template-zone", default=DEFAULT_TEMPLATE_ZONE, help="stock zone holding the template")
     ap.add_argument("--sounds", help="folder written by foley_bank.py bank: the weapon's own sound bank, sfx package and notetrack map")
+    ap.add_argument("--anims", help="folder written by vm_compose.py build: xanim/*.xab and animpkg_patch.json (the weapon's "
+                                    "own first-person clips); the package's slots and its raise/drop timers follow them")
     args = ap.parse_args(argv)
 
     sounds = read_sounds(args.sounds) if args.sounds else None
@@ -234,6 +238,21 @@ def main(argv=None):
     weapon, pkg, changes = author(template, pkg_template, view_model)
     if sounds:
         apply_sounds(weapon, sounds, changes)
+    clips = []
+    if args.anims:
+        with open(os.path.join(args.anims, "animpkg_patch.json"), encoding="utf-8") as f:
+            patch = json.load(f)["anims"]
+        clips = sorted(os.path.splitext(n)[0] for n in os.listdir(os.path.join(args.anims, "xanim")) if n.endswith(".xab"))
+        missing = sorted({v for v in patch.values() if v and v not in clips})
+        if missing:
+            sys.exit("animpkg_patch.json names clips that are not in xanim/: %s" % missing)
+        for slot, name in patch.items():
+            changes.append(("animpkg.anims." + slot, pkg["anims"].get(slot), name))
+            pkg["anims"][slot] = name
+        # the clips' own lengths (DESIGN.md section 6): first raise 2.2 s, raise and drop 0.5 s
+        for key, ms in ANIM_TIMERS.items():
+            changes.append(("animpkg.timers." + key, pkg["timers"].get(key), ms))
+            pkg["timers"][key] = ms
 
     mod = os.path.join(args.out, "zonetool", ZONE)
     if os.path.exists(mod):
@@ -241,6 +260,10 @@ def main(argv=None):
     shutil.copytree(args.fragment, mod, ignore=shutil.ignore_patterns(*FRAGMENT_SKIP))
     save(os.path.join(mod, "weapons", WEAPON + ".json"), weapon)
     save(os.path.join(mod, "animpkg", PACKAGE + ".json"), pkg)
+    if clips:
+        os.makedirs(os.path.join(mod, "xanim"), exist_ok=True)
+        for name in clips:
+            shutil.copyfile(os.path.join(args.anims, "xanim", name + ".xab"), os.path.join(mod, "xanim", name + ".xab"))
     if sounds:
         for folder in SOUND_DIRS:
             shutil.copytree(os.path.join(args.sounds, folder), os.path.join(mod, folder), dirs_exist_ok=True)
@@ -261,7 +284,7 @@ def main(argv=None):
                  (args.template_zone, args.dump))
 
     sound_rows = [tuple(r.split(",", 1)) for r in sounds["csv_rows"]] if sounds else []
-    embedded = rows + sound_rows + [("animpkg", PACKAGE), ("weapon", WEAPON)]
+    embedded = rows + sound_rows + [("xanim", c) for c in clips] + [("animpkg", PACKAGE), ("weapon", WEAPON)]
     lines = write_csv(os.path.join(zone_source, ZONE + ".csv"), embedded, present)
 
     report = {
