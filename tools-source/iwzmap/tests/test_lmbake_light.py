@@ -176,6 +176,36 @@ class Light(unittest.TestCase):
         self.assertTrue(np.allclose(a, [0.5, 0.25, 0.0], atol=0.03), a)       # the rays reach the sky through the sky box
         self.assertEqual(bj['triangles'], 2)                                   # the floor only: the box has no chart
 
+    # ---------------------------------------------------------------- a runtime light with its bounce baked (LIGHTING-GAP W1, 28 Nov 2026)
+    def test_runtime_light_bounce_only(self):
+        # one room: a floor and a wall at x = 0 facing it; a lamp 60 over the floor at x 128. Baked, the lamp's direct light is in B (the floor
+        # under it) and its bounce in A (the wall). As `runtime` with `bake: bounce` the engine draws the direct light: B under the lamp is 0
+        # and the wall keeps the same bounce; the light grid has no delta term of it
+        quads = [SW.floor_quad(0, 0, 0, 256, 256), SW.wall_quad_x(1, 0, 0, 256, 0, 128, facing=1)]
+        lamp = dict(LIGHT, origin=[128.0, 128.0, 60.0])
+        dark = {'ambient': {'color': [0, 0, 0], 'level': 0}, 'bounces': 2}
+        zb, cfg_b, _, bjb = bake_emit(self.work, quads, ['w/concrete_floor', 'w/concrete_wall'], {'lights': [lamp], 'lighting': dark})
+        zr, cfg_r, rep, bjr = bake_emit(self.work, quads, ['w/concrete_floor', 'w/concrete_wall'],
+                                        {'lights': [dict(lamp, runtime=True, bake='bounce')], 'lighting': dark})
+        self.assertIs(cfg_r['lights'][0]['direct'], False)
+        self.assertEqual(rep['runtime_lights_bounce_baked'], 1)
+        self.assertEqual((bjr['lights'], bjr['bounce_only_lights']), (0, 1))
+        f = nearest(zr, 128, 128)
+        w = nearest(zr, 0, 128, 40)
+        Bb = zb['B'][zb['tx_y'][f], zb['tx_x'][f]]; Br = zr['B'][zr['tx_y'][f], zr['tx_x'][f]]
+        Ab = zb['A'][zb['tx_y'][w], zb['tx_x'][w]]; Ar = zr['A'][zr['tx_y'][w], zr['tx_x'][w]]
+        print('floor under the lamp: B baked %.3f, bounce-only %.3f; wall: A baked %.3f, bounce-only %.3f' % (Bb.sum(), Br.sum(), Ab.sum(), Ar.sum()))
+        self.assertGreater(Bb.sum(), 1.0)                                       # baked: the direct light is stored
+        self.assertTrue(np.allclose(Br, 0, atol=1e-6))                          # bounce-only: zero direct in the lightmap
+        self.assertTrue(np.allclose(zr['Edir'][f], 0, atol=1e-6))
+        self.assertGreater(Ar.sum(), 0.05)                                      # the facing wall still gets the lamp's bounce
+        self.assertAlmostEqual(Ar.sum() / Ab.sum(), 1.0, delta=0.02)            # the same bounce as the baked light
+        # the light grid: the same cells; baked = what the surfaces throw + the lamp's delta term, bounce-only = what the surfaces throw (the lit floor too)
+        cb, cr = zb['grid'][:, 3:6].sum(), zr['grid'][:, 3:6].sum()
+        print('light grid c0 sum: baked %.2f, bounce-only %.2f' % (cb, cr))
+        self.assertGreater(cr, 0.0)
+        self.assertLess(cr, 0.9 * cb)
+
     def test_defaults_are_unchanged(self):
         floor = [SW.floor_quad(0, 0, 0, 256, 256)]
         cfg, _ = layout_lights.build_config(self._emit(floor), texel=8.0)

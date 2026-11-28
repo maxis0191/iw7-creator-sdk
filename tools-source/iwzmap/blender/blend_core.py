@@ -1296,6 +1296,8 @@ class BlendEmitter(scenegen.Emitter):
                     rec['shadows'] = bool(L['shadows'])
                 if L.get('bake') is False:
                     rec['bake'] = False             # a pure runtime light: bake/layout_lights.py leaves it out of the lightmap
+                elif L.get('bake') == 'bounce':
+                    rec['bake'] = 'bounce'          # a runtime light with its bounce baked: the baker stores none of its direct light
             self.layout['lights'].append(rec)
             if L.get('runtime'):
                 nrun[rec['type']] = nrun.get(rec['type'], 0) + 1

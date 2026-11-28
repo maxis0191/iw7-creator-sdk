@@ -142,20 +142,27 @@ def picture2(m, id, name, centre, axis, size):
 LIGHTS = []    # (id, role) for the report
 
 
-def fix(m, kind, at, facing=0.0, role='hall', **kw):
-    """a stock fixture with its light, always baked and in the emergency group (PLAN decision 3: no runtime light)"""
+KEY_BAKE = os.environ.get('L1_KEY_BAKE', 'bounce')     # PLAN decision 3 as revised 28 Nov (LIGHTING-GAP W1): key lights are always-on runtime lights whose
+#                                                        bounce is baked ('bounce'); 'baked' rebuilds the all-baked arcade of passes 1 to 8 for A/B
+
+
+def fix(m, kind, at, facing=0.0, role='hall', key=False, **kw):
+    """a stock fixture with its light in the emergency group: the fill baked; a key light (key=True: a shop's pool and sign lights, the directory's lamp)
+    a runtime light with its bounce baked (KEY_BAKE)"""
     if 'intensity' in kw:
         kw['intensity'] = kw['intensity'] * LIGHT_K
     kw['radius'] = kw.get('radius', 1.0) * RADIUS_K      # pass 1 score: the fixture radii as given gave a median of 128 (rule 10: 175 or more)
-    ids = B.fixture(m, kind, at, facing, group='emergency', bake='baked', layer='lights', **kw)
+    ids = B.fixture(m, kind, at, facing, group='emergency', bake=KEY_BAKE if key else 'baked', layer='lights', **kw)
     for lid in ids[1:]:
         LIGHTS.append((lid, role))
     return ids
 
 
-def lamp(m, id, origin, role, **kw):
-    """a light without a fixture model of its own (a lit ceiling panel's soft spot, a machine's glow): baked, emergency"""
+def lamp(m, id, origin, role, key=False, **kw):
+    """a light without a fixture model of its own (a lit ceiling panel's soft spot, a machine's glow): emergency; baked, or a key light (see fix)"""
     kw['intensity'] = kw.get('intensity', 1.0) * LIGHT_K
+    if key and KEY_BAKE == 'bounce':
+        kw.update(runtime=True, bake='bounce')
     B.light(m, origin, group='emergency', layer='lights', id=id, **kw)
     LIGHTS.append((id, role))
 

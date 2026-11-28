@@ -415,12 +415,20 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
         L.append(list(l['origin']) + list(l['color']) + [l['intensity'], l['radius'], l.get('size', 4.0)] + list(d) +
                  [ci, co, 1.0 if l.get('type') == 'spot' else 0.0, 0.0])
     L = np.array(L, float).reshape(-1, 16)
+    # a light with "direct": false is a runtime light whose bounce is baked (Studio `bake='bounce'`): the engine draws its direct term (highlights,
+    # coloured pools), so its direct light feeds the gather below but is not stored (B, the direction image, the light grid's delta term)
+    bounce_only = np.array([l.get('direct', True) is False for l in cfg.get('lights', [])], bool)
+    Lb = L[bounce_only]
+    L = L[~bounce_only]
     p, nn = np.ascontiguousarray(tx['pos']), np.ascontiguousarray(tx['n'])
     tu, tv = np.ascontiguousarray(tx['tu']), np.ascontiguousarray(tx['tv'])
     t0 = time.time()
     Edir, Wdir = rt.direct_light(p, nn, tu, tv, 1 if quick else 3, L, 1, *S_args)
+    Ebounce = np.zeros_like(Edir)
+    if len(Lb):
+        Ebounce, _ = rt.direct_light(p, nn, tu, tv, 1 if quick else 3, np.ascontiguousarray(Lb), 1, *S_args)
     timing['direct'] = time.time() - t0
-    print('direct light: %d lights, %.1f s' % (len(L), timing['direct']))
+    print('direct light: %d lights (+%d runtime lights with baked bounce: direct not stored), %.1f s' % (len(L), len(Lb), timing['direct']))
 
     # indirect: one set of cosine rays per texel, reused by every bounce
     t0 = time.time()
@@ -470,14 +478,14 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
         if cfg.get('sun_bounce', True) and cfg['sun'].get('color'):
             Esun = (S * np.maximum(cosn, 0.0))[:, None] * np.array(cfg['sun']['color'], float)[None]
     for k in range(bounces):
-        Lout = np.vstack([a_tex * (Edir + Esun + Eind) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])
+        Lout = np.vstack([a_tex * (Edir + Ebounce + Esun + Eind) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])
         Eind = np.concatenate([Lout[idx[r0:r0 + 8192]].mean(1) for r0 in range(0, n, 8192)])
     timing['indirect'] = time.time() - t0
     print('indirect: %d rays/texel, %d bounces, %.1f s; mean AO %.3f' % (nr_, bounces, timing['indirect'], ao.mean()))
 
     # light grid samples (lighting.txt): SH order 1 (constant + vertical) of the radiance around each cell centre
     t0 = time.time()
-    Lfinal = np.vstack([a_tex * (Edir + Esun + Eind + fill * ao[:, None]) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])
+    Lfinal = np.vstack([a_tex * (Edir + Ebounce + Esun + Eind + fill * ao[:, None]) + e_tex, sky[None], np.zeros((1, 3)), emit_rad])   # what surfaces throw at the grid's cells: a runtime light's lit floor too
     light_lines, grid = light_grid(cfg, w, Lfinal, n, grid_scene, grid_world[1], grid_world[2], tid, W, H, L, quick)
     timing['light_grid'] = time.time() - t0
 
@@ -555,7 +563,7 @@ def bake(src, lights_path, out, texel=None, nrays=100, bounces=None, quick=False
                         tx_pos=p, tx_n=nn, tx_x=x, tx_y=y, tx_mat=tx['mat'], tx_chart=tx['chart'], Edir=Edir, Eind=Eind, ao=ao,
                         grid=grid)
     rep = {'schema': 'iwzmap.lightbake/1', 'atlas': [W, H], 'texel': texel, 'texels': n, 'charts': len(charts),
-           'triangles': len(front), 'occluder_boxes': len(occ), 'emissive_boxes': len(emitters), 'bounces_used': bounces, 'lights': len(L), 'rays_per_texel': nr_, 'bounces': bounces,
+           'triangles': len(front), 'occluder_boxes': len(occ), 'emissive_boxes': len(emitters), 'bounces_used': bounces, 'lights': len(L), 'bounce_only_lights': int(len(Lb)), 'rays_per_texel': nr_, 'bounces': bounces,
            'mean': {'A': imgA[valid].mean(0).tolist(), 'B': imgB[valid].mean(0).tolist(), 'E': E_flat[valid].mean(0).tolist(),
                     'ao': float(ao.mean())},
            'encode': enc_err, 'timing_s': {k: round(v, 2) for k, v in timing.items()}, 'total_s': round(time.time() - t_start, 1),

@@ -70,7 +70,7 @@ def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emis
     st = lay.get('lighting') or {}
     w = lmbake.read_world(os.path.join(src, 'world.bin'))
     lights, fixture_col = [], {}
-    runtime_only = 0
+    runtime_only = bounce_only = 0
     for l in lay.get('lights', []):
         if l.get('runtime') and l.get('bake') is False:       # a pure runtime light (lights.txt, the engine's dynamic light): not in the lightmap
             runtime_only += 1
@@ -84,6 +84,9 @@ def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emis
                'radius': float(l.get('radius', 384)) * radius_scale, 'size': 6.0, 'room': l.get('zone', '')}
         if rec['type'] == 'spot':
             rec.update({'dir': l.get('dir', [0, 0, -1]), 'inner': l.get('inner', 25), 'outer': l.get('outer', 60)})
+        if l.get('runtime') and l.get('bake') == 'bounce':     # a runtime light with its bounce baked: lmbake keeps its direct light out of the lightmap
+            rec['direct'] = False
+            bounce_only += 1
         lights.append(rec)
     albedo, emi = {}, {}
     for m in w['materials']:
@@ -93,7 +96,7 @@ def build_config(src, power=3.0, radius_scale=2.5, texel=8.0, ambient=0.02, emis
             key = next((f for f in fixture_col if f and f.split('_')[-1] in ml), None)
             col = fixture_col.get(key, [1.0, 0.95, 0.85])
             emi[m] = [round(c * emissive, 3) for c in col]
-    rep = {'runtime_only_lights_not_baked': runtime_only}
+    rep = {'runtime_only_lights_not_baked': runtime_only, 'runtime_lights_bounce_baked': bounce_only}
     doc_emi = st.get('emissive') or {}
     unknown = []
     for m, v in doc_emi.items():                       # the document wins over the name rule
