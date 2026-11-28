@@ -187,3 +187,80 @@ black floors and vaults (cause not found; the lightmap is ruled out; E1 to E4 de
 prefab; Studio patches 1-2 R2, mapgen 3 lead, kit import 4 R2/lead, compiler 5 compiler owner); decals / caulk (3: Studio and compiler);
 baked shadow of props (built; frame measure pending); SSAO (plumbing built; frame pending); probes (6); content the lift cannot carry
 (far geometry outside the box, effects, the sky, the 115 entities).
+
+## 8. 2 x 2 result (worker R2b, 28 Nov 2026; data back, one batch)
+
+Gate first: Studio `claude/film-parity` head d51d97b (origin/main had not moved, no merge): 832 tests, 0 failures, 0 errors, 18 skipped, 13.4 s
+(`r2\gate\gate_resume.log`; the earlier 21-22 errors are gone, they were the deleted files). Not merged to Studio main.
+
+Batch `r2\run_batch2.py` (`r2\batch2.json`, one background job, about 40 min): control room, `--mode bounce --base-only`, kit dump roots on in every
+cell (bake log: 824 occluder boxes), draft bake (no remembered bake) or final bake (texel 8, 256 rays, 3 bounces), probe room (`probe_rooms` row in
+probes.txt) on or off, frames at stock poses 1, 2, 5 (`ctl_subway_east_1/2/5` = stock `subway_east_1/2/5`), 5 cells, all shots ok and not stale.
+Metric: `control_compare.py metric` against `stockref\cp_disco` (`r2\metric\m2_cells.md`; `analyze2.py`).
+
+| pose | cell | ceiling lum | wall lum | floor lum | floor b/r | black % | distance |
+|---|---|---|---|---|---|---|---|
+| 1 | stock | 0.0363 | 0.0917 | 0.1021 | 0.73 | 0.0 | - |
+| 1 | C1 b_bounce (reference, no kit roots, no probe room) | 0.0699 | 0.0875 | 0.0158 | 0.76 | 20.7 | 5.68 |
+| 1 | draft, probe room | 0.0678 | 0.0796 | 0.0156 | 0.77 | 22.2 | 5.77 |
+| 1 | final, probe room | 0.0681 | 0.0798 | 0.0157 | 0.76 | 22.2 | 5.77 |
+| 1 | draft, no probe room | 0.0677 | 0.0795 | 0.0156 | 0.77 | 22.2 | 5.77 |
+| 1 | final, no probe room | 0.0681 | 0.0797 | 0.0156 | 0.76 | 22.2 | 5.77 |
+| 1 | final + probe room + r_ssao MDAO | 0.0681 | 0.0798 | 0.0157 | 0.76 | 22.2 | 5.77 |
+| 2 | stock | 0.0329 | 0.0654 | 0.0433 | 0.48 | 0.0 | - |
+| 2 | C1 b_bounce | 0.0443 | 0.0962 | 0.0581 | 0.28 | 10.9 | 4.17 |
+| 2 | draft, probe room | 0.0404 | 0.0898 | 0.0573 | 0.28 | 12.7 | 4.16 |
+| 2 | final, probe room | 0.0405 | 0.0899 | 0.0576 | 0.28 | 12.6 | 4.16 |
+| 2 | draft, no probe room | 0.0405 | 0.0898 | 0.0573 | 0.28 | 12.7 | 4.16 |
+| 2 | final, no probe room | 0.0405 | 0.0898 | 0.0576 | 0.28 | 12.6 | 4.16 |
+| 2 | final + probe room + MDAO | 0.0405 | 0.0899 | 0.0576 | 0.28 | 12.6 | 4.16 |
+| 5 | stock | 0.0248 | 0.0537 | 0.1134 | 0.74 | 0.0 | - |
+| 5 | C1 b_bounce | 0.0401 | 0.0673 | 0.0089 | 1.05 | 40.1 | 7.56 |
+| 5 | draft, probe room | 0.0389 | 0.0629 | 0.0088 | 1.06 | 40.9 | 7.54 |
+| 5 | final, probe room | 0.0392 | 0.0631 | 0.0087 | 1.09 | 40.8 | 7.56 |
+| 5 | draft, no probe room | 0.0389 | 0.0629 | 0.0088 | 1.06 | 40.9 | 7.53 |
+| 5 | final, no probe room | 0.0392 | 0.0631 | 0.0087 | 1.08 | 40.8 | 7.56 |
+| 5 | final + probe room + MDAO | 0.0392 | 0.0631 | 0.0087 | 1.09 | 40.8 | 7.56 |
+
+Mean distance over poses 1, 2, 5: C1 5.80; draft+probe 5.82; final+probe 5.83; draft no probe 5.82; final no probe 5.83; final+probe+MDAO 5.83.
+**The black floor share did not move in any cell** (22 / 13 / 41 % at poses 1 / 2 / 5, as C1's 21 / 11 / 40 %). **The prediction held**: draft and
+final give the same black, and the probe room did not move it (probe room on against off, draft cells: 22.2 / 12.7 / 40.9 % against 22.2 / 12.7 / 40.9 %).
+Frame of the final + probe room cell, pose 5 (stock left, ours right: `r2\metric\look5_pair.png`): ours shows the platform floor, the track bed, the vault and
+the tunnel mouths black; the car bodies, walls and the far lit room are drawn.
+
+Other numbers of this batch:
+- Bench-foot ratio (`bake_probe.py`, kept final bake of p1_final against C1's emit_b_bounce, same floor box, 4 bench props): near / far light
+  0.895 without kit roots, 0.442 with (feet E 0.0116 -> 0.0001). C1's variant gave 0.994 -> 0.571; same direction and size: the bench feet are now
+  baked dark. It moved no frame number above (distance +0.03).
+- SSAO: stock with `r_ssao=MDAO` set before the first camera (`forge capture --set`) and plain stock: the occlusion target is 255 at every pixel in BOTH
+  (share_255 1.0, mean 255): the dvar set that way did not turn occlusion on. Our capture (`cap\ours_ssao`, 69 actions) has no occlusion target at all
+  (`ao\summary.json`: empty). Stock frames with `--dvar-at-launch r_ssao=MDAO` (plan run, `stock_mdao\`) differ from the plain stock frames by a mean
+  absolute 3.06 / 0.68 / 1.31 grey levels at poses 1 / 2 / 5 (not an occlusion look). So SSAO is not shown on either side by this route; the SSAO cell's
+  metric equals the same cell without it. The RenderDoc check on the launch-time dvar was not done (only `--set` captures).
+
+### What the diag document adds that the control document lacks (stop condition: every cell kept the black)
+
+Read from `control\doc_diag\` and `control\doc_b_bounce\`: `map.json` is identical but for the name and the layer list; the diag has ONE more layer,
+`ctl_diag.json`, all `mode: render`: (1) three flat slabs 40 x 40 x 2 units at z -111.88..-109.88 and three upright slabs 40 x 4 x 48 at z -113.88..-65.88,
+each in one of three materials (`concrete_bare_patches_clean_03`, `concrete_wall_grunge_01`, `dt_tile_ceramic_white`), at x -6990..-6850, y -4230..-4146
+(a material swatch row at the room's south edge); (2) `ctl_diag_floor_mesh`: a triangle mesh of `concrete_bare_patches_clean_03` at z -113 covering the room
+floor from x -7162 to -6746, y -4284 to -3996, one unit above the lifted floor (z -114). So the diag differs from the control by NEW world geometry authored
+in the document, not by any bake or probe setting. The cause of the black is therefore not in the bake (draft = final), not in the probe room (on = off), not in
+the kit roots, not in SSAO: it is in the lifted floor and vault surfaces as the lift writes them, or in the engine's draw of those surfaces. Next step: bake and
+shoot the control with ONLY `ctl_diag_floor_mesh` added, then only the slabs, to find which row removes the black; then read what differs between the lifted
+surface 268 and the mesh in world.bin (flags, sort key, vertex colour, lightmap uv); E4 (pixel history at pose 5) is the other route. Not done here (stop rule).
+
+## 9. Ranking of the pipeline gaps by the metric distance to stock that closing them removed (this batch)
+
+Distance baseline: 5.80 (mean, poses 1, 2, 5).
+
+| gap | removed | basis |
+|---|---|---|
+| black floors and vaults | not measured (cause not found) | the metric is dominated by them: black share 22 / 13 / 41 %, floor luminance 0.016 / 0.058 / 0.009 against stock 0.102 / 0.043 / 0.113 |
+| probe room | 0.00 (5.82 on, 5.82 off, draft; 5.83 / 5.83 final) | measured |
+| draft against final bake | 0.00 to +0.01 (5.82 draft, 5.83 final) | measured; final is not closer |
+| prop shadows / kit dump roots | +0.02 (C1 5.80 without, 5.82 to 5.83 with); bench feet ratio 0.895 -> 0.442 | measured: real in the bake, invisible in this metric |
+| SSAO (`r_ssao` MDAO) | 0.00 | measured, not engaged: the occlusion target stays 255 on stock too |
+| blend layers (32.7 % of the lifted surface) | not measured | needs patches 1 to 5 (HOLD) |
+| decals, glass, caulk shadow casters | not measured | needs the draw-class patches (HOLD) |
+| probes cube (the room's own cp_disco cube) | not measured | needs the compiler mode of section 6 (HOLD) |
