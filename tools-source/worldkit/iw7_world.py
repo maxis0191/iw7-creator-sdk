@@ -242,6 +242,15 @@ def mesh_path(db_path):
     return db_path + '.mesh'
 
 
+def resolve_mesh_file(db_path, meta_name):
+    """the mesh file of a database: <db>.mesh beside it; meta['mesh_file'] is the name the build wrote, which a build
+    into a temporary name then renamed (Studio grammar/build_all.sh: tmp_<map>.sqlite) leaves stale"""
+    own = mesh_path(os.path.abspath(db_path))
+    if os.path.isfile(own) or not meta_name:
+        return own
+    return os.path.join(os.path.dirname(os.path.abspath(db_path)), meta_name)
+
+
 def build(dump_dir, db_path, catalog=None, map_name=None, log=print):
     t0 = time.time()
     dump_dir = os.path.abspath(dump_dir)
@@ -530,6 +539,9 @@ class World:
         if self.meta.get('reader_version', '').split('.')[0] != READER_VERSION.split('.')[0]:
             raise WorldError('database was built by reader %s, this is %s: rebuild it' % (self.meta.get('reader_version'), READER_VERSION))
 
+    def mesh_file_path(self):
+        return resolve_mesh_file(self.path, self.meta.get('mesh_file'))
+
     def q(self, sql, args=()):
         return _rows(self.con.execute(sql, args))
 
@@ -545,8 +557,7 @@ class World:
         s = rows[0]
         zrow = self.q('SELECT vertex_count, offset FROM mesh_zones WHERE zone=?', (s['transientZone'],))[0]
         n = s['tri_count'] * 3
-        mesh_file = os.path.join(os.path.dirname(os.path.abspath(self.path)), self.meta['mesh_file'])
-        with open(mesh_file, 'rb') as f:
+        with open(self.mesh_file_path(), 'rb') as f:
             f.seek(self.meta['mesh_index_offset'] + 2 * s['base_index'])
             raw = f.read(2 * n)
             if len(raw) != 2 * n:

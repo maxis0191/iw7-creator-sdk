@@ -420,7 +420,7 @@ class Scene:
         self.w = world.World(db_path)
         self.db_path = db_path
         m = self.w.meta
-        mesh_file = os.path.join(os.path.dirname(os.path.abspath(db_path)), m['mesh_file'])
+        mesh_file = world.resolve_mesh_file(db_path, m.get('mesh_file'))
         zones = {r['zone']: r for r in self.w.q('SELECT zone, vertex_count, offset FROM mesh_zones')}
         raw = np.fromfile(mesh_file, dtype=np.uint8)
         size = world.dump.VERTEX_SIZE
