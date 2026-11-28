@@ -1,0 +1,230 @@
+{
+  "schema": "iw7.gamelab-plan/1",
+  "name": "sz_oneway_sound",
+  "map": "cp_zmb",
+  "conditions": "quiet",
+  "libraries": [
+    "cp_sz_oneway",
+    "szoneway_driver"
+  ],
+  "about": "ONE WAY's own sounds heard by a joined client (ops/netlab/Invoke-NetLab.ps1 -Plan -Classic -AudioCapture -FsGame mods/szoneway): the first raise (bell test), four issues 0.6 s apart, the last ticket, a reload from empty. The client's audio is recorded from the join; the probes give the times of each key.",
+  "steps": [
+    {
+      "do": "waves",
+      "on": false
+    },
+    {
+      "do": "ignore",
+      "on": true
+    },
+    {
+      "do": "wait",
+      "s": 16
+    },
+    {
+      "do": "call",
+      "fn": "owt_held",
+      "args": [
+        "t_give"
+      ],
+      "s": 0.1
+    },
+    {
+      "do": "give",
+      "weapon": "iw7_szoneway_zm"
+    },
+    {
+      "do": "wait",
+      "s": 4
+    },
+    {
+      "do": "call",
+      "fn": "owt_key",
+      "args": [
+        "f1",
+        "keydown:attack"
+      ],
+      "s": 0.1
+    },
+    {
+      "do": "wait",
+      "s": 0.15
+    },
+    {
+      "do": "call",
+      "fn": "owt_key",
+      "args": [
+        "u1",
+        "keyup:attack"
+      ],
+      "s": 0.5
+    },
+    {
+      "do": "wait",
+      "s": 0.7
+    },
+    {
+      "do": "call",
+      "fn": "owt_key",
+      "args": [
+        "f2",
+        "keydown:attack"
+      ],
+      "s": 0.1
+    },
+    {
+      "do": "wait",
+      "s": 0.15
+    },
+    {
+      "do": "call",
+      "fn": "owt_key",
+      "args": [
+        "u2",
+        "keyup:attack"
+      ],
+      "s": 0.5
+    },
+    {
+      "do": "wait",
+      "s": 0.7
+    },
+    {
+      "do": "call",
+      "fn": "owt_key",
+      "args": [
+        "f3",
+        "keydown:attack"
+      ],
+      "s": 0.1
+    },
+    {
+      "do": "wait",
+      "s": 0.15
+    },
+    {
+      "do": "call",
+      "fn": "owt_key",
+      "args": [
+        "u3",
+        "keyup:attack"
+      ],
+      "s": 0.5
+    },
+    {
+      "do": "wait",
+      "s": 0.7
+    },
+    {
+      "do": "call",
+      "fn": "owt_key",
+      "args": [
+        "f4",
+        "keydown:attack"
+      ],
+      "s": 0.1
+    },
+    {
+      "do": "wait",
+      "s": 0.15
+    },
+    {
+      "do": "call",
+      "fn": "owt_key",
+      "args": [
+        "u4",
+        "keyup:attack"
+      ],
+      "s": 1.5
+    },
+    {
+      "do": "wait",
+      "s": 0.7
+    },
+    {
+      "do": "ammo",
+      "clip": 1,
+      "stock": 60
+    },
+    {
+      "do": "wait",
+      "s": 0.5
+    },
+    {
+      "do": "call",
+      "fn": "owt_key",
+      "args": [
+        "f5",
+        "keydown:attack"
+      ],
+      "s": 0.1
+    },
+    {
+      "do": "wait",
+      "s": 0.15
+    },
+    {
+      "do": "call",
+      "fn": "owt_key",
+      "args": [
+        "u5",
+        "keyup:attack"
+      ],
+      "s": 1.5
+    },
+    {
+      "do": "wait",
+      "s": 0.7
+    },
+    {
+      "do": "call",
+      "fn": "owt_key",
+      "args": [
+        "r1",
+        "keydown:usereload"
+      ],
+      "s": 0.1
+    },
+    {
+      "do": "wait",
+      "s": 0.15
+    },
+    {
+      "do": "call",
+      "fn": "owt_key",
+      "args": [
+        "r2",
+        "keyup:usereload"
+      ],
+      "s": 4
+    },
+    {
+      "do": "wait",
+      "s": 4
+    },
+    {
+      "do": "call",
+      "fn": "owt_held",
+      "args": [
+        "after"
+      ],
+      "s": 1
+    },
+    {
+      "do": "wait",
+      "s": 6
+    },
+    {
+      "do": "expect",
+      "that": "probe:after.clip",
+      "eq": 12,
+      "why": "the reload from empty refilled the stack"
+    },
+    {
+      "do": "expect",
+      "that": "probe:after.oneway",
+      "eq": 1,
+      "why": "the player holds ONE WAY"
+    }
+  ]
+}

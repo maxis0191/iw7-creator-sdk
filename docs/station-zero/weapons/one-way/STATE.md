@@ -103,6 +103,19 @@ measure the stock grip in `j_gun` space (its mesh) and place ours on it, then ou
 | Zone z3 | `make_zone.py --sounds --anims`, `C:\studio-data\sz\weapons\one-way\zone\z3`, built `mod.ff` 5,691,852 B + `mod.sabl/.sabs` | preflight 0 errors; ZoneTool 15 ms, no error |
 | In the game | `plans/sz-oneway-anim.json` (pause 1) and `sz-oneway-anim-nopause.json`, `--joined`, keys through CLIREQ | 3/3 both runs: a press issues one ticket (12 to 11), a reload from empty refills (12, reserve 48). Frames `runs\frames\anim3_*.png`: right hand on the grip, the lamps glow, the fire kick and the reload's left hand show. With `pause: 1` every frame showed the hold pose (ledger `forge-client-frame-pause-freezes-viewmodel`); a client cell with a mod never reached its match (ledger `forge-client-cell-mod-no-first-match`) |
 
+**Round 2 of the hold, in game (zone z4, `anim4_*.png`, 3/3):** the weapon turned 20 degrees so its left face, top badge
+and lamp desk show; the left hand in the idle near the bell, with two touches a loop; the strap swung clear of the right
+hand (2.8 / 3.2 / 0.87 inch).
+
+**The sounds heard in game (28 Nov):** `plans/sz-oneway-sound.json` through the classic network lab with the client's audio
+recorded (`ops/netlab/Invoke-NetLab.ps1 -Plan -Classic -AudioCapture -FsGame mods/szoneway`, run from a private copy of the
+prepared workspace with the two libraries added; PASS 2/2). Our files found in the client's recording by normalized
+cross-correlation (`C:\studio-data\sz\weapons\one-way\runs\sound-2`): `ow_band_tear` 0.95, `ow_stack_out` 0.66, `ow_door_open` 0.62,
+`ow_raise` 0.60, `ow_flag` 0.47, `ow_crank` 0.37, each where the reload's notes put it (about 0.4 s after the key);
+`ow_issue` 0.32 / 0.27 at the first two presses only, under a broadband bed from 12 to 16 s whose source is not
+identified. Open: the fire sound's level in game against that bed and against the stock fire. A plan's `call` step
+`s` is not a wait: the first sound run sent every key at the same server instant.
+
 **Wrong in the frames, round 2 under way:** the gun is seen from behind (the rear plate fills the view), the left hand is
 out of sight at idle, the strap passes through the right hand. Not measured: the sounds in game (needs the network lab's
 audio capture), the first raise's bell, ADS, melee.
