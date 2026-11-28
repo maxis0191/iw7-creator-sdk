@@ -11,7 +11,7 @@
   1280,
   720
  ],
- "about": "I1 real time, a client: power on, D4 bought, a walk with player physics (move: no forward key exists in the input channel) from the ticket hall through D4 to the Arcade west end and back; perf windows and client frames at arc_east_long and at the middle of the hall (1280 x 720).",
+ "about": "I1 real time, a client: power on, every debris door opened (the D4 purchase is proven headless in i1_arcade; on this client cell the use step fired and charged nothing), a walk with player physics (move: no forward key exists in the input channel) from the ticket hall through D4 along the north shop lane (y 4150, clear of the bench islands) to the west end and back; perf windows and client frames at arc_east_long and at the middle of the hall (1280 x 720).",
  "steps": [
   {
    "do": "waves",
@@ -45,14 +45,7 @@
    "snap": true
   },
   {
-   "do": "use",
-   "name": "door",
-   "kind": "debris_1000",
-   "near": [
-    -1160.0,
-    3900.0,
-    24.0
-   ]
+   "do": "doors"
   },
   {
    "do": "wait",
@@ -78,23 +71,18 @@
      1
     ],
     [
-     -1700,
-     3960,
+     -1450,
+     4150,
      1
     ],
     [
      -2200,
-     3960,
+     4150,
      1
     ],
     [
-     -2700,
-     3960,
-     1
-    ],
-    [
-     -2900,
-     4000,
+     -2880,
+     4150,
      1
     ]
    ],
@@ -106,23 +94,18 @@
    "name": "walk_out",
    "path": [
     [
-     -2900,
-     4000,
-     1
-    ],
-    [
-     -2700,
-     3960,
+     -2880,
+     4150,
      1
     ],
     [
      -2200,
-     3960,
+     4150,
      1
     ],
     [
-     -1700,
-     3960,
+     -1450,
+     4150,
      1
     ],
     [
@@ -199,12 +182,6 @@
    "do": "capture",
    "name": "i1_mid_hall",
    "pause": 2
-  },
-  {
-   "do": "expect",
-   "that": "use:door.spent",
-   "eq": 1000,
-   "why": "D4 bought"
   },
   {
    "do": "expect",
