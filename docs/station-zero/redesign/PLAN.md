@@ -147,6 +147,14 @@ the stock layer bytes are per vertex (cp_disco's transient zone in the store cac
 gaps. K1's parts list (cp_disco donor kit, hall 480 clear, about 244 props, authored column and girder meshes in stock
 plain materials) is the construction plan for the Arcade's next round.
 
+Answered by BL1 ([BLEND-LAYERS](https://github.com/maxis0191/iw7-creator-sdk/blob/claude/sz-blend/docs/station-zero/redesign/BLEND-LAYERS.md), branch
+`claude/sz-blend`, from bytes and shader disassembly, no frame yet): the layered lit techniques read the vertex colour
+(G, B, A = the weights of layers 1, 2, 3) and a per-surface layer stream (per-layer UVs, planar projection, rotation;
+8 to 56 bytes a vertex by technique). So our own surfaces can carry stock layered materials with weights we paint (98 %
+of cp_disco's layered triangles). Implementation in work: steps 1-5 SDK and compiler (`claude/sz-blend`,
+x64-zt `claude/zt-layers`), steps 6-8 Studio (`claude/film-blend`); the lead builds the compiler and runs the one
+in-game proof (a wall of 3 x 3 weights against an all-zero frame).
+
 Not done: real reflection probes, the copy by Gemini 4 Neon (every sign text is Gemini 4 Hydrogen's or a marked
 placeholder), the seventeen other zones.
 
