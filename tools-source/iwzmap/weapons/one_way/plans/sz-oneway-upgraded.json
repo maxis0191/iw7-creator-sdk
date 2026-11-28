@@ -68,8 +68,8 @@
    "args": [
     "a_spread",
     "a",
-    4,
-    80
+    3,
+    110
    ],
    "s": 1
   },
@@ -115,17 +115,6 @@
    "what": "alive",
    "n": 6,
    "s": 20
-  },
-  {
-   "do": "call",
-   "fn": "owt_spread",
-   "args": [
-    "g_spread",
-    "g",
-    4,
-    80
-   ],
-   "s": 1
   },
   {
    "do": "call",

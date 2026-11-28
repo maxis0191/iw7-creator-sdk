@@ -51,7 +51,7 @@ owt_issue( name, tag, per, head, limit )
     before = 0;
     if ( isdefined( self.ow_stats ) && isdefined( self.ow_stats["issued"] ) )
         before = self.ow_stats["issued"];
-    bone = "j_spine4";
+    bone = "j_spinelower";          // low in the trunk and fired level: never the head of a leaning zombie
     if ( head )
         bone = "j_head";
     foreach ( z in zs )
@@ -68,7 +68,10 @@ owt_issue( name, tag, per, head, limit )
                 z dodamage( 1, end, self, self, "MOD_RIFLE_BULLET", w );
             else
             {
-                dir = vectornormalize( self geteye() - end );
+                dir = self geteye() - end;
+                if ( !head )
+                    dir = ( dir[0], dir[1], 0 );
+                dir = vectornormalize( dir );
                 magicbullet( w, end + dir * 30, end - dir * 8, self );
             }
             shots++;

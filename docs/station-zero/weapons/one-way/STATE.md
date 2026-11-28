@@ -1,17 +1,47 @@
 # ONE WAY: state of the work (28 Nov 2026, resumed after the owner's pause)
 
-Branch `claude/sz-wonder-1`. Nothing of this weapon has run in the game yet.
+Branch `claude/sz-wonder-1`. The mechanic is measured in the game on a stand-in weapon; the weapon itself has not been in the game.
+
+## Measured in the running game (28 Nov 2026, Forge, headless server, one engine bot, compressed time, cp_zmb)
+
+The mechanic on a stock stand-in weapon (`iw7_fhr_zm`), by the two plans of `tools-source/iwzmap/weapons/one_way/plans`
+(`forge run <plan> --library-dir tools-source/iwzmap/weapons/one_way`). Both pass: core 37 of 37 expectations
+(`C:\studio-data\sz\weapons\one-way\runs\core-6.json`), upgraded 13 of 13 (`upgraded-5.json`).
+
+| Rule | Measured |
+|---|---|
+| A ticket is a real bullet through the stock damage callback and takes no health | 12 bullets in the trunk of 12 round-10 zombies: 12 second-class tickets, health 1,045 each before the bell |
+| Taken on the bell, kill paid to the owner | 12 taken on one bell; points +60 a kill (23 kills: 500 to 1,880). A first-class kill pays 60 too, not the head reward |
+| Full train | 12 taken: 6 tickets to the reserve (10 to 16); 8 taken: 4. Upgraded: 12 taken: 8 |
+| Flat rated damage | round 25: 4,365 to 395 on all eight (3,970 exactly); round 34 after one first-class ticket: 10,292 to 372 |
+| Six cars | eight round-25 zombies, one ticket each: six carried, two stayed; all eight alive |
+| Put back, the 12 s rule | all six back on the platform at the next bell, counted immune; a second ticket then takes all eight |
+| First class | one bullet in the head: taken at round 33 (9,357), carried at round 34 |
+| Three tickets a zombie | four bullets on one round-35 zombie: three tickets, one wasted, taken |
+| Doors closing | a ticket issued with 250 ms left is not taken at that bell and is taken at the next |
+| The calm | four zombies asked to sprint: 186 units a second; ticketed: 70 units a second, move mode walk |
+| Arrival (upgraded) | 12 and 3 arrivals one bell after 12 and 3 taken; unbooked round-30 zombies fall from 7,030 to 3,060 (one arrival) or die (two) |
+
+Learned in these runs: a stock bullet goes on through zombies standing together and hits the hook several times
+(62 hits for 12 bullets), so the script books only the first zombie of a shot; a script `dodamage` reaches the stock
+callback as a HEAD hit; round 30 health is 7,030 and round 34 is 10,292 in the game.
+
+**Not measured yet:** with a real player joined (the carried zombie really unseen and unhittable on a client, the
+calm seen), at real time, with 24 and with about 55 zombies alive, four players and two weapons in the game (the
+logic tests cover them outside it), the specials, frame time. Nothing of the weapon itself (model, animations,
+effects, sounds, its own definition) has been in the game.
+
 
 | Done | Where |
 |---|---|
 | Design, reviewed once and corrected (the corrected version was not re-reviewed) | `DESIGN.md` |
 | Owner's choice: mechanic kept, look = direction A (the conductor's machine) | `DESIGN.md` section 14; images in `C:\studio-data\sz\weapons\one-way\concept\final`, prompts and manifest in `concept/` |
 | Fallback copy and names (Gemini 4 Hydrogen; Neon refused for this account) | `DESIGN.md` section 12 |
-| The mechanic's game script and its test driver | `tools-source/iwzmap/weapons/one_way/cp_sz_oneway.gsc`, `szoneway_driver.gsc`: compiled by the pinned compiler inside the plan fixture (`forge check` accepts both plans), link check 0 unresolved. **Never run** |
+| The mechanic's game script and its test driver | `tools-source/iwzmap/weapons/one_way/cp_sz_oneway.gsc`, `szoneway_driver.gsc`: both plans pass in the game (below); 20 logic tests outside it |
 | Plans | `tools-source/iwzmap/weapons/one_way/plans/sz-oneway-core.json`, `sz-oneway-upgraded.json`, with `make_gamelab.py` |
 | The weapon's own skeleton as data | `skeleton.json` (20 bones; the root's name and the standard tags wait for a stock view model dump) |
 
-## Blocked: no game session can start on this machine (28 Nov)
+## History: the game was unavailable for part of 28 Nov (restored the same day by the lead session)
 
 The disk clean of 28 Nov removed the retained test stock (`IW7-Runtime\private-test-server`: Forge answers
 "Stock root not found", class infra, `C:\studio-data\sz\weapons\one-way\runs\core-1.json`), `C:\IW7-Cache\tools`
@@ -40,7 +70,7 @@ stock emitters), animations (they need the hands' skeleton from a stock dump), t
 
 ## The exact next steps
 
-1. When a stock root exists again: `python -B make_gamelab.py --server <iw7-paris-server checkout> --out C:\studio-data\sz\weapons\one-way\gamelab`,
+1. Next proofs of the mechanic: a joined client (`--joined`) with frames of a carried zombie and of the calm; 24 and about 55 alive; the stock specials. (Old note, kept for the command) When `--library-dir` fails for a missing tool cache: `python -B make_gamelab.py --server <iw7-paris-server checkout> --out C:\studio-data\sz\weapons\one-way\gamelab`,
    then `python -B C:\forge\forge.py run plans\sz-oneway-core.json --gamelab C:\studio-data\sz\weapons\one-way\gamelab\ops\gamelab --json`
    in the background, then the upgraded plan. Read the probes against the expectations; fix the script.
 2. The model: lighter chips on the grip, the strap where it can be seen; then its export on its own skeleton (needs a stock view model as the header template).

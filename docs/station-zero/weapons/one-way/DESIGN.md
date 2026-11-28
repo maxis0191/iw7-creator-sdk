@@ -77,7 +77,7 @@ round 1, +100 a round to round 9, then 950 x 1.1^(round - 9)). Nothing here kill
 | Calm | 0.6 s flinch, then walk until the bell | same |
 | Carried on one bell | 6 | 6 |
 | Full train | 6 or more taken: 1 ticket back for 2 taken | 6 or more: 2 back for 3 taken |
-| Points | a ticket pays no hit points; a kill pays the stock reward (first-class as a head kill) | same |
+| Points | a ticket pays no hit points; a kill at the bell pays the stock kill reward (measured: 60, for a first-class kill too) | same |
 | Max Ammo | refills the reserve. Wall ammo: none | same |
 
 By round (ordinary zombie; one bell):
@@ -244,12 +244,12 @@ the call exists, the result was never proven in the game), **missing** (with the
 | Part | State | Evidence, or the limit |
 |---|---|---|
 | A weapon with a new definition, given, fired, reloaded, upgraded at the machine | proven | four Black Ops 3 ports, 6 to 8 Nov (server `docs/BO3-WONDER-WEAPONS.md`) |
-| Detecting the shot and its victim, hit location | proven | `weapon_fired`, `weapon_hit_enemy` (`paris_bo3wpn.gsc:349, :379`); the chained `onzombiedamage_func` of the EXACT CHANGE prototype was never run |
-| Flat damage from script, credited to a player | proven for the kill; the points of such a kill are not measured | `dodamage(..., player, player, "MOD_UNKNOWN", weapon)`, 11 Nov |
+| Detecting the shot and its victim, hit location | proven for this weapon's script, 28 Nov (Forge, headless): the chained `level.onzombiedamage_func` books the zombie and returns 0 damage; head and body are told apart | `STATE.md`, "Measured in the running game" |
+| Flat damage from script, credited to a player | proven, 28 Nov: exactly the rated amount (4,365 to 395), the kill and 60 points to the owner | `dodamage(..., player, player, "MOD_UNKNOWN", weapon)` with the hook forcing the amount |
 | Per-zombie state, the list of live zombies, health by round | proven | `getaliveagentsofteam`, `calculatezombiehealth` |
 | Flinch | proven | the ported Thundergun's stun fields, 7 Nov |
-| **Calm: one zombie forced to a walk** | built | `scragentsetanimscale`, `asm_setmoveplaybackrate` are called in `paris_doom.gsc:510`, `paris_kino.gsc:1668`; no per-zombie slow was measured. First probe |
-| **Carried over: an agent hidden, frozen, and put back** | built | `scripted_mode`, `setorigin` exist in lab libraries; "a script-moved agent snaps back to the navmesh". First probe. If it fails, the part is an engine job (agent suspend and resume), and the weapon ships without it only as "not done" |
+| **Calm: one zombie forced to a walk** | proven on the server, 28 Nov: 186 to 70 units a second by the stock slow card's own call, `scripts\asm\asm_bb::bb_requestmovetype( "walk" )` | not yet seen on a client |
+| **Carried over: an agent hidden, held, and put back** | proven on the server, 28 Nov, as state: six carried, alive, undamaged while away, back at the next bell. NOT proven: that a client does not see it, and that players and bullets pass through where it stands (it is hidden and held, not moved: a hull trace and frames on a joined client are the next probe) | `STATE.md` |
 | An effect on a zombie's tag, an effect at a point | built | called in the ported DG-2; counted by kills, never by frames |
 | A new effect | proven by cloning a stock emitter and rewriting its fields (`iw7_vfx.py`, `t7_fx_to_iw7.py`; Thundergun muzzle, 7 Nov). An effect authored from nothing: missing (no authoring tool; the limit is the emitter template) | the doors' light is built from stock emitters with our textures; lit particles read black in a dark map, so it uses unlit or emissive ones |
 | First-person effects | only from an animation's notes or the definition's flash slots | no client-timed view effect exists in this engine's assets |
