@@ -147,7 +147,9 @@ ZoneTool was once killed mid-build (exit 0xC000013A, no log line), the rebuild s
 **Name.** `make_zone.py --name "ALLER SIMPLE"`: localize `WEAPON_SZONEWAY` (`localizedstrings/szoneway.json`), zone z6
 built (ZoneTool parsed it); not seen in game yet.
 
-**Next, in order:** (1) read `runs\fxprobe-2` (z6: door as built vs stock glow vs light alone vs leaf alone, first raise,
+**fxprobe-2 did not run**: twice Forge INFRA "the client did not reach its first match within 240 s" (ledger `forge-joined-mod-no-first-match`). It is the first plan with GameLab `fx` steps in a joined run, so first check whether `fx` steps keep a joined client from its match (the probe plan without them, effects played by `owt_fx` after `owt_fxmap`).
+
+**Next, in order:** (1) run `plans/sz-oneway-fxprobe.json` (z6: door as built vs stock glow vs light alone vs leaf alone, first raise,
 ADS toggle, melee) and fix the door from what shows; (2) rerun `sz-oneway-fx.json` on the fixed zone for door/card frames;
 (3) the audio twin through the network lab: fire level against the old bed, bell, doors, lamp ticks; (4) the name in the
 HUD; (5) world model, sprint, inspect, the impact (still the Atomizer's row 16).
