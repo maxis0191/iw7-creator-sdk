@@ -1,0 +1,114 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "i1_mk_look",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "libraries": [
+  "szaccept",
+  "szi1"
+ ],
+ "about": "I1 (29 Nov), a client, an experiment: the rifle prompt at the Heel & Key counter front looking 10 down, level, and 4 up (at the rifle): the use trigger stands at eye height straight ahead and the stock default asks the player to look at it.",
+ "steps": [
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "call",
+   "fn": "sz_power_direct",
+   "args": [
+    "power",
+    20
+   ],
+   "s": 1
+  },
+  {
+   "do": "wait",
+   "s": 6
+  },
+  {
+   "do": "money",
+   "value": 20000
+  },
+  {
+   "do": "tp",
+   "at": [
+    -1490,
+    4285,
+    1
+   ],
+   "yaw": 90
+  },
+  {
+   "do": "look",
+   "yaw": 90,
+   "pitch": 10
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "ui",
+   "name": "look_10"
+  },
+  {
+   "do": "capture",
+   "name": "i1_mk_look_10",
+   "pause": 1
+  },
+  {
+   "do": "look",
+   "yaw": 90,
+   "pitch": 0
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "ui",
+   "name": "look_0"
+  },
+  {
+   "do": "capture",
+   "name": "i1_mk_look_0",
+   "pause": 1
+  },
+  {
+   "do": "look",
+   "yaw": 90,
+   "pitch": -4
+  },
+  {
+   "do": "wait",
+   "s": 2
+  },
+  {
+   "do": "ui",
+   "name": "look_m4"
+  },
+  {
+   "do": "capture",
+   "name": "i1_mk_look_m4",
+   "pause": 1
+  },
+  {
+   "do": "call",
+   "fn": "i1_hint",
+   "args": [
+    "mk_hint",
+    "iw7_m1c_zm",
+    -1490,
+    4336
+   ],
+   "s": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:mk_hint.picked",
+   "eq": 1,
+   "why": "the monitor picked the rifle"
+  }
+ ]
+}

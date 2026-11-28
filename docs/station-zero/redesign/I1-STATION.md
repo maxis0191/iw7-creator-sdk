@@ -63,8 +63,8 @@ Clipped pixels at all three Terminus cameras: 0.0 % in every variant.
 ## Final bake and frames [m]
 `studio bake doc --final` and `studio bake doc_look --final` (about 5.4 min each: a bake is remembered per document, TOOL-FAULTS I1-1;
 texel 8, 256 rays, 3 bounces); both sessions `reused: the remembered final bake`; real `live power on` (settle 15 s) + 10 s. Second pass
-(after the price script and the key move; the first pass is kept in `final_v1`, `final_term_v1`; a Terminus set shot on a draft bake is
-`final_term_draft`, not used). Sheets (all opened):
+(after the price script and the key move; the first pass is kept in `final_v1`, `final_term_v1`; a Terminus set shot on a draft bake was
+discarded). Sheets (all opened):
 - Arcade and every camera of the document, station vision: `station\final\sheet_on_{0..3}.jpg`, `sheet_off_{0..3}.jpg` (34 cameras each)
 - the Terminus under its own vision (look copy, T1's way: the camera of `live shot` is no rider): `station\final_term\sheet_on_0.jpg`, `sheet_off_0.jpg`
 
@@ -124,14 +124,51 @@ uncapped, 10 s windows. Alone on the machine (build before the key move): `arc_e
 of the hall **2.77 ms** (4.54, 5.14). Final build, while another client cell booted beside it: `arc_east_long` 2.99 ms (6.20, 7.59, max
 17.4), middle 2.67 ms (5.52, 6.77). Client frames `station\final_checks\client_east_long.png`, `client_mid_hall.png`.
 
+## Follow-up (29 Nov): the marksman rifle from the hall, D4 on a client [m]
+Rebuilt once more after these changes (`station\rebuild_v2.sh`: document, check ok 480 / reach 61-0, final bake, a fresh build, usermap
+`station\um\cp_iwz`, session stopped and its folders removed). Verdicts on that build:
+```
+sz8_doors   PASS  steps 30/30  expects 21/21   (compressed time)
+i1_arcade   PASS  steps 49/49  expects 55/55   (compressed time)
+i1_prompts  PASS  steps 33/33  expects 11/11   (real time, a client)
+i1_walk     PASS  steps 26/26  expects 6/6     (real time, a client)
+```
+**How a purchase is offered on this map (read in the stock scripts, then measured).** The interaction monitor that runs is cp_zmb's
+(`cp_zmb_interactions.gsc` `zmb_player_interaction_monitor`): it offers only the struct nearest the player's origin, within 72 units, and
+puts the player's use trigger at that struct's x, y at eye height; it never offers a door. A door is bought through its own `door_buy`
+`trigger_use` (`zombie_doors.gsc` `init_door_buys`): the engine draws its prompt, its `trigger` takes the money and opens the door.
+
+**The marksman rifle (Heel & Key).** Three placements, each measured on a client:
+- on the back pegboard (y 4404): never offered from the hall (beyond 72);
+- on a board behind the counter (y 4336): offered (the monitor picked it, `i1_hint`: hint string, can-give, cost 1500), but no prompt drawn
+  at any view pitch (`i1_mk_look`). Cause, isolated with the monitor stopped (`i1_mk_trig`): the use trigger stood behind the stall's player
+  clip (`hk_stall_clip`, y 4300..4330); the same trigger moved 42 forward, in front of the clip, drew "Hold F to purchase the M1 ($1500)";
+- now: a pegboard display board on the counter's front edge (x -1530..-1450, y 4298..4301, z 44..100, framed in the stall's joinery),
+  between the front rail's tagged pairs (x -1535, -1445); the rifle hangs broadside on its hall face (yaw 0, chosen from client frames
+  turned by 90 degrees: `final_checks\mk_turn_sheet.jpg`; at 270 it was edge-on). The struct at (-1490, 4296).
+Measured on the client from the hall at the counter front (-1490, 4285): prompt "Hold F to purchase the M1 ($1500)" (UI dump and frame
+`final_checks\i1_mk_before.png`), offered by the stock monitor itself (`hint=1`, route monitor), 1500 spent, the M1 in hand, then "Hold F to
+purchase ammo for the M1 ($750)" (`i1_mk_after.png`). Headless (`i1_arcade`): bought from the same hall position, 1500, no teleport.
+The weapon is the emitter's stand-in for the marksman class (`iw7_m1c_zm`, shown as "M1").
+
+**D4 on a client.** Cause: the plan, not the map. The lab's `use` step bought D4 through the interaction struct (it stands the player 44
+past the struct along its yaw, x -1204, inside the door plane, and fires the player's interaction trigger by hand): headless that charged
+1000, on a client nothing, and it is not how a player buys a door here. Now `i1_door_buy` fires D4's `door_buy` trigger for the player where
+he stands in the ticket hall (-1080, 3900). Client: prompt "Hold F to Enter this area ($1000)" from there (`i1_d4_before.png`), 1000 spent,
+door open (`DOOR_BOUGHT` in the map log), no `door_buy` trigger of D4 left; after the purchase no D4 prompt from the hall or the Arcade
+(`i1_d4_after_hall.png`, `i1_d4_after_arcade.png`). The prompt that stayed after the lab's `doors` step is that step's artifact (it opens
+the blockers and leaves the trigger), not a product fault: a real purchase removes it. `i1_walk` now buys D4 this way.
+The SMG in Hole Number Nine on the same client: "Hold F to purchase the HVR ($1000)" (`i1_smg_prompt.png`).
+
+**Plans.** `szi1.gsc`: `i1_buy` (an interaction bought from where the player stands; on a client it waits for the stock monitor's pick, headless
+it applies the monitor's rule at that position and refuses beyond 72 or when another struct is nearer), `i1_door_buy`, the probes `i1_hint`,
+`i1_ww`, and the experiments `i1_trig_hold`, `i1_trig_set` (plans `i1_mk_turn`, `i1_mk_look`, `i1_mk_trig`). sz8_doors once gave 20/21 (one
+zombie from Copy Stop's back room stood at (-2272, 4507), 27 north of the partition by its door, until the stock cleanup removed it); the
+next two runs passed: intermittent, not diagnosed.
+
 ## Not done, not proven
-- **The Heel & Key marksman buy cannot be used from the hall.** A real client standing where the hull stops at the stall counter (y 4284.9),
-  facing the pegboard, gets no purchase prompt (UI dump). The `i1_arcade` reach probe (133 against `player_useRadius` 128) is a model, not
-  the engine's test; the client is the evidence. The headless purchase passes only because the lab stands the player inside the stall.
-  The change needed (shell, A2's file): the buy toward the counter front, or the stall made enterable; then `i1_reach_client` shows the prompt.
-- **D4 bought on the client cell**: the `use` step fired the trigger and charged nothing; headless it charges 1000 with the power off and
-  on (`i1_door_power`), so the lit state is not the cause. The walk used the `doors` step; after it the D4 prompt still shows at
-  `arc_east_long` (client frame). Not diagnosed.
+- The Heel & Key marksman buy: fixed (follow-up above).
+- D4 on a client: the plan was the cause, fixed (follow-up above).
 - The Terminus OFF frames show the room at the dark exposure; the room is reachable only after power, so they are a record, not a state a
   player sees.
 - From T1, still: the clock does not run, no dust in the beam, the line printer's sound, the bench numbers, WAY OUT, Strand's tape.
@@ -151,4 +188,4 @@ Documents of earlier workers under `C:\studio-data\sz\film\` that this document 
 `arcade\shell\docall`, `arcade\shell\litview`, `arcade\goods_a\doc`, `arcade\goods_b\doc`, `light\doc` and its variant documents
 (`light\e1`, `e1b`, `w1`, `w2`, `w2b`, `w4`, `w5`). Still read, not superseded: `allbaked2\doc\map.json` (the recipe), `base_lit` (the shell's
 default base), `art`. Mine, removable when this lands: `station\base_before_prices`, `station\mach`, `station\mach_final` (the machine
-study), `station\final_v1`, `station\final_term_v1`, `station\final_term_draft`.
+study), `station\final_v1`, `station\final_term_v1`.

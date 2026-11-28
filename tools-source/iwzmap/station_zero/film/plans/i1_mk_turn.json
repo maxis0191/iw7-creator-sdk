@@ -1,0 +1,26 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "i1_mk_turn",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "libraries": ["szaccept", "szi1"],
+ "about": "I1 (29 Nov), a client: the wall weapons' spawned models read (the Hole Number Nine SMG, the Heel & Key rifle); the rifle turned by 90 degree steps with a frame at each, from the hall at the counter front, to choose the yaw that hangs it broadside to the hall (an experiment: the map is not changed).",
+ "steps": [
+  {"do": "waves", "on": false},
+  {"do": "call", "fn": "sz_power_direct", "args": ["power", 20], "s": 1},
+  {"do": "wait", "s": 6},
+  {"do": "call", "fn": "i1_ww", "args": ["ww_smg", -1948, 4440, 0], "s": 1},
+  {"do": "call", "fn": "i1_ww", "args": ["ww_mk0", -1490, 4336, 0], "s": 1},
+  {"do": "tp", "at": [-1490, 4285, 1], "yaw": 90},
+  {"do": "look", "yaw": 90, "pitch": 12},
+  {"do": "wait", "s": 2},
+  {"do": "capture", "name": "i1_mk_turn0", "pause": 1},
+  {"do": "call", "fn": "i1_ww", "args": ["ww_mk90", -1490, 4336, 90], "s": 1},
+  {"do": "capture", "name": "i1_mk_turn90", "pause": 1},
+  {"do": "call", "fn": "i1_ww", "args": ["ww_mk180", -1490, 4336, 90], "s": 1},
+  {"do": "capture", "name": "i1_mk_turn180", "pause": 1},
+  {"do": "call", "fn": "i1_ww", "args": ["ww_mk270", -1490, 4336, 90], "s": 1},
+  {"do": "capture", "name": "i1_mk_turn270", "pause": 1},
+  {"do": "expect", "that": "probe:ww_mk0.found", "eq": 1, "why": "the rifle's model is hung"}
+ ]
+}

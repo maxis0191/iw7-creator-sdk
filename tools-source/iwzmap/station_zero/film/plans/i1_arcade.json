@@ -7,7 +7,7 @@
   "g1probe",
   "szi1"
  ],
- "about": "I1: the Arcade on the one document. D4 bought, a player standing on the navigation inside Needle Drop, Copy Stop and Hole Number Nine; the SMG wall buy (Hole Number Nine) and the marksman wall buy (Heel & Key, used from the hall) bought; the stock wheel moved to Copy Stop and rolled once, its weapon taken; two zombies from each shop back room chase the player in the hall. The marksman buy: how close the hall gets (hull trace to the counter) against the use radius. Chases 70 s (the Heel & Key path runs through the service passage). Control: the base own UMP wall buy keeps its stock price (1250) right after the Arcade SMG sold at 1000.",
+ "about": "I1: the Arcade on the one document. D4 bought, a player standing on the navigation inside Needle Drop, Copy Stop and Hole Number Nine; the SMG wall buy (Hole Number Nine) and the marksman wall buy (Heel & Key, used from the hall) bought; the stock wheel moved to Copy Stop and rolled once, its weapon taken; two zombies from each shop back room chase the player in the hall. D4 and the marksman rifle are bought from where a player stands (szi1 i1_buy: no teleport; D4 from the ticket hall, the rifle from the hall at the Heel & Key counter front).",
  "steps": [
   {
    "do": "waves",
@@ -20,22 +20,21 @@
   {
    "do": "tp",
    "at": [
-    -1000,
+    -1080,
     3900,
     1
    ],
-   "yaw": 180,
-   "snap": true
+   "yaw": 180
   },
   {
-   "do": "use",
-   "name": "door",
-   "kind": "debris_1000",
-   "near": [
-    -1160.0,
-    3900.0,
-    24.0
-   ]
+   "do": "call",
+   "fn": "i1_door_buy",
+   "args": [
+    "door",
+    "iwz_door_d_hall_arcade",
+    2
+   ],
+   "s": 4
   },
   {
    "do": "wait",
@@ -180,42 +179,29 @@
   {
    "do": "tp",
    "at": [
-    -1420,
-    4270,
+    -1490,
+    4285,
     1
    ],
+   "yaw": 90
+  },
+  {
+   "do": "look",
    "yaw": 90,
-   "snap": true
+   "pitch": 5
   },
   {
    "do": "call",
-   "fn": "i1_stand",
+   "fn": "i1_buy",
    "args": [
-    "hk_hall"
-   ],
-   "s": 1
-  },
-  {
-   "do": "call",
-   "fn": "i1_reach",
-   "args": [
-    "hk_reach",
+    "buy_mk",
     "iw7_m1c_zm",
-    -1420,
-    4200,
-    4420
+    -1490.0,
+    4296.0,
+    64.0,
+    2
    ],
-   "s": 1
-  },
-  {
-   "do": "use",
-   "name": "buy_mk",
-   "kind": "iw7_m1c_zm",
-   "near": [
-    -1420.0,
-    4404.0,
-    64.0
-   ]
+   "s": 6
   },
   {
    "do": "mark",
@@ -363,18 +349,6 @@
   {
    "do": "state",
    "name": "end"
-  },
-  {
-   "do": "expect",
-   "that": "use:door.found",
-   "why": "D4's purchase struct is a stock interaction",
-   "eq": 1
-  },
-  {
-   "do": "expect",
-   "that": "use:door.spent",
-   "why": "D4 costs 1000 (the document)",
-   "eq": 1000
   },
   {
    "do": "expect",
@@ -570,30 +544,6 @@
   },
   {
    "do": "expect",
-   "that": "use:buy_mk.found",
-   "why": "the marksman rifle on Heel & Key pegboard is a stock interaction",
-   "eq": 1
-  },
-  {
-   "do": "expect",
-   "that": "use:buy_mk.picked",
-   "why": "the stock monitor picks it",
-   "eq": "iw7_m1c_zm"
-  },
-  {
-   "do": "expect",
-   "that": "use:buy_mk.has",
-   "why": "the player holds the marksman rifle",
-   "eq": 1
-  },
-  {
-   "do": "expect",
-   "that": "use:buy_mk.spent",
-   "why": "the price of the document (1500)",
-   "eq": 1500
-  },
-  {
-   "do": "expect",
    "that": "probe:wheel_to.active",
    "why": "the stock wheel now stands in the arcade",
    "eq": "arcade"
@@ -656,12 +606,6 @@
   },
   {
    "do": "expect",
-   "that": "probe:hk_reach.reach",
-   "le": "@probe:hk_reach.use_radius",
-   "why": "the marksman buy on Heel & Key pegboard is within use range of a player stopped at the stall counter in the hall"
-  },
-  {
-   "do": "expect",
    "that": "use:buy_ctrl.found",
    "eq": 1,
    "why": "control: the base own SMG wall buy (stair_a, no price row)"
@@ -677,6 +621,66 @@
    "that": "use:buy_ctrl.spent",
    "eq": 1250,
    "why": "control: the base place keeps the stock price right after the Arcade place of the same weapon sold at 1000"
+  },
+  {
+   "do": "expect",
+   "that": "probe:buy_mk.has",
+   "why": "the player holds the marksman rifle",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:door.found",
+   "why": "D4 from the ticket hall: D4's door_buy trigger is there",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:door.spent",
+   "why": "D4 from the ticket hall: 1000 paid",
+   "eq": 1000
+  },
+  {
+   "do": "expect",
+   "that": "probe:door.open",
+   "why": "D4 from the ticket hall: the door is open (the map script saw the purchase)",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:door.left",
+   "why": "D4 from the ticket hall: no door_buy trigger of D4 is left (the prompt has no source)",
+   "eq": 0
+  },
+  {
+   "do": "expect",
+   "that": "probe:buy_mk.found",
+   "why": "the marksman rifle from the hall at the Heel & Key counter front: the stock interaction is there",
+   "eq": 1
+  },
+  {
+   "do": "expect",
+   "that": "probe:buy_mk.d",
+   "why": "the marksman rifle from the hall at the Heel & Key counter front: within the 72 of the cp_zmb monitor from where a player stands",
+   "le": 72
+  },
+  {
+   "do": "expect",
+   "that": "probe:buy_mk.route",
+   "why": "the marksman rifle from the hall at the Heel & Key counter front: offered (not beyond 72)",
+   "ne": "refused_beyond_72"
+  },
+  {
+   "do": "expect",
+   "that": "probe:buy_mk.route",
+   "why": "the marksman rifle from the hall at the Heel & Key counter front: offered (the nearest struct)",
+   "ne": "refused_not_nearest"
+  },
+  {
+   "do": "expect",
+   "that": "probe:buy_mk.spent",
+   "why": "the marksman rifle from the hall at the Heel & Key counter front: the price",
+   "eq": 1500
   }
  ]
 }
