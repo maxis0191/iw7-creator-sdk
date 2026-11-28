@@ -26,7 +26,7 @@ from studio import lightwhy as LW  # noqa: E402
 from studio import Map  # noqa: E402
 
 
-def measure(folder, region, n=60000, emit=None, seed=7):
+def measure(folder, region, n=9000, emit=None, seed=7):
     import time
     t0 = time.time()
     log = lambda *a: print('[%5.1fs]' % (time.time() - t0), *a, file=sys.stderr, flush=True)     # noqa: E731
@@ -40,11 +40,22 @@ def measure(folder, region, n=60000, emit=None, seed=7):
     dump = BK.template_dump()
     sc = LW.Scene(emit_dir, m, [dump] if dump else [])
     x0, y0, x1, y1 = region
+    # pass 1 (a third of n): everything in the region, for the floor level, ceiling and walls; pass 2: only the floor level, so the floor gets its own points
     sc.zones['_region'] = [x0, y0, -2000.0, x1, y1, 2000.0]      # sample only the region: the world's other 500,000 triangles would each cost a cover ray
-    log('scene', sc.world_n, 'tris')
-    P, N, cls, _ = sc.sample(n, seed, '_region')
+    P, N, _, _ = sc.sample(max(1500, n // 3), seed, '_region')
     log('sampled', len(P))
-    cls = np.array(cls)
+    up = N[:, 2] > 0.9
+    zs = np.round(P[up, 2] / 8.0) * 8.0
+    vals, cnt = np.unique(zs, return_counts=True)
+    zf = float(vals[cnt.argmax()])           # the floor level: the commonest 8-unit height of up-facing points in the region (a document with no zone has no floor class)
+    log('floor level', zf)
+    sc.zones['_floor'] = [x0, y0, zf - 12.0, x1, y1, zf + 12.0]
+    P2, N2, _, _ = sc.sample(n, seed + 1, '_floor')
+    P2, N2 = P2[N2[:, 2] > 0.9], N2[N2[:, 2] > 0.9]
+    keep = ~((N[:, 2] > 0.9) & (np.abs(P[:, 2] - zf) <= 12.0))
+    P, N = np.vstack([P[keep], P2]), np.vstack([N[keep], N2])
+    cls = np.where((N[:, 2] > 0.9) & (np.abs(P[:, 2] - zf) <= 12.0), 'floor', np.where((N[:, 2] < -0.7) & (P[:, 2] >= zf + 120.0), 'ceiling', np.where(np.abs(N[:, 2]) < 0.5, 'wall', 'other')))
+    log('points', len(P), 'floor', int((cls == 'floor').sum()))
     E = np.zeros(len(P))
     per = []
     for L in lt['baked'] + lt['runtime']:

@@ -23,7 +23,7 @@ def _f(name, default):
 
 
 TROF_ROW = _f('L2_TROF', 0.9)            # strength of a bright troffer, document units (x 27,000 = the engine row; stock median 0.41, 90th percentile 1.04)
-TROF_RADIUS = _f('L2_TROF_R', 330.0)
+TROF_RADIUS = _f('L2_TROF_R', 380.0)
 TROF_CONE = (_f('L2_TROF_IN', 18.0), _f('L2_TROF_OUT', 46.0))
 POOL_K = _f('L2_POOL_K', 0.35)           # the four pools' strength against what they were
 POOL_CONE = (22.0, 58.0)
