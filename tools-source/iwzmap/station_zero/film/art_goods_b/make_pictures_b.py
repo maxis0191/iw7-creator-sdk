@@ -246,9 +246,20 @@ def cs_strip():
     d = ImageDraw.Draw(card)
     sx0, sw, fh = 186, 140, 102
     d.rectangle([sx0 - 8, 52, sx0 + sw + 8, 52 + 4 * (fh + 8) + 8], fill=(252, 252, 250))
-    for k, spec in enumerate(FACES):
-        f = face(spec, 500 + k).resize((sw, fh))
-        card.paste(f, (sx0, 60 + k * (fh + 8)))
+    gen = os.path.join(OUT, 'gen', 'booth_faces.png')            # the image generator's 2 x 2 grid of four booth portraits, when made
+    if os.path.isfile(gen):
+        g = Image.open(gen).convert('RGB')
+        W2, H2 = g.size[0] // 2, g.size[1] // 2
+        m = int(min(W2, H2) * 0.03)                                # trim the white borders between the frames
+        frames = [g.crop((i * W2 + m, j * H2 + m, (i + 1) * W2 - m, (j + 1) * H2 - m)) for j in range(2) for i in range(2)]
+    else:
+        frames = [face(spec, 500 + k) for k, spec in enumerate(FACES)]
+    for k, f in enumerate(frames):
+        fw, fhh = f.size                                             # centre-crop each frame to the strip's frame ratio
+        tw = int(fhh * sw / fh)
+        if tw <= fw:
+            f = f.crop(((fw - tw) // 2, 0, (fw - tw) // 2 + tw, fhh))
+        card.paste(f.resize((sw, fh), Image.LANCZOS), (sx0, 60 + k * (fh + 8)))
     logo = Image.open(os.path.join(ART, 'logo_copy_stop.png')).convert('RGBA').resize((56, 56))
     for k in range(2):
         card.paste(logo, (40 + k * 376, 40), logo)
@@ -610,6 +621,7 @@ def main():
     h9_cards()
     mat_glaze('mat_h9_glaze_pink.png', (238, 128, 170), sprinkles=[(250, 250, 250), (90, 200, 220), (250, 220, 70), (120, 70, 40)], seed=1)
     mat_glaze('mat_h9_glaze_honey.png', (244, 214, 150), dough=(176, 112, 60), seed=2)
+    mat_glaze('mat_h9_glaze_choc.png', (70, 38, 24), dough=(190, 132, 76), sprinkles=[(250, 250, 250), (250, 120, 160), (120, 200, 230)], seed=3)
     h9_tv()
     mat_box()
     mat_bag()
