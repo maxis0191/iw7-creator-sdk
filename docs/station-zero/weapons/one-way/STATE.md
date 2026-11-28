@@ -120,6 +120,37 @@ identified. Open: the fire sound's level in game against that bed and against th
 out of sight at idle, the strap passes through the right hand. Not measured: the sounds in game (needs the network lab's
 audio capture), the first raise's bell, ADS, melee.
 
+## Effects, fire sound, name (28 Nov 2026 evening; paused by the owner mid-proof)
+
+**Fire sound.** The masking bed was found: the fire rows were cloned from the Atomizer's `hybrid_pcm` row (head loaded,
+rest streamed from `mod.sabs`). The first press started a 4.4 s broadband bed that none of our 31 files matches (NCC 0.01
+to 0.09 over 11.5-17 s, `runs\sound-2`), ending at the last press. Fire rows are now `loaded` (`sounds/one_way_sounds.json`,
+bank `sound\bank2`, `mod.sabs` 115 KB to 4 KB). **Not yet heard in game**: the audio twin `plans/sz-oneway-fxsound.json`
+is ready, run script `netlab_fxsound.ps1` logic = Invoke-NetLab -Classic -AudioCapture from `netlab-ws` (libs copied in),
+StockRoot `IW7-Runtime\private-test-server`, UpdaterData `IW7-Runtime\enginelab\native\data\cdata`.
+
+**Effects (built, in zone z5/z6).** `make_fx.py`: nine particle systems of ours (issue v/ADS/world: card dust, chips, press
+spark, 30 ms warm light; cards on the booked 2/1/upgraded; door, full-train door; cards of the taken), tracer
+`szoneway_ticket`, package `iw7_szoneway_zm_vfxpackage`; `make_zone.py --fx`. Script: card per ticket (playfxontag,
+cleared at the bell), a door at each taken/carried/put back (max 12 a bell), `ow_taken` cards, the bell at each holder,
+full-train stroke, lamp ticks (`ow_lamps`, holder only).
+
+**In game, `plans/sz-oneway-fx.json` (joined, z5): PASS 9/9**: the real press issues (12 to 11), 6 booked, 10 tickets
+(3 first class), bell: 6 taken and 6 doors counted, then 3 carried (3 doors) and put back alive (3 doors). Frames
+`runs\frames\fx1_*.png`: the card-dust puff at the press shows (`fx1_issue_b`). **The doors did not show**, and the
+cause is measured (`runs\fxprobe-1.json`): `loadfx` called after the level has loaded returns nothing (defined=0), so
+the test's `owt_start -> ow_init` loaded no effect. The map module calls `ow_init()` at load and is not affected. For
+tests: plans now precache the six effects with GameLab `fx` steps and `owt_fxmap` hands their ids to the mechanic.
+Also measured: the ADS key `speed_throw` does nothing; the client binds MOUSE2 to `+toggleads_throw` (plans changed).
+ZoneTool was once killed mid-build (exit 0xC000013A, no log line), the rebuild succeeded.
+
+**Name.** `make_zone.py --name "ALLER SIMPLE"`: localize `WEAPON_SZONEWAY` (`localizedstrings/szoneway.json`), zone z6
+built (ZoneTool parsed it); not seen in game yet.
+
+**Next, in order:** (1) read `runs\fxprobe-2` (z6: door as built vs stock glow vs light alone vs leaf alone, first raise,
+ADS toggle, melee) and fix the door from what shows; (2) rerun `sz-oneway-fx.json` on the fixed zone for door/card frames;
+(3) the audio twin through the network lab: fire level against the old bed, bell, doors, lamp ticks; (4) the name in the
+HUD; (5) world model, sprint, inspect, the impact (still the Atomizer's row 16).
 ## The exact next steps
 
 1. Next proofs of the mechanic: a player walking through a carried zombie's place; 24 and about 55 alive; the stock specials; real time. (Old note, kept for the command) When `--library-dir` fails for a missing tool cache: `python -B make_gamelab.py --server <iw7-paris-server checkout> --out C:\studio-data\sz\weapons\one-way\gamelab`,

@@ -7,7 +7,7 @@
   "cp_sz_oneway",
   "szoneway_driver"
  ],
- "about": "Audio twin of sz-oneway-fx.json (no client frames): the press (fire sound, the A/B of the loaded row against the hybrid bed), the bell, the doors, the cards of the taken, the lamp ticks, recorded on the joined client by the classic network lab (Invoke-NetLab -Classic -AudioCapture). At the end the beat is set back to 6 s for 9 s so the lamp ticks of the holder are heard.",
+ "about": "Audio twin of sz-oneway-fx.json (no client frames): the press (fire sound, the A/B of the loaded row against the hybrid bed), the bell, the doors, the cards of the taken, the lamp ticks, recorded on the joined client by the classic network lab (Invoke-NetLab -Classic -AudioCapture). At the end the beat is set back to 6 s for 9 s so the lamp ticks of the holder are heard. The weapon's effects are precached by the plan's first fx steps (loadfx after load returns nothing) and handed to the mechanic by owt_fxmap.",
  "steps": [
   {
    "do": "waves",
@@ -16,6 +16,60 @@
   {
    "do": "ignore",
    "on": true
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_ticket_2",
+   "at": [
+    1467,
+    4134,
+    -3000
+   ]
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_ticket_1",
+   "at": [
+    1467,
+    4134,
+    -3000
+   ]
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_ticket_r",
+   "at": [
+    1467,
+    4134,
+    -3000
+   ]
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_door",
+   "at": [
+    1467,
+    4134,
+    -3000
+   ]
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_door_full",
+   "at": [
+    1467,
+    4134,
+    -3000
+   ]
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_taken",
+   "at": [
+    1467,
+    4134,
+    -3000
+   ]
   },
   {
    "do": "tp",
@@ -43,6 +97,14 @@
     0
    ],
    "s": 0.5
+  },
+  {
+   "do": "call",
+   "fn": "owt_fxmap",
+   "args": [
+    "fxmap"
+   ],
+   "s": 0.1
   },
   {
    "do": "call",

@@ -3,60 +3,357 @@
  "name": "sz_oneway_fxprobe",
  "map": "cp_zmb",
  "conditions": "quiet",
- "libraries": ["cp_sz_oneway", "szoneway_driver"],
- "about": "Door parts A/B in front of a joined client (each played 200 units ahead, 1.6 s apart, a frame 0.35 s after each): the door as built, the stock glow with only its life changed, the light alone, one leaf alone, the cards of the taken, a ticket card. Then ONE WAY's first raise (bell test stroke), aim down sights and melee (keys speed_throw, melee_zoom; playerads() read on the server).",
+ "libraries": [
+  "cp_sz_oneway",
+  "szoneway_driver"
+ ],
+ "about": "Door parts A/B in front of a joined client (each played 200 units ahead, 1.6 s apart, a frame 0.35 s after each): the door as built, the stock glow with only its life changed, the light alone, one leaf alone, the cards of the taken, a ticket card. Then ONE WAY's first raise (bell test stroke), aim down sights and melee (keys toggleads_throw (a toggle), melee_zoom; playerads() read on the server). Effects are precached by the plan's fx steps (loadfx after load returns nothing) and played by fx steps.",
  "steps": [
-  {"do": "waves", "on": false},
-  {"do": "ignore", "on": true},
-  {"do": "tp", "at": [1467.65, 4134.45, 0.2], "yaw": 0},
-  {"do": "wait", "s": 16},
-  {"do": "give", "weapon": "iw7_szoneway_zm"},
-  {"do": "wait", "s": 0.45},
-  {"do": "client_frame", "name": "mv_raise_a", "pause": 0},
-  {"do": "wait", "s": 0.55},
-  {"do": "client_frame", "name": "mv_raise_b", "pause": 0},
-  {"do": "wait", "s": 0.55},
-  {"do": "client_frame", "name": "mv_raise_c", "pause": 0},
-  {"do": "wait", "s": 1.5},
-  {"do": "call", "fn": "owt_start", "args": ["start", "szoneway", 0], "s": 0.2},
-  {"do": "call", "fn": "owt_fx", "args": ["p_door", "ow_door", 200, 0], "s": 0.1},
-  {"do": "wait", "s": 0.35},
-  {"do": "client_frame", "name": "pr_door", "pause": 0},
-  {"do": "wait", "s": 1.6},
-  {"do": "call", "fn": "owt_fx", "args": ["p_glow", "ow_probe_glow", 200, 40], "s": 0.1},
-  {"do": "wait", "s": 0.35},
-  {"do": "client_frame", "name": "pr_glow", "pause": 0},
-  {"do": "wait", "s": 1.6},
-  {"do": "call", "fn": "owt_fx", "args": ["p_light", "ow_probe_light", 200, 40], "s": 0.1},
-  {"do": "wait", "s": 0.35},
-  {"do": "client_frame", "name": "pr_light", "pause": 0},
-  {"do": "wait", "s": 1.6},
-  {"do": "call", "fn": "owt_fx", "args": ["p_leaf", "ow_probe_leaf", 200, 0], "s": 0.1},
-  {"do": "wait", "s": 0.35},
-  {"do": "client_frame", "name": "pr_leaf", "pause": 0},
-  {"do": "wait", "s": 1.6},
-  {"do": "call", "fn": "owt_fx", "args": ["p_taken", "ow_taken", 120, 0], "s": 0.1},
-  {"do": "wait", "s": 0.5},
-  {"do": "client_frame", "name": "pr_taken", "pause": 0},
-  {"do": "wait", "s": 1.6},
-  {"do": "call", "fn": "owt_ads", "args": ["ads_off"], "s": 0.1},
-  {"do": "call", "fn": "owt_key", "args": ["a1", "keydown:speed_throw"], "s": 0.05},
-  {"do": "wait", "s": 0.7},
-  {"do": "call", "fn": "owt_ads", "args": ["ads_on"], "s": 0.1},
-  {"do": "client_frame", "name": "mv_ads", "pause": 0},
-  {"do": "call", "fn": "owt_key", "args": ["a2", "keyup:speed_throw"], "s": 0.05},
-  {"do": "wait", "s": 1},
-  {"do": "call", "fn": "owt_key", "args": ["m1", "keydown:melee_zoom"], "s": 0.05},
-  {"do": "wait", "s": 0.22},
-  {"do": "client_frame", "name": "mv_melee", "pause": 0},
-  {"do": "call", "fn": "owt_key", "args": ["m2", "keyup:melee_zoom"], "s": 0.05},
-  {"do": "wait", "s": 1.5},
-  {"do": "call", "fn": "owt_held", "args": ["end"], "s": 0.5},
-  {"do": "wait", "s": 0.5},
-  {"do": "expect", "that": "probe:p_door.defined", "eq": 1, "why": "the door effect loads"},
-  {"do": "expect", "that": "probe:p_glow.defined", "eq": 1, "why": "the probe loads"},
-  {"do": "expect", "that": "probe:ads_on.ads", "ge": 0.9, "why": "the ADS key lifts the machine to the eye"},
-  {"do": "expect", "that": "probe:ads_off.ads", "lt": 0.1, "why": "from the hip"},
-  {"do": "expect", "that": "probe:end.oneway", "eq": 1, "why": "the player holds ONE WAY"}
+  {
+   "do": "waves",
+   "on": false
+  },
+  {
+   "do": "ignore",
+   "on": true
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_ticket_2",
+   "at": [
+    1467,
+    4134,
+    -3000
+   ]
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_ticket_1",
+   "at": [
+    1467,
+    4134,
+    -3000
+   ]
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_ticket_r",
+   "at": [
+    1467,
+    4134,
+    -3000
+   ]
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_door",
+   "at": [
+    1467,
+    4134,
+    -3000
+   ]
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_door_full",
+   "at": [
+    1467,
+    4134,
+    -3000
+   ]
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_taken",
+   "at": [
+    1467,
+    4134,
+    -3000
+   ]
+  },
+  {
+   "do": "tp",
+   "at": [
+    1467.65,
+    4134.45,
+    0.2
+   ],
+   "yaw": 0
+  },
+  {
+   "do": "wait",
+   "s": 16
+  },
+  {
+   "do": "give",
+   "weapon": "iw7_szoneway_zm"
+  },
+  {
+   "do": "wait",
+   "s": 0.45
+  },
+  {
+   "do": "client_frame",
+   "name": "mv_raise_a",
+   "pause": 0
+  },
+  {
+   "do": "wait",
+   "s": 0.55
+  },
+  {
+   "do": "client_frame",
+   "name": "mv_raise_b",
+   "pause": 0
+  },
+  {
+   "do": "wait",
+   "s": 0.55
+  },
+  {
+   "do": "client_frame",
+   "name": "mv_raise_c",
+   "pause": 0
+  },
+  {
+   "do": "wait",
+   "s": 1.5
+  },
+  {
+   "do": "call",
+   "fn": "owt_start",
+   "args": [
+    "start",
+    "szoneway",
+    0
+   ],
+   "s": 0.2
+  },
+  {
+   "do": "call",
+   "fn": "owt_fxmap",
+   "args": [
+    "fxmap"
+   ],
+   "s": 0.1
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_door",
+   "at": [
+    1667,
+    4134,
+    0
+   ]
+  },
+  {
+   "do": "wait",
+   "s": 0.35
+  },
+  {
+   "do": "client_frame",
+   "name": "pr_door",
+   "pause": 0
+  },
+  {
+   "do": "wait",
+   "s": 1.6
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_probe_glow",
+   "at": [
+    1667,
+    4134,
+    40
+   ]
+  },
+  {
+   "do": "wait",
+   "s": 0.35
+  },
+  {
+   "do": "client_frame",
+   "name": "pr_glow",
+   "pause": 0
+  },
+  {
+   "do": "wait",
+   "s": 1.6
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_probe_light",
+   "at": [
+    1667,
+    4134,
+    40
+   ]
+  },
+  {
+   "do": "wait",
+   "s": 0.35
+  },
+  {
+   "do": "client_frame",
+   "name": "pr_light",
+   "pause": 0
+  },
+  {
+   "do": "wait",
+   "s": 1.6
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_probe_leaf",
+   "at": [
+    1667,
+    4134,
+    0
+   ]
+  },
+  {
+   "do": "wait",
+   "s": 0.35
+  },
+  {
+   "do": "client_frame",
+   "name": "pr_leaf",
+   "pause": 0
+  },
+  {
+   "do": "wait",
+   "s": 1.6
+  },
+  {
+   "do": "fx",
+   "effect": "vfx/iwz/oneway/ow_taken",
+   "at": [
+    1587,
+    4134,
+    0
+   ]
+  },
+  {
+   "do": "wait",
+   "s": 0.5
+  },
+  {
+   "do": "client_frame",
+   "name": "pr_taken",
+   "pause": 0
+  },
+  {
+   "do": "wait",
+   "s": 1.6
+  },
+  {
+   "do": "call",
+   "fn": "owt_ads",
+   "args": [
+    "ads_off"
+   ],
+   "s": 0.1
+  },
+  {
+   "do": "call",
+   "fn": "owt_key",
+   "args": [
+    "a1",
+    "keydown:toggleads_throw"
+   ],
+   "s": 0.05
+  },
+  {
+   "do": "wait",
+   "s": 0.7
+  },
+  {
+   "do": "call",
+   "fn": "owt_ads",
+   "args": [
+    "ads_on"
+   ],
+   "s": 0.1
+  },
+  {
+   "do": "client_frame",
+   "name": "mv_ads",
+   "pause": 0
+  },
+  {
+   "do": "call",
+   "fn": "owt_key",
+   "args": [
+    "a2",
+    "keydown:toggleads_throw"
+   ],
+   "s": 0.05
+  },
+  {
+   "do": "wait",
+   "s": 1
+  },
+  {
+   "do": "call",
+   "fn": "owt_key",
+   "args": [
+    "m1",
+    "keydown:melee_zoom"
+   ],
+   "s": 0.05
+  },
+  {
+   "do": "wait",
+   "s": 0.22
+  },
+  {
+   "do": "client_frame",
+   "name": "mv_melee",
+   "pause": 0
+  },
+  {
+   "do": "call",
+   "fn": "owt_key",
+   "args": [
+    "m2",
+    "keyup:melee_zoom"
+   ],
+   "s": 0.05
+  },
+  {
+   "do": "wait",
+   "s": 1.5
+  },
+  {
+   "do": "call",
+   "fn": "owt_held",
+   "args": [
+    "end"
+   ],
+   "s": 0.5
+  },
+  {
+   "do": "wait",
+   "s": 0.5
+  },
+  {
+   "do": "expect",
+   "that": "probe:ads_on.ads",
+   "ge": 0.9,
+   "why": "the ADS key lifts the machine to the eye"
+  },
+  {
+   "do": "expect",
+   "that": "probe:ads_off.ads",
+   "lt": 0.1,
+   "why": "from the hip"
+  },
+  {
+   "do": "expect",
+   "that": "probe:end.oneway",
+   "eq": 1,
+   "why": "the player holds ONE WAY"
+  }
  ]
 }

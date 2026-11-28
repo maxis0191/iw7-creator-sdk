@@ -327,3 +327,27 @@ owt_fx( name, fx, dist, up )
         playfx( id, at );
     print( "[IWZ local] GL PROBE name=" + name + " fx=" + fx + " defined=" + isdefined( id ) + " t=" + gettime() );
 }
+
+// loadfx after the level has loaded returns nothing (measured 28 Nov: defined=0), so a test precaches the weapon's effects
+// with the plan's own fx steps (GameLab loads them in gl_precache, in the order they first appear: OWT_FX below) and hands
+// their ids to the mechanic here. The map module calls ow_init() at load and needs none of this.
+owt_fxmap( name )
+{
+    names = [];
+    names[0] = "ow_ticket_2";
+    names[1] = "ow_ticket_1";
+    names[2] = "ow_ticket_r";
+    names[3] = "ow_door";
+    names[4] = "ow_door_full";
+    names[5] = "ow_taken";
+    n = 0;
+    for ( i = 0; i < names.size; i++ )
+    {
+        if ( isdefined( level.gl_fx ) && isdefined( level.gl_fx["fx" + i] ) )
+        {
+            level.ow_fx[names[i]] = level.gl_fx["fx" + i];
+            n++;
+        }
+    }
+    print( "[IWZ local] GL PROBE name=" + name + " mapped=" + n );
+}
