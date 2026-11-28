@@ -1,0 +1,25 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "sz_oneway_held",
+ "map": "cp_zmb",
+ "conditions": "quiet",
+ "libraries": [
+  "cp_sz_oneway",
+  "szoneway_driver"
+ ],
+ "about": "ONE WAY in the hands of a real joined player (forge run --joined --fs-game mods/szoneway --mod-ff <mod.ff>): the mod weapon iw7_szoneway_zm given at the player's spawn, frames of the joined client after the raise and after a pause. Its own view model on its own 22-bone skeleton; the animations are the stock FTL pistol's (stand-in). Stock spawning off.",
+ "steps": [
+  {"do": "waves", "on": false},
+  {"do": "ignore", "on": true},
+  {"do": "wait", "s": 2},
+  {"do": "call", "fn": "owt_held", "args": ["before"], "s": 1},
+  {"do": "give", "weapon": "iw7_szoneway_zm"},
+  {"do": "wait", "s": 3},
+  {"do": "call", "fn": "owt_held", "args": ["held"], "s": 1},
+  {"do": "client_frame", "name": "ow_held_a", "pause": 1},
+  {"do": "wait", "s": 2},
+  {"do": "client_frame", "name": "ow_held_b", "pause": 1},
+  {"do": "expect", "that": "probe:held.oneway", "eq": 1, "why": "the player holds ONE WAY"},
+  {"do": "expect", "that": "probe:held.clip", "eq": 12, "why": "twelve tickets in the stack"}
+ ]
+}

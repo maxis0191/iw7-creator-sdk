@@ -11,6 +11,13 @@ owt_start( name, match, up )
     print( "[IWZ local] GL PROBE name=" + name + " match=" + match + " up=" + up + " hooked=" + isdefined( level.onzombiedamage_func ) + " reward=" + isdefined( level.eligable_for_reward_func ) + " period=" + level.ow_period );
 }
 
+// what the tested player holds: the weapon in the hands, its clip and reserve, and the player's place and view
+owt_held( name )
+{
+    w = self getcurrentweapon();
+    print( "[IWZ local] GL PROBE name=" + name + " weapon=" + getweaponbasename( w ) + " oneway=" + issubstr( getweaponbasename( w ), "szoneway" ) + " clip=" + self getweaponammoclip( w ) + " stock=" + self getweaponammostock( w ) + " x=" + int( self.origin[0] ) + " y=" + int( self.origin[1] ) + " z=" + int( self.origin[2] ) + " yaw=" + int( self.angles[1] ) );
+}
+
 owt_tagged( tag )
 {
     out = [];

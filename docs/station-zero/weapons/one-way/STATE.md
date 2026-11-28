@@ -78,6 +78,21 @@ rewrites it. To reduce later: 20 surfaces (one a bone and atlas) against 5 or 6 
 Not started: the world model, sounds (ElevenLabs has 191 credits left of 40,000 until the reset of 9 Dec 2026), effects (they are cloned from
 stock emitters), animations (they need the hands' skeleton from a stock dump), the upgraded form at the machine, the quest hooks.
 
+## In the game: ONE WAY in a player's hands (28 Nov 2026)
+
+| Step | Where | Measured |
+|---|---|---|
+| View model built on its own skeleton | x64-zt-extensions `claude/sz-oneway-model` b958f38: `build_authored_weapon.py` own-skeleton mode, `one_way.recipe.json`; output `C:\studio-data\sz\weapons\one-way\model\r14` | 22 bones (root `j_gun`, `tag_flash`, `tag_ik_loc_ri`, `tag_ik_loc_le`), bind positions within 2e-7 inch of the generator's skeleton (read by the lead), 3 surfaces, 37,798 triangles, proof `PROOF_OK`; atlases 1024 px (the 512 px cap was for the BO3 ports' download size; this weapon's zone is 5.3 MB) |
+| Weapon definition and mod zone | `tools-source/iwzmap/weapons/one_way/make_zone.py`, `ZONE.md`; tree `C:\studio-data\sz\weapons\one-way\zone\z1` | `iw7_szoneway_zm` from the stock `iw7_atomizer_mp` (a bullet weapon): clip 12, reserve 60, 0.4 s a shot, reload 2.4 / 2.8 s in its own anim package, flat damage range 1,500. Preflight exit 0. STAND-INS: world model, every animation (stock FTL pistol), sounds, effects, tracer, name |
+| Zone build | `zt.ps1 -buildzone mod` under the Build lease, own work folder `C:\studio-data\sz\weapons\one-way\ztwork` (stock links, no disk) | `mod.ff` 5,302,784 B, compiled in 16 ms, no error |
+| In the hands of a joined player | `plans/sz-oneway-held.json`, `forge run --joined --fs-game mods/szoneway --mod-ff <mod.ff>` | 2/2 expects: the player holds `iw7_szoneway_zm`, clip 12, reserve 60. Frames `C:\studio-data\sz\weapons\one-way\runs\frames\held1_*.png`: the model draws with its textures, the desk and its six lamps read |
+
+**Wrong in those frames:** the hands do not hold it. The stock FTL pistol animations pose open hands and the gun
+floats above and ahead of the right hand. Measured cause candidates: the stock pistol's `tag_ik_loc_ri` is at
+(-12.58, -0.43, -4.54) in `j_gun` space and ours at (-1.33, 0, -1.5), and our body is far larger than the pistol's. Next:
+measure the stock grip in `j_gun` space (its mesh) and place ours on it, then our own first-person animations
+(the stand-in pose is not the feature).
+
 ## The exact next steps
 
 1. Next proofs of the mechanic: a player walking through a carried zombie's place; 24 and about 55 alive; the stock specials; real time. (Old note, kept for the command) When `--library-dir` fails for a missing tool cache: `python -B make_gamelab.py --server <iw7-paris-server checkout> --out C:\studio-data\sz\weapons\one-way\gamelab`,
