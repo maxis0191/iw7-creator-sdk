@@ -662,6 +662,8 @@
     "tools-source/iwzmap/station_zero/film/goods_pass_b.py",
     "tools-source/iwzmap/station_zero/film/goods_score_a.py",
     "tools-source/iwzmap/station_zero/film/goods_score_b.py",
+    "tools-source/iwzmap/station_zero/film/light_measure.py",
+    "tools-source/iwzmap/station_zero/film/light_variants.py",
     "tools-source/iwzmap/station_zero/film/plans/batch_t1.json",
     "tools-source/iwzmap/station_zero/film/plans/batch_t1_only.json",
     "tools-source/iwzmap/station_zero/film/plans/lib/szt1.gsc",
