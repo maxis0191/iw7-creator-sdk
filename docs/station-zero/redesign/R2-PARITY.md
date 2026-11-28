@@ -90,6 +90,18 @@ Ready to run when the dumps and a compiler are back (one session, four documents
   `bake.npz grid`, `lighting.txt`; the Umbra tome's cells).
 New in Studio meanwhile: the bake's answer carries `probe_coverage` and warns above 2 % of the drawn area in no room (`studio/bake.py`, unit test).
 
+### Resume (28 Nov, data back): checks before the 2 x 2, and the prediction written before it ran
+
+(a) What `draft` changes (Studio `bake.SETTINGS`, SDK `bake/lmbake.py`): gather rays 16 against 144 (C1's final: the recipe's 256), light grid rays
+64 against 256; direct light 3 x 3 samples in both (`direct_sub` 3). The SAME texel (8), atlas packing (`pack`), pages (one atlas), value range and
+encoding (secondary BC6H_UF16 two halves, secondunorm R8G8, primary BC4; `lmbake.py:544`). Nothing of how the engine reads the bake changes.
+(b) Black pixels in lightmap ATLAS space (C1's b_baked, floor pixels only, `pick4.py`): no pattern. By atlas v band black is 39 to 80 % (pose 1)
+and 89 to 100 % (pose 5) in every band; by chart size 41 to 89 % / 83 to 97 %; by stored light level 35 to 86 % / 91 to 98 %; 31 (pose 1) and 58
+(pose 5) charts are part black, part lit. Black follows world position (20 floor cells black from both poses, none lit from both).
+Prediction for the 2 x 2: draft and final give the same black (no encoding, range or atlas difference to act through); only the probe room can
+move it, and the diag build (same probe rooms, floor drawn) argues it will not. If all four cells keep the black: stop, the cause is in the
+document's geometry (what the diag document adds) or in the engine's draw, not in the bake.
+
 ## 2. Blend materials (found where the data is lost; carrying it needs the dumps and a compiler patch)
 
 - A stock blend material (`*622n_274n`, map-local) is a layered material: a base plus decal layers. The lift records them: `*387n_86n_354n_362n` =
