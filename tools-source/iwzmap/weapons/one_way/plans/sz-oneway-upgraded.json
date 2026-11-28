@@ -43,11 +43,11 @@
     {"do": "expect", "that": "probe:a_stat.refund", "eq": 8, "why": "two tickets back for three taken: twelve give eight"},
     {"do": "expect", "that": "probe:a2_stat.arrivals", "eq": 12, "why": "every zombie taken for good comes back one bell later as an arrival"},
 
-    {"do": "expect", "that": "probe:g_stat.taken", "eq": 15, "why": "three of the six were ticketed and taken (round 30: 7,020)"},
+    {"do": "expect", "that": "probe:g_stat.taken", "eq": 15, "why": "three of the six were ticketed and taken (round 30: 7,030)"},
     {"do": "expect", "that": "probe:g_z.alive", "eq": 3, "why": "the three unbooked are untouched by the bell"},
-    {"do": "expect", "that": "probe:g_z.hmin", "near": 7020, "tol": 3, "why": "and keep their health until the arrival"},
+    {"do": "expect", "that": "probe:g_z.hmin", "near": 7030, "tol": 3, "why": "and keep their health until the arrival"},
     {"do": "expect", "that": "probe:g2_stat.arrivals", "eq": 15, "why": "three arrivals one bell later"},
-    {"do": "expect", "that": "probe:g2_stat.arrival_kills", "ge": 1, "why": "an unbooked zombie within 120 units of two arrivals takes 7,940 and dies (how many stand that close is read in the trace)"},
+    {"do": "expect", "that": "probe:g2_stat.arrival_kills", "ge": 1, "why": "an unbooked zombie within 120 units of two arrivals takes 7,940 (7,030 health) and dies (how many stand that close is read in the trace)"},
 
     {"do": "expect", "that": "probe:r_issue.issued", "eq": 4, "why": "four tickets on four runners"},
     {"do": "expect", "that": "probe:r_run.speed", "gt": "@probe:r_calm.speed", "why": "a booked zombie moves slower than it ran"},

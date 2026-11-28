@@ -142,8 +142,11 @@ class OneWay(unittest.TestCase):
             self.vm.run_for(0.05)
         self.fail("no sync")
 
-    def shoot(self, z, head=0, who=None):
+    def shoot(self, z, head=0, who=None, step=True):
+        """one shot; then one server frame passes (two hits of one owner in one frame are one bullet going on)"""
         self.vm.call("t", "t_shoot", [z, head], self_obj=who or self.p)
+        if step:
+            self.vm.run_for(0.05)
 
     def stat(self, key, who=None):
         return self.vm.call("t", "t_stat", [key], self_obj=who or self.p)
@@ -164,7 +167,7 @@ class OneWay(unittest.TestCase):
         self.assertEqual([z.f["health"] for z in zs], [1045] * 12)
         self.assertEqual([self.tickets(z) for z in zs], [1] * 12)
         self.assertEqual(self.stat("issued"), 12)
-        self.vm.run_for(4.8)
+        self.vm.run_for(4.2)
         self.assertEqual(sum(z.f["health"] > 0 for z in zs), 12, "nothing before the bell")
         self.bell()
         self.assertEqual(sum(z.f["health"] > 0 for z in zs), 0)
@@ -264,7 +267,7 @@ class OneWay(unittest.TestCase):
         z = self.zombie(1045)
         self.sync(1000)
         t0 = self.now()
-        self.shoot(z)
+        self.shoot(z, step=False)
         self.vm.run_for(0.95)
         self.assertEqual(z.f["health"], 1045)
         self.vm.run_for(0.15)
@@ -274,7 +277,7 @@ class OneWay(unittest.TestCase):
     def test_calm_flinch_then_walk_then_restored(self):
         z = self.zombie(50000)
         self.sync(5000)
-        self.shoot(z)
+        self.shoot(z, step=False)
         self.assertEqual(z.f.get("stunned"), 1)
         self.vm.run_for(0.7)
         self.assertIs(z.f.get("stunned", Undefined), Undefined)
@@ -410,6 +413,17 @@ class OneWay(unittest.TestCase):
         self.bell()
         self.assertEqual((z.f["health"], boss.f["health"]), (0, 45300))
         self.assertEqual(self.stat("taken"), 1)
+
+
+    def test_one_ticket_a_shot_the_bullet_books_nobody_behind(self):
+        a, b = self.zombie(1045), self.zombie(1045)
+        self.sync(5000)
+        self.shoot(a, step=False)
+        self.shoot(b, step=False)        # same server frame, same owner: the same bullet going on
+        self.assertEqual((self.tickets(a), self.tickets(b), self.stat("issued"), self.stat("wasted")), (1, 0, 1, 0))
+        self.vm.run_for(0.05)
+        self.shoot(b)                    # the next shot
+        self.assertEqual(self.tickets(b), 1)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@
 //
 //   issue    a bullet of the weapon does no damage: it books the zombie it hits on the next departure
 //            (body = second class, head = first class; 3 tickets a zombie; a fourth is spent for nothing)
+//            one ticket a shot: a bullet that goes on through its first zombie books nobody else
 //   calm     a booked ordinary zombie flinches 0.6 s, then walks until the bell (the stock slow card's own call)
 //   beat     the departure is re-issued every 6.0 s of the match's own time; nothing starts it or rings it early;
 //            a ticket of the last 0.5 s is valid for the departure after
@@ -113,6 +114,11 @@ ow_damage( inflictor, attacker, damage, flags, mod, weapon, point, dir, hitloc, 
         return 0;                       // a carried zombie is not on the platform
     if ( !ow_is( weapon ) || !ow_bullet( mod ) || !isdefined( attacker ) || !isplayer( attacker ) )
         return damage;
+    // one ticket a shot: the victims of one bullet share a server frame, and only the first is booked
+    t = gettime();
+    if ( isdefined( attacker.ow_shot ) && attacker.ow_shot == t )
+        return 0;
+    attacker.ow_shot = t;
     self ow_issue( attacker, weapon, ow_head( hitloc ) );
     return 0;
 }

@@ -35,9 +35,11 @@ owt_sync( name, ms )
     print( "[IWZ local] GL PROBE name=" + name + " left=" + left + " t=" + gettime() );
 }
 
-// one real bullet of the held weapon per ticket, fired from 48 units in front of each zombie of the tag at its chest
-// (head=1: at its head), `per` tickets a zombie, the first `limit` zombies (0 = all). The stock damage callback and
-// the weapon's hook do the rest.
+// `per` tickets a zombie, the first `limit` zombies of the tag (0 = all). A tag with ONE zombie, or head=1: one real
+// bullet of the held weapon per ticket, fired from 48 units in front of the zombie at its chest (head=1: its head).
+// A tag with several zombies and head=0: one script hit with a bullet's means of death per ticket
+// (dodamage, the same stock callback and hook, no hit location), because a real bullet into zombies standing
+// together reaches the nearest one, not the aimed one (measured 28 Nov). Hits are one server frame apart.
 owt_issue( name, tag, per, head, limit )
 {
     w = self getcurrentweapon();
@@ -60,8 +62,13 @@ owt_issue( name, tag, per, head, limit )
             if ( !isalive( z ) )
                 break;
             end = z gettagorigin( bone );
-            dir = vectornormalize( self geteye() - end );
-            magicbullet( w, end + dir * 48, end - dir * 8, self );
+            if ( zs.size > 1 && !head )
+                z dodamage( 1, end, self, self, "MOD_RIFLE_BULLET", w );
+            else
+            {
+                dir = vectornormalize( self geteye() - end );
+                magicbullet( w, end + dir * 48, end - dir * 8, self );
+            }
             shots++;
             wait 0.05;
         }

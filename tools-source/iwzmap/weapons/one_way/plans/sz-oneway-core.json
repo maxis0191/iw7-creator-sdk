@@ -78,7 +78,7 @@
     {"do": "expect", "that": "probe:c_stat.taken", "eq": 21, "why": "one first-class ticket (9,920) covers round 33 (9,357)"},
     {"do": "expect", "that": "probe:d_stat.taken", "eq": 21, "why": "and not round 34 (10,293)"},
     {"do": "expect", "that": "probe:d_stat.carried", "eq": 7, "why": "it is carried one stop"},
-    {"do": "expect", "that": "probe:d_z.hmax", "near": 373, "tol": 2, "why": "10,293 - 9,920"},
+    {"do": "expect", "that": "probe:d_z.hmax", "near": 372, "tol": 2, "why": "10,292 in the game - 9,920"},
     {"do": "expect", "that": "probe:d2_z.carried", "eq": 0, "why": "and put back"},
 
     {"do": "expect", "that": "probe:e_stat.wasted", "eq": 1, "why": "a zombie holds three tickets: the fourth is spent for nothing"},
