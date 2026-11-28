@@ -443,3 +443,45 @@ materials draw with their layers, and the visible effect on the control frames i
 Closing the foreign materials removed **3.22** of the mean distance (5.83 to 2.61) and all of the black. Closing the blend layers (`keep`) removed about 0.00 on this metric.
 What remains of the 2.61 is named in the bands: the clean floor against stock's dirt, the missing graffiti and decals (decal draw classes: HOLD), the blue floor balance (probe
 cube: HOLD), the ceiling and wall levels.
+
+## 14. Draw classes: decals, glass, fences, shadow casters (worker DC1, 28 Nov 2026)
+
+Plan written before any code. Everything marked [m] was measured by reading the stock files on this PC; [r] read in code.
+
+### How IW7 orders world surfaces by draw class
+- [m] The template world's header (`cp_zmb.d3dbsp.gfxmap`, `GfxWorld` fields `sortKeyOpaqueBegin..sortKeyEmissiveEnd`) holds the class bands as material sort keys, both ends
+  inclusive: **opaque 1..6, decal 7..17, trans 18..34, emissive 35..40** (also `sortKeyLitDecal` 7, `sortKeyEffectDecal` 14, `sortKeyTopDecal` 17, `sortKeyDistortion` 24, `sortKey2D` 41).
+  The compiler reads them from the template world at run time (`w->sortKey*`), not from constants of another game (H1 uses 7..17 decal, 18..33 trans).
+- [r] `GfxWorldDpvsStatic` holds four surface ranges, `litOpaqueSurfsBegin/End`, `litDecalSurfsBegin/End`, `litTransSurfsBegin/End`, `emissiveSurfsBegin/End` (no shadow-caster range,
+  unlike H1). A surface belongs to the draw pass of the range its index is in; the template has 10,760 surfaces of which 0..10,015 are the opaque range, the rest decal / trans /
+  emissive. `sortedSurfIndex` maps position to surface index (identity in our worlds).
+- [m] A material's class lives in its own file: `sortKey` (opaque 2 or 3, lit decal 7..17, glass and unlit add 24..30, emissive 35..40) with `cameraRegion` 0 / 2 / 3 / 4 in step, and
+  `stateFlags` (opaque 57, decal 53 = cull back + DECAL 0x4 + depth, no depth write; glass 49). The `wc/` prefix is NOT the class: of 62 `wc/` materials in the cp_zmb zone, 19 are sort 2 (plain
+  opaque, a fence among them) and the rest decals; about a hundred `w/` materials are decals (`w/cp_disco_graffiti_01`, `w/fah_wall_stain_01`, `w/t7_decal_blood_spray_01`).
+- [m] Control room prefab `ctl_subway_east` by sort key and region: opaque 79,782 triangles (84 materials), **decal 120 (11 materials, graffiti, blood, wall stains), trans 148
+  (`w/glass_clear_solid_01` 144, `wc/glass_cracked_01` 4)**, `w/caulk_shadow` 1,044 (region 11, `w_tools_r0c0`), and 186 triangles of `wc/mtl_zeb_fence_chainlink` (sort 2, opaque class,
+  alpha tested: dropped only because `render_material` refuses the `wc/` prefix). Today the decals are drawn in the opaque range (graffiti is `w/`, so it is lifted), glass and the
+  fence are dropped or opaque.
+- [r] The compiler today (`iwzmap.cpp build_gfx`): every generated surface is `litOpaque` (`0..count`, decal / trans / emissive ranges empty), flags / sort key / unknown bytes / draw key are
+  copied from a template surface of the same material (`by_material`), else from the first opaque template surface (`fallback`, the "using template surface defaults" line).
+  The material is a name stub; the compiler never sees the material file (the zone assembly brings it after the compile).
+- [m] `GfxSurface.sortKey` is NOT the material's sort key (template surface 0: sort 0, flags 0x26, material sort 2). The compiler must not invent it: per class it takes the surface values of
+  the template's own surfaces of that range.
+
+### The change
+1. Studio writes `draw_classes.txt` beside `world.bin`: `<material>\t<sortKey>` for every drawn material whose sort key is outside the opaque band (read from the material file); no
+   such material, no file (a stale one is removed). Studio keeps `wc/` materials as render records, with `draw` = decal / trans / emissive; only caulk, shadowcaster, nodraw, clip stay out.
+2. Compiler, right after `read_world`: classify each surface (sidecar sort key against `w->sortKey*Begin/End`); one stable partition of `src.surfaces` by class (opaque, decal,
+   trans, emissive). Every later consumer (tome ids, voxel light lists, aabb leaf, `build_gfx_lights`) then sees the final index. Without the file, or with only opaque classes, the
+   partition is the identity and the output is byte for byte what it is now. Ranges: opaque `0..tpl+n_opaque`, decal, trans, emissive follow (`iwzmap_draw_classes.hpp`, static test).
+3. Per surface defaults: a template surface of the same material (as now), else a representative of the template's range for the class (the most common flags / sort key / unknown
+   bytes / lightmap index tuple, its first surface), else the opaque fallback with a warning. The log prints each template range with its histogram, and for a material the template
+   also uses, whether its template surface sits in the range the sort key says (a check of the mapping).
+4. Z-fighting [m, inferred from the bit layout of `structs.hpp` GFXS1_*]: stock decals lie coplanar with their wall. The offset is not in the surface or the dpvs: it is in the material's
+   technique states. `wc_l_sm_ndw_blend_i0c0s0` (`blood_smear_01_dec.statebitsmap`) has bit 0x10 (`GFXS1_POLYGON_OFFSET_1`) in state word 1 for its lit pass (value 28, 0x20 for another
+   pass) and no depth write; the opaque `w_l_sm_replace_i0c0s0` states have none. The `.statebits/.statebitsmap/.stateinfo` files travel with the material when a build brings it, so the compiler
+   writes nothing for it; the frame has to confirm (a decal that flickers or vanishes against its wall).
+5. Vertex colour: the lifted surfaces carry the stock colour (`s['col']`); decal and trans records keep it (`cols`), the `_vc_` techniques read it.
+6. Baker: decals, glass and fences are lifted to the baker as ordinary world triangles and occlude light as solids. The baker gets the class list and skips non-opaque classes as occluders (they
+   stay lit receivers). `caulk_shadow` triangles become a baker-only `shadow_occluders` triangle list (not in `world.bin`, not in collision or navigation).
+7. Not done by this change: the engine pass order inside a range (by `sortedSurfIndex` and the draw key), distortion, a class for sort keys 1..6 other than opaque, culling by class.
