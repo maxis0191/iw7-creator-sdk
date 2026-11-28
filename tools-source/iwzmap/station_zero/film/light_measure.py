@@ -81,6 +81,15 @@ def studio(*args):
         return {'ok': False, 'exit': p.returncode, 'stdout': p.stdout[-1500:], 'stderr': p.stderr[-1500:]}
 
 
+def _keep_compile_log(sub):
+    """the newest build's compile log (the live folder keeps only the last one) beside the variant's frames: its light slots and voxel lists"""
+    import glob
+    import shutil
+    logs = glob.glob(os.path.join(os.environ.get('STUDIO_DATA', r'C:\studio-data'), 'live', '*', 'next', 'cp_iwz.compile.log'))
+    if logs:
+        shutil.copyfile(max(logs, key=os.path.getmtime), os.path.join(sub, 'compile.log'))
+
+
 def shoot(folder, doc, cams, states, variants, start=True):
     """One session of `doc`; for each document (doc, then each variant synced into the session) and each state, the cameras."""
     os.makedirs(folder, exist_ok=True)
@@ -107,6 +116,8 @@ def shoot(folder, doc, cams, states, variants, start=True):
                 if not log['sync_%d' % k].get('ok'):           # a failed sync leaves the previous document in the game: its frames would be a false null
                     log['aborted_%d' % k] = 'sync failed'
                     continue
+            os.makedirs(sub, exist_ok=True)
+            _keep_compile_log(sub)
             for state in states:
                 os.makedirs(os.path.join(sub, state), exist_ok=True)
                 log['power_%d_%s' % (k, state)] = studio('live', 'power', d, state, *sa)
