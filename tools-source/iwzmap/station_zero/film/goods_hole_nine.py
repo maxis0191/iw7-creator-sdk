@@ -14,7 +14,7 @@ No light of ours here: a fifth light would put the shop at 0.052 lights per 1,00
 import math
 import random
 
-from goods_kit_b import M, art, art_b, obox, prism, paper_stack, rings, Kit
+from goods_kit_b import M, art, art_b, obox, prism, paper_stack, rings, tilt, Kit
 from studio import build as B
 import shellgeo as G
 
@@ -53,6 +53,17 @@ def tray(K, kind, x0, y0, z, w, d, glaze=None, cols=0, rows=0, pitch=4.4, seed=0
     return it
 
 
+def tilted_tray(K, kind, x0, y0, z, w, d, glaze, cols, rows, pitch=4.6, angle=28.0, seed=0, skip=()):
+    """a tray of rings tilted toward the hall about its front edge (a pastry case's display), pan, liner and rings in one turn"""
+    it = K.item(kind)
+    org = (0.0, y0, z)
+    K.mesh(it, 'pan', M['alu'], tilt(obox((x0 + w / 2, y0 + d / 2, z), (w, d, 0.6), fit=False), org, angle))
+    K.mesh(it, 'liner', M['white'], tilt(obox((x0 + w / 2, y0 + d / 2, z + 0.6), (w - 1.0, d - 1.0, 0.05), faces='t'), org, angle))
+    c0 = (x0 + (w - (cols - 1) * pitch) / 2, y0 + (d - (rows - 1) * pitch) / 2, z + 0.65)
+    K.mesh(it, 'rings', K.mat(glaze), tilt(rings(c0, cols, rows, pitch, jitter=0.25, seed=seed, skip=skip), org, angle))
+    return it
+
+
 def serving_counter(K):
     """the serving counter, open to the hall, west to east: the cake stand, napkins, sugar, the bagged order, the bell, cups and saucers,
     the till, the gala trays; two window cards on its front"""
@@ -64,13 +75,13 @@ def serving_counter(K):
     K.box(it, 'base', [cx0, cy0, z, cx1, cy1, z + 2.0], M['chrome'])
     K.box(it, 'top', [cx0, cy0, z + 27.0, cx1, cy1, z + 28.0], M['chrome'])
     K.sign(it, 'lamp', art_b('h9_warm_strip.png'), ((cx0 + cx1) / 2, (cy0 + cy1) / 2, z + 27.0), (0.0, 0.0, -1.0), (40.0, 6.0),
-           emissive={'color': [1.0, 0.72, 0.42], 'strength': 2.0}, lift=0.1)
+           emissive={'color': [1.0, 0.72, 0.42], 'strength': 3.0}, lift=0.1)
     K.box(it, 'back', [cx0 + 0.5, cy1 - 0.3, z + 2.0, cx1 - 0.5, cy1, z + 27.0], M['glass'])
     for k, x in enumerate((cx0, cx1 - 0.6)):
         K.box(it, 'end%d' % k, [x, cy0, z + 2.0, x + 0.6, cy1, z + 27.0], M['chrome'])
     K.box(it, 'shelf', [cx0 + 0.6, cy0 + 0.3, z + 14.0, cx1 - 0.6, cy1 - 0.3, z + 14.4], M['glass'])
-    tray(K, 'ring_tray', cx0 + 2.0, cy0 + 1.5, z + 2.0, 42.0, 19.0, glaze='mat_h9_glaze_honey.png', cols=9, rows=4, pitch=4.6, seed=41, skip=((8, 0), (8, 1), (0, 3)))
-    tray(K, 'ring_tray', cx0 + 2.0, cy0 + 1.5, z + 14.4, 42.0, 19.0, glaze='choc', cols=8, rows=3, pitch=5.0, seed=42, skip=((0, 0), (1, 0), (7, 2)))
+    tilted_tray(K, 'ring_tray', cx0 + 2.0, cy0 + 2.0, z + 3.0, 42.0, 14.0, 'mat_h9_glaze_honey.png', 9, 3, seed=41, skip=((8, 0), (0, 2)))
+    tilted_tray(K, 'ring_tray', cx0 + 2.0, cy0 + 2.0, z + 15.0, 42.0, 14.0, 'mat_h9_glaze_choc.png', 9, 3, seed=42, skip=((0, 0), (1, 0), (8, 2)))
     K.prop('napkin_dispenser', 'p7_diner_table_napkin_clean', (-1900.0, yc + 5.0, z), yaw=0.0)
     for k, x in enumerate((-1892.0, -1888.0)):
         it = K.item('sugar_pourer')
@@ -114,7 +125,7 @@ def serving_counter(K):
     lamp = K.item('hatch_lamp')
     K.box(lamp, 'housing', [-1952.0, 4306.0, 135.0, -1770.0, 4316.0, 138.0], M['chrome'])
     K.sign(lamp, 'strip', art_b('h9_warm_strip.png'), (-1861.0, 4311.0, 135.0), (0.0, 0.0, -1.0), (176.0, 6.0),
-           emissive={'color': [1.0, 0.72, 0.42], 'strength': 2.2}, lift=0.1)
+           emissive={'color': [1.0, 0.72, 0.42], 'strength': 3.0}, lift=0.1)
     # her cards on the counter's front, eye level
     for k, (x, card) in enumerate(((-1928.0, 'h9_card_1.png'), (-1846.0, 'h9_card_3.png'))):
         K.sign(K.item('window_card'), 'card', art_b(card), (x, 4302.0, 31.0), (0.0, -1.0, 0.0), (13.0, 8.1), rot=(-3.0, 2.0)[k])
