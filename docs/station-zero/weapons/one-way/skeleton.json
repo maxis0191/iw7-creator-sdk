@@ -1,6 +1,5 @@
 {
  "schema": "iw7-skinned-writer/skeleton-1",
- "about": "ONE WAY view model, its own skeleton (design, 28 Nov 2026). Model space in inches, x forward (to the ticket slot), y left, z up, origin at the top rear of the grip. Every bone is at rest with the model's axes (identity quaternion): the crank and the striker turn about y, the door about z, the follower and the stack move along z, the ticket along x. The root's name and the standard tags (the hands' attach bone, the sight tag) are NOT settled: they are read from a stock view model when a dump exists again.",
  "bones": [
   {
    "name": "j_gun",
@@ -17,7 +16,7 @@
    "pos": [
     0.55,
     0.0,
-    0.05
+    0.1
    ]
   },
   {
@@ -25,7 +24,7 @@
    "parent": "j_gun",
    "pos": [
     0.6,
-    1.5,
+    1.62,
     2.2
    ]
   },
@@ -33,8 +32,8 @@
    "name": "j_ow_door",
    "parent": "j_gun",
    "pos": [
-    5.3,
-    1.5,
+    5.34,
+    1.62,
     2.1
    ]
   },
@@ -53,23 +52,23 @@
    "pos": [
     4.1,
     0.0,
-    1.0
+    1.1
    ]
   },
   {
    "name": "j_ow_flag",
    "parent": "j_gun",
    "pos": [
-    4.1,
-    1.45,
-    3.35
+    3.66,
+    1.22,
+    2.7
    ]
   },
   {
    "name": "j_ow_ticket",
    "parent": "j_gun",
    "pos": [
-    6.0,
+    6.92,
     0.0,
     2.3
    ]
@@ -80,70 +79,70 @@
    "pos": [
     5.2,
     0.0,
-    -0.95
+    -0.635
    ]
   },
   {
    "name": "j_ow_striker",
    "parent": "j_gun",
    "pos": [
-    4.0,
+    3.2,
     0.0,
-    -0.6
+    0.02
    ]
   },
   {
    "name": "j_ow_lamp1",
    "parent": "j_gun",
    "pos": [
-    1.6,
+    1.5,
     0.0,
-    3.9
+    3.88
    ]
   },
   {
    "name": "j_ow_lamp2",
    "parent": "j_gun",
    "pos": [
-    2.32,
+    2.26,
     0.0,
-    3.9
+    3.88
    ]
   },
   {
    "name": "j_ow_lamp3",
    "parent": "j_gun",
    "pos": [
-    3.04,
+    3.02,
     0.0,
-    3.9
+    3.88
    ]
   },
   {
    "name": "j_ow_lamp4",
    "parent": "j_gun",
    "pos": [
-    3.76,
+    3.78,
     0.0,
-    3.9
+    3.88
    ]
   },
   {
    "name": "j_ow_lamp5",
    "parent": "j_gun",
    "pos": [
-    4.48,
+    4.54,
     0.0,
-    3.9
+    3.88
    ]
   },
   {
    "name": "j_ow_lamp6",
    "parent": "j_gun",
    "pos": [
-    5.2,
+    5.3,
     0.0,
-    3.9
+    3.88
    ]
   },
   {
@@ -151,7 +150,7 @@
    "parent": "j_gun",
    "pos": [
     6.2,
-    0.0,
+    -1.31,
     3.8
    ]
   },
@@ -160,7 +159,7 @@
    "parent": "j_gun",
    "pos": [
     -2.3,
-    0.0,
+    -1.31,
     3.8
    ]
   },
@@ -168,16 +167,16 @@
    "name": "j_ow_strap3",
    "parent": "j_gun",
    "pos": [
-    2.0,
-    -1.6,
-    1.5
+    -1.4,
+    -2.0,
+    -2.7
    ]
   },
   {
    "name": "tag_flash",
    "parent": "j_gun",
    "pos": [
-    6.6,
+    6.92,
     0.0,
     2.3
    ]

@@ -26,7 +26,16 @@ who restores it; this session does not touch the stock.
 | Blender generator of direction A | x64-zt-extensions branch `claude/sz-oneway-model` (7aa3358): `tools-source/asset-bridge/t7-weapons/authored/one_way_gun.py`, `one_way.params.json` | 37,386 triangles, 148 parts, each tagged with its bone key; five preview renders per round in `C:\studio-data\sz\weapons\one-way\model\r10` read by the lead (product, left, fp). The helper's unwrap and bake ran to the end on Blender 5.2 with no game data (an earlier round, 540 s). Left: chips too heavy on the grip, the strap hidden behind the body; never exported, never in the game |
 | Own-skeleton mode of the model writer | x64-zt-extensions branch `claude/own-skeleton-writer` (776320f): `tools-source/iw7-skinned-writer/skeleton.py`, `build_model.py --skeleton <spec.json>` | 34 tests of the folder pass (16 new), the old path's bytes unchanged, `skeleton.json` of this weapon loads. Unverified against stock data: the quaternion scale (32767 or 32768), the per-bone bounds, three records copied from the base |
 
-Not started: sounds (ElevenLabs has 191 credits left of 40,000 until the reset of 9 Dec 2026), effects (they are cloned from
+| The two meet: the model written on its own skeleton | `C:\studio-data\sz\weapons\one-way\model11\dump` (`weapon_iwz_oneway_vm.xmb`, `_lod0.xsb`), built by `build_model.py --skeleton` from the generator's bake model and its own `one_way.skeleton.json` (x64-zt-extensions `claude/sz-oneway-model` 9a15fbd, which now holds the writer too) | read back by the lead: 20 bones, 20 surfaces, 37,386 triangles, every surface on its bone, positions within 2e-7 inch of the spec. The header is a SYNTHETIC base, so this file is not a game asset: the same command with a stock view model as `--base-xmodel` is the next step when dumps exist |
+| The mechanic's script, after a read of the whole stock damage callback | `cp_sz_oneway.gsc` (6cee926) | 19 logic tests: the bell's damage is never left on a zombie when the callback returns early, a special that stays is not stunned, a leaving player cancels his tickets, Insta-Kill makes any ticket enough |
+
+**Found on the model, the owner's call:** held straight in first person the six lamps line up one behind the other and
+cannot be counted (`model11p_straight.png`, `fp_cant10.png`); they read only with the weapon turned toward the
+player (`model10p.png`, 22 degrees). The lamps are the weapon's readout. The owner was asked (28 Nov): a hold turned
+toward the player in every animation, or the six lamps moved to an inclined panel at the rear of the top, in a row
+across. Also left on the model: the grip is chipped almost bare (`model11ear.png`); no world model yet.
+
+Not started: the world model, sounds (ElevenLabs has 191 credits left of 40,000 until the reset of 9 Dec 2026), effects (they are cloned from
 stock emitters), animations (they need the hands' skeleton from a stock dump), the upgraded form at the machine, the quest hooks.
 
 ## The exact next steps
