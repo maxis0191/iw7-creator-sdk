@@ -3,8 +3,8 @@ r"""control_doc: the control document = the whole station document + the lifted 
     python control_doc.py --mode bounce|baked [--out <folder>]
 
 The base + the room alone was tried first (fastest bake), but `live start` refuses it: the base by itself fails the build's walk gate
-(a drop-only floor where the Arcade layers stand). So the whole station document is loaded and the room added; the room is an island
-840 units west of the Terminus: nothing of the Arcade or the Terminus is seen from its cameras or reaches it with light. The settings block
+(a drop-only floor where the Arcade layers stand). So the whole station document is loaded and the room added; the room stands alone
+in the empty gap between the Terminus and the base (control_room.OFFSET): nothing of the Arcade or the Terminus is seen from its cameras or reaches it with light. The settings block
 (kit dumps, darkness, the lit vision = light_rules.LIT_VISION, the dark exposure) is the station document's, unchanged, so the room goes
 through exactly the pipeline the station goes through. Writes the document and `control.json` (the lights as transcribed, the prefab's
 expand report: substituted and skipped materials, props, collision; the models no dump holds).

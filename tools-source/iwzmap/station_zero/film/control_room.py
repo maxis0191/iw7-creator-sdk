@@ -34,7 +34,7 @@ from studio import prefab as P  # noqa: E402
 ZONE = 'cp_disco'
 PREFAB = 'ctl_subway_east'
 STOCK_BOX = [-150.0, 1950.0, 230.0, 1260.0, 3400.0, 760.0]     # both platforms, the track, the stairs' feet, the mezzanine edge
-OFFSET = (-13000.0, -7000.0, 0.0)                              # stock -> document: a pure translation (west of the Terminus, 840 units clear)
+OFFSET = (-7850.0, -6750.0, -400.0)                          # stock -> document: a pure translation, inside the station's own bounds (the empty x gap between the Terminus and the base; z in the base's range): placed outside them (-13000, -7000, 0) the build's walk gate turned the base's own drop region (shallowest drop 40) from a warning into an error
 BOUNCE_ROW_PER_UNIT = 27000.0
 STOCKREF = r'C:\studio-data\sz\film\stockref\cp_disco'
 POSES = ['subway_east_%d' % k for k in range(1, 9)]
