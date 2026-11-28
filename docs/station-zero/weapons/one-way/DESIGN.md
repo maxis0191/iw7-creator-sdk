@@ -2,7 +2,8 @@
 
 Working id `one-way` (asset prefix `iw7_szoneway`). "ONE WAY" is the lead's working title; the names a player reads
 are in section 12 and are fallback copy. Nothing in this page was run in the game: it is a design, with the
-state of the engine and of our tools checked on 28 Nov (section 10). Canon: `../../01-LORE.md`.
+state of the engine and of our tools checked on 28 Nov (section 10). The look is section 14, the HUD section 15.
+Canon: `../../01-LORE.md`.
 
 ## 1. The fantasy, in one sentence
 
@@ -48,8 +49,8 @@ at a run. Again.
   more (twelve tickets a stack; a fourth ticket on a zombie that holds three is spent for nothing).
 - *Full trains.* Six on one bell pays three tickets back: a player who batches gets half as many kills again out
   of a reserve; a player who issues one at a time gets none of it.
-- *Reading the carry.* Past the rating a bell clears the platform for six seconds instead of killing: the
-  skilled player uses the empty six seconds to move, and stands off the spot where the carried will be put back.
+- *Reading the carry.* Past the rating a bell carries six away for six seconds instead of killing: the skilled
+  player uses those six seconds to move, and stands off the spot where the carried will be put back.
 
 **Why four players want it differently.** The runner wants the front of his train walking. The one who holds a
 window wants full trains on a choke, for the refund. The one who revives wants a single ticket on each of the
@@ -139,9 +140,9 @@ station, not by a marker (a shelf light, a bell that rings by itself once).
 | Part | Where (one per match) | State of the place on 28 Nov |
 |---|---|---|
 | **The machine** (issuing machine No. 0, under a token window) | Fare Hall token booth · Transit Police Post evidence shelf | Fare Hall: the generator's version exists; Police Post: not built |
-| **The ticket stock** (a carton: 312 commemorative singles for the inauguration, never collected) | Copy Stop, the uncollected jobs | built (Arcade, `redesign/PLAN.md` section 3) |
+| **The ticket stock** (a carton: 312 commemorative singles for the inauguration, never collected) | Copy Stop, the uncollected jobs | built (Arcade; `docs/station-zero/redesign/PLAN.md` sections 3 and 5, on branch `claude/sz-film`, not on main) |
 | **The bell** (a counter bell that comes away in the hand when it is rung) | Hole Number Nine, the serving counter · Needle Drop, beside the till | built (Arcade) |
-| **Fitting** (hold Use 3 s at the bench; Brill's key machine cuts the issuing key) | Heel & Key, the stall counter | built (Arcade); the stall is not entered, the counter is reached from the hall |
+| **Fitting** (hold Use 3 s at the bench; Brill's key machine cuts the issuing key) | Heel & Key, the stall counter | built (Arcade); the stall is not entered and its counter is reached from the hall. Open defect of that place on 28 Nov: the rifle on its pegboard cannot be bought from the hall (PLAN section 5). The fitting step rides on the same reach and waits for that fix |
 
 The player who fits it receives it. Afterwards the stall offers one more for 2,500 points, once per player; two
 exist in a match at most. It takes a weapon slot; the Lost Property window never returns it.
@@ -171,7 +172,7 @@ follower**, the **ticket tongue** in the slot, the **stock door**, the **bell st
 | Melee | 0.7 s | struck bell-first; the bell gives a dull stroke |
 | Inspect | 3.5 s | turned over: the fare plate on the back; a finger flicks the bell; the thumb riffles the stack |
 | Bell (overlay, at each departure) | 0.5 s | the striker hits twice by itself and the hand takes the jolt |
-| Full train (overlay) | 0.6 s | third stroke; four tickets drop back into the stock window |
+| Full train (overlay) | 0.6 s | third stroke; the refunded tickets drop back into the stock window |
 
 The world model (what the other players see) uses the stock third-person holding poses: a player's third-person
 animations are not in this package's scope, and that is said in the report.
@@ -249,7 +250,7 @@ the call exists, the result was never proven in the game), **missing** (with the
 | **Calm: one zombie forced to a walk** | built | `scragentsetanimscale`, `asm_setmoveplaybackrate` are called in `paris_doom.gsc:510`, `paris_kino.gsc:1668`; no per-zombie slow was measured. First probe |
 | **Carried over: an agent hidden, frozen, and put back** | built | `scripted_mode`, `setorigin` exist in lab libraries; "a script-moved agent snaps back to the navmesh". First probe. If it fails, the part is an engine job (agent suspend and resume), and the weapon ships without it only as "not done" |
 | An effect on a zombie's tag, an effect at a point | built | called in the ported DG-2; counted by kills, never by frames |
-| A new effect | proven by cloning a stock emitter and rewriting its fields (`iw7_vfx.py`, `t7_fx_to_iw7.py`; Thundergun muzzle, 7 Nov). An effect authored from nothing: missing (no authoring tool; the limit is the emitter template) | the passing light is built from stock emitters with our textures; lit particles read black in a dark map, so it uses unlit or emissive ones |
+| A new effect | proven by cloning a stock emitter and rewriting its fields (`iw7_vfx.py`, `t7_fx_to_iw7.py`; Thundergun muzzle, 7 Nov). An effect authored from nothing: missing (no authoring tool; the limit is the emitter template) | the doors' light is built from stock emitters with our textures; lit particles read black in a dark map, so it uses unlit or emissive ones |
 | First-person effects | only from an animation's notes or the definition's flash slots | no client-timed view effect exists in this engine's assets |
 | New sounds in the bank, played to their owner | proven | 22 Nov capture (`docs/STATE.md:81`): `playlocalsound`, loops |
 | A new one-shot heard by the others at a place | built, and failed once | 4 of 4 weapon-type one-shots were not heard on 22 Nov. First probe: the bell for the team |
@@ -359,3 +360,48 @@ arithmetic and canon faults; it read the first version of this page).
 | Its first proposal: drop the calm and apply the damage on return | not taken: the walk is the film's joke in behaviour, and damage at the bell keeps the kill where the player sees it. Open to the first playtest |
 
 Not re-reviewed after these changes.
+
+## 14. The look
+
+One object, said in one line: **a ticket window you carry.** It is not shaped like a rifle with ticket parts on
+it; it is a piece of station equipment that somebody put a grip on.
+
+The parts every direction must show, because the animations of section 6 move them and the mechanic is read on
+them: (1) a grip and trigger; (2) the **issuing lever**; (3) the **ticket slot** in the place of a muzzle, with
+the tongue of the next ticket; (4) the **ticket stack** behind a window, with its follower; (5) the **stock
+door**; (6) the **guard's dome bell** with an outside striker; (7) **six amber lamps** in one row, facing the
+player; (8) the **strap**. No barrel, no magazine, no optics.
+
+**The detail people will remember:** the bell rings by itself. Nobody pulls it. Six lamps go out one by one on
+the thing in your hands, the bell strikes twice, and the dead in front of you are gone. The second: the tongue of
+the next ticket, always trembling in the slot.
+
+Four directions, the same mechanic and the same eight parts (concept images made with the image generator, not
+the game; prompts and manifest in `concept/`):
+
+| | Direction | Silhouette | Material story | Lamps while playing |
+|---|---|---|---|---|
+| A | **The conductor's machine** | compact box, a side crank with a ball knob, the bell slung under the front | die-cast aluminium, hammertone transit green and cream, worn bare edges, chrome, brown leather: the Rapid's own, 1960s kept in service | on the top plate, close to the eye: read at a glance |
+| B | **The platform validator** | long, a turnstile arm lying on a steel tube, a tubular stock, the bell at the rear | brushed stainless and signal orange, smoked acrylic: the 1978 refit of the concourse | at the far end over the slot: small in play; they would move back along the top |
+| C | **The Lodestar terminal** | short and deep, a paddle lever, a smoked lid over the stack, a telephone gong on the side | beige and putty ABS, chocolate rockers, coiled cord: the contractor that built ZERO, 1984 | on the left side under the lid: read at a glance |
+| D | **The dating press** | a heavy pistol: a nickel press handle over a brass ticket tube, a brass counter bell at the back | black crackle cast iron and brass from 1931, a grey 1980s grip and a label strip "No. 0" | on a brass strip along the top: read at a glance |
+
+The choice is the owner's (28 Nov: asked, not yet answered). Whatever is chosen: real topology with bevels on
+every edge the light catches; three texture sets on the view model (body, mechanism, tickets and glass: colour,
+normal, gloss) at about 40 texels a centimetre on every face seen in first person; one set for the world model;
+the lamps and the ticket edge are the only emissive parts.
+
+## 15. The HUD
+
+| Need | How | Elements of the 24 |
+|---|---|---|
+| The six lamps (the weapon's readout) | one server text element near the ammo counter, seven fixed strings (six lit to none), changed once a second while the weapon is in the hands | 1 |
+| Stack and reserve | the stock ammo counter | 0 |
+| Who is booked | read on the zombies: the ticket on the chest. No list, no number | 0 |
+| A full train, an empty weapon | the same element shows the word for 0.8 s (section 12) | 0 |
+| The team | nothing on screen: the bell is the signal | 0 |
+
+One element, so the map's plan goes from 20 to 21 of 24 (`../../09-TAB-AND-HUD.md`). Unproven: that the HUD font
+has a lamp glyph (otherwise two letters); that the element can sit beside the stock counter at every aspect
+ratio. The lamps on the weapon itself are the real readout and are a probe of section 10: until it passes, the
+HUD element is the only true count and the report says so.

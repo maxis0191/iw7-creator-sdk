@@ -1,0 +1,11 @@
+Use case: stylized-concept
+Asset type: a screenshot-like first-person view from a 1980s-set video game, no interface, shown to the studio lead to choose a prop design
+Input images: Image 1 is the exact device (the stainless steel and orange platform validator). Keep its design, proportions, parts, colours, materials, plates and wear exactly; only the camera and the setting change.
+Primary request: the same device as Image 1, now held by the player and seen through the player's own eyes, as the held-item view of a first-person video game.
+Composition/framing: 16:9 landscape. The camera is at the player's eye. The device is in the lower right of the frame and points straight ahead, away from the camera, into the depth of the scene: it is strongly foreshortened, its rear end nearest the camera and large, its ticket slot at the far end, small, aimed at the vanishing point just left of the centre of the frame. We look along its top and its left side from behind. It is NOT shown side-on and NOT turned to display its side to the camera. The six amber lamps and the dome bell stay visible from this angle. About 60 percent of the frame is the scene.
+Hands: the player's own bare right hand on the grip at the bottom right, wrist entering from the bottom right corner; the left hand supports the body from below, entering from the bottom edge; cuffs of a dark 1980s work jacket; natural anatomy
+Scene/backdrop: a dim abandoned 1980s underground metro platform stretching away, cream wall tiles with an orange band, a yellow line along the platform edge, sodium-orange and cold fluorescent lamps, haze; out of focus; empty: no people, no train
+Style/medium: photorealistic real-time game render of the highest quality
+Lighting/mood: warm overhead light on the device, cool rim light, the six lamps lit amber; quiet and tense
+Constraints: same device as Image 1; exactly six amber lamps; one dome bell; a buff card ticket edge in the slot; no HUD, no crosshair, no text overlay, no flash
+Avoid: side view, display pose, a second device, extra fingers, fantasy ornament, glowing energy, sci-fi panels, any real brand name, watermark

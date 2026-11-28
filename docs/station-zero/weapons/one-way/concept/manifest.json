@@ -1,0 +1,137 @@
+{
+ "made": "2026-11-28",
+ "generator": "Codex image_gen through the imagegen skill (the owner's ChatGPT plan)",
+ "images_root": "C:\\studio-data\\sz\\weapons\\one-way\\concept",
+ "note": "Concept images, not the game. Images are not in git. The first-person views take the product view as the reference image.",
+ "must_show": [
+  "grip and trigger",
+  "issuing lever",
+  "ticket slot with a ticket tongue",
+  "ticket stack behind a window",
+  "stock door",
+  "dome bell with outside striker",
+  "six amber lamps",
+  "strap"
+ ],
+ "directions": [
+  {
+   "id": "A",
+   "name": "the conductor's machine",
+   "product": {
+    "file": "a_conductor_product.png",
+    "pixels": [
+     1672,
+     941
+    ],
+    "bytes": 2521303,
+    "sha256": "42aea1eba4a6a280",
+    "prompt": "prompts/a_conductor_product.txt"
+   },
+   "first_person": {
+    "file": "a_conductor_fp3.png",
+    "pixels": [
+     1672,
+     941
+    ],
+    "bytes": 2013084,
+    "sha256": "3041c27d9966458d",
+    "prompt": "prompts/a_conductor_fp3.txt",
+    "reference": "a_conductor_product.png"
+   }
+  },
+  {
+   "id": "B",
+   "name": "the platform validator",
+   "product": {
+    "file": "b_validator_product2.png",
+    "pixels": [
+     1672,
+     941
+    ],
+    "bytes": 2287311,
+    "sha256": "1e4ce9d4463bb9ba",
+    "prompt": "prompts/b_validator_product2.txt"
+   },
+   "first_person": {
+    "file": "b_validator_fp2.png",
+    "pixels": [
+     1672,
+     941
+    ],
+    "bytes": 1934350,
+    "sha256": "1734b4477a4d9a7c",
+    "prompt": "prompts/b_validator_fp2.txt",
+    "reference": "b_validator_product2.png"
+   }
+  },
+  {
+   "id": "C",
+   "name": "the Lodestar terminal",
+   "product": {
+    "file": "c_lodestar_product.png",
+    "pixels": [
+     1672,
+     941
+    ],
+    "bytes": 2496275,
+    "sha256": "e41af9399704d21b",
+    "prompt": "prompts/c_lodestar_product.txt"
+   },
+   "first_person": {
+    "file": "c_lodestar_fp2.png",
+    "pixels": [
+     1672,
+     941
+    ],
+    "bytes": 1985601,
+    "sha256": "4749b967689ddba2",
+    "prompt": "prompts/c_lodestar_fp2.txt",
+    "reference": "c_lodestar_product.png"
+   }
+  },
+  {
+   "id": "D",
+   "name": "the dating press",
+   "product": {
+    "file": "d_datepress_product2.png",
+    "pixels": [
+     1672,
+     941
+    ],
+    "bytes": 2583453,
+    "sha256": "602b38ac3f4605ac",
+    "prompt": "prompts/d_datepress_product2.txt"
+   },
+   "first_person": {
+    "file": "d_datepress_fp2.png",
+    "pixels": [
+     1672,
+     941
+    ],
+    "bytes": 1951689,
+    "sha256": "d2c76d70ed23bafa",
+    "prompt": "prompts/d_datepress_fp2.txt",
+    "reference": "d_datepress_product2.png"
+   }
+  }
+ ],
+ "redone": [
+  {
+   "what": "all four first-person views (round 1)",
+   "why": "the device was shown side-on, not as a first-person view"
+  },
+  {
+   "what": "B product, B and D first-person (round 1)",
+   "why": "five lamps instead of six"
+  },
+  {
+   "what": "D product (round 1)",
+   "why": "refused by the generator's violence policy; reworded as a film prop"
+  },
+  {
+   "what": "A first-person (round 2)",
+   "why": "five lamps instead of six"
+  }
+ ],
+ "checked": "lamp rows counted by the lead on enlarged crops: six in all eight finals"
+}
