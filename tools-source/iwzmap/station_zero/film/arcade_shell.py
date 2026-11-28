@@ -847,6 +847,8 @@ def recipe():
     src = json.load(open(RECIPE_FROM, encoding='utf-8'))
     st = copy.deepcopy(src['settings'])
     st['map'] = 'cp_iwz'
+    import light_rules                        # L1 (W2, 28 Nov): the proposed lit vision
+    light_rules.apply_lit(st)
     return st
 
 
