@@ -125,22 +125,23 @@ def main(argv=None):
         seen_mat.add(mat)
         if ('material', mat) in have:
             rep['materials']['shared'].append(mat); return
-        mj = find(zone, os.path.join('materials', mat + '.json'))
+        fname = mat.replace('*', '_')                # ZoneTool clean_name: a `*` material's files are named with `_`
+        mj = find(zone, os.path.join('materials', fname + '.json'))
         if not mj:
             missing.append('material:' + mat); return
         md = json.load(open(mj))
-        add(mj, os.path.join('materials', mat + '.json'))
+        add(mj, os.path.join('materials', fname + '.json'))
         rep['materials']['new'].append(mat)
         tech = md.get('techniqueSet->name') or ''
         if tech:
             for sub, exts, need in (('state', ('.stateinfo', '.statebits', '.statebitsmap'), ('.statebits', '.statebitsmap')),
                                     ('constantbuffer', ('.cbi', '.cbt'), ())):
                 for ext in exts:
-                    p = find(zone, os.path.join('techsets', sub, tech, mat + ext))
+                    p = find(zone, os.path.join('techsets', sub, tech, fname + ext))
                     if p:
-                        add(p, os.path.join('techsets', sub, tech, mat + ext))
+                        add(p, os.path.join('techsets', sub, tech, fname + ext))
                     elif ext in need or (sub == 'constantbuffer' and md.get('constantTable')):
-                        missing.append('%s %s/%s%s' % (sub, tech, mat, ext))
+                        missing.append('%s %s/%s%s' % (sub, tech, fname, ext))
             if tech not in seen_tech:
                 seen_tech.add(tech)
                 if ('techset', tech) in have or ('techset', tech) in runtime:

@@ -28,7 +28,7 @@ def reverse(folder):
         return {'reversed': 0, 'already': True}
     b = bytearray(open(p, 'rb').read())
     magic, ver = struct.unpack_from('<II', b, 0)
-    if magic != MAGIC or ver != 1:
+    if magic != MAGIC or ver not in (1, 2):                 # version 2: surface records of 52 bytes (layer offset and stride), indices unaffected
         raise ValueError('%s: not a world.bin' % p)
     o = 8
     nm, = struct.unpack_from('<I', b, o); o += 4
@@ -41,7 +41,7 @@ def reverse(folder):
     ns, = struct.unpack_from('<I', b, o); o += 4
     n = 0
     for s in range(ns):
-        _mat, _fv, _vc, fi, tc = struct.unpack_from('<5I', b, o + s * (20 + 24))
+        _mat, _fv, _vc, fi, tc = struct.unpack_from('<5I', b, o + s * (44 if ver == 1 else 52))
         if fi + 3 * tc > ni:
             raise ValueError('%s: surface %d runs past the index list' % (p, s))
         for t in range(tc):

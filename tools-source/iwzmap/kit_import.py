@@ -284,23 +284,30 @@ def main(argv=None):
             return
         seen_mat.add(mat)
         if ('material', mat) in have:
-            rep['materials']['shared'].append(mat); return
+            rep['materials']['shared'].append(mat)
+            if mat.startswith('*'):
+                rep['materials'].setdefault('starShared', []).append(mat)   # `*` materials are map-local: the template's `*name` may be another material
+            return
         if a.share_runtime and ('material', mat) in runtime:
-            ref('material', mat); rep['materials']['shared'].append(mat); return
-        mj = find(zone, os.path.join('materials', mat + '.json'))
+            ref('material', mat); rep['materials']['shared'].append(mat)
+            if mat.startswith('*'):
+                rep['materials'].setdefault('starShared', []).append(mat)
+            return
+        fname = mat.replace('*', '_')                # ZoneTool clean_name: a `*` material's files are named with `_`; the asset reference keeps `*`
+        mj = find(zone, os.path.join('materials', fname + '.json'))
         md = json.load(open(mj))
-        add(mj, os.path.join('materials', mat + '.json'))
+        add(mj, os.path.join('materials', fname + '.json'))
         rep['materials']['new'].append(mat)
         tech = md.get('techniqueSet->name') or ''
         if tech:
             for sub, exts, need in (('state', ('.stateinfo', '.statebits', '.statebitsmap'), ('.statebits', '.statebitsmap')),
                                     ('constantbuffer', ('.cbi', '.cbt'), ())):
                 for ext in exts:
-                    p = find(zone, os.path.join('techsets', sub, tech, mat + ext))
+                    p = find(zone, os.path.join('techsets', sub, tech, fname + ext))
                     if p:
-                        add(p, os.path.join('techsets', sub, tech, mat + ext))
+                        add(p, os.path.join('techsets', sub, tech, fname + ext))
                     elif ext in need or (sub == 'constantbuffer' and md.get('constantTable')):
-                        missing.append('%s %s/%s%s' % (sub, tech, mat, ext))
+                        missing.append('%s %s/%s%s' % (sub, tech, fname, ext))
             if ('techset', tech) in have or ('techset', tech) in runtime:
                 ref('techset', tech)
                 if tech not in rep['techsets']['shared']:
@@ -407,7 +414,7 @@ def main(argv=None):
             for sub in ('physicsasset', 'physicsfxshape', 'proceduralbones'):
                 for pp, rel in (find_all(zone, sub, s) if s and not set(s) & BADPATH and s not in shared_here else []):
                     add(pp, rel); info['physics'].append(rel.replace(os.sep, '/'))
-            if find(zone, os.path.join('materials', s + '.json')):
+            if find(zone, os.path.join('materials', s.replace('*', '_') + '.json')):
                 info['materials'].append(s)
         if not info['surfaces']:
             missing.append('xsurface:' + name)
@@ -422,7 +429,7 @@ def main(argv=None):
             missing.append('material spec %r (want <zone>:<name>)' % spec); continue
         if not dumps.get(z):
             missing.append('zone dump for %s (%s)' % (mname, z)); continue
-        if not find(z, os.path.join('materials', mname + '.json')):
+        if not find(z, os.path.join('materials', mname.replace('*', '_') + '.json')):
             missing.append('material:%s (%s)' % (mname, z)); continue
         before = len(rep['materials']['new'])
         bring_material(z, mname)

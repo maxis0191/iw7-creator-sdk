@@ -574,3 +574,20 @@ class BinaryComWorldTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ResolveMeshFile(unittest.TestCase):
+    """a database built under a temporary name then renamed keeps the temporary mesh name in its meta"""
+
+    def test_own_mesh_beside_db_wins(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            db = os.path.join(d, 'cp_x.sqlite')
+            open(db + '.mesh', 'wb').close()
+            self.assertEqual(W.resolve_mesh_file(db, 'tmp_cp_x.sqlite.mesh'), os.path.abspath(db + '.mesh'))
+
+    def test_meta_name_when_own_missing(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            db = os.path.join(d, 'cp_x.sqlite')
+            self.assertEqual(W.resolve_mesh_file(db, 'other.mesh'), os.path.join(os.path.abspath(d), 'other.mesh'))
