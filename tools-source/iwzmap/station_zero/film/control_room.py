@@ -112,11 +112,11 @@ def build(m, mode='bounce', probe_room=True):
     # depends on navigation or zones; the bake and the lights do not read them.
     zb = None
     # ... and so the room was in no probe room: no reflection probe volume (R2, 28 Nov 2026: 10.8 % of the control build's drawn area, the whole room;
-    # its floors and vaults drew black). A probe room of the box, no zone (Studio settings.build.probe_rooms; a Studio without it ignores the key)
+    # its floors and vaults drew black). A probe room of the box, no zone (Studio settings.probe_rooms; a Studio without it ignores the key)
     if probe_room:
         b = STOCK_BOX
         lo, hi = to_doc(b[:3]), to_doc(b[3:])
-        m.settings.setdefault('build', {}).setdefault('probe_rooms', []).append(lo + hi + list(PROBE_RGB_UP))
+        m.settings.setdefault('probe_rooms', []).append(lo + hi + list(PROBE_RGB_UP))
     rows = []
     for k, L in enumerate(stock_lights()):
         kw = light_args(L, mode)

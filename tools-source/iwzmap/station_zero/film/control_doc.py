@@ -52,7 +52,7 @@ def main(argv=None):
     ap.add_argument('--mode', choices=('bounce', 'baked'), required=True)
     ap.add_argument('--out')
     ap.add_argument('--base-only', action='store_true', help='the station base + the room (no Arcade, no Terminus)')
-    ap.add_argument('--no-probe-room', action='store_true', help='C1's documents: the room in no probe room (R2 E1 control)')
+    ap.add_argument('--no-probe-room', action='store_true', help='as C1 built it: the room in no probe room (R2 E1 control)')
     a = ap.parse_args(argv)
     out = a.out or os.path.join(DATA, 'doc_' + a.mode)
     m, rep = build(a.mode, whole=not a.base_only, probe_room=not a.no_probe_room)
