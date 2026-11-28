@@ -1,0 +1,24 @@
+{
+ "schema": "iw7.gamelab-plan/1",
+ "name": "i1_mk_clip",
+ "map": "cp_iwz",
+ "conditions": "quiet",
+ "libraries": ["szaccept", "szi1"],
+ "about": "I1 (29 Nov), a client, an experiment: at the Heel & Key counter front the monitor picks the rifle but no prompt is drawn. Its use trigger stands behind the stall clip (y 4300..4330). The trigger held in front of the clip (y 4294): does the prompt appear? The map is not changed.",
+ "steps": [
+  {"do": "waves", "on": false},
+  {"do": "call", "fn": "sz_power_direct", "args": ["power", 20], "s": 1},
+  {"do": "wait", "s": 6},
+  {"do": "money", "value": 20000},
+  {"do": "tp", "at": [-1490, 4285, 1], "yaw": 90},
+  {"do": "look", "yaw": 90, "pitch": 10},
+  {"do": "wait", "s": 2},
+  {"do": "call", "fn": "i1_hint", "args": ["mk_hint", "iw7_m1c_zm", -1490, 4336], "s": 1},
+  {"do": "ui", "name": "clip_behind"},
+  {"do": "capture", "name": "i1_clip_behind", "pause": 1},
+  {"do": "call", "fn": "i1_trig_hold", "args": ["hold", -1490, 4294, 6], "s": 2},
+  {"do": "ui", "name": "clip_front"},
+  {"do": "capture", "name": "i1_clip_front", "pause": 1},
+  {"do": "expect", "that": "probe:mk_hint.picked", "eq": 1, "why": "the monitor picked the rifle"}
+ ]
+}

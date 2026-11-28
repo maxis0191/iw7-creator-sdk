@@ -194,8 +194,7 @@ i1_ww( name, x, y, turn )
 }
 
 // i1_hint: what the stock code would put in the prompt of the wall buy of `kind` nearest (x, y) for player 0: hint (the string of
-// coop_wall_buys.gsc get_wall_buy_hint_func is defined: 1/0), table (level.interaction_hintstrings of its base weapon defined), name (the weapon's
-// name string defined), weaponfunc (level.weapon_hint_func defined), can_give (can_give_weapon), cost (level.interactions cost), picked (the
+// coop_wall_buys.gsc get_wall_buy_hint_func is defined: 1/0), table (level.interaction_hintstrings of its base weapon defined), weaponfunc (level.weapon_hint_func defined), can_give (can_give_weapon), cost (level.interactions cost), picked (the
 // stock monitor's current point is that struct)
 i1_hint( name, kind, x, y )
 {
@@ -221,9 +220,6 @@ i1_hint( name, kind, x, y )
     table = 0;
     if ( isdefined( level.interaction_hintstrings[getweaponbasename( kind )] ) )
         table = 1;
-    nm = 0;
-    if ( isdefined( getweaponnamestring( kind ) ) )
-        nm = 1;
     wf = 0;
     if ( isdefined( level.weapon_hint_func ) )
         wf = 1;
@@ -234,8 +230,65 @@ i1_hint( name, kind, x, y )
     picked = 0;
     if ( isdefined( p.last_interaction_point ) && p.last_interaction_point == s )
         picked = 1;
-    print( "[IWZ local] GL PROBE name=" + name + " found=1 hint=" + hint + " table=" + table + " name_str=" + nm + " weaponfunc=" + wf + " can_give=" + cg
+    print( "[IWZ local] GL PROBE name=" + name + " found=1 hint=" + hint + " table=" + table + " weaponfunc=" + wf + " can_give=" + cg
         + " cost=" + cost + " picked=" + picked + " base=" + getweaponbasename( kind ) );
+}
+
+// i1_trig_hold: an experiment: for `secs` seconds hold player 0's interaction trigger (the use trigger the stock monitor puts at the picked
+// struct's x, y at eye height, and puts back every 50 ms for a wall buy) at (x, y, eye height), then let the monitor have it again. Prints where
+// it was and where it is held.
+i1_trig_hold( name, x, y, secs )
+{
+    p = level.players[0];
+    if ( !isdefined( p.interaction_trigger ) )
+    {
+        print( "[IWZ local] GL PROBE name=" + name + " trigger=0" );
+        return;
+    }
+    o = p.interaction_trigger.origin;
+    print( "[IWZ local] GL PROBE name=" + name + " trigger=1 was_x=" + o[0] + " was_y=" + o[1] + " was_z=" + o[2] + " hold_x=" + x + " hold_y=" + y );
+    level thread i1_trig_hold_loop( p, x, y, secs );
+}
+
+i1_trig_hold_loop( p, x, y, secs )
+{
+    t0 = gettime();
+    while ( gettime() - t0 < secs * 1000 )
+    {
+        if ( isdefined( p.interaction_trigger ) )
+            p.interaction_trigger.origin = ( x, y, p geteye()[2] );
+        wait 0.05;
+    }
+}
+
+// i1_trig_set: an experiment without the race of i1_trig_hold: the stock monitor of player 0 stopped (it ends on its own notify
+// "player_interaction_monitor"), the stock set_interaction_point run once for the wall buy of `kind` nearest (x, y) (hint, cost, usable), then
+// the trigger moved to (x, ty, eye height) when ty != 0. Prints the trigger's origin.
+i1_trig_set( name, kind, x, y, ty )
+{
+    p = level.players[0];
+    p notify( "player_interaction_monitor" );
+    s = undefined;
+    foreach ( st in level.current_interaction_structs )
+    {
+        if ( isdefined( st ) && isdefined( st.script_noteworthy ) && st.script_noteworthy == kind )
+        {
+            if ( !isdefined( s ) || distance2d( st.origin, ( x, y, 0 ) ) < distance2d( s.origin, ( x, y, 0 ) ) )
+                s = st;
+        }
+    }
+    if ( !isdefined( s ) )
+    {
+        print( "[IWZ local] GL PROBE name=" + name + " found=0" );
+        return;
+    }
+    p.last_interaction_point = undefined;
+    p scripts\cp\cp_interaction::set_interaction_point( s );
+    wait 0.2;
+    if ( ty != 0 )
+        p.interaction_trigger.origin = ( x, ty, p geteye()[2] );
+    o = p.interaction_trigger.origin;
+    print( "[IWZ local] GL PROBE name=" + name + " found=1 tx=" + o[0] + " ty=" + o[1] + " tz=" + o[2] );
 }
 
 // i1_wheel_to: the stock magic wheel moved to `area` as the stock code moves it after its rolls (interaction_magicwheel.gsc _id_BC3E: the wheel of that
