@@ -188,12 +188,13 @@ def author(template, pkg_template, view_model):
     return w, pkg, changes
 
 
-def stand_ins(template_name, weapon, sounds_own=False):
+def stand_ins(template_name, weapon, sounds_own=False, fx_own=False):
     d = weapon["weapDef"]
     fields = ("worldModel", "defaultWorldModel", "szXAnimsRightHanded", "szXAnimsLeftHanded", "handXModel",
               "vfxPackage", "sfxPackage", "tracerType", "hudIcon", "pickupIcon", "ammoCounterIcon", "fireRumble",
               "meleeImpactRumble", "stowTag", "stowOffsetModel", "szLUICrosshairWidget", "killIcon")
-    out = {f: d.get(f) for f in fields if d.get(f) and not (f == "sfxPackage" and sounds_own)}
+    out = {f: d.get(f) for f in fields if d.get(f) and not (f == "sfxPackage" and sounds_own)
+           and not (f in ("vfxPackage", "tracerType") and fx_own)}
     out["szDisplayName"] = weapon.get("szDisplayName")
     out["package animations (every slot of %s)" % PACKAGE] = "stock FTL pistol animations, the template's own package"
     out["feel (spread, kick, sway, ADS, melee, aim assist, accuracy graph, damage values)"] = \
@@ -222,9 +223,16 @@ def main(argv=None):
     ap.add_argument("--sounds", help="folder written by foley_bank.py bank: the weapon's own sound bank, sfx package and notetrack map")
     ap.add_argument("--anims", help="folder written by vm_compose.py build: xanim/*.xab and animpkg_patch.json (the weapon's "
                                     "own first-person clips); the package's slots and its raise/drop timers follow them")
+    ap.add_argument("--fx", help="folder written by make_fx.py: the weapon's own particle systems, tracer and vfx package")
+    ap.add_argument("--name", help="the weapon's displayed name (DESIGN.md section 12; one language a zone: a localize "
+                                   "entry WEAPON_SZONEWAY in localizedstrings/szoneway.json, row `localize,szoneway`)")
     args = ap.parse_args(argv)
 
     sounds = read_sounds(args.sounds) if args.sounds else None
+    fx = None
+    if args.fx:
+        with open(os.path.join(args.fx, "fx.json"), encoding="utf-8") as f:
+            fx = json.load(f)
     rows = read_rows(args.fragment)
     check_rows(args.fragment, rows)
     models = [name for kind, name in rows if kind == "xmodel"]
@@ -238,6 +246,14 @@ def main(argv=None):
     weapon, pkg, changes = author(template, pkg_template, view_model)
     if sounds:
         apply_sounds(weapon, sounds, changes)
+    if args.name:
+        changes.append(("szDisplayName", weapon.get("szDisplayName"), "WEAPON_SZONEWAY"))
+        weapon["szDisplayName"] = "WEAPON_SZONEWAY"
+    if fx:
+        d = weapon["weapDef"]
+        for field in ("vfxPackage", "tracerType"):
+            changes.append(("weapDef." + field, d.get(field), fx[field]))
+            d[field] = fx[field]
     clips = []
     if args.anims:
         with open(os.path.join(args.anims, "animpkg_patch.json"), encoding="utf-8") as f:
@@ -267,6 +283,11 @@ def main(argv=None):
     if sounds:
         for folder in SOUND_DIRS:
             shutil.copytree(os.path.join(args.sounds, folder), os.path.join(mod, folder), dirs_exist_ok=True)
+    if fx:
+        for folder in ("particlesystem", "tracer", "vfxpkg"):
+            shutil.copytree(os.path.join(args.fx, folder), os.path.join(mod, folder), dirs_exist_ok=True)
+    if args.name:
+        save(os.path.join(mod, "localizedstrings", "szoneway.json"), {"WEAPON_SZONEWAY": args.name})
 
     # stock lists beside the csv (what `ignore,<zone>` reads)
     zone_source = os.path.join(args.out, "zone_source")
@@ -284,14 +305,18 @@ def main(argv=None):
                  (args.template_zone, args.dump))
 
     sound_rows = [tuple(r.split(",", 1)) for r in sounds["csv_rows"]] if sounds else []
-    embedded = rows + sound_rows + [("xanim", c) for c in clips] + [("animpkg", PACKAGE), ("weapon", WEAPON)]
+    fx_rows = [tuple(r.split(",", 1)) for r in fx["rows"]] if fx else []
+    if args.name:
+        fx_rows.append(("localize", "szoneway"))
+    embedded = rows + sound_rows + fx_rows + [("xanim", c) for c in clips] + [("animpkg", PACKAGE), ("weapon", WEAPON)]
     lines = write_csv(os.path.join(zone_source, ZONE + ".csv"), embedded, present)
 
     report = {
         "weapon": WEAPON, "zone": ZONE, "template": args.template, "template_zone": args.template_zone,
         "view_model": view_model, "csv": lines, "stock_lists_ignored": present, "stock_lists_absent": absent,
         "changed_fields": [{"field": f, "template": b, "now": a} for f, b, a in changes],
-        "stand_ins": stand_ins(args.template, weapon, bool(sounds)),
+        "stand_ins": stand_ins(args.template, weapon, bool(sounds), bool(fx)),
+        "fx": None if not fx else {"rows": fx["rows"], "vfxPackage": fx["vfxPackage"], "tracerType": fx["tracerType"]},
         "sounds": None if not sounds else {"bank": sounds["bank"], "zone": sounds["zone"], "sfxpackage": sounds["sfxpackage"],
                                            "aliases": sounds["aliases"], "alias_rows": len(sounds["rows"]),
                                            "sfx_fields_changed": sounds["sfx_fields_changed"],

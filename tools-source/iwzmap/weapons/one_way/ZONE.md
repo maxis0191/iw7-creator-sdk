@@ -19,6 +19,30 @@ dry, raise and putaway aliases and the npc raise/reload fields emptied), and the
 note called `ow_band_tear` plays `ow_band_tear`). Rows: `soundbank,mod.all` and `sfxpkg,iw7_szoneway_zm_sfxpackage` in `mod.csv`. Recipes and wiring:
 `sounds/one_way_sounds.json`; measured levels: `sounds/levels.json`.
 
+The fire rows are `loaded` since 28 Nov evening: the Atomizer row they were cloned from is `hybrid_pcm` (a loaded head, the
+rest streamed from `mod.sabs`), and in the client's recording the first press started a 4.4 s broadband bed that none of
+our 31 files matches (normalized cross-correlation 0.01 to 0.09 over 11.5-17 s), ending at the last-ticket press. Every
+`loaded` row of the bank was heard clean (`ow_band_tear` 0.95).
+
+## Effects (`--fx`, 28 Nov 2026)
+
+    python -B make_fx.py --dump <dump> --vfx-tool <x64-zt-extensions>/tools-source/asset-bridge/t7-weapons --out <fx>
+    python -B make_zone.py ... --fx <fx>
+
+Nine particle systems of ours under `vfx/iwz/oneway/` (emitters cloned from stock cp_zmb systems and rewritten: life,
+counts, sizes, velocities, colours, materials; table in `make_fx.py`), the tracer `szoneway_ticket` and the effect package
+`iw7_szoneway_zm_vfxpackage` (view, ADS and world flash: card dust, card chips, press spark, a 30 ms warm light). The
+weapon's `vfxPackage` and `tracerType` point at them. The script plays the rest: a card on the chest per ticket
+(`playfxontag`, cleared at the bell), a door of carriage light at each zombie taken, carried or put back (at most 12 a
+bell, each has a light), the cards of the taken, the bell at each holder, the full-train stroke, the lamp ticks.
+
+## Name (`--name`, 28 Nov 2026)
+
+`--name "ALLER SIMPLE"` writes `localizedstrings/szoneway.json` (`{"WEAPON_SZONEWAY": ...}`, ZoneTool's flat JSON
+localize format) and the row `localize,szoneway`, and sets the weapon's `szDisplayName` to `WEAPON_SZONEWAY`. A zone
+holds one language: the Paris servers' players read French, so the built zone says ALLER SIMPLE (English ONE WAY,
+DESIGN.md section 12, until Neon rewrites the copy).
+
 ## What the zone holds
 
 - Embedded: 3 materials (`mo/weapon_iwz_oneway_acc`, `_glass`, `_body`), the view model `weapon_iwz_oneway_vm`
@@ -37,9 +61,10 @@ note called `ow_band_tear` plays `ow_band_tear`). Rows: `soundbank,mod.all` and 
 
 ## Stand-ins (the template's, referenced from the stock zones)
 
-World model `weapon_ftlpistol_wm`, hand packages, every animation (stock FTL pistol), effect package `iw7_atomizer_mp_vfxpackage`,
-sound package `iw7_atomizer_mp_sfxpackage`, tracer `atomizer` (cp_zmb only), icons, rumble, stow, display name `WEAPON_ATOMIZER`, and
-the whole feel (spread, kick, sway, ADS, melee, accuracy graph). Full list in `make_zone_report.json`.
+World model `weapon_ftlpistol_wm`, the third-person hand packages, the sprint and jump slots of the package (stock FTL
+pistol), the impact table row (`vfxImpactType`/`sfxImpactType` 16, the Atomizer's), icons, rumble, stow, display name
+`WEAPON_ATOMIZER`, and the feel (spread, sway, accuracy graph). With `--sounds --anims --fx` the view model, 13 first-person
+clips, the sound and effect packages and the tracer are ours. Full list in `make_zone_report.json`.
 
 ## Preflight
 
@@ -48,8 +73,8 @@ Exit 0, 0 errors, 0 warnings, 2 notes: no catalog (the one weapon file is its ow
 
 ## Not proven
 
-- ZoneTool builds the zone (the `ignore` and `require` lists are those of the map builds and the BO3 ports; not run for this zone).
-- The game loads `mod.ff`, the weapon is givable and reloads, the model draws.
+- (Proven since: ZoneTool builds the zone, the game loads `mod.ff`, the weapon is given, fires, reloads and draws; see
+  `docs/station-zero/weapons/one-way/STATE.md`.)
 - Assumed: `iMaxAmmo` is the reserve outside the clip (stock zombies weapons hold it at a multiple of the clip, 8/80, 14/126,
   20/160, and the script reads `getweaponammostock`); if it counts the clip, the reserve is 48.
 - Assumed: the damage range is what limits a bullet; no weapon field was found that cuts a trace at 1,500 units.

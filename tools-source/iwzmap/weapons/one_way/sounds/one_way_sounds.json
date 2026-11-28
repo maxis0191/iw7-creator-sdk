@@ -2593,7 +2593,7 @@
   "roles": {
    "fire_plr": {
     "alias": "weap_atomizer_fire_plr",
-    "type": "hybrid_pcm"
+    "type": "loaded"
    },
    "fire_npc": {
     "alias": "weap_atomizer_fire_npc",

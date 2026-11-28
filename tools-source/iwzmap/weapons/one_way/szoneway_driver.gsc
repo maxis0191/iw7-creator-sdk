@@ -293,3 +293,37 @@ owt_ray( at )
     tr = bullettrace( a, b, 1, self );
     return int( 100 * tr["fraction"] );
 }
+
+// Test control of the beat (effects frames): a long period so the match's own clock rings nothing during the plan,
+// then owt_ring rings the departure the tickets of now are valid for, at a moment the plan chooses.
+owt_beat( name, ms )
+{
+    level.ow_period = ms;
+    print( "[IWZ local] GL PROBE name=" + name + " period=" + level.ow_period + " t=" + gettime() );
+}
+
+owt_ring( name )
+{
+    dep = ow_departure( gettime() );
+    if ( isdefined( level.owt_dep ) && dep <= level.owt_dep )
+        dep = level.owt_dep + 1;        // a second ring puts back what the first carried
+    level.owt_dep = dep;
+    level ow_bell( dep );
+    print( "[IWZ local] GL PROBE name=" + name + " dep=" + dep + " bells=" + level.ow_bells + " doors=" + level.ow_doors + " t=" + gettime() );
+}
+// How far the player is in aim-down-sights (0 to 1), and the weapon held: the ADS key's effect, read on the server.
+owt_ads( name )
+{
+    w = self getcurrentweapon();
+    print( "[IWZ local] GL PROBE name=" + name + " ads=" + self playerads() + " weapon=" + getweaponbasename( w ) + " t=" + gettime() );
+}
+
+// Play one of the weapon's effects in front of the player (dist units ahead, up units above the feet): the effect probes.
+owt_fx( name, fx, dist, up )
+{
+    id = loadfx( "vfx/iwz/oneway/" + fx );
+    at = self.origin + anglestoforward( ( 0, self.angles[1], 0 ) ) * dist + ( 0, 0, up );
+    if ( isdefined( id ) )
+        playfx( id, at );
+    print( "[IWZ local] GL PROBE name=" + name + " fx=" + fx + " defined=" + isdefined( id ) + " t=" + gettime() );
+}

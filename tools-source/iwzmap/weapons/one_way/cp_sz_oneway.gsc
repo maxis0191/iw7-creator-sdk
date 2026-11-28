@@ -47,12 +47,106 @@ ow_init()
     level.ow_bells = 0;
     level.ow_keys = 0;
     level.ow_gone = [];
+    level.ow_door_max = 12;             // doors (each with its light) a bell; the others still leave their tickets
     level.ow_prev_damage = level.onzombiedamage_func;
     level.onzombiedamage_func = ::ow_damage;
     level.ow_prev_reward = level.eligable_for_reward_func;
     level.eligable_for_reward_func = ::ow_reward;
+    ow_fx_init();
     level thread ow_clock();
+    level thread ow_lamps();
     print( "[SZ oneway] INIT period=" + level.ow_period + " closing=" + level.ow_closing );
+}
+
+// The weapon's own effects (make_fx.py, zone `mod`) and sounds (bank mod.all). A missing effect is left undefined
+// and never played: the mechanic does not depend on its look.
+ow_fx_init()
+{
+    level.ow_fx = [];
+    level.ow_fx["ow_ticket_2"] = loadfx( "vfx/iwz/oneway/ow_ticket_2" );
+    level.ow_fx["ow_ticket_1"] = loadfx( "vfx/iwz/oneway/ow_ticket_1" );
+    level.ow_fx["ow_ticket_r"] = loadfx( "vfx/iwz/oneway/ow_ticket_r" );
+    level.ow_fx["ow_door"] = loadfx( "vfx/iwz/oneway/ow_door" );
+    level.ow_fx["ow_door_full"] = loadfx( "vfx/iwz/oneway/ow_door_full" );
+    level.ow_fx["ow_taken"] = loadfx( "vfx/iwz/oneway/ow_taken" );
+    level.ow_ticket_tags = [];
+    level.ow_ticket_tags[0] = "j_spine4";
+    level.ow_ticket_tags[1] = "j_spineupper";
+    level.ow_ticket_tags[2] = "j_spinelower";
+    level.ow_doors = 0;
+}
+
+ow_play( name, origin )
+{
+    if ( isdefined( level.ow_fx[name] ) )
+        playfx( level.ow_fx[name], origin );
+}
+
+// A card stuck to the chest for each ticket held: buff, first class with its red band, upgraded pale green.
+ow_fx_ticket( head, up )
+{
+    name = "ow_ticket_2";
+    if ( up )
+        name = "ow_ticket_r";
+    else if ( head )
+        name = "ow_ticket_1";
+    if ( !isdefined( level.ow_fx[name] ) )
+        return;
+    if ( !isdefined( self.ow_cards ) )
+        self.ow_cards = [];
+    tag = level.ow_ticket_tags[self.ow_cards.size % level.ow_ticket_tags.size];
+    playfxontag( level.ow_fx[name], self, tag );
+    c = spawnstruct();
+    c.fx = level.ow_fx[name];
+    c.tag = tag;
+    self.ow_cards[self.ow_cards.size] = c;
+}
+
+ow_fx_clear()
+{
+    if ( !isdefined( self.ow_cards ) )
+        return;
+    foreach ( c in self.ow_cards )
+        stopfxontag( c.fx, self, c.tag );
+    self.ow_cards = [];
+}
+
+// The door of carriage light at a booked zombie's place, with the door engine; capped per bell (each has a light).
+ow_door( origin, full )
+{
+    if ( level.ow_doors >= level.ow_door_max )
+        return 0;
+    level.ow_doors++;
+    name = "ow_door";
+    if ( full )
+        name = "ow_door_full";
+    ow_play( name, origin );
+    playsoundatpos( origin, "ow_door_engine" );
+    return 1;
+}
+
+// The six lamps count the departure down for whoever holds the weapon: one relay tick a second, falling in pitch,
+// the last second a double tick. Heard by the holder only.
+ow_lamps()
+{
+    level endon( "game_ended" );
+    for ( ;; )
+    {
+        left = level.ow_period - ( gettime() % level.ow_period );
+        wait ( ( left % 1000 ) + 1 ) / 1000;
+        left = level.ow_period - ( gettime() % level.ow_period );
+        n = int( ( level.ow_period - left ) / 1000 ) + 1;     // 1 .. 6
+        if ( n < 1 || n > 6 )
+            continue;
+        alias = "ow_lamp_tick_" + n;
+        if ( n == 6 )
+            alias = "ow_lamp_double";
+        foreach ( p in level.players )
+        {
+            if ( isalive( p ) && issubstr( getweaponbasename( p getcurrentweapon() ), level.ow_match ) )
+                p playlocalsound( alias );
+        }
+    }
 }
 
 ow_is( weapon )
@@ -176,6 +270,7 @@ ow_issue( owner, weapon, head )
     if ( head )
         ow_stat( owner, "first", 1 );
     print( "[SZ oneway] ISSUE victim=" + self getentitynumber() + " owner=" + owner getentitynumber() + " head=" + head + " up=" + up + " value=" + value + " dep=" + tix.dep + " held=" + self.ow_tix.size + " t=" + t );
+    self ow_fx_ticket( head, up );
     if ( self ow_ordinary() )
         self thread ow_calm();
 }
@@ -263,6 +358,7 @@ ow_owner_of( tix )
 ow_bell( dep )
 {
     t = gettime();
+    level.ow_doors = 0;
     zombies = scripts\cp\cp_agent_utils::getaliveagentsofteam( "axis" );
     // 1. the carried of the bell before are put back
     back = 0;
@@ -309,10 +405,24 @@ ow_bell( dep )
     taken = [];
     carried = [];
     stayed = 0;
+    // the guard's bell, struck at each holder of a ticket for this departure: the whole team hears it there
+    rung = [];
+    foreach ( z in booked )
+    {
+        foreach ( x in z.ow_now )
+        {
+            if ( isdefined( x.owner ) && !isdefined( rung[x.owner getentitynumber()] ) )
+            {
+                rung[x.owner getentitynumber()] = 1;
+                x.owner playsound( "ow_bell" );
+            }
+        }
+    }
     foreach ( z in booked )
     {
         now = z.ow_now;
         z.ow_now = undefined;
+        z ow_fx_clear();
         owner = ow_owner_of( now );
         sum = 0;
         up = 0;
@@ -352,6 +462,9 @@ ow_bell( dep )
                 level.ow_arrivals[level.ow_arrivals.size] = a;
             }
             print( "[SZ oneway] TAKEN victim=" + id + " owner=" + key + " sum=" + sum + " health=" + health + " tickets=" + now.size + " dep=" + dep );
+            ow_door( origin, 0 );
+            ow_play( "ow_taken", origin );
+            playsoundatpos( origin, "ow_taken" );
             z ow_rated( sum, origin, owner, now[0].weapon );
             continue;
         }
@@ -476,6 +589,7 @@ ow_refund( n )
     stock = self getweaponammostock( w );
     self setweaponammostock( w, stock + back );
     got = self getweaponammostock( w ) - stock;
+    self playsound( "ow_full_train" );
     ow_stat( self, "full", 1 );
     ow_stat( self, "refund", got );
     print( "[SZ oneway] FULL owner=" + self getentitynumber() + " taken=" + n + " back=" + back + " got=" + got + " stock=" + stock + "->" + self getweaponammostock( w ) );
@@ -486,6 +600,7 @@ ow_carry_away( back )
 {
     self.ow_carry = back;
     self.ow_place = self.origin;
+    ow_door( self.origin, 0 );
     self.ow_was_scripted = self.scripted_mode;
     self.ow_was_ignoreall = self.ignoreall;
     self.ow_was_ignoreme = self.ignoreme;
@@ -536,6 +651,7 @@ ow_put_back()
     self endon( "death" );
     spot = ow_place_for( self.ow_place );
     moved = distance( spot, self.ow_place );
+    ow_door( spot, 0 );
     self setorigin( spot );
     self scragentsetphysicsmode( "gravity" );
     self setgoalpos( spot );
