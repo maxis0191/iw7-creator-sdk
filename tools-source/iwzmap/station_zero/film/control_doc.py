@@ -1,10 +1,11 @@
-r"""control_doc: the control document = the station document's base + the lifted stock room only (worker C1, 28 Nov 2026).
+r"""control_doc: the control document = the whole station document + the lifted stock room on an island (worker C1, 28 Nov 2026).
 
     python control_doc.py --mode bounce|baked [--out <folder>]
 
-Chosen over "the whole station document + the room" because it builds and bakes fastest (no Arcade, no Terminus in the bake) and the room is
-an island: nothing of the Arcade or the Terminus could light it or be seen from its cameras. The settings block (kit dumps, darkness, the
-lit vision = light_rules.LIT_VISION, the dark exposure) is the station document's, copied unchanged from its map.json, so the room goes
+The base + the room alone was tried first (fastest bake), but `live start` refuses it: the base by itself fails the build's walk gate
+(a drop-only floor where the Arcade layers stand). So the whole station document is loaded and the room added; the room is an island
+840 units west of the Terminus: nothing of the Arcade or the Terminus is seen from its cameras or reaches it with light. The settings block
+(kit dumps, darkness, the lit vision = light_rules.LIT_VISION, the dark exposure) is the station document's, unchanged, so the room goes
 through exactly the pipeline the station goes through. Writes the document and `control.json` (the lights as transcribed, the prefab's
 expand report: substituted and skipped materials, props, collision; the models no dump holds).
 """
@@ -25,10 +26,17 @@ STATION = r'C:\studio-data\sz\film\station'
 DATA = r'C:\studio-data\sz\film\control'
 
 
-def build(mode, station_doc=os.path.join(STATION, 'doc'), base=os.path.join(STATION, 'base')):
-    src = json.load(open(os.path.join(station_doc, 'map.json'), encoding='utf-8'))
-    m = Map('sz_control_' + mode, title='Control: cp_disco east subway station lifted onto the station base (%s lights)' % mode,
-            base={'kind': 'emit', 'path': base}, settings=copy.deepcopy(src['settings']))
+def build(mode, station_doc=os.path.join(STATION, 'doc'), base=os.path.join(STATION, 'base'), whole=True):
+    if whole:
+        # the whole station document + the room: the base alone fails the build's own walk gate (its Arcade region is a drop-only floor that
+        # the Arcade layers replace), so `live start` refuses base + room (first session, 28 Nov: "gate check failed")
+        m = Map.load(station_doc)
+        m.path = None
+        m.name, m.title = 'sz_control_' + mode, 'Control: the station document + cp_disco east subway station lifted on an island (%s lights)' % mode
+    else:
+        src = json.load(open(os.path.join(station_doc, 'map.json'), encoding='utf-8'))
+        m = Map('sz_control_' + mode, title='Control: cp_disco east subway station lifted onto the station base (%s lights)' % mode,
+                base={'kind': 'emit', 'path': base}, settings=copy.deepcopy(src['settings']))
     rep = control_room.build(m, mode)
     rep['models_no_dump_holds'] = FX.use_kit(m)
     fl = m.flat()
